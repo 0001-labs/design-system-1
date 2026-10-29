@@ -49,3 +49,33 @@ for (const [name, engine] of [['Chromium', chromium], ['WebKit', webkit]] as con
     } finally { await browser.close(); }
   }, 45_000);
 }
+
+for (const [name, engine] of [['Chromium', chromium], ['WebKit', webkit]] as const) {
+  test(`${name}: a custom day width keeps the neighbouring months outside the current grid`, async () => {
+    const browser = await engine.launch({ headless: true });
+    try {
+      const page = await browser.newPage({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+      await page.goto(`${origin}/tests/fixtures/calendar-mobile-swipe.html`);
+      await page.waitForFunction(() => !!document.querySelector('ds-calendar')?.shadowRoot?.querySelector('.month-track'));
+      await page.evaluate(async () => {
+        const calendar = document.querySelector('ds-calendar') as any;
+        calendar.compact = false;
+        calendar.dayWidth = 2;
+        calendar.month = '2026-10';
+        calendar.style.setProperty('--ds-calendar-day', 'calc(12 * var(--ds-unit) / 7)');
+        await calendar.updateComplete;
+        await Promise.all([...calendar.shadowRoot.querySelectorAll('ds-calendar')].map((child: any) => child.updateComplete));
+      });
+      const geometry = await page.evaluate(() => {
+        const root = document.querySelector('ds-calendar')!.shadowRoot!;
+        const current = root.querySelector('.month-track > .grid')!.getBoundingClientRect();
+        const previous = root.querySelector('.previous ds-calendar')!.shadowRoot!.querySelector('.grid')!.getBoundingClientRect();
+        const next = root.querySelector('.next ds-calendar')!.shadowRoot!.querySelector('.grid')!.getBoundingClientRect();
+        return { leak: previous.right - current.left, previousWidth: previous.width - current.width, nextWidth: next.width - current.width };
+      });
+      expect(Math.abs(geometry.previousWidth)).toBeLessThan(1);
+      expect(Math.abs(geometry.nextWidth)).toBeLessThan(1);
+      expect(geometry.leak).toBeLessThan(1);
+    } finally { await browser.close(); }
+  }, 45_000);
+}

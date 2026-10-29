@@ -813,7 +813,13 @@
 .month-neighbour.next { left: 100%; }
 :host(:dir(rtl)) .month-neighbour.previous { left: 100%; }
 :host(:dir(rtl)) .month-neighbour.next { left: -100%; }
-.month-neighbour > ds-calendar { display: block; }
+.month-neighbour > ds-calendar {
+  display: block;
+  /* A consumer may size the visible days independently of day-width.
+     Keep the swipe pages on those same tracks instead of resetting the
+     day measure at the nested calendar's host. */
+  --ds-calendar-day: inherit;
+}
 @media (prefers-reduced-motion: reduce) {
   .month-track { transition: none !important; }
 }
