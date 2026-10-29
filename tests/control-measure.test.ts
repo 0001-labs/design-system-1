@@ -16,7 +16,7 @@ const pages = {} as Record<Scheme, Page>;
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   const url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/control-measure.html`;
   for (const scheme of SCHEMES) {
     const page = await browser.newPage({ viewport: { width: 800, height: 600 }, colorScheme: scheme });
@@ -389,6 +389,6 @@ test("compact monochrome switches keep a grid-sized hit target and native keyboa
   const colours=await button.evaluate(el=>({track:getComputedStyle(el,'::before').backgroundColor,thumb:getComputedStyle(el,'::after').backgroundColor,ink:getComputedStyle(el).getPropertyValue('--ds-text-color').trim(),outline:getComputedStyle(el).outlineStyle,transform:getComputedStyle(el,'::after').transform}));
   expect(colours.track).not.toBe('rgb(82, 157, 54)');expect(colours.track).not.toBe(colours.thumb);expect(colours.outline).toBe('solid');expect(colours.transform).toBe('matrix(1, 0, 0, 1, 12, 0)');
   await page.keyboard.press('Enter');expect(await button.getAttribute('aria-checked')).toBe('false');
-  await button.evaluate(el=>el.disabled=true);await page.keyboard.press('Space');expect(await button.getAttribute('aria-checked')).toBe('false');
+  await button.evaluate(el=>(el as HTMLButtonElement).disabled=true);await page.keyboard.press('Space');expect(await button.getAttribute('aria-checked')).toBe('false');
  }
 });

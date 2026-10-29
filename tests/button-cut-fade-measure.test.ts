@@ -12,7 +12,7 @@ let url = "";
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/cut-fade-measure.html`;
 }, 60_000);
 afterAll(async () => { await browser?.close(); await server?.close(); });
@@ -64,7 +64,7 @@ test("button labels stay whole without gradients and snap up to the grid", async
   }, dir);
   for (const face of result) { expect(face.fits).toBe(true); expect(face.cut).toBe(false); expect(face.mask).toBe('none'); expect(face.clip).not.toContain('text'); expect(face.image).not.toContain('gradient'); expect(face.width % face.unit).toBeLessThan(1); }
  }
- const findings = await tab.evaluate(`(async () => {
+ const findings = await tab.evaluate<{ clean: number; masked: number }>(`(async () => {
   const path = '/DS1/0-face/constraints.ts';
   const { inspectConstraints } = await import(path);
   const inspect = () => inspectConstraints(document).filter((entry) => entry.constraint.code === 'button.visible-label').length;

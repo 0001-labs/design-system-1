@@ -7,11 +7,11 @@ import { composite, contrastRatio } from '../DS1/0-face/text-contrast';
 let browser: Browser;
 let bundle: string;
 beforeAll(async () => {
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   bundle = (await build({ entryPoints: [join(import.meta.dirname, '../DS1/0-face/constraints.ts')], bundle: true, format: 'iife', globalName: 'DSConstraints', write: false })).outputFiles[0]!.text;
 });
 afterAll(async () => browser?.close());
-const findings = (page: Page) => page.evaluate(() => (window as any).DSConstraints.inspectConstraints(document)
+const findings = (page: Page): Promise<{ id: string; message: string }[]> => page.evaluate(() => (window as any).DSConstraints.inspectConstraints(document)
   .filter((f: any) => f.constraint.code === 'color.text-contrast').map((f: any) => ({ id: f.element.id, message: f.message })));
 async function fixture(html: string) {
   const page = await browser.newPage();

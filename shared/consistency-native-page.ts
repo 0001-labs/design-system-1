@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { sitePagePatch, type SiteSurfaceDesign } from './consistency-site-design';
 import { COMPONENT_MEASURES, componentDefinition, componentMarkup, type NativeComponents } from './consistency-components';
 import { nativeIcon, nativeRegionStyles, renderNativeRegion, validateNativeRegion } from './consistency-native-content';

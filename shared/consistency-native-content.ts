@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /** Server publication of the same Markdown and closed atoms the editor writes. No browser DOM. */
 import { parseBlocks, blockRuns, readColumns, readTabs, tableRows, tableAlignments, exportMarkdown, DEFAULT_ATOMS, type Block, type AtomSyntax } from '../website/src/vendor/aa/parse.js';
 import { readBasicContentElement } from './consistency-content';

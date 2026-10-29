@@ -90,16 +90,16 @@ describe('the check', () => {
     const answer = { ...hero(), id: 'top', height: 23.4, picture: { src: '/photos/harbour.jpg', alt: 'The harbour', focus: { x: 50.4, y: 130 } }, actions: [{ text: 'Book', href: '/book/', appearance: 'primary', face: 'outlined', size: 'large', icon: 'right' }, { text: 'Prices', href: 'https://example.com/prices/' }], extra: 'dropped' };
     const result = checkAskAnswer('```json\n' + JSON.stringify(answer) + '\n```', 'section', context);
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
+    if (!result.ok || result.level !== 'section') throw new Error('Expected a section answer');
     expect(result.block.kind).toBe('hero'); expect(result.block.id).not.toBe('top'); expect(result.block.id).toMatch(/^ask_\d+$/);
     expect((result.block as Record<string, unknown>).height).toBe(23); expect(result.block).not.toHaveProperty('extra');
-    expect((result.block as { actions: unknown[] }).actions).toEqual([{ text: 'Book', href: '/book/', appearance: 'primary', face: 'outlined', size: 'large' }, { text: 'Prices', href: 'https://example.com/prices/' }]);
-    expect((result.block as { picture: unknown }).picture).toEqual({ src: '/photos/harbour.jpg', alt: 'The harbour', focus: { x: 50, y: 100 } });
+    expect((result.block as Record<string, unknown>).actions).toEqual([{ text: 'Book', href: '/book/', appearance: 'primary', face: 'outlined', size: 'large' }, { text: 'Prices', href: 'https://example.com/prices/' }]);
+    expect((result.block as Record<string, unknown>).picture).toEqual({ src: '/photos/harbour.jpg', alt: 'The harbour', focus: { x: 50, y: 100 } });
     expect(() => validateNativePage({ ...document, blocks: [result.block as unknown as NativeBlock] } as NativePageDocument, { images, collections, runtimes, bindings: [] })).not.toThrow();
     const tall = checkAskAnswer({ ...hero(), height: 100 }, 'section', context);
-    expect(tall.ok && (tall.block as Record<string, unknown>).height).toBe(40);
+    expect(tall.ok && tall.level === 'section' && (tall.block as Record<string, unknown>).height).toBe(40);
     const low = checkAskAnswer({ ...hero(), height: 3 }, 'section', context);
-    expect(low.ok && (low.block as Record<string, unknown>).height).toBe(12);
+    expect(low.ok && low.level === 'section' && (low.block as Record<string, unknown>).height).toBe(12);
     expect(snapMeasure({ type: 'squares', min: 20, max: 40, step: 10, meaning: '' }, 34)).toBe(30);
     expect(snapMeasure({ type: 'pixels', min: 0, max: 2000, meaning: '' }, 33)).toBe(40);
   });
@@ -125,9 +125,9 @@ describe('the check', () => {
   });
   test('a header with the site\'s runtime and a list on its collection pass, and the runtime\'s props keep only the allowed keys', () => {
     const header = checkAskAnswer({ ...example('header'), logo: { src: '/photos/logo.svg', alt: 'Harbour rafts', href: '/' }, languages: undefined, menu: { name: 'MenuToggle', props: { label: 'Menu' } } }, 'section', context);
-    expect(header.ok && (header.block as { menu: unknown }).menu).toEqual({ name: 'MenuToggle', props: {} });
+    expect(header.ok && header.level === 'section' && (header.block as Record<string, unknown>).menu).toEqual({ name: 'MenuToggle', props: {} });
     const list = checkAskAnswer(example('list', 2), 'section', context);
-    expect(list.ok && (list.block as { collection: string }).collection).toBe('storefront');
+    expect(list.ok && list.level === 'section' && (list.block as Record<string, unknown>).collection).toBe('storefront');
   });
   test('a page answer becomes a whole document, its layout kept, and an empty or overlong one is refused', () => {
     const answer = { title: 'The floating shelter', description: 'A night on the water.', lang: 'en', blocks: [hero(), { ...example('questions'), id: 'top' }, { id: 'words', kind: 'content', source: '## Prices\n\nFrom 1200 kr.' }] };

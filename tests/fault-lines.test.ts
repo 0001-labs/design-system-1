@@ -12,7 +12,7 @@ beforeAll(async () => {
   server = await createServer({configFile:false, root:process.cwd(), logLevel:'error', server:{host:'127.0.0.1',port:0}});
   await server.listen();
   base = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}`;
-  browsers = await Promise.all([chromium.launch(), webkit.launch()]);
+  browsers = await Promise.all([chromium.launch({ headless: true }), webkit.launch({ headless: true })]);
   bundle = (await build({stdin:{contents:"export * from './fault-lines'; export { createConstraintPanel } from './constraint-panel';",resolveDir:join(import.meta.dirname,'../DS1/0-face'),loader:'ts'},bundle:true,format:'iife',globalName:'FaultLines',write:false})).outputFiles[0]!.text;
 });
 afterAll(async () => { await server?.close(); await Promise.all(browsers?.map(browser=>browser.close()) ?? []); });
@@ -33,7 +33,7 @@ test("fault lines catch shifted tracks and unequal gaps across sections at each 
           <div id="hidden" data-ds-fault-lines="cards" class="grid bad" style="display:none"><button>A</button><button>B</button></div>
           <div data-ds-fault-lines="other" class="grid bad"><button>A</button><button>B</button></div>`);
         await page.addScriptTag({content:bundle});
-        const findings = () => page.evaluate(()=>(window as any).FaultLines.inspectFaultLines(document).map((f:any)=>({id:f.element.id,review:!!f.review,message:f.message})));
+        const findings = (): Promise<{ id: string; review: boolean; message: string }[]> => page.evaluate(()=>(window as any).FaultLines.inspectFaultLines(document).map((f:any)=>({id:f.element.id,review:!!f.review,message:f.message})));
         expect((await findings()).map(f=>f.id), `${width}px`).toEqual(['bad']);
         expect((await findings())[0]!.message).toContain(`${width}px`);
         await page.locator('#bad').evaluate(el=>(el as HTMLElement).style.gap='20px');
@@ -102,7 +102,7 @@ test("fault lines enforce visible content edges through real text-tab slots", as
       await page.goto(`${base}/tests/fixtures/fault-lines-column.html`);
       await page.waitForFunction(() => document.documentElement.dataset.ready === 'true');
       await page.addScriptTag({content:bundle});
-      const findings = () => page.evaluate(() => (window as any).FaultLines.inspectFaultLines(document).map((f:any) => f.element.id));
+      const findings = (): Promise<{ id: string; review: boolean; message: string }[]> => page.evaluate(() => (window as any).FaultLines.inspectFaultLines(document).map((f:any) => f.element.id));
       for (const width of [320,375,393,430,768,1024,1440]) for (const scale of [1,1.5]) {
         await page.setViewportSize({width,height:900});
         await page.evaluate(scale => document.documentElement.style.setProperty('--ds-sf', String(scale)), scale);

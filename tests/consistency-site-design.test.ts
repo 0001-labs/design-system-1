@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 import { sitePagePatch, siteSurfacePatch } from '../shared/consistency-site-design';
 
 test('page colours resolve without client DS1 tokens and default restores authored values', () => {

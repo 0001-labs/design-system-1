@@ -82,7 +82,7 @@ export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTML
       const face = createSurfaceElement(doc, kind === 'button' ? 'ds-button' : 'ds-card');
       paint(face, value); element.append(face);
       const editors: ReturnType<typeof createPlainEditor>[] = [];
-      const fields = value.kind === 'card' ? ['label', 'title', 'body'] as const : ['label'] as const;
+      const fields: readonly ('label' | 'title' | 'body')[] = value.kind === 'card' ? ['label', 'title', 'body'] : ['label'];
       const nodes = Array.from(face.children) as HTMLElement[];
       const commit = () => {
         if (!canWrite() || !value) return false;
