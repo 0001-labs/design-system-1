@@ -26,6 +26,7 @@ export class ControlEdit {
   private readonly action = createSurfaceElement(document, 'ds-button');
   private target?: HTMLElement;
   private timer?: ReturnType<typeof setTimeout>;
+  private resizeFrame = 0;
   private readonly view: Window;
   private readonly resize: ResizeObserver;
   private readonly changes: MutationObserver;
@@ -49,7 +50,13 @@ export class ControlEdit {
     root.ownerDocument.addEventListener('focusin', this.over);
     root.ownerDocument.addEventListener('keydown', this.key, true);
     root.ownerDocument.addEventListener('click', this.hide, true);
-    this.resize = new ResizeObserver(() => { if (!this.enabled()) this.hide(); else this.place(); });
+    // Hiding also changes observations; defer it outside resize delivery in WebKit.
+    this.resize = new ResizeObserver(() => {
+      if (!this.resizeFrame) this.resizeFrame = requestAnimationFrame(() => {
+        this.resizeFrame = 0;
+        if (!this.enabled()) this.hide(); else this.place();
+      });
+    });
     this.resize.observe(frame);
     this.resize.observe(this.action);
     // An inline link otherwise inherits Aa's writing surface. WebKit selects its
@@ -97,7 +104,7 @@ export class ControlEdit {
   };
   hide = () => { this.keep(); if(this.target)this.resize.unobserve(this.target); this.action.hidden = true; this.target = undefined; };
   destroy() {
-    this.hide(); this.action.remove();
+    this.hide(); cancelAnimationFrame(this.resizeFrame); this.action.remove();
     const doc = this.root.ownerDocument;
     doc.removeEventListener('pointerover', this.over); doc.removeEventListener('pointerout', this.leave);
     doc.removeEventListener('focusin', this.over); doc.removeEventListener('keydown', this.key, true);
