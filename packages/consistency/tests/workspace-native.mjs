@@ -36,6 +36,12 @@ try{
  const frame=page.frameLocator('consistency-page-editor iframe');
  await frame.locator('[data-c9y-native-root][data-editor-surface]').waitFor({timeout:15000});
  check(await frame.getByRole('slider',{name:'Card height',exact:true}).count()===2,'Card height controls must have a clear accessible name');
+ await page.getByRole('combobox',{name:'Heading face',exact:true}).selectOption({label:'Inter'});
+ await page.waitForFunction(()=>document.querySelector('.composition-status')?.textContent==='Unsaved');
+ await page.waitForFunction(()=>document.querySelector('.composition-status')?.textContent==='Saved');
+ check([...drafts.values()][0].document.fonts.heading==='Inter','Saved draft lost heading font');
+ await page.reload(); await frame.locator('[data-c9y-native-root][data-editor-surface]').waitFor();
+ check(await page.getByRole('combobox',{name:'Heading face',exact:true}).inputValue()==='Inter','Saved heading font did not reopen');
  await page.evaluate(()=>{const doc=document.querySelector('consistency-page-editor iframe').contentDocument;const link=doc.createElement('a');link.href='#canvas-anchor';link.textContent='Canvas anchor';doc.body.prepend(link);const target=doc.createElement('div');target.id='canvas-anchor';doc.body.append(target);});
  await frame.getByRole('link',{name:'Canvas anchor',exact:true}).click();
  await page.waitForTimeout(300);
