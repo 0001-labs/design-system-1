@@ -35,6 +35,7 @@ try{
  await page.getByRole('button',{name:'New page',exact:true}).click();
  const frame=page.frameLocator('consistency-page-editor iframe');
  await frame.locator('[data-c9y-native-root][data-editor-surface]').waitFor({timeout:15000});
+ check(await frame.getByRole('slider',{name:'Card height',exact:true}).count()===2,'Card height controls must have a clear accessible name');
  await page.evaluate(()=>{const doc=document.querySelector('consistency-page-editor iframe').contentDocument;const link=doc.createElement('a');link.href='#canvas-anchor';link.textContent='Canvas anchor';doc.body.prepend(link);const target=doc.createElement('div');target.id='canvas-anchor';doc.body.append(target);});
  await frame.getByRole('link',{name:'Canvas anchor',exact:true}).click();
  await page.waitForTimeout(300);
