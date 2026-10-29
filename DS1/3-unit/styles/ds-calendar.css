@@ -806,7 +806,12 @@
 
 /* A small month's neighbours stand ready for direct mobile manipulation.
  * Only the grid travels; its header, controls and outer geometry stay still. */
-.month-swipe { overflow: clip; }
+.month-swipe {
+  overflow: clip;
+  /* The frame is centred on the grid edge, half a pixel outside its box.
+     Extend only the paint clip; keep the calendar’s layout untouched. */
+  overflow-clip-margin: 1px;
+}
 .month-track { position: relative; user-select: none; }
 .month-neighbour { position: absolute; top: 0; width: 100%; pointer-events: none; }
 .month-neighbour.previous { left: -100%; }
