@@ -1241,7 +1241,7 @@ export class Calendar extends CalendarBase {
   /** What a day writes before its date: its weekday's name in the first week, and the week's number on its first day. */
   private renderLabel(label: DayLabel) {
     return html`${label.weekday ? html`<span class="weekday-name" ?data-today=${label.today}>${label.weekday}</span>` : nothing}${label.week
-      ? html`<span class="week-number">${this.words("W{week}", { week: label.week })}</span>`
+      ? html`<span class="week-number">${label.week}</span>`
       : nothing}`;
   }
 

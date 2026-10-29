@@ -748,16 +748,16 @@ test("a full month names its days inside the first week, writes the week's numbe
   expect([...first.querySelectorAll(".weekday-name")].map(name => name.textContent)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
   expect(root.querySelectorAll(".week + .week .weekday-name")).toHaveLength(0);
   // The month starts on a Thursday: Monday's box is empty and still names its day and its week.
-  expect(first.querySelector(".day.outside .week-number")!.textContent).toBe("W40");
+  expect(first.querySelector(".day.outside .week-number")!.textContent).toBe("40");
   expect(first.querySelector(".weekday-name[data-today]")!.textContent).toBe("Mon");
-  expect(cell(calendar, "2026-10-26").querySelector(".week-number")!.textContent).toBe("W44");
+  expect(cell(calendar, "2026-10-26").querySelector(".week-number")!.textContent).toBe("44");
   // A step back, Today and a step on, in that order.
   expect([...root.querySelector(".controls")!.children].map(button => button.getAttribute("part"))).toEqual(["previous", "today", "next"]);
 });
 
 test("a week from Sunday takes its Monday's number", async () => {
   const calendar = await mount<Calendar>(`<ds-calendar month="2026-10" week-start="0" week-numbers></ds-calendar>`);
-  expect(cell(calendar, "2026-10-04").querySelector(".week-number")!.textContent).toBe("W41");
+  expect(cell(calendar, "2026-10-04").querySelector(".week-number")!.textContent).toBe("41");
   expect(calendar.shadowRoot!.querySelector(".weekday-name")!.textContent).toBe("Sun");
 });
 
