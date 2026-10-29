@@ -63,6 +63,7 @@ for (const [name, engine] of [['Chromium', chromium], ['WebKit', webkit]] as con
         calendar.dayWidth = 2;
         calendar.month = '2026-10';
         calendar.style.setProperty('--ds-calendar-day', 'calc(12 * var(--ds-unit) / 7)');
+        calendar.style.setProperty('--ds-calendar-line', '1px solid rgba(44, 44, 43, 0.28)');
         await calendar.updateComplete;
         await Promise.all([...calendar.shadowRoot.querySelectorAll('ds-calendar')].map((child: any) => child.updateComplete));
       });
@@ -76,6 +77,12 @@ for (const [name, engine] of [['Chromium', chromium], ['WebKit', webkit]] as con
       expect(Math.abs(geometry.previousWidth)).toBeLessThan(1);
       expect(Math.abs(geometry.nextWidth)).toBeLessThan(1);
       expect(geometry.leak).toBeLessThan(1);
+      const borders = await page.evaluate(() => {
+        const calendar = document.querySelector('ds-calendar')!;
+        const border = (host: Element) => getComputedStyle(host.shadowRoot!.querySelector('.week:last-child .day')!, '::after').borderTopColor;
+        return [border(calendar), ...[...calendar.shadowRoot!.querySelectorAll('.month-neighbour ds-calendar')].map(border)];
+      });
+      expect(new Set(borders).size).toBe(1);
     } finally { await browser.close(); }
   }, 45_000);
 }
