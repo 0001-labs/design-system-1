@@ -322,7 +322,7 @@
   white-space: nowrap;
 }
 .weekday-name[data-today] { color: var(--ds-calendar-today); }
-.week-number { font-family: "Inter Arrows", var(--ds-typeface-compressed); }
+.week-number { font-family: "Inter Arrows", var(--ds-calendar-week-typeface, var(--ds-typeface-compressed)); }
 .day.outside .date-line { justify-content: flex-start; }
 
 /* A compact day: the date centred in its square, in the ink; with events,
