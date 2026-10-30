@@ -2,7 +2,9 @@
 consistency-site-editor, consistency-page-editor, consistency-workspace-page { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
 .consistency-site-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--ds-unit); padding: var(--ds-unit); border-bottom: 1px solid var(--ds-border-color); line-height: calc(16px * var(--sf)); }
 .consistency-site-bar > .ds-text { min-width: 0; }
-consistency-site-editor > ds-message, consistency-site-editor > ds-empty { margin: var(--ds-unit); }
+.consistency-site-notice { margin: var(--ds-unit); }
+.consistency-site-state { flex: 1; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; padding: var(--ds-unit); box-sizing: border-box; }
+.consistency-site-state > :is(ds-message, ds-empty) { max-width: 100%; }
 .consistency-site-stage { flex: 1; min-height: calc(24 * var(--ds-unit)); display: flex; }
 .consistency-site-stage[hidden] { display: none; }
 .consistency-site-frame, .consistency-site-frame-cached { box-sizing: border-box; display: block; width: 100%; height: 100%; min-height: inherit; border: 0; background: var(--ds-paper); }

@@ -1,3 +1,4 @@
+import { BASE_STYLES } from '../../shared/consistency-canvas';
 import { expect, it, vi } from 'vite-plus/test';
 import { consistencyPreview } from '../src/consistency';
 import { BUSINESS_BYTES, DOCUMENT_POLICY, EDIT_BYTES, FACE_HOSTS, FILE_POLICY, NATIVE_PAGE_BYTES, apiRoute } from '../src/consistency-sites';
@@ -63,13 +64,13 @@ it('serves the page sandboxed, with no script source, even opened on its own', a
   expect(page.status).toBe(200);
   expect(page.headers.get('content-security-policy')).toBe(DOCUMENT_POLICY);
   expect(DOCUMENT_POLICY).toMatch(/^sandbox allow-same-origin allow-scripts;/); expect(DOCUMENT_POLICY).toContain("script-src 'none'");
-  // A library that pins a Google face draws it in the frame: its stylesheet from one host, its files from the other, and nothing else off this origin.
+  // A library that pins a Google face draws it in the frame: its stylesheet from one host, its files from the other, and native pages may load only the trusted DS1 base path as well.
   const directive = (policy: string, name: string) => policy.split(';').map(part => part.trim()).find(part => part.startsWith(`${name} `))!;
   for (const policy of [DOCUMENT_POLICY, FILE_POLICY]) {
-    expect(directive(policy, 'style-src')).toBe(`style-src ${policy === DOCUMENT_POLICY ? "'self' " : ''}'unsafe-inline' ${FACE_HOSTS.styles}`);
+    expect(directive(policy, 'style-src')).toBe(`style-src ${policy === DOCUMENT_POLICY ? "'self' " : ''}'unsafe-inline' ${FACE_HOSTS.styles}${policy === DOCUMENT_POLICY ? ` ${BASE_STYLES}` : ''}`);
     expect(directive(policy, 'font-src')).toBe(`font-src 'self' data: ${FACE_HOSTS.fonts}`);
     expect(directive(policy, 'default-src')).toBe("default-src 'none'"); expect(policy).not.toMatch(/connect-src/); if(policy===FILE_POLICY)expect(policy).not.toMatch(/allow-scripts/);else expect(policy).toContain("script-src 'none'");
-    expect(policy.match(/https:\/\/[\w.-]+/g)).toEqual([FACE_HOSTS.styles, FACE_HOSTS.fonts]);
+    expect(policy.match(/https:\/\/[\w.-]+/g)).toEqual([FACE_HOSTS.styles, ...(policy === DOCUMENT_POLICY ? [new URL(BASE_STYLES).origin] : []), FACE_HOSTS.fonts]);
   }
   expect(page.headers.get('x-content-type-options')).toBe('nosniff');
   expect(page.headers.get('cache-control')).toBe('private, no-store');
