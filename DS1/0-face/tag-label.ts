@@ -22,6 +22,8 @@ export function inspectTagLabels(root: ParentNode): Finding[] {
       }
     }
     for (let parent: Element | null = tag; parent; parent = parent.assignedSlot ?? parent.parentElement ?? (parent.getRootNode() as ShadowRoot).host ?? null) {
+      // A carousel intentionally hides other slides; each slide still gives its tags room.
+      if (parent.matches('[part~="track"]') && (parent.getRootNode() as ShadowRoot).host?.matches('ds-carousel')) break;
       const style = view.getComputedStyle(parent);
       const box = parent.getBoundingClientRect();
       if (/hidden|clip|auto|scroll/.test(style.overflowX) && (rect.left < box.left - 1 || rect.right > box.right + 1))

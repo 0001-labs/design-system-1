@@ -21,7 +21,7 @@ test("tags keep complete labels in narrow containers and report clipping or fadi
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction(() => document.documentElement.dataset.ready === 'true');
-  await page.evaluate(`import('/DS1/0-face/constraints.ts').then(module => window.tagInspect = module.inspectConstraints)`);
+  await page.evaluate(`Promise.all([import('/DS1/0-face/constraints.ts'), import('/DS1/3-unit/ds-carousel.ts')]).then(([module]) => window.tagInspect = module.inspectConstraints)`);
   for (const dir of ['ltr', 'rtl']) {
     const result = await page.evaluate(async dir => {
       document.documentElement.dir = dir;
@@ -55,5 +55,12 @@ test("tags keep complete labels in narrow containers and report clipping or fadi
     expect(result.clipped).toBeGreaterThan(0);
     expect(result.ancestor).toBeGreaterThan(0);
   }
+  const carouselFindings = await page.evaluate(async () => {
+    const stage = document.getElementById('stage')!;
+    stage.innerHTML = '<ds-carousel slide-width="auto" style="display:block;width:100px"><div style="width:160px"><ds-tag>Til gennemgang</ds-tag></div><div style="width:160px"><ds-tag>Another status</ds-tag></div></ds-carousel>';
+    await Promise.all([...stage.querySelectorAll('*')].map(element => (element as any).updateComplete));
+    return (window as any).tagInspect(document).filter((f: any) => f.constraint.code === 'tag.visible-label').length;
+  });
+  expect(carouselFindings).toBe(0);
   await page.close();
 });
