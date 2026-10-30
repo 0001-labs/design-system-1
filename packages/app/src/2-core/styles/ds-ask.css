@@ -342,3 +342,20 @@
   .veil > i, .cards, .line, .caret, .answer, .dot, :host([state="thinking"]) .words { animation: none; }
   .card { transition: none; }
 }
+
+/* Products with a working canvas can keep Ask within a compact reading column. */
+:host([compact]) .dock { inset-inline-end: auto; width: min(100%, calc(32 * var(--ds-unit))); }
+:host([compact]) .veil {
+  inset-inline-end: auto;
+  width: min(100%, calc(36 * var(--ds-unit)));
+  mask-image: linear-gradient(to right, #000 calc(100% - 4 * var(--ds-unit)), transparent);
+}
+:host([compact]) .line {
+  white-space: pre-wrap;
+  height: auto;
+  min-height: calc(2 * var(--ds-unit));
+  max-height: calc(6 * var(--ds-unit));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+:host([compact]) .answer { max-height: calc(12 * var(--ds-unit)); overflow-y: auto; }

@@ -20,7 +20,7 @@ export async function showAskFace(options:AskFaceOptions):Promise<{close():void}
  if(generation!==opening)return{close(){}};
  current?.close();
  const face=new Face() as Ask;face.className='consistency-ask-face';face.setAttribute('data-editor-chrome','');
- face.open=true;face.placeholder=options.placeholder??(speech.canListen()?'Ask or search, or press space to speak':'Ask or search');
+ face.setAttribute('compact','');face.open=true;face.placeholder=options.placeholder??(speech.canListen()?'Ask or search, or press space to speak':'Ask or search');
  let text=options.seed??'',chosen:number|null=null,confirmed='',pending:AbortController|undefined,listening:Listening|null=null,closed=false;
  const focused=document.activeElement as HTMLElement|null;focused?.blur();
  document.documentElement.setAttribute('data-c9y-asking','');

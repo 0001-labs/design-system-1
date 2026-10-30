@@ -2,7 +2,7 @@
 import {LitElement,html,nothing} from 'lit';
 import '../../../DS1/2-core/ds-button';
 export type {AskChoice} from './ask-face';
-import {asksQuestion,isAskShortcut,showAskFace,type AskChoice} from './ask-face';
+import {isAskShortcut,showAskFace,type AskChoice} from './ask-face';
 export interface PageAskTarget {
  frame:HTMLIFrameElement;
  choices:()=>AskChoice[];
@@ -19,20 +19,18 @@ export const registerAskNavigation=(host:HTMLElement,choices:()=>AskChoice[])=>{
 const activePage=()=>[...pages].find(page=>page.frame.isConnected&&page.frame.getClientRects().length>0&&page.frame.getBoundingClientRect().width>0);
 const catalogue=()=>[...[...navigation].filter(([host])=>host.isConnected).flatMap(([,read])=>read()),...(activePage()?.choices()??[])];
 const allowed=()=>checked??=fetch('/api/consistency/ask',{credentials:'same-origin',cache:'no-store'}).then(async response=>{enabled=response.ok&&(await response.json()).enabled===true;dispatchEvent(new Event(AVAILABILITY));return enabled;}).catch(()=>false);
-const editsPage=(query:string)=>/^(?:add|create|make|build|design|rewrite|change|replace|remove|insert|put|move|edit|lav|tilføj|ændr)\b/i.test(query);
 export async function openGlobalAsk(seed='') {
  if(!await allowed())return;
  const started=activePage();
- await showAskFace({seed,choices:query=>{
+ await showAskFace({seed,timeout:105000,choices:query=>{
   const words=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return catalogue().filter(row=>words.every(word=>`${row.title} ${row.detail} ${row.label??''}`.toLowerCase().includes(word))).slice(0,24);
  },submit:async(prompt,signal)=>{
   const page=activePage();
-  if(editsPage(prompt)&&!asksQuestion(prompt)) {if(!page)throw Error('Open a page to ask for an edit.');if(page!==started)throw Error('The page changed. Open Ask again.');await page.generate(prompt,signal);return;}
   const rows=catalogue().slice(0,100).map(({id,title,detail,kind})=>({id,title,detail,kind}));
-  const response=await fetch('/api/consistency/ask',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({prompt,catalogue:rows,page:page?.text().slice(0,12000)??''})});
+  const response=await fetch('/api/consistency/ask',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({prompt,catalogue:rows,page:page?.text().slice(0,12000)??'',allowPageEdits:true})});
   const answer=await response.json();if(!response.ok){if(response.status===401||response.status===403){enabled=false;checked=undefined;dispatchEvent(new Event(AVAILABILITY));}throw Error(answer.error??'No answer came this time. Try again.');}
-  if(activePage()!==started)throw Error('The page changed. Open Ask again.');return String(answer.answer);
+  if(activePage()!==started)throw Error('The page changed. Open Ask again.');if(answer.intent==='edit'){if(!page)throw Error('Open a page to ask for an edit.');await page.generate(prompt,signal);return;}return String(answer.answer);
  }});
 }
 /** Setup is small; the face, speech and catalogue work start only when Ask is opened. */
