@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Real layout: button labels remain visible and round up to the grid.
+// Real layout: tag labels stay complete and the constraint detects regressions.
 import { afterAll, beforeAll, expect, test } from "vite-plus/test";
 import { chromium, type Browser } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
