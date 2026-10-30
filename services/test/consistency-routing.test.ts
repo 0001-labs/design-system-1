@@ -22,7 +22,7 @@ it('uses an authenticated enabled decision to insert the existing component with
   expect(response.headers.get('server-timing')).toMatch(/^component;dur=/);
   expect(run).not.toHaveBeenCalled(); expect(decide).toHaveBeenCalledOnce();
   const init = vi.mocked(send).mock.calls.find(([url]) => String(url).startsWith('https://system.0001.dev/api/ai/typesafe/'))![1]!;
-  expect(init.redirect).toBe('error');
+  expect(init.redirect).toBe('manual');
   expect(JSON.parse(init.body as string).state).toMatchObject({ request: 'Add a button', insertionAvailable: true, components: [] });
 });
 it('honours explicit off and missing credentials without a decision call', async () => {

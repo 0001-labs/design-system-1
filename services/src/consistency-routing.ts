@@ -21,7 +21,7 @@ export async function routeComponentEdit(input: ComponentRequest, env: Component
     const response = await send(TYPESAFE_URL, {
       method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: COMPONENT_ROUTING_MODEL, state: componentState(context), questions: componentQuestions(context) }),
-      signal: abort.signal, redirect: 'error',
+      signal: abort.signal, redirect: 'manual',
     });
     if (!response.ok || abort.signal.aborted) return null;
     const body: unknown = await response.json();
@@ -41,7 +41,7 @@ export async function routePageRequest(prompt:string,env:ComponentRoutingEnv,sen
  const abort=new AbortController(),cancel=()=>abort.abort();signal.addEventListener('abort',cancel,{once:true});
  const timer=setTimeout(cancel,COMPONENT_ROUTING_TIMEOUT);
  try{
-  const response=await send(TYPESAFE_URL,{method:'POST',headers:{authorization:`Bearer ${env.SYSTEM_AI_TOKEN}`,'content-type':'application/json'},body:JSON.stringify({model:COMPONENT_ROUTING_MODEL,state:{request:prompt},questions:{intent:{type:'choice',instructions:'Does the person explicitly request a current-page change, or information? Understand conversational prefixes, polite phrasing and typos. For example, “but aput an extra section below with three buttons” and “could you add a section?” request an edit. “How do I add a section?” asks for information. Quoted, hypothetical, ambiguous or negated requests are not permission to edit. Publishing, sending, permissions and business-record changes are outside page editing.',criteria:{edit:'An explicit request to add, change, remove or move content or design on the current page.',answer:'Information, explanation, ambiguity, quoted or negated changes, or an operation outside page editing.'}}}}),signal:abort.signal,redirect:'error'});
+  const response=await send(TYPESAFE_URL,{method:'POST',headers:{authorization:`Bearer ${env.SYSTEM_AI_TOKEN}`,'content-type':'application/json'},body:JSON.stringify({model:COMPONENT_ROUTING_MODEL,state:{request:prompt},questions:{intent:{type:'choice',instructions:'Does the person explicitly request a current-page change, or information? Understand conversational prefixes, polite phrasing and typos. For example, “but aput an extra section below with three buttons” and “could you add a section?” request an edit. “How do I add a section?” asks for information. Quoted, hypothetical, ambiguous or negated requests are not permission to edit. Publishing, sending, permissions and business-record changes are outside page editing.',criteria:{edit:'An explicit request to add, change, remove or move content or design on the current page.',answer:'Information, explanation, ambiguity, quoted or negated changes, or an operation outside page editing.'}}}}),signal:abort.signal,redirect:'manual'});
   if(!response.ok||abort.signal.aborted)throw Error('Request routing failed.');
   const body=await response.json() as {answers?:{intent?:{type?:unknown;choice?:unknown;confidence?:unknown;probabilities?:{edit?:unknown;answer?:unknown}}}};
   const decision=body?.answers?.intent,probabilities=decision?.probabilities;

@@ -131,7 +131,7 @@ async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetc
     const response = await send(TYPESAFE_URL, {
       method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: COMPONENT_ROUTING_MODEL, state, questions }),
-      signal: abort.signal, redirect: 'error',
+      signal: abort.signal, redirect: 'manual',
     });
     if (!response.ok || abort.signal.aborted) return null;
     const body: unknown = await response.json();
