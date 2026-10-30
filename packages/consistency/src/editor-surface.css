@@ -1,5 +1,5 @@
 /* Canonical editor guide and selection skin, shared by the lab and site surfaces. */
-.consistency-gap{position:relative;background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
+.consistency-gap{position:relative;background:transparent}
 .consistency-gap::before{content:'';position:absolute;inset:0;border-top:1px dashed var(--ds-pink);border-bottom:1px dashed var(--ds-pink);pointer-events:none}
 .consistency-gap .ghost{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2}
 .consistency-shell .ghost{--ds-button-text-color:var(--ds-black);--ds-button-background:var(--ds-yellow)}
@@ -11,7 +11,7 @@
 
 .ghost-surface--width{transform:translateX(50%);border-left:1px solid var(--ds-yellow)}
 
-.ghost-surface--padding{background:color-mix(in srgb,var(--ds-pink) 6%,transparent)}
+.ghost-surface--padding{background:transparent}
 
 .ghost-surface--gap{cursor:ns-resize;min-height:calc(20px * var(--sf,1));top:50%;transform:translateY(-50%)}
 
@@ -47,12 +47,12 @@
 
 .consistency-gap-name{font-size:calc(12px * var(--sf,1));color:var(--ds-text-color-muted)}
 
-/* Production keeps measurements quiet until hover, keyboard focus or adjustment. */
-.production-on .ghost-surface .ghost-measure{opacity:0}
+/* Measurements stay quiet until hover, keyboard focus or adjustment. */
+.ghost-surface .ghost-measure{opacity:0}
 
-.production-on .ghost-surface:hover .ghost-measure,
-.production-on .ghost-surface:focus-visible .ghost-measure,
-.production-on .ghost-surface[data-spacing-active] .ghost-measure{opacity:1}
+.ghost-surface:hover .ghost-measure,
+.ghost-surface:focus-visible .ghost-measure,
+.ghost-surface[data-spacing-active] .ghost-measure{opacity:1}
 
 .consistency-inspector p,.consistency-gap-name{line-height:var(--u)}
 
@@ -69,9 +69,9 @@
 
 .ghost-surface--gap:hover,.ghost-surface--gap:focus-visible{background:transparent}
 
-.consistency-shell.production-on:not(.spacing-off) .consistency-gap:is(:hover,:has(:focus-visible),:has([data-spacing-active])){background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
+.consistency-shell:not(.spacing-off) .consistency-gap:is(:hover,:has(:focus-visible),:has([data-spacing-active])){background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
 
-.consistency-shell.production-on:not(.spacing-off) .consistency-gap:is(:hover,:has(:focus-visible),:has([data-spacing-active]))::before{border-color:var(--ds-pink)}
+.consistency-shell:not(.spacing-off) .consistency-gap:is(:hover,:has(:focus-visible),:has([data-spacing-active]))::before{border-color:var(--ds-pink)}
 
 .production-on .ghost-surface--width{background-image:none}
 
@@ -164,10 +164,14 @@ consistency-editor[data-pointer-busy] :is(.consistency-button-action,.consistenc
 /* A C9Y constraint broken as drawn (c9y-constraints.ts): the blocks it moved, for a moment. */
 [data-c9y-broken]{outline:2px solid var(--ds-pink,#f0f)!important;outline-offset:-2px}
 
-/* Spacing is part of the editing surface even while idle. Zero shows its real
-   centre line, keeping the generous pointer target without inventing space. */
-:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds):not(.spacing-off) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding):not([aria-valuenow="0"]){background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
-:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface--gap[aria-valuenow="0"]::after{opacity:1}
-.consistency-shell .ghost-surface--padding[aria-valuenow="0"]::before{opacity:1}
-.consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]{background:transparent}
-.consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ds-pink);opacity:1;pointer-events:none}
+/* Keep hit targets available without painting every editable space. Reveal only
+   the space under the pointer, keyboard focus or an active adjustment. */
+:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding){background:transparent}
+:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds):not(.spacing-off) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding):not([aria-valuenow="0"]):is(:hover,:focus-visible,[data-spacing-active]){background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
+:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding)[aria-valuenow="0"]::before,
+:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding)[aria-valuenow="0"]::after{opacity:0}
+:is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds):not(.spacing-off) .ghost-surface--gap[aria-valuenow="0"]:is(:hover,:focus-visible,[data-spacing-active])::after{opacity:1}
+:is(.consistency-shell,.consistency-text-bounds):not(.spacing-off) .ghost-surface--padding[aria-valuenow="0"]:is(:hover,:focus-visible,[data-spacing-active])::before{opacity:1}
+.consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::before{content:none}
+.consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ds-pink);opacity:0;pointer-events:none}
+.consistency-native-guides:not(.spacing-off) .ghost-surface--padding[aria-valuenow="0"]:is(:hover,:focus-visible,[data-spacing-active])::after{opacity:1}

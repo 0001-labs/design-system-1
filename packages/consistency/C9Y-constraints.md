@@ -14,9 +14,9 @@ Held by `tests/control-edit.mjs`: “Hover Edit works for native links, imported
 
 ### `spacing.always-visible`
 
-Every editable spacer stays pink while idle, with a visible centre line at zero, across all example pages.
+Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-focused or actively adjusted space, including zero-size gaps and padding.
 
-Held by `tests/template-spacing.mjs`: “idle pink guides”.
+Held by `tests/spacing-visibility.mjs`: “hover-only spacing guides”.
 
 ### `spacing.vertical-growth`
 

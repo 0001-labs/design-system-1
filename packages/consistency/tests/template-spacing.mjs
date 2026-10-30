@@ -1,4 +1,4 @@
-/** All examples: idle pink guides, real spacing, growing pages, and safe links. */
+/** All examples: hover-only guides, real spacing, growing pages, and safe links. */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -42,8 +42,9 @@ try {
     await mount(id,width);
     const label = `${engine.name()} ${id}:${width}`;
     const frame = page.frameLocator('#spacing-check iframe');
+    await page.mouse.move(1400,980);
     const visibility = await frame.locator('[data-spacing-key]:not([hidden])').evaluateAll(handles => handles.map(el => ({key:el.dataset.spacingKey,value:Number(el.getAttribute('aria-valuenow')),background:getComputedStyle(el).backgroundColor,line:getComputedStyle(el,'::after').opacity,opacity:getComputedStyle(el).opacity})));
-    for (const handle of visibility) assert.ok(handle.opacity !== '0' && (handle.value === 0 ? handle.line === '1' : !['transparent','rgba(0, 0, 0, 0)'].includes(handle.background)), `${label}: invisible idle spacer ${handle.key}`);
+    for (const handle of visibility) assert.ok(['transparent','rgba(0, 0, 0, 0)'].includes(handle.background) && (handle.value !== 0 || handle.line === '0'), `${label}: visible idle spacer ${handle.key}`);
     // Exercise every example's actual links, including shadow-DOM button anchors.
     const links = frame.locator('a[href],ds-button[href],ds-link[href]');
     const count = await links.count();
@@ -83,7 +84,7 @@ try {
      await mount(id,width,saved);
      assert.deepEqual(await page.locator('#spacing-check consistency-workspace-page').evaluate(host=>host.readDocument()),saved,`${label}: spacing did not reopen`);
     }
-    console.log(`${label}: ${visibility.length} idle pink guides, ${count} safe links, ${target?'pointer spacing and reopen':'no visible vertical spacing target'}`);
+    console.log(`${label}: ${visibility.length} quiet spacing targets, ${count} safe links, ${target?'pointer spacing and reopen':'no visible vertical spacing target'}`);
    }
    // A previously resized text container must expand as its gap grows, including after reopening.
    for(const id of ['shop','booking']) {

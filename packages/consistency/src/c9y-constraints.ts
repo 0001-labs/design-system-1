@@ -22,7 +22,7 @@ export type C9yConstraint = {
 
 export const C9Y_CONSTRAINTS: C9yConstraint[] = [
   {code:'controls.edit-position',rule:'The Edit action stays centred above its control, including after resizing, while pressing the control itself follows its normal action.',check:{file:'tests/control-edit.mjs',test:'Hover Edit works for native links, imported links and DS1 buttons'}},
-  {code:'spacing.always-visible',rule:'Every editable spacer stays pink while idle, with a visible centre line at zero, across all example pages.',check:{file:'tests/template-spacing.mjs',test:'idle pink guides'}},
+  {code:'spacing.always-visible',rule:'Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-focused or actively adjusted space, including zero-size gaps and padding.',check:{file:'tests/spacing-visibility.mjs',test:'hover-only spacing guides'}},
   {code:'spacing.vertical-growth',rule:'Content containers grow vertically when edited spacing needs more room, including after resizing and reopening, instead of clipping their words.',check:{file:'tests/template-spacing.mjs',test:'resized page grows with its spacing after reopening'}},
   {code:'navigation.no-nesting',rule:'Following a canvas link never loads an editor inside the editor; local anchors remain in the page and external destinations open separately.',check:{file:'tests/template-spacing.mjs',test:'safe links'}},
   {code:'canvas.component-assets',rule:'Site-owned device artwork and chrome load through the authenticated file gateway in inline and URL canvases, including after reopening.',check:{file:'tests/carousel-frames.mjs',test:'Device frames load through site files and carousel insertion stays unavailable'}},
