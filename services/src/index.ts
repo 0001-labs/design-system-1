@@ -33,7 +33,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     // Upgrade before authentication, APIs or private-path guards handle the request.
-    if (isConsistencyHost(url.hostname) && url.protocol === "http:") {
+    if (url.protocol === "http:") {
       url.protocol = "https:";
       return new Response(null, { status: 308, headers: { Location: url.href, "Cache-Control": "no-store" } });
     }

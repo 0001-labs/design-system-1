@@ -6,14 +6,24 @@ beforeAll(async () => { site = await startAssets(); });
 afterAll(async () => { await site.dispose(); });
 
 describe("combined website routes", () => {
-  it("upgrades Consistency HTTP requests before private routes or APIs run", async () => {
-    for (const host of ["consistency.site", "c9y.site", "editor.c9y.site", "neweditor.c9y.site"]) {
+  it("upgrades HTTP requests on every host before assets, private routes or APIs run", async () => {
+    for (const host of ["designsystem1.com", "www.designsystem1.com", "play.designsystem1.com", "dsone.dev", "fonts.designsystem1.com", "icon.designsystem1.com", "system.designsystem1.com", "system.consistency.site", "consistency.site", "c9y.site", "editor.c9y.site", "neweditor.c9y.site"]) {
       for (const path of ["/", "/auth/start?next=%2F", "/api/consistency/ai", "/private-consistency/index.html"]) {
         const response = await site.fetch(`http://${host}${path}`, { redirect: "manual" });
         expect(response.status).toBe(308);
         expect(response.headers.get("location")).toBe(`https://${host}${path}`);
         expect(response.headers.get("cache-control")).toBe("no-store");
       }
+    }
+  });
+  it("upgrades writes without dispatching or changing their destination", async () => {
+    for (const host of ["designsystem1.com", "play.designsystem1.com"]) {
+      const response = await site.fetch(`http://${host}/api/libraries?next=%2F`, {
+        method: "POST", body: "{}", redirect: "manual",
+      });
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(`https://${host}/api/libraries?next=%2F`);
+      expect(await response.text()).toBe("");
     }
   });
   it("isolates private preview HTML and assets on every host", async () => {
