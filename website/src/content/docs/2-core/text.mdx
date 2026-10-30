@@ -63,7 +63,7 @@ Like any element, a hidden one stays out of the page: `<ds-text hidden>` is not 
 
 ## Cut words fade
 
-Wherever Design system 1 cuts words that do not fit (a literal text, a row's name, a tag, a menu entry, a calendar's title), they fade out over their last square, never ending in an ellipsis. Words that fit stay crisp. The fade is a mask on the words, so it fades into whatever is behind them, and it runs to the left in a right-to-left page. It is drawn only while the words are marked `data-cut="end"`; the components measure and mark their own words as they resize, render or change.
+Wherever Design system 1 cuts words that do not fit (a literal text, a row's name, a menu entry, a calendar's title), they fade out over their last square, never ending in an ellipsis. Words that fit stay crisp. The fade is a mask on the words, so it fades into whatever is behind them, and it runs to the left in a right-to-left page. It is drawn only while the words are marked `data-cut="end"`; the components measure and mark their own words as they resize, render or change.
 
 A page without Lit marks the native classes (`.ds-row__name`, `.ds-sidebar__label`, `.ds-menu__item`, `.ds-badge__label`, `.ds-notice__title`, `.ds-progress__label` …) with one call from `0-face/cut-fade.ts` (Sync 1 `root` `"modules": ["cut-fade"]`):
 

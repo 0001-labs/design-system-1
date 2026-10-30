@@ -392,6 +392,10 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 - `button.visible-label`: Button labels stay fully visible, never faded, gradient-masked or truncated; round the required width up to whole grid squares. The action must remain readable; a chosen width cannot cut off its label.
 
+**Tag** (`ds-tag`)
+
+- `tag.visible-label`: Tags always show their complete label, never clipping, truncating or fading it; the surrounding layout gives the tag room or reflows.
+
 **Text** (`ds-text`)
 
 - `text.whole-words`: Headings and table headers keep each word intact across lines; only a long word that cannot fit may split at a valid language-specific hyphenation point, with a visible hyphen. Wrap between words or give the heading more room; never leave a final letter on its own, use break-all or anywhere, or insert an arbitrary line break inside a word. Use the correct lang with automatic hyphenation, or a soft hyphen at an editorially verified break; scripts with other line-breaking conventions keep their own typesetting rules.

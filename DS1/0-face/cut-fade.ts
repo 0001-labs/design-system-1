@@ -1,6 +1,6 @@
 /**
  * Cut words fade, never an ellipsis. Wherever Design system 1 cuts words that do
- * not fit (a row's name, a tag, a menu entry, a calendar's title), they fade out
+ * not fit (a row's name, a menu entry, a calendar's title), they fade out
  * over their last square (`var(--ds-unit)`), a mask on the words, so they fade
  * into whatever is behind them. Words that fit stay crisp: the fade is drawn
  * only while an element is marked `data-cut="end"`, and this module is what

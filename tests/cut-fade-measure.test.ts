@@ -14,7 +14,7 @@ let url = "";
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/cut-fade-measure.html`;
 }, 60_000);
 afterAll(async () => { await browser?.close(); await server?.close(); });
@@ -70,7 +70,7 @@ for (const dir of ["ltr", "rtl"] as const) {
       expect(mask).toContain("calc(100% - 20px)");
     };
     const seen = await measure(dir);
-    for (const name of ["long", "row", "tag", "menu", "native"] as const) {
+    for (const name of ["long", "row", "menu", "native"] as const) {
       expect(seen[name].cut, `${name} ${to}`).toBe("end");
       fade(seen[name].mask);
       expect(seen[name].overflow, name).not.toBe("ellipsis");
@@ -78,7 +78,9 @@ for (const dir of ["ltr", "rtl"] as const) {
     expect(seen.short.cut).toBeNull();
     expect(seen.short.mask).toBe("none");
     expect(seen.short.overflow).toBe("clip");
-    // A tag's fill stays whole: only its words fade.
+    // Tags keep their complete label even in a narrower container.
+    expect(seen.tag.cut).toBeNull();
+    expect(seen.tag.mask).toBe("none");
     expect(seen.tagFrame.mask).toBe("none");
     expect(seen.longWidth).toBe(80);
   }, 60_000);

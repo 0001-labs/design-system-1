@@ -1,3 +1,4 @@
+import { inspectTagLabels } from './tag-label';
 import { faultLineGrids, faultLineColumns, inspectFaultLines } from './fault-lines';
 import { labelledButtons, inspectButtonLabels } from './button-label';
 import { inspectTextContrast, measureTextContrast } from "./text-contrast";
@@ -142,6 +143,15 @@ export const constraints: Constraint[] = [
     components: ['ds-button'],
     check: { file: 'tests/button-cut-fade-measure.test.ts', test: 'button labels stay whole without gradients and snap up to the grid' },
     measures: ['button', 'buttons'], count: root => labelledButtons(root).length, inspect: inspectButtonLabels,
+  },
+  {
+    code: 'tag.visible-label',
+    rule: 'Tags always show their complete label, never clipping, truncating or fading it; the surrounding layout gives the tag room or reflows.',
+    components: ['ds-tag'],
+    check: { file: 'tests/tag-label.test.ts', test: 'tags keep complete labels in narrow containers and report clipping or fading overrides' },
+    measures: ['tag', 'tags'],
+    count: root => root.querySelectorAll('ds-tag').length,
+    inspect: inspectTagLabels,
   },
   {
     code: 'text.whole-words',

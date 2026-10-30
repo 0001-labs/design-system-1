@@ -13,7 +13,7 @@ Tag labels a category or status. Its rounded face hugs the text, with 4px of pad
 <ds-tag style="--ds-tag-accent: var(--ds-pink)">App</ds-tag>
 ```
 
-Set `--ds-tag-accent` to a system colour for a pale fill and coloured text in both themes. Dark-mode text uses a lighter tint to keep at least 4.5:1 contrast across the palette. Use `--ds-tag-background` and `--ds-tag-color` for explicit colours; check their contrast together. Long labels truncate within the available space.
+Set `--ds-tag-accent` to a system colour for a pale fill and coloured text in both themes. Dark-mode text uses a lighter tint to keep at least 4.5:1 contrast across the palette. Use `--ds-tag-background` and `--ds-tag-color` for explicit colours; check their contrast together. Tags always show their full label, never clipping or fading it. Give the tag room by letting adjacent text yield or reflowing the surrounding layout.
 
 A tag is a label, with no click action or tab stop. Put it inside a link or button when the containing item is interactive. Use [Badge](/2-core/badge/) when you need a grid-sized status marker or an icon.
 
@@ -22,3 +22,7 @@ Copy `tag` through Sync 1. React consumers can use `Tag` from `DS1/react/tag` af
 ## Its own tokens
 
 `--ds-tag-size` (its height), `--ds-tag-padding-size` (its side padding), `--ds-tag-corner-size`, `--ds-tag-text-size` and `--ds-tag-accent`. They are unset by default: each face reads its token first and falls back to its own measure, so a page that sets none draws exactly as before. Lengths are unscaled pixels, multiplied by the surface scale (`--ds-sf`) where the component is drawn. Design system 1's component editor sets them live for every page that links the base sheet; a page can also set them itself.
+
+import ConstraintList from "../../../components/ConstraintList.astro";
+
+<ConstraintList component="ds-tag" />
