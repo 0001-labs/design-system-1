@@ -151,7 +151,7 @@ try {
  const field=page.locator('consistency-home ds-input.home-workspace-field input');await field.waitFor();await field.fill('0001 labs');await field.press('Enter');
  await page.getByRole('button',{name:'Workspace: 0001 labs'}).waitFor();if(renamed!=='0001 labs')throw Error('The workspace name was not saved');
  // A site of another workspace, asked for by its code, opens in that workspace.
- await page.goto(home+'?open=40RAFT');await page.getByRole('button',{name:'Site: Raft'}).waitFor();same();
+ await page.goto(home+'?open=40RAFT');await page.locator('#home-site[text="Raft"]').waitFor();same();
  if(await page.evaluate(()=>localStorage.getItem('consistency-active-workspace'))!=='02RAFT')throw Error('Opening a site did not move to its workspace');
  // A failed read is said under the title, over the cards from the last visit, which stay: the session ended, with Sign in to the gateway's sign-in page.
  const problem=page.locator('consistency-home .home-problem');
