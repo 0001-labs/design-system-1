@@ -62,7 +62,7 @@ Held by `tests/carousel-reorder.mjs`: “Carousel cards drag horizontally, save 
 
 ### `selection.writing-only`
 
-Browser text selection stays inside the active text editor or input; dragging over the canvas and Select All outside writing never select page text.
+Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.
 
 Held by `tests/text-selection.mjs`: “Canvas selection stays within active writing”.
 

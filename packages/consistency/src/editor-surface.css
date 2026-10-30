@@ -1,3 +1,7 @@
+/* Authored site CSS must not turn the canvas back into a browser document. */
+[data-editor-surface],[data-editor-surface] *{-webkit-user-select:none!important;user-select:none!important}
+[data-editor-surface] :is(input,textarea,[contenteditable]:not([contenteditable="false"])),[data-editor-surface] [contenteditable]:not([contenteditable="false"]) *{-webkit-user-select:text!important;user-select:text!important}
+
 /* Canonical editor guide and selection skin, shared by the lab and site surfaces. */
 .consistency-gap{position:relative;background:transparent}
 .consistency-gap::before{content:'';position:absolute;inset:0;border-top:1px dashed var(--ds-pink);border-bottom:1px dashed var(--ds-pink);pointer-events:none}

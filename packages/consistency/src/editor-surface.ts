@@ -32,6 +32,8 @@ export class EditorSurface {
     root.setAttribute('data-editor-surface', '');
     root.ownerDocument.addEventListener('dragstart', this.nativeDrag, true);
     root.ownerDocument.addEventListener('selectstart', this.selectText, true);
+    root.ownerDocument.addEventListener('selectionchange', this.selectionChanged);
+    root.ownerDocument.addEventListener('contextmenu', this.browserContext, true);
     root.ownerDocument.addEventListener('keydown', this.selectAll, true);
     this.pointer = new PointerActivity(root);
     this.contexts = new ContextActivity(root, active => {
@@ -50,6 +52,19 @@ export class EditorSurface {
     const target = event.target as Node;
     return this.root.contains(target) || target === this.root.ownerDocument.body || target === this.root.ownerDocument.documentElement;
   }
+  /** Browser commands can create a range without a cancellable selectstart. */
+  private selectionChanged = () => {
+    const doc = this.root.ownerDocument, selection = doc.getSelection();
+    if (!selection?.rangeCount || selection.isCollapsed) return;
+    let active = doc.activeElement as HTMLElement | null;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement as HTMLElement;
+    if (active?.isContentEditable || active?.matches('input,textarea')) return;
+    for (let index = 0; index < selection.rangeCount; index++) {
+      if (selection.getRangeAt(index).intersectsNode(this.root)) { selection.removeAllRanges(); break; }
+    }
+  };
+  /** Cancel the browser menu without stopping the editor's own context handlers. */
+  private browserContext = (event: MouseEvent) => { if (this.onCanvas(event)) event.preventDefault(); };
   private selectText = (event: Event) => { if (this.onCanvas(event) && !this.textInput(event)) event.preventDefault(); };
   private selectAll = (event: KeyboardEvent) => {
     if (!(event.metaKey || event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 'a' || this.textInput(event)) return;
@@ -102,5 +117,5 @@ export class EditorSurface {
     }
     this.options.constraintBroken?.(finding);
   });
-  destroy() { this.root.ownerDocument.removeEventListener('dragstart', this.nativeDrag, true); this.root.ownerDocument.removeEventListener('selectstart', this.selectText, true); this.root.ownerDocument.removeEventListener('keydown', this.selectAll, true); for (const face of this.imageFaces.values()) face.remove(); this.imageFaces.clear(); this.cancelMarquee(); this.pointer.destroy(); this.contexts.destroy(); this.root.removeAttribute('data-editor-surface'); this.root.classList.remove('context-active'); }
+  destroy() { this.root.ownerDocument.removeEventListener('dragstart', this.nativeDrag, true); this.root.ownerDocument.removeEventListener('selectstart', this.selectText, true); this.root.ownerDocument.removeEventListener('selectionchange', this.selectionChanged); this.root.ownerDocument.removeEventListener('contextmenu', this.browserContext, true); this.root.ownerDocument.removeEventListener('keydown', this.selectAll, true); for (const face of this.imageFaces.values()) face.remove(); this.imageFaces.clear(); this.cancelMarquee(); this.pointer.destroy(); this.contexts.destroy(); this.root.removeAttribute('data-editor-surface'); this.root.classList.remove('context-active'); }
 }
