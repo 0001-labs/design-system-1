@@ -59,6 +59,7 @@ for (const engine of [chromium, webkit]) {
     check(!await frame.locator('body').evaluate(el=>el.ownerDocument.getSelection().toString()),'Authored iframe CSS enabled browser text selection');
     await page.locator('#chrome').click();await page.keyboard.press(selectAll);await page.waitForTimeout(30);
     check(!await frame.locator('body').evaluate(el=>el.ownerDocument.getSelection().toString()),'Select all from the parent document selected the site canvas');
+    check(!await page.evaluate(()=>getSelection().toString()),'Select all in the outer app selected the iframe as a browser document');
     await frame.locator('#frameWriting').click();await page.keyboard.press(selectAll);await page.keyboard.type('Frame writing works');
     check(await frame.locator('#frameWriting').textContent()==='Frame writing works','Shared iframe surface broke inline writing');
     await frame.locator('#frameLabel').click({button:'right'});

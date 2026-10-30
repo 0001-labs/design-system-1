@@ -14,6 +14,7 @@ export function createSurfaceElement(doc: Document, name: string): HTMLElement {
 /** The editor's interaction surface. Document adapters own content, never gestures or selection history. */
 export class EditorSurface {
   private pointer: PointerActivity;
+  private boundaries: {root: HTMLElement; doc: Document}[] = [];
   private contexts: ContextActivity;
   private cancelSelection?: () => void;
   private paused = false;
@@ -30,17 +31,27 @@ export class EditorSurface {
     constraintBroken?: (finding: C9yFinding) => void;
   }) {
     root.setAttribute('data-editor-surface', '');
-    root.ownerDocument.addEventListener('dragstart', this.nativeDrag, true);
-    root.ownerDocument.addEventListener('selectstart', this.selectText, true);
-    root.ownerDocument.addEventListener('selectionchange', this.selectionChanged);
-    root.ownerDocument.addEventListener('contextmenu', this.browserContext, true);
-    root.ownerDocument.addEventListener('keydown', this.selectAll, true);
+    // The browser can select an iframe as one object from its containing app.
+    // Guard each same-origin boundary as well as the canvas document itself.
+    for (let boundary: HTMLElement | null = root; boundary;) {
+      const doc = boundary.ownerDocument;
+      this.boundaries.push({root: boundary, doc});
+      try { boundary = doc.defaultView?.frameElement as HTMLElement | null; }
+      catch { boundary = null; }
+    }
+    for (const {doc} of this.boundaries) {
+      doc.addEventListener('dragstart', this.nativeDrag, true);
+      doc.addEventListener('selectstart', this.selectText, true);
+      doc.addEventListener('selectionchange', this.selectionChanged);
+      doc.addEventListener('contextmenu', this.browserContext, true);
+      doc.addEventListener('keydown', this.selectAll, true);
+    }
     this.pointer = new PointerActivity(root);
     this.contexts = new ContextActivity(root, active => {
       this.paused = active; root.classList.toggle('context-active', active); options.contextChanged?.(active);
     }, options.contextRoot);
   }
-  private nativeDrag = (event: DragEvent) => event.preventDefault();
+  private nativeDrag = (event: DragEvent) => { if (this.onCanvas(event)) event.preventDefault(); };
   get contextActive() { return this.paused; }
   private textInput(event: Event) {
     let element = event.composedPath().find(node => (node as Node).nodeType === 1) as HTMLElement | undefined;
@@ -50,17 +61,20 @@ export class EditorSurface {
   }
   private onCanvas(event: Event) {
     const target = event.target as Node;
-    return this.root.contains(target) || target === this.root.ownerDocument.body || target === this.root.ownerDocument.documentElement || (target.nodeType === 1 && !!(target as Element).closest('[data-editor-chrome]'));
+    const scope = this.boundaries.find(({doc}) => doc === event.currentTarget);
+    return !!scope && !!scope.root.getClientRects().length && (scope.root.contains(target) || target === scope.doc.body || target === scope.doc.documentElement || (target.nodeType === 1 && !!(target as Element).closest('[data-editor-chrome]')));
   }
   /** Browser commands can create a range without a cancellable selectstart. */
-  private selectionChanged = () => {
-    const doc = this.root.ownerDocument, selection = doc.getSelection();
+  private selectionChanged = (event: Event) => {
+    const scope = this.boundaries.find(({doc}) => doc === event.currentTarget);
+    if (!scope) return;
+    const doc = scope.doc, selection = doc.getSelection();
     if (!selection?.rangeCount || selection.isCollapsed) return;
     let active = doc.activeElement as HTMLElement | null;
     while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement as HTMLElement;
     if (active?.isContentEditable || active?.matches('input,textarea')) return;
     for (let index = 0; index < selection.rangeCount; index++) {
-      if (selection.getRangeAt(index).intersectsNode(this.root)) { selection.removeAllRanges(); break; }
+      if (selection.getRangeAt(index).intersectsNode(scope.root)) { selection.removeAllRanges(); break; }
     }
   };
   /** Cancel the browser menu without stopping the editor's own context handlers. */
@@ -117,5 +131,5 @@ export class EditorSurface {
     }
     this.options.constraintBroken?.(finding);
   });
-  destroy() { this.root.ownerDocument.removeEventListener('dragstart', this.nativeDrag, true); this.root.ownerDocument.removeEventListener('selectstart', this.selectText, true); this.root.ownerDocument.removeEventListener('selectionchange', this.selectionChanged); this.root.ownerDocument.removeEventListener('contextmenu', this.browserContext, true); this.root.ownerDocument.removeEventListener('keydown', this.selectAll, true); for (const face of this.imageFaces.values()) face.remove(); this.imageFaces.clear(); this.cancelMarquee(); this.pointer.destroy(); this.contexts.destroy(); this.root.removeAttribute('data-editor-surface'); this.root.classList.remove('context-active'); }
+  destroy() { for (const {doc} of this.boundaries) { doc.removeEventListener('dragstart', this.nativeDrag, true); doc.removeEventListener('selectstart', this.selectText, true); doc.removeEventListener('selectionchange', this.selectionChanged); doc.removeEventListener('contextmenu', this.browserContext, true); doc.removeEventListener('keydown', this.selectAll, true); } this.boundaries = []; for (const face of this.imageFaces.values()) face.remove(); this.imageFaces.clear(); this.cancelMarquee(); this.pointer.destroy(); this.contexts.destroy(); this.root.removeAttribute('data-editor-surface'); this.root.classList.remove('context-active'); }
 }
