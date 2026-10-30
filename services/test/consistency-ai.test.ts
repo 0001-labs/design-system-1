@@ -4,7 +4,7 @@ const origin = 'https://editor.c9y.site';
 function setup(id = 'owner') {
   const run = vi.fn(async () => ({ response: 'Updated writing' }));
   const send = vi.fn(async () => Response.json({ status: 'success', value: { _id: id, email: 'jaa90@icloud.com', emailVerified: true } }));
-  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', AI: { run } } as unknown as PreviewAIEnv;
+  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', AI: { run }, LIBRARIES:{get:vi.fn(async()=>({json:async()=>({enabled:true,audience:'owner'})}))} } as unknown as PreviewAIEnv;
   return { run, env, send };
 }
 function request(body: unknown = { prompt: 'Improve this', kind: 'writing', text: 'Old writing' }, extra: Record<string, string> = {}) {
@@ -133,4 +133,9 @@ it('rejects a malformed Ask context before any inference, and needs the generato
   expect((await consistencyAI(request(askBody('section', 'A hero', { runtimes: { Cart: 'label' } })), env, send)).status).toBe(400);
   expect(run).not.toHaveBeenCalled();
   expect((await consistencyAI(request(askBody('section')), { ...env, AI: undefined }, send)).status).toBe(503);
+});
+
+it('gates generation before inference and withholds a draft after owner access is revoked',async()=>{
+ const x=setup();vi.mocked(x.env.LIBRARIES.get).mockResolvedValue(null);expect((await consistencyAI(request(askBody('section')),x.env,x.send)).status).toBe(403);expect(x.run).not.toHaveBeenCalled();
+ const y=setup();y.run.mockImplementation(async()=>{y.send.mockResolvedValue(Response.json({status:'success',value:{_id:'other',email:'jaa90@icloud.com',emailVerified:true}}));return{response:JSON.stringify(generatedHero)};});expect((await consistencyAI(request(askBody('section')),y.env,y.send)).status).toBe(403);
 });

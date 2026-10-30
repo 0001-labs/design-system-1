@@ -1,3 +1,4 @@
+import {consistencyAsk,consistencyAskGateway} from './consistency-ask';
 import { consistencyAI, type PreviewAIEnv } from "./consistency-ai";
 import { consistencyPreview, isConsistencyHost, type WorkspaceEnv, isEditorBuildPath } from "./consistency";
 import { appNavigation } from './app-navigation';
@@ -47,6 +48,7 @@ export default {
       if (url.hostname !== 'designsystem1.com') return new Response('Not found', { status: 404 });
       return dashboard(request, env);
     }
+    if (url.pathname === '/api/consistency/ask') return consistencyAsk(request,env);
     if (url.pathname === '/api/consistency/ai') return consistencyAI(request, env);
     // Dispatch before public assets and other APIs: this host has no public app routes.
     if (isConsistencyHost(url.hostname) || isEditorBuildPath(url.pathname)) return consistencyPreview(request, env);
@@ -183,4 +185,9 @@ export class FeatureFlagsService extends WorkerEntrypoint<Env> {
   async set(input: unknown) { return setFeatureFlag(this.env, input); }
   async listExamples() { return listExamples(this.env); }
   async setExample(input: unknown) { return setExample(this.env, input); }
+}
+
+/** Owner gateway; no public route dispatches to this service entrypoint. */
+export class ConsistencyAskService extends WorkerEntrypoint<Env> {
+  fetch(request:Request){return consistencyAskGateway(request,this.env);}
 }

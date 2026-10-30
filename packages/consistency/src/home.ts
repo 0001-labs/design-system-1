@@ -1,3 +1,4 @@
+import {registerAskNavigation,type AskChoice} from './ask-runtime';
 import type { DraftSiteEditor, NewSite } from './draft-site';
 import { draftSiteApi, type DraftSiteSummary } from './draft-site-api';
 import { LitElement, html } from 'lit';
@@ -150,6 +151,7 @@ export class ConsistencyHome extends LitElement {
   /** The sidebar's edge: dragged, it folds the sidebar away and back (`sidebar-edge.ts`). */
   readonly edge = new SidebarEdge(this);
   /** Every site opened so far, kept alive while hidden. */
+  private stopAsk?:()=>void;
   private readonly editors = new Map<string, ConsistencySiteEditor>();
   /** Each site's places, as stored or read, by site code. */
   private readonly places = new Map<string, SitePlace[]>();
@@ -195,10 +197,10 @@ export class ConsistencyHome extends LitElement {
     if (workspace === this.workspace) this.keepPeople(members);
   };
 
-  connectedCallback() { this.edge.connect(); super.connectedCallback(); addEventListener('popstate', this.onPop); addEventListener('hashchange', this.onHash); this.addEventListener(OPEN_PAGE, this.onOpenPage); this.addEventListener(MEMBERS_CHANGE, this.onMembers); void this.readWorkspaces(); }
+  connectedCallback() { this.stopAsk=registerAskNavigation(this,()=>this.askChoices()); this.edge.connect(); super.connectedCallback(); addEventListener('popstate', this.onPop); addEventListener('hashchange', this.onHash); this.addEventListener(OPEN_PAGE, this.onOpenPage); this.addEventListener(MEMBERS_CHANGE, this.onMembers); void this.readWorkspaces(); }
 
   /** Goes to a place inside the app, the address unchanged. */
-  go(next: Place) { void this.move(next, 'push'); }
+  go(next: Place) { return this.move(next, 'push'); }
 
   /** Moves to a place, first saving a word being edited on the site being left; a failed save stays put. */
   private async move(next: Place, record: 'push' | 'none') {
@@ -359,7 +361,7 @@ export class ConsistencyHome extends LitElement {
     for (const [code, editor] of this.editors) editor.hidden = code !== current?.code || Boolean(at);
     for (const [each, element] of this.placeElements) element.hidden = each !== key;
   }
-  disconnectedCallback() { super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
+  disconnectedCallback() { this.stopAsk?.(); super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
 
   /** The workspace the app is in, as last read. */
   private get current(): WorkspaceSummary | undefined { return this.workspaces.find(each => each.code === this.workspace); }
@@ -415,6 +417,7 @@ export class ConsistencyHome extends LitElement {
              Workspaces moves to another, as Link's Settings does. -->
         <ds-sidebar class="home-foot" label="Workspace" .items=${[{ id: 'settings', label: 'Settings', current: settings }]}
           @sidebar-activate=${() => this.go({ page: 'settings', tab: 'domains' })}></ds-sidebar>
+        <consistency-ask-launcher></consistency-ask-launcher>
       </nav>`}
       <div class=${open || drafting ? 'home-main home-main--site' : 'home-main'}>
         ${open || drafting || creating ? '' : html`<ds-text class="home-title" role="heading" aria-level="1" literal size="display" text=${settings ? 'Settings' : 'Sites'}></ds-text>`}
@@ -442,6 +445,16 @@ export class ConsistencyHome extends LitElement {
   /**
    * An open site's title returns to the workspace's sites; no avatar or site-switching menu.
    */
+  private askChoices():AskChoice[]{
+    const current=this.place.page==='site'?this.place.code:'';
+    const destination=(id:string,title:string,detail:string,next:Place,confirm=false):AskChoice=>({id,kind:next.page,label:next.page==='site'?'Site':'Consistency',title,detail,icon:next.page==='site'?'globe':'search',tone:'light-blue',preview:{type:'text',text:detail},href:next.page==='site'?`https://consistency.site/?open=${next.code}`:undefined,confirm,open:()=>this.go(next)});
+    const rows:AskChoice[]=[destination('sites','Sites','Your workspace',{page:'sites'}),...TABS.map(tab=>destination(`settings:${tab}`,tab==='members'?'People':tab[0].toUpperCase()+tab.slice(1),'Settings',{page:'settings',tab}))];
+    rows.push(...this.sites.map(site=>destination(`site:${site.code}`,site.name,new URL(site.url).hostname,{page:'site',code:site.code},site.code!==current)));
+    rows.push(...this.draftSites.map(site=>destination(`draft:${site.id}`,site.name,'Private draft',{page:'draft-site',id:site.id,workspace:this.workspace},this.place.page!=='draft-site'||this.place.id!==site.id)));
+    if(current){const editor=this.editors.get(current);for(const page of editor?.pages??[])rows.push({id:`page:${page.path}`,kind:'page',label:'Page',title:page.title||page.path,detail:page.path,icon:'document',preview:{type:'text',text:page.title||page.path},confirm:editor?.path!==page.path,open:async()=>{await this.go({page:'site',code:current});if(this.place.page==='site'&&this.place.code===current)await editor?.open(page.path);}});}
+    return rows;
+  }
+
   private siteNav(site: SiteSummary | DraftSiteSummary) {
     const published = 'code' in site;
     const current = published ? this.placeOf(this.place) : undefined;
@@ -456,6 +469,7 @@ export class ConsistencyHome extends LitElement {
       </div>
       <ds-sidebar class="home-places" label=${site.name} .items=${items}
         @sidebar-activate=${(event: CustomEvent<{ id: string }>) => this.go(published && event.detail.id !== SITE_ROW ? { page: 'site', code: site.code, place: event.detail.id } : home)}></ds-sidebar>
+      <consistency-ask-launcher></consistency-ask-launcher>
     </nav>`;
   }
 

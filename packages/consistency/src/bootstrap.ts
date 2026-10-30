@@ -3,3 +3,6 @@ import '../../../DS1/0-face/theme';
 import { startScaling } from '../../../DS1/0-face/scaling';
 configureI18n({ languages: ['en'], autoLoad: false, sharedWords: true });
 startScaling();
+
+import {installGlobalAsk} from './ask-runtime';
+installGlobalAsk();

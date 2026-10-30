@@ -1,21 +1,15 @@
 /**
- * Ask, in the editor: a small sheet with one field, Enter to send, the answer landed on the page as a
- * draft the person keeps or discards. The sheet calls `/api/consistency/ai` with the page's own
+ * Ask, in the editor: the shared on-page face, Enter to send, the answer landed on the page as a
+ * draft the person keeps or discards. The face calls `/api/consistency/ai` with the page's own
  * context; no provider credential is here. The route checks the answer against the vocabulary, and
  * the editor checks it again with the renderer's validator before it lands. A refusal shows its words
- * with Try again; a slow or failed answer leaves the page as it was.
+ * with a retry on Enter; a slow or failed answer leaves the page as it was.
  */
 import { checkAskAnswer, type AskBlock, type AskContext, type AskDocument, type AskIntent, type AskLevel } from '../../../shared/consistency-ask';
 import { validateNativePage, type NativePageDocument, type NativeSection } from '../../../shared/consistency-native-page';
 import { createSurfaceContext } from './surface-context';
 import type { Context } from '../../../DS1/3-unit/ds-context';
-import type { Overlay } from '../../../DS1/4-page/ds-overlay';
-import '../../../DS1/4-page/ds-overlay';
-import '../../../DS1/2-core/ds-input';
-import '../../../DS1/2-core/ds-button';
-import '../../../DS1/2-core/ds-icon';
-import '../../../DS1/2-core/ds-text';
-import './ask.css';
+import { showAskFace } from './ask-face';
 
 /** The browser waits a little longer than the route's own generator time, so a route that answers late still lands. */
 export const ASK_CLIENT_TIMEOUTS: Readonly<Record<AskLevel, number>> = { section: 50_000, page: 70_000 };
@@ -48,49 +42,25 @@ export function readAskAnswer(body: unknown, level: AskLevel, document: NativePa
   return { level: 'page', document: checked.document as unknown as NativePageDocument };
 }
 
-/** The sheet: one field, Enter to send, the field held and "Asking…" said while the answer is awaited. */
-export function openAsk(options: AskSheetOptions): { close(): void } {
-  const level = options.level, send = options.send ?? sendSameOrigin, timeout = options.timeout ?? ASK_CLIENT_TIMEOUTS[level];
-  const overlay = document.createElement('ds-overlay') as Overlay; overlay.className = 'consistency-ask'; overlay.type = 'sheet'; overlay.nonModal = true; overlay.holdScroll = false; overlay.blockOutside = false; overlay.setAttribute('data-editor-chrome', '');
-  const dialog = document.createElement('dialog'); dialog.setAttribute('aria-labelledby', 'consistency-ask-title');
-  const header = document.createElement('header'); header.setAttribute('data-ds-overlay', 'header');
-  const title = document.createElement('span'); title.id = 'consistency-ask-title'; title.setAttribute('data-ds-overlay', 'title'); title.textContent = level === 'page' ? 'Ask for the page' : 'Ask for a section'; header.append(title);
-  const close = document.createElement('ds-button'); close.setAttribute('data-ds-overlay', 'close'); close.setAttribute('data-ds-overlay-dismiss', ''); close.setAttribute('icon', ''); close.setAttribute('label', 'Close');
-  const closeIcon = document.createElement('ds-icon'); closeIcon.setAttribute('type', 'close'); close.append(closeIcon);
-  const field = document.createElement('ds-input') as HTMLElement & { value: string; placeholder: string; disabled: boolean; focus(): void };
-  field.setAttribute('aria-label', level === 'page' ? 'Ask for the page' : 'Ask for a section'); field.placeholder = ASK_PLACEHOLDERS[level]; field.setAttribute('enterkeyhint', 'send'); field.setAttribute('autocomplete', 'off');
-  const status = document.createElement('div'); status.className = 'consistency-ask-status'; status.setAttribute('role', 'status'); status.hidden = true;
-  const words = document.createElement('ds-text') as HTMLElement & { literal: boolean; text: string; tone: string; wrap: boolean }; words.literal = true; words.wrap = true;
-  const again = document.createElement('ds-button'); again.setAttribute('secondary', ''); again.textContent = 'Try again'; again.hidden = true;
-  status.append(words, again);
-  dialog.append(header, close, field, status); overlay.append(dialog); document.body.append(overlay);
-  let pending: AbortController | null = null, closed = false;
-  const say = (text: string, tone: '' | 'danger', retry: boolean) => { status.hidden = !text; words.text = text; if (tone) words.setAttribute('tone', tone); else words.removeAttribute('tone'); again.hidden = !retry; };
-  const finish = () => { if (closed) return; closed = true; pending?.abort(); pending = null; overlay.open = false; overlay.remove(); };
-  const ask = async () => {
-    const prompt = field.value.trim();
-    if (!prompt || pending) return;
-    const page = options.document(), controller = new AbortController(); pending = controller;
-    const timer = setTimeout(() => controller.abort(), timeout);
-    field.disabled = true; say('Asking…', '', false);
-    let outcome: AskAnswer | string = FAILED;
-    try {
-      const response = await send(JSON.stringify({ kind: level, prompt, document: page, ...(level === 'section' && options.selected ? { selected: options.selected } : {}), images: options.context.images, collections: options.context.collections, runtimes: options.context.runtimes, ...(options.context.site ? { site: options.context.site } : {}) }), controller.signal);
-      let body: unknown = null;
-      try { body = await response.json(); } catch { body = null; }
-      if (!response.ok) outcome = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string' ? (body as { error: string }).error : FAILED;
-      else outcome = readAskAnswer(body, level, page, options.context);
-    } catch { outcome = FAILED; }
-    finally { clearTimeout(timer); if (pending === controller) pending = null; }
-    if (closed || controller.signal.aborted && typeof outcome !== 'string') return;
-    if (typeof outcome === 'string') { field.disabled = false; say(outcome, 'danger', true); field.focus(); return; }
-    options.land(outcome); finish();
-  };
-  field.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); void ask(); } });
-  again.addEventListener('click', () => { say('', '', false); field.focus(); });
-  overlay.addEventListener('ds-close-request', () => finish());
-  void overlay.show().then(() => { if (!closed) field.focus(); });
-  return { close: finish };
+/** The same checked generator serves the global Ask face and a component's Ask action. */
+export async function requestAskAnswer(options:AskSheetOptions,prompt:string,signal:AbortSignal):Promise<AskAnswer> {
+ const page=options.document(),level=options.level,send=options.send??sendSameOrigin;
+ const response=await send(JSON.stringify({kind:level,prompt,document:page,...(level==='section'&&options.selected?{selected:options.selected}:{}),images:options.context.images,collections:options.context.collections,runtimes:options.context.runtimes,...(options.context.site?{site:options.context.site}:{})}),signal);
+ const body:unknown=await response.json().catch(()=>null);
+ if(!response.ok)throw Error(body&&typeof body==='object'&&typeof(body as {error?:unknown}).error==='string'?(body as {error:string}).error:FAILED);
+ const result=readAskAnswer(body,level,page,options.context);if(typeof result==='string')throw Error(result);return result;
+}
+/** Context-menu Ask uses Link's shared face too; a checked answer still lands as a Keep/Discard draft. */
+export function openAsk(options:AskSheetOptions):{close():void} {
+ let closed=false,face:{close():void}|undefined;
+ void showAskFace({placeholder:options.level==='page'?'Ask for the page':'Ask for a section',submit:async(prompt,signal)=>{
+  const controller=new AbortController(),cancel=()=>controller.abort();signal.addEventListener('abort',cancel,{once:true});
+  const timer=setTimeout(cancel,options.timeout??ASK_CLIENT_TIMEOUTS[options.level]);
+  try{const answer=await requestAskAnswer(options,prompt,controller.signal);if(!closed&&!controller.signal.aborted)options.land(answer);else throw Error(FAILED);}
+  catch(error){if(controller.signal.aborted&&!signal.aborted)throw Error(FAILED);throw error;}
+  finally{clearTimeout(timer);signal.removeEventListener('abort',cancel);}
+ }}).then(handle=>{face=handle;if(closed)handle.close();});
+ return{close(){closed=true;face?.close();}};
 }
 
 /** The bar over a landed draft: Keep leaves it as an edit, Discard takes it back; it follows the draft as the page moves and goes when the page changes under it. */

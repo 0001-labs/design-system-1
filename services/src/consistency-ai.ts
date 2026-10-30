@@ -1,3 +1,4 @@
+import {consistencyAskEnabled} from './consistency-ask-access';
 /** The private editor's inference transport. Provider credentials never reach the browser. */
 import { authorizeReport, type ReportsEnv } from './reports';
 import { sessionRequest } from './dashboard';
@@ -34,7 +35,14 @@ export async function consistencyAI(request: Request, env: PreviewAIEnv, send: t
   let input: Record<string, unknown>;
   try { input = JSON.parse(await new Blob(chunks).text()); } catch { return error('Invalid JSON.', 400); }
   if (!input || typeof input !== 'object' || typeof input.prompt !== 'string' || !input.prompt.trim() || input.prompt.length > 4000 || !['writing', 'diagram', ...ASK_LEVELS].includes(String(input.kind))) return error('Provide a prompt and editing kind.', 400);
-  if ((ASK_LEVELS as readonly string[]).includes(String(input.kind))) return ask(request, input, env, send);
+  if ((ASK_LEVELS as readonly string[]).includes(String(input.kind))) {
+    if(!await consistencyAskEnabled(env))return error('Ask is not enabled.',403);
+    const answer=await ask(request,input,env,send);
+    if(request.signal.aborted)return error('The edit was cancelled.',408);
+    const revoked=(await systemOwner(request,env))?null:await authorizeReport(sessionRequest(new Request(request.url,{headers:request.headers})),env,send);
+    if(revoked)return revoked;
+    return await consistencyAskEnabled(env)?answer:error('Ask is not enabled.',403);
+  }
   for (const name of ['text', 'before', 'after', 'document']) if (input[name] !== undefined && typeof input[name] !== 'string') return error('Invalid document context.', 400);
   const routingStarted = Date.now();
   const routed = await routeComponentEdit({ prompt: input.prompt, kind: String(input.kind), text: input.text as string | undefined, document: input.document as string | undefined }, env, send, request.signal);
