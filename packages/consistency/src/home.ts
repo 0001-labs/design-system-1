@@ -38,7 +38,7 @@ import './home.css';
  * nothing more (Joachim, 26 October 2026): where the app stands is its own state, kept in the history so Back and
  * Forward still move between places. Sites are known by their IDv1 codes. A site once opened stays open, hidden
  * while another is shown, so going back to it is instant: no reload and no sign-in again. With a site open, the
- * sidebar is that site's: its name at the top (pressing it shows the workspace's sites; its menu switches to another
+ * sidebar is that site's: its plain name at the top (Back returns to the workspace's sites to choose another
  * site), then the site's own address, which shows the site itself and is current while it is shown, and the site's
  * places under it, the menus the platform says it has and the app has an element for (`places/`). There is no list of pages: the owner moves between pages by the site's own links.
  */
@@ -440,8 +440,7 @@ export class ConsistencyHome extends LitElement {
   }
 
   /**
-   * An open site's sidebar, as the workspace's is: its name, which shows the workspace's sites and whose menu goes to
-   * another site, then Site, which shows the site itself to edit, and its places.
+   * An open site's sidebar: a plain site title, then Site and its places. Back returns to the workspace's sites.
    */
   private siteNav(site: SiteSummary | DraftSiteSummary) {
     const published = 'code' in site;
@@ -451,18 +450,9 @@ export class ConsistencyHome extends LitElement {
       ...(published ? shownPlaces(this.placesFor(site.code)).map(place => ({ id: place.id, label: place.label, current: place.id === current })) : []),
     ];
     const home: Place = published ? { page: 'site', code: site.code } : { page: 'draft-site', id: site.id, workspace: this.workspace };
-    const others: Array<{ name: string; place: Place }> = [
-      ...this.sites.filter(item => !published || item.code !== site.code).map(item => ({ name: item.name, place: { page: 'site' as const, code: item.code } })),
-      ...this.draftSites.filter(item => published || item.id !== site.id).map(item => ({ name: item.name, place: { page: 'draft-site' as const, id: item.id, workspace: this.workspace } })),
-    ];
     return html`<nav slot="nav" id="home-nav" class="home-nav" aria-label=${site.name}>
       <div class="home-workspace" aria-label="Site">
-        <ds-button id="home-site" class="home-workspace-name" label=${`Site: ${site.name}`} @click=${() => this.go({ page: 'sites' })}>
-          <ds-avatar initial=${workspaceInitial(site.name)} outlined plain aria-hidden="true"></ds-avatar>${site.name}${others.length ? html`<ds-icon type="chevron-down"></ds-icon>` : ''}
-        </ds-button>
-        ${others.length ? html`<ds-select for="home-site" hover aria-label="Sites">
-          ${others.map(item => html`<ds-button menu-item @click=${() => this.go(item.place)}>${item.name}</ds-button>`)}
-        </ds-select>` : ''}
+        <ds-text id="home-site" literal text=${site.name}></ds-text>
       </div>
       <ds-sidebar class="home-places" label=${site.name} .items=${items}
         @sidebar-activate=${(event: CustomEvent<{ id: string }>) => this.go(published && event.detail.id !== SITE_ROW ? { page: 'site', code: site.code, place: event.detail.id } : home)}></ds-sidebar>

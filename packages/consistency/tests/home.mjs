@@ -75,8 +75,8 @@ try {
  // Back goes to the sites, Forward to the site again.
  await page.goBack();await page.locator('consistency-home ds-card').first().waitFor();same();await page.goForward();await page.locator('consistency-home consistency-site-editor:not([hidden])').waitFor();same();
  await page.evaluate(()=>{document.querySelector('consistency-site-editor').dataset.first='yes';});
- // Pressing the site's name shows the workspace's sites, as pressing the workspace does.
- const allSites=async()=>{await page.locator('#home-site').click();await page.locator('consistency-home ds-card').first().waitFor();await page.mouse.move(700,500);};
+ // Fixture navigation returns to Sites; the browser Back/Forward journey is checked above.
+ const allSites=async()=>{await page.evaluate(()=>document.querySelector('consistency-home').go({page:'sites'}));await page.locator('consistency-home ds-card').first().waitFor();await page.mouse.move(700,500);};
  await allSites();
  if(await page.locator('consistency-home consistency-site-editor[hidden]').count()!==1)throw Error('Leaving a site took its editor out of the page');
  await page.locator('consistency-home ds-card',{hasText:'CPH Raft'}).click();
@@ -111,8 +111,9 @@ try {
  // A site's /edit opens the app on that site once, ?open=CODE, and the address is the app's again at once.
  await page.goto(home+'?open=30SDGA');await page.locator('consistency-home consistency-site-editor:not([hidden])').waitFor();same();
  // An open site's sidebar is the site's: its name at the top, not the workspace, and no rows of its pages.
- await page.getByRole('button',{name:'Site: Søndergården'}).waitFor();
- if(await page.locator('#home-site ds-avatar[initial="S"]').count()!==1)throw Error('The site\'s name has no avatar, as the workspace\'s has');
+ await page.locator('#home-site[text="Søndergården"]').waitFor();
+ if(await page.locator('#home-site ds-avatar, #home-site ds-icon, ds-select[for="home-site"]').count())throw Error('The site title still has an avatar or site switcher');
+ if(await page.locator('ds-button#home-site').count())throw Error('The site title is still a button');
  // The site's own address is the sidebar's first row, current while the site itself is shown.
  const rowsOf=()=>page.locator('consistency-home ds-sidebar.home-places').evaluate(bar=>[...bar.shadowRoot.querySelectorAll('[data-item]')].map(row=>row.textContent.trim()+(row.getAttribute('aria-current')?'*':'')));
  if(await page.locator('#home-workspace').count())throw Error('The workspace stays in the sidebar of an open site');
@@ -140,12 +141,11 @@ try {
  slowPlaces=true;await page.reload();await page.evaluate(()=>{const home=document.querySelector('consistency-home');home.constructor.places.set('lab',()=>document.createElement('div'));home.requestUpdate();});
  await page.locator('consistency-home ds-sidebar.home-places').getByText('Lab',{exact:true}).waitFor({timeout:500});slowPlaces=false;
  await page.mouse.move(700,500);
- await page.locator('#home-site').hover();const sitesMenu=page.locator('consistency-home ds-select[aria-label="Sites"]');
- if((await sitesMenu.locator('ds-button[menu-item]').allInnerTexts()).map(t=>t.trim()).join()!=='Flavo,CPH Raft')throw Error('The site menu is not the other sites');
- await sitesMenu.locator('ds-button[menu-item]',{hasText:'CPH Raft'}).click();await page.getByRole('button',{name:'Site: CPH Raft'}).waitFor();same();
+ await page.locator('#home-site').hover();if(await page.locator('consistency-home ds-select[aria-label="Sites"]').count())throw Error('Hovering the site title exposes a site switcher');
+ await allSites();await page.locator('consistency-home ds-card',{hasText:'CPH Raft'}).click();await page.locator('#home-site[text="CPH Raft"]').waitFor();same();
  if((await rowsOf()).join()!=='Site*')throw Error('A site without places lists some: '+(await rowsOf()).join());
  await page.mouse.move(700,500);await allSites();
- if(await page.locator('consistency-home .home-title[text="Sites"]').count()!==1)throw Error('The site\'s name does not show Sites');
+ if(await page.locator('consistency-home .home-title[text="Sites"]').count()!==1)throw Error('Returning to the workspace does not show Sites');
  // The workspace is renamed where it is shown, in Account.
  await page.evaluate(()=>document.querySelector('consistency-home').go({page:'settings',tab:'account'}));
  const field=page.locator('consistency-home ds-input.home-workspace-field input');await field.waitFor();await field.fill('0001 labs');await field.press('Enter');
