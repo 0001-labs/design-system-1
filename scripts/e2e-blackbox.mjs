@@ -610,6 +610,11 @@ if (PRODUCTION) {
   ]);
 
   await step("Private hosts", [
+    ...["consistency.site","editor.c9y.site"].map(host=>[
+      `${host} Ask refuses signed-out questions`,
+      async()=>{const answer=await request(`https://${host}/api/consistency/ask`);expectStatus(answer,401);expectPrivate(answer);expect(!answer.text.includes('"enabled":true'),'Ask exposed its owner rollout');},
+    ]),
+    ["Ask has no public DS1 host alias",async()=>expectStatus(await request('/api/consistency/ask'),404)],
     ...["consistency.site", "editor.c9y.site", "neweditor.c9y.site", "c9y.site"].flatMap(host => ["/private-consistency/", "/private-consistency/home", "/private-consistency/home/", "/private-consistency/home.html", "/private-consistency/guide/", "/private-consistency/assets/editor.js"].map(path => [
       `${host}${path} is gone without a redirect`,
       async () => { const answer = await request(`https://${host}${path}?open=52OFXF`); expectStatus(answer, 410); if (answer.headers.has("location")) throw new Error("Retired editor URL redirects"); },

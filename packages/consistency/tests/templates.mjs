@@ -79,7 +79,7 @@ try {
  await savedFrame.getByText('Our first site', { exact: true }).waitFor();
  if (await page.locator('consistency-draft-site ds-input[label="Site name"]').count()) throw Error('A named site still has a name field over its canvas');
  if (await page.locator('consistency-draft-site consistency-editor').count()) throw Error('A saved site still mounts the lab workspace');
- await page.getByRole('button', { name: 'Site: A saved booking site', exact: true }).waitFor();
+ await page.getByRole('button', { name: 'Back to sites: A saved booking site', exact: true }).waitFor();
  const bounds = await page.locator('consistency-draft-site').evaluate(element => {
   const stage = element.closest('.home-stage').getBoundingClientRect(), frame = element.querySelector('consistency-page-editor iframe').getBoundingClientRect();
   return { top: frame.top - stage.top, height: stage.height - frame.height };
@@ -88,7 +88,7 @@ try {
 
  const heading = savedFrame.getByRole('textbox', { name: 'Edit Our first site' }).locator('[contenteditable]');
  await heading.click();await heading.press(process.platform==='darwin'?'Meta+A':'Control+A');await heading.pressSequentially('The next version');
- await page.getByRole('button', { name: 'Site: A saved booking site' }).click();
+ await page.getByRole('button', { name: 'Back to sites: A saved booking site' }).click();
  await page.locator('ds-card[data-draft-site]').click();
  await savedFrame.getByText('The next version', { exact: true }).waitFor();
  await page.reload();
@@ -99,12 +99,12 @@ try {
  // A failed autosave must retain the draft and block navigation.
  refuse = true;
  const unsaved=savedFrame.getByRole('textbox', { name: 'Edit The next version' }).locator('[contenteditable]');await unsaved.click();await unsaved.press(process.platform==='darwin'?'Meta+A':'Control+A');await unsaved.pressSequentially('Keep this unsaved edit');
- await page.getByRole('button', { name: 'Site: A saved booking site' }).click();
+ await page.getByRole('button', { name: 'Back to sites: A saved booking site' }).click();
  await page.locator('consistency-draft-site [role="alert"]').waitFor();
  await savedFrame.getByText('Keep this unsaved edit', { exact: true }).waitFor();
  refuse = false;
  await page.locator('consistency-draft-site').getByRole('button', { name: 'Try again', exact: true }).click();
- await page.getByRole('button', { name: 'Site: A saved booking site' }).click();
+ await page.getByRole('button', { name: 'Back to sites: A saved booking site' }).click();
  await page.getByRole('button', { name: 'Add new site', exact: true }).waitFor();
  console.log('Home: failed autosave keeps the edit, blocks navigation and recovers on retry');
  await page.getByRole('button', {name:'Add new site',exact:true}).click();
@@ -119,7 +119,7 @@ try {
  const blank=[...drafts.values()].find(draft=>draft.name==='Shared blank');
  if(blank?.document.schema!==2||blank.document.page.layout.padding!==60||blank.document.composition)throw Error('Blank creation did not keep canonical blocks and edited geometry');
  await blankFrame.getByRole('slider',{name:'Page padding',exact:true}).press('ArrowDown');
- await page.getByRole('button',{name:'Site: Shared blank',exact:true}).click();
+ await page.getByRole('button',{name:'Back to sites: Shared blank',exact:true}).click();
  await page.locator(`ds-card[data-draft-site="${blank.id}"]`).click();
  await blankFrame.getByRole('slider',{name:'Page padding',exact:true}).waitFor();
  if(await blankFrame.getByRole('slider',{name:'Page padding',exact:true}).getAttribute('aria-valuenow')!=='40')throw Error('Blank shared spacing did not reopen');
