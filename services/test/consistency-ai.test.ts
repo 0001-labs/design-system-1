@@ -113,13 +113,13 @@ it('judges with TypeSafe when the key and flag are there: the intent, the kind a
   const { env, send, run } = setup();
   const get = vi.fn(async () => ({ json: async () => ({ enabled: true, audience: 'owner' }) }));
   const decide = vi.fn(async () => Response.json({ answers: { change: { type: 'noul', noul: 0.98 }, intent: { type: 'choice', choice: 'replace', confidence: 0.9, probabilities: {} }, kind: { type: 'choice', choice: 'cards', confidence: 0.85, probabilities: {} }, picture_0: { type: 'noul', noul: 0.1 }, picture_1: { type: 'noul', noul: 0.9 } } }));
-  const both: typeof fetch = vi.fn(async (url, init) => String(url).startsWith("https://api.typesafe.ai/") ? decide() : (send as typeof fetch)(url, init));
-  const judgedEnv = { ...env, TYPESAFE_API_KEY: 'fixture-key', LIBRARIES: { get } } as unknown as PreviewAIEnv;
+  const both: typeof fetch = vi.fn(async (url, init) => String(url).startsWith("https://system.0001.dev/api/ai/typesafe/") ? decide() : (send as typeof fetch)(url, init));
+  const judgedEnv = { ...env, SYSTEM_AI_TOKEN: 'fixture-key', LIBRARIES: { get } } as unknown as PreviewAIEnv;
   run.mockResolvedValueOnce({ response: JSON.stringify({ id: 'tours', kind: 'cards', columns: 3, items: [{ title: 'Green raft', picture: { src: '/photos/logo.svg', alt: 'The mark' } }, { title: 'Sunset' }, { title: 'Quiz' }] }) });
   const response = await consistencyAI(request(askBody('section', 'Turn this into three cards with the logo')), judgedEnv, both);
   expect(await response.json()).toMatchObject({ level: 'section', intent: 'replace', kind: 'cards', block: { kind: 'cards', columns: 3 } });
   expect(decide).toHaveBeenCalledOnce(); expect(get).toHaveBeenCalledWith('feature-flags/consistency-component-routing.json');
-  const init = vi.mocked(both).mock.calls.find(([url]) => String(url).startsWith('https://api.typesafe.ai/'))![1]!;
+  const init = vi.mocked(both).mock.calls.find(([url]) => String(url).startsWith('https://system.0001.dev/api/ai/typesafe/'))![1]!;
   const sent = JSON.parse(init.body as string);
   expect(sent.model).toBe('jev-1.13.0'); expect(sent.state).toMatchObject({ request: 'Turn this into three cards with the logo', level: 'section', selected: { kind: 'cards' } });
   expect(Object.keys(sent.questions)).toEqual(['change', 'intent', 'kind', 'picture_0', 'picture_1']);

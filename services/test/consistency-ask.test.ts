@@ -41,22 +41,22 @@ it('gateway checks membership and scopes site context before inference',async()=
 
 it('uses typed intent for conversational and misspelled page requests without generating an answer',async()=>{
  for(const prompt of ['but aput an extra section below with three buttons','Could you add a section?']){
-  const x=setup();x.env.TYPESAFE_API_KEY='fixture-key';
+  const x=setup();x.env.SYSTEM_AI_TOKEN='fixture-key';
   const typed=vi.fn(async()=>Response.json({answers:{intent:{type:'choice',choice:'edit',confidence:0.99,probabilities:{edit:0.99,answer:0.01}}}}));
-  const send:typeof fetch=vi.fn(async(url)=>String(url).startsWith('https://api.typesafe.ai/')?typed():x.send());
+  const send:typeof fetch=vi.fn(async(url)=>String(url).startsWith('https://system.0001.dev/api/ai/typesafe/')?typed():x.send());
   const response=await consistencyAsk(request({...body,prompt,allowPageEdits:true}),x.env,send);expect(await response.json()).toEqual({intent:'edit'});expect(x.run).not.toHaveBeenCalled();expect(typed).toHaveBeenCalledOnce();
  }
 });
 it('answers informational requests and refuses uncertain or unavailable edit decisions',async()=>{
- const x=setup();x.env.TYPESAFE_API_KEY='fixture-key';let choice='answer',confidence=1;
- const send:typeof fetch=vi.fn(async(url)=>String(url).startsWith('https://api.typesafe.ai/')?Response.json({answers:{intent:{type:'choice',choice,confidence,probabilities:{edit:choice==='edit'?confidence:0,answer:choice==='edit'?1-confidence:1}}}}):x.send());
+ const x=setup();x.env.SYSTEM_AI_TOKEN='fixture-key';let choice='answer',confidence=1;
+ const send:typeof fetch=vi.fn(async(url)=>String(url).startsWith('https://system.0001.dev/api/ai/typesafe/')?Response.json({answers:{intent:{type:'choice',choice,confidence,probabilities:{edit:choice==='edit'?confidence:0,answer:choice==='edit'?1-confidence:1}}}}):x.send());
  const req=()=>request({...body,prompt:'How do I add a section?',allowPageEdits:true});
  expect(await(await consistencyAsk(req(),x.env,send)).json()).toEqual({answer:'Flowers and objects.'});expect(x.run).toHaveBeenCalledOnce();
  choice='edit';confidence=0.6;expect((await consistencyAsk(req(),x.env,send)).status).toBe(502);expect(x.run).toHaveBeenCalledOnce();
- delete x.env.TYPESAFE_API_KEY;expect((await consistencyAsk(req(),x.env,send)).status).toBe(502);
+ delete x.env.SYSTEM_AI_TOKEN;expect((await consistencyAsk(req(),x.env,send)).status).toBe(502);
 });
 it('does not return edit intent after owner access is revoked during judgment',async()=>{
- const x=setup();x.env.TYPESAFE_API_KEY='fixture-key';
- const send:typeof fetch=vi.fn(async(url)=>{if(String(url).startsWith('https://api.typesafe.ai/')){x.revoke();return Response.json({answers:{intent:{type:'choice',choice:'edit',confidence:1,probabilities:{edit:1,answer:0}}}});}return x.send();});
+ const x=setup();x.env.SYSTEM_AI_TOKEN='fixture-key';
+ const send:typeof fetch=vi.fn(async(url)=>{if(String(url).startsWith('https://system.0001.dev/api/ai/typesafe/')){x.revoke();return Response.json({answers:{intent:{type:'choice',choice:'edit',confidence:1,probabilities:{edit:1,answer:0}}}});}return x.send();});
  expect((await consistencyAsk(request({...body,allowPageEdits:true}),x.env,send)).status).toBe(403);expect(x.run).not.toHaveBeenCalled();
 });

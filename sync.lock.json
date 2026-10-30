@@ -1,4 +1,13 @@
 {
+  "AI gateway": {
+    "commit": "d5164a8a2d2a65badcd5688fb997c9393d952867",
+    "version": null,
+    "owned": ["services/src/vendor/ai-gateway"],
+    "files": {
+      "services/src/vendor/ai-gateway/README.md": "eddd157b72fb0b3cb0d4b62d63dc545a772717cc8d93a0e4017bef8c053c8b7d",
+      "services/src/vendor/ai-gateway/client.ts": "772c87845194fff4120c08ca5fc607d48b9c2fbc7ffe9f9a31846b8b3209e9d7"
+    }
+  },
   "Aa": {
     "commit": "c61f0c9d3c4d5dcfd34c17a0799bcac5d3498372",
     "version": "0.10.3",

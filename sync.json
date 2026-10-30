@@ -33,6 +33,11 @@
       "client": {
         "to": "website/src/vendor/feedback-loop"
       }
+    },
+    "AI gateway": {
+      "client": {
+        "to": "services/src/vendor/ai-gateway"
+      }
     }
   }
 }

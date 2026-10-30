@@ -1,3 +1,4 @@
+import { TYPESAFE_URL } from './vendor/ai-gateway/client';
 import {consistencyAskEnabled} from './consistency-ask-access';
 /** The private editor's inference transport. Provider credentials never reach the browser. */
 import { authorizeReport, type ReportsEnv } from './reports';
@@ -117,7 +118,7 @@ async function ask(request: Request, input: Record<string, unknown>, env: Previe
 }
 /** The judgment, when the TypeSafe key and the flag are there; null when it is off, slow, failed or unsure. Caller has authorized the owner. */
 async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetch, signal: AbortSignal): Promise<AskJudgment | null> {
-  if (!env.TYPESAFE_API_KEY || signal.aborted) return null;
+  if (!env.SYSTEM_AI_TOKEN || signal.aborted) return null;
   const abort = new AbortController();
   const cancel = () => abort.abort();
   signal.addEventListener('abort', cancel, { once: true });
@@ -127,8 +128,8 @@ async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetc
     const rules = object ? { [COMPONENT_ROUTING_FLAG]: await object.json() } : {};
     if (!resolveFlag(FEATURE_FLAGS, COMPONENT_ROUTING_FLAG, rules, { accountId: env.REPORTS_OWNER_ID, isOwner: true }) || abort.signal.aborted) return null;
     const { state, questions } = askJudgmentQuestions(input);
-    const response = await send('https://api.typesafe.ai/v1/systemone', {
-      method: 'POST', headers: { authorization: `Bearer ${env.TYPESAFE_API_KEY}`, 'content-type': 'application/json' },
+    const response = await send(TYPESAFE_URL, {
+      method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: COMPONENT_ROUTING_MODEL, state, questions }),
       signal: abort.signal, redirect: 'error',
     });

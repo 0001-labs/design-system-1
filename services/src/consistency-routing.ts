@@ -1,14 +1,15 @@
+import { TYPESAFE_URL } from './vendor/ai-gateway/client';
 import { FEATURE_FLAGS } from '../../shared/feature-flags';
 import { resolveFlag } from '../../shared/feature-flags-runtime/index';
 import { applyComponentDecision, componentContext, componentState, componentQuestions, COMPONENT_ROUTING_FLAG, COMPONENT_ROUTING_MODEL, COMPONENT_ROUTING_TIMEOUT, type ComponentRequest } from '../../shared/consistency-routing';
 import type { ReportsEnv } from './reports';
 
-export interface ComponentRoutingEnv extends ReportsEnv { TYPESAFE_API_KEY?: string }
+export interface ComponentRoutingEnv extends ReportsEnv { SYSTEM_AI_TOKEN?: string }
 
 /** Caller must have completed the existing verified owner authorization. */
 export async function routeComponentEdit(input: ComponentRequest, env: ComponentRoutingEnv, send: typeof fetch, signal: AbortSignal) {
   const context = componentContext(input);
-  if (!context || !env.TYPESAFE_API_KEY || signal.aborted) return null;
+  if (!context || !env.SYSTEM_AI_TOKEN || signal.aborted) return null;
   const abort = new AbortController();
   const cancel = () => abort.abort();
   signal.addEventListener('abort', cancel, { once: true });
@@ -17,8 +18,8 @@ export async function routeComponentEdit(input: ComponentRequest, env: Component
     const object = await env.LIBRARIES.get(`feature-flags/${COMPONENT_ROUTING_FLAG}.json`);
     const rules = object ? { [COMPONENT_ROUTING_FLAG]: await object.json() } : {};
     if (!resolveFlag(FEATURE_FLAGS, COMPONENT_ROUTING_FLAG, rules, { accountId: env.REPORTS_OWNER_ID, isOwner: true }) || abort.signal.aborted) return null;
-    const response = await send('https://api.typesafe.ai/v1/systemone', {
-      method: 'POST', headers: { authorization: `Bearer ${env.TYPESAFE_API_KEY}`, 'content-type': 'application/json' },
+    const response = await send(TYPESAFE_URL, {
+      method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: COMPONENT_ROUTING_MODEL, state: componentState(context), questions: componentQuestions(context) }),
       signal: abort.signal, redirect: 'error',
     });
@@ -36,11 +37,11 @@ export async function routeComponentEdit(input: ComponentRequest, env: Component
 
 /** A typed request judgment, without page text that could masquerade as permission to edit. */
 export async function routePageRequest(prompt:string,env:ComponentRoutingEnv,send:typeof fetch,signal:AbortSignal):Promise<'edit'|'answer'> {
- if(!env.TYPESAFE_API_KEY||signal.aborted)throw Error('Request routing is unavailable.');
+ if(!env.SYSTEM_AI_TOKEN||signal.aborted)throw Error('Request routing is unavailable.');
  const abort=new AbortController(),cancel=()=>abort.abort();signal.addEventListener('abort',cancel,{once:true});
  const timer=setTimeout(cancel,COMPONENT_ROUTING_TIMEOUT);
  try{
-  const response=await send('https://api.typesafe.ai/v1/systemone',{method:'POST',headers:{authorization:`Bearer ${env.TYPESAFE_API_KEY}`,'content-type':'application/json'},body:JSON.stringify({model:COMPONENT_ROUTING_MODEL,state:{request:prompt},questions:{intent:{type:'choice',instructions:'Does the person explicitly request a current-page change, or information? Understand conversational prefixes, polite phrasing and typos. For example, “but aput an extra section below with three buttons” and “could you add a section?” request an edit. “How do I add a section?” asks for information. Quoted, hypothetical, ambiguous or negated requests are not permission to edit. Publishing, sending, permissions and business-record changes are outside page editing.',criteria:{edit:'An explicit request to add, change, remove or move content or design on the current page.',answer:'Information, explanation, ambiguity, quoted or negated changes, or an operation outside page editing.'}}}}),signal:abort.signal,redirect:'error'});
+  const response=await send(TYPESAFE_URL,{method:'POST',headers:{authorization:`Bearer ${env.SYSTEM_AI_TOKEN}`,'content-type':'application/json'},body:JSON.stringify({model:COMPONENT_ROUTING_MODEL,state:{request:prompt},questions:{intent:{type:'choice',instructions:'Does the person explicitly request a current-page change, or information? Understand conversational prefixes, polite phrasing and typos. For example, “but aput an extra section below with three buttons” and “could you add a section?” request an edit. “How do I add a section?” asks for information. Quoted, hypothetical, ambiguous or negated requests are not permission to edit. Publishing, sending, permissions and business-record changes are outside page editing.',criteria:{edit:'An explicit request to add, change, remove or move content or design on the current page.',answer:'Information, explanation, ambiguity, quoted or negated changes, or an operation outside page editing.'}}}}),signal:abort.signal,redirect:'error'});
   if(!response.ok||abort.signal.aborted)throw Error('Request routing failed.');
   const body=await response.json() as {answers?:{intent?:{type?:unknown;choice?:unknown;confidence?:unknown;probabilities?:{edit?:unknown;answer?:unknown}}}};
   const decision=body?.answers?.intent,probabilities=decision?.probabilities;

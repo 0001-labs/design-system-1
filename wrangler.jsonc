@@ -4,8 +4,7 @@
   "main": "./services/src/index.ts",
   "compatibility_date": "2026-07-24",
   "workers_dev": true,
-  "services": [{"binding":"CONSISTENCY_WORKSPACE","service":"consistency-platform","entrypoint":"ConsistencyWorkspace"}, {"binding":"C9Y_IDENTITY","service":"0001-system","entrypoint":"ConsistencyIdentity"}],
-  "ai": { "binding": "AI" },
+  "services": [{"binding":"AI","service":"0001-system","entrypoint":"ConsistencyAi"}, {"binding":"CONSISTENCY_WORKSPACE","service":"consistency-platform","entrypoint":"ConsistencyWorkspace"}, {"binding":"C9Y_IDENTITY","service":"0001-system","entrypoint":"ConsistencyIdentity"}],
   "observability": {
     "enabled": true
   },
