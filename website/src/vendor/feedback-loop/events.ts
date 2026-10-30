@@ -77,6 +77,8 @@ export const PERF_NETS = ['slow-2g', '2g', '3g', '4g'] as const;
 const PERF_MAX = { bytes: 10_000_000_000, count: 100_000, ms: 3_600_000, score: 100, flag: 1 } as const;
 
 export interface FeedbackBatch {
+  /** Owner-only diagnostics, stored as Issues without usage or session records. */
+  errorsOnly?: boolean;
   /** The product's id, as registered in System's inventory (`ezo`, `link`, `money`…). */
   product: string;
   /** A random id for this tab's visit; a new one when the tab is opened again. */
@@ -184,6 +186,7 @@ export function parsePerf(value: unknown, now = Date.now()): PerfEvent {
 export function parseBatch(value: unknown, now = Date.now()): FeedbackBatch {
   if (!value || typeof value !== 'object') throw new Error('batch must be an object');
   const batch = value as Record<string, unknown>;
+  if (batch.errorsOnly !== undefined && typeof batch.errorsOnly !== 'boolean') throw new Error('bad errorsOnly mode');
   const product = typeof batch.product === 'string' && PRODUCT.test(batch.product) ? batch.product : null;
   if (!product) throw new Error('batch needs a product');
   const session = typeof batch.session === 'string' && ID.test(batch.session) ? batch.session : null;
@@ -206,7 +209,7 @@ export function parseBatch(value: unknown, now = Date.now()): FeedbackBatch {
   }
   const version = text(batch.version, 40);
   const tester = typeof batch.tester === 'string' && TESTER.test(batch.tester) ? batch.tester : null;
-  return { product, session, visitor, account, person, version, tester, device, events: batch.events.map(event => ((event as { kind?: unknown } | null)?.kind === PERF_KIND ? parsePerf(event, now) : parseEvent(event, now))) };
+  return { product, session, visitor, account, person, version, tester, device, ...(batch.errorsOnly ? { errorsOnly: true } : {}), events: batch.events.map(event => ((event as { kind?: unknown } | null)?.kind === PERF_KIND ? parsePerf(event, now) : parseEvent(event, now))) };
 }
 
 /** A short, stable summary of a user agent: browser and system, no version noise. */

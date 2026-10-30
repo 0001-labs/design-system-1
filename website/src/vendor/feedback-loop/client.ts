@@ -38,6 +38,8 @@ import { errorOutbox } from './error-outbox';
 import { eventCodeCandidate } from './idv1/advanced';
 
 export interface FeedbackLoopOptions {
+  /** Owner-only diagnostic mode: no interactions, page views, measurements or recordings. */
+  errorsOnly?: boolean;
   /** The product's System inventory id. */
   product: string;
   /** Where batches go; System's Worker by default. */
@@ -192,8 +194,9 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
 
   const push = (event: FeedbackBatch['events'][number]) => {
     if (stopped) return;
+    if (options.errorsOnly && event.kind !== 'error') return;
     if (outbox && event.kind === 'error') {
-      outbox.add({ product: options.product, session, visitor, account: options.account?.() ?? null, person: person?.hash ?? null, version: options.version ?? null, tester, device: { ua: navigator.userAgent.slice(0, 200), width: innerWidth, height: innerHeight, scale: devicePixelRatio }, events: [event] });
+      outbox.add({ product: options.product, session, visitor, account: options.account?.() ?? null, person: person?.hash ?? null, version: options.version ?? null, tester, ...(options.errorsOnly ? { errorsOnly: true } : {}), device: { ua: navigator.userAgent.slice(0, 200), width: innerWidth, height: innerHeight, scale: devicePixelRatio }, events: [event] });
       retryErrors();
       return;
     }
@@ -214,6 +217,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
     const email = options.email?.();
     const batch: FeedbackBatch = {
       product: options.product,
+      ...(options.errorsOnly ? { errorsOnly: true } : {}),
       session,
       visitor,
       account: options.account?.() ?? null,
@@ -301,7 +305,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
   // What the load cost, measured from the start and sent once: on the first hide, when INP and CLS are final,
   // or a minute after the page settled while it stays open, so a tab kept for hours still reports.
   const loadPath = path();
-  const measure = enabled && options.performance !== false ? measureLoad(endpoint) : null;
+  const measure = enabled && !options.errorsOnly && options.performance !== false ? measureLoad(endpoint) : null;
   let measured = false;
   const sendMeasure = () => {
     if (measured || !measure || stopped) return;
@@ -332,7 +336,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
     step: (name, props) => record('step', name, props),
     page: (to) => { lastPath = to ?? path(); record('page', lastPath); },
     error: (error, props) => {
-      const message = error instanceof Error ? error.message : typeof error === 'string' ? error : (() => { try { return JSON.stringify(error); } catch { return String(error); } })();
+      const message = options.errorsOnly && props?.source !== 'ds1' ? 'An application operation failed' : error instanceof Error ? error.message : typeof error === 'string' ? error : (() => { try { return JSON.stringify(error); } catch { return String(error); } })();
       // Safari/Firefox start directly with a frame; V8 starts with the message.
       // Keep frames only, including stacks supplied by another realm or the DS1 handoff.
       const rawStack = typeof props?.stack === 'string' ? props.stack
@@ -372,7 +376,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
   // A reload reads as one in the trace ("Reloaded"), not as the page opened afresh.
   const navigation = (performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined)?.type;
   record('page', lastPath, { ...(document.referrer ? { referrer: safeOrigin(document.referrer) } : {}), ...(navigation === 'reload' ? { navigation: 'reload' } : {}) });
-  if (options.autocapture !== false) {
+  if (!options.errorsOnly && options.autocapture !== false) {
     document.addEventListener('click', onPress, true);
     document.addEventListener('change', onChange, true);
   }
@@ -393,7 +397,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       return result;
     } as History['pushState'];
   }
-  if (sampled()) startReplay();
+  if (!options.errorsOnly && sampled()) startReplay();
   if (measure) settled(() => { const wait = setTimeout(sendMeasure, 60_000); measure.onStop(() => clearTimeout(wait)); });
   return loop;
 }

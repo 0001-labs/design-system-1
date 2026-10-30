@@ -92,14 +92,14 @@
     }
   },
   "Feedback loop": {
-    "commit": "20a6d8a8669275031a93babe0d8226492f8863cf",
+    "commit": "473fe45309a819b1dfe257802755abd80e6f6b53",
     "version": null,
     "owned": ["website/src/vendor/feedback-loop"],
     "files": {
       "website/src/vendor/feedback-loop/README.md": "18628e25dc23a90715383a435c82684b582ca714c131a0d049e3ce26891fa892",
-      "website/src/vendor/feedback-loop/client.ts": "19d746c0e76c2d81b7e51edbdddf20b35d7093d982e853f34de16e058606ba9d",
+      "website/src/vendor/feedback-loop/client.ts": "10120cbd87afda319ace1cb5f25b0fc4025792602a934436c75a417f7fdc7369",
       "website/src/vendor/feedback-loop/error-outbox.ts": "b583a096726c2db38ee5868d1374bdefb1f800a585790168f1ed055490a858bd",
-      "website/src/vendor/feedback-loop/events.ts": "0d5e05a2dcaa4ce84105f7f9e557f57d047a8910f0131cfee46cffa2c37ae3d5",
+      "website/src/vendor/feedback-loop/events.ts": "b4d97701d18c7b171656e9d5ac607fe9788cd12b2e34e4ee551aae2bf85f5760",
       "website/src/vendor/feedback-loop/idv1/advanced.ts": "9516a1706baf856caaabbb4ca62521aeb0ac0c12120347496d834874148d9f55",
       "website/src/vendor/feedback-loop/idv1/shapes.ts": "847786dd6a9cac468a9c39742385897aa7975b825c8c73b99032dbdc988df8b7",
       "website/src/vendor/feedback-loop/idv1/words.ts": "d68e87838ec0e406e2f127289bf8f71e4ee094931696e2611e0d5247ba47cd6a",
