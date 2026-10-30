@@ -41,7 +41,7 @@ export function installGlobalAsk(){
  const bound=new WeakMap<Document,AbortController>();
  const bind=(doc:Document,frame?:HTMLIFrameElement)=>{
   if(bound.has(doc))return;const controller=new AbortController();bound.set(doc,controller);
-  doc.addEventListener('keydown',event=>{if(frame&&(!frame.isConnected||!frame.getClientRects().length))return;if(!enabled||document.documentElement.hasAttribute('data-c9y-asking')||!isAskShortcut(event))return;if(document.querySelector('dialog[open],ds-context[open],ds-select[open]'))return;event.preventDefault();event.stopImmediatePropagation();void openGlobalAsk();},{capture:true,signal:controller.signal});
+  doc.addEventListener('keydown',event=>{if(frame&&(!frame.isConnected||!frame.getClientRects().length))return;if(!enabled||document.documentElement.hasAttribute('data-c9y-asking')||doc.documentElement.hasAttribute('data-drag-active')||doc.querySelector('[data-resizing],[data-resize-active],[data-spacing-active]')||!isAskShortcut(event))return;if(document.querySelector('dialog[open],ds-context[open],ds-select[open]'))return;event.preventDefault();event.stopImmediatePropagation();void openGlobalAsk();},{capture:true,signal:controller.signal});
  };
  bind(document);document.addEventListener('page-ready',event=>{const frame=(event as CustomEvent<{frame?:HTMLIFrameElement}>).detail?.frame;if(frame?.contentDocument)bind(frame.contentDocument,frame);});
 }
