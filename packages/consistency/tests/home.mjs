@@ -75,8 +75,8 @@ try {
  // Back goes to the sites, Forward to the site again.
  await page.goBack();await page.locator('consistency-home ds-card').first().waitFor();same();await page.goForward();await page.locator('consistency-home consistency-site-editor:not([hidden])').waitFor();same();
  await page.evaluate(()=>{document.querySelector('consistency-site-editor').dataset.first='yes';});
- // Fixture navigation returns to Sites; the browser Back/Forward journey is checked above.
- const allSites=async()=>{await page.evaluate(()=>document.querySelector('consistency-home').go({page:'sites'}));await page.locator('consistency-home ds-card').first().waitFor();await page.mouse.move(700,500);};
+ // The site title goes back to Sites; browser Back/Forward works too.
+ const allSites=async()=>{await page.locator('#home-site').click();await page.locator('consistency-home ds-card').first().waitFor();await page.mouse.move(700,500);};
  await allSites();
  if(await page.locator('consistency-home consistency-site-editor[hidden]').count()!==1)throw Error('Leaving a site took its editor out of the page');
  await page.locator('consistency-home ds-card',{hasText:'CPH Raft'}).click();
@@ -111,9 +111,9 @@ try {
  // A site's /edit opens the app on that site once, ?open=CODE, and the address is the app's again at once.
  await page.goto(home+'?open=30SDGA');await page.locator('consistency-home consistency-site-editor:not([hidden])').waitFor();same();
  // An open site's sidebar is the site's: its name at the top, not the workspace, and no rows of its pages.
- await page.locator('#home-site[text="Søndergården"]').waitFor();
+ await page.getByRole('button',{name:'Back to sites: Søndergården'}).waitFor();
  if(await page.locator('#home-site ds-avatar, #home-site ds-icon, ds-select[for="home-site"]').count())throw Error('The site title still has an avatar or site switcher');
- if(await page.locator('ds-button#home-site').count())throw Error('The site title is still a button');
+ if(await page.locator('ds-button#home-site').count()!==1)throw Error('The site title is not a back button');
  // The site's own address is the sidebar's first row, current while the site itself is shown.
  const rowsOf=()=>page.locator('consistency-home ds-sidebar.home-places').evaluate(bar=>[...bar.shadowRoot.querySelectorAll('[data-item]')].map(row=>row.textContent.trim()+(row.getAttribute('aria-current')?'*':'')));
  if(await page.locator('#home-workspace').count())throw Error('The workspace stays in the sidebar of an open site');
@@ -142,7 +142,7 @@ try {
  await page.locator('consistency-home ds-sidebar.home-places').getByText('Lab',{exact:true}).waitFor({timeout:500});slowPlaces=false;
  await page.mouse.move(700,500);
  await page.locator('#home-site').hover();if(await page.locator('consistency-home ds-select[aria-label="Sites"]').count())throw Error('Hovering the site title exposes a site switcher');
- await allSites();await page.locator('consistency-home ds-card',{hasText:'CPH Raft'}).click();await page.locator('#home-site[text="CPH Raft"]').waitFor();same();
+ await allSites();await page.locator('consistency-home ds-card',{hasText:'CPH Raft'}).click();await page.getByRole('button',{name:'Back to sites: CPH Raft'}).waitFor();same();
  if((await rowsOf()).join()!=='Site*')throw Error('A site without places lists some: '+(await rowsOf()).join());
  await page.mouse.move(700,500);await allSites();
  if(await page.locator('consistency-home .home-title[text="Sites"]').count()!==1)throw Error('Returning to the workspace does not show Sites');
@@ -151,7 +151,7 @@ try {
  const field=page.locator('consistency-home ds-input.home-workspace-field input');await field.waitFor();await field.fill('0001 labs');await field.press('Enter');
  await page.getByRole('button',{name:'Workspace: 0001 labs'}).waitFor();if(renamed!=='0001 labs')throw Error('The workspace name was not saved');
  // A site of another workspace, asked for by its code, opens in that workspace.
- await page.goto(home+'?open=40RAFT');await page.locator('#home-site[text="Raft"]').waitFor();same();
+ await page.goto(home+'?open=40RAFT');await page.getByRole('button',{name:'Back to sites: Raft'}).waitFor();same();
  if(await page.evaluate(()=>localStorage.getItem('consistency-active-workspace'))!=='02RAFT')throw Error('Opening a site did not move to its workspace');
  // A failed read is said under the title, over the cards from the last visit, which stay: the session ended, with Sign in to the gateway's sign-in page.
  const problem=page.locator('consistency-home .home-problem');

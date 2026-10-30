@@ -440,7 +440,7 @@ export class ConsistencyHome extends LitElement {
   }
 
   /**
-   * An open site's sidebar: a plain site title, then Site and its places. Back returns to the workspace's sites.
+   * An open site's title returns to the workspace's sites; no avatar or site-switching menu.
    */
   private siteNav(site: SiteSummary | DraftSiteSummary) {
     const published = 'code' in site;
@@ -452,7 +452,7 @@ export class ConsistencyHome extends LitElement {
     const home: Place = published ? { page: 'site', code: site.code } : { page: 'draft-site', id: site.id, workspace: this.workspace };
     return html`<nav slot="nav" id="home-nav" class="home-nav" aria-label=${site.name}>
       <div class="home-workspace" aria-label="Site">
-        <ds-text id="home-site" literal text=${site.name}></ds-text>
+        <ds-button id="home-site" class="home-workspace-name" label=${`Back to sites: ${site.name}`} @click=${() => this.go({ page: 'sites' })}>${site.name}</ds-button>
       </div>
       <ds-sidebar class="home-places" label=${site.name} .items=${items}
         @sidebar-activate=${(event: CustomEvent<{ id: string }>) => this.go(published && event.detail.id !== SITE_ROW ? { page: 'site', code: site.code, place: event.detail.id } : home)}></ds-sidebar>
