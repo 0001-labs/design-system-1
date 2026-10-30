@@ -50,7 +50,7 @@ export class EditorSurface {
   }
   private onCanvas(event: Event) {
     const target = event.target as Node;
-    return this.root.contains(target) || target === this.root.ownerDocument.body || target === this.root.ownerDocument.documentElement;
+    return this.root.contains(target) || target === this.root.ownerDocument.body || target === this.root.ownerDocument.documentElement || (target.nodeType === 1 && !!(target as Element).closest('[data-editor-chrome]'));
   }
   /** Browser commands can create a range without a cancellable selectstart. */
   private selectionChanged = () => {

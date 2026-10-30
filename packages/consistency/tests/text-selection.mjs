@@ -9,7 +9,7 @@ for (const engine of [chromium, webkit]) {
   const browser = await engine.launch({ headless: true });
   try {
     const page = await browser.newPage();
-    await page.setContent(`<style>${styles}body{margin:40px}p{margin:0 0 40px;font:20px/30px sans-serif}</style><main><p id="label">Canvas words are not a document selection.</p><p id="other">Another independent piece of the page.</p><p id="writing" contenteditable="true">Select words within this editor.</p><input value="A native field"></main>`);
+    await page.setContent(`<style>${styles}body{margin:40px}p{margin:0 0 40px;font:20px/30px sans-serif}</style><main><p id="label">Canvas words are not a document selection.</p><p id="other">Another independent piece of the page.</p><p id="writing" contenteditable="true">Select words within this editor.</p><input value="A native field"></main><div id="guide" data-editor-chrome="">20</div>`);
     await page.addScriptTag({ content: bundle.outputFiles[0].text });
     const selection = () => page.evaluate(() => window.getSelection().toString());
     const box = await page.locator('#label').boundingBox();
@@ -40,7 +40,7 @@ for (const engine of [chromium, webkit]) {
     await shadow.click(); await page.keyboard.press(selectAll); await page.keyboard.type('Changed shadow');
     check(await shadow.textContent() === 'Changed shadow', 'Shadow component text selection failed');
     await page.evaluate(() => { window.contextEvents=[];document.addEventListener('contextmenu',event=>window.contextEvents.push(event.defaultPrevented)); });
-    for(const target of ['#label','#writing','input','#shadow [contenteditable]']) {
+    for(const target of ['#label','#writing','input','#shadow [contenteditable]','#guide']) {
       await page.locator(target).click({button:'right'});
       check(await page.evaluate(()=>window.contextEvents.at(-1)===true), `Browser context menu was not suppressed on ${target}`);
     }
