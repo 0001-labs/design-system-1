@@ -37,6 +37,37 @@ export function inkOnResolved(fill: string): string | undefined {
   return inkOn([match[1], match[2], match[3]].map((n) => Number(n) / 255));
 }
 
+// A new element must know a previously drawn image's proportions before its first paint.
+// Bound source retention; embedded SVGs also carry their dimensions across document reloads.
+const imageRatios = new Map<string, string>();
+function rememberImageRatio(src: string, width: number, height: number): string | undefined {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
+  const ratio = `${width} / ${height}`;
+  imageRatios.delete(src);
+  imageRatios.set(src, ratio);
+  if (imageRatios.size > 128) imageRatios.delete(imageRatios.keys().next().value!);
+  return ratio;
+}
+function knownImageRatio(src: string): string | undefined {
+  const known = imageRatios.get(src);
+  if (known) return known;
+  if (!/^data:image\/svg\+xml[;,]/i.test(src) || src.length > 1_000_000) return;
+  try {
+    const comma = src.indexOf(",");
+    const source = /;base64/i.test(src.slice(0, comma))
+      ? atob(src.slice(comma + 1)) : decodeURIComponent(src.slice(comma + 1));
+    const svg = new DOMParser().parseFromString(source, "image/svg+xml").documentElement;
+    if (svg.localName !== "svg") return;
+    const width = Number(svg.getAttribute("width")?.replace(/px$/i, ""));
+    const height = Number(svg.getAttribute("height")?.replace(/px$/i, ""));
+    if (width > 0 && height > 0) return rememberImageRatio(src, width, height);
+    const box = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+    if (box?.length === 4) return rememberImageRatio(src, box[2], box[3]);
+  } catch {
+    // Other or malformed images get their dimensions from their successful load event.
+  }
+}
+
 /**
  * A person's or workspace's mark, one control high and round by default;
  * `shape="square"` gives it a picture's corners (`--ds-avatar-radius`, the
@@ -122,7 +153,9 @@ export class Avatar extends LitElement {
     if (changed.has("src")) {
       this.loaded = false;
       this.failed = false;
-      this.style.removeProperty("--ds-avatar-intrinsic-ratio");
+      const ratio = knownImageRatio(this.src);
+      if (ratio) this.style.setProperty("--ds-avatar-intrinsic-ratio", ratio);
+      else this.style.removeProperty("--ds-avatar-intrinsic-ratio");
     }
   }
   /** A fill named by a variable (`var(--brand-highlight)`) gets its ink once the browser has resolved it. */
@@ -187,11 +220,8 @@ export class Avatar extends LitElement {
                 @load=${(event: Event) => {
                   if (this.src === src) {
                     const image = event.currentTarget as HTMLImageElement;
-                    if (image.naturalWidth && image.naturalHeight)
-                      this.style.setProperty(
-                        "--ds-avatar-intrinsic-ratio",
-                        `${image.naturalWidth} / ${image.naturalHeight}`,
-                      );
+                    const ratio = rememberImageRatio(src, image.naturalWidth, image.naturalHeight);
+                    if (ratio) this.style.setProperty("--ds-avatar-intrinsic-ratio", ratio);
                     this.loaded = true;
                   }
                 }}

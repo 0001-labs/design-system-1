@@ -145,3 +145,36 @@ test("one- and two-digit labels keep the normal type size while wide initials st
     expect(avatar.shadowRoot!.querySelector(".initial")!.hasAttribute("data-pair")).toBe(true);
   }
 });
+
+
+test("a remounted logo has its known proportions before another image load event", async () => {
+  const src = "https://example.test/wide-static-logo.svg";
+  const first = document.createElement("ds-avatar");
+  first.logo = first.mask = true;
+  first.src = src;
+  document.body.append(first);
+  await first.updateComplete;
+  const image = first.shadowRoot!.querySelector("img")!;
+  Object.defineProperties(image, { naturalWidth: { value: 240 }, naturalHeight: { value: 40 } });
+  image.dispatchEvent(new Event("load"));
+  await first.updateComplete;
+  first.remove();
+  const next = document.createElement("ds-avatar");
+  next.logo = next.mask = true;
+  next.src = src;
+  document.body.append(next);
+  await next.updateComplete;
+  expect(next.style.getPropertyValue("--ds-avatar-intrinsic-ratio")).toBe("240 / 40");
+});
+
+test.each([
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40"><path d="M0 0h240v40H0z"/></svg>',
+  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="40" viewBox="0 0 60 60"/>',
+])("a locally stored SVG has its proportions on its first render", async (svg) => {
+  const avatar = document.createElement("ds-avatar");
+  avatar.logo = avatar.mask = true;
+  avatar.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+  document.body.append(avatar);
+  await avatar.updateComplete;
+  expect(avatar.style.getPropertyValue("--ds-avatar-intrinsic-ratio")).toBe("240 / 40");
+});
