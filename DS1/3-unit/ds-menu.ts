@@ -11,12 +11,50 @@ const ITEM = '[role="option"], [role="menuitem"], [role="menuitemradio"], [role=
 const FOCUSABLE = 'button, a[href], input, select, textarea, [tabindex]';
 /** Every element the engine draws: the engine itself, Select and Context. */
 const MENUS = "ds-menu, ds-select, ds-context";
-export type MenuCloseReason = "escape" | "outside" | "select" | "back" | "parent";
+export type MenuCloseReason = "escape" | "outside" | "select" | "back" | "parent" | "navigation";
 export type MenuTriggerMode = "click" | "context" | "submenu" | "manual";
 export type MenuToggleDetail = { open: boolean; trigger: HTMLElement | null; point?: { x: number; y: number } };
 export type MenuAnchor = HTMLElement | Pick<DOMRectReadOnly, "left" | "top" | "right" | "bottom" | "width" | "height">;
 
 const openMenus = new WeakMap<Document, Set<Menu>>();
+
+type PointerBounds = { left: number; right: number; top: number; bottom: number };
+type MenuNavigation = { menus: Set<Menu>; point: { x: number; y: number } | null; bounds: PointerBounds | null };
+const navigationState = new WeakMap<Document, MenuNavigation>();
+function menuNavigation(document: Document): MenuNavigation {
+  let state = navigationState.get(document);
+  if (state) return state;
+  state = { menus: new Set(), point: null, bounds: null };
+  navigationState.set(document, state);
+  const held = state;
+  const pointer = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+    held.point = { x: event.clientX, y: event.clientY };
+    if (held.bounds) {
+      held.bounds.left = Math.min(held.bounds.left, event.clientX);
+      held.bounds.right = Math.max(held.bounds.right, event.clientX);
+      held.bounds.top = Math.min(held.bounds.top, event.clientY);
+      held.bounds.bottom = Math.max(held.bounds.bottom, event.clientY);
+    }
+  };
+  document.addEventListener("pointermove", pointer, { capture: true, passive: true });
+  document.addEventListener("pointerdown", pointer, { capture: true, passive: true });
+  return state;
+}
+/** Close floating menus before a route swap. A control appearing under the pointer
+ * becomes hoverable only after the pointer has travelled outside that control.
+ * Explicit click and keyboard opening remain available immediately. */
+export function dismissMenusForNavigation(document: Document = window.document) {
+  const state = menuNavigation(document);
+  const point = state.point;
+  state.bounds = point ? { left: point.x, right: point.x, top: point.y, bottom: point.y } : null;
+  for (const menu of state.menus) {
+    if (!menu.floating || !menu.open) continue;
+    menu.requestClose("navigation");
+    menu.open = false;
+    menu.renderNow();
+  }
+}
 
 /** Shared option/action face and navigation. Floating menus use the native
  * popover layer; suggestions can keep focus on a light-DOM writing field. */
@@ -101,10 +139,12 @@ export class Menu extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
+    menuNavigation(this.ownerDocument).menus.add(this);
     if (!this.hasAttribute("role")) this.setAttribute("role", "listbox");
     this.requestUpdate();
   }
   disconnectedCallback() {
+    navigationState.get(this.ownerDocument)?.menus.delete(this);
     this.listeningTo?.removeEventListener("keydown", this.onControllerKey);
     this.listeningTo = null;
     this.bindTrigger(null);
@@ -247,6 +287,11 @@ export class Menu extends LitElement {
   private onHoverEnter = (event: PointerEvent) => {
     if ((!this.hover && this.triggerMode !== "submenu") || event.pointerType === "touch") return;
     clearTimeout(this.hoverTimer);
+    const bounds = navigationState.get(this.ownerDocument)?.bounds;
+    const rect = (this.trigger ?? this).getBoundingClientRect();
+    // Bounds include every pointer position since the route change, so moving
+    // within a newly mounted trigger cannot count as leaving and entering it.
+    if (bounds && rect.width > 0 && rect.height > 0 && bounds.left >= rect.left && bounds.right < rect.right && bounds.top >= rect.top && bounds.bottom < rect.bottom) return;
     if (!this.open) { this.focusOnOpen = false; this.toggleFromTrigger(true); }
   };
   private onHoverLeave = (event: PointerEvent) => {
@@ -356,7 +401,7 @@ export class Menu extends LitElement {
     this.heldFocus = false;
   }
   requestClose(reason: MenuCloseReason) {
-    this.restoreFocus = reason !== "outside" && reason !== "parent";
+    this.restoreFocus = reason !== "outside" && reason !== "parent" && reason !== "navigation";
     for (const child of this.querySelectorAll<Menu>(MENUS)) child.restoreFocus = false;
     const event = new CustomEvent("ds-menu-close", {detail: {reason}, bubbles: true, composed: true, cancelable: true});
     if (this.dispatchEvent(event)) this.open = false;

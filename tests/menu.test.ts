@@ -213,3 +213,37 @@ test("native file menu actions share navigation without intercepting chooser act
   key(first!, "i"); expect(document.activeElement).toBe(input);
   input.disabled = true; first!.focus(); key(first!, "ArrowDown"); expect(document.activeElement).toBe(last);
 });
+
+test("navigation closes menus and a replacement trigger needs pointer exit before hover opens again", async () => {
+  const { dismissMenusForNavigation: dismiss } = await import("../DS1/3-unit/ds-menu");
+  const make = async () => {
+    const trigger = document.createElement("button"), menu = document.createElement("ds-menu");
+    trigger.textContent = "Projects";
+    trigger.getBoundingClientRect = () => new DOMRect(10, 10, 100, 30);
+    menu.hover = menu.floating = true; menu.trigger = menu.anchor = trigger;
+    menu.innerHTML = '<button role="menuitem">Next page</button>';
+    document.body.append(trigger, menu); await menu.updateComplete;
+    return { trigger, menu };
+  };
+  const pointer = (type: string, x: number, y: number) => new PointerEvent(type, { pointerType: "mouse", clientX: x, clientY: y, bubbles: true });
+  const old = await make();
+  document.dispatchEvent(pointer("pointermove", 30, 20));
+  old.trigger.dispatchEvent(pointer("pointerenter", 30, 20)); await old.menu.updateComplete;
+  expect(old.menu.open).toBe(true);
+  dismiss(document); await old.menu.updateComplete;
+  expect(old.menu.open).toBe(false);
+  old.menu.remove(); old.trigger.remove();
+  const next = await make();
+  next.trigger.dispatchEvent(pointer("pointerenter", 30, 20)); await next.menu.updateComplete;
+  expect(next.menu.open).toBe(false);
+  document.dispatchEvent(pointer("pointermove", 35, 20));
+  next.trigger.dispatchEvent(pointer("pointerenter", 35, 20)); await next.menu.updateComplete;
+  expect(next.menu.open).toBe(false);
+  document.dispatchEvent(pointer("pointermove", 150, 80));
+  next.trigger.dispatchEvent(pointer("pointerleave", 150, 80));
+  next.trigger.dispatchEvent(pointer("pointerenter", 30, 20)); await next.menu.updateComplete;
+  expect(next.menu.open).toBe(true);
+  dismiss(document); await next.menu.updateComplete;
+  key(next.trigger, "ArrowDown"); await next.menu.updateComplete;
+  expect(next.menu.open).toBe(true);
+});
