@@ -247,3 +247,26 @@ test("navigation closes menus and a replacement trigger needs pointer exit befor
   key(next.trigger, "ArrowDown"); await next.menu.updateComplete;
   expect(next.menu.open).toBe(true);
 });
+
+test("fast pointer movement before a destination trigger mounts does not count as exiting that trigger", async () => {
+  const { dismissMenusForNavigation } = await import("../DS1/3-unit/ds-menu");
+  const move = (x: number, y: number) => document.dispatchEvent(new PointerEvent("pointermove", { pointerType: "mouse", clientX: x, clientY: y }));
+  const old = document.createElement("ds-menu"); document.body.append(old); await old.updateComplete;
+  move(300, 20);
+  dismissMenusForNavigation(document);
+  move(30, 20); // The destination is still preparing; its button does not exist yet.
+  const trigger = document.createElement("button"), menu = document.createElement("ds-menu");
+  trigger.getBoundingClientRect = () => new DOMRect(10, 10, 100, 30);
+  menu.hover = menu.floating = true; menu.trigger = menu.anchor = trigger;
+  menu.innerHTML = '<button role="menuitem">Choice</button>';
+  document.body.append(trigger, menu); await menu.updateComplete;
+  trigger.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse", clientX: 30, clientY: 20 }));
+  await menu.updateComplete;
+  expect(menu.open).toBe(false);
+  move(35, 20);
+  trigger.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse", clientX: 35, clientY: 20 }));
+  await menu.updateComplete; expect(menu.open).toBe(false);
+  move(150, 80); move(30, 20);
+  trigger.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse", clientX: 30, clientY: 20 }));
+  await menu.updateComplete; expect(menu.open).toBe(true);
+});

@@ -65,6 +65,10 @@ For stepping through a list's records, use Money's paired round secondary icon b
 
 Name the modes **fill** and **hug**. Fill occupies the available width; hug sizes to the control’s content. Select triggers and date-picker triggers always use hug, never fill: no full-row stretch, growing flex item, fixed wide variant or width token that expands them. Status tags remain tags when clickable; do not wrap them in a filled select face or add an arrow. Their anchored menu still provides the choices.
 
+## Dropdowns during navigation
+
+Close every open Select dropdown before navigation, including between workspace, client and project pages and on Back/Forward. A destination button appearing beneath the pointer stays closed until the mouse exits that button and enters it again. Remounting the button or moving within it does not count as a fresh entry. Click and keyboard opening remain available immediately. Verify the actual page sequence with a stationary pointer, including menus that survive the route swap.
+
 ## Measures (get these exactly right)
 
 Everything is counted in **squares**: one square is 20px (`--unit`, `--1`), multiplied by `--sf` on phones and tablets. Never invent a size: take it from this table, or from the code it names.

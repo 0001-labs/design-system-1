@@ -18,24 +18,19 @@ export type MenuAnchor = HTMLElement | Pick<DOMRectReadOnly, "left" | "top" | "r
 
 const openMenus = new WeakMap<Document, Set<Menu>>();
 
-type PointerBounds = { left: number; right: number; top: number; bottom: number };
-type MenuNavigation = { menus: Set<Menu>; point: { x: number; y: number } | null; bounds: PointerBounds | null };
+type MenuNavigation = { menus: Set<Menu>; blocked: Set<Menu>; point: { x: number; y: number } | null; version: number };
 const navigationState = new WeakMap<Document, MenuNavigation>();
 function menuNavigation(document: Document): MenuNavigation {
   let state = navigationState.get(document);
   if (state) return state;
-  state = { menus: new Set(), point: null, bounds: null };
+  state = { menus: new Set(), blocked: new Set(), point: null, version: 0 };
   navigationState.set(document, state);
   const held = state;
   const pointer = (event: PointerEvent) => {
     if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+    const moved = !held.point || held.point.x !== event.clientX || held.point.y !== event.clientY;
     held.point = { x: event.clientX, y: event.clientY };
-    if (held.bounds) {
-      held.bounds.left = Math.min(held.bounds.left, event.clientX);
-      held.bounds.right = Math.max(held.bounds.right, event.clientX);
-      held.bounds.top = Math.min(held.bounds.top, event.clientY);
-      held.bounds.bottom = Math.max(held.bounds.bottom, event.clientY);
-    }
+    if (moved) for (const menu of held.blocked) menu.releaseNavigationHoverIfOutside(held.point);
   };
   document.addEventListener("pointermove", pointer, { capture: true, passive: true });
   document.addEventListener("pointerdown", pointer, { capture: true, passive: true });
@@ -46,9 +41,9 @@ function menuNavigation(document: Document): MenuNavigation {
  * Explicit click and keyboard opening remain available immediately. */
 export function dismissMenusForNavigation(document: Document = window.document) {
   const state = menuNavigation(document);
-  const point = state.point;
-  state.bounds = point ? { left: point.x, right: point.x, top: point.y, bottom: point.y } : null;
+  state.version++;
   for (const menu of state.menus) {
+    menu.holdNavigationHover();
     if (!menu.floating || !menu.open) continue;
     menu.requestClose("navigation");
     menu.open = false;
@@ -106,6 +101,9 @@ export class Menu extends LitElement {
   /** Move focus into the menu when it opens (a person's opening always does); off to show a menu open without taking the reader's focus, as an example beside the page does. */
   focusOnOpen = true;
   private hoverTimer?: ReturnType<typeof setTimeout>;
+  private hoverAwaitingExit = false;
+  private hoverNavigationVersion = 0;
+  private hoverReleased = false;
   private shown = false;
   private observer?: ResizeObserver;
   private choicesObserver?: MutationObserver;
@@ -145,6 +143,7 @@ export class Menu extends LitElement {
   }
   disconnectedCallback() {
     navigationState.get(this.ownerDocument)?.menus.delete(this);
+    navigationState.get(this.ownerDocument)?.blocked.delete(this);
     this.listeningTo?.removeEventListener("keydown", this.onControllerKey);
     this.listeningTo = null;
     this.bindTrigger(null);
@@ -207,6 +206,8 @@ export class Menu extends LitElement {
     this.listeningTrigger = trigger;
     this.listeningSelector = this.contextSelector;
     this.listeningMode = this.triggerMode;
+    this.hoverNavigationVersion = 0;
+    this.holdNavigationHover();
     if (trigger && this.triggerMode === "context") this.contextBinding = bindContextMenuTrigger(trigger, (point, control) => {
       if (this.disabled) return false;
       this.openAt(point, control);
@@ -284,14 +285,36 @@ export class Menu extends LitElement {
     this.openingEdge = event.key === "ArrowUp" ? "last" : "first";
     if (this.open) this.initialChoice()?.focus(); else this.toggleFromTrigger(true);
   };
+  /** @internal Arm against the pointer where this destination control actually appears. */
+  holdNavigationHover() {
+    if (!this.isConnected) return;
+    const state = navigationState.get(this.ownerDocument);
+    if (!state?.version || (!this.hover && this.triggerMode !== "submenu")) return;
+    if (this.hoverNavigationVersion !== state.version) {
+      this.hoverNavigationVersion = state.version;
+      this.hoverReleased = false;
+    }
+    if (this.hoverReleased) return;
+    const point = state.point;
+    const rect = (this.trigger ?? this).getBoundingClientRect();
+    this.hoverAwaitingExit = Boolean(point && rect.width > 0 && rect.height > 0 && point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom);
+    if (this.hoverAwaitingExit) state.blocked.add(this); else state.blocked.delete(this);
+  }
+  /** @internal Only movement after the control exists can release its hover guard. */
+  releaseNavigationHoverIfOutside(point: { x: number; y: number }) {
+    const rect = (this.trigger ?? this).getBoundingClientRect();
+    if (point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom) return;
+    this.hoverAwaitingExit = false;
+    this.hoverReleased = true;
+    navigationState.get(this.ownerDocument)?.blocked.delete(this);
+  }
   private onHoverEnter = (event: PointerEvent) => {
     if ((!this.hover && this.triggerMode !== "submenu") || event.pointerType === "touch") return;
     clearTimeout(this.hoverTimer);
-    const bounds = navigationState.get(this.ownerDocument)?.bounds;
-    const rect = (this.trigger ?? this).getBoundingClientRect();
-    // Bounds include every pointer position since the route change, so moving
-    // within a newly mounted trigger cannot count as leaving and entering it.
-    if (bounds && rect.width > 0 && rect.height > 0 && bounds.left >= rect.left && bounds.right < rect.right && bounds.top >= rect.top && bounds.bottom < rect.bottom) return;
+    const point = navigationState.get(this.ownerDocument)?.point;
+    // A layout change can enter a trigger without moving the mouse.
+    if (point && point.x === event.clientX && point.y === event.clientY) this.holdNavigationHover();
+    if (this.hoverAwaitingExit) return;
     if (!this.open) { this.focusOnOpen = false; this.toggleFromTrigger(true); }
   };
   private onHoverLeave = (event: PointerEvent) => {
