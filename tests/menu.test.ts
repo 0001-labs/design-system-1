@@ -283,3 +283,13 @@ test("a cached menu reconnects closed after navigation, even if its old open sta
   document.body.append(trigger, menu); await menu.updateComplete;
   expect(menu.open).toBe(false);
 });
+
+test("a newly created menu may still be explicitly opened after navigation", async () => {
+  const { dismissMenusForNavigation } = await import("../DS1/3-unit/ds-menu");
+  dismissMenusForNavigation(document);
+  const menu = document.createElement("ds-menu");
+  menu.floating = true; menu.open = true;
+  menu.innerHTML = '<button role="menuitem">Choice</button>';
+  document.body.append(menu); await menu.updateComplete;
+  expect(menu.open).toBe(true);
+});

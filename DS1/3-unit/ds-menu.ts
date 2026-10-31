@@ -105,6 +105,7 @@ export class Menu extends LitElement {
   private hoverNavigationVersion = 0;
   private hoverReleased = false;
   private shown = false;
+  private connectedBefore = false;
   private observer?: ResizeObserver;
   private choicesObserver?: MutationObserver;
   private opener: HTMLElement | null = null;
@@ -139,7 +140,9 @@ export class Menu extends LitElement {
     super.connectedCallback();
     const navigation = menuNavigation(this.ownerDocument);
     navigation.menus.add(this);
-    if (navigation.version > 0 && this.floating && this.open) {
+    const returning = this.connectedBefore;
+    this.connectedBefore = true;
+    if (returning && navigation.version > 0 && this.floating && this.open) {
       this.requestClose("navigation");
       this.open = false;
     }
