@@ -137,7 +137,12 @@ export class Menu extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
-    menuNavigation(this.ownerDocument).menus.add(this);
+    const navigation = menuNavigation(this.ownerDocument);
+    navigation.menus.add(this);
+    if (navigation.version > 0 && this.floating && this.open) {
+      this.requestClose("navigation");
+      this.open = false;
+    }
     if (!this.hasAttribute("role")) this.setAttribute("role", "listbox");
     this.requestUpdate();
   }

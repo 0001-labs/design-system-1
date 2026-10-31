@@ -270,3 +270,16 @@ test("fast pointer movement before a destination trigger mounts does not count a
   trigger.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse", clientX: 30, clientY: 20 }));
   await menu.updateComplete; expect(menu.open).toBe(true);
 });
+
+test("a cached menu reconnects closed after navigation, even if its old open state survived detachment", async () => {
+  const { dismissMenusForNavigation } = await import("../DS1/3-unit/ds-menu");
+  const trigger = document.createElement("button"), menu = document.createElement("ds-menu");
+  menu.floating = menu.hover = true; menu.trigger = menu.anchor = trigger;
+  menu.innerHTML = '<button role="menuitem">Choice</button>';
+  document.body.append(trigger, menu); await menu.updateComplete;
+  menu.open = true; await menu.updateComplete;
+  menu.remove(); trigger.remove();
+  dismissMenusForNavigation(document);
+  document.body.append(trigger, menu); await menu.updateComplete;
+  expect(menu.open).toBe(false);
+});
