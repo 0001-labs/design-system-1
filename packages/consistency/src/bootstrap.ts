@@ -6,3 +6,6 @@ startScaling();
 
 import {installGlobalAsk} from './ask-runtime';
 installGlobalAsk();
+
+import {installAppCursor} from './app-cursor';
+installAppCursor();
