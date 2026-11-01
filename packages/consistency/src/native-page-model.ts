@@ -18,6 +18,22 @@ export function updateNativeChildren(document: NativePageDocument, id: string, u
   return updateNativeBlock(document,id,block => 'children' in block ? {...block,children:update(block.children)} : block);
 }
 
+/**
+ * A column is a flow down the page standing in a flow across it. Holding a single block it moves with that
+ * block (the C9Y `column` rule): a press on the block carries the column, so no empty column is left behind.
+ */
+export function soleColumnBlock(entries: Map<string, NativeEntry>, id: string): NativeEntry | undefined {
+  const entry = entries.get(id), parent = entry && entries.get(entry.parent);
+  if (entry?.block.kind !== 'flow' || entry.block.direction !== 'column' || entry.block.children.length !== 1 || parent?.block.kind !== 'flow' || parent.block.direction !== 'row') return undefined;
+  return entries.get(entry.block.children[0]!.id);
+}
+/** What a carried block becomes where it lands: a column landing anywhere but among columns lands as its single block. */
+export function landingBlock(entries: Map<string, NativeEntry>, id: string, parent: string): NativeBlock | undefined {
+  const entry = entries.get(id); if (!entry) return undefined;
+  const sole = soleColumnBlock(entries, id), destination = entries.get(parent)?.block;
+  return sole && !(destination?.kind === 'flow' && destination.direction === 'row') ? sole.block : entry.block;
+}
+
 /*
  * The vocabulary, as `shared/generated/vocabulary.json` records it: every kind's fields with their
  * ranges and defaults, its slots and its examples. The editor reads ranges, defaults, choices and

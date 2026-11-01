@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { PLACEHOLDER_PICTURE, addSectionItem, clampSectionMeasure, firstWordsId, itemsSlot, memberAt, moveSectionItem, nativeGridSpaces, nativeEntries, newSection, readAt, removeSectionItem, sectionItemIds, sectionKinds, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, writeAt } from './native-page-model';
+import { landingBlock, soleColumnBlock, PLACEHOLDER_PICTURE, addSectionItem, clampSectionMeasure, firstWordsId, itemsSlot, memberAt, moveSectionItem, nativeGridSpaces, nativeEntries, newSection, readAt, removeSectionItem, sectionItemIds, sectionKinds, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, writeAt } from './native-page-model';
 import { SECTION_KINDS, sectionDefinition } from '../../../shared/consistency-vocabulary';
 import { validateNativePage, type NativeCards, type NativeHero, type NativePageDocument, type NativeQuestions, type NativeSection } from '../../../shared/consistency-native-page';
 const box=(left:number,top:number,width:number,height:number)=>({left,top,width,height,right:left+width,bottom:top+height});
@@ -89,5 +89,25 @@ describe('edits a section as one block: slots, items and ranges from the vocabul
     expect(firstWordsId(hero)).toBe(`${hero.id}.title`);expect(firstWordsId(newSection('cards',[],newId) as NativeCards)).toMatch(/\.items\.0\.label$/);expect(firstWordsId(newSection('gallery',[],newId)!)).toBeUndefined();
     const header=newSection('header',[],newId) as NativeSection&{languages?:unknown;menu?:unknown;links:{text:string}[]};expect(header.languages).toBeUndefined();expect(header.menu).toBeUndefined();expect(header.links.map(link=>link.text)).toEqual(['Link','Link','Link','Link']);
     const panels=newSection('panels',[],newId) as NativeSection&{items:NativeHero[]};expect(new Set(panels.items.map(hero=>hero.id)).size).toBe(2);expect(panels.items[0]!.id).not.toBe(panels.id);
+  });
+});
+
+describe('a column with a single block moves with that block',()=>{
+  const content=(id:string)=>({id,kind:'content' as const,source:id});
+  const column=(id:string,children:ReturnType<typeof content>[])=>({id,kind:'flow' as const,direction:'column' as const,gap:20,padding:0,children});
+  const page:NativePageDocument={schema:1,kind:'native-page',layout:{mode:'document',padding:0,gap:0},blocks:[content('p1'),{id:'cols',kind:'flow',direction:'row',gap:20,padding:0,children:[column('colA',[content('a1')]),column('colB',[content('b1'),content('b2')])]}]};
+  it('names the single block a column carries, and no other',()=>{
+    const entries=nativeEntries(page);
+    expect(soleColumnBlock(entries,'colA')?.block.id).toBe('a1');
+    expect(soleColumnBlock(entries,'colB')).toBeUndefined();
+    expect(soleColumnBlock(entries,'cols')).toBeUndefined();
+    expect(soleColumnBlock(entries,'a1')).toBeUndefined();
+  });
+  it('lands a carried column as its block anywhere but among columns',()=>{
+    const entries=nativeEntries(page);
+    expect(landingBlock(entries,'colA','page')?.id).toBe('a1');
+    expect(landingBlock(entries,'colA','colB')?.id).toBe('a1');
+    expect(landingBlock(entries,'colA','cols')?.id).toBe('colA');
+    expect(landingBlock(entries,'b1','page')?.id).toBe('b1');
   });
 });
