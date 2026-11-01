@@ -42,6 +42,6 @@ export type CommentsView = {
     readonly threads: readonly AnchoredThread[];
     destroy(): void;
 };
-/** A person's mark: Design system 1's avatar, round and one control high, the initial lettered in their ink inside a ring of it. */
+/** A person's mark: Design system 1's avatar, round and one control high, filled with their colour, the initial dark on it. */
 export declare const avatar: (person: CommentPerson) => HTMLSpanElement;
 export declare function createCommentsView(host: HTMLElement, options: CommentsViewOptions): CommentsView;
