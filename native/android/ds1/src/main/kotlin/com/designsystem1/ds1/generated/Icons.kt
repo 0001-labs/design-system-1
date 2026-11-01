@@ -172,6 +172,8 @@ enum class DS1IconName(val fileName: String, @DrawableRes val drawable: Int) {
     food("food", R.drawable.ds1_icon_food),
     form("form", R.drawable.ds1_icon_form),
     fuel("fuel", R.drawable.ds1_icon_fuel),
+    fullscreen("fullscreen", R.drawable.ds1_icon_fullscreen),
+    fullscreenExit("fullscreen-exit", R.drawable.ds1_icon_fullscreen_exit),
     gallery("gallery", R.drawable.ds1_icon_gallery),
     game("game", R.drawable.ds1_icon_game),
     gift("gift", R.drawable.ds1_icon_gift),

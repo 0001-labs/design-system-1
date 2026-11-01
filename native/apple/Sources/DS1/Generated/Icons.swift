@@ -168,6 +168,8 @@ public enum DS1IconName: String, CaseIterable, Sendable {
     case food
     case form
     case fuel
+    case fullscreen
+    case fullscreenExit = "fullscreen-exit"
     case gallery
     case game
     case gift

@@ -702,6 +702,20 @@
     "shapes": 3
   },
   {
+    "key": "fullscreen-exit",
+    "name": "Fullscreen",
+    "source": "Library",
+    "url": "/icons/library/fullscreen-exit.svg",
+    "shapes": 1
+  },
+  {
+    "key": "fullscreen",
+    "name": "Fullscreen",
+    "source": "Library",
+    "url": "/icons/library/fullscreen.svg",
+    "shapes": 1
+  },
+  {
     "key": "gallery",
     "name": "Gallery",
     "source": "Figma",
