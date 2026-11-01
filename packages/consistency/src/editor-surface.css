@@ -179,3 +179,10 @@ consistency-editor[data-pointer-busy] :is(.consistency-button-action,.consistenc
 .consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::before{content:none}
 .consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ds-pink);opacity:0;pointer-events:none}
 .consistency-native-guides:not(.spacing-off) .ghost-surface--padding[aria-valuenow="0"]:is(:hover,:focus-visible,[data-spacing-active])::after{opacity:1}
+
+/* Where a carried block will land: the list under it is outlined (the page itself never is), a list it enters
+   reserves its room below what it holds, and a block carried over no list fades. Outlines and opacity only:
+   nothing here animates or moves a block. */
+:root[data-drag-active] [data-drag-over]:not([data-c9y-native-root]){outline:1px solid var(--ds-accent-color,var(--accent-color,var(--apple-green,Highlight)));outline-offset:-1px}
+:root[data-drag-active] .c9y-native-flow:not([data-direction="row"])[style*="--drag-reserve"]{padding-bottom:calc(var(--c9y-padding,0px) + var(--drag-reserve))}
+:root[data-drag-outside] [data-drag-overlay]{opacity:.6}
