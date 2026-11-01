@@ -1,96 +1,97 @@
-import { componentFixture } from './component-fixture.mjs';
-/** Local-only viewport contract. Build first; no customer data or live host. */
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { resolve, extname } from 'node:path';
-import { chromium } from 'playwright';
-const root = fileURLToPath(new URL('../../../website/dist/', import.meta.url));
-const server = createServer(async (request, response) => {
-  const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-  const file = resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
-  if (!file.startsWith(root)) { response.writeHead(403).end(); return; }
-  try { const body = await componentFixture(file); response.setHeader('content-type', ({ '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html' })[extname(file)] ?? 'application/octet-stream'); response.end(body); }
-  catch { response.writeHead(404).end(); }
+/** editing.gesture-ownership: a marquee owns its pointer, keeps spacing available, writes no history, cancels to the previous selection and follows scrolling. Build first. */
+import { contract, openNativePage, pageOf, picture } from './harness.mjs';
+
+const NAME = 'Interaction ownership';
+const list = { id: 'list', kind: 'flow', direction: 'column', gap: 20, padding: 0, children: [{ id: 'w1', kind: 'content', source: 'First words' }, { id: 'w2', kind: 'content', source: 'Second words' }] };
+await contract({}, async ({ page, name }) => {
+  const editor = await openNativePage(page, { document: pageOf([{ id: 'l', kind: 'link', href: '/about/', text: 'About us' }, ...['a', 'b', 'c', 'd'].map(id => picture(id, 200)), list, picture('e', 200)], { overrides: ['padding'], padding: 40 }) });
+  const { frame, mouse } = editor;
+  const o = await editor.origin();
+  const history = () => page.evaluate(() => document.querySelector('#c9y-stage consistency-workspace-page').pageEditor.controller.state.past.length);
+  const json = async () => JSON.stringify(await editor.read());
+  const sweep = async (from, to, steps = 10) => { for (let n = 1; n <= steps; n++) await mouse.move(from.x + (to.x - from.x) * n / steps, from.y + (to.y - from.y) * n / steps, 1); };
+  const frames = (count = 2) => frame.evaluate(count => new Promise(done => { const next = left => left ? requestAnimationFrame(() => next(left - 1)) : done(); next(count); }), count);
+  const before = await json(), saves = await editor.saves();
+  if (await history()) throw Error('The page opened with history');
+
+  // Count rebuilds of the editor and layout reads of stable content, not machine-dependent timings.
+  await page.evaluate(() => {
+    const controller = document.querySelector('#c9y-stage consistency-workspace-page').pageEditor.controller;
+    window.interactionMetrics = { rebuilds: 0, reads: 0 };
+    const reconcile = controller.reconcile; controller.reconcile = function (...args) { window.interactionMetrics.rebuilds++; return reconcile.apply(this, args); };
+  });
+  await frame.evaluate(() => {
+    const rect = Object.getOwnPropertyDescriptor(Element.prototype, 'getBoundingClientRect').value;
+    Element.prototype.getBoundingClientRect = function () { if (this.matches('[data-selectable]')) parent.interactionMetrics.reads++; return Reflect.apply(rect, this, []); };
+  });
+
+  // A marquee from the page's margin across the link and two pictures. Hovered on its own, the link offers Edit.
+  const l = await editor.rect('l'), b = await editor.rect('b');
+  await mouse.move(o.x + l.left + 10, o.y + l.top + l.height / 2, 0);
+  await page.waitForFunction(() => !document.querySelector('.consistency-control-edit').hidden);
+  await mouse.move(o.x + 20, o.y + l.top + 2, 0);
+  await page.waitForFunction(() => document.querySelector('.consistency-control-edit').hidden);
+  const start = { x: o.x + 20, y: o.y + l.top + 2 }, end = { x: o.x + 600, y: o.y + b.top + 20 };
+  await mouse.move(start.x, start.y, 0); await mouse.down(start.x, start.y);
+  await mouse.move(start.x + 10, start.y + 10, 1); await frames();
+  // The counters are live: the marquee measured its candidates once as it began.
+  if (!(await page.evaluate(() => window.interactionMetrics.reads))) throw Error('The layout reads are not being counted');
+  await page.evaluate(() => { window.interactionMetrics.rebuilds = 0; window.interactionMetrics.reads = 0; });
+  await sweep({ x: start.x + 10, y: start.y + 10 }, end, 15); await frames();
+  if (await frame.locator('.consistency-marquee').count() !== 1) throw Error('No marquee was drawn');
+  if (!await page.locator('.consistency-control-edit').evaluate(action => action.hidden)) throw Error('A passive hover took over the marquee: the link’s Edit opened');
+  const guides = await frame.evaluate(() => ({ paused: !!document.querySelector('.consistency-native-guides.context-active'), handles: document.querySelectorAll('[data-spacing-key]').length }));
+  if (guides.paused || !guides.handles) throw Error(`The marquee took spacing away: ${JSON.stringify(guides)}`);
+  const metrics = await page.evaluate(() => window.interactionMetrics);
+  if (metrics.rebuilds || metrics.reads) throw Error(`The marquee rebuilt the editor or measured stable content again while it moved: ${JSON.stringify(metrics)}`);
+  await mouse.up(end.x, end.y);
+  await frame.waitForFunction(() => !document.querySelector('.consistency-marquee'));
+  const selected = (await editor.selection()).join();
+  if (selected !== 'l,a,b') throw Error(`The marquee chose ${selected}`);
+  if (await json() !== before || await history() || await editor.savesSettled() !== saves) throw Error('Selecting wrote to the page or its history');
+
+  // Spacing with a selection keeps the selection and is one step to undo.
+  const handle = frame.locator('[data-spacing-key^="list:gap:"]').first();
+  const box = await handle.boundingBox(), at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await mouse.move(at.x, at.y, 0); await frames(); await mouse.down(at.x, at.y);
+  await sweep(at, { x: at.x, y: at.y + 40 }, 5); await mouse.up(at.x, at.y + 40);
+  await frame.waitForFunction(() => !document.querySelector('[data-spacing-active]'));
+  const spaced = await editor.read();
+  if (spaced.blocks.find(block => block.id === 'list').gap === 20) throw Error('The spacing handle did not change the gap');
+  if (!(await page.evaluate(() => window.interactionMetrics.rebuilds))) throw Error('The editor’s rebuilds are not being counted');
+  if ((await editor.selection()).join() !== selected) throw Error(`Spacing changed the selection to ${await editor.selection()}`);
+  if (await history() !== 1) throw Error(`Spacing wrote ${await history()} steps of history, not one`);
+  await page.keyboard.press('Meta+z');
+  if (await json() !== before) throw Error('One undo did not restore the page before spacing');
+
+  // A new marquee cancelled by a lost window gives back the previous selection, not an empty one.
+  const d = await editor.rect('d');
+  const again = { x: o.x + 20, y: o.y + d.top + 10 };
+  await mouse.move(again.x, again.y, 0); await mouse.down(again.x, again.y);
+  await sweep(again, { x: again.x + 500, y: again.y + 60 }, 5); await frames();
+  await frame.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await mouse.up(again.x + 500, again.y + 60);
+  if ((await editor.selection()).join() !== selected) throw Error(`A cancelled marquee left ${await editor.selection()}, not ${selected}`);
+
+  // Shift gives the marquee priority over reordering, on a block that would otherwise lift.
+  const c = await editor.rect('c');
+  const press = { x: o.x + c.left + c.width / 2, y: o.y + c.top + c.height / 2 };
+  const shift = (type, point, buttons) => editor.cdp.send('Input.dispatchMouseEvent', { type, ...point, button: type === 'mouseMoved' && !buttons ? 'none' : 'left', buttons, clickCount: type === 'mouseMoved' ? 0 : 1, modifiers: 8 });
+  await page.keyboard.down('Shift');
+  await shift('mouseMoved', press, 0); await shift('mousePressed', press, 1);
+  const corner = { x: press.x - 80, y: press.y - 60 };
+  for (let n = 1; n <= 5; n++) await shift('mouseMoved', { x: press.x + (corner.x - press.x) * n / 5, y: press.y + (corner.y - press.y) * n / 5 }, 1);
+  await frames();
+  if (await frame.locator('.consistency-marquee').count() !== 1 || await frame.locator('[data-drag-preview]').count()) throw Error('Reordering took the pointer from a Shift marquee');
+  // The marquee's origin follows the content when it scrolls; its anchored corner is the lower right one here.
+  const scrolled = await frame.evaluate(() => { const top = scrollY; scrollBy(0, 60); return scrollY - top; });
+  await frames(3);
+  const bottom = await frame.locator('.consistency-marquee').evaluate(element => element.getBoundingClientRect().bottom);
+  if (!scrolled || Math.abs(bottom - (press.y - o.y - scrolled)) > 1) throw Error(`The marquee’s origin did not follow the scrolled content: ${JSON.stringify({ scrolled, bottom, expected: press.y - o.y - scrolled })}`);
+  await shift('mouseReleased', corner, 0); await page.keyboard.up('Shift');
+  if (await json() !== before) throw Error('A Shift marquee reordered the page');
+  const added = await editor.selection();
+  if (selected.split(',').some(id => !added.includes(id))) throw Error(`A Shift marquee dropped the existing selection: ${added}`);
+  if (editor.broken.length) throw Error(editor.broken.join('\n'));
+  console.log(`${NAME} (${name}): the marquee kept spacing and the link’s Edit closed, rebuilt nothing and measured no stable content while moving, wrote no history; spacing kept the selection as one undo step; a cancelled marquee restored the selection; Shift took the pointer from reordering and its origin followed scrolling`);
 });
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const browser = await chromium.launch({ headless: true });
-try {
- const page = await browser.newPage({viewport:{width:1440,height:1000}});
- await page.goto(`http://127.0.0.1:${server.address().port}/editor/`);
- await page.waitForSelector('aa-editor');
- await page.locator('select[aria-label="Example page"]').selectOption('studio');
- await page.locator('consistency-editor').evaluate(async e=>{
-  e.history.commit({text:'## Heading\n\nA paragraph\n\n```c9y-button\n'+JSON.stringify({label:'Open a page',secondary:false})+'\n```'});
-  e.requestUpdate();await e.updateComplete;
- });
- const button=page.locator('.consistency-button-action').first();
- await button.waitFor({state:'attached'});await page.waitForTimeout(100);
- // Selecting a section retains command identity, but paints only its authored leaves.
- await page.locator('consistency-editor').evaluate(async e=>{e.selection=new Set(['group-intro']);await e.updateComplete;});
- const faces=await page.locator('[data-sort-group="intro"]').evaluate(group=>({
-  selected:group.hasAttribute('data-selected'), parentFace:getComputedStyle(group,'::after').content,
-  leaves:[...group.querySelectorAll('[data-selection-face]')].map(e=>({empty:!e.textContent.trim(),children:!!e.querySelector('[data-selectable],.aa-block'),paint:getComputedStyle(e,'::after').content})),
-  gapPaint:[...group.querySelectorAll('.consistency-gap,.consistency-text-gap')].some(e=>e.hasAttribute('data-selection-face'))
- }));
- if(!faces.selected||!['none','normal'].includes(faces.parentFace)||faces.gapPaint||faces.leaves.length<5||faces.leaves.some(e=>e.empty||e.children||e.paint!=='""'))throw Error('Selection painted group spacing '+JSON.stringify(faces));
- await page.keyboard.press('Escape');
- if(await page.locator('[data-selection-face]').count())throw Error('Escape left component selection faces');
- const before = await page.locator('consistency-editor').evaluate(e=>JSON.stringify(e.history.value));
- // Count full editor updates and hit-test layout reads, not machine-dependent timings.
- await page.locator('consistency-editor').evaluate(e=>{
-  window.interactionMetrics={updates:0,reads:0};
-  const updated=e.updated;e.updated=function(...args){window.interactionMetrics.updates++;return updated.apply(this,args);};
-  const rect=Element.prototype.getBoundingClientRect;Element.prototype.getBoundingClientRect=function(){if(this.matches('.aa-block[data-selectable]'))window.interactionMetrics.reads++;return rect.call(this);};
- });
- const sheet=await page.locator('.consistency-sheet').boundingBox();
- const atom=await button.locator('..').boundingBox();
- await page.mouse.move(sheet.x+sheet.width/2,sheet.y+4);
- await page.mouse.down();
- await page.waitForTimeout(80);
- await page.evaluate(()=>{window.interactionMetrics.updates=0;window.interactionMetrics.reads=0;});
- await page.mouse.move(atom.x+atom.width/2,atom.y+atom.height/2,{steps:15});
- await page.waitForTimeout(50);
- if(await page.getByRole('switch',{name:'Spacing',exact:true}).isDisabled())throw Error('Marquee crossing a button opened its toolbar and disabled spacing');
- if(await button.getAttribute('data-open')!==null)throw Error('Passive hover stole marquee gesture');
- const metrics=await page.evaluate(()=>window.interactionMetrics);
- if(metrics.updates || metrics.reads)throw Error(`Marquee rebuilt the document or remeasured stable content during movement: ${JSON.stringify(metrics)}`);
- await page.mouse.up();
- await page.waitForTimeout(30);
- if(await page.getByRole('switch',{name:'Spacing',exact:true}).isDisabled())throw Error('Releasing marquee disabled spacing');
- if(await page.locator('consistency-editor').evaluate(e=>JSON.stringify(e.history.value))!==before)throw Error('Selection wrote document history');
- if(await page.locator('consistency-editor').evaluate(e=>e.selection.size)===0)throw Error('Marquee did not select content');
- const selected=await page.locator('consistency-editor').evaluate(e=>[...e.selection]);
- const gap=page.locator('.consistency-text-gap').first();
- const original=Number(await gap.getAttribute('aria-valuenow'));
- const gapBox=await gap.boundingBox();
- await page.mouse.move(gapBox.x+gapBox.width/2,gapBox.y+gapBox.height/2);
- await page.mouse.down();await page.mouse.move(gapBox.x+gapBox.width/2,gapBox.y+gapBox.height/2+30,{steps:5});
- if(Number(await gap.getAttribute('aria-valuenow'))===original)throw Error('A selected element lost its working spacing handle');
- await page.mouse.up();await page.waitForTimeout(250);
- if(JSON.stringify(await page.locator('consistency-editor').evaluate(e=>[...e.selection]))!==JSON.stringify(selected))throw Error('Spacing a selection cleared the selection');
- await page.locator('.consistency-inspector [role="status"]').click();await page.keyboard.press('Meta+z');await page.waitForTimeout(50);
- if(await page.locator('consistency-editor').evaluate(e=>JSON.stringify(e.history.value))!==before)throw Error('Spacing after selection did not form one undo transaction');
- // A cancelled new marquee restores the previous selection, rather than its empty additive base.
- await page.mouse.move(sheet.x+sheet.width/2,sheet.y+4);await page.mouse.down();
- await page.mouse.move(sheet.x+sheet.width-5,sheet.y+10);await page.waitForTimeout(30);
- await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.mouse.up();
- if(JSON.stringify(await page.locator('consistency-editor').evaluate(e=>[...e.selection]))!==JSON.stringify(selected))throw Error('Blur failed to restore the original selection');
- // Shift gives marquee priority over section reordering on unused row space.
- const row=await page.locator('.consistency-sample-actions').first().boundingBox();
- await page.keyboard.down('Shift');await page.mouse.move(row.x+row.width-3,row.y+row.height/2);await page.mouse.down();
- await page.mouse.move(row.x+row.width-80,row.y-60,{steps:5});await page.waitForTimeout(50);
- if(await page.locator('.consistency-marquee').count()!==1||await page.locator('[data-drag-preview]').count())throw Error('Section reordering stole additive marquee '+JSON.stringify(await page.evaluate(({x,y})=>({hit:document.elementFromPoint(x,y)?.outerHTML.slice(0,300),additive:document.querySelector('consistency-editor').hasAttribute('data-pointer-additive'),marquees:document.querySelectorAll('.consistency-marquee').length,previews:document.querySelectorAll('[data-drag-preview]').length}),{x:row.x+row.width-3,y:row.y+row.height/2})));
- const scrollBefore=await page.locator('.consistency-sheet').evaluate(e=>e.scrollTop);
- await page.locator('.consistency-sheet').evaluate(e=>e.scrollBy(0,60));await page.waitForTimeout(80);
- const scrolled=await page.locator('.consistency-sheet').evaluate(e=>e.scrollTop)-scrollBefore;
- // The upper corner here is the moving pointer, so inspect the lower anchored corner.
- const bottom=await page.locator('.consistency-marquee').evaluate(e=>e.getBoundingClientRect().bottom);
- if(!scrolled||Math.abs(bottom-(row.y+row.height/2-scrolled))>1)throw Error('Marquee origin did not follow content scrolling '+JSON.stringify({scrolled,bottom,row,scroll:await page.locator('.consistency-stage').evaluate(e=>({top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight,parents:[...document.querySelectorAll('.consistency-workspace,.consistency-shell')].map(p=>[p.className,p.scrollTop,p.clientHeight,p.scrollHeight])}))}));
- await page.mouse.up();await page.keyboard.up('Shift');
- if(await page.locator('consistency-editor').evaluate(e=>JSON.stringify(e.history.value))!==before)throw Error('Additive marquee reordered content');
- const added=await page.locator('consistency-editor').evaluate(e=>[...e.selection]);
- if(selected.some(id=>!added.includes(id)))throw Error('Shift marquee discarded the existing selection');
- console.log('Interaction ownership: marquee keeps spacing available and does not open passive hover contexts');
- await page.close();
-} finally { await browser.close();await new Promise(resolve=>server.close(resolve)); }

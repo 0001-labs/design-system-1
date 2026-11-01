@@ -42,8 +42,8 @@ export function pageOf(blocks, layout = {}) {
 /** A picture block, served locally. */
 export const picture = (id, height = 60) => ({ id, kind: 'image', src: 'https://designsystem1.com/examples/images/atelier-anders.jpg', alt: '', height });
 
-/** Mounts a page (or a template's document) in the workspace editor and returns its handles. */
-export async function openNativePage(page, { document, template = 'blank' } = {}) {
+/** Mounts a page (or a template's document) in the workspace editor, in a library preset, and returns its handles. */
+export async function openNativePage(page, { document, template = 'blank', library = 'original' } = {}) {
   const saves = { api: 0 }, broken = [];
   page.on('console', message => { if (message.text().startsWith('C9Y constraint')) broken.push(message.text()); });
   await page.route('**/api/**', route => {
@@ -58,8 +58,8 @@ export async function openNativePage(page, { document, template = 'blank' } = {}
   if (!page.url().includes('/editor/')) await page.goto(`${page.context().__base ?? ''}/editor/`);
   const templates = document ? null : JSON.parse(await readFile('shared/consistency-template-pages.json', 'utf8'));
   const source = document ?? templates[template].document;
-  await page.evaluate(async ({ source, example, stage }) => {
-    document.querySelector('#c9y-stage')?.remove();
+  await page.evaluate(async ({ source, example, library, stage }) => {
+    document.querySelector('#c9y-stage')?.remove(); document.querySelector('#c9y-chrome')?.remove();
     const chrome = Object.assign(document.createElement('div'), { id: 'c9y-chrome' });
     Object.assign(chrome.style, { position: 'fixed', left: '0', top: '0', width: '100%', height: `${stage.top}px`, background: '#eee', zIndex: '999' });
     chrome.addEventListener('pointerup', () => { window.chromeReleases = (window.chromeReleases ?? 0) + 1; });
@@ -67,13 +67,13 @@ export async function openNativePage(page, { document, template = 'blank' } = {}
     Object.assign(holder.style, { position: 'fixed', left: '0', top: `${stage.top}px`, width: `${stage.width}px`, height: `${stage.height}px`, background: 'white', zIndex: '999', display: 'flex' });
     const host = document.createElement('consistency-workspace-page');
     Object.assign(host.style, { display: 'flex', flex: '1', height: '100%' });
-    host.loadDocument({ schema: 2, kind: 'page', example, library: 'original', fonts: {}, page: source });
+    host.loadDocument({ schema: 2, kind: 'page', example, library, fonts: {}, page: source });
     holder.append(host); document.body.append(chrome, holder);
     await new Promise(done => host.addEventListener('page-ready', done, { once: true }));
     // Count every save the editor settles: the transport the workspace hands its document state.
     const state = host.pageEditor.controller.state, save = state.save;
     window.c9ySaves = 0; state.save = value => { window.c9ySaves++; return save(value); };
-  }, { source, example: template, stage: STAGE });
+  }, { source, example: template, library, stage: STAGE });
   const element = await page.$('#c9y-stage iframe');
   const frame = await element.contentFrame();
   await frame.waitForSelector('[data-editor-surface]');
@@ -176,6 +176,32 @@ export async function landing(frame, id, ms = 900) {
     if (Math.abs(last.top - final.top) > 1 || Math.abs(last.left - final.left) > 1) throw Error(`${id}: second landing ${JSON.stringify({ last, final })}`);
     if (frames.slice(handoff).some(f => Math.abs(f.top - final.top) > 1 || Math.abs(f.left - final.left) > 1)) throw Error(`${id}: moved after the handoff`);
   };
+}
+
+/**
+ * Stubs the lab's pages API with an in-memory store of drafts, so the lab's own workspace opens, saves and reopens
+ * pages locally. Set `refuse` to answer every save with a revision conflict. Route before navigating.
+ */
+export async function stubPages(page, drafts = new Map()) {
+  const store = { drafts, refuse: false };
+  await page.route('**/api/consistency/sites', route => route.fulfill({ json: { sites: [] } }));
+  await page.route('**/api/consistency/pages**', async route => {
+    const request = route.request(), id = new URL(request.url()).pathname.split('/')[4];
+    if (request.method() === 'PUT') {
+      const input = request.postDataJSON(), old = drafts.get(id);
+      if (store.refuse || input.revision !== (old?.revision ?? 0)) return route.fulfill({ status: 409, json: { error: 'revision-conflict' } });
+      const saved = { ...input, id, revision: input.revision + 1, updatedAt: Date.now() }; drafts.set(id, saved); return route.fulfill({ json: saved });
+    }
+    return route.fulfill({ json: id ? drafts.get(id) : { pages: [...drafts.values()] } });
+  });
+  return store;
+}
+
+/** The lab's canvas: the native page editor's frame, once it can be edited. */
+export async function labCanvas(page) {
+  const frame = page.frameLocator('consistency-page-editor:not([hidden]) iframe');
+  await frame.locator('[data-c9y-native-root][data-editor-surface]').waitFor({ timeout: 15000 });
+  return frame;
 }
 
 /** Runs a contract with a served dist and a browser, closing both. */
