@@ -19,7 +19,7 @@
 /* Compact specimens retain real typography and component sizes. */
 .consistency-element-preview-inner .consistency-element-preview-stage{display:flex;width:100%;height:calc(4 * var(--ds-unit));align-items:center;justify-content:center}
 .consistency-element-preview-inner:has(ds-card) .consistency-element-preview-stage{height:auto;min-height:calc(10 * var(--ds-unit));overflow:visible}
-.aa-command-preview.consistency-element-preview:has(ds-card){width:calc(13 * var(--ds-unit))}
+.aa-command-preview.consistency-element-preview:has(.consistency-element-preview-inner ds-card){width:calc(13 * var(--ds-unit))}
 .consistency-element-preview-inner .consistency-element-preview-stage ds-card{width:calc(12 * var(--ds-unit));height:auto;min-height:calc(10 * var(--ds-unit))}
 .consistency-element-preview-inner .consistency-element-preview-label{padding-top:calc(var(--ds-unit)/2);font-size:var(--ds-type-size-default);line-height:var(--ds-unit)}
 .consistency-element-preview-inner .consistency-element-preview-cursor{left:55%;top:45%}
