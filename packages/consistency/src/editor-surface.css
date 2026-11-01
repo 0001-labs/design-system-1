@@ -186,3 +186,5 @@ consistency-editor[data-pointer-busy] :is(.consistency-button-action,.consistenc
 :root[data-drag-active] [data-drag-over]:not([data-c9y-native-root]){outline:1px solid var(--ds-accent-color,var(--accent-color,var(--apple-green,Highlight)));outline-offset:-1px}
 :root[data-drag-active] .c9y-native-flow:not([data-direction="row"])[style*="--drag-reserve"]{padding-bottom:calc(var(--c9y-padding,0px) + var(--drag-reserve))}
 :root[data-drag-outside] [data-drag-overlay]{opacity:.6}
+/* How many blocks a carried selection holds: a tag one control high at the preview's top end. */
+[data-drag-preview] .c9y-drag-count{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:4px;background:var(--ds-text-color,#1e1e1e);color:var(--ds-paper,#fff);font:14px/16px var(--ds-typeface-regular,sans-serif);text-align:center;pointer-events:none}

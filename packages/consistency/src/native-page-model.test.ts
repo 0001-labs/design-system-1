@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { landingBlock, soleColumnBlock, PLACEHOLDER_PICTURE, addSectionItem, clampSectionMeasure, firstWordsId, itemsSlot, memberAt, moveSectionItem, nativeGridSpaces, nativeEntries, newSection, readAt, removeSectionItem, sectionItemIds, sectionKinds, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, writeAt } from './native-page-model';
+import { landingBlock, moveNativeBlocks, soleColumnBlock, PLACEHOLDER_PICTURE, addSectionItem, clampSectionMeasure, firstWordsId, itemsSlot, memberAt, moveSectionItem, nativeGridSpaces, nativeEntries, newSection, readAt, removeSectionItem, sectionItemIds, sectionKinds, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, writeAt } from './native-page-model';
 import { SECTION_KINDS, sectionDefinition } from '../../../shared/consistency-vocabulary';
 import { validateNativePage, type NativeCards, type NativeHero, type NativePageDocument, type NativeQuestions, type NativeSection } from '../../../shared/consistency-native-page';
 const box=(left:number,top:number,width:number,height:number)=>({left,top,width,height,right:left+width,bottom:top+height});
@@ -109,5 +109,21 @@ describe('a column with a single block moves with that block',()=>{
     expect(landingBlock(entries,'colA','colB')?.id).toBe('a1');
     expect(landingBlock(entries,'colA','cols')?.id).toBe('colA');
     expect(landingBlock(entries,'b1','page')?.id).toBe('b1');
+  });
+});
+
+describe('moving several blocks together',()=>{
+  const content=(id:string)=>({id,kind:'content' as const,source:id});
+  const page:NativePageDocument={schema:1,kind:'native-page',layout:{mode:'document',padding:0,gap:0},blocks:[content('a'),content('b'),content('c'),{id:'f',kind:'flow',direction:'column',gap:20,padding:0,children:[content('x')]},content('d')]};
+  const ids=(blocks:{id:string;children?:unknown[]}[]):string=>blocks.map(block=>block.children?`${block.id}[${ids(block.children as never)}]`:block.id).join(',');
+  it('keeps their document order wherever they land, whatever order they were chosen in',()=>{
+    expect(ids(moveNativeBlocks(page,['c','a'],'page',2).blocks as never)).toBe('b,f[x],a,c,d');
+    expect(ids(moveNativeBlocks(page,['b','a'],'page',0).blocks as never)).toBe('a,b,c,f[x],d');
+    expect(ids(moveNativeBlocks(page,['a','c'],'page',9).blocks as never)).toBe('b,f[x],d,a,c');
+    expect(ids(moveNativeBlocks(page,['a','b'],'f',1).blocks as never)).toBe('c,f[x,a,b],d');
+  });
+  it('changes nothing for blocks that are not siblings, or into one of themselves',()=>{
+    expect(moveNativeBlocks(page,['a','x'],'page',0)).toBe(page);
+    expect(moveNativeBlocks(page,['a','f'],'f',0)).toBe(page);
   });
 });

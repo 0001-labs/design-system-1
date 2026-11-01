@@ -187,6 +187,12 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
     why: 'Outlines and opacity never move a block, so drag.one-movement and motion.transform-only hold.',
     check: { file: 'tests/drag-affordance.mjs', test: 'The list a carried block will land in is shown' },
   },
+  {
+    code: 'drag.selection-together',
+    rule: 'Carrying one of several selected sibling blocks carries them all, counted on the carried preview: they land together in document order, Escape sends them all home, Alt+Arrow moves them a place, and the selection is kept.',
+    why: 'They are folded into one carrier, spaced as their list spaces them, before the lift is measured, so the room made is the room they take together and drag.one-movement holds.',
+    check: { file: 'tests/drag-selection.mjs', test: 'Selected blocks move together' },
+  },
 ];
 
 export type BlockKind = NonNullable<SurfaceNode['kind']>;

@@ -270,6 +270,14 @@ Outlines and opacity never move a block, so drag.one-movement and motion.transfo
 
 Held by `tests/drag-affordance.mjs`: “The list a carried block will land in is shown”.
 
+### `drag.selection-together`
+
+Carrying one of several selected sibling blocks carries them all, counted on the carried preview: they land together in document order, Escape sends them all home, Alt+Arrow moves them a place, and the selection is kept.
+
+They are folded into one carrier, spaced as their list spaces them, before the lift is measured, so the room made is the room they take together and drag.one-movement holds.
+
+Held by `tests/drag-selection.mjs`: “Selected blocks move together”.
+
 ## Blocks
 
 Capabilities come from the platform; `reorder` is added where `blocks.reorder` allows it. Measures are whole 20px squares multiplied by `--sf`.

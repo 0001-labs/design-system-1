@@ -19,6 +19,20 @@ export function updateNativeChildren(document: NativePageDocument, id: string, u
 }
 
 /**
+ * Moves sibling blocks together: they leave their list and stand in document order in `parent`, at `index` among
+ * the children it keeps without them. Blocks that are not siblings, or a parent inside one of them, change nothing.
+ */
+export function moveNativeBlocks(document: NativePageDocument, ids: readonly string[], parent: string, index: number): NativePageDocument {
+  const entries = nativeEntries(document), moving = ids.map(id => entries.get(id));
+  const home = moving[0]?.parent;
+  if (!moving.length || moving.some(entry => !entry || entry.parent !== home)) return document;
+  for (let at = entries.get(parent); at; at = entries.get(at.parent)) if (ids.includes(at.block.id)) return document;
+  const blocks = (moving as NativeEntry[]).sort((a, b) => a.index - b.index).map(entry => entry.block);
+  const removed = updateNativeChildren(document, home!, children => children.filter(block => !ids.includes(block.id)));
+  return updateNativeChildren(removed, parent, children => { const next = [...children]; next.splice(Math.max(0, Math.min(index, next.length)), 0, ...blocks); return next; });
+}
+
+/**
  * A column is a flow down the page standing in a flow across it. Holding a single block it moves with that
  * block (the C9Y `column` rule): a press on the block carries the column, so no empty column is left behind.
  */
