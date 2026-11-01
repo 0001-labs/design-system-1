@@ -1,64 +1,49 @@
-import { componentFixture } from './component-fixture.mjs';
-/** Local-only viewport contract. Build first; no customer data or live host. */
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { resolve, extname } from 'node:path';
-import { chromium } from 'playwright';
-const root = fileURLToPath(new URL('../../../website/dist/', import.meta.url));
-const server = createServer(async (request, response) => {
-  const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-  const file = resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
-  if (!file.startsWith(root)) { response.writeHead(403).end(); return; }
-  try { const body = await componentFixture(file); response.setHeader('content-type', ({ '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html' })[extname(file)] ?? 'application/octet-stream'); response.end(body); }
-  catch { response.writeHead(404).end(); }
+/** Contexts in a page: the formatting toolbar keeps its footprint and stays open for its choices, an outside press closes it at once, spacing pauses while any context is open, and typing in a table stays in its cell. Build first. */
+import { contract, openNativePage, pageOf, picture } from './harness.mjs';
+
+const NAME = 'Context';
+await contract({}, async ({ page, name }) => {
+  const editor = await openNativePage(page, { document: pageOf([{ id: 'w', kind: 'content', source: 'Words to format here\n\nA second paragraph' }, { id: 't', kind: 'content', source: '| Name | Value |\n| --- | --- |\n| Milk | 2 |' }, picture('x', 60)]) });
+  const { frame, mouse } = editor;
+  const paused = () => frame.evaluate(() => !!document.querySelector('.consistency-native-guides.context-active'));
+  const frames = (count = 2) => frame.evaluate(count => new Promise(done => { const next = left => left ? requestAnimationFrame(() => next(left - 1)) : done(); next(count); }), count);
+  await frame.evaluate(() => { const host = document.querySelector('aa-editor[data-editor-key="w"]'); host.editor.focus(); host.editor.selectRange(2, 12); document.dispatchEvent(new Event('selectionchange')); });
+  const toolbar = frame.locator('.aa-toolbar:not([hidden])');
+  await toolbar.waitFor();
+  const before = await toolbar.boundingBox();
+  // Writing a prompt fills the toolbar's own rows and makes the covered buttons inert.
+  const prompt = toolbar.getByRole('textbox', { name: 'Ask AI about the selected words' });
+  await prompt.click();
+  await toolbar.locator('button').first().evaluate(button => new Promise(done => { const check = () => button.inert ? done() : requestAnimationFrame(check); check(); }));
+  await toolbar.evaluate(element => Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)));
+  const after = await toolbar.boundingBox(), writing = await prompt.boundingBox();
+  if (Math.abs(before.width - after.width) > 0.1 || Math.abs(before.height - after.height) > 0.1 || Math.abs(writing.y - after.y) > 0.1 || Math.abs(writing.height - after.height) > 0.1) throw Error(`Writing a prompt changed the toolbar’s footprint or did not fill its rows: ${JSON.stringify({ before, after, writing })}`);
+  if (!await toolbar.locator('button').evaluateAll(buttons => buttons.every(button => button.inert))) throw Error('Covered formatting buttons stay interactive');
+  await prompt.evaluate(field => field.blur());
+  await toolbar.locator('button').first().evaluate(button => new Promise(done => { const check = () => !button.inert ? done() : requestAnimationFrame(check); check(); }));
+  if (!await paused()) throw Error('Spacing stayed live while the formatting toolbar was open');
+  await toolbar.locator('[data-action="bold"]').click();
+  if (!await toolbar.isVisible() || !await paused()) throw Error('A formatting choice closed the toolbar or gave spacing back');
+  // A press outside the writing, on the page's margin, closes it at once, with no reopening on the same words.
+  const o = await editor.origin(), x = await editor.rect('x');
+  const margin = { x: o.x + 15, y: o.y + x.top + 5 };
+  await mouse.move(margin.x, margin.y, 0); await mouse.down(margin.x, margin.y); await mouse.up(margin.x, margin.y);
+  await frame.waitForFunction(() => !document.querySelector('.consistency-native-guides.context-active'));
+  await frames(10);
+  if (await frame.locator('.aa-toolbar:not([hidden])').count()) throw Error('The formatting toolbar opened again after an outside press');
+  // A block's menu pauses spacing too, and closes on a press outside it.
+  await page.mouse.click(o.x + x.left + 20, o.y + x.top + 20, { button: 'right' });
+  await page.locator('ds-context[data-consistency-context][open]').waitFor();
+  await frame.waitForFunction(() => !!document.querySelector('.consistency-native-guides.context-active'));
+  await mouse.down(margin.x, margin.y); await mouse.up(margin.x, margin.y);
+  await page.locator('ds-context[data-consistency-context][open]').waitFor({ state: 'detached' });
+  await frame.waitForFunction(() => !document.querySelector('.consistency-native-guides.context-active'));
+  // Typing spaces in a table cell keeps the caret in that cell.
+  await frame.locator('aa-editor[data-editor-key="t"] [data-cell="1:0"]').click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' and another year for this');
+  const table = (await editor.read()).blocks.find(block => block.id === 't').source;
+  if (!table.includes('| Milk and another year for this | 2 |') || !table.startsWith('| Name | Value |')) throw Error(`Typing spaces moved the caret out of the table cell: ${table}`);
+  if (editor.broken.length) throw Error(editor.broken.join('\n'));
+  console.log(`${NAME} (${name}): the prompt fills the toolbar’s rows and covers its buttons, Bold keeps it open, an outside press closes it for good; spacing pauses for the toolbar and a block’s menu and returns; table typing stays in its cell`);
 });
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const browser = await chromium.launch({ headless: true });
-try {
- const page=await browser.newPage({viewport:{width:1440,height:1000}});
- await page.goto(`http://127.0.0.1:${server.address().port}/editor/`);await page.waitForSelector('aa-editor');
- await page.locator('select[aria-label="Example page"]').selectOption('studio');
- const spacing=page.getByRole('switch',{name:'Spacing',exact:true}), resizing=page.getByRole('switch',{name:'Resizing',exact:true});
- // Keep one preference off, to prove closing does not turn everything on.
- await resizing.click();
- await page.locator('aa-editor[data-editor-key="intro"]').evaluate(e=>{e.editor.focus();e.editor.selectRange(2,12);});
- await page.locator('.aa-toolbar:not([hidden])').waitFor();
- const toolbar = page.locator('.aa-toolbar:not([hidden])');
- const before = await toolbar.boundingBox();
- const prompt = toolbar.getByRole('textbox', { name: 'Ask AI about the selected words' });
- await prompt.click();
- await page.waitForTimeout(220);
- const after = await toolbar.boundingBox(), writing = await prompt.boundingBox();
- if (Math.abs(before.width-after.width)>0.1 || Math.abs(before.height-after.height)>0.1 || Math.abs(writing.y-after.y)>0.1 || Math.abs(writing.height-after.height)>0.1) throw Error('Prompt expansion changed panel footprint or did not fill its rows');
- if (!(await toolbar.locator('button').evaluateAll(buttons=>buttons.every(button=>button.inert)))) throw Error('Covered formatting buttons remain interactive');
- await prompt.evaluate(field=>field.blur());
- await page.waitForTimeout(220);
- await page.waitForFunction(()=>document.querySelector('[role="switch"][aria-label="Spacing"]').disabled);
- if(await spacing.getAttribute('aria-checked')!=='false'||!(await resizing.isDisabled()))throw Error('Menu did not pause controls visibly');
- const preferences=await page.locator('consistency-editor').evaluate(e=>e.layers);
- if(!preferences.spacing||preferences.resizing)throw Error('Temporary state overwrote layer preferences');
- await page.locator('.aa-toolbar:not([hidden]) [data-action="bold"]').click();
- if(!(await page.locator('.aa-toolbar:not([hidden])').isVisible())||!(await spacing.isDisabled()))throw Error('Formatting choice unexpectedly dismissed context');
- // A pointer outside closes immediately, with no delayed same-range reopen.
- await page.locator('.consistency-inspector [role="status"]').click();
- await page.waitForFunction(()=>!document.querySelector('[role="switch"][aria-label="Spacing"]').disabled);
- if(await spacing.getAttribute('aria-checked')!=='true'||await resizing.getAttribute('aria-checked')!=='false')throw Error('Closing context did not restore saved preferences');
- await page.waitForTimeout(80);if(await page.locator('.aa-toolbar:not([hidden])').count())throw Error('Formatting toolbar reopened after outside click');
- const sheet=page.locator('.consistency-sheet'), box=await sheet.boundingBox();await page.mouse.click(box.x+box.width/2,box.y+5,{button:'right'});
- await page.locator('ds-context[data-consistency-context][open]').waitFor();
- await page.waitForFunction(()=>document.querySelector('[role="switch"][aria-label="Spacing"]').disabled);
- await page.locator('.consistency-inspector [role="status"]').click();await page.waitForFunction(()=>!document.querySelector('ds-context[data-consistency-context][open]'));
- await page.waitForFunction(()=>!document.querySelector('[role="switch"][aria-label="Spacing"]').disabled);
- if(await resizing.getAttribute('aria-checked')!=='false')throw Error('Context close changed disabled resize preference');
- console.log('Context: formatting stays open; outside closes; spacing/resize visibly pause and restore saved preferences');
- const tableEditor = page.locator('aa-editor[data-editor-key="intro"]');
- await tableEditor.evaluate(element => { element.editor.value = '| Name | Value |\n| --- | --- |\n| Milk | 2 |'; });
- await tableEditor.locator('[data-cell="1:0"]').click();
- await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
- await page.keyboard.type('Another year for this');
- const tableValue = await tableEditor.evaluate(element => element.editor.value);
- if (!tableValue.includes('| Another year for this | 2 |')) throw Error('Typing spaces moved the caret out of the table cell: '+tableValue);
- console.log('Table typing: spaces remain in the edited cell and adjacent contents stay unchanged');
- await page.close();
-}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
