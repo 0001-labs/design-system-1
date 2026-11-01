@@ -29,13 +29,14 @@
  *
  * Tokens: `--ds-card-width` and `--ds-card-height` (whole squares; the
  * content's size by default), `--ds-card-padding` (one square), and
- * `--ds-card-fill`, `--ds-card-ink` and `--ds-card-muted`.
+ * `--ds-card-fill`, `--ds-card-ink` and `--ds-card-muted`; a product's own colour for an untoned
+ * card is `--ds-card-fill-override` with `--ds-card-ink-override` and `--ds-card-muted-override`.
  */
 
 .ds-card {
-  --ds-card-fill: var(--ds-fill);
-  --ds-card-ink: var(--ds-text-color);
-  --ds-card-muted: var(--ds-text-color-muted);
+  --ds-card-fill: var(--ds-card-fill-override, var(--ds-fill));
+  --ds-card-ink: var(--ds-card-ink-override, var(--ds-text-color));
+  --ds-card-muted: var(--ds-card-muted-override, var(--ds-text-color-muted));
   --ds-card-padding: var(--ds-card-padding-override, var(--ds-unit));
   --ds-card-text-padding: max(var(--ds-card-padding), var(--ds-card-text-inset-min, 0px));
   position: relative;
@@ -63,9 +64,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Opt-in safe text inset; media still stands on the card's foot. */
+/* Without a picture the words end a padding above the card's foot, as they start a padding below
+   its top; a picture still stands on the foot. */
 .ds-card:not(:has(> .ds-card__media:not([hidden]))) {
-  padding-block-end: max(var(--ds-card-text-inset-min, 0px), var(--ds-bento-inset-bottom, 0px));
+  padding-block-end: calc(var(--ds-card-text-padding) + var(--ds-bento-inset-bottom, 0px));
 }
 
 .ds-card[hidden] {

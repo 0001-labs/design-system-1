@@ -65,6 +65,15 @@ test("a picture stands on the card's foot, so pictures side by side stand on one
   expect(media).toContain("padding-top: var(--ds-unit)");
 });
 
+test("words without a picture end a padding above the foot, and a product may fill a card with its own colour", () => {
+  const card = sheet("1-root/card.css");
+  const bare = /\.ds-card:not\(:has\(> \.ds-card__media:not\(\[hidden\]\)\)\) \{([^}]*)\}/.exec(card)![1]!;
+  expect(bare).toContain("padding-block-end: calc(var(--ds-card-text-padding) + var(--ds-bento-inset-bottom, 0px))");
+  expect(card).toContain("--ds-card-fill: var(--ds-card-fill-override, var(--ds-fill))");
+  expect(card).toContain("--ds-card-ink: var(--ds-card-ink-override, var(--ds-text-color))");
+  expect(card).toContain("--ds-card-muted: var(--ds-card-muted-override, var(--ds-text-color-muted))");
+});
+
 // card.media-corners in DS1/0-face/constraints.ts
 test("a picture is square where it meets the card's edge", () => {
   const card = sheet("1-root/card.css");
