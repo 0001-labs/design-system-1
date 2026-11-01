@@ -34,6 +34,9 @@ type Slot = "label" | "title" | "media";
  *   and no fill.
  * @prop {number} width - The card's width in whole squares.
  * @prop {number} height - The card's height in whole squares.
+ * @prop {number} mediaHeight - The picture's room in whole squares (`media-height`), from the
+ *   foot up: cards side by side given one start their pictures on one line, and the foot cuts a
+ *   taller picture.
  * @prop {string} padding - `none`, `small` (half a square), `medium` (one,
  *   the default) or `large` (two).
  * @prop {string} media - Where the picture stands: `start` (the default),
@@ -63,6 +66,7 @@ export class Card extends LitElement {
     variant: { type: String, reflect: true },
     width: { type: Number, reflect: true },
     height: { type: Number, reflect: true },
+    mediaHeight: { type: Number, attribute: "media-height", reflect: true },
     padding: { type: String, reflect: true },
     media: { type: String, reflect: true },
     disabled: { type: Boolean, reflect: true },
@@ -77,6 +81,7 @@ export class Card extends LitElement {
   declare variant: "filled" | "outlined";
   declare width: number | undefined;
   declare height: number | undefined;
+  declare mediaHeight: number | undefined;
   declare padding: "none" | "small" | "medium" | "large";
   declare media: "start" | "center" | "bleed";
   declare disabled: boolean;
@@ -102,6 +107,9 @@ export class Card extends LitElement {
     else this.style.removeProperty("--ds-card-width");
     if (height) this.style.setProperty("--ds-card-height", `calc(var(--ds-unit) * ${height})`);
     else this.style.removeProperty("--ds-card-height");
+    const mediaHeight = squares(this.mediaHeight);
+    if (mediaHeight) this.style.setProperty("--ds-card-media-height", `calc(var(--ds-unit) * ${mediaHeight})`);
+    else this.style.removeProperty("--ds-card-media-height");
     this.style.setProperty("--ds-card-padding", PADDING[this.padding] ?? PADDING.medium);
   }
 
@@ -136,7 +144,7 @@ export class Card extends LitElement {
       <span class="ds-card__label" part="label" ?hidden=${!this.filled.has("label")}><slot name="label" @slotchange=${this.changed}></slot></span>
       <span class="ds-card__title" part="title" ?hidden=${!this.filled.has("title")}><slot name="title" @slotchange=${this.changed}></slot></span>
       <div class="ds-card__body" part="body"><slot></slot></div>
-      <div class="ds-card__media${media}" part="media" ?hidden=${!this.filled.has("media")}><slot name="media" @slotchange=${this.changed}></slot></div>`;
+      <div class="ds-card__media${media}${squares(this.mediaHeight) ? " ds-card__media--fixed" : ""}" part="media" ?hidden=${!this.filled.has("media")}><slot name="media" @slotchange=${this.changed}></slot></div>`;
     const className = `ds-card${this.variant === "outlined" ? " ds-card--outlined" : ""}`;
     if (this.href && !this.disabled) {
       return html`<a class=${className} part="card" href=${this.href} data-tone=${tone}>${parts}</a>`;

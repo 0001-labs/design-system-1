@@ -26,9 +26,12 @@
  *                                least, so pictures side by side line up; square where it meets the card
  *   ds-card__media--center       standing in the card's middle
  *   ds-card__media--bleed        running on past the padding to the end edge
+ *   ds-card__media--fixed        a room of `--ds-card-media-height` from the foot up, the picture
+ *                                at its top and cut by the foot, so pictures side by side start on
+ *                                one line whatever their own height
  *
  * Tokens: `--ds-card-width` and `--ds-card-height` (whole squares; the
- * content's size by default), `--ds-card-padding` (one square), and
+ * content's size by default), `--ds-card-media-height` (a fixed picture's room), `--ds-card-padding` (one square), and
  * `--ds-card-fill`, `--ds-card-ink` and `--ds-card-muted`; a product's own colour for an untoned
  * card is `--ds-card-fill-override` with `--ds-card-ink-override` and `--ds-card-muted-override`.
  */
@@ -186,6 +189,18 @@
 
 .ds-card__media > * {
   flex: none;
+}
+
+/* Pictures side by side start on one line (Joachim, 2 November 2026): each takes one room from the
+   foot up, whatever the words above it or its own height, stands at the room's top and is cut by
+   the foot. The room's padding stays the square below the words. */
+.ds-card__media--fixed {
+  flex: none;
+  box-sizing: border-box;
+  height: calc(var(--ds-card-media-height) + var(--ds-unit));
+  overflow: clip;
+  overflow-clip-margin: var(--ds-unit);
+  justify-content: flex-start;
 }
 
 /* A card that opens something. */

@@ -49,7 +49,7 @@ test("a card's empty slots take no room", async () => {
 
 test("the sheet pads the card a square and puts no shadow on a filled card", () => {
   const card = sheet("1-root/card.css");
-  expect(card).toContain("--ds-card-padding: var(--ds-unit)");
+  expect(card).toContain("--ds-card-padding: var(--ds-card-padding-override, var(--ds-unit))");
   expect(card).toContain("border-radius: var(--ds-radius-card)");
   expect(card).not.toMatch(/box-shadow:\s*0 \d/);
 });
@@ -63,6 +63,18 @@ test("a picture stands on the card's foot, so pictures side by side stand on one
   const media = /\.ds-card__media \{([^}]*)\}/.exec(card)![1]!;
   expect(media).toContain("margin-top: auto");
   expect(media).toContain("padding-top: var(--ds-unit)");
+  // A fixed room starts pictures side by side on one line, whatever their own height.
+  const fixed = /\.ds-card__media--fixed \{([^}]*)\}/.exec(card)![1]!;
+  expect(fixed).toContain("height: calc(var(--ds-card-media-height) + var(--ds-unit))");
+  expect(fixed).toContain("justify-content: flex-start");
+});
+
+test("media-height gives the picture a fixed room in squares", async () => {
+  document.body.innerHTML = `<ds-card media="bleed" media-height="7"><span slot="title">Book</span><div slot="media"></div></ds-card>`;
+  const card = document.querySelector("ds-card") as HTMLElement & { updateComplete: Promise<unknown> };
+  await card.updateComplete;
+  expect(card.style.getPropertyValue("--ds-card-media-height")).toBe("calc(var(--ds-unit) * 7)");
+  expect(card.shadowRoot!.querySelector(".ds-card__media")!.classList.contains("ds-card__media--fixed")).toBe(true);
 });
 
 test("words without a picture end a padding above the foot, and a product may fill a card with its own colour", () => {

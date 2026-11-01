@@ -181,7 +181,7 @@ Slides that move sideways are `<ds-carousel label>` (React `Carousel`, `DS1/reac
 
 Several things shown at once, of different sizes, are a `<ds-bento>` of cards (`.ds-bento` without Lit), half a square apart; never a product's own bento grid. https://designsystem1.com/3-unit/bento/
 
-The things in a strip are `<ds-card>` (`.ds-card`): `href` for one link, `tone` a palette colour's pastel (or `ink`), `width` and `height` in squares, slots `label`, `title`, default and `media` (`center`, `bleed`). Never build a product's own card tile. https://designsystem1.com/2-core/card/
+The things in a strip are `<ds-card>` (`.ds-card`): `href` for one link, `tone` a palette colour's pastel (or `ink`), `width` and `height` in squares, slots `label`, `title`, default and `media` (`center`, `bleed`); `media-height` in squares gives cards side by side one picture room, so their pictures start on one line. Never build a product's own card tile. https://designsystem1.com/2-core/card/
 
 ## Toasts
 
@@ -415,7 +415,7 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 **Card** (`ds-card`)
 
-- `card.media-level`: A card's picture stands on the card's foot, a square below the words at least, so the pictures of cards side by side stand on one level whatever the words above them. The room a taller card leaves goes above its picture, never below it, so pictures of one height side by side start on one line too; a taller picture starts higher.
+- `card.media-level`: A card's picture stands on the card's foot, a square below the words at least, so the pictures of cards side by side stand on one level whatever the words above them. The room a taller card leaves goes above its picture, never below it, so pictures of one height side by side start on one line too. Pictures of different heights side by side take one room (`media-height`, `--ds-card-media-height`) and start on one line, the foot cutting the taller.
 - `card.media-corners`: A picture is never rounded where it meets the card's edge: the card cuts it square there, and only a corner standing free inside the card, towards the words, keeps a picture's corner.
 
 **Carousel** (`ds-carousel`)

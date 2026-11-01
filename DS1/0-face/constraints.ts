@@ -186,7 +186,7 @@ export const constraints: Constraint[] = [
   {
     code: 'card.media-level',
     rule: "A card's picture stands on the card's foot, a square below the words at least, so the pictures of cards side by side stand on one level whatever the words above them.",
-    why: 'The room a taller card leaves goes above its picture, never below it, so pictures of one height side by side start on one line too; a taller picture starts higher.',
+    why: 'The room a taller card leaves goes above its picture, never below it, so pictures of one height side by side start on one line too. Pictures of different heights side by side take one room (`media-height`, `--ds-card-media-height`) and start on one line, the foot cutting the taller.',
     components: ['ds-card'],
     check: { file: 'tests/card.test.ts', test: "a picture stands on the card's foot, so pictures side by side stand on one level" },
     measures: ['card with a media picture', 'cards with a media picture'],
