@@ -46,7 +46,8 @@ export function paintCompositionSelection(root: HTMLElement, selection: Set<stri
 /** A gesture owns its overlay and geometry cache; the composition changes only at release. */
 export function beginMarquee(root: HTMLElement, event: PointerEvent, previous: Set<string>, commit: (selection: Set<string>) => void, paint?: (selection: Set<string>) => void): () => void {
   const view = root.ownerDocument.defaultView!;
-  const stage = event.currentTarget as HTMLElement;
+  // A press heard on the document (a page whose root is its body) draws the marquee on the root.
+  const stage = ((event.currentTarget as Node | null)?.nodeType === 1 ? event.currentTarget : root) as HTMLElement;
   const base = event.shiftKey ? new Set(previous) : new Set<string>();
   const overlay = root.ownerDocument.createElement('div');
   overlay.className = 'consistency-marquee'; overlay.setAttribute('aria-hidden', 'true');
