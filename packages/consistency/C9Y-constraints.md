@@ -200,6 +200,76 @@ With reduced motion, a release applies the final layout at once, with the same g
 
 Held by `src/settle.test.ts`: “release uses translation only and reduced motion applies layout immediately”.
 
+### `motion.reduced-browser`
+
+With reduced motion, a block dropped in the editor lands at once: nothing animates after the drop and every block stands where the committed order draws it.
+
+The browser half of motion.reduced: the editor's own drop, measured in a page that asks for less motion.
+
+Held by `tests/drag-reduced-motion.mjs`: “With reduced motion a drop lands at once”.
+
+### `drag.cancel-home`
+
+Escape, the window losing focus or the page being hidden while a block is carried sends it home: the document is unchanged, no drag marks or moved siblings are left behind, the selection is kept and the block can be carried again.
+
+Held by `tests/drag-cancel.mjs`: “Escape, a lost window and a hidden page send a carried block home”.
+
+### `drag.release-anywhere`
+
+A block carried out of the canvas and released over the app ends its drag there: released over no list it goes home, the document unchanged, nothing is left marked and the next press reaches the page.
+
+The canvas keeps the pointer it was pressed in until release, in Chromium and WebKit alike, so the drag never sticks to a pointer that has left it.
+
+Held by `tests/drag-release-outside.mjs`: “Releasing a carried block outside the canvas ends the drag”.
+
+### `drag.auto-scroll`
+
+A block held near the canvas's top or bottom edge scrolls the page within a second, and dropped past the last block it lands last, once, without moving anything again.
+
+Held by `tests/drag-autoscroll.mjs`: “A block held at the bottom edge scrolls the page and lands last”.
+
+### `drag.scroll-while-carried`
+
+Scrolling the page while a block is carried keeps the drop under the pointer: the block lands where it was carried, once.
+
+Held by `tests/drag-wheel.mjs`: “Scrolling under a carried block keeps the drop under the pointer”.
+
+### `drag.no-self-nesting`
+
+A block that holds blocks is never dropped into itself or into anything it holds, by pointer or keyboard; the page stays a tree.
+
+Drag never offers a list inside the carried item, so its own lists neither take the drop nor make room.
+
+Held by `tests/drag-nesting.mjs`: “A block is never dropped into itself or what it holds”.
+
+### `drag.across-containers`
+
+A block moves between columns and out to the page in one landing; a column's single block carries its column, which lands as that block anywhere but among columns, so no empty column is left.
+
+The carried column stands at its block's height from the lift, so the room it makes is the room the block takes, and a list it enters reserves that room until the commit fills it.
+
+Held by `tests/drag-columns.mjs`: “Blocks move between columns and out to the page”.
+
+### `drag.touch`
+
+A finger lifts a block only after holding still; a finger that moves at once scrolls the page and changes nothing.
+
+Held by `tests/drag-touch.mjs`: “A finger lifts a block after a hold and scrolls without one”.
+
+### `drag.undo-redo`
+
+A pointer reorder is one step of the history: undo and redo restore the order and every block's place, each saved once.
+
+Held by `tests/drag-undo.mjs`: “A pointer reorder undoes and redoes as one saved step”.
+
+### `drag.target-shown`
+
+While a block is carried, the list it will land in is outlined by a 1px line (the page itself never is), a list it enters shows the room it reserves, and a block over no list fades; nothing stays marked after the drop.
+
+Outlines and opacity never move a block, so drag.one-movement and motion.transform-only hold.
+
+Held by `tests/drag-affordance.mjs`: “The list a carried block will land in is shown”.
+
 ## Blocks
 
 Capabilities come from the platform; `reorder` is added where `blocks.reorder` allows it. Measures are whole 20px squares multiplied by `--sf`.

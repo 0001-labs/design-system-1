@@ -132,6 +132,61 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
     rule: 'With reduced motion, a release applies the final layout at once, with the same geometry and no animation.',
     check: { file: 'src/settle.test.ts', test: 'release uses translation only and reduced motion applies layout immediately' },
   },
+  {
+    code: 'motion.reduced-browser',
+    rule: 'With reduced motion, a block dropped in the editor lands at once: nothing animates after the drop and every block stands where the committed order draws it.',
+    why: 'The browser half of motion.reduced: the editor\'s own drop, measured in a page that asks for less motion.',
+    check: { file: 'tests/drag-reduced-motion.mjs', test: 'With reduced motion a drop lands at once' },
+  },
+  {
+    code: 'drag.cancel-home',
+    rule: 'Escape, the window losing focus or the page being hidden while a block is carried sends it home: the document is unchanged, no drag marks or moved siblings are left behind, the selection is kept and the block can be carried again.',
+    check: { file: 'tests/drag-cancel.mjs', test: 'Escape, a lost window and a hidden page send a carried block home' },
+  },
+  {
+    code: 'drag.release-anywhere',
+    rule: 'A block carried out of the canvas and released over the app ends its drag there: released over no list it goes home, the document unchanged, nothing is left marked and the next press reaches the page.',
+    why: 'The canvas keeps the pointer it was pressed in until release, in Chromium and WebKit alike, so the drag never sticks to a pointer that has left it.',
+    check: { file: 'tests/drag-release-outside.mjs', test: 'Releasing a carried block outside the canvas ends the drag' },
+  },
+  {
+    code: 'drag.auto-scroll',
+    rule: 'A block held near the canvas\'s top or bottom edge scrolls the page within a second, and dropped past the last block it lands last, once, without moving anything again.',
+    check: { file: 'tests/drag-autoscroll.mjs', test: 'A block held at the bottom edge scrolls the page and lands last' },
+  },
+  {
+    code: 'drag.scroll-while-carried',
+    rule: 'Scrolling the page while a block is carried keeps the drop under the pointer: the block lands where it was carried, once.',
+    check: { file: 'tests/drag-wheel.mjs', test: 'Scrolling under a carried block keeps the drop under the pointer' },
+  },
+  {
+    code: 'drag.no-self-nesting',
+    rule: 'A block that holds blocks is never dropped into itself or into anything it holds, by pointer or keyboard; the page stays a tree.',
+    why: 'Drag never offers a list inside the carried item, so its own lists neither take the drop nor make room.',
+    check: { file: 'tests/drag-nesting.mjs', test: 'A block is never dropped into itself or what it holds' },
+  },
+  {
+    code: 'drag.across-containers',
+    rule: 'A block moves between columns and out to the page in one landing; a column\'s single block carries its column, which lands as that block anywhere but among columns, so no empty column is left.',
+    why: 'The carried column stands at its block\'s height from the lift, so the room it makes is the room the block takes, and a list it enters reserves that room until the commit fills it.',
+    check: { file: 'tests/drag-columns.mjs', test: 'Blocks move between columns and out to the page' },
+  },
+  {
+    code: 'drag.touch',
+    rule: 'A finger lifts a block only after holding still; a finger that moves at once scrolls the page and changes nothing.',
+    check: { file: 'tests/drag-touch.mjs', test: 'A finger lifts a block after a hold and scrolls without one' },
+  },
+  {
+    code: 'drag.undo-redo',
+    rule: 'A pointer reorder is one step of the history: undo and redo restore the order and every block\'s place, each saved once.',
+    check: { file: 'tests/drag-undo.mjs', test: 'A pointer reorder undoes and redoes as one saved step' },
+  },
+  {
+    code: 'drag.target-shown',
+    rule: 'While a block is carried, the list it will land in is outlined by a 1px line (the page itself never is), a list it enters shows the room it reserves, and a block over no list fades; nothing stays marked after the drop.',
+    why: 'Outlines and opacity never move a block, so drag.one-movement and motion.transform-only hold.',
+    check: { file: 'tests/drag-affordance.mjs', test: 'The list a carried block will land in is shown' },
+  },
 ];
 
 export type BlockKind = NonNullable<SurfaceNode['kind']>;
