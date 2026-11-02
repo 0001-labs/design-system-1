@@ -166,7 +166,7 @@ export const constraints: Constraint[] = [
   {
     code: 'color.text-contrast',
     rule: 'Visible text, including muted labels, placeholders and avatar initials, has at least 4.5:1 contrast against the background it is drawn on.',
-    why: 'Measure resolved colours through slots and open shadow roots, including transparency and opacity; image backgrounds and effects that cannot be measured need a visual review.',
+    why: 'Measure resolved colours through slots and open shadow roots, including transparency and opacity; image backgrounds and effects that cannot be measured need a visual review. In products, contrast-watch.ts measures the theme in use after load and reports each failure as `contrast.<theme>.<component>`.',
     components: ['ds-color', 'ds-text', 'ds-avatar'],
     check: { file: 'tests/text-contrast.test.ts', test: 'rendered text contrast catches component overrides, slots, alpha and opacity' },
     measures: ['text sample', 'text samples'],

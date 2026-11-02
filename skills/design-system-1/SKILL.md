@@ -407,7 +407,7 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 **Color** (`ds-color`)
 
-- `color.text-contrast`: Visible text, including muted labels, placeholders and avatar initials, has at least 4.5:1 contrast against the background it is drawn on. Measure resolved colours through slots and open shadow roots, including transparency and opacity; image backgrounds and effects that cannot be measured need a visual review.
+- `color.text-contrast`: Visible text, including muted labels, placeholders and avatar initials, has at least 4.5:1 contrast against the background it is drawn on. Measure resolved colours through slots and open shadow roots, including transparency and opacity; image backgrounds and effects that cannot be measured need a visual review. In products, contrast-watch.ts measures the theme in use after load and reports each failure as `contrast.<theme>.<component>`.
 
 **Avatar** (`ds-avatar`)
 
