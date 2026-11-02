@@ -1,3 +1,5 @@
+import { step } from './feedback';
+
 /** Revisioned persistence shared by native pages and the source-page adapter. */
 export interface DocumentSnapshot<Document> { build: string; base: string; revision: number; document: Document }
 export type DocumentSave<Document, Snapshot extends DocumentSnapshot<Document>> = (value: DocumentSnapshot<Document>) => Promise<Snapshot>;
@@ -41,17 +43,20 @@ export class DocumentState<Document, Snapshot extends DocumentSnapshot<Document>
     return pending;
   }
   private async drain(): Promise<boolean> {
+    let saves = 0;
     try {
       while (this.dirty && !this.disposed) {
         const document = copy(this.document);
         this.error = '';
         try {
           const saved = await this.save({ build: this.snapshot.build, base: this.snapshot.base, revision: this.snapshot.revision, document });
-          this.snapshot = saved; this.accepted = copy(saved.document);
+          this.snapshot = saved; this.accepted = copy(saved.document); saves++;
           if (equal(this.document, document)) this.document = copy(saved.document);
           this.changed();
         } catch (error) { clearTimeout(this.timer); this.error = error instanceof Error ? error.message : 'Could not save. Try again.'; return false; }
       }
+      // One step for a run of saves, so the Feedback loop sees each change reach the site.
+      if (saves && !this.dirty) step('changes saved');
       return !this.dirty;
     } finally { this.saving = null; this.changed(); }
   }

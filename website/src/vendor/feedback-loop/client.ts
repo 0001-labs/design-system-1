@@ -34,6 +34,7 @@
  */
 import { hashEmail, PERF_KIND, PERF_NETS, TESTER, type FeedbackBatch, type FeedbackEvent } from './events';
 import { isStaleImportError } from './stale-reload';
+import { leaveContext } from './sudden-leave';
 import { errorOutbox } from './error-outbox';
 import { eventCodeCandidate } from './idv1/advanced';
 
@@ -345,7 +346,8 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       if (hidden) return;
       hidden = true;
       sendMeasure();
-      record('leave', lastPath);
+      // What was on screen as they went (a loading state, a dialog, an error toast), never its words: the Worker reads a sudden leave from it.
+      record('leave', lastPath, leaveContext());
       flush();
     } else if (hidden) {
       hidden = false;

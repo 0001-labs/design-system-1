@@ -9,6 +9,7 @@ import '../../../DS1/2-core/ds-tag';
 import '../../../DS1/2-core/ds-text';
 import '../../../DS1/2-core/ds-icon';
 import { workspaceHeaders } from './workspace-choice';
+import { step } from './feedback';
 
 /**
  * Settings → Domains: a workspace's own domains on its sites, on a plan that has them; on Free, its sites stay on
@@ -93,6 +94,7 @@ export class ConsistencyDomains extends LitElement {
       for (const domain of this.waiting()) {
         const response = await fetch(`${API}/${domain.host}/check`, { method: 'POST', headers: workspaceHeaders() }).catch(() => null);
         const next = response?.ok ? await response.json().catch(() => null) as Domain | null : null;
+        if (next?.state === 'active') step('domain connected');
         if (next) this.replace(next);
       }
     } finally { this.checking = false; this.schedule(); }
@@ -122,6 +124,7 @@ export class ConsistencyDomains extends LitElement {
       const response = await fetch(API, { method: 'POST', headers: { ...workspaceHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ site: this.site, host: this.host }) }).catch(() => null);
       const body = response ? await response.json().catch(() => null) as (Domain & { error?: string }) | null : null;
       if (!response?.ok || !body?.host) { this.error = messageFor(body?.error, 'The domain could not be connected. Try again.'); return; }
+      step('domain added', { connected: body.state === 'active' });
       this.replace(body, this.site);
       this.host = '';
       this.schedule();

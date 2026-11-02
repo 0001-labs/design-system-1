@@ -1,6 +1,7 @@
 import type { NativeSection } from '../../../shared/consistency-native-page';
 import type { FieldDefinition, KindDefinition } from '../../../shared/consistency-vocabulary';
 import { createSurfaceElement } from './editor-surface';
+import { step } from './feedback';
 import { TONE_NAMES, kindDefinition, sectionLabel, sectionValue } from './native-page-model';
 import '../../../DS1/2-core/ds-number';
 import '../../../DS1/2-core/ds-icon';
@@ -68,6 +69,6 @@ export function appendKindChooser(menu: HTMLElement, kinds: readonly KindDefinit
   for (const definition of kinds) {
     const row = doc.createElement('button'); row.type = 'button'; row.setAttribute('role', 'menuitem'); row.textContent = sectionLabel(definition.kind);
     row.setAttribute('data-tooltip', definition.description); row.setAttribute('aria-description', definition.description);
-    row.addEventListener('click', () => choose(definition.kind)); menu.append(row);
+    row.addEventListener('click', () => { step('section added', { kind: definition.kind }); choose(definition.kind); }); menu.append(row);
   }
 }

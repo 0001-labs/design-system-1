@@ -8,6 +8,7 @@ import '../../../DS1/3-unit/ds-form';
 import '../../../DS1/3-unit/ds-row';
 
 import {draftSiteApi,type DraftSiteSummary,type DraftSite} from './draft-site-api';
+import { step } from './feedback';
 export {draftSiteApi,type DraftSiteSummary,type DraftSite} from './draft-site-api';
 
 /** A saved private site draft, using the production editor without the lab inspector. */
@@ -84,6 +85,7 @@ export class NewSite extends LitElement {
       const editor = this.previews.get(this.selected)!;
       if (!await editor.flush()) throw new Error('The preview is still opening. Try again.');
       const saved = await draftSiteApi<DraftSite>(this.workspace, this.creationId, { method: 'PUT', body: JSON.stringify({ name: this.name.trim(), document: editor.readDocument(), revision: 0 }) });
+      step('site created', { template: this.selected });
       this.dispatchEvent(new CustomEvent('site-created', { detail: saved, bubbles: true }));
     } catch (error) { this.problem = (error as Error).message; }
     finally { this.busy = false; }
