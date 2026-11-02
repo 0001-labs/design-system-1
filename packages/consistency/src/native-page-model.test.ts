@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { landingBlock, moveNativeBlocks, soleColumnBlock, PLACEHOLDER_PICTURE, addSectionItem, clampSectionMeasure, firstWordsId, itemsSlot, memberAt, moveSectionItem, nativeGridSpaces, nativeEntries, newSection, readAt, removeSectionItem, sectionItemIds, sectionKinds, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, writeAt } from './native-page-model';
 import { SECTION_KINDS, sectionDefinition } from '../../../shared/consistency-vocabulary';
-import { validateNativePage, type NativeCards, type NativeHero, type NativePageDocument, type NativeQuestions, type NativeSection } from '../../../shared/consistency-native-page';
+import { nativeBlockStyles, nativePageRootStyles, validateNativePage, type NativeCards, type NativeHero, type NativePageDocument, type NativeQuestions, type NativeSection } from '../../../shared/consistency-native-page';
 const box=(left:number,top:number,width:number,height:number)=>({left,top,width,height,right:left+width,bottom:top+height});
 describe('native page model',()=>{
   it('maps two featured and three ordinary gallery items to actual whitespace',()=>{
@@ -125,5 +125,25 @@ describe('moving several blocks together',()=>{
   it('changes nothing for blocks that are not siblings, or into one of themselves',()=>{
     expect(moveNativeBlocks(page,['a','x'],'page',0)).toBe(page);
     expect(moveNativeBlocks(page,['a','f'],'f',0)).toBe(page);
+  });
+});
+
+describe('side padding',()=>{
+  const context={images:[],collections:[],runtimes:{},bindings:[]};
+  it('is kept on a page and a section, and left off where it was never named',()=>{
+    const named:NativePageDocument={schema:1,kind:'native-page',layout:{padding:40,sidePadding:20,gap:20},blocks:[{id:'s',kind:'flow',direction:'column',gap:20,padding:40,sidePadding:0,children:[]}]};
+    expect(validateNativePage(named,context)).toEqual(named);
+    const plain:NativePageDocument={schema:1,kind:'native-page',layout:{padding:40,gap:20},blocks:[{id:'s',kind:'flow',direction:'column',gap:20,padding:40,children:[]}]};
+    const checked=validateNativePage(plain,context);
+    expect(checked.layout).not.toHaveProperty('sidePadding');expect(checked.blocks[0]).not.toHaveProperty('sidePadding');
+  });
+  it('draws the sides as their own measure only when named, so older pages keep equal sides',()=>{
+    expect(nativeBlockStyles({id:'s',kind:'flow',direction:'column',gap:20,padding:40,children:[]})).not.toHaveProperty('--c9y-side-padding');
+    expect(nativeBlockStyles({id:'s',kind:'flow',direction:'column',gap:20,padding:40,sidePadding:0,children:[]})['--c9y-side-padding']).toBe('calc(0px * var(--sf,1))');
+    expect(nativeBlockStyles({id:'c',kind:'component',name:'box',children:[],padding:40})).toMatchObject({padding:'calc(40px * var(--sf,1))!important'});
+    expect(nativeBlockStyles({id:'c',kind:'component',name:'box',children:[],padding:40,sidePadding:20})).toMatchObject({padding:'calc(40px * var(--sf,1)) calc(20px * var(--sf,1))!important'});
+    const sidesOnly=nativeBlockStyles({id:'c',kind:'component',name:'box',children:[],sidePadding:20});
+    expect(sidesOnly['padding-inline']).toBe('calc(20px * var(--sf,1))!important');expect(sidesOnly).not.toHaveProperty('padding');expect(sidesOnly).not.toHaveProperty('side-padding');
+    expect(nativePageRootStyles({schema:1,kind:'native-page',layout:{mode:'document',overrides:['padding','sidePadding'],padding:40,sidePadding:0,gap:0},blocks:[]})).toMatchObject({padding:'calc(40px * var(--sf,1))','padding-inline':'calc(0px * var(--sf,1))'});
   });
 });

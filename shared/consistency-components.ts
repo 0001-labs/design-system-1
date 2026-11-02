@@ -10,14 +10,16 @@ export interface NativeComponentDefinition {
   markup?: string;
 }
 export type NativeComponents = Readonly<Record<string, NativeComponentDefinition>>;
-export const COMPONENT_MEASURES = ['gap','padding','height','marginTop','marginBottom','columnGap','rowGap'] as const;
+export const COMPONENT_MEASURES = ['gap','padding','sidePadding','height','marginTop','marginBottom','columnGap','rowGap'] as const;
 export const COMPONENT_FIELDS = ['text','label','title','figure','caption','placeholder','alt','href','src','poster','value','tone','variant','color','primary','secondary','data-face','data-size','size'] as const;
 export const componentEscape = (value: string) => value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const voidTags = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
 /** Typed geometry follows the component's own layout surface. */
 export function componentGeometry(definition:NativeComponentDefinition,styles:Record<string,string>):Record<string,string>{
   const result={...styles};
-  if(definition.tag==='ds-card'&&result.padding!==undefined){result['--ds-card-padding-override']=result.padding;delete result.padding;}
+  // A card pads through its own tokens: the top and bottom through one, the sides through another that falls back to it.
+  if(definition.tag==='ds-card'&&result.padding!==undefined){const important=result.padding.endsWith('!important')?'!important':'',value=result.padding.replace(/!important$/,''),two=value.match(/^(.+\))\s+(calc\(.+)$/),top=two?two[1]!:value,side=two?.[2];result['--ds-card-padding-override']=top+important;if(side)result['--ds-card-side-padding-override']=side+important;delete result.padding;}
+  if(definition.tag==='ds-card'&&result['padding-inline']!==undefined){result['--ds-card-side-padding-override']=result['padding-inline'];delete result['padding-inline'];}
   // A content height is a minimum: spacing and writing must be able to make the
   // page taller. Media keep their explicit crop height. Editor and publication
   // share this mapping, so reopening never restores a clipping box.

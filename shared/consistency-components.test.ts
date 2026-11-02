@@ -2,6 +2,7 @@ import {expect,test} from 'vite-plus/test';
 import {Window} from 'happy-dom';
 import {importComponentPage} from './consistency-import';
 import {renderNativePage,validateNativePage} from './consistency-native-page';
+import {componentGeometry} from './consistency-components';
 const source='<style>.cards{display:grid;gap:40px}</style><section class="cards" style="padding:20px"><h1>Keep <em>every</em> word &amp; mark.</h1><ds-card tone="sharp-blue"><span slot="title">A title</span><p>A body.</p></ds-card><svg viewBox="0 0 20 20"><path d="M0 0h20v20z"></path></svg></section>';
 test('an imported page round trips content, DOM structure, slots and library styles through the common renderer',()=>{
  const window=new Window();window.document.body.innerHTML=source;
@@ -33,4 +34,11 @@ test('resized content grows instead of clipping while pictures retain their crop
  const section=window.document.querySelector('section')!,image=window.document.querySelector('img')!;
  expect(section.style.height).toBe('auto');expect(section.style.minHeight).toContain('200px');
  expect(image.style.height).toContain('200px');expect(image.style.minHeight).toBe('');
+});
+
+test('a card takes its top and bottom through one token and its sides through another',()=>{
+  const card={tag:'ds-card'} as Parameters<typeof componentGeometry>[0];
+  expect(componentGeometry(card,{padding:'calc(40px * var(--sf,1))!important'})).toEqual({'--ds-card-padding-override':'calc(40px * var(--sf,1))!important'});
+  expect(componentGeometry(card,{padding:'calc(40px * var(--sf,1)) calc(0px * var(--sf,1))!important'})).toEqual({'--ds-card-padding-override':'calc(40px * var(--sf,1))!important','--ds-card-side-padding-override':'calc(0px * var(--sf,1))!important'});
+  expect(componentGeometry(card,{'padding-inline':'calc(20px * var(--sf,1))!important'})).toEqual({'--ds-card-side-padding-override':'calc(20px * var(--sf,1))!important'});
 });

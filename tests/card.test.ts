@@ -50,6 +50,7 @@ test("a card's empty slots take no room", async () => {
 test("the sheet pads the card a square and puts no shadow on a filled card", () => {
   const card = sheet("1-root/card.css");
   expect(card).toContain("--ds-card-padding: var(--ds-card-padding-override, var(--ds-unit))");
+  expect(card).toContain("--ds-card-side-padding: var(--ds-card-side-padding-override, var(--ds-card-padding))");
   expect(card).toContain("border-radius: var(--ds-radius-card)");
   expect(card).not.toMatch(/box-shadow:\s*0 \d/);
 });

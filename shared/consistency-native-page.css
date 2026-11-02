@@ -1,9 +1,9 @@
 /* The same native block layout is used by publication and the editing frame. */
-.c9y-native-page{--c9y-unit:calc(20px * var(--sf,1));box-sizing:border-box;max-width:100%;margin-inline:auto;padding:var(--c9y-page-padding,0px);display:flex;flex-direction:column;gap:var(--c9y-page-gap,var(--c9y-unit))}
+.c9y-native-page{--c9y-unit:calc(20px * var(--sf,1));box-sizing:border-box;max-width:100%;margin-inline:auto;padding:var(--c9y-page-padding,0px) var(--c9y-page-side-padding,var(--c9y-page-padding,0px));display:flex;flex-direction:column;gap:var(--c9y-page-gap,var(--c9y-unit))}
 .c9y-native-page *, .c9y-native-page *::before, .c9y-native-page *::after{box-sizing:border-box}
 .c9y-native-node{min-width:0;max-width:100%;margin:0}
 .c9y-native-node[hidden]{display:none!important}
-.c9y-native-flow{display:flex;flex-direction:var(--c9y-direction,column);gap:var(--c9y-gap);padding:var(--c9y-padding,0px);align-items:stretch}
+.c9y-native-flow{display:flex;flex-direction:var(--c9y-direction,column);gap:var(--c9y-gap);padding:var(--c9y-padding,0px) var(--c9y-side-padding,var(--c9y-padding,0px));align-items:stretch}
 .c9y-native-flow[data-direction="row"]>.c9y-native-node{flex:1 1 0}
 details.c9y-native-flow{display:block}
 .c9y-native-disclosure{display:flex;flex-direction:var(--c9y-direction,column);gap:var(--c9y-gap);padding-block-start:var(--c9y-gap)}

@@ -18,6 +18,12 @@ Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-fo
 
 Held by `tests/spacing-visibility.mjs`: “hover-only spacing guides”.
 
+### `spacing.sides-apart`
+
+A page's, section's or card's top and bottom and its sides are two spaces: the handle across the top changes only the top and bottom, the handle down the side only the sides, and the document records both.
+
+Held by `tests/spacing-sides.mjs`: “top and side padding apart”.
+
 ### `spacing.vertical-growth`
 
 Content containers grow vertically when edited spacing needs more room, including after resizing and reopening, instead of clipping their words.

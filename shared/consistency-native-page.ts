@@ -10,7 +10,7 @@ import footerStyles from '../DS1/1-root/footer.css?raw';
 export interface NativeBlockBase { id: string; width?: number; hidden?: boolean; locale?: string; marginTop?:number; marginBottom?:number }
 export interface NativeFlow extends NativeBlockBase {
   kind: 'flow'; role?: 'section' | 'header' | 'nav' | 'footer' | 'main';
-  direction: 'column' | 'row'; mobileDirection?: 'column' | 'row'; gap: number; mobileGap?: number; padding: number; children: NativeBlock[];
+  direction: 'column' | 'row'; mobileDirection?: 'column' | 'row'; gap: number; mobileGap?: number; padding: number; sidePadding?: number; children: NativeBlock[];
   disclosure?: { label: string; open?: boolean };
 }
 export interface NativeGrid extends NativeBlockBase {
@@ -38,7 +38,7 @@ export interface NativeCollection extends NativeBlockBase {
 export type NativeRuntimeProps = Record<string, string | number | boolean | null>;
 export interface NativeRuntime extends NativeBlockBase { kind: 'runtime'; name: string; props: NativeRuntimeProps }
 export interface NativeText extends NativeBlockBase { kind: 'text'; text: string; editable?: boolean }
-export interface NativeComponent extends NativeBlockBase { kind:'component'; name:string; children:NativeBlock[]; values?:Record<string,string>; words?:Record<string,string>; gap?:number; padding?:number; height?:number; marginTop?:number; marginBottom?:number; columnGap?:number; rowGap?:number; design?:SiteSurfaceDesign }
+export interface NativeComponent extends NativeBlockBase { kind:'component'; name:string; children:NativeBlock[]; values?:Record<string,string>; words?:Record<string,string>; gap?:number; padding?:number; sidePadding?:number; height?:number; marginTop?:number; marginBottom?:number; columnGap?:number; rowGap?:number; design?:SiteSurfaceDesign }
 export type NativePrimitive = NativeText | NativeComponent | NativeFlow | NativeGrid | NativeContent | NativeImage | NativeLink | NativeCollection | NativeRuntime;
 
 /*
@@ -103,7 +103,7 @@ export const isNativeSection = (block: NativeBlock): block is NativeSection => (
 export interface NativePageDocument {
   schema: 1; kind: 'native-page';
   title?: string; description?: string; lang?: string;
-  layout: { mode?: 'document'; overrides?:('gap'|'padding'|'width')[]; tone?:string; maxWidth?: number; padding: number; gap: number };
+  layout: { mode?: 'document'; overrides?:('gap'|'padding'|'sidePadding'|'width')[]; tone?:string; maxWidth?: number; padding: number; sidePadding?: number; gap: number };
   blocks: NativeBlock[];
 }
 export interface NativeCollectionItem {
@@ -153,12 +153,14 @@ const squares = (value: number) => measure(value * 20);
 export function validateNativePage(value: unknown, context: NativePageContext): NativePageDocument {
   const source = record(value); keys(source,['schema','kind','title','description','lang','layout','blocks']);
   if (source.schema !== 1 || source.kind !== 'native-page') return invalid();
-  const layout = record(source.layout); keys(layout,['mode','overrides','tone','maxWidth','padding','gap']);
+  const layout = record(source.layout); keys(layout,['mode','overrides','tone','maxWidth','padding','sidePadding','gap']);
   const result: NativePageDocument = { schema:1, kind:'native-page', layout:{padding:integer(layout.padding),gap:integer(layout.gap)}, blocks:[] };
   if (layout.mode !== undefined) { if(layout.mode!=='document')return invalid();result.layout.mode='document'; }
-  if(layout.overrides!==undefined){if(!Array.isArray(layout.overrides)||layout.overrides.some(key=>!['gap','padding','width'].includes(key)))return invalid();result.layout.overrides=[...layout.overrides] as ('gap'|'padding'|'width')[];}
+  if(layout.overrides!==undefined){if(!Array.isArray(layout.overrides)||layout.overrides.some(key=>!['gap','padding','sidePadding','width'].includes(key)))return invalid();result.layout.overrides=[...layout.overrides] as ('gap'|'padding'|'sidePadding'|'width')[];}
   if(layout.tone!==undefined)result.layout.tone=choice(layout.tone,['','ink','sharp-blue','apple-green','pink','orange','yellow','purple']);
   if (layout.maxWidth !== undefined) result.layout.maxWidth=integer(layout.maxWidth,10000,200);
+  // The sides are their own space; a page that names none keeps them equal to its top and bottom, as it always has.
+  if (layout.sidePadding !== undefined) result.layout.sidePadding=integer(layout.sidePadding);
   if (source.title !== undefined) result.title=text(source.title,500);
   if (source.description !== undefined) result.description=text(source.description,2000);
   if (source.lang !== undefined) { result.lang=text(source.lang,20); if(!/^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(result.lang)) return invalid(); }
@@ -278,10 +280,11 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       if(input.design!==undefined){const d=record(input.design);keys(d,['tone','variant','color','appearance','action','gaps']);const design:SiteSurfaceDesign={};for(const key of ['tone','color'] as const)if(d[key]!==undefined)design[key]=choice(d[key],['','ink','sharp-blue','apple-green','pink','orange','yellow','purple']);if(d.variant!==undefined)design.variant=choice(d.variant,['filled','outlined'] as const);if(d.appearance!==undefined)design.appearance=choice(d.appearance,['plain','primary','secondary'] as const);if(d.action!==undefined){if(d.action===null)design.action=null;else{const a=record(d.action);keys(a,['kind','target']);design.action={kind:choice(a.kind,['link','page']),target:address(a.target)};}}if(d.gaps!==undefined){design.gaps={};for(const[key,value]of Object.entries(record(d.gaps))){if(!['label','title','body','footer','figure','media'].includes(key))return invalid();design.gaps[key]=integer(value);}}block.design=design;}
       for(const key of COMPONENT_MEASURES)if(input[key]!==undefined)block[key]=integer(input[key]);
     }else if(kind==='flow'){
-      keys(input,[...common,'role','direction','mobileDirection','gap','mobileGap','padding','children','disclosure']);
+      keys(input,[...common,'role','direction','mobileDirection','gap','mobileGap','padding','sidePadding','children','disclosure']);
       block={...base,kind,direction:choice(input.direction,['column','row']),gap:integer(input.gap),padding:integer(input.padding),children:nodes(input.children,depth+1)};
       if(input.mobileDirection!==undefined)block.mobileDirection=choice(input.mobileDirection,['column','row'] as const);
       if(input.mobileGap!==undefined)block.mobileGap=integer(input.mobileGap);
+      if(input.sidePadding!==undefined)block.sidePadding=integer(input.sidePadding);
       if(input.role!==undefined)block.role=choice(input.role,['section','header','nav','footer','main'] as const);
       if(input.disclosure!==undefined){const disclosure=record(input.disclosure);keys(disclosure,['label','open']);block.disclosure={label:text(disclosure.label,500)};if(disclosure.open!==undefined)block.disclosure.open=boolean(disclosure.open);}
     }else if(kind==='grid'){
@@ -357,8 +360,10 @@ export function nativeBlockStyles(block: NativeBlock): Record<string,string> {
   for(const key of ['marginTop','marginBottom'] as const)if(block[key]!==undefined)styles[key==='marginTop'?'margin-top':'margin-bottom']=measure(block[key]!);
   if(block.width!==undefined){styles.width=measure(block.width);styles.flex='0 1 auto';}
   if(block.kind==='component'){if(block.padding!==undefined)styles['--c9y-component-padding']=measure(block.padding);if(block.gap!==undefined)styles['--c9y-component-gap']=measure(block.gap);if(block.height!==undefined)for(const key of ['--ds-card-height','--ds-carousel-height'])styles[key]=measure(block.height)+'!important';if(block.width!==undefined)styles['--ds-card-width']=measure(block.width)+'!important';}
-  if(block.kind==='component')for(const key of COMPONENT_MEASURES)if(block[key]!==undefined)styles[key.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase())]=measure(block[key]!)+'!important';
-  if(block.kind==='flow')Object.assign(styles,{'--c9y-direction':block.direction,'--c9y-mobile-direction':block.mobileDirection??'column','--c9y-gap':measure(block.gap),'--c9y-mobile-gap':measure(block.mobileGap??block.gap),'--c9y-padding':measure(block.padding)});
+  if(block.kind==='component')for(const key of COMPONENT_MEASURES)if(key!=='sidePadding'&&block[key]!==undefined)styles[key.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase())]=measure(block[key]!)+'!important';
+  // Named sides stand apart from the top and bottom; without them a component's padding is one measure all round, as before.
+  if(block.kind==='component'&&block.sidePadding!==undefined){if(block.padding!==undefined)styles.padding=`${measure(block.padding)} ${measure(block.sidePadding)}!important`;else styles['padding-inline']=measure(block.sidePadding)+'!important';}
+  if(block.kind==='flow')Object.assign(styles,{'--c9y-direction':block.direction,'--c9y-mobile-direction':block.mobileDirection??'column','--c9y-gap':measure(block.gap),'--c9y-mobile-gap':measure(block.mobileGap??block.gap),'--c9y-padding':measure(block.padding),...(block.sidePadding!==undefined?{'--c9y-side-padding':measure(block.sidePadding)}:{})});
   if(block.kind==='grid'||block.kind==='collection')Object.assign(styles,{'--c9y-columns':String(block.kind==='collection'?nativeCollectionTracks(block).columns:block.columns),'--c9y-column-gap':measure(block.columnGap),'--c9y-row-gap':measure(block.rowGap)});
   if(block.kind==='grid')styles['--c9y-mobile-columns']=String(block.mobileColumns??1);
   if(block.kind==='collection'){
@@ -565,10 +570,10 @@ function renderList(block: NativeList, options: NativePageRenderOptions): string
 }
 export function renderNativePage(document: NativePageDocument, options: NativePageRenderOptions = {}): string {
   if(document.layout.mode==='document')return document.blocks.map(block=>renderNativeBlock(block,{...options,lang:document.lang??options.lang})).join('');
-  const styles={'--c9y-page-padding':measure(document.layout.padding),'--c9y-page-gap':measure(document.layout.gap),...(document.layout.maxWidth?{width:measure(document.layout.maxWidth)}:{})};
+  const styles={'--c9y-page-padding':measure(document.layout.padding),...(document.layout.sidePadding!==undefined?{'--c9y-page-side-padding':measure(document.layout.sidePadding)}:{}),'--c9y-page-gap':measure(document.layout.gap),...(document.layout.maxWidth?{width:measure(document.layout.maxWidth)}:{})};
   const pageOptions:NativePageRenderOptions={...options,lang:options.lang??document.lang};
   return`<div class="c9y-native-page"${options.editor?' data-c9y-native-root':''} style="${escape(styleText(styles))}">${document.blocks.map(block=>render(block,pageOptions)).join('')}</div>`;
 }
 
 /** Typed document-root overrides; the authored library owns every unspecified declaration. */
-export function nativePageRootStyles(document:NativePageDocument):Record<string,string>{const styles={...sitePagePatch(document.layout.tone??'').styles};if(document.layout.mode==='document')for(const key of document.layout.overrides??[])styles[key==='width'?'width':key]=measure(key==='width'?document.layout.maxWidth??1000:document.layout[key]);return styles;}
+export function nativePageRootStyles(document:NativePageDocument):Record<string,string>{const styles={...sitePagePatch(document.layout.tone??'').styles};if(document.layout.mode==='document')for(const key of document.layout.overrides??[])styles[key==='width'?'width':key==='sidePadding'?'padding-inline':key]=measure(key==='width'?document.layout.maxWidth??1000:key==='sidePadding'?document.layout.sidePadding??document.layout.padding:document.layout[key]);return styles;}

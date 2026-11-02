@@ -41,7 +41,10 @@
   --ds-card-ink: var(--ds-card-ink-override, var(--ds-text-color));
   --ds-card-muted: var(--ds-card-muted-override, var(--ds-text-color-muted));
   --ds-card-padding: var(--ds-card-padding-override, var(--ds-unit));
+  /* The sides are their own measure, equal to the top and bottom unless `--ds-card-side-padding-override` says otherwise. */
+  --ds-card-side-padding: var(--ds-card-side-padding-override, var(--ds-card-padding));
   --ds-card-text-padding: max(var(--ds-card-padding), var(--ds-card-text-inset-min, 0px));
+  --ds-card-text-side-padding: max(var(--ds-card-side-padding), var(--ds-card-text-inset-min, 0px));
   position: relative;
   box-sizing: border-box;
   display: flex;
@@ -54,9 +57,9 @@
   /* In a squares bento the surface reaches a quarter square towards its neighbours (`--ds-bento-inset-*`, 0 elsewhere), and the padding grows by as much so what it holds stays on the squares. */
   padding:
     calc(var(--ds-card-text-padding) + var(--ds-bento-inset-top, 0px))
-    calc(var(--ds-card-text-padding) + var(--ds-bento-inset-end, 0px))
+    calc(var(--ds-card-text-side-padding) + var(--ds-bento-inset-end, 0px))
     var(--ds-bento-inset-bottom, 0px)
-    calc(var(--ds-card-text-padding) + var(--ds-bento-inset-start, 0px));
+    calc(var(--ds-card-text-side-padding) + var(--ds-bento-inset-start, 0px));
   overflow: hidden;
   border-radius: var(--ds-radius-card);
   background: var(--ds-card-fill);
@@ -168,7 +171,7 @@
 
 .ds-card__media--center {
   justify-content: center;
-  margin-inline: calc(-1 * var(--ds-card-text-padding));
+  margin-inline: calc(-1 * var(--ds-card-text-side-padding));
 }
 
 /* A picture that bleeds runs on to the end edge and stands on the foot, the space a taller card
@@ -180,7 +183,7 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: safe flex-end;
-  margin-inline-end: calc(-1 * (var(--ds-card-text-padding) + var(--ds-bento-inset-end, 0px)));
+  margin-inline-end: calc(-1 * (var(--ds-card-text-side-padding) + var(--ds-bento-inset-end, 0px)));
   margin-block-end: calc(-1 * var(--ds-bento-inset-bottom, 0px));
   --ds-radius: 0px;
   --ds-image-end-radius: 0px;

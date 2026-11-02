@@ -117,6 +117,10 @@
 
 .ghost-surface--padding[aria-valuenow="0"] .ghost-measure{left:0;transform:translateY(-50%)}
 
+/* A side padding runs down the edge; at zero its line stands up, as a horizontal gap's does. */
+.ghost-surface--padding[aria-orientation="horizontal"][aria-valuenow="0"] .ghost-measure{left:50%;top:0;transform:translateX(-50%)}
+.consistency-native-guides .ghost-surface--padding[aria-orientation="horizontal"][aria-valuenow="0"]::after{left:50%;right:auto;top:0;bottom:0;width:1px;height:auto}
+
 .production-on .ghost-surface--width .ghost-measure{top:0}
 
 .consistency-projects:has(>ds-card[hidden])>.consistency-gap,
