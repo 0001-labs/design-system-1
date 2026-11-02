@@ -89,6 +89,21 @@ export interface FeedbackLoop {
 
 /** How long a failed part of the app waits to be recorded, so a document reloaded for a publish never reports it. */
 const STALE_IMPORT_GRACE = 2_000;
+/**
+ * A request still under way when the person follows a link fails as the document goes: Safari rejects it
+ * with "Load failed", Chrome with "Failed to fetch", Firefox with "NetworkError when attempting to fetch
+ * resource.", with no stack. A third party's request the page never waited for (Google's tag) then surfaces
+ * as an uncaught rejection in the page being left. Such a failure waits this long and is recorded only if
+ * the document has not gone (`pagehide`) since; one met by a page that stays is recorded.
+ */
+const LEAVING_GRACE = 10_000;
+const NETWORK_FAILURE = /^(?:Load failed|Failed to fetch|NetworkError when attempting to fetch resource\.?|The network connection was lost\.?)$/i;
+
+/** Whether an error is the browser's own words for a request that failed on the network. */
+export function isNetworkFailure(error: unknown): boolean {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === 'string' && NETWORK_FAILURE.test(message.trim());
+}
 const DEFAULT_ENDPOINT = 'https://system.0001.dev/api/feedback/events';
 const VISITOR_KEY = 'feedback-loop:visitor';
 const SESSION_KEY = 'feedback-loop:session';
@@ -286,8 +301,16 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
     // stale-reload.ts then loads the document afresh within a moment, and a failure the page
     // recovered from is no failure. One it did not recover from is recorded after that moment.
     if (isStaleImportError(error)) { setTimeout(() => { if (!stopped) loop.error(error, source); }, STALE_IMPORT_GRACE); return; }
+    // A request cut off because the page is being left is no failure of the page.
+    if (isNetworkFailure(error)) {
+      const at = Date.now();
+      setTimeout(() => { if (!stopped && leftAt < at) loop.error(error, source); }, LEAVING_GRACE);
+      return;
+    }
     loop.error(error, source);
   };
+  let leftAt = 0;
+  const onPageHide = () => { leftAt = Date.now(); };
   // DS1 reports only explicitly classified failures. Never infer from a colour,
   // an alert role, console output or arbitrary text in the page.
   const onFailure = (event: Event) => {
@@ -365,6 +388,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onError);
       window.removeEventListener('popstate', onNavigate);
+      window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('visibilitychange', onVisibility);
     },
   };
@@ -386,6 +410,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
   window.addEventListener('error', onError);
   window.addEventListener('unhandledrejection', onError);
   window.addEventListener('popstate', onNavigate);
+  window.addEventListener('pagehide', onPageHide);
   document.addEventListener('visibilitychange', onVisibility);
   // Single-page apps change the address without a load: watch pushState and replaceState too.
   const history = window.history;

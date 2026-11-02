@@ -92,12 +92,12 @@
     }
   },
   "Feedback loop": {
-    "commit": "473fe45309a819b1dfe257802755abd80e6f6b53",
+    "commit": "37d35b96226ec27e31a5c53652c13ed9d59ef28b",
     "version": null,
     "owned": ["website/src/vendor/feedback-loop"],
     "files": {
       "website/src/vendor/feedback-loop/README.md": "18628e25dc23a90715383a435c82684b582ca714c131a0d049e3ce26891fa892",
-      "website/src/vendor/feedback-loop/client.ts": "10120cbd87afda319ace1cb5f25b0fc4025792602a934436c75a417f7fdc7369",
+      "website/src/vendor/feedback-loop/client.ts": "d88b04f0979d854f3df413ba161eedff5dd04106ab9f4580a2618ad1d1bd083a",
       "website/src/vendor/feedback-loop/error-outbox.ts": "b583a096726c2db38ee5868d1374bdefb1f800a585790168f1ed055490a858bd",
       "website/src/vendor/feedback-loop/events.ts": "b4d97701d18c7b171656e9d5ac607fe9788cd12b2e34e4ee551aae2bf85f5760",
       "website/src/vendor/feedback-loop/idv1/advanced.ts": "9516a1706baf856caaabbb4ca62521aeb0ac0c12120347496d834874148d9f55",
