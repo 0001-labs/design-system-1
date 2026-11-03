@@ -241,7 +241,9 @@ button and name for assistive technology. Keep swipe, Escape and the configured
 backdrop/outside dismissal available; do not disable every way to leave a sheet.
 A modeless sheet has no backdrop, so the page above it stands for one: with
 `closeOnBackdrop` (the default) a press there closes it with the reason
-`outside`, and the press still reaches the page.
+`outside`, and the press still reaches the page. A finger closes an overlay
+that closes outside as it lifts, since Safari sends no click for a tap on
+something that is not itself clickable; a mouse closes it on its click.
 Desktop close controls retain their existing appearance.
 
 For tabs, mark the native dialog `data-ds-overlay-tabbed`, keep the tabs in

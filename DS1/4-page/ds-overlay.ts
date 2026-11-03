@@ -316,6 +316,7 @@ export class Overlay extends LitElement {
     document.addEventListener("keydown", this.onDocumentKey);
     document.addEventListener("pointerdown", this.onOutsidePress, true);
     document.addEventListener("click", this.onOutsideClick, true);
+    document.addEventListener("pointerup", this.onOutsideRelease, true);
     document.addEventListener("wheel", this.onScrollGesture, { passive: false });
     document.addEventListener("touchmove", this.onScrollGesture, { passive: false });
   }
@@ -335,6 +336,7 @@ export class Overlay extends LitElement {
     document.removeEventListener("keydown", this.onDocumentKey);
     document.removeEventListener("pointerdown", this.onOutsidePress, true);
     document.removeEventListener("click", this.onOutsideClick, true);
+    document.removeEventListener("pointerup", this.onOutsideRelease, true);
     document.removeEventListener("wheel", this.onScrollGesture);
     document.removeEventListener("touchmove", this.onScrollGesture);
     this.outsidePress = null;
@@ -385,13 +387,23 @@ export class Overlay extends LitElement {
   private onOutsideClick = (event: Event) => {
     if (!this.modeless || !this.isTop() || event.composedPath().includes(this)) return;
     if (this.blockOutside) { event.preventDefault(); event.stopImmediatePropagation(); }
-    // A modeless sheet has no backdrop, and on a phone its close button is hidden: the page above
-    // it stands for the backdrop, or the sheet could not be left at all (Link's people sheet,
-    // 3 November 2026). The press still reaches the page, as every modeless outside press does.
-    const closes = this.closeOnOutside || (this.kind === "sheet" && this.closeOnBackdrop);
-    if (closes && this.outsidePress !== false) this.requestClose("outside");
+    if (this.closesOutside && this.outsidePress !== false) this.requestClose("outside");
     this.outsidePress = null;
   };
+  /**
+   * A finger lifted outside closes it at once: Safari sends no click for a tap on something that is
+   * not itself clickable (a header's fill, a page's margin), so waiting for one leaves the overlay
+   * open on an iPhone. A finger that scrolled was cancelled and lifts nothing; a mouse keeps its click.
+   */
+  private onOutsideRelease = (event: PointerEvent) => {
+    if (event.pointerType === "mouse" || !this.modeless || !this.isTop() || this.blockOutside || event.composedPath().includes(this)) return;
+    if (this.closesOutside && this.outsidePress === true) this.requestClose("outside");
+  };
+  /** Whether a press outside closes it: `closeOnOutside`, or a modeless sheet's `closeOnBackdrop`.
+   * A modeless sheet has no backdrop, and on a phone its close button is hidden: the page above it
+   * stands for the backdrop, or the sheet could not be left at all (Link's people sheet, 3 November
+   * 2026). The press still reaches the page, as every modeless outside press does. */
+  private get closesOutside() { return this.closeOnOutside || (this.kind === "sheet" && this.closeOnBackdrop); }
 
   private onCancel = (event: Event) => {
     event.preventDefault();

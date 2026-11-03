@@ -350,3 +350,33 @@ test("before it decides, a move towards the edge is held from the page, so Safar
   Object.defineProperties(dialog, { scrollHeight: { value: 900, configurable: true }, clientHeight: { value: 400, configurable: true }, scrollTop: { value: 50, configurable: true } });
   expect(first([[100, 400], [100, 404]]), "content scrolled down scrolls back first").toBe(false);
 });
+
+test("a finger lifted outside closes a modeless overlay without waiting for a click Safari never sends; a mouse waits for its click", async () => {
+  const page = document.createElement("div");
+  document.body.append(page);
+  const host = document.createElement("ds-overlay");
+  host.type = "sheet";
+  host.nonModal = true;
+  host.innerHTML = '<dialog aria-label="People"><button>Inside</button></dialog>';
+  document.body.append(host);
+  const lift = (target: Element, pointerType: string) => {
+    target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true, pointerType }));
+    target.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, composed: true, pointerType }));
+  };
+  await host.show();
+  lift(host.querySelector("dialog button")!, "touch");
+  expect(host.open, "a finger inside keeps it").toBe(true);
+  lift(page, "mouse");
+  expect(host.open, "a mouse waits for its click").toBe(true);
+  page.click();
+  expect(host.open).toBe(false);
+  await host.show();
+  lift(page, "touch");
+  expect(host.open, "a finger lifted on the page above closes it").toBe(false);
+  await host.show();
+  page.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, composed: true, pointerType: "touch" }));
+  expect(host.open, "a lift without its press outside (a drag that ended there) keeps it").toBe(true);
+  host.closeOnBackdrop = false;
+  lift(page, "touch");
+  expect(host.open, "closeOnBackdrop off keeps it").toBe(true);
+});
