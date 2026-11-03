@@ -32,7 +32,7 @@
  * words of the product's public pages (elements marked `data-feedback-public`)
  * while nobody is signed in.
  */
-import { hashEmail, PERF_KIND, PERF_NETS, TESTER, type FeedbackBatch, type FeedbackEvent } from './events';
+import { hashEmail, LIMITS, PERF_KIND, PERF_NETS, TESTER, type FeedbackBatch, type FeedbackEvent, type PerfFile, type PerfFileKind } from './events';
 import { isStaleImportError } from './stale-reload';
 import { leaveContext } from './sudden-leave';
 import { errorOutbox } from './error-outbox';
@@ -336,7 +336,8 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
     measured = true;
     const props = measure.figures();
     measure.stop();
-    if (Object.keys(props).length) push({ kind: PERF_KIND, name: loadPath, at: Date.now(), path: loadPath, props });
+    const files = measure.files();
+    if (Object.keys(props).length) push({ kind: PERF_KIND, name: loadPath, at: Date.now(), path: loadPath, props, ...(files.length ? { files } : {}) });
   };
   // Hidden: the person left (another tab or app, the phone locked, the page closing). Shown again: they came
   // back to the same page, which is not a new page view. Each is recorded once, however the browser repeats it.
@@ -447,7 +448,7 @@ type Interaction = PerformanceEntry & { interactionId?: number };
  * fifty (INP). Hosts are counted, never named; the Feedback loop's own
  * requests are left out. Null where the browser has no PerformanceObserver.
  */
-function measureLoad(endpoint: string): { figures(): Record<string, number | string>; stop(): void; onStop(run: () => void): void } | null {
+function measureLoad(endpoint: string): { figures(): Record<string, number | string>; files(): PerfFile[]; stop(): void; onStop(run: () => void): void } | null {
   if (typeof performance === 'undefined' || typeof PerformanceObserver === 'undefined' || !performance.getEntriesByType) return null;
   let fcp = 0, lcp = 0, cls = 0, windowValue = 0, windowFirst = 0, windowLast = 0;
   const interactions = new Map<number, number>();
@@ -491,7 +492,16 @@ function measureLoad(endpoint: string): { figures(): Record<string, number | str
     const page = nav();
     let js = 0, css = 0, font = 0, img = 0, total = 0, sent = 0, jsFirst = 0, jsThird = 0, requests = 0, scripts = 0;
     const hosts = new Set<string>();
-    if (page) { total += page.encodedBodySize || 0; sent += page.transferSize || 0; requests++; }
+    const collected = new Map<string, PerfFile>();
+    const keep = (name: string, kind: PerfFileKind, bytes: number) => {
+      if (!bytes || name.length > LIMITS.perfFileName) return;
+      const kept = collected.get(name);
+      if (kept) kept.bytes += bytes; else collected.set(name, { name, kind, bytes });
+    };
+    if (page) {
+      total += page.encodedBodySize || 0; sent += page.transferSize || 0; requests++;
+      keep(location.pathname || '/', 'doc', page.encodedBodySize || page.transferSize || 0);
+    }
     const home = site(location.hostname);
     for (const entry of performance.getEntriesByType('resource') as PerformanceResourceTiming[]) {
       if (entry.name.startsWith(own)) continue;
@@ -506,14 +516,18 @@ function measureLoad(endpoint: string): { figures(): Record<string, number | str
       const file = url.pathname.toLowerCase();
       const first = url.hostname === location.hostname || site(url.hostname) === home;
       if (!first) hosts.add(url.hostname);
+      let kind: PerfFileKind = 'other';
       if (/javascript|ecmascript/.test(type) || entry.initiatorType === 'script' || /\.m?js$/.test(file)) {
-        js += size; scripts++;
+        js += size; scripts++; kind = 'js';
         if (first) jsFirst += size; else jsThird += size;
-      } else if (/css/.test(type) || /\.css$/.test(file)) css += size;
-      else if (/^font\//.test(type) || /\.(woff2?|ttf|otf|eot)$/.test(file)) font += size;
-      else if (/^image\//.test(type) || entry.initiatorType === 'img' || entry.initiatorType === 'image' || /\.(png|jpe?g|gif|webp|avif|svg|ico)$/.test(file)) img += size;
+      } else if (/css/.test(type) || /\.css$/.test(file)) { css += size; kind = 'css'; }
+      else if (/^font\//.test(type) || /\.(woff2?|ttf|otf|eot)$/.test(file)) { font += size; kind = 'font'; }
+      else if (/^image\//.test(type) || entry.initiatorType === 'img' || entry.initiatorType === 'image' || /\.(png|jpe?g|gif|webp|avif|svg|ico)$/.test(file)) { img += size; kind = 'img'; }
+      // Another host by its name alone; the page's own files by path, the build's content hash taken out.
+      keep(first ? url.pathname.replace(BUILD_HASH, '') : url.hostname, kind, size);
     }
     Object.assign(out, { js, css, font, img, total, sent, jsFirst, jsThird, requests, scripts, hosts: hosts.size });
+    payload = total > 0 && sent >= total * COLD_LOAD ? [...collected.values()] : [];
     if (page) {
       if (page.responseStart > 0) out.ttfb = Math.round(since(page.responseStart));
       if (page.domContentLoadedEventEnd > 0) out.dcl = Math.round(since(page.domContentLoadedEventEnd));
@@ -533,12 +547,19 @@ function measureLoad(endpoint: string): { figures(): Record<string, number | str
     if (net && (PERF_NETS as readonly string[]).includes(net)) out.net = net;
     return out;
   };
+  let payload: PerfFile[] = [];
   return {
     figures,
+    files: () => payload.sort((a, b) => b.bytes - a.bytes).slice(0, LIMITS.perfFiles),
     stop: () => { for (const observer of observers.splice(0)) observer.disconnect(); for (const run of stops.splice(0)) run(); },
     onStop: run => { stops.push(run); },
   };
 }
+
+/** A load at least this share of whose bytes came over the network is cold: a first visit's payload. */
+const COLD_LOAD = 0.9;
+/** A build's content hash before the extension (Vite's `main.4BEnCfGM.js`), taken out so a file keeps its name across releases. */
+const BUILD_HASH = /\.(?=[\w-]*[A-Z0-9])[\w-]{8,12}(?=\.[a-z0-9]+$)/;
 
 function safeOrigin(url: string): string {
   try { return new URL(url).origin; } catch { return 'unknown'; }

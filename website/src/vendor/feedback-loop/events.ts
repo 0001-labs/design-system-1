@@ -47,7 +47,19 @@ export interface PerfEvent {
   path: string;
   /** The figures, by PERF_METRICS key; `net` is the connection's effective type. */
   props: Record<string, number | string>;
+  /** What a cold load (nearly everything over the network) fetched, file by file: its payload. */
+  files?: PerfFile[];
 }
+
+/**
+ * One file of a cold load's payload. The page's own site names its files by path, without the query
+ * and with a build's content hash taken out (`/assets/main.4BEnCfGM.js` is `/assets/main.js`), so
+ * the same file adds up across releases; another host is named by its host alone, never a path.
+ * The document itself is `doc`. Sizes are compressed bytes, as sent.
+ */
+export const PERF_FILE_KINDS = ['doc', 'js', 'css', 'font', 'img', 'other'] as const;
+export type PerfFileKind = (typeof PERF_FILE_KINDS)[number];
+export interface PerfFile { name: string; kind: PerfFileKind; bytes: number }
 
 /**
  * A perf event's figures and what each one is, so the Worker can check them:
@@ -110,6 +122,9 @@ export const LIMITS = {
   ua: 200,
   /** The most keys a perf event's props may carry; the known ones (PERF_METRICS and `net`) are kept, any other dropped. */
   perfKeys: 24,
+  /** The most files a cold load's payload lists, the largest kept, and the longest name. */
+  perfFiles: 80,
+  perfFileName: 160,
 } as const;
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -179,7 +194,23 @@ export function parsePerf(value: unknown, now = Date.now()): PerfEvent {
     if (typeof number !== 'number' || !Number.isFinite(number) || number < 0 || number > PERF_MAX[sort]) continue;
     props[key] = sort === 'score' ? Math.round(number * 10_000) / 10_000 : sort === 'flag' ? (number ? 1 : 0) : Math.round(number);
   }
-  return { kind: PERF_KIND, name: path, at: clamped, path, props };
+  const files = parsePerfFiles(event.files);
+  return { kind: PERF_KIND, name: path, at: clamped, path, props, ...(files.length ? { files } : {}) };
+}
+
+/** A payload's files, checked: a file that is not a plausible name, kind and size is dropped, never the load. */
+export function parsePerfFiles(value: unknown): PerfFile[] {
+  if (!Array.isArray(value)) return [];
+  const out: PerfFile[] = [];
+  for (const item of value.slice(0, LIMITS.perfFiles)) {
+    if (!item || typeof item !== 'object') continue;
+    const { name, kind, bytes } = item as Record<string, unknown>;
+    if (typeof name !== 'string' || !name || name.length > LIMITS.perfFileName || /[\s?#]/.test(name)) continue;
+    if (!(PERF_FILE_KINDS as readonly unknown[]).includes(kind)) continue;
+    if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0 || bytes > PERF_MAX.bytes) continue;
+    out.push({ name, kind: kind as PerfFileKind, bytes: Math.round(bytes) });
+  }
+  return out;
 }
 
 /** Checks a whole batch from the network, returning a clean copy or throwing. */
