@@ -242,7 +242,7 @@ Write a shortcut once, `"mod+shift+d"`, and let `DS1/0-face/keys.ts` do the rest
 ## VisualKit windows
 
 - **A product shown in a window** is VisualKit's `<ds-app-chrome kind="macos-compact">` (`DS1/5-visual-kit/app-chrome.ts`) or `<ds-window>`, on the product's own colours: a desktop window's **16:10** (forty squares by twenty-five where it has the room), never stretched to its content and never taller than it is wide on a computer. Narrower than thirty squares (a phone), it stands **4:5**. Never a hand-drawn browser bar, traffic lights or address.
-- **What it holds comes to the window**, never the other way: the product at its own measures, centred in the window's middle, and scaled down as a whole by making its stage a surface (`data-ds-surface` with `--ds-sf` set to the fit, so every measure follows) until it stands whole. Choose the product's own narrow form first (Home's two-square days and one event line on a phone), then scale; never crop it, scroll it inside the window or leave it pinned to a corner with empty room beside it. Joachim, 3 November 2026.
+- **What it holds comes to the window**, never the other way: the product's whole page as a person sees it, its normal header included (Link's brand band with the workspace's name and people, then Home's column), drawn on a canvas of a real window's size (1024 × 640 for a computer, 400 × 500 for a phone's form) and zoomed out to the window as one picture (`transform: scale` from the window's width). The page runs on past the window's foot as a real window cuts it; never crop it at the sides, scroll it inside the window, scale one piece apart from its header, or leave it pinned to a corner with empty room beside it. Joachim, 3 November 2026.
 
 ## Figures, meters and steps
 
