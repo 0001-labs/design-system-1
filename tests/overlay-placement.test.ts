@@ -283,3 +283,70 @@ test("detail follows the viewport without replacing the open dialog or changing 
   host.requestClose("escape");
   vi.unstubAllGlobals();
 });
+
+test("a modeless sheet closes on a press on the page above it, which stands for its backdrop", async () => {
+  const page = document.createElement("button");
+  const pressed = vi.fn();
+  page.addEventListener("click", pressed);
+  document.body.append(page);
+  const host = document.createElement("ds-overlay");
+  host.type = "sheet";
+  host.nonModal = true;
+  host.closeOnOutside = false;
+  host.innerHTML = '<dialog aria-label="People"><button>Inside</button></dialog>';
+  document.body.append(host);
+  await host.show();
+  const reasons: string[] = [];
+  host.addEventListener("ds-close-request", event => reasons.push((event as CustomEvent).detail.reason));
+  host.querySelector("dialog button")!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
+  host.querySelector<HTMLButtonElement>("dialog button")!.click();
+  expect(host.open, "a press inside keeps it").toBe(true);
+  page.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
+  page.click();
+  expect(reasons).toEqual(["outside"]);
+  expect(host.open).toBe(false);
+  expect(pressed, "the press reaches the page, as every modeless outside press does").toHaveBeenCalledTimes(1);
+
+  host.closeOnBackdrop = false;
+  await host.show();
+  page.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
+  page.click();
+  expect(host.open, "closeOnBackdrop off keeps it").toBe(true);
+  expect(pressed).toHaveBeenCalledTimes(2);
+
+  const drawer = document.createElement("ds-overlay");
+  drawer.type = "drawer";
+  drawer.nonModal = true;
+  drawer.innerHTML = '<dialog aria-label="Panel"></dialog>';
+  host.remove();
+  document.body.append(drawer);
+  await drawer.show();
+  page.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
+  page.click();
+  expect(drawer.open, "a modeless drawer stays while the page is used").toBe(true);
+  expect(pressed).toHaveBeenCalledTimes(3);
+});
+
+test("before it decides, a move towards the edge is held from the page, so Safari cannot scroll the page instead", async () => {
+  const { dialog } = await sheet();
+  const first = (path: [number, number][]) => {
+    const target = dialog.firstElementChild!;
+    const fire = (type: string, [x, y]: [number, number], held = true) => {
+      const touch = { identifier: 3, clientX: x, clientY: y, target };
+      const event = new Event(type, { bubbles: true, cancelable: true, composed: true });
+      Object.defineProperties(event, { touches: { value: held ? [touch] : [] }, changedTouches: { value: [touch] } });
+      target.dispatchEvent(event);
+      return event;
+    };
+    fire("touchstart", path[0]!);
+    const move = fire("touchmove", path[1]!);
+    fire("touchend", path[1]!, false);
+    return move.defaultPrevented;
+  };
+  expect(first([[100, 400], [100, 404]]), "down, under the ten pixels").toBe(true);
+  expect(first([[100, 400], [100, 396]]), "up: the content's or the page's").toBe(false);
+  expect(first([[100, 400], [106, 402]]), "sideways").toBe(false);
+  dialog.style.overflowY = "auto";
+  Object.defineProperties(dialog, { scrollHeight: { value: 900, configurable: true }, clientHeight: { value: 400, configurable: true }, scrollTop: { value: 50, configurable: true } });
+  expect(first([[100, 400], [100, 404]]), "content scrolled down scrolls back first").toBe(false);
+});

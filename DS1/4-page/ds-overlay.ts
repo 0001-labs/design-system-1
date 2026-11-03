@@ -81,7 +81,9 @@ function styleRoot(root: Node) {
  * from the foot of the screen, a `drawer` at the `side` `"end"` (the default)
  * or `"start"`, a responsive `detail` (drawer on desktop, sheet on phones), a `popover` at the `anchor` point, or the whole `screen`. A
  * sheet and a drawer slide in and out and a finger swipes them away (reason
- * `"swipe"`); a popover is modeless.
+ * `"swipe"`); a popover is modeless. A modeless sheet has no backdrop, so with
+ * `closeOnBackdrop` a press on the page above it closes it (reason
+ * `"outside"`), as `closeOnOutside` does for the others.
  */
 export class Overlay extends LitElement {
   static properties = {
@@ -383,7 +385,11 @@ export class Overlay extends LitElement {
   private onOutsideClick = (event: Event) => {
     if (!this.modeless || !this.isTop() || event.composedPath().includes(this)) return;
     if (this.blockOutside) { event.preventDefault(); event.stopImmediatePropagation(); }
-    if (this.closeOnOutside && this.outsidePress !== false) this.requestClose("outside");
+    // A modeless sheet has no backdrop, and on a phone its close button is hidden: the page above
+    // it stands for the backdrop, or the sheet could not be left at all (Link's people sheet,
+    // 3 November 2026). The press still reaches the page, as every modeless outside press does.
+    const closes = this.closeOnOutside || (this.kind === "sheet" && this.closeOnBackdrop);
+    if (closes && this.outsidePress !== false) this.requestClose("outside");
     this.outsidePress = null;
   };
 

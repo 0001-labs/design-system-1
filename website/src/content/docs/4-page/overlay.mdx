@@ -140,6 +140,9 @@ that scrolls sideways keeps its touches, and so do a slider, a range input and
 anything marked `data-ds-overlay-no-swipe`. Dismissing sends `ds-close-request`
 with the reason `swipe`: prevent it (unsaved changes, say) and the sheet
 settles home. A mouse or trackpad closes it with Escape or the close button.
+While the finger is still within those ten pixels a move towards the edge is
+held from the page, so Safari does not scroll the page behind a modeless sheet
+instead of moving the sheet.
 
 A drawer beside a list is often modeless (`non-modal`), so a press on another
 row swaps what it shows.
@@ -236,6 +239,9 @@ At phone widths (up to 768px), sheet close controls marked
 `data-ds-overlay="close"` are visually hidden. They retain their accessible
 button and name for assistive technology. Keep swipe, Escape and the configured
 backdrop/outside dismissal available; do not disable every way to leave a sheet.
+A modeless sheet has no backdrop, so the page above it stands for one: with
+`closeOnBackdrop` (the default) a press there closes it with the reason
+`outside`, and the press still reaches the page.
 Desktop close controls retain their existing appearance.
 
 For tabs, mark the native dialog `data-ds-overlay-tabbed`, keep the tabs in
