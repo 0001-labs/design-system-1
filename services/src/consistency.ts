@@ -4,6 +4,7 @@ import { authorizeReport, isStudioOwner, signedIn, type ReportsEnv } from './rep
 import { hasOwnerSignIn, ownerRoutes, ownerSignOut, systemOwner, type OwnerEnv } from './consistency-owner';
 import { personHeaders, sitesApi, type Person } from './consistency-sites';
 import { isLegalPath, legalPage } from './consistency-legal';
+import { consistencySocialAuth, isSocialAuthPath } from './consistency-social-auth';
 
 export const CONSISTENCY_HOST = 'c9y.site';
 /** The owner's editor lab: the page editor alone, at its root, behind the verified owner session. */
@@ -133,6 +134,8 @@ function protect(response: Response, cache?: string): Response {
 export async function consistencyPreview(request: Request, env: ReportsEnv & WorkspaceEnv & { ASSETS: Fetcher }, send: typeof fetch = fetch): Promise<Response> {
   const url = new URL(request.url);
   if (!isConsistencyHost(url.hostname) || url.protocol !== 'https:') return new Response(null, { status: 404, headers: security });
+  // Before landing and owner routing: Apple returns by cross-site form POST.
+  if (isSocialAuthPath(url.pathname)) return consistencySocialAuth(request, env, send);
   // Retired URLs are gone before sign-in or host routing; none redirect to the root.
   if (canonicalEditorPath(url.pathname).startsWith('/private-consistency')) {
     return new Response(null, { status: 410, headers: security });

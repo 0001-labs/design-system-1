@@ -610,6 +610,14 @@ if (PRODUCTION) {
   ]);
 
   await step("Private hosts", [
+    ["Consistency social callbacks refuse unsupported methods before provider routing", async () => {
+      // No provider request, consent or account is created by these method refusals.
+      for (const provider of ["google", "apple"]) {
+        const answer = await request(`https://consistency.site/api/auth/signin/${provider}`, { method: "OPTIONS" });
+        expectStatus(answer, 405);
+        expectHeader(answer, "cache-control", /no-store/);
+      }
+    }],
     ...["consistency.site","editor.c9y.site"].map(host=>[
       `${host} Ask refuses signed-out questions`,
       async()=>{const answer=await request(`https://${host}/api/consistency/ask`);expectStatus(answer,401);expectPrivate(answer);expect(!answer.text.includes('"enabled":true'),'Ask exposed its owner rollout');},

@@ -25,7 +25,7 @@ export class SignIn extends AppElement {
   declare fontsOnly: boolean;
   declare dashboardOnly: boolean;
   declare privateTitle: string | undefined;
-  /** A private product's sign-in open to every address, by the emailed code alone: Consistency's invited people. */
+  /** Consistency's member sign-in; workspace access is still checked by the platform. */
   declare anyone: boolean;
   /** Which of the backend's brands the emailed code goes out under (`convex/auth.ts`), for another product's sign-in. */
   declare brand: string | undefined;
@@ -55,7 +55,6 @@ export class SignIn extends AppElement {
     const host = this.querySelector<HTMLElement>("[data-sign-in-host]")!;
     defineSignInScreen();
     const ownerOnly = this.#ownerOnly();
-    const codeOnly = ownerOnly || this.anyone;
     const { privateTitle, dashboardOnly, redirectTo } = this;
     const screen = document.createElement("sign-in-screen") as SignInScreenElement;
     screen.adapter = signInAdapter({
@@ -65,7 +64,7 @@ export class SignIn extends AppElement {
       },
       providers: async () => {
         const available = await query(api.auth.providers, {});
-        return codeOnly ? { ...available, google: false, apple: false } : available;
+        return ownerOnly ? { ...available, google: false, apple: false } : available;
       },
       passwordSignIn: email => query(api.auth.passwordSignIn, { email }),
       redirectTo: () => `${window.location.origin}${window.location.pathname}`,

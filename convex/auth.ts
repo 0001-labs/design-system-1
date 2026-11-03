@@ -6,6 +6,7 @@ import { normalizeEmail } from "./lib/token";
 import { signInProviders } from "./signIn/providers";
 import { signInFunctions } from "./signIn/functions";
 import { signInRedirect } from "./signIn/redirect";
+import { signInAvailability } from "./signIn/social";
 import { resolveSignInUser } from "./signIn/users";
 import { signInCodeEmail } from "./signIn/emails";
 import { rememberAppleTokenFromProfile } from "./signIn/appleTokens";
@@ -50,8 +51,15 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   callbacks: {
     // A returning account's user, else the user with the address when the way in proves
     // it, else a new one; addresses are normalized, so one person is one user.
-    createOrUpdateUser: (ctx, args) =>
-      resolveSignInUser(ctx as unknown as MutationCtx, args, {
+    createOrUpdateUser: async (ctx, args) => {
+      // Enforce rollout on the server, including returning provider identities.
+      if (args.type === "oauth") {
+        const available = signInAvailability(process.env, Date.now());
+        if ((args.provider.id !== "google" && args.provider.id !== "apple") || !available[args.provider.id]) {
+          throw new Error("This sign-in provider is not available. Continue with email.");
+        }
+      }
+      return resolveSignInUser(ctx as unknown as MutationCtx, args, {
         findByEmail: async (ctx, email) =>
           (
             await ctx.db
@@ -60,7 +68,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
               .first()
           )?._id ?? null,
         create: (ctx, user) => ctx.db.insert("users", user),
-      }),
+      });
+    },
     async afterUserCreatedOrUpdated(ctx, { userId, ...args }) {
       await rememberAppleTokenFromProfile(ctx as unknown as MutationCtx, userId, args);
     },
