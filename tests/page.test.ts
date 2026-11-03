@@ -96,6 +96,8 @@ test('resizable split pages expose a separator and keyboard changes emit their s
   const page = await setup('<ds-page layout="split" resizable><nav slot="nav">List</nav><p>Details</p></ds-page>');
   const separator = page.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
   expect(separator.getAttribute('aria-orientation')).toBe('vertical');
+  Object.defineProperty(page.shadowRoot!.querySelector('.page'), 'clientWidth', {value:1000});
+  Object.defineProperty(page.shadowRoot!.querySelector('[part=nav]'), 'getBoundingClientRect', {value:()=>({width:500})});
   let share: number | undefined;
   page.addEventListener('ds-page-resize', event => { share = (event as CustomEvent).detail.split; });
   separator.dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight', bubbles:true}));

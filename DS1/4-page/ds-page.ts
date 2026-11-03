@@ -155,24 +155,33 @@ export class Page extends LitElement {
     });
   }
 
-  private drag: { id: number; handle: HTMLElement } | null = null;
-  private resizeTo(value: number) {
+  private drag: { id: number; handle: HTMLElement; startX: number; startWidth: number; width: number; available: number; unit: number; rtl: boolean } | null = null;
+  private splitMetrics() {
     const page = this.renderRoot.querySelector<HTMLElement>('.page')!;
     const style = getComputedStyle(page);
+    const handle = this.renderRoot.querySelector<HTMLElement>('.resize');
+    const unit = handle?.getBoundingClientRect().width || 20;
     const available = page.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0) - (parseFloat(style.columnGap) || 0);
-    // Keep both columns usable; the page stacks below thirty squares.
-    const minimum = Math.min(0.4, 200 / Math.max(1, available));
-    this.split = Math.max(minimum, Math.min(1 - minimum, value));
+    return { unit, available: Math.max(unit, available) };
+  }
+  private splitWidth(value: number, available: number, unit: number) {
+    const minimum = Math.min(10 * unit, Math.floor(available / 2 / unit) * unit);
+    const maximum = Math.floor((available - minimum) / unit) * unit;
+    return Math.max(minimum, Math.min(maximum, Math.round(value / unit) * unit));
+  }
+  private resizeTo(value: number) {
+    const { available, unit } = this.splitMetrics();
+    this.split = this.splitWidth(value * available, available, unit) / available;
     this.dispatchEvent(new CustomEvent('ds-page-resize', { bubbles: true, composed: true, detail: { split: this.split } }));
   }
   private resizePointer(event: PointerEvent) {
-    if (!this.drag || this.drag.id !== event.pointerId) return;
-    const page = this.renderRoot.querySelector<HTMLElement>('.page')!;
-    const box = page.getBoundingClientRect(), style = getComputedStyle(page);
-    const gap = (parseFloat(style.columnGap) || 0), left = (parseFloat(style.paddingLeft) || 0), right = (parseFloat(style.paddingRight) || 0);
-    const available = box.width - left - right - gap;
-    const position = getComputedStyle(this).direction === 'rtl' ? box.right - right - event.clientX : event.clientX - box.left - left;
-    this.resizeTo((position - gap / 2) / Math.max(1, available));
+    const drag = this.drag;
+    if (!drag || drag.id !== event.pointerId) return;
+    const minimum = Math.min(10 * drag.unit, Math.floor(drag.available / 2 / drag.unit) * drag.unit);
+    const delta = (event.clientX - drag.startX) * (drag.rtl ? -1 : 1);
+    drag.width = Math.max(minimum, Math.min(drag.available - minimum, drag.startWidth + delta));
+    // The line follows the pointer; release commits the layout on whole squares.
+    drag.handle.style.transform = `translateX(${(drag.width - drag.startWidth) * (drag.rtl ? -1 : 1)}px)`;
   }
   private startResize(event: PointerEvent) {
     if (event.button !== 0) return;
@@ -180,19 +189,26 @@ export class Page extends LitElement {
     const handle = event.currentTarget as HTMLElement;
     handle.focus();
     handle.setPointerCapture(event.pointerId);
-    this.drag = { id: event.pointerId, handle };
+    const { available, unit } = this.splitMetrics();
+    const width = this.renderRoot.querySelector<HTMLElement>('[part="nav"]')!.getBoundingClientRect().width;
+    this.drag = { id: event.pointerId, handle, startX: event.clientX, startWidth: width, width, available, unit, rtl: getComputedStyle(this).direction === 'rtl' };
     handle.setAttribute('data-dragging', '');
   }
   private endResize(event: PointerEvent) {
-    if (!this.drag || this.drag.id !== event.pointerId) return;
-    this.drag.handle.removeAttribute('data-dragging');
+    const drag = this.drag;
+    if (!drag || drag.id !== event.pointerId) return;
+    drag.handle.removeAttribute('data-dragging');
+    drag.handle.style.removeProperty('transform');
     this.drag = null;
+    if (event.type === 'pointerup') this.resizeTo(drag.width / drag.available);
   }
   private resizeKey(event: KeyboardEvent) {
     const rtl = getComputedStyle(this).direction === 'rtl';
-    const step = event.shiftKey ? 0.1 : 0.02;
+    const { available, unit } = this.splitMetrics();
+    const width = this.renderRoot.querySelector<HTMLElement>('[part="nav"]')!.getBoundingClientRect().width;
+    const step = unit * (event.shiftKey ? 5 : 1) / available;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-      event.preventDefault(); this.resizeTo(this.split + (event.key === 'ArrowRight' !== rtl ? step : -step));
+      event.preventDefault(); this.resizeTo(width / available + (event.key === 'ArrowRight' !== rtl ? step : -step));
     } else if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault(); this.resizeTo(event.key === 'Home' ? 0 : 1);
     } else if (event.key === 'Enter') { event.preventDefault(); this.resizeTo(0.5); }
