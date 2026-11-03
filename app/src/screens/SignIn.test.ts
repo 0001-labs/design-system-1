@@ -19,6 +19,11 @@ test('Consistency members can choose either configured social provider; owner-on
   expect(backend.signIn).toHaveBeenCalledWith('google', { redirectTo: `${window.location.origin}${window.location.pathname}` });
   await adapter.requestCode('member@example.com');
   expect(backend.signIn).toHaveBeenCalledWith('email-code', { email: 'member@example.com', brand: 'consistency' });
+  screen.brand = undefined;
+  await screen.updateComplete;
+  adapter = screen.querySelector('sign-in-screen')!.adapter!;
+  expect(await adapter.providers()).toMatchObject({ google: false, apple: false });
+  screen.brand = 'consistency';
   screen.anyone = false;
   await screen.updateComplete;
   adapter = screen.querySelector('sign-in-screen')!.adapter!;

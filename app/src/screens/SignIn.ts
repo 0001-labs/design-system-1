@@ -64,7 +64,9 @@ export class SignIn extends AppElement {
       },
       providers: async () => {
         const available = await query(api.auth.providers, {});
-        return ownerOnly ? { ...available, google: false, apple: false } : available;
+        // These provider registrations belong to Consistency. DS1's own app
+        // keeps email until it has separate branded provider registrations.
+        return ownerOnly || this.brand !== "consistency" ? { ...available, google: false, apple: false } : available;
       },
       passwordSignIn: email => query(api.auth.passwordSignIn, { email }),
       redirectTo: () => `${window.location.origin}${window.location.pathname}`,
