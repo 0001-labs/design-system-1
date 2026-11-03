@@ -91,3 +91,18 @@ test("every column of a page can shrink to the window, and below thirty squares 
   const narrow = /@container \(max-width: 599px\) \{([^]*?)\n\}/.exec(css)![1]!;
   expect(narrow).toContain("grid-template-columns: minmax(0, 1fr);");
 });
+
+test('resizable split pages expose a separator and keyboard changes emit their share', async () => {
+  const page = await setup('<ds-page layout="split" resizable><nav slot="nav">List</nav><p>Details</p></ds-page>');
+  const separator = page.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
+  expect(separator.getAttribute('aria-orientation')).toBe('vertical');
+  let share: number | undefined;
+  page.addEventListener('ds-page-resize', event => { share = (event as CustomEvent).detail.split; });
+  separator.dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight', bubbles:true}));
+  await page.updateComplete;
+  expect(page.split).toBeCloseTo(0.52);
+  expect(share).toBeCloseTo(0.52);
+  expect(separator.getAttribute('aria-valuenow')).toBe('52');
+  separator.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+  expect(page.split).toBe(0.5);
+});

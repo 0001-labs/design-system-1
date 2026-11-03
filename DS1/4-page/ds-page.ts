@@ -40,6 +40,8 @@ export const PAGE_LAYOUTS: readonly PageLayout[] = ["sidebar", "split", "inspect
  *
  * @element ds-page
  * @attr layout - `sidebar`, `split`, `inspector`, `column`, `centered` or `tiles`.
+ * @attr resizable - Adds a draggable, keyboard-accessible divider to a split layout.
+ * @attr split - Leading column share (0–1), default 0.5; resizing emits ds-page-resize with detail.split.
  * @attr divided - Draws a hairline between the columns.
  * @attr measure - Width of the `column` or `centered` column in whole squares.
  * @attr fill - Takes its container's height; each column scrolls on its own.
@@ -57,6 +59,8 @@ export const PAGE_LAYOUTS: readonly PageLayout[] = ["sidebar", "split", "inspect
  */
 export class Page extends LitElement {
   static properties = {
+    resizable: { type: Boolean, reflect: true },
+    split: { type: Number },
     layout: { type: String, reflect: true },
     divided: { type: Boolean, reflect: true },
     measure: { type: Number, reflect: true },
@@ -67,6 +71,8 @@ export class Page extends LitElement {
     landmark: { state: true },
   };
 
+  declare resizable: boolean;
+  declare split: number;
   declare layout: PageLayout;
   declare divided: boolean;
   declare measure: number | undefined;
@@ -83,6 +89,8 @@ export class Page extends LitElement {
 
   constructor() {
     super();
+    this.resizable = false;
+    this.split = 0.5;
     this.layout = "sidebar";
     this.divided = false;
     this.fill = false;
@@ -147,11 +155,54 @@ export class Page extends LitElement {
     });
   }
 
+  private drag: { id: number; handle: HTMLElement } | null = null;
+  private resizeTo(value: number) {
+    const page = this.renderRoot.querySelector<HTMLElement>('.page')!;
+    const style = getComputedStyle(page);
+    const available = page.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0) - (parseFloat(style.columnGap) || 0);
+    // Keep both columns usable; the page stacks below thirty squares.
+    const minimum = Math.min(0.4, 200 / Math.max(1, available));
+    this.split = Math.max(minimum, Math.min(1 - minimum, value));
+    this.dispatchEvent(new CustomEvent('ds-page-resize', { bubbles: true, composed: true, detail: { split: this.split } }));
+  }
+  private resizePointer(event: PointerEvent) {
+    if (!this.drag || this.drag.id !== event.pointerId) return;
+    const page = this.renderRoot.querySelector<HTMLElement>('.page')!;
+    const box = page.getBoundingClientRect(), style = getComputedStyle(page);
+    const gap = (parseFloat(style.columnGap) || 0), left = (parseFloat(style.paddingLeft) || 0), right = (parseFloat(style.paddingRight) || 0);
+    const available = box.width - left - right - gap;
+    const position = getComputedStyle(this).direction === 'rtl' ? box.right - right - event.clientX : event.clientX - box.left - left;
+    this.resizeTo((position - gap / 2) / Math.max(1, available));
+  }
+  private startResize(event: PointerEvent) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const handle = event.currentTarget as HTMLElement;
+    handle.focus();
+    handle.setPointerCapture(event.pointerId);
+    this.drag = { id: event.pointerId, handle };
+    handle.setAttribute('data-dragging', '');
+  }
+  private endResize(event: PointerEvent) {
+    if (!this.drag || this.drag.id !== event.pointerId) return;
+    this.drag.handle.removeAttribute('data-dragging');
+    this.drag = null;
+  }
+  private resizeKey(event: KeyboardEvent) {
+    const rtl = getComputedStyle(this).direction === 'rtl';
+    const step = event.shiftKey ? 0.1 : 0.02;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault(); this.resizeTo(this.split + (event.key === 'ArrowRight' !== rtl ? step : -step));
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault(); this.resizeTo(event.key === 'Home' ? 0 : 1);
+    } else if (event.key === 'Enter') { event.preventDefault(); this.resizeTo(0.5); }
+  }
+
   render() {
     const label = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     const close = getText("Close") || "Close";
     return html`
-      <div class="page" part="page" style=${ifDefined(measureStyle(this.measure))}>
+      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
         <div class="bar" part="bar" ?hidden=${!this.drawer}>
           <button class="ds-button ds-button--icon" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer">
             <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
@@ -162,7 +213,7 @@ export class Page extends LitElement {
             <ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
           </button></div>
         </dialog>
-        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot></div>
+        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot>${this.resizable && this.layout === 'split' ? html`<div class="resize" part="resize" role="separator" tabindex="0" aria-label="Resize columns" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow=${Math.round(this.split * 100)} @pointerdown=${this.startResize} @pointermove=${this.resizePointer} @pointerup=${this.endResize} @pointercancel=${this.endResize} @lostpointercapture=${this.endResize} @keydown=${this.resizeKey} @dblclick=${() => this.resizeTo(0.5)}></div>` : undefined}</div>
         <div class="area header" part="header" data-area="header"><slot name="header"></slot></div>
         <div class="area main" part="main" data-area="main" role=${ifDefined(this.landmark ? "main" : undefined)}><slot @slotchange=${this.syncLandmark}></slot></div>
         <div class="area aside" part="aside" data-area="aside"><slot name="aside"></slot></div>
