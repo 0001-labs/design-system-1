@@ -313,6 +313,9 @@ body.sidebar-open {
   border: 0;
   overflow-wrap: anywhere;
 }
+.sl-markdown-content :is(th, td) :is(code, kbd, samp) {
+  font-size: inherit;
+}
 .sl-markdown-content th {
   word-break: normal;
   overflow-wrap: normal;
