@@ -225,3 +225,23 @@ test("table text keeps one size across headers and values", async () => {
   expect(check.inspect(document)).toHaveLength(0);
   expect(rule('.ds-table :is(th, td)')).toContain('font-size: inherit');
 });
+
+test('column resizing snaps to the current grid and emits square widths for keyboard edits', async () => {
+  const { snapColumn } = await import('../DS1/3-unit/table-columns');
+  expect(snapColumn(133, 20)).toBe(140);
+  expect(snapColumn(134, 25)).toBe(125);
+  expect(snapColumn(1, 20)).toBe(40);
+  const table = document.createElement('ds-table');
+  table.columns = ['Name', 'Count']; table.data = [{name: 'A long name', count: 12}]; table.resizable = true;
+  document.body.append(table); await table.updateComplete;
+  const handle = table.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
+  const headers = [...table.shadowRoot!.querySelectorAll<HTMLElement>('th[scope="col"]')];
+  for (const header of headers) header.getBoundingClientRect = () => ({width: 100}) as DOMRect;
+  handle.getBoundingClientRect = () => ({width: 20}) as DOMRect;
+  let widths: number[] = [];
+  table.addEventListener('table-columns-resize', event => { widths = (event as CustomEvent).detail.widths; });
+  handle.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true}));
+  await table.updateComplete;
+  expect(widths).toEqual([6, 5]);
+  expect(table.shadowRoot!.querySelector('col[data-column]')?.getAttribute('style')).toContain('120px');
+});

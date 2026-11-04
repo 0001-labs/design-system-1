@@ -6,9 +6,9 @@
  * Browser-only registration of ds-table stays in the product's runtime entry;
  * on the server the element renders empty and fills on load. */
 import { createElement as h, forwardRef, useEffect, useLayoutEffect, useRef, type HTMLAttributes } from "react";
-import type { DsTable as TableElement, TableColumn, TableMoveDetail, TableRow } from "../3-unit/ds-table";
+import type { DsTable as TableElement, TableColumn, TableMoveDetail, ColumnResizeDetail, TableRow } from "../3-unit/ds-table";
 
-export type { TableColumn, TableMoveDetail, TableRow };
+export type { TableColumn, TableMoveDetail, ColumnResizeDetail, TableRow };
 
 export type TableProps = HTMLAttributes<TableElement> & {
   /** The body rows: objects read by column key, or arrays read by position. */
@@ -19,6 +19,8 @@ export type TableProps = HTMLAttributes<TableElement> & {
   footer?: TableRow;
   /** Keeps the first column in place while the table scrolls sideways. */
   sticky?: boolean;
+  resizable?: boolean;
+  onColumnsResize?: (detail: ColumnResizeDetail) => void;
   /** A spreadsheet: cells four squares by one, columns lettered, rows numbered. */
   sheet?: boolean;
   /** A sheet's rows move by the grip on their number. */
@@ -32,7 +34,7 @@ export type TableProps = HTMLAttributes<TableElement> & {
 const useCommitEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export const Table = forwardRef<TableElement, TableProps>(function Table(
-  { data, columns, footer, sticky, sheet, reorderable, label, onMove, ...props }, ref,
+  { data, columns, footer, sticky, resizable, sheet, reorderable, label, onMove, onColumnsResize, ...props }, ref,
 ) {
   const host = useRef<TableElement>(null);
   useCommitEffect(() => {
@@ -47,7 +49,13 @@ export const Table = forwardRef<TableElement, TableProps>(function Table(
     element.addEventListener("table-move", move);
     return () => element.removeEventListener("table-move", move);
   });
-  return h("ds-table", { ...props, label, sticky: sticky || undefined, sheet: sheet || undefined, reorderable: reorderable || undefined,
+  useCommitEffect(() => {
+    const element = host.current; if (!element || !onColumnsResize) return;
+    const resize = (event: Event) => onColumnsResize((event as CustomEvent<ColumnResizeDetail>).detail);
+    element.addEventListener("table-columns-resize", resize);
+    return () => element.removeEventListener("table-columns-resize", resize);
+  });
+  return h("ds-table", { ...props, label, resizable: resizable || undefined, sticky: sticky || undefined, sheet: sheet || undefined, reorderable: reorderable || undefined,
     ref: (element: TableElement | null) => { host.current = element; if (typeof ref === "function") ref(element); else if (ref) ref.current = element; },
   });
 });

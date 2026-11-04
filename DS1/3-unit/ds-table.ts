@@ -1,3 +1,6 @@
+import { TableColumns } from "./table-columns";
+export { TableColumns } from "./table-columns";
+export type { ColumnResizeDetail } from "./table-columns";
 import { define } from "../0-face/define";
 // ds-table.ts
 // A data table: rows one square high on hairlines, drawn from data with the
@@ -78,6 +81,7 @@ export class DsTable extends LitElement {
     columns: { type: Array },
     footer: { type: Object },
     sticky: { type: Boolean, reflect: true },
+    resizable: { type: Boolean, reflect: true },
     sheet: { type: Boolean, reflect: true },
     reorderable: { type: Boolean, reflect: true },
     label: { type: String },
@@ -91,12 +95,28 @@ export class DsTable extends LitElement {
   declare footer: TableRow | undefined;
   /** Keeps the first column in place while the table scrolls sideways. */
   declare sticky: boolean;
+  /** Column boundaries drag freely and snap to whole squares on release; arrows resize by a square. */
+  declare resizable: boolean;
   /** A spreadsheet: cells 80 by 20, columns lettered A, B, C…, rows numbered, both held in place. */
   declare sheet: boolean;
   /** A sheet's rows move by the grip on their number; each move fires `table-move`. */
   declare reorderable: boolean;
   /** The table's accessible name. */
   declare label: string | undefined;
+
+  private sizing = new TableColumns(this, {
+    scroller: () => this.scroller,
+    headers: () => [...this.renderRoot.querySelectorAll<HTMLElement>('thead th[scope="col"]')],
+    apply: widths => {
+      const table = this.table; if (!table || !this.resizable) return;
+      table.dataset.columnWidths = '';
+      table.style.tableLayout = 'fixed';
+      const number = this.sheet ? 2 * (this.renderRoot.querySelector<HTMLElement>('.ds-table-column-resize')?.getBoundingClientRect().width || 20) : 0;
+      table.style.width = `${widths.reduce((a, b) => a + b, number)}px`;
+      this.renderRoot.querySelectorAll<HTMLElement>('col[data-column]').forEach((col, i) => { col.style.width = `${widths[i]}px`; });
+      this.fit();
+    },
+  });
 
   private drag: Drag | undefined;
   /** The row whose grip the keyboard reaches with Tab; arrows move between grips. */
@@ -113,6 +133,7 @@ export class DsTable extends LitElement {
     this.data = [];
     this.columns = [];
     this.sticky = false;
+    this.resizable = false;
     this.sheet = false;
     this.reorderable = false;
   }
@@ -122,7 +143,7 @@ export class DsTable extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     // The faces may arrive after the first measure and change every width.
-    void document.fonts?.ready.then(() => { if (this.isConnected && this.sheet) this.fit(); });
+    void document.fonts?.ready.then(() => { if (this.isConnected && (this.sheet || this.resizable)) this.fit(); });
   }
 
   disconnectedCallback() {
@@ -137,13 +158,18 @@ export class DsTable extends LitElement {
   protected willUpdate(changed: PropertyValues<this>) {
     super.willUpdate(changed);
     // New data puts every row where it belongs: the steps aside end in the same frame.
+    if (changed.has("columns")) {
+      this.sizing.widths = [];
+      this.table?.style.removeProperty('width'); this.table?.style.removeProperty('table-layout');
+      this.renderRoot.querySelectorAll<HTMLElement>('col').forEach(col => col.style.removeProperty('width'));
+    }
     if (changed.has("data") && this.settle) this.place(false);
     if (this.grip >= this.data.length) this.grip = Math.max(0, this.data.length - 1);
   }
 
   protected updated(changed: PropertyValues<this>) {
     super.updated(changed);
-    if (!this.sheet) return;
+    if (!this.sheet && !this.resizable) return;
     // Before the first paint, so words that fit never show a fade.
     if (["data", "columns", "footer", "sheet"].some(name => changed.has(name as keyof DsTable))) this.fit();
     const table = this.table;
@@ -197,8 +223,8 @@ export class DsTable extends LitElement {
     return html`<tr>${columns.map((column, index) => {
       const value = text(cell(row, column.key, index));
       return index === 0
-        ? html`<th scope="row" ?data-numeric=${column.numeric}>${value}</th>`
-        : html`<td ?data-numeric=${column.numeric}>${value}</td>`;
+        ? html`<th scope="row" ?data-numeric=${column.numeric}><span class="ds-table__words">${value}</span></th>`
+        : html`<td ?data-numeric=${column.numeric}><span class="ds-table__words">${value}</span></td>`;
     })}</tr>`;
   }
 
@@ -448,9 +474,10 @@ export class DsTable extends LitElement {
     return html`
       <div class="ds-table-scroll" part="scroll" @pointerdown=${this.press} @touchmove=${{ handleEvent: this.holdTouch, passive: false }} @contextmenu=${this.holdMenu}>
         <table class="ds-table" part="table" data-sheet data-fit ?data-reorderable=${this.reorderable} style=${`--ds-table-columns: ${columns.length}`} aria-label=${this.label ?? nothing}>
+          <colgroup><col>${columns.map(() => html`<col data-column>`)}</colgroup>
           <thead>
             <tr class="ds-table__letters" aria-hidden="true"><td class="ds-table__number"></td>${columns.map((_, index) => html`<td>${columnLetter(index)}</td>`)}</tr>
-            <tr><td class="ds-table__number"></td>${columns.map(column => html`<th scope="col" ?data-numeric=${column.numeric}><span class="ds-table__words">${column.label}</span></th>`)}</tr>
+            <tr><td class="ds-table__number"></td>${columns.map((column, index) => html`<th scope="col" ?data-numeric=${column.numeric}><span class="ds-table__words">${column.label}</span>${this.resizable ? this.sizing.handle(index, column.label) : nothing}</th>`)}</tr>
           </thead>
           <tbody>${this.data.map((row, index) => this.sheetRow(row, columns, String(index + 1), index))}</tbody>
           ${this.footer ? html`<tfoot>${this.sheetRow(this.footer, columns, "")}</tfoot>` : nothing}
@@ -466,8 +493,9 @@ export class DsTable extends LitElement {
     return html`
       <div class="ds-table-scroll" part="scroll">
         <table class="ds-table" part="table" ?data-sticky=${this.sticky} aria-label=${this.label ?? nothing}>
+          <colgroup>${columns.map(() => html`<col data-column>`)}</colgroup>
           <thead>
-            <tr>${columns.map(column => html`<th scope="col" ?data-numeric=${column.numeric}>${column.label}</th>`)}</tr>
+            <tr>${columns.map((column, index) => html`<th scope="col" ?data-numeric=${column.numeric}><span class="ds-table__words">${column.label}</span>${this.resizable ? this.sizing.handle(index, column.label) : nothing}</th>`)}</tr>
           </thead>
           <tbody>${this.data.map(row => this.row(row, columns))}</tbody>
           ${this.footer ? html`<tfoot>${this.row(this.footer, columns)}</tfoot>` : nothing}

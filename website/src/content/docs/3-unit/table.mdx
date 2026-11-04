@@ -30,6 +30,7 @@ Set the properties after the component has been registered. In Lit, bind them: `
 | `data` | Array | `[]` | The body rows: objects read by column key, or arrays read by position. |
 | `columns` | Array | `[]` | Headers. A string is a label read from its lowercase key (`"Users"` reads `users`); an object is `{ key, label, numeric? }`. Empty, the first row's keys are the headers. |
 | `footer` | Object or Array | none | A totals row under the body. |
+| `resizable` | boolean | false | Drag a column boundary; release snaps to whole grid squares. Arrow keys resize one square, Shift five; Escape cancels a drag. |
 | `sticky` | boolean | false | Keeps the first column in place while the table scrolls sideways. |
 | `sheet` | boolean | false | A spreadsheet: every cell four squares by one, columns lettered and rows numbered. See [Sheet](#sheet). |
 | `reorderable` | boolean | false | A sheet's rows move by the grip on their number. See [Moving rows](#moving-rows). |
@@ -126,3 +127,5 @@ The totals row stays where it is. Moving rows belongs to the element; a native `
 On a native `.ds-table`, mark the body row whose details are open with `data-open`. Its cells keep the shared current-row fill, including the sticky first cell, while selected cells keep their selection colour. Remove the attribute on close or move it when navigating between records. Keep `aria-expanded` on the row’s detail button in step. This is a controlled state; it does not add click or keyboard behavior to a table row.
 
 All table text uses the same default text size: headers, names, tags, scores, dates and times. Secondary values keep that size; use colour or alignment to distinguish them.
+
+With `resizable`, column headers expose thin, focusable separator lines. Dragging follows the pointer continuously and snaps on release to the current scaled grid. Columns retain a readable header and at least two squares. `table-columns-resize` emits `{ widths: number[] }` in grid squares after a completed drag or keyboard edit; no event is emitted for cancellation. Widths stay local to the mounted table unless the product saves them. Replacing the column definitions restores automatic widths. Sideways overflow fades at the left, right or both edges only while more columns lie beyond that edge. Product-owned grid rows can reuse the exported `TableColumns` controller and the canonical table stylesheet; no app-specific copy of the interaction is needed.
