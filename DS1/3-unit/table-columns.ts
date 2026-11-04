@@ -9,29 +9,19 @@ export class TableColumns implements ReactiveController {
   private watched?: HTMLElement;
   private content?: HTMLElement;
   private frame = 0;
-  private drag?: { handle: HTMLElement; capture: HTMLElement; pointer: number; index: number; start: number; before: number[]; unit: number; minimum: number; rtl: boolean };
+  private drag?: { pointer: number; index: number; start: number; before: number[]; unit: number; minimum: number; rtl: boolean };
   constructor(private host: ReactiveControllerHost & HTMLElement, private options: {
     scroller: () => HTMLElement | null;
     headers: () => HTMLElement[];
     apply: (widths: number[]) => void;
     minimum?: (index: number, unit: number) => number;
   }) { host.addController(this); }
-  hostConnected() {
-    this.host.addEventListener('pointermove', this.move);
-    this.host.addEventListener('pointerup', this.boundaryEnd);
-    this.host.addEventListener('pointercancel', this.boundaryCancel);
-    this.host.addEventListener('lostpointercapture', this.boundaryCancel);
-  }
   hostUpdated() {
     const scroller = this.options.scroller(), content = scroller?.firstElementChild as HTMLElement | null;
     if (scroller !== this.watched || content !== this.content) {
       this.disconnect();
       this.watched = scroller ?? undefined; this.content = content ?? undefined;
       scroller?.addEventListener('scroll', this.measure, { passive: true });
-      scroller?.addEventListener('pointerdown', this.boundaryDown, true);
-      scroller?.addEventListener('pointermove', this.boundaryHover, { passive: true });
-      scroller?.addEventListener('pointerleave', this.clearHover);
-
       if (typeof ResizeObserver !== 'undefined') {
         this.observer = new ResizeObserver(this.measure);
         if (scroller) this.observer.observe(scroller);
@@ -41,18 +31,9 @@ export class TableColumns implements ReactiveController {
     if (this.widths.length) this.options.apply(this.widths);
     this.measure();
   }
-  hostDisconnected() {
-    this.host.removeEventListener('pointermove', this.move);
-    this.host.removeEventListener('pointerup', this.boundaryEnd);
-    this.host.removeEventListener('pointercancel', this.boundaryCancel);
-    this.host.removeEventListener('lostpointercapture', this.boundaryCancel);
-    this.disconnect(); if (this.drag) this.widths = this.drag.before; this.drag = undefined; this.watched = undefined; this.content = undefined; }
+  hostDisconnected() { this.disconnect(); if (this.drag) this.widths = this.drag.before; this.drag = undefined; this.watched = undefined; this.content = undefined; }
   private disconnect() {
     this.observer?.disconnect(); this.watched?.removeEventListener('scroll', this.measure);
-    this.watched?.removeEventListener('pointerdown', this.boundaryDown, true);
-    this.watched?.removeEventListener('pointermove', this.boundaryHover);
-    this.watched?.removeEventListener('pointerleave', this.clearHover);
-
     cancelAnimationFrame(this.frame); this.frame = 0;
   }
   private measure = () => {
@@ -74,37 +55,12 @@ export class TableColumns implements ReactiveController {
     });
   };
   handle(index: number, label: string) {
-    return html`<span class="ds-table-column-resize" data-column-index=${index} role="separator" aria-orientation="vertical" tabindex="0"
+    return html`<span class="ds-table-column-resize" role="separator" aria-orientation="vertical" tabindex="0"
       aria-label=${`Resize ${label} column`} aria-valuemin="0" aria-valuemax="100000" aria-valuenow=${Math.round(this.widths[index] ?? 0)} aria-valuetext=${this.widths[index] ? `${Math.round(this.widths[index]!)} pixels` : 'Automatic width'}
       @click=${(e: Event) => e.stopPropagation()}
       @pointerdown=${(e: PointerEvent) => this.start(e, index, label)} @pointermove=${this.move} @pointerup=${this.end} @pointercancel=${this.cancel} @lostpointercapture=${this.cancel}
       @keydown=${(e: KeyboardEvent) => this.key(e, index, label)}></span>`;
   }
-  // WebKit can clip table-cell hit testing to the header even when its boundary is taller.
-  // Resolve the same full-height target at the scrolling viewport before row interactions.
-  private boundaryAt(e: PointerEvent) {
-    return [...this.watched?.querySelectorAll<HTMLElement>('.ds-table-column-resize') ?? []].find(handle => {
-      const box = handle.getBoundingClientRect();
-      return e.clientX >= box.left && e.clientX < box.right && e.clientY >= box.top && e.clientY < box.bottom;
-    });
-  }
-  private boundaryDown = (e: PointerEvent) => {
-    const handle = this.boundaryAt(e);
-    if (handle) this.start(e, Number(handle.dataset.columnIndex), handle.getAttribute('aria-label')!.replace(/^Resize | column$/g, ''), handle);
-  };
-  private boundaryHover = (e: PointerEvent) => {
-    if (this.drag) return;
-    if (e.pointerType === 'touch') return;
-    const active = this.boundaryAt(e);
-    this.watched?.toggleAttribute('data-ds-table-boundary', Boolean(active));
-    for (const handle of this.watched?.querySelectorAll<HTMLElement>('.ds-table-column-resize') ?? []) handle.toggleAttribute('data-hovered', handle === active);
-  };
-  private boundaryEnd = (e: PointerEvent) => { if (this.drag?.pointer === e.pointerId) this.finish(this.drag.handle, false); };
-  private boundaryCancel = (e: PointerEvent) => { if (this.drag?.pointer === e.pointerId) this.finish(this.drag.handle, true); };
-  private clearHover = () => {
-    this.watched?.removeAttribute('data-ds-table-boundary');
-    for (const handle of this.watched?.querySelectorAll<HTMLElement>('[data-hovered]') ?? []) handle.removeAttribute('data-hovered');
-  };
   private metrics(handle: HTMLElement, label: string, index: number) {
     const unit = handle.getBoundingClientRect().width || 20;
     const font = getComputedStyle(this.options.headers()[0] ?? handle);
@@ -114,13 +70,13 @@ export class TableColumns implements ReactiveController {
     return { unit, minimum, rtl: getComputedStyle(handle).direction === 'rtl' };
   }
   private initial(unit: number) { return this.options.headers().map((header, i) => snapColumn(this.widths[i] ?? header.getBoundingClientRect().width, unit)); }
-  private start(e: PointerEvent, index: number, label: string, target?: HTMLElement) {
+  private start(e: PointerEvent, index: number, label: string) {
     if (e.button !== 0 || this.drag) return;
     e.preventDefault(); e.stopPropagation();
-    const handle = target ?? e.currentTarget as HTMLElement, metrics = this.metrics(handle, label, index);
+    const handle = e.currentTarget as HTMLElement, metrics = this.metrics(handle, label, index);
     this.widths = this.initial(metrics.unit);
-    this.drag = { handle, capture: this.host, pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
-    handle.focus(); this.drag.capture.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
+    this.drag = { pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
+    handle.focus(); handle.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
   }
   private move = (e: PointerEvent) => {
     const d = this.drag; if (!d || e.pointerId !== d.pointer) return;
@@ -132,7 +88,7 @@ export class TableColumns implements ReactiveController {
     this.drag = undefined;
     this.widths = cancelled ? d.before : this.widths.map((w, i) => snapColumn(w, d.unit, i === d.index ? d.minimum : 2 * d.unit));
     delete handle.dataset.resizing;
-    if (d.capture.hasPointerCapture?.(d.pointer)) d.capture.releasePointerCapture(d.pointer);
+    if (handle.hasPointerCapture?.(d.pointer)) handle.releasePointerCapture(d.pointer);
     this.options.apply(this.widths); this.host.requestUpdate(); this.measure();
     if (!cancelled) this.emit(d.unit);
   }
