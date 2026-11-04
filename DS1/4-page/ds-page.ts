@@ -175,7 +175,7 @@ export class Page extends LitElement {
   private resizeTo(value: number) {
     if (this.layout === "sidebar") {
       const {available, unit} = this.splitMetrics();
-      this.navWidth = Math.max(8, Math.min(24, Math.floor((available - 10 * unit) / unit), Math.round(value * available / unit)));
+      this.navWidth = Math.max(4, Math.min(24, Math.floor((available - 10 * unit) / unit), Math.round(value * available / unit)));
       this.dispatchEvent(new CustomEvent("ds-page-resize", {bubbles: true, composed: true, detail: {navWidth: this.navWidth}}));
       return;
     }
@@ -186,7 +186,7 @@ export class Page extends LitElement {
   private resizePointer(event: PointerEvent) {
     const drag = this.drag;
     if (!drag || drag.id !== event.pointerId) return;
-    const minimum = Math.min((this.layout === "sidebar" ? 8 : 10) * drag.unit, Math.floor(drag.available / 2 / drag.unit) * drag.unit);
+    const minimum = Math.min((this.layout === "sidebar" ? 4 : 10) * drag.unit, Math.floor(drag.available / 2 / drag.unit) * drag.unit);
     const delta = (event.clientX - drag.startX) * (drag.rtl ? -1 : 1);
     drag.width = Math.max(minimum, Math.min((this.layout === "sidebar" ? Math.min(24 * drag.unit, drag.available - 10 * drag.unit) : drag.available - minimum), drag.startWidth + delta));
     // The line follows the pointer; release commits the layout on whole squares.
@@ -232,7 +232,7 @@ export class Page extends LitElement {
     const label = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     const close = getText("Close") || "Close";
     return html`
-      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout === "sidebar" ? `--ds-page-nav: calc(${Math.max(8, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
+      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout === "sidebar" ? `--ds-page-nav: calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
         <div class="bar" part="bar" ?hidden=${!this.drawer}>
           <button class="ds-button ds-button--icon" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer">
             <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
@@ -243,7 +243,7 @@ export class Page extends LitElement {
             <ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
           </button></div>
         </dialog>
-        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot>${this.resizable && (this.layout === 'split' || this.layout === 'sidebar') ? html`<div class="resize" part="resize" role="separator" tabindex="0" aria-label=${this.layout === "sidebar" ? "Resize sidebar" : "Resize columns"} aria-orientation="vertical" aria-valuemin=${this.layout === "sidebar" ? 8 : 0} aria-valuemax=${this.layout === "sidebar" ? 24 : 100} aria-valuenow=${this.layout === "sidebar" ? this.navWidth : Math.round(this.split * 100)} @pointerdown=${this.startResize} @pointermove=${this.resizePointer} @pointerup=${this.endResize} @pointercancel=${this.endResize} @lostpointercapture=${this.endResize} @keydown=${this.resizeKey} @dblclick=${() => this.resetResize()}></div>` : undefined}</div>
+        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot>${this.resizable && (this.layout === 'split' || this.layout === 'sidebar') ? html`<div class="resize" part="resize" role="separator" tabindex="0" aria-label=${this.layout === "sidebar" ? "Resize sidebar" : "Resize columns"} aria-orientation="vertical" aria-valuemin=${this.layout === "sidebar" ? 4 : 0} aria-valuemax=${this.layout === "sidebar" ? 24 : 100} aria-valuenow=${this.layout === "sidebar" ? this.navWidth : Math.round(this.split * 100)} @pointerdown=${this.startResize} @pointermove=${this.resizePointer} @pointerup=${this.endResize} @pointercancel=${this.endResize} @lostpointercapture=${this.endResize} @keydown=${this.resizeKey} @dblclick=${() => this.resetResize()}></div>` : undefined}</div>
         <div class="area header" part="header" data-area="header"><slot name="header"></slot></div>
         <div class="area main" part="main" data-area="main" role=${ifDefined(this.landmark ? "main" : undefined)}><slot @slotchange=${this.syncLandmark}></slot></div>
         <div class="area aside" part="aside" data-area="aside"><slot name="aside"></slot></div>

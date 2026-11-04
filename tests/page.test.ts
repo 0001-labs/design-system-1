@@ -125,4 +125,7 @@ test('sidebar resizing reports whole-square widths and can reset', async () => {
   await page.updateComplete;
   expect(page.navWidth).toBe(8);
   expect(handle.getAttribute('aria-valuenow')).toBe('8');
+  handle.dispatchEvent(new KeyboardEvent('keydown', {key:'Home', bubbles:true}));
+  await page.updateComplete;
+  expect(page.navWidth).toBe(4);
 });
