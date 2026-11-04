@@ -146,8 +146,10 @@ export default {
     },
     /** Approved documentation artwork; components are selected separately through components. */
     'device-artwork': {
-      files({ read }) {
-        return Object.fromEntries(['iphone-17-pro-max-deep-blue.png','status-wifi.svg','status-battery.svg'].map(file=>[file,read(`packages/visual-kit/private-assets/${file}`)]));
+      files({ read, options }) {
+        if (options.bezels !== undefined && !Array.isArray(options.bezels)) throw new Error('Name the extra bezels to copy: "bezels": ["ipad-pro-11-space-gray"]');
+        const bezels = (options.bezels ?? []).map(bezel => `${bezel}.png`);
+        return Object.fromEntries(['iphone-17-pro-max-deep-blue.png','status-wifi.svg','status-battery.svg',...bezels].map(file=>[file,read(`packages/visual-kit/private-assets/${file}`)]));
       },
     },
     /** Internal on-page Ask face and speech input; hosts supply their own authorized data. */
