@@ -516,7 +516,7 @@ await step("Files", [
     ["/favicon.svg", "image/svg+xml"],
     ["/icons/design-system-1.svg", "image/svg+xml"],
     ["/icons/apple-touch-icon.png", "image/png"],
-    ...["slack", "gmail", "google-calendar", "google-drive", "notion", "jira", "confluence", "figma", "dropbox"].map(name => [`/icons/apps/${name}.svg`, "image/svg+xml"]),
+    ...["slack", "gmail", "google-calendar", "google-drive", "notion", "jira", "confluence", "figma", "dropbox", "asana", "airtable", "google-sheets", "outlook"].map(name => [`/icons/apps/${name}.svg`, "image/svg+xml"]),
   ].map(([path, ...types]) => [
     `${path} is an image`,
     async () => {

@@ -43,5 +43,25 @@
     "key": "dropbox",
     "name": "Dropbox",
     "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/dropbox.svg"
+  },
+  {
+    "key": "asana",
+    "name": "Asana",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/asana-logo.svg"
+  },
+  {
+    "key": "google-sheets",
+    "name": "Google Sheets",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/google-sheets.svg"
+  },
+  {
+    "key": "outlook",
+    "name": "Outlook",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/microsoft-outlook.svg"
+  },
+  {
+    "key": "airtable",
+    "name": "Airtable",
+    "source": "https://raw.githubusercontent.com/gilbarbara/logos/main/logos/airtable.svg"
   }
 ]

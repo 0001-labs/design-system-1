@@ -381,7 +381,7 @@ export default {
         if (!icons || !Object.keys(icons).length) throw new Error('Name the icons to copy: "icons": ["duplicate", …]');
         const files = Object.fromEntries(Object.entries(icons).map(([name, file]) => [file, read(name.startsWith("app-") ? `DS1/x-app/${name.slice(4)}.svg` : `DS1/x-icon/${name}.svg`)]));
         if (Object.keys(icons).some(name => name.startsWith("app-"))) {
-          for (const file of ['SVGL-LICENSE', 'Devicon-LICENSE', 'catalog.json']) files[`app-${file}`] = read(`DS1/x-app/${file}`);
+          for (const file of ['SVGL-LICENSE', 'Devicon-LICENSE', 'Logos-LICENSE', 'catalog.json']) files[`app-${file}`] = read(`DS1/x-app/${file}`);
         }
         return files;
       },
