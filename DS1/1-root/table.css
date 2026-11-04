@@ -370,3 +370,5 @@
 :is(.ds-table th, .ds-table-heading):last-child > .ds-table-column-resize::after { inset-inline-start: auto; inset-inline-end: 0; }
 
 .ds-table[data-column-widths] { min-width: 0; }
+
+[data-ds-table-boundary], [data-ds-table-boundary] * { cursor: col-resize; }
