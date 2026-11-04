@@ -70,10 +70,14 @@ async function serve(folder: string): Promise<{ server: Server; base: string }> 
       response.end(readFileSync(file));
       return;
     }
-    const answer = await fetch(new URL(url.pathname + url.search, origin), { redirect: 'follow' }).catch(() => null);
-    if (!answer) { response.writeHead(502).end(); return; }
-    response.writeHead(answer.status, { 'content-type': answer.headers.get('content-type') ?? 'application/octet-stream' });
-    response.end(Buffer.from(await answer.arrayBuffer()));
+    try {
+      const answer = await fetch(new URL(url.pathname + url.search, origin), { redirect: 'follow', signal: AbortSignal.timeout(15_000) });
+      const body = Buffer.from(await answer.arrayBuffer());
+      response.writeHead(answer.status, { 'content-type': answer.headers.get('content-type') ?? 'application/octet-stream' });
+      response.end(body);
+    } catch {
+      response.writeHead(502).end();
+    }
   });
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
   const address = server.address();

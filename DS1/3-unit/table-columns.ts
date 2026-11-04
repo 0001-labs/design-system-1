@@ -14,6 +14,7 @@ export class TableColumns implements ReactiveController {
     scroller: () => HTMLElement | null;
     headers: () => HTMLElement[];
     apply: (widths: number[]) => void;
+    minimum?: (index: number, unit: number) => number;
   }) { host.addController(this); }
   hostUpdated() {
     const scroller = this.options.scroller(), content = scroller?.firstElementChild as HTMLElement | null;
@@ -54,19 +55,19 @@ export class TableColumns implements ReactiveController {
       @pointerdown=${(e: PointerEvent) => this.start(e, index, label)} @pointermove=${this.move} @pointerup=${this.end} @pointercancel=${this.cancel} @lostpointercapture=${this.cancel}
       @keydown=${(e: KeyboardEvent) => this.key(e, index, label)}></span>`;
   }
-  private metrics(handle: HTMLElement, label: string) {
+  private metrics(handle: HTMLElement, label: string, index: number) {
     const unit = handle.getBoundingClientRect().width || 20;
     const font = getComputedStyle(this.options.headers()[0] ?? handle);
     const canvas = document.createElement('canvas').getContext('2d');
     if (canvas) canvas.font = font.font || `${font.fontSize} ${font.fontFamily}`;
-    const minimum = Math.max(2 * unit, Math.ceil(((canvas?.measureText(label).width ?? label.length * 8) + unit) / unit) * unit);
+    const minimum = Math.max(this.options.minimum?.(index, unit) ?? 0, 2 * unit, Math.ceil(((canvas?.measureText(label).width ?? label.length * 8) + unit) / unit) * unit);
     return { unit, minimum, rtl: getComputedStyle(handle).direction === 'rtl' };
   }
   private initial(unit: number) { return this.options.headers().map((header, i) => snapColumn(this.widths[i] ?? header.getBoundingClientRect().width, unit)); }
   private start(e: PointerEvent, index: number, label: string) {
     if (e.button !== 0 || this.drag) return;
     e.preventDefault(); e.stopPropagation();
-    const handle = e.currentTarget as HTMLElement, metrics = this.metrics(handle, label);
+    const handle = e.currentTarget as HTMLElement, metrics = this.metrics(handle, label, index);
     this.widths = this.initial(metrics.unit);
     this.drag = { pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
     handle.focus(); handle.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
@@ -91,7 +92,7 @@ export class TableColumns implements ReactiveController {
     if (e.key === 'Escape' && this.drag) { e.preventDefault(); e.stopPropagation(); this.finish(e.currentTarget as HTMLElement, true); return; }
     if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
     e.preventDefault(); e.stopPropagation();
-    const { unit, minimum, rtl } = this.metrics(e.currentTarget as HTMLElement, label);
+    const { unit, minimum, rtl } = this.metrics(e.currentTarget as HTMLElement, label, index);
     this.widths = this.initial(unit);
     this.widths[index] = snapColumn(this.widths[index]! + (e.key === 'ArrowRight' ? 1 : -1) * (rtl ? -1 : 1) * (e.shiftKey ? 5 : 1) * unit, unit, minimum);
     this.options.apply(this.widths); this.host.requestUpdate(); this.measure(); this.emit(unit);
