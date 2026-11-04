@@ -4,6 +4,7 @@ description: "Everything that stands over the page, one component with a type: a
 ---
 
 import ComponentExample from "../../../components/ComponentExample.astro";
+import ConstraintList from "../../../components/ConstraintList.astro";
 
 An overlay is anything that stands over the page. Design system 1 draws them all
 with one component, `ds-overlay`, and a `type` that says which it is:
@@ -195,9 +196,7 @@ focus inside the opening gesture, such as a phone's search keyboard. The native
 frame opens synchronously; focus that control before awaiting the returned
 promise. Nested shared menus and inputs render synchronously too. When a new
 input is added to an already open overlay, `input.renderNow()` exposes its
-native field before gesture-time focus. Modeless Escape is handled after a
-nested editor can cancel it, and keyboard scrolling inside the overlay remains
-available while the page behind is held.
+native field before gesture-time focus. Escape always closes the top sheet, including while typing or when focus is on the page. A nested editor, `closeOnEscape={false}` or a prevented close request cannot block a sheet’s Escape dismissal. Its existing close event still runs, so drafts and cleanup remain the caller’s responsibility. Other overlay types retain their configured Escape behavior. Keyboard scrolling inside the overlay remains available while the page behind is held.
 
 Configure a floating overlay with `--ds-overlay-inset`, `--ds-overlay-margin`,
 `--ds-overlay-width`, `--ds-overlay-max-width`, `--ds-overlay-max-height` and
@@ -254,3 +253,7 @@ the visual viewport, keyboard, rotation and safe areas. Desktop sizing is unchan
 A people/access sheet may start with its tabs and use `aria-label` for its
 nonvisual dialog name, without a separate visible title. This pattern does not
 change the labels, permissions or actions of those tabs.
+
+## Constraints
+
+<ConstraintList component="ds-overlay" />

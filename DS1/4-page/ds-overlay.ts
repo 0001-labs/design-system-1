@@ -313,6 +313,7 @@ export class Overlay extends LitElement {
     document.defaultView?.addEventListener("resize", this.place);
     document.defaultView?.visualViewport?.addEventListener("resize", this.place);
     document.defaultView?.visualViewport?.addEventListener("scroll", this.place);
+    document.addEventListener("keydown", this.onSheetEscape, true);
     document.addEventListener("keydown", this.onDocumentKey);
     document.addEventListener("pointerdown", this.onOutsidePress, true);
     document.addEventListener("click", this.onOutsideClick, true);
@@ -333,6 +334,7 @@ export class Overlay extends LitElement {
     const wasTop = entries[entries.length - 1] === this;
     if (!stack?.delete(this)) return;
     syncScroll(document);
+    document.removeEventListener("keydown", this.onSheetEscape, true);
     document.removeEventListener("keydown", this.onDocumentKey);
     document.removeEventListener("pointerdown", this.onOutsidePress, true);
     document.removeEventListener("click", this.onOutsideClick, true);
@@ -362,13 +364,22 @@ export class Overlay extends LitElement {
   requestClose(reason: OverlayCloseReason = "button") {
     if (!this.open) return;
     const event = new CustomEvent("ds-close-request", { detail: { reason }, bubbles: true, composed: true, cancelable: true });
-    if (this.dispatchEvent(event)) this.close();
+    const allowed = this.dispatchEvent(event);
+    if (allowed || (reason === "escape" && this.kind === "sheet")) this.close();
   }
 
   private isTop() {
     const stack = [...(openDialogs.get(this.ownerDocument) ?? [])];
     return stack[stack.length - 1] === this;
   }
+
+  /** A sheet always gives Escape back to closing, before an editor can consume it. */
+  private onSheetEscape = (event: KeyboardEvent) => {
+    if (event.key !== "Escape" || this.kind !== "sheet" || !this.isTop()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.requestClose("escape");
+  };
 
   private onDocumentKey = (event: KeyboardEvent) => {
     if (!this.modeless || !this.isTop() || event.defaultPrevented) return;
@@ -407,7 +418,7 @@ export class Overlay extends LitElement {
 
   private onCancel = (event: Event) => {
     event.preventDefault();
-    if (this.closeOnEscape) this.requestClose("escape");
+    if (this.kind === "sheet" || this.closeOnEscape) this.requestClose("escape");
   };
 
   private onNativeClose = () => {

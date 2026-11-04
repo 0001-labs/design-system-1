@@ -429,3 +429,28 @@ test("mobile tabbed sheets keep their bounds, scroll panels and retain accessibl
   await tab.waitForFunction(() => !document.querySelector("dialog")?.open);
   expect(await tab.locator("#opener").evaluate(el => document.activeElement === el)).toBe(true);
 });
+
+test("Escape closes the top sheet even when its editor consumes keys and dismissal is vetoed", async () => {
+  const tab = await page({ width: 1280, height: 900 });
+  await tab.evaluate(async () => {
+    for (const id of ["lower-sheet", "upper-sheet"]) {
+      const sheet = document.createElement("ds-overlay");
+      sheet.id = id;
+      sheet.type = "sheet";
+      sheet.nonModal = true;
+      sheet.closeOnEscape = false;
+      sheet.innerHTML = '<dialog aria-label="Draft"><textarea>Unsaved draft</textarea></dialog>';
+      sheet.addEventListener("ds-close-request", event => event.preventDefault());
+      sheet.querySelector("textarea")!.addEventListener("keydown", event => { event.preventDefault(); event.stopImmediatePropagation(); });
+      document.body.append(sheet);
+      await sheet.show();
+    }
+    document.querySelector<HTMLTextAreaElement>("#upper-sheet textarea")!.focus();
+  });
+  await tab.keyboard.press("Escape");
+  await expect.poll(() => tab.evaluate(() => document.querySelector<HTMLDialogElement>("#upper-sheet dialog")!.open)).toBe(false);
+  expect(await tab.locator("#lower-sheet dialog").evaluate(dialog => (dialog as HTMLDialogElement).open)).toBe(true);
+  expect(await tab.locator("#upper-sheet textarea").inputValue()).toBe("Unsaved draft");
+  await tab.keyboard.press("Escape");
+  await expect.poll(() => tab.evaluate(() => document.querySelector<HTMLDialogElement>("#lower-sheet dialog")!.open)).toBe(false);
+});

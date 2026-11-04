@@ -135,6 +135,15 @@ function tableType(root: ParentNode) {
 
 export const constraints: Constraint[] = [
   {
+    code: 'overlay.escape-close',
+    rule: 'Escape always closes the top sheet, including while typing or with focus outside it; editors, disabled Escape options and close vetoes cannot block it, and unsent drafts are preserved.',
+    components: ['ds-overlay'],
+    check: { file: 'tests/overlay-measure.test.ts', test: 'Escape closes the top sheet even when its editor consumes keys and dismissal is vetoed' },
+    measures: ['sheet', 'sheets'],
+    count: root => root.querySelectorAll('ds-overlay[type="sheet"], dialog.ds-overlay--sheet').length,
+    inspect: root => Array.from(root.querySelectorAll('ds-overlay[type="sheet"], dialog.ds-overlay--sheet')).map(element => ({ element, review: true, message: 'Open the sheet, focus its editor and press Escape: only the top sheet must close, preserving its draft. Keyboard dismissal cannot be measured without interacting.' })),
+  },
+  {
     code: 'table.uniform-text',
     rule: 'All table text uses the same default text size, including headers, names, tags, numbers, dates and times.',
     components: ['ds-table'],

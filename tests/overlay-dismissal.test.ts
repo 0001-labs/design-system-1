@@ -110,3 +110,33 @@ for (const type of ["sheet", "drawer"] as const) {
     expect(pageAction).toHaveBeenCalledTimes(2);
   });
 }
+
+for (const nonModal of [false, true]) {
+  test(`${nonModal ? "modeless" : "modal"} sheet Escape wins over an editor, disabled dismissal and a close veto`, async () => {
+    const { host, native, reasons } = await fixture("sheet", nonModal);
+    host.closeOnEscape = false;
+    host.addEventListener("ds-close-request", event => event.preventDefault());
+    const input = host.querySelector("input")!;
+    input.value = "Keep this draft";
+    input.addEventListener("keydown", event => { event.preventDefault(); event.stopImmediatePropagation(); });
+    await host.show();
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true, composed: true }));
+    await host.updateComplete;
+    expect(native.open).toBe(false);
+    expect(host.open).toBe(false);
+    expect(input.value).toBe("Keep this draft");
+    expect(reasons).toEqual(["escape"]);
+  });
+}
+
+test("Escape closes only the top sheet, including when focus is on the page", async () => {
+  const first = await fixture("sheet", true);
+  const second = await fixture("sheet", true);
+  await first.host.show();
+  await second.host.show();
+  second.outside.focus();
+  second.outside.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+  expect(second.host.open).toBe(false);
+  expect(first.host.open).toBe(true);
+});

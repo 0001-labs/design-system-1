@@ -389,6 +389,10 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 <!-- constraints:start (written by scripts/write-constraints.ts from DS1/0-face/constraints.ts) -->
 
+**Overlay** (`ds-overlay`)
+
+- `overlay.escape-close`: Escape always closes the top sheet, including while typing or with focus outside it; editors, disabled Escape options and close vetoes cannot block it, and unsent drafts are preserved.
+
 **Table** (`ds-table`)
 
 - `table.uniform-text`: All table text uses the same default text size, including headers, names, tags, numbers, dates and times.
