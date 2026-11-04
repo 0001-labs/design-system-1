@@ -241,7 +241,7 @@ Write a shortcut once, `"mod+shift+d"`, and let `DS1/0-face/keys.ts` do the rest
 
 ## VisualKit windows
 
-- **A product shown in a window** is VisualKit's `<ds-app-chrome kind="macos-compact">` (`DS1/5-visual-kit/app-chrome.ts`) or `<ds-window>`, on the product's own colours: a desktop window's **16:10** (forty squares by twenty-five where it has the room), never stretched to its content and never taller than it is wide on a computer. Narrower than thirty squares (a phone), it stands **4:5**. Never a hand-drawn browser bar, traffic lights or address.
+- **A product shown in a window** is VisualKit's `<ds-app-chrome kind="macos-compact">` (`DS1/5-visual-kit/app-chrome.ts`) or `<ds-window>`, on the product's own colours: a desktop window's **16:10** (forty squares by twenty-five where it has the room), never stretched to its content or to the column beside it and never taller than it is wide on a computer. On a phone's width, thirty squares and under, it stands **4:5**, no taller. `ds-window` keeps this itself; a frame around a bare `ds-app-chrome` is measured by `window.shape`, and a phone's screen goes in `ds-device-bezel`, never a tall window. Never a hand-drawn browser bar, traffic lights or address.
 - **What it holds comes to the window**, never the other way: the product's whole page as a person sees it, its normal header included (Link's brand band with the workspace's name and people, then Home's column), drawn on a canvas of a real window's size (1024 × 640 for a computer, 400 × 500 for a phone's form) and zoomed out to the window as one picture (`transform: scale` from the window's width). The page runs on past the window's foot as a real window cuts it; never crop it at the sides, scroll it inside the window, scale one piece apart from its header, or leave it pinned to a corner with empty room beside it. Joachim, 3 November 2026.
 
 ## Figures, meters and steps
@@ -430,6 +430,10 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 - `card.media-level`: A card's picture stands on the card's foot, a square below the words at least, so the pictures of cards side by side stand on one level whatever the words above them. The room a taller card leaves goes above its picture, never below it, so pictures of one height side by side start on one line too. Pictures of different heights side by side take one room (`media-height`, `--ds-card-media-height`) and start on one line, the foot cutting the taller.
 - `card.media-corners`: A picture is never rounded where it meets the card's edge: the card cuts it square there, and only a corner standing free inside the card, towards the words, keeps a picture's corner.
+
+**Window** (`ds-window`)
+
+- `window.shape`: A window with a computer's chrome keeps a computer window's shape whatever it holds, 16:10 and never taller than it is wide, and stands no taller than 4:5 on a phone's width. What a window holds comes to the window: its page is cut by the foot or zoomed out as one picture, and the window never grows to fit it or to fill a column beside it.
 
 **Carousel** (`ds-carousel`)
 

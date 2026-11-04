@@ -3,6 +3,7 @@ import { faultLineGrids, faultLineColumns, inspectFaultLines } from './fault-lin
 import { labelledButtons, inspectButtonLabels } from './button-label';
 import { inspectTextContrast, measureTextContrast } from "./text-contrast";
 import { inspectWordWrap, wordHeaders } from './word-wrap';
+import { windowRatioFloor } from './window-shape';
 
 // Design system 1's small rules: one list, each rule a sentence a component keeps and a check that
 // measures it on a page as it is drawn. Five presses of C show what a page breaks, in a panel at
@@ -50,6 +51,15 @@ const near = (a: number, b: number) => Math.abs(a - b) <= 1;
 const px = (n: number) => `${Math.round(n)}px`;
 /** An element's style, from its own window: a page checked in a frame is measured by the frame's. */
 const styleOf = (element: Element) => (element.ownerDocument.defaultView ?? window).getComputedStyle(element);
+
+/** Every window with a computer's chrome as drawn: a `ds-window`, or the frame a `ds-app-chrome` heads. */
+function windows(root: ParentNode) {
+  return Array.from(root.querySelectorAll<HTMLElement>('ds-window:not([frameless]), ds-app-chrome:is([kind=macos], [kind=macos-compact], [kind=safari], [kind=chrome], [kind=edge])')).flatMap(element => {
+    const frame = element.localName === 'ds-window' ? element : element.parentElement;
+    const box = frame?.getBoundingClientRect();
+    return frame && box?.width && box.height ? [{ frame, box }] : [];
+  });
+}
 
 /** Every drawn card with its picture: `ds-card` and its slotted picture, or `.ds-card` and its media's. */
 function cards(root: ParentNode) {
@@ -297,6 +307,24 @@ export const constraints: Constraint[] = [
         findings.push({ element, message: `It reaches ${px(reach)} past the window's ${side} edge, in a window ${px(width)} wide.` });
       }
       return findings;
+    },
+  },
+  {
+    code: 'window.shape',
+    rule: "A window with a computer's chrome keeps a computer window's shape whatever it holds, 16:10 and never taller than it is wide, and stands no taller than 4:5 on a phone's width.",
+    why: 'What a window holds comes to the window: its page is cut by the foot or zoomed out as one picture, and the window never grows to fit it or to fill a column beside it.',
+    components: ['ds-window'],
+    check: { file: 'tests/window.test.ts', test: "a window keeps a window's shape: it draws itself 16:10, 4:5 on a phone, and a taller frame around chrome breaks the rule" },
+    measures: ['window', 'windows'],
+    count: root => windows(root).length,
+    inspect(root) {
+      const page = (root as Node).ownerDocument ?? (root as Document);
+      const width = page.documentElement.clientWidth || page.defaultView?.innerWidth || 0;
+      if (!width) return [];
+      return windows(root).filter(({ box }) => box.height > box.width / windowRatioFloor(width) + 1).map(({ frame, box }) => ({
+        element: frame,
+        message: `The window is ${px(box.width)} by ${px(box.height)}, too tall for a window in a page ${px(width)} wide.`,
+      }));
     },
   },
   {

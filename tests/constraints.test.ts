@@ -6,7 +6,9 @@ import { constraints, skillBlock, skillEnd, skillStart } from "../DS1/0-face/con
 const root = join(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 const docs = join(root, "website/src/content/docs");
-const page = (tag: string) => readdirSync(docs, { withFileTypes: true }).filter(entry => entry.isDirectory())
+/** VisualKit's parts share one page. */
+const visualKit = new Set(["ds-window"]);
+const page = (tag: string) => visualKit.has(tag) ? "visual-kit/index.mdx" : readdirSync(docs, { withFileTypes: true }).filter(entry => entry.isDirectory())
   .flatMap(entry => [`${entry.name}/${tag.replace(/^ds-/, "")}.mdx`, `${entry.name}/${tag.replace(/^ds-/, "")}.md`])
   .find(path => existsSync(join(docs, path)));
 

@@ -5,6 +5,7 @@ description: Real app content, presented in windows and device frames.
 
 import InstagramExample from "../../../components/InstagramExample.astro";
 import PlatformExamples from "../../../components/PlatformExamples.astro";
+import ConstraintList from "../../../components/ConstraintList.astro";
 import CompactWindowExample from "../../../components/CompactWindowExample.astro";
 import PhoneVideoExample from "../../../components/PhoneVideoExample.astro";
 import DeviceBezelExample from "../../../components/DeviceBezelExample.astro";
@@ -28,10 +29,14 @@ The default device clock is **00:01**. Browser addresses are empty until supplie
 
 <PlatformExamples mode="windows" />
 
+A window has a window's shape, whatever it holds: `ds-window` stands 16:10 by itself and 4:5 on a phone's width, and its page is cut by the foot or zoomed out as one picture. Show a phone's screen in a [Device Bezel](#device-bezels), not in a tall window.
+
+<ConstraintList component="ds-window" />
+
 `ds-window` wraps app content in a macOS application window or a Safari, Google Chrome or Microsoft Edge browser window.
 
 ```html
-<ds-window kind="safari" label="Orders" address="shop.example" style="height:500px">
+<ds-window kind="safari" label="Orders" address="shop.example">
   <iframe title="Orders preview" src="/sample-app/"></iframe>
 </ds-window>
 ```
@@ -47,7 +52,7 @@ A 30px title bar, multiplied by DS1’s `--sf`, with three muted window controls
 <CompactWindowExample />
 
 ```html
-<ds-window kind="macos-compact" label="Room shop" href="/examples/layouts/shop/" style="height:500px">
+<ds-window kind="macos-compact" label="Room shop" href="/examples/layouts/shop/">
   <iframe title="Shop design" src="/examples/layouts/shop/"></iframe>
 </ds-window>
 ```
