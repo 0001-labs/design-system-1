@@ -19,6 +19,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { faceCorrection } from '../DS1/0-face/face-correction.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -70,6 +71,272 @@ export function sectionTones(lib) {
     ...Object.fromEntries(pastels.map((pastel, i) => [`pastel-${i + 1}`, [pastel, inkPair(lib, pastel)]])),
   };
 }
+
+// Tally's own roles, for a price list: its bands, its type, its package cards and its lists. The
+// faces are corrected to the sixteen, which draws Funnel 1.05 times its size, so a size here is that
+// much under the size it is seen at (16px reads as 17). The large roles follow the window on a phone
+// and the rest take the device scale, none falling under its size on a computer.
+const TALLY_RULES = `
+/* One mode: white paper and night bands, whatever the reader's system says. */
+html {
+  color-scheme: light !important;
+}
+
+/* A band: a stretch of the page in a colour of its own. */
+[data-band="night"] {
+  --ds-paper: #0e0f11;
+  --background: #0e0f11;
+  --ds-text-color: #f4f4f2;
+  --text-color: #f4f4f2;
+  --ds-text-color-muted: #9ea2a9;
+  --ds-title-color: #9ea2a9;
+  --ds-border-color: #2e3036;
+  --ds-fill: #1d1f23;
+  --ds-fill-hover: #2a2c31;
+  --ds-accent-color: #f4f4f2;
+  --ds-button-primary-fill: #f4f4f2;
+  --ds-button-primary-text: #0e0f11;
+  --ds-button-text-color-on-accent: #0e0f11;
+  --ds-button-secondary-fill: #1d1f23;
+  --ds-button-background-color-secondary: #1d1f23;
+  --ds-button-text-color: #f4f4f2;
+  --ds-footer-line: #2e3036;
+  background: #0e0f11;
+  color: #f4f4f2;
+}
+[data-band="quiet"] {
+  background: var(--ds-fill);
+}
+
+/* The site header on a band: its paper is the band's, its links at the row's end. */
+ds-header[data-links="end"] {
+  --ds-header-paper: transparent;
+}
+ds-header[data-links="end"]::part(header) {
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: calc(1.5 * var(--ds-unit));
+}
+ds-header[data-links="end"]::part(nav) {
+  justify-content: flex-end;
+  gap: calc(1.5 * var(--ds-unit));
+}
+ds-header[data-links="end"] ds-button[slot="actions"]::part(control) {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+}
+[data-wordmark] {
+  display: block;
+  color: inherit;
+  font-family: var(--ds-typeface-medium);
+  font-size: calc(20px * var(--ds-sf, 1));
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: var(--ds-unit);
+  text-decoration: none;
+}
+[data-wordmark] b {
+  font-weight: 700;
+}
+
+/* Type. */
+ds-text[data-type] {
+  display: block;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  white-space: normal;
+  letter-spacing: 0;
+}
+ds-text:is([data-type="hero"], [data-type="display"], [data-type="closing"], [data-type="price"], [data-type="fee"], [data-type="title"], [data-type="name"], [data-type="subhead"], [data-type="question"]) {
+  font-family: var(--ds-typeface-medium);
+  font-weight: 600;
+}
+ds-text[data-type="hero"] {
+  font-size: min(106px, 11.8vw);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+ds-text[data-type="display"] {
+  font-size: min(99px, 11.2vw);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+ds-text[data-type="closing"] {
+  font-size: min(68px, 11vw);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+ds-text[data-type="price"] {
+  font-size: clamp(46px, 12.4vw, 57px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+ds-text[data-type="fee"] {
+  font-size: calc(30px * var(--ds-sf, 1));
+  line-height: calc(32px * var(--ds-sf, 1));
+  letter-spacing: -0.03em;
+}
+ds-text[data-type="title"] {
+  font-size: calc(25px * var(--ds-sf, 1));
+  line-height: calc(28px * var(--ds-sf, 1));
+  letter-spacing: -0.03em;
+}
+ds-text[data-type="name"] {
+  font-size: calc(21px * var(--ds-sf, 1));
+  line-height: calc(24px * var(--ds-sf, 1));
+  letter-spacing: -0.03em;
+}
+ds-text[data-type="name"][data-heavy] {
+  font-weight: 800;
+}
+ds-text[data-type="subhead"] {
+  font-size: calc(19px * var(--ds-sf, 1));
+  line-height: calc(24px * var(--ds-sf, 1));
+  letter-spacing: -0.02em;
+}
+ds-text[data-type="question"] {
+  font-size: calc(27px * var(--ds-sf, 1));
+  line-height: calc(32px * var(--ds-sf, 1));
+  letter-spacing: -0.02em;
+}
+ds-text[data-type="body"] {
+  font-size: calc(16px * var(--ds-sf, 1));
+  line-height: calc(24px * var(--ds-sf, 1));
+}
+ds-text[data-type="small"] {
+  font-size: calc(13px * var(--ds-sf, 1));
+  line-height: calc(20px * var(--ds-sf, 1));
+}
+ds-text[data-type="small"][strong] {
+  font-family: var(--ds-typeface-regular);
+}
+
+/* A package: padded a square and a half, its colours the card's own. */
+ds-card[data-plan] {
+  --ds-card-padding-override: calc(1.5 * var(--ds-unit));
+  --ds-text-color: var(--ds-card-ink-override);
+  --ds-text-color-muted: var(--ds-card-muted-override);
+  --ds-title-color: var(--ds-card-muted-override);
+  --ds-border-color: var(--plan-line);
+}
+/* The writing fills the card, so what ends a package can stand on its foot. */
+ds-card[data-plan]::part(body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+ds-card[data-plan="night"] {
+  --ds-card-fill-override: #1d1f23;
+  --ds-card-ink-override: #f4f4f2;
+  --ds-card-muted-override: #9ea2a9;
+  --plan-line: #3a3c42;
+}
+ds-card[data-plan="paper"] {
+  --ds-card-fill-override: #ffffff;
+  --ds-card-ink-override: #0e0f11;
+  --ds-card-muted-override: #5b5e64;
+  --plan-line: #dddddb;
+  --ds-accent-color: #0e0f11;
+  --ds-button-primary-fill: #0e0f11;
+  --ds-button-primary-text: #ffffff;
+  --ds-button-text-color-on-accent: #ffffff;
+}
+ds-card[data-plan="accent"] {
+  --ds-card-fill-override: #34b36e;
+  --ds-card-ink-override: #0e0f11;
+  --ds-card-muted-override: #163024;
+  --plan-line: #1f7d4b;
+  --ds-accent-color: #0e0f11;
+  --ds-button-primary-fill: #0e0f11;
+  --ds-button-primary-text: #ffffff;
+  --ds-button-text-color-on-accent: #ffffff;
+}
+ds-card[data-plan="sheet"] {
+  --ds-card-padding-override: var(--ds-unit);
+  --ds-card-corner-size: 6px;
+  --ds-card-fill-override: #ffffff;
+  --ds-card-ink-override: #0e0f11;
+  --ds-card-muted-override: #5b5e64;
+  --plan-line: #dddddb;
+}
+
+/* A list of what is included: dots, or rules between the rows with data-list="rules". */
+ul[data-list] {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ds-text-color-muted);
+  font-family: var(--ds-typeface-regular);
+  font-size: calc(15px * var(--ds-sf, 1));
+  line-height: calc(24px * var(--ds-sf, 1));
+}
+ul[data-list="dots"] > li {
+  position: relative;
+  padding-block: calc(3px * var(--ds-sf, 1));
+  padding-inline-start: calc(16px * var(--ds-sf, 1));
+}
+ul[data-list="dots"] > li::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(13px * var(--ds-sf, 1));
+  inset-inline-start: 0;
+  width: calc(4px * var(--ds-sf, 1));
+  height: calc(4px * var(--ds-sf, 1));
+  border-radius: 50%;
+  background: currentColor;
+}
+ul[data-list="dots"] > li[data-strong] {
+  color: var(--ds-text-color);
+  font-weight: 600;
+}
+ul[data-list="rules"] > li {
+  padding-block: calc(8px * var(--ds-sf, 1)) calc(7px * var(--ds-sf, 1));
+  border-block-start: 1px solid var(--ds-border-color);
+}
+
+/* A large button says its words in the middle of whatever width it is given. */
+ds-button[data-size="large"] {
+  --ds-button-text-size: 16px;
+}
+ds-button[data-size="large"]::part(control) {
+  justify-content: center;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* A question: a large accordion on a rule, its plus at the end. */
+ds-accordion[data-size="large"] {
+  --ds-accordion-width: 100%;
+  --ds-title-color: var(--ds-text-color);
+  border-block-end: 1px solid var(--ds-border-color);
+}
+ds-accordion[data-size="large"]::part(summary) {
+  padding-block: calc(19px * var(--ds-sf, 1));
+  border-radius: 0;
+}
+ds-accordion[data-size="large"]::part(row) {
+  align-items: center;
+}
+ds-accordion[data-size="large"]::part(details) {
+  max-width: calc(27 * var(--ds-unit));
+  padding-block-end: var(--ds-unit);
+}
+
+@media (max-width: 600px) {
+  ds-button[data-size="large"] { --ds-button-text-size: 12px; }
+  ds-text[data-type="fee"] { font-size: max(30px, calc(22px * var(--ds-sf, 1))); line-height: max(32px, calc(24px * var(--ds-sf, 1))); }
+  ds-text[data-type="title"] { font-size: max(25px, calc(18px * var(--ds-sf, 1))); line-height: max(28px, calc(20px * var(--ds-sf, 1))); }
+  ds-text[data-type="name"] { font-size: max(21px, calc(16px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }
+  ds-text[data-type="subhead"] { font-size: max(19px, calc(14px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }
+  ds-text[data-type="question"] { font-size: max(19px, calc(14px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }
+  ds-text[data-type="body"] { font-size: max(16px, calc(12px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }
+  ds-text[data-type="small"] { font-size: max(13px, calc(10px * var(--ds-sf, 1))); line-height: max(20px, calc(15px * var(--ds-sf, 1))); }
+  ul[data-list] { font-size: max(15px, calc(11px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }
+}
+`;
 
 // Each value is [light, dark].
 export const LIBRARIES = {
@@ -141,6 +408,22 @@ export const LIBRARIES = {
     band: ['#c5d0dd', '#2b3542'], bandInk: ['#1e1e1e', '#f5f5f5'], highlight: ['#fde70c', '#fde70c'],
     corner: '4px', inset: '2.5px', card: '8px',
   },
+  tally: {
+    name: 'Tally', note: 'A price list of its own in one mode: night bands, big Funnel headings, white and green package cards, and buttons three squares high.',
+    paper: ['#ffffff', '#ffffff'], text: ['#0e0f11', '#0e0f11'], muted: ['#5b5e64', '#5b5e64'],
+    fill: ['#eeeeec', '#eeeeec'], hover: ['#e4e4e2', '#e4e4e2'], border: ['#dddddb', '#dddddb'], input: ['#ffffff', '#ffffff'],
+    accent: ['#0e0f11', '#0e0f11'], onAccent: ['#ffffff', '#ffffff'], focus: ['#1f7d4b', '#1f7d4b'],
+    chart: ['#34b36e', '#34b36e'], chartInk: ['#0e0f11', '#0e0f11'],
+    band: ['#0e0f11', '#0e0f11'], bandInk: ['#f4f4f2', '#f4f4f2'], highlight: ['#34b36e', '#34b36e'],
+    corner: '6px', inset: '4px', card: '14px', tracking: '0px',
+    typeface: '"Inter Arrows", "Funnel Sans", "Helvetica Neue", Arial, sans-serif',
+    typefaceMedium: '"Inter Arrows", "Funnel Display", "Funnel Sans", "Helvetica Neue", Arial, sans-serif',
+    metrics: { '--ds-type-weight-bold': '600' },
+    // Funnel's capitals are 0.675 of the em, measured by scripts/face-metrics.mjs; both faces are variable from 300 to 800.
+    faces: [['Funnel Display', 'funneldisplay/v3/B50WF7FGv37QNVWgE0ga--4Pbb6dDYs0gnHA'], ['Funnel Sans', 'funnelsans/v3/OpNIno8Dg9bX6Bsp3Wq69TpyfhjoyU7d']].map(([family, file]) => ({ family, weight: '300 800', src: `https://fonts.gstatic.com/s/${file}.woff2`, metrics: { ascent: 1, descent: 0.25, capHeight: 0.675 } })),
+    sizes: { large: { squares: 3, text: 16, leading: 24, inset: 30, corner: 6, weight: 600, phone: { size: 40, text: 12, leading: 20, inset: 20, corner: 4 } } },
+    componentRules: TALLY_RULES,
+  },
   atelier: {
     name: 'Atelier', note: 'A design studio: near-white paper, ink buttons with soft corners, big rounded cards and sections that turn over to black.',
     paper: ['#fafafa', '#0f0f10'], text: ['#18181b', '#fafafa'], muted: ['#5c5c62', '#a6a6ad'],
@@ -177,7 +460,7 @@ export function draft(lib) {
     '--ds-input-disabled-color': ld(...lib.muted),
     '--ds-input-reveal-color': ld(...lib.text),
   };
-  if (lib.typeface) Object.assign(values, { '--ds-typeface-regular': lib.typeface, '--ds-typeface-medium': lib.typeface });
+  if (lib.typeface) Object.assign(values, { '--ds-typeface-regular': lib.typeface, '--ds-typeface-medium': lib.typefaceMedium ?? lib.typeface });
   let css = template.replace('the accent is Apple green.', `the accent is ${lib.name}'s own.`);
   for (const [name, value] of Object.entries(values)) {
     const pattern = new RegExp(`(\\n  ${name}:)[^;]*;`);
@@ -187,6 +470,8 @@ export function draft(lib) {
   const chart = ld(...lib.chart);
   const extra = [
     `/* ${lib.name}: ${lib.note} */`,
+    // A face of the library's own, corrected at its @font-face so it stands on the sixteen.
+    ...(lib.faces ?? []).map(face => `@font-face { font-family: "${face.family}"; src: url("${face.src}") format("woff2"); font-weight: ${face.weight}; font-style: normal; font-display: swap; ${faceCorrection(face.metrics).replaceAll(';', '; ')}; }`),
     ':root {',
     `  --ds-corner-size: ${lib.corner};`,
     `  --ds-card-corner-size: ${lib.card};`,
@@ -206,7 +491,7 @@ export function draft(lib) {
     '  --button-background-color-primary: var(--ds-accent-color);',
     '  --button-text-color-on-light: var(--ds-button-text-color-on-accent);',
     '  --button-background-color-secondary: var(--ds-fill);',
-    ...(lib.typeface ? [`  --typeface-regular: ${lib.typeface};`, `  --typeface-medium: ${lib.typeface};`] : []),
+    ...(lib.typeface ? [`  --typeface-regular: ${lib.typeface};`, `  --typeface-medium: ${lib.typefaceMedium ?? lib.typeface};`] : []),
     ...(lib.band ? [`  --brand-band: ${ld(...lib.band)};`, `  --brand-band-ink: ${ld(...lib.bandInk)};`, `  --brand-highlight: ${ld(...lib.highlight)};`] : []),
     "  /* The section tones of Consistency's native pages: a surface and the ink that reads on it. */",
     ...Object.entries(sectionTones(lib)).flatMap(([tone, [surface, ink]]) => [`  --c9y-tone-${tone}: ${ld(...surface)};`, `  --c9y-tone-${tone}-ink: ${ld(...ink)};`]),
@@ -228,9 +513,9 @@ export function draft(lib) {
     '}',
     '',
     '/* Button sizes: data-size="medium" (two squares) and "large" (three); the default is one control in one square. */',
-    ...Object.entries(SIZES).flatMap(([size, measure]) => {
+    ...Object.entries({ ...SIZES, ...lib.sizes }).flatMap(([size, measure]) => {
       const height = measure.squares * 20 - 4;
-      const corner = lib.pill ? height / 2 : px(lib.corner) * measure.squares;
+      const corner = lib.pill ? height / 2 : measure.corner ?? px(lib.corner) * measure.squares;
       return [
         `ds-button[data-size="${size}"] {`,
         `  --ds-control-size: ${height}px;`,
@@ -238,6 +523,7 @@ export function draft(lib) {
         `  --ds-text-leading: ${measure.leading}px;`,
         `  --ds-button-inset: ${measure.inset}px;`,
         `  --ds-corner-size: ${corner}px;`,
+        ...(measure.weight ? [`  --ds-type-weight-default: ${measure.weight};`] : []),
         '  vertical-align: bottom;',
         '}',
         '',
@@ -246,11 +532,11 @@ export function draft(lib) {
     '/* On a phone a large button takes the medium measures, so a call to action keeps to the screen. */',
     '@media (max-width: 600px) {',
     '  ds-button[data-size="large"] {',
-    `    --ds-control-size: ${SIZES.medium.squares * 20 - 4}px;`,
-    `    --ds-text-size: ${SIZES.medium.text}px;`,
-    `    --ds-text-leading: ${SIZES.medium.leading}px;`,
-    `    --ds-button-inset: ${SIZES.medium.inset}px;`,
-    `    --ds-corner-size: ${lib.pill ? (SIZES.medium.squares * 20 - 4) / 2 : px(lib.corner) * SIZES.medium.squares}px;`,
+    `    --ds-control-size: ${lib.sizes?.large?.phone?.size ?? SIZES.medium.squares * 20 - 4}px;`,
+    `    --ds-text-size: ${lib.sizes?.large?.phone?.text ?? SIZES.medium.text}px;`,
+    `    --ds-text-leading: ${lib.sizes?.large?.phone?.leading ?? SIZES.medium.leading}px;`,
+    `    --ds-button-inset: ${lib.sizes?.large?.phone?.inset ?? SIZES.medium.inset}px;`,
+    `    --ds-corner-size: ${lib.sizes?.large?.phone?.corner ?? (lib.pill ? (SIZES.medium.squares * 20 - 4) / 2 : px(lib.corner) * SIZES.medium.squares)}px;`,
     '  }',
     '}',
     '',

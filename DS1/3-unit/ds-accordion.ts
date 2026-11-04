@@ -20,6 +20,16 @@ import styles from "./styles/ds-accordion.css?inline";
  * <ds-accordion summary="How it began">
  *   <div slot="details">Rich HTML content here</div>
  * </ds-accordion>
+ *
+ * Usage (with a summary of its own, and a plus that turns into a close):
+ * <ds-accordion icon="plus">
+ *   <ds-text slot="summary" literal>Who owns the shop?</ds-text>
+ *   <ds-text slot="details" literal wrap>You do.</ds-text>
+ * </ds-accordion>
+ *
+ * @csspart summary - The pressed row.
+ * @csspart row - The words and the icon inside it.
+ * @csspart details - What opens below it.
  */
 export class Accordion extends LitElement {
   static properties = {
@@ -28,6 +38,7 @@ export class Accordion extends LitElement {
     literal: { type: Boolean, reflect: true },
     open: { type: Boolean, reflect: true },
     control: { type: String, reflect: true },
+    icon: { type: String, reflect: true },
     _hasSlottedContent: { type: Boolean, state: true },
   };
 
@@ -37,6 +48,8 @@ export class Accordion extends LitElement {
   declare literal: boolean;
   declare open: boolean;
   declare control: string;
+  /** The icon at the summary's end: `chevron-down`, turned over when open, or `plus`, turned to a close. */
+  declare icon: string;
   declare _hasSlottedContent: boolean;
 
   constructor() {
@@ -46,6 +59,7 @@ export class Accordion extends LitElement {
     this.literal = false;
     this.open = false;
     this.control = "native";
+    this.icon = "chevron-down";
     this._hasSlottedContent = false;
     this.addEventListener("click", event => {
       if (this.control !== "slotted") return;
@@ -86,14 +100,14 @@ export class Accordion extends LitElement {
     if (this.control === "slotted") return html`<div class="header"><slot name="trigger" @slotchange=${this.syncFrame}></slot><slot name="actions"></slot></div><slot name="details" @slotchange=${this.syncFrame}></slot>`;
     return html`
       <details ?open=${this.open}>
-        <summary>
-          <span class="summaryRow">
-            <ds-text class="summaryText" .text=${this.summary} ?literal=${this.literal}></ds-text>
-            <ds-icon class="chevron" type="chevron-down" size="large" aria-hidden="true"></ds-icon>
+        <summary part="summary">
+          <span class="summaryRow" part="row">
+            <slot class="summaryText" name="summary"><ds-text .text=${this.summary} ?literal=${this.literal}></ds-text></slot>
+            <ds-icon class="chevron" type=${this.icon} size="large" aria-hidden="true"></ds-icon>
           </span>
         </summary>
 
-        <div class="detailsBody">
+        <div class="detailsBody" part="details">
           <slot name="details" @slotchange=${this._handleSlotChange}></slot>
           ${!this._hasSlottedContent
             ? html`<ds-text

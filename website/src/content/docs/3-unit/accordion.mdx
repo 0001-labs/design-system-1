@@ -33,6 +33,7 @@ The React `Accordion` draws the same chevron on its trigger.
 | --- | --- | --- | --- |
 | `summary` | string | Empty | The summary text or translation key. |
 | `details` | string | Empty | Detail text when no named-slot content is supplied. |
+| `icon` | string | `chevron-down` | The icon at the summary's end. `plus` turns to a close when open, for long lists of questions. |
 | `literal` | boolean | false | The summary and details are what someone wrote, such as a template's name: shown as they stand and never translated. |
 | `open` | boolean | false | Initially expands the disclosure. |
 
@@ -42,7 +43,7 @@ Without `literal`, `summary` and `details` are translation keys, as in [Text](/2
 <ds-accordion literal summary="Ideas for spring" details="Plant the bulbs in October"></ds-accordion>
 ```
 
-For rich detail content, use `slot="details"` as in the example. The summary can be activated with the pointer, Enter or Space. Native `<details>` owns opening and closing.
+For rich detail content, use `slot="details"` as in the example; for a summary of its own, `slot="summary"`, whose words stay editable where `summary` is an attribute. A library sizes the row through the parts `summary`, `row` and `details`. The summary can be activated with the pointer, Enter or Space. Native `<details>` owns opening and closing.
 
 [Row](/3-unit/row/) · [Text](/2-core/text/)
 

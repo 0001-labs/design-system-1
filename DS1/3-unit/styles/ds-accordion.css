@@ -40,13 +40,14 @@ summary:focus-visible { outline: 2px solid var(--ds-focus-ring); outline-offset:
   min-height: var(--ds-unit);
   line-height: var(--ds-type-lineheight-default);
 }
-.summaryText { flex: 1 1 auto; min-width: 0; }
+.summaryText { display: block; flex: 1 1 auto; min-width: 0; }
 
 .chevron {
   flex: 0 0 auto;
   color: var(--ds-title-color);
 }
 details[open] .chevron { transform: rotate(180deg); }
+:host([icon="plus"]) details[open] .chevron { transform: rotate(45deg); }
 @media (prefers-reduced-motion: no-preference) {
   .chevron { transition: transform 140ms ease; }
 }
