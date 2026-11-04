@@ -12,7 +12,7 @@ const composition = `<style>
    needs. Below sixty-one squares the page fills and the grid keeps the left edge. */
 :root { --ds-grid-origin-x:max(0px, calc(50% - 30 * var(--ds-unit))); }
 .pricing-wrap { box-sizing:border-box; width:100%; max-width:calc(61 * var(--ds-unit)); margin-inline:auto; padding-inline:var(--ds-unit); min-width:0; }
-.pricing-header { display:block; max-width:calc(61 * var(--ds-unit)); margin-inline:auto; }
+.pricing-header, .pricing-footer { display:block; max-width:calc(61 * var(--ds-unit)); margin-inline:auto; }
 .pricing-hero { padding-block:calc(3.5 * var(--ds-unit)) calc(5 * var(--ds-unit)); }
 .pricing-hero .pricing-title { max-width:calc(30 * var(--ds-unit)); }
 .pricing-hero [lang='ja'] .pricing-title, [lang='ja'] .pricing-hero .pricing-title { max-width:none; }
@@ -144,7 +144,7 @@ const page = (copy: PricingCopy) => {
   ${heading('closing', copy.closing, 2, 'class="pricing-title"')}
   ${book}
 </div></section>
-<ds-footer brand="plainshop" tagline="${copy.tagline}" literal year="2026" columns='${JSON.stringify([{ heading: copy.site, links: copy.nav.map((label, index) => ({ label, href: ['#packages', '#send', '#after', '#questions'][index] })) }])}' policies='${copy.policies}'><span slot="legal">${copy.legal}</span></ds-footer>
+<ds-footer class="pricing-footer" brand="plainshop" tagline="${copy.tagline}" literal year="2026" columns='${JSON.stringify([{ heading: copy.site, links: copy.nav.map((label, index) => ({ label, href: ['#packages', '#send', '#after', '#questions'][index] })) }])}' policies='${copy.policies}'><span slot="legal">${copy.legal}</span></ds-footer>
 </div>`;
   return `${composition}${copy.lang ? `<div lang="${copy.lang}">${content}</div>` : content}`;
 };
