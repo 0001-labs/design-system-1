@@ -353,7 +353,7 @@
 [data-ds-table-edge="both"] { mask-image: linear-gradient(to right, transparent, #000 var(--ds-unit), #000 calc(100% - var(--ds-unit)), transparent); }
 .ds-table-heading { box-sizing: border-box; padding-inline: calc(4px * var(--ds-sf, 1)); }
 .ds-table th:has(> .ds-table-column-resize) { position: relative; }
-.ds-table-column-resize { position: absolute; z-index: 3; inset-block-start: 0; inset-inline-end: calc(var(--ds-unit) / -2); width: var(--ds-unit); height: var(--ds-unit); cursor: col-resize; touch-action: none; user-select: none; }
+.ds-table-column-resize { position: absolute; z-index: 3; inset-block-start: 0; inset-inline-end: calc(var(--ds-unit) / -2); width: var(--ds-unit); height: var(--ds-table-resize-height, var(--ds-unit)); cursor: col-resize; touch-action: none; user-select: none; }
 .ds-table-column-resize::after { content: ''; position: absolute; inset-block-start: 0; inset-inline-start: calc(50% - 0.5px); width: 1px; height: var(--ds-table-resize-height, var(--ds-unit)); background: var(--ds-border-color); opacity: 0; pointer-events: none; }
 .ds-table-column-resize:is(:focus, [data-resizing])::after { opacity: 1; }
 @media (hover: hover) { .ds-table-column-resize:hover::after { opacity: 1; } }
