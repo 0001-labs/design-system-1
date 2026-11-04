@@ -6,6 +6,10 @@ import { library, text } from './library-example-parts';
 // this page holds only where things stand.
 
 const composition = `<style>
+/* The page stands centred, so the grid starts where the page does: a percentage here counts the
+   area less one tile, hence the half square back. Below sixty squares the page fills and the
+   grid keeps the left edge. */
+:root { --ds-grid-origin-x:max(0px, calc(50% + 0.5 * var(--ds-unit) - 30 * var(--ds-unit))); }
 .pricing-wrap { box-sizing:border-box; width:100%; max-width:calc(60 * var(--ds-unit)); margin-inline:auto; padding-inline:var(--ds-unit); min-width:0; }
 .pricing-header { display:block; max-width:calc(60 * var(--ds-unit)); margin-inline:auto; }
 .pricing-hero { padding-block:calc(3.5 * var(--ds-unit)) calc(5 * var(--ds-unit)); }
