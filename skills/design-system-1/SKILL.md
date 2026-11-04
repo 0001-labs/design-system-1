@@ -1,6 +1,6 @@
 ---
-name: design-system-1
-description: The exact rules of Design system 1, the 0001 design framework: the 20px square, item and row sizes (one square high), widths in whole squares, type sizes, lines, corners, colours and motion. Use whenever you design, build or review any interface, page, component, diagram or card in a 0001 product (Ezo, Link, Consistency, Peer, Ins, Visual, the 0001 site, System) or a 0001 design for a client, before choosing any size, spacing, font size or radius, and when a product adds languages, translations or a language picker.
+name: 0001-design-system-1
+description: "The exact rules of Design system 1, the 0001 design framework: the 20px square, item and row sizes (one square high), widths in whole squares, type sizes, lines, corners, colours and motion. Use whenever you design, build or review any interface, page, component, diagram or card in a 0001 product (Ezo, Link, Consistency, Peer, Ins, Visual, the 0001 site, System) or a 0001 design for a client, before choosing any size, spacing, font size or radius, and when a product adds languages, translations or a language picker."
 ---
 
 # Design system 1
