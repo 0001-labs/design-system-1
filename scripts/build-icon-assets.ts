@@ -24,3 +24,11 @@ await writeFile(new URL('apple-touch-icon.png', destination), await sharp(Buffer
 await copyFile(new URL('design-system-1.ico', destination), new URL('../favicon.ico', destination));
 await copyFile(new URL('design-system-1.svg', destination), new URL('../favicon.svg', destination));
 console.log(`Built ${PRODUCTS.length} favicon sets.`);
+
+// App logos are published separately from the monochrome interface collection.
+const apps = JSON.parse(await readFile(new URL("../DS1/x-app/catalog.json", import.meta.url), "utf8"));
+await mkdir(new URL("apps/", destination), { recursive: true });
+for (const app of apps) {
+  await copyFile(new URL(`../DS1/x-app/${app.key}.svg`, import.meta.url), new URL(`apps/${app.key}.svg`, destination));
+}
+await copyFile(new URL("../DS1/x-app/catalog.json", import.meta.url), new URL("apps/catalog.json", destination));

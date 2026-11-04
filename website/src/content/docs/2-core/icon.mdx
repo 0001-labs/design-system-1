@@ -4,9 +4,15 @@ description: Every interface icon, by name. Click one to download its SVG.
 tableOfContents: false
 ---
 
+import AppIconTable from "../../../components/AppIconTable.astro";
+
 import IconTable from "../../../components/IconTable.astro";
 
 import ComponentExample from "../../../components/ComponentExample.astro";
+
+<AppIconTable />
+
+## Interface icons
 
 <IconTable />
 
@@ -28,7 +34,7 @@ import ComponentExample from "../../../components/ComponentExample.astro";
 | `type` | string | Empty | File name from `DS1/x-icon/`, without `.svg`. |
 | `variant` | `glyph`, `primary`, `secondary` | `glyph` | Plain drawing or a background treatment. |
 
-Use `type="check"`, not `name="check"`. There is no `size` attribute. The drawing follows the system’s `--sf` scale. Use `--icon-color` when a control needs a different ink.
+Use `type="check"`, not `name="check"`. `size="small"` draws at 12px, `size="large"` at 16px. The drawing follows the system’s `--ds-sf` scale. Use `--ds-icon-color` when a control needs a different ink.
 
 ## Accessible labels
 
@@ -51,3 +57,18 @@ Every country has its flag, in `DS1/x-flag/` by its two-letter code in lower cas
 A product copies them with Sync 1's `flags` export: `"flags": ["jp", "dk"]`, or `true` for every one when the country is not known in advance. The drawings are country-flag-icons' (MIT, licence beside them); Japan's is Ezo's.
 
 [Button](/2-core/button/) · [Tooltip](/2-core/tooltip/) · [All components](/2-core/overview/#component-overview)
+
+## App logos
+
+Use the original full-colour artwork for app sections and integration cards. These are separate from monochrome interface marks: no recolouring, masking, cropping or added corners. Their source SVGs and attribution live in `DS1/x-app/`. Brand names and marks belong to their owners.
+
+```html
+<ds-icon type="app-slack" size="app" aria-hidden="true"></ds-icon>
+<span>Slack</span>
+<ds-icon type="app-gmail" size="app-large" aria-hidden="true"></ds-icon>
+<ds-icon type="app-google-drive" style="--ds-icon-size: 20px" aria-hidden="true"></ds-icon>
+```
+
+`size="app"` is 40px (two squares), `size="app-large"` is 60px (three). `--ds-icon-size` sets another size, multiplied by the device scale. Keep the artwork contained in its square; its original aspect ratio stays intact. Beside an app’s written name, hide the decorative logo from assistive technology. When it stands alone, give the containing link or button the app’s name.
+
+Sync 1 copies selected files through the existing icons export: `"icons": ["app-slack", "app-gmail"]`. Components include these names in the deferred icon collection. No other product is migrated by adding this library.

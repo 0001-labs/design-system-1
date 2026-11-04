@@ -221,3 +221,11 @@ test('arrows survive token-only and font-free copies, and export as a standalone
     expect(String(css)).toContain('font-family: "Inter Arrows"');
   }
 });
+
+ test('app logos copy through the icon export with their source attribution', () => {
+  const copy = files('icons', { icons: ['app-slack', 'app-google-drive', 'close'] });
+  expect(copy['app-slack.svg']).toBe(read('DS1/x-app/slack.svg'));
+  expect(copy['close.svg']).toBe(read('DS1/x-icon/close.svg'));
+  expect(copy['app-SVGL-LICENSE']).toContain('MIT');
+  expect(copy['app-catalog.json']).toContain('google-drive');
+});

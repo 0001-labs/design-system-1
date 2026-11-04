@@ -1,0 +1,47 @@
+[
+  {
+    "key": "slack",
+    "name": "Slack",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/slack.svg"
+  },
+  {
+    "key": "gmail",
+    "name": "Gmail",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/gmail.svg"
+  },
+  {
+    "key": "google-calendar",
+    "name": "Google Calendar",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/google-calendar.svg"
+  },
+  {
+    "key": "google-drive",
+    "name": "Google Drive",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/drive.svg"
+  },
+  {
+    "key": "notion",
+    "name": "Notion",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/notion.svg"
+  },
+  {
+    "key": "jira",
+    "name": "Jira",
+    "source": "https://raw.githubusercontent.com/devicons/devicon/master/icons/jira/jira-original.svg"
+  },
+  {
+    "key": "confluence",
+    "name": "Confluence",
+    "source": "https://raw.githubusercontent.com/devicons/devicon/master/icons/confluence/confluence-original.svg"
+  },
+  {
+    "key": "figma",
+    "name": "Figma",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/figma.svg"
+  },
+  {
+    "key": "dropbox",
+    "name": "Dropbox",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/dropbox.svg"
+  }
+]

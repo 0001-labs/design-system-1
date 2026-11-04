@@ -85,6 +85,12 @@ function generateIconMap() {
     iconMap[iconName] = svgContent;
   }
 
+  // App artwork keeps its native viewBox and brand colours.
+  const appsDir = join(ICONS_DIR, "..", "x-app");
+  for (const file of readdirSync(appsDir).filter(file => file.endsWith(".svg"))) {
+    iconMap[`app-${basename(file, ".svg")}`] = readFileSync(join(appsDir, file), "utf8").trim();
+  }
+
   // Sort keys for consistent output
   const sortedKeys = Object.keys(iconMap).sort();
 
