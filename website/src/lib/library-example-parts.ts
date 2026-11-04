@@ -13,7 +13,7 @@ export const LIBRARIES = {
   voyage: { name: 'Voyage', id: 'VOYAGE_ID', version: 1 },
   studio: { name: 'Studio', id: 'STUDIO_ID', version: 1 },
   atelier: { name: 'Atelier', id: 'pzjtr1r25rp4b8xv6991', version: 1 },
-  tally: { name: 'Tally', id: 'bbw9m8gdy3815th5cgvx', version: 1 },
+  tally: { name: 'Tally', id: 'bbw9m8gdy3815th5cgvx', version: 2 },
 } as const;
 
 // Until a library is published in the libraries account, the example loads its draft, written by

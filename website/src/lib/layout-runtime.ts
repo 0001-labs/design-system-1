@@ -18,7 +18,8 @@ await import('../../../DS1/index');
 const { startScaling } = await import('../../../DS1/0-face/scaling');
 document.documentElement.style.setProperty('--ds-sf', 'var(--sf)');
 const { configureI18n, setLanguage } = await import('../../../DS1/0-face/i18n');
-configureI18n({ languages: ['en', 'da', 'ja'], sharedWords: true });
+// A page written in a language of its own keeps its `lang`, which search engines read.
+configureI18n({ languages: ['en', 'da', 'ja'], sharedWords: true, ...(document.documentElement.lang === 'en' ? {} : { langTarget: false as const }) });
 setLanguage('en');
 
 type Layer = 2 | 3 | 4;

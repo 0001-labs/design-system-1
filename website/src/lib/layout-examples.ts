@@ -6,7 +6,7 @@ import { FINANCIAL_EXAMPLE } from './financial-example';
 import { ISSUE_TRACKER_EXAMPLE } from './issue-tracker-example';
 import { SETTINGS_EXAMPLE } from './settings-example';
 import { STUDIO_EXAMPLE } from './studio-example';
-import { PRICING_EXAMPLE } from './pricing-example';
+import { PRICING_EXAMPLE, PRICING_JAPANESE_EXAMPLE } from './pricing-example';
 // The standard page layouts, each filled with the core and unit components a
 // real page would hold. The preview and the copyable code share one source;
 // every sample is local and sends nothing.
@@ -20,6 +20,8 @@ export interface LayoutExample {
   height: number;
   /** A published design library the example is drawn with, pinned to one version. */
   library?: { name: string; id: string; version: number; href: string };
+  /** For a page meant to be found: its language, what a search result says and the data search engines read. */
+  seo?: { lang: string; title: string; description: string; structuredData: unknown[] };
 }
 
 const sidebarScript = `const sidebar = document.querySelector('ds-sidebar');
@@ -64,6 +66,7 @@ export const LAYOUT_EXAMPLES: Record<string, LayoutExample> = {
   financial: FINANCIAL_EXAMPLE,
   agency: STUDIO_EXAMPLE,
   pricing: PRICING_EXAMPLE,
+  'pricing-ja': PRICING_JAPANESE_EXAMPLE,
   ...PRODUCT_EXAMPLES,
   ...LIBRARY_EXAMPLES,
   ...LIBRARY_SITES,

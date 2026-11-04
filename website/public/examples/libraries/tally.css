@@ -538,8 +538,37 @@ ds-accordion[data-size="large"]::part(details) {
   padding-block-end: var(--ds-unit);
 }
 
+/* Japanese: Funnel draws the Latin and the figures, the reader's own Japanese faces the rest, so
+   nothing heavy loads. Kana and kanji take open lines and no tracking, and lines break at phrases. */
+:lang(ja) {
+  --ds-typeface-regular: "Inter Arrows", "Funnel Sans", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+  --ds-typeface-medium: "Inter Arrows", "Funnel Display", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+}
+ds-text[data-type]:lang(ja) {
+  letter-spacing: 0;
+  line-break: strict;
+  word-break: auto-phrase;
+}
+ds-text:is([data-type="hero"], [data-type="display"], [data-type="closing"]):lang(ja) {
+  letter-spacing: -0.03em;
+  line-height: 1.16;
+}
+ds-text[data-type="price"]:lang(ja) {
+  font-size: clamp(40px, 4.6vw, 47px);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+ds-text[data-type="body"]:lang(ja), ul[data-list]:lang(ja) {
+  line-height: 1.75;
+}
+ul[data-list]:lang(ja) {
+  line-break: strict;
+  word-break: auto-phrase;
+}
+
 @media (max-width: 600px) {
   ds-button[data-size="large"] { --ds-button-text-size: 12px; }
+  ds-text[data-type="price"]:lang(ja) { font-size: 12.4vw; }
   ds-text[data-type="fee"] { font-size: max(30px, calc(22px * var(--ds-sf, 1))); line-height: max(32px, calc(24px * var(--ds-sf, 1))); }
   ds-text[data-type="title"] { font-size: max(25px, calc(18px * var(--ds-sf, 1))); line-height: max(28px, calc(20px * var(--ds-sf, 1))); }
   ds-text[data-type="name"] { font-size: max(21px, calc(16px * var(--ds-sf, 1))); line-height: max(24px, calc(18px * var(--ds-sf, 1))); }

@@ -10,8 +10,12 @@ const sample = LAYOUT_EXAMPLES[layout];
 const layers = JSON.stringify(Object.fromEntries(Object.entries(TAG_LAYERS).map(([tag, info]) => [tag, info.layer])));
 ---
 <!doctype html>
-<html lang="en" class="light-theme">
-  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>{sample.name} layout — example</title>
+<html lang={sample.seo?.lang ?? 'en'} class="light-theme">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>{sample.seo?.title ?? `${sample.name} layout — example`}</title>
+    {sample.seo && <meta name="description" content={sample.seo.description} />}
+    {sample.seo && <meta property="og:title" content={sample.seo.title} />}
+    {sample.seo && <meta property="og:description" content={sample.seo.description} />}
+    {sample.seo?.structuredData.map(data => <script is:inline type="application/ld+json" set:html={JSON.stringify(data).replaceAll('<', '\\u003c')} />)}
     {/* A library brings its own paper: the theme leaves the canvas to the stylesheet. */}
     {sample.library && <script is:inline>window.DS_ONE_PREFERENCES = Object.assign({}, window.DS_ONE_PREFERENCES, { themePaper: false });</script>}
   </head>

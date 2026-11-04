@@ -35,13 +35,13 @@ for (const template of SITE_TEMPLATES) {
     if (Object.keys(data).length) components[element.getAttribute('data-template-node')!] = data;
   });
   const library = template.library ? template.library.href.startsWith('https:') ? await fetch(template.library.href).then(response => { if (!response.ok) throw new Error('Template library unavailable'); return response.text(); }) : await readFile(`website/public${template.library.href}`, 'utf8') : '';
-  const imported=pinPresentations(template.id,importComponentPage(document.body as never,{namespace:`template_${template.id.replaceAll('-','_')}`,properties:components,origin:'https://designsystem1.com'}));
+  const imported=pinPresentations(template.id,importComponentPage(document.body as never,{namespace:`template_${template.id.replaceAll('-','_')}`,properties:components,origin:'https://designsystem1.com',...('seo'in template&&template.seo?{title:template.seo.title,description:template.seo.description,lang:template.seo.lang}:{})}));
   const bookingKeys:string[]=[];
   if(template.id==='booking'){
     const textIds=new Map<Node,string>();let index=0;const walker=document.createTreeWalker(document.body,window.NodeFilter.SHOW_TEXT);while(walker.nextNode()){const node=walker.currentNode;if(node.textContent?.trim()&&!node.parentElement?.closest('style,script,svg,option,textarea'))textIds.set(node,imported.textKeys[`template:page:${index++}`]);}
     const visit=(element:Element)=>{if(element.matches('ds-text:not(:empty),span[slot="title"],span[slot="label"]'))bookingKeys.push(imported.sourceIds[element.getAttribute('data-template-node')!]);for(const child of element.childNodes){if(child.nodeType===1)visit(child as Element);else if(element.localName==='ds-button'&&child.nodeType===3&&child.textContent?.trim())bookingKeys.push(textIds.get(child)!);}};visit(document.body);
   }
-  pages[template.id] = {id:template.id,label:template.label,description:template.description,href:template.href,...imported,bookingKeys,library};
+  pages[template.id] = {id:template.id,label:template.label,description:template.description,href:template.href,...imported,bookingKeys,library,...('seo'in template&&template.seo?{structuredData:template.seo.structuredData}:{})};
   snapshots[template.id] = { id: template.id, label: template.label, description: template.description, href: template.href, html: document.body.innerHTML, components, library };
   await window.happyDOM.close();
 }
