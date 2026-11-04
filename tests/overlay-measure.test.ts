@@ -433,6 +433,7 @@ test("mobile tabbed sheets keep their bounds, scroll panels and retain accessibl
 test("Escape closes the top sheet even when its editor consumes keys and dismissal is vetoed", async () => {
   const tab = await page({ width: 1280, height: 900 });
   await tab.evaluate(async () => {
+    document.addEventListener("keydown", event => { if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
     for (const id of ["lower-sheet", "upper-sheet"]) {
       const sheet = document.createElement("ds-overlay");
       sheet.id = id;

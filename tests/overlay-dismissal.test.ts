@@ -118,11 +118,14 @@ for (const nonModal of [false, true]) {
     host.addEventListener("ds-close-request", event => event.preventDefault());
     const input = host.querySelector("input")!;
     input.value = "Keep this draft";
+    const editorKeys = new AbortController();
+    document.addEventListener("keydown", event => { event.preventDefault(); event.stopImmediatePropagation(); }, { capture: true, signal: editorKeys.signal });
     input.addEventListener("keydown", event => { event.preventDefault(); event.stopImmediatePropagation(); });
     await host.show();
     input.focus();
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true, composed: true }));
     await host.updateComplete;
+    editorKeys.abort();
     expect(native.open).toBe(false);
     expect(host.open).toBe(false);
     expect(input.value).toBe("Keep this draft");

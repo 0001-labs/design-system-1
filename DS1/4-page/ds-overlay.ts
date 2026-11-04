@@ -313,7 +313,7 @@ export class Overlay extends LitElement {
     document.defaultView?.addEventListener("resize", this.place);
     document.defaultView?.visualViewport?.addEventListener("resize", this.place);
     document.defaultView?.visualViewport?.addEventListener("scroll", this.place);
-    document.addEventListener("keydown", this.onSheetEscape, true);
+    (document.defaultView ?? document).addEventListener("keydown", this.onSheetEscape as EventListener, true);
     document.addEventListener("keydown", this.onDocumentKey);
     document.addEventListener("pointerdown", this.onOutsidePress, true);
     document.addEventListener("click", this.onOutsideClick, true);
@@ -334,7 +334,7 @@ export class Overlay extends LitElement {
     const wasTop = entries[entries.length - 1] === this;
     if (!stack?.delete(this)) return;
     syncScroll(document);
-    document.removeEventListener("keydown", this.onSheetEscape, true);
+    (document.defaultView ?? document).removeEventListener("keydown", this.onSheetEscape as EventListener, true);
     document.removeEventListener("keydown", this.onDocumentKey);
     document.removeEventListener("pointerdown", this.onOutsidePress, true);
     document.removeEventListener("click", this.onOutsideClick, true);
