@@ -6,6 +6,7 @@ import { FINANCIAL_EXAMPLE } from './financial-example';
 import { ISSUE_TRACKER_EXAMPLE } from './issue-tracker-example';
 import { SETTINGS_EXAMPLE } from './settings-example';
 import { STUDIO_EXAMPLE } from './studio-example';
+import { PRICING_EXAMPLE } from './pricing-example';
 // The standard page layouts, each filled with the core and unit components a
 // real page would hold. The preview and the copyable code share one source;
 // every sample is local and sends nothing.
@@ -62,6 +63,7 @@ export const LAYOUT_EXAMPLES: Record<string, LayoutExample> = {
   issues: ISSUE_TRACKER_EXAMPLE,
   financial: FINANCIAL_EXAMPLE,
   agency: STUDIO_EXAMPLE,
+  pricing: PRICING_EXAMPLE,
   ...PRODUCT_EXAMPLES,
   ...LIBRARY_EXAMPLES,
   ...LIBRARY_SITES,
