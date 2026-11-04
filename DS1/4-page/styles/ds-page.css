@@ -241,3 +241,4 @@
 
 /* Sidebar resize targets sit over the existing divided hairline. */
 :host([layout="sidebar"][resizable]) .nav .resize { inset-inline-end: calc(-0.5 * var(--ds-unit) - 1px); }
+:host([layout="sidebar"][resizable][fill]) .nav { overflow: visible; }
