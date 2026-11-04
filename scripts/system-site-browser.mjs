@@ -42,7 +42,7 @@ window.measure = () => measureConstraints(document).flatMap(r => r.findings.filt
 }] });
 await server.listen();
 const base = server.resolvedUrls.local[0];
-const browser = await chromium.launch();
+const browser = await chromium.launch({ headless: true });
 await mkdir('.reports/system-site', { recursive: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
