@@ -20,7 +20,8 @@ const page = (width: number) => vi.spyOn(document.documentElement, "clientWidth"
 
 test("a window keeps a window's shape: it draws itself 16:10, 4:5 on a phone, and a taller frame around chrome breaks the rule", () => {
   const styles = DsWindow.styles.toString().replace(/\s+/g, " ");
-  expect(styles).toContain("height:var(--ds-window-height,auto); aspect-ratio:1.6;");
+  // Its width comes from the page: given a height, the ratio alone would widen it past the page.
+  expect(styles).toContain("width:100%; min-width:0; height:var(--ds-window-height,auto); aspect-ratio:1.6;");
   expect(styles).toContain(`@media (max-width:${PHONE_WIDTH}px) { :host { aspect-ratio:0.8; } }`);
 
   // The Link feature page's window: as tall as the column beside it.
