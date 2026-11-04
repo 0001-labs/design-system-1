@@ -77,6 +77,7 @@
   text-align: start;
   vertical-align: bottom;
   font-weight: inherit;
+  font-size: inherit;
   white-space: nowrap;
 }
 
@@ -338,3 +339,6 @@
     transition: none;
   }
 }
+
+/* Numbers, dates and secondary words keep the table’s common text size. */
+.ds-table :is(small, .ds-table__words) { font-size: inherit; }

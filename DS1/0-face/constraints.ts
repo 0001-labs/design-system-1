@@ -112,7 +112,37 @@ function rows(found: ReturnType<typeof cards>) {
   return groups.filter(row => row.length > 1);
 }
 
+/** Text inside native, component and composed tables, including open component shadows. */
+function tableType(root: ParentNode) {
+  return Array.from(root.querySelectorAll<HTMLElement>('table, [role="table"], [data-ds-table]')).flatMap(table => {
+    const expected = parseFloat(styleOf(table).fontSize);
+    const findings: Finding[] = [];
+    const visit = (parent: Element | ShadowRoot) => {
+      for (const element of Array.from(parent.children) as HTMLElement[]) {
+        if (element.matches('svg, ds-icon, [aria-hidden="true"]')) continue;
+        if (element.getBoundingClientRect().width && Array.from(element.childNodes).some(node => node.nodeType === 3 && node.textContent?.trim())) {
+          const size = parseFloat(styleOf(element).fontSize);
+          if (Math.abs(size - expected) > 0.1) findings.push({element, message: `Table text must use the same ${expected}px size; found ${size}px.`});
+        }
+        visit(element);
+        if (element.shadowRoot) visit(element.shadowRoot);
+      }
+    };
+    visit(table);
+    return findings;
+  });
+}
+
 export const constraints: Constraint[] = [
+  {
+    code: 'table.uniform-text',
+    rule: 'All table text uses the same default text size, including headers, names, tags, numbers, dates and times.',
+    components: ['ds-table'],
+    check: {file: 'tests/table.test.ts', test: 'table text keeps one size across headers and values'},
+    measures: ['table', 'tables'],
+    count: root => root.querySelectorAll('table, [role="table"], [data-ds-table]').length,
+    inspect: tableType,
+  },
   {
     code: 'page.fault-lines',
     rule: 'Fault lines keep related card and control grids aligned across the whole page, with matching track edges and gaps. Headings, prose and text tabs in a content column share the leading visible text edge, including labels inside shadow roots and slots, at every checked viewport width.',

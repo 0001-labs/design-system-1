@@ -213,3 +213,15 @@ test("a plain table takes every line away and keeps its rows one square", () => 
   expect(plain).toContain("border-bottom: 0");
   expect(plain).not.toContain("height");
 });
+
+
+test("table text keeps one size across headers and values", async () => {
+  const {constraints} = await import('../DS1/0-face/constraints');
+  const check = constraints.find(rule => rule.code === 'table.uniform-text')!;
+  document.body.innerHTML = '<table style="font-size:14px"><tr><th style="font-size:14px">Name</th><td style="font-size:10px">4/11 10:45</td></tr></table>';
+  for (const el of document.querySelectorAll('th,td')) Object.defineProperty(el, 'getBoundingClientRect', {value:()=>({width:100,height:20})});
+  expect(check.inspect(document)).toHaveLength(1);
+  document.querySelector<HTMLElement>('td')!.style.fontSize = '14px';
+  expect(check.inspect(document)).toHaveLength(0);
+  expect(rule('.ds-table :is(th, td)')).toContain('font-size: inherit');
+});

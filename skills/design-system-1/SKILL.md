@@ -389,6 +389,10 @@ The small rules every component keeps, each a sentence with a code that never ch
 
 <!-- constraints:start (written by scripts/write-constraints.ts from DS1/0-face/constraints.ts) -->
 
+**Table** (`ds-table`)
+
+- `table.uniform-text`: All table text uses the same default text size, including headers, names, tags, numbers, dates and times.
+
 **Page** (`ds-page`)
 
 - `page.fault-lines`: Fault lines keep related card and control grids aligned across the whole page, with matching track edges and gaps. Headings, prose and text tabs in a content column share the leading visible text edge, including labels inside shadow roots and slots, at every checked viewport width. Compare separate sections in the same alignment family; responsive layouts may change together, while unrelated groups and intentional exceptions remain independent.
