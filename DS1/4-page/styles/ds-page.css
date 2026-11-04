@@ -244,4 +244,4 @@
 :host([layout="sidebar"][resizable][fill]) .nav { overflow: visible; }
 
 /* The resize hairline owns the boundary; a divided sidebar must not draw a second line beside it. */
-:host([layout="sidebar"][resizable][divided]) .nav { border-inline-end-color: transparent; }
+:host([divided][resizable]:not([layout="column"]):not([layout="centered"]):not([layout="tiles"])) .nav { border-inline-end-color: transparent; }
