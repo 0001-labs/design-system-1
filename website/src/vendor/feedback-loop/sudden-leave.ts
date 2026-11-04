@@ -109,7 +109,14 @@ export function suddenLeaveReason(
   leave: FeedbackEvent,
   session: { account: string | null; firstPage?: number | null },
 ): { reason: SuddenLeaveReason; about: string } | null {
-  const recent = before.filter(event => event.at >= leave.at - SUDDEN_LEAVE_WINDOW && event.at <= leave.at);
+  const within = before.filter(event => event.at >= leave.at - SUDDEN_LEAVE_WINDOW && event.at <= leave.at);
+  // A new page (including a reload of the same path) starts a new visit.
+  // Delayed diagnostics retain their original path and cannot implicate another page.
+  let pageIndex = -1;
+  for (let index = within.length - 1; index >= 0; index--) {
+    if (within[index].kind === 'page') { pageIndex = index; break; }
+  }
+  const recent = within.slice(Math.max(0, pageIndex)).filter(event => event.path === leave.path);
   const rage = latest(recent, event => event.kind === 'error' && event.props?.source === 'rage-click');
   if (rage) return { reason: 'rage-click', about: normalizeMessage(rage.name) };
   const error = latest(recent, event => event.kind === 'error' && !BROWSER_NOTIFICATIONS.some(message => message === event.name) && !isDesignFinding(event));

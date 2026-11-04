@@ -9,10 +9,21 @@
  * the draft to the product (`send`), whose server names who sent it and
  * passes it on to System (report.ts). An unsent note is kept until it is sent.
  *
+ * The owner annotates a product with it (`rightClick`, `tones`): a plain right
+ * click on anything opens the sheet about it (a right click with ⇧, ⌥, ⌃ or ⌘
+ * held, or in a field being written, is the browser's own), and the sheet asks
+ * whether it is something to fix, something liked to keep, or something to remove. Every
+ * draft names the element it is about (`describeTarget`: tag, component, id,
+ * classes, a short selector, its place and its HTML) so an agent handed a
+ * batch of reports finds each one in the source.
+ *
  * The product turns it on only for the people who should report (the site engine's
- * editors, Link's testers): nobody else meets the taps or the shortcut.
+ * editors, Link's testers, the owner): nobody else meets the taps or the shortcut.
+ * An app keeps this file out of its startup path by waking it on the first gesture
+ * (report-wake.ts `wakeReport`), loading it and Aa's editor only then.
  */
-import type { ReportDraft } from './report';
+import type { ReportDraft, ReportElement, ReportTone } from './report';
+import { EDITABLE, isPlainRightClick, isReportShortcut } from './report-wake';
 
 /** Aa's plain editor as the sheet uses it (`createPlainEditor` from the product's copy of Aa, 71a482b on; `speak` from da6c13e). */
 export type PlainEditorFactory = (host: HTMLElement, options: { value?: string; placeholder?: string; speak?: boolean; onChange?: (value: string) => void }) => { readonly value: string; focus(): void; destroy(): void };
@@ -28,6 +39,10 @@ export interface ReportSheetOptions {
   /** The report's page, from the document it was opened in: its path by default. */
   path?: (doc: Document) => string;
   version?: string;
+  /** A plain right click opens the sheet about the element under the pointer (the owner's way). */
+  rightClick?: boolean;
+  /** The sheet asks whether it is something to fix, keep or remove (`tone` on the draft). */
+  tones?: boolean;
 }
 
 export interface ReportSheet {
@@ -41,12 +56,24 @@ export interface ReportSheet {
 /** Taps further apart than this, in time or place, start again. */
 export const TAP = { ms: 450, px: 32, still: 10, hold: 500 } as const;
 const ABOUT_MAX = 200;
+const HTML_MAX = 1500;
+const SELECTOR_DEPTH = 6;
 const SHEET = 'report-sheet';
 const MARK = 'data-report-about';
+type ReportChoice = ReportTone | 'remove';
 
-/** Whether a key press is the shortcut, ⌥⇧R: by the key's place, since ⌥ changes the letter on a Mac. */
-export const isReportShortcut = (event: Pick<KeyboardEvent, 'code' | 'altKey' | 'shiftKey' | 'metaKey' | 'ctrlKey'>) =>
-  event.code === 'KeyR' && event.altKey && event.shiftKey && !event.metaKey && !event.ctrlKey;
+/** Removal is a change request on the existing wire format, understood by deployed servers. */
+export function reportChoice(choice: ReportChoice, note: string): Pick<ReportDraft, 'tone' | 'note'> {
+  return choice === 'remove' ? { tone: 'fix', note: `Remove: ${note}` } : { tone: choice, note };
+}
+
+const TONE_WORDS: Record<ReportChoice, { label: string; ask: string }> = {
+  fix: { label: 'Fix', ask: 'What is wrong here? It goes straight to the people who build it.' },
+  like: { label: 'Like', ask: 'What is good here? It is kept, so it stays that way.' },
+  remove: { label: 'Remove', ask: 'What should be removed? It goes straight to the people who build it.' },
+};
+
+export { isPlainRightClick, isReportShortcut } from './report-wake';
 
 const squash = (words: string | null | undefined) => (words ?? '').replace(/\s+/g, ' ').trim();
 const clip = (words: string) => (words.length > ABOUT_MAX ? `${words.slice(0, ABOUT_MAX - 1).trimEnd()}…` : words);
@@ -71,6 +98,59 @@ export function describeElement(element: Element | null, selection?: string | nu
     if (words) return clip(words);
   }
   return null;
+}
+
+/** A class that names a component (`ds-button`, `c9y-booking`), never a modifier (`ds-button--primary`) or a state. */
+const COMPONENT_CLASS = /^(?:ds|c9y|aa)-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const componentOf = (element: Element): string | null => {
+  for (let at: Element | null = element; at && at !== element.ownerDocument.body; at = at.parentElement) {
+    const tag = at.tagName.toLowerCase();
+    if (tag.includes('-')) return tag;
+    const named = [...at.classList].find(name => COMPONENT_CLASS.test(name));
+    if (named) return named;
+  }
+  return null;
+};
+
+/** A short selector: from the nearest ancestor with an id (or the body) down to the element, `nth-of-type` where siblings share a tag. */
+export function selectorOf(element: Element): string {
+  const parts: string[] = [];
+  for (let at: Element | null = element, depth = 0; at && depth < SELECTOR_DEPTH; at = at.parentElement, depth++) {
+    const tag = at.tagName.toLowerCase();
+    if (tag === 'html') break;
+    if (at.id && /^[A-Za-z][\w-]*$/.test(at.id)) { parts.unshift(`${tag}#${at.id}`); break; }
+    if (tag === 'body') { parts.unshift(tag); break; }
+    const siblings = at.parentElement ? [...at.parentElement.children].filter(each => each.tagName === at!.tagName) : [];
+    parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${siblings.indexOf(at) + 1})` : tag);
+  }
+  return parts.join(' > ');
+}
+
+/** The element a report points at, as report.ts keeps it (`ReportElement`); null for the page itself. */
+export function describeTarget(element: Element | null): ReportElement | null {
+  if (!element || element === element.ownerDocument.body || element === element.ownerDocument.documentElement) return null;
+  const classes = [...element.classList].filter(name => name !== SHEET).slice(0, 6).join(' ');
+  const rect = element.getBoundingClientRect();
+  const html = element.outerHTML.replace(/\s+/g, ' ');
+  return {
+    tag: element.tagName.toLowerCase(),
+    component: componentOf(element),
+    id: element.id || null,
+    classes: classes || null,
+    selector: selectorOf(element),
+    rect: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
+    html: html.length > HTML_MAX ? `${html.slice(0, HTML_MAX - 1)}…` : html,
+  };
+}
+
+/** The theme the page wears: Design system 1's `data-theme` or `dark-theme`, else the system's. */
+export function themeOf(doc: Document): string | null {
+  const root = doc.documentElement;
+  const named = root.getAttribute('data-theme') || root.getAttribute('data-ds-theme');
+  if (named) return named;
+  if (root.classList.contains('dark-theme') || root.classList.contains('dark')) return 'dark';
+  const view = doc.defaultView;
+  return view ? (view.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : null;
 }
 
 /** A report's own id: `r-` and sixteen letters and digits. */
@@ -103,15 +183,23 @@ export function tapCounter() {
   };
 }
 
-const STYLE = `[${MARK}] { outline: 2px solid var(--ds-focus-ring, #594dff) !important; outline-offset: 2px !important; }
+const STYLE = `[${MARK}] { outline: 2px solid var(--ds-text-color, #292929) !important; outline-offset: 2px !important; }
 .${SHEET} [data-ds-overlay="field"] { gap: 0; }
 .${SHEET} .${SHEET}__about { margin: 0; color: var(--ds-text-color-muted, #8a8a8a); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: var(--ds-unit, 20px); }
+.${SHEET} .${SHEET}__tones { display: flex; gap: calc(4px * var(--ds-sf, 1)); margin: 0 0 calc(4px * var(--ds-sf, 1)); }
 .${SHEET} .${SHEET}__note { --ds-input-height: auto; display: block; box-sizing: border-box; width: 100%; min-height: calc(4 * var(--ds-row-height, 20px)); max-height: calc(12 * var(--ds-row-height, 20px)); overflow: auto; padding: calc(4px * var(--ds-sf, 1)); border-radius: calc(4px * var(--ds-sf, 1)); line-height: var(--ds-unit, 20px); cursor: text; white-space: pre-wrap; }
-.${SHEET} .${SHEET}__note:focus-within { outline: 2px solid var(--ds-focus-ring, #594dff); outline-offset: 1px; }
+.${SHEET} .${SHEET}__note:focus-within { outline: 2px solid var(--ds-text-color, #292929); outline-offset: 1px; }
 .${SHEET} .${SHEET}__note > .aa-block { min-height: calc(3 * var(--ds-row-height, 20px)); outline: none; }
 .${SHEET} .${SHEET}__status { margin: 0; min-height: var(--ds-unit, 20px); line-height: var(--ds-unit, 20px); color: var(--ds-text-color-muted, #8a8a8a); }
 .${SHEET} .${SHEET}__status[data-tone="danger"] { color: var(--ds-danger-color, #d33); }
 .${SHEET} .${SHEET}__keys { color: var(--ds-text-color-muted, #8a8a8a); margin-inline-end: auto; }`;
+
+/** Puts children on a node with `appendChild`, which is the DOM's alone: a product's program may hold Cloudflare's `Element.append` too. */
+const put = (parent: Node, ...children: (Node | string)[]) => {
+  const owner = parent.nodeType === 9 ? (parent as Document) : parent.ownerDocument!;
+  for (const child of children) parent.appendChild(typeof child === 'string' ? owner.createTextNode(child) : child);
+  return parent;
+};
 
 const styled = new WeakSet<Document>();
 function style(doc: Document) {
@@ -120,7 +208,7 @@ function style(doc: Document) {
   const sheet = doc.createElement('style');
   sheet.dataset.report = '';
   sheet.textContent = STYLE;
-  doc.head.append(sheet);
+  put(doc.head, sheet);
 }
 
 export function startReport(options: ReportSheetOptions): ReportSheet {
@@ -135,6 +223,8 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
     const from = about?.ownerDocument ?? doc;
     const selection = from.getSelection()?.toString() ?? '';
     const aboutWords = describeElement(about ?? null, selection);
+    // The element as it stood before the sheet marked it.
+    const element = describeTarget(about ?? null);
     // The taps select words on the way; the sheet takes nothing with it.
     from.getSelection()?.removeAllRanges();
     style(doc);
@@ -143,38 +233,61 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
     const el = <K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, string> = {}, ...children: (Node | string)[]) => {
       const node = doc.createElement(tag);
       for (const [name, value] of Object.entries(props)) node.setAttribute(name, value);
-      node.append(...children);
+      put(node, ...children);
       return node;
     };
     const sheet = el('dialog', { class: `ds-overlay ds-overlay--sheet ${SHEET}`, 'aria-labelledby': 'report-sheet-title' });
     dialog = sheet;
     if (options.nonModal) sheet.style.zIndex = 'var(--ds-overlay-layer, 1)';
+    let tone: ReportChoice = 'fix';
+    const ask = el('p', { 'data-ds-overlay': 'description' }, TONE_WORDS.fix.ask);
+    const toneButtons = new Map<ReportChoice, HTMLButtonElement>();
+    const choose = (next: ReportChoice) => {
+      tone = next;
+      ask.textContent = TONE_WORDS[next].ask;
+      for (const [each, button] of toneButtons) {
+        button.setAttribute('aria-pressed', String(each === next));
+        button.classList.toggle('ds-button--primary', each === next);
+        button.classList.toggle('ds-button--secondary', each !== next);
+      }
+    };
+    const tones = options.tones ? el('div', { class: `${SHEET}__tones`, role: 'group', 'aria-label': 'What it is' }) : null;
+    if (tones) {
+      for (const each of ['fix', 'like', 'remove'] as const) {
+        const button = el('button', { type: 'button', class: 'ds-button ds-button--secondary', 'aria-pressed': 'false' }, TONE_WORDS[each].label);
+        button.addEventListener('click', () => choose(each));
+        toneButtons.set(each, button);
+        put(tones, button);
+      }
+      choose('fix');
+    }
     const note = el('div', { class: `ds-input ${SHEET}__note` });
     const status = el('p', { class: `${SHEET}__status`, role: 'status', 'aria-live': 'polite' });
     const send = el('button', { type: 'button', class: 'ds-button ds-button--primary' }, 'Send');
     const cancel = el('button', { type: 'button', class: 'ds-button ds-button--secondary' }, 'Cancel');
     const keys = el('span', { class: `${SHEET}__keys ds-text`, 'aria-hidden': 'true' }, mac ? '⌘↩ sends' : 'Ctrl+Enter sends');
-    sheet.append(
+    put(sheet,
       el('div', { 'data-ds-overlay': 'header' },
         el('h2', { 'data-ds-overlay': 'title', id: 'report-sheet-title' }, 'Report'),
-        el('p', { 'data-ds-overlay': 'description' }, 'What is wrong here? It goes straight to the people who build it.')),
+        ask),
       el('div', { 'data-ds-overlay': 'field' },
+        ...(tones ? [tones] : []),
         ...(aboutWords ? [el('p', { class: `${SHEET}__about ds-text` }, `About “${aboutWords}”`)] : []),
         note),
       status,
       el('div', { 'data-ds-overlay': 'footer' }, ...(matchMedia('(pointer: fine)').matches ? [keys] : []), cancel, send),
     );
-    const editor = options.createPlainEditor(note, { value: kept, placeholder: 'Say what is wrong', speak: true, onChange: value => { kept = value; } });
+    const editor = options.createPlainEditor(note, { value: kept, placeholder: tones ? 'Say what you think' : 'Say what is wrong', speak: true, onChange: value => { kept = value; } });
     const say = (words: string, tone?: 'danger') => { status.textContent = words; if (tone) status.dataset.tone = tone; else delete status.dataset.tone; };
     let sending = false;
     const submit = async () => {
       const words = editor.value.trim();
       if (sending) return;
-      if (!words) { say('Say what is wrong first.', 'danger'); editor.focus(); return; }
+      if (!words) { say(tone === 'like' ? 'Say what is good first.' : tone === 'remove' ? 'Say what should be removed first.' : 'Say what is wrong first.', 'danger'); editor.focus(); return; }
       sending = true; send.disabled = true; say('Sending…');
       const screen = { width: Math.round(from.defaultView?.innerWidth ?? 0), height: Math.round(from.defaultView?.innerHeight ?? 0), touch: matchMedia('(pointer: coarse)').matches };
       try {
-        await options.send({ id: reportId(), note: words, path: options.path?.(from) ?? from.location.pathname, about: aboutWords, screen, version: options.version ?? null });
+        await options.send({ id: reportId(), ...reportChoice(tone, words), path: options.path?.(from) ?? from.location.pathname, about: aboutWords, screen, version: options.version ?? null, element, theme: themeOf(from) });
         kept = '';
         say('Sent. Thank you.');
         setTimeout(() => sheet.close(), 900);
@@ -201,13 +314,18 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
       // Design system 1's sheet slides out before it leaves the page.
       setTimeout(() => sheet.remove(), 400);
     }, { once: true });
-    doc.body.append(sheet);
+    put(doc.body, sheet);
     if (options.nonModal) sheet.show(); else sheet.showModal();
     const escape = (event: KeyboardEvent) => {
-      if (options.nonModal && event.key === 'Escape' && !event.defaultPrevented) { event.preventDefault(); event.stopPropagation(); sheet.close(); }
+      if (event.key !== 'Escape' || !sheet.open) return;
+      // Escape belongs to the top sheet even when its editor consumes keys or focus is outside.
+      const openDialogs = [...doc.querySelectorAll<HTMLDialogElement>('dialog[open]')];
+      if (openDialogs.at(-1) !== sheet) return;
+      event.preventDefault(); event.stopImmediatePropagation(); sheet.close();
     };
-    sheet.addEventListener('keydown', escape);
-    sheet.addEventListener('close', () => sheet.removeEventListener('keydown', escape), { once: true });
+    const escapeTarget = doc.defaultView ?? doc;
+    escapeTarget.addEventListener('keydown', escape as EventListener, true);
+    sheet.addEventListener('close', () => escapeTarget.removeEventListener('keydown', escape as EventListener, true), { once: true });
     editor.focus();
   };
 
@@ -243,6 +361,16 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
       swallow = 0;
       event.preventDefault(); event.stopPropagation();
     };
+    // The owner's plain right click opens the sheet about what is under the pointer; a modifier held, or a field
+    // being written, leaves the browser its own menu, so pasting and inspecting stay a click away.
+    const context = (event: MouseEvent) => {
+      if (!options.rightClick || dialog || inside(event.target) || !isPlainRightClick(event as MouseEvent & { pointerType?: string })) return;
+      const at = event.target instanceof Element ? event.target : null;
+      if (at?.closest(EDITABLE)) return;
+      event.preventDefault(); event.stopPropagation();
+      const under = event.button === 2 ? target.elementFromPoint(event.clientX, event.clientY) : null;
+      open(under ?? at ?? pointed);
+    };
     const cancel = () => taps.cancel();
     target.addEventListener('keydown', keydown, true);
     target.addEventListener('pointermove', move, { passive: true });
@@ -251,6 +379,7 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
     target.addEventListener('pointerup', up, true);
     target.addEventListener('pointercancel', cancel, true);
     target.addEventListener('click', click, true);
+    target.addEventListener('contextmenu', context, true);
     view?.addEventListener('scroll', cancel, { passive: true });
     const stop = () => {
       target.removeEventListener('keydown', keydown, true);
@@ -260,6 +389,7 @@ export function startReport(options: ReportSheetOptions): ReportSheet {
       target.removeEventListener('pointerup', up, true);
       target.removeEventListener('pointercancel', cancel, true);
       target.removeEventListener('click', click, true);
+      target.removeEventListener('contextmenu', context, true);
       view?.removeEventListener('scroll', cancel);
       watched.delete(target);
     };
