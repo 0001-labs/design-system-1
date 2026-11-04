@@ -6,12 +6,13 @@ import { library, text } from './library-example-parts';
 // this page holds only where things stand.
 
 const composition = `<style>
-/* The page stands centred, so the grid starts where the page does: a percentage here counts the
-   area less one tile, hence the half square back. Below sixty squares the page fills and the
-   grid keeps the left edge. */
-:root { --ds-grid-origin-x:max(0px, calc(50% + 0.5 * var(--ds-unit) - 30 * var(--ds-unit))); }
-.pricing-wrap { box-sizing:border-box; width:100%; max-width:calc(60 * var(--ds-unit)); margin-inline:auto; padding-inline:var(--ds-unit); min-width:0; }
-.pricing-header { display:block; max-width:calc(60 * var(--ds-unit)); margin-inline:auto; }
+/* The page stands centred, so the grid starts where the page does. Sixty-one squares less a square
+   each side leave fifty-nine: three cards of nineteen, or two columns of twenty-nine, one square
+   apart. 50% centres one tile, so a line falls half a square left of the middle, as the odd width
+   needs. Below sixty-one squares the page fills and the grid keeps the left edge. */
+:root { --ds-grid-origin-x:max(0px, calc(50% - 30 * var(--ds-unit))); }
+.pricing-wrap { box-sizing:border-box; width:100%; max-width:calc(61 * var(--ds-unit)); margin-inline:auto; padding-inline:var(--ds-unit); min-width:0; }
+.pricing-header { display:block; max-width:calc(61 * var(--ds-unit)); margin-inline:auto; }
 .pricing-hero { padding-block:calc(3.5 * var(--ds-unit)) calc(5 * var(--ds-unit)); }
 .pricing-hero .pricing-title { max-width:calc(30 * var(--ds-unit)); }
 .pricing-hero [lang='ja'] .pricing-title, [lang='ja'] .pricing-hero .pricing-title { max-width:none; }
@@ -32,7 +33,7 @@ const composition = `<style>
 .pricing-section { padding-block:calc(7 * var(--ds-unit)); }
 .pricing-section > .pricing-wrap { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(1.5 * var(--ds-unit)); }
 .pricing-section[data-band] > .pricing-wrap { gap:var(--ds-unit); }
-.pricing-needs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 calc(2 * var(--ds-unit)); margin:0; border-block-start:1px solid var(--ds-text-color); }
+.pricing-needs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 var(--ds-unit); margin:0; border-block-start:1px solid var(--ds-text-color); }
 .pricing-needs > div { padding-block:var(--ds-unit) calc(17px * var(--ds-sf, 1)); border-block-end:1px solid var(--ds-border-color); }
 .pricing-needs dt, .pricing-needs dd { margin:0; }
 .pricing-subs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--ds-unit); }
