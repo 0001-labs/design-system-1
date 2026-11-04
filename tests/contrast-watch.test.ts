@@ -86,15 +86,35 @@ test('a readable page reports nothing', async () => {
   } finally { await page.close(); }
 });
 
-test('the stop function stops reporting', async () => {
+test('the stop function cancels the pending initial scan', async () => {
   const page = await fixture('<p style="color:#ddd">Faint</p>');
   try {
-    await start(page);
-    await page.evaluate(() => (window as any).stop());
+    // Start and cancel in one browser task: a second evaluate permits the scheduled scan to run first.
+    await page.evaluate(() => {
+      const stop = (window as any).DSContrastWatch.startContrastWatch({ interval: 0, quiet: 50, report: (f: any) => (window as any).reports.push(f) });
+      stop();
+    });
     await settle(page);
     await toDark(page);
     await settle(page);
     expect(await reports(page)).toEqual([]);
+  } finally { await page.close(); }
+});
+
+test('stopping after a scan prevents later theme and mutation reports', async () => {
+  const page = await fixture('<p>Faint</p><style>p { color:#ddd } .dark-theme p { color:#333 }</style>');
+  try {
+    await start(page);
+    await page.waitForFunction(() => (window as any).reports.length === 1);
+    await page.evaluate(() => { (window as any).stop(); (window as any).reports = []; });
+    await toDark(page);
+    await page.evaluate(() => { document.querySelector('p')!.textContent = 'Changed'; });
+    await settle(page);
+    expect(await reports(page)).toEqual([]);
+    // The changed theme really has a failing target: a new watcher must report it.
+    await start(page);
+    await page.waitForFunction(() => (window as any).reports.length === 1);
+    expect((await reports(page))[0]!.code).toBe('contrast.dark.p');
   } finally { await page.close(); }
 });
 
