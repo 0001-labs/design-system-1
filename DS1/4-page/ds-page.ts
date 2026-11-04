@@ -189,8 +189,8 @@ export class Page extends LitElement {
     const minimum = Math.min((this.layout === "sidebar" ? 4 : 10) * drag.unit, Math.floor(drag.available / 2 / drag.unit) * drag.unit);
     const delta = (event.clientX - drag.startX) * (drag.rtl ? -1 : 1);
     drag.width = Math.max(minimum, Math.min((this.layout === "sidebar" ? Math.min(24 * drag.unit, drag.available - 10 * drag.unit) : drag.available - minimum), drag.startWidth + delta));
-    // The line follows the pointer; release commits the layout on whole squares.
-    drag.handle.style.transform = `translateX(${(drag.width - drag.startWidth) * (drag.rtl ? -1 : 1)}px)`;
+    // Preview the real columns immediately; only release persists a snapped preference.
+    this.renderRoot.querySelector<HTMLElement>('.page')!.style.setProperty('--ds-page-resize-width', `${drag.width}px`);
   }
   private startResize(event: PointerEvent) {
     if (event.button !== 0) return;
@@ -207,7 +207,7 @@ export class Page extends LitElement {
     const drag = this.drag;
     if (!drag || drag.id !== event.pointerId) return;
     drag.handle.removeAttribute('data-dragging');
-    drag.handle.style.removeProperty('transform');
+    this.renderRoot.querySelector<HTMLElement>('.page')!.style.removeProperty('--ds-page-resize-width');
     this.drag = null;
     if (event.type === 'pointerup') this.resizeTo(drag.width / drag.available);
   }
@@ -232,7 +232,7 @@ export class Page extends LitElement {
     const label = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     const close = getText("Close") || "Close";
     return html`
-      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout === "sidebar" ? `--ds-page-nav: calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
+      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout === "sidebar" ? `--ds-page-nav: var(--ds-page-resize-width, calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
         <div class="bar" part="bar" ?hidden=${!this.drawer}>
           <button class="ds-button ds-button--icon" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer">
             <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>

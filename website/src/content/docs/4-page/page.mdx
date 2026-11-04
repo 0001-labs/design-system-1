@@ -42,7 +42,7 @@ Every layout has the same five areas, so content moves between layouts without b
 
 ## Resizing a split
 
-Add `resizable` to `layout="split"` for a quiet hairline between the list and detail. Drag the line to resize both columns; the line follows the pointer and the layout snaps to whole grid squares on release. Arrow keys move one square, or five with Shift. The square around it is the hit area. Home and End move to either limit, and Enter or a double press returns to equal columns. The divider disappears when the layout stacks on a phone. Set the `split` property to the leading column’s share, from 0 to 1; `ds-page-resize` reports the new share in `event.detail.split`. The app may remember that preference. Other pages keep their existing layout.
+Add `resizable` to `layout="split"` for a quiet hairline between the list and detail. Drag the line to resize both columns; the line and both columns follow the pointer continuously, and the layout snaps to whole grid squares on release. Arrow keys move one square, or five with Shift. The square around it is the hit area. Home and End move to either limit, and Enter or a double press returns to equal columns. The divider disappears when the layout stacks on a phone. Set the `split` property to the leading column’s share, from 0 to 1; `ds-page-resize` reports the new share in `event.detail.split`. The app may remember that preference. Other pages keep their existing layout.
 
 ## Widths
 
@@ -120,4 +120,4 @@ The adapter does not register the element: import `4-page/ds-page` once in the b
 
 [Grid](/4-page/grid/) · [Container](/4-page/container/) · [Sidebar](/3-unit/sidebar/) · [List](/3-unit/list/) · [Row](/3-unit/row/)
 
-Sidebar pages also accept `resizable`. Set `nav-width` to a width in squares (4–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press resets to eight squares. The divider stays hidden in the phone drawer.
+Sidebar pages also accept `resizable`. Their navigation and content resize continuously during the drag, then snap on release. Set `nav-width` to a width in squares (4–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press resets to eight squares. The divider stays hidden in the phone drawer.

@@ -228,7 +228,7 @@
   --_split-room: calc(100% - var(--ds-page-gap));
   --_split-min: min(calc(10 * var(--ds-unit)), round(down, calc(var(--_split-room) / 2), var(--ds-unit)));
   --_split-max: round(down, calc(var(--_split-room) - var(--_split-min)), var(--ds-unit));
-  grid-template-columns: minmax(0, clamp(var(--_split-min), round(nearest, calc(var(--_split-room) * var(--ds-page-split, 0.5)), var(--ds-unit)), var(--_split-max))) minmax(0, 1fr);
+  grid-template-columns: minmax(0, var(--ds-page-resize-width, clamp(var(--_split-min), round(nearest, calc(var(--_split-room) * var(--ds-page-split, 0.5)), var(--ds-unit)), var(--_split-max)))) minmax(0, 1fr);
 }
 .resize { position: absolute; inset-block: 0; inset-inline-end: calc(-0.5 * var(--ds-page-gap) - 0.5 * var(--ds-unit)); width: var(--ds-unit); cursor: col-resize; touch-action: none; user-select: none; z-index: 2; }
 .resize::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 50%; width: 1px; background: var(--ds-line-color, var(--ds-page-line)); }
