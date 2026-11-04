@@ -108,3 +108,21 @@ test('resizable split pages expose a separator and keyboard changes emit their s
   separator.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
   expect(page.split).toBe(0.5);
 });
+
+
+test('sidebar resizing reports whole-square widths and can reset', async () => {
+  const page = await setup('<ds-page layout="sidebar" resizable nav-width="8"><nav slot="nav">Places</nav><p>Work</p></ds-page>');
+  Object.defineProperty(page.shadowRoot!.querySelector('.page'), 'clientWidth', {value:1000});
+  const handle = page.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
+  expect(handle.getAttribute('aria-label')).toBe('Resize sidebar');
+  let width: number | undefined;
+  page.addEventListener('ds-page-resize', event => {width = (event as CustomEvent).detail.navWidth;});
+  handle.dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight', shiftKey:true, bubbles:true}));
+  await page.updateComplete;
+  expect(width).toBe(13);
+  expect(page.navWidth).toBe(13);
+  handle.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+  await page.updateComplete;
+  expect(page.navWidth).toBe(8);
+  expect(handle.getAttribute('aria-valuenow')).toBe('8');
+});

@@ -119,3 +119,5 @@ import { Page } from "./design/react/page";
 The adapter does not register the element: import `4-page/ds-page` once in the browser entry, as for the other components. A product that writes `<ds-page>` directly instead needs a `JSX.IntrinsicElements` entry for it in its own declarations, because React does not know custom elements; the adapter replaces that entry. Sync 1 copies `react/page.ts` with the component when a product names `page` in its `components`.
 
 [Grid](/4-page/grid/) · [Container](/4-page/container/) · [Sidebar](/3-unit/sidebar/) · [List](/3-unit/list/) · [Row](/3-unit/row/)
+
+Sidebar pages also accept `resizable`. Set `nav-width` to a width in squares (8–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press resets to eight squares. The divider stays hidden in the phone drawer.
