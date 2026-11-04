@@ -16,6 +16,12 @@ export class TableColumns implements ReactiveController {
     apply: (widths: number[]) => void;
     minimum?: (index: number, unit: number) => number;
   }) { host.addController(this); }
+  hostConnected() {
+    this.host.addEventListener('pointermove', this.move);
+    this.host.addEventListener('pointerup', this.boundaryEnd);
+    this.host.addEventListener('pointercancel', this.boundaryCancel);
+    this.host.addEventListener('lostpointercapture', this.boundaryCancel);
+  }
   hostUpdated() {
     const scroller = this.options.scroller(), content = scroller?.firstElementChild as HTMLElement | null;
     if (scroller !== this.watched || content !== this.content) {
@@ -25,9 +31,7 @@ export class TableColumns implements ReactiveController {
       scroller?.addEventListener('pointerdown', this.boundaryDown, true);
       scroller?.addEventListener('pointermove', this.boundaryHover, { passive: true });
       scroller?.addEventListener('pointerleave', this.clearHover);
-      scroller?.addEventListener('pointerup', this.boundaryEnd);
-      scroller?.addEventListener('pointercancel', this.boundaryCancel);
-      scroller?.addEventListener('lostpointercapture', this.boundaryCancel);
+
       if (typeof ResizeObserver !== 'undefined') {
         this.observer = new ResizeObserver(this.measure);
         if (scroller) this.observer.observe(scroller);
@@ -37,15 +41,18 @@ export class TableColumns implements ReactiveController {
     if (this.widths.length) this.options.apply(this.widths);
     this.measure();
   }
-  hostDisconnected() { this.disconnect(); if (this.drag) this.widths = this.drag.before; this.drag = undefined; this.watched = undefined; this.content = undefined; }
+  hostDisconnected() {
+    this.host.removeEventListener('pointermove', this.move);
+    this.host.removeEventListener('pointerup', this.boundaryEnd);
+    this.host.removeEventListener('pointercancel', this.boundaryCancel);
+    this.host.removeEventListener('lostpointercapture', this.boundaryCancel);
+    this.disconnect(); if (this.drag) this.widths = this.drag.before; this.drag = undefined; this.watched = undefined; this.content = undefined; }
   private disconnect() {
     this.observer?.disconnect(); this.watched?.removeEventListener('scroll', this.measure);
     this.watched?.removeEventListener('pointerdown', this.boundaryDown, true);
     this.watched?.removeEventListener('pointermove', this.boundaryHover);
     this.watched?.removeEventListener('pointerleave', this.clearHover);
-    this.watched?.removeEventListener('pointerup', this.boundaryEnd);
-    this.watched?.removeEventListener('pointercancel', this.boundaryCancel);
-    this.watched?.removeEventListener('lostpointercapture', this.boundaryCancel);
+
     cancelAnimationFrame(this.frame); this.frame = 0;
   }
   private measure = () => {
@@ -86,7 +93,7 @@ export class TableColumns implements ReactiveController {
     if (handle) this.start(e, Number(handle.dataset.columnIndex), handle.getAttribute('aria-label')!.replace(/^Resize | column$/g, ''), handle);
   };
   private boundaryHover = (e: PointerEvent) => {
-    if (this.drag) { this.move(e); return; }
+    if (this.drag) return;
     if (e.pointerType === 'touch') return;
     const active = this.boundaryAt(e);
     this.watched?.toggleAttribute('data-ds-table-boundary', Boolean(active));
@@ -112,7 +119,7 @@ export class TableColumns implements ReactiveController {
     e.preventDefault(); e.stopPropagation();
     const handle = target ?? e.currentTarget as HTMLElement, metrics = this.metrics(handle, label, index);
     this.widths = this.initial(metrics.unit);
-    this.drag = { handle, capture: this.watched ?? handle, pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
+    this.drag = { handle, capture: this.host, pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
     handle.focus(); this.drag.capture.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
   }
   private move = (e: PointerEvent) => {
