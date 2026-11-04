@@ -24,8 +24,9 @@ const { title, src, height } = Astro.props;
 <style is:global>
   [data-global-example-device] [data-preview-width]{display:none}
   .example-device{position:relative;width:100%;margin-inline:auto}
-  .example-device-glass{--ds-window-height:calc(var(--example-height) + 20px)}
-  .example-device iframe{display:block;width:100%;height:var(--example-height);border:0;background:var(--background)}
+  .example-device-glass{width:100%;max-width:100%;--ds-window-height:auto}
+  .example-device-glass:not([frameless]) > ds-device-bezel{width:100%;height:100%}
+  .example-device iframe{display:block;width:100%;height:100%;border:0;background:var(--background)}
   [data-phone] .example-device{width:calc(21 * 20px * var(--sf,1));max-width:100%}
   [data-phone] .example-device ds-device-bezel{--ds-device-width:100%;width:100%}
   [data-phone] .example-device iframe{height:100%!important}
