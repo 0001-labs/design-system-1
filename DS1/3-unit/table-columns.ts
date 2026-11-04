@@ -46,6 +46,12 @@ export class TableColumns implements ReactiveController {
       const left = inner.left < box.left - 1, right = inner.right > box.left + viewport.clientWidth + 1;
       const edge = left && right ? 'both' : left ? 'left' : right ? 'right' : '';
       if (viewport.dataset.dsTableEdge !== edge) viewport.dataset.dsTableEdge = edge;
+      const bottom = viewport.lastElementChild?.getBoundingClientRect().bottom ?? inner.bottom;
+      const handles = [...viewport.querySelectorAll<HTMLElement>('.ds-table-column-resize')];
+      const heights = handles.map(handle => `${Math.max(0, bottom - handle.getBoundingClientRect().top)}px`);
+      handles.forEach((handle, i) => {
+        if (handle.style.getPropertyValue('--ds-table-resize-height') !== heights[i]) handle.style.setProperty('--ds-table-resize-height', heights[i]!);
+      });
     });
   };
   handle(index: number, label: string) {
