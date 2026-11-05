@@ -8,10 +8,10 @@ struct DS1ControlText: View {
     let face: DS1Font.Face
     init(_ string: String, colour: DS1Color, face: DS1Font.Face = .regular) { self.string = string; self.colour = colour; self.face = face }
     var body: some View {
-        Text(DS1Font.attributed(string, scale: scale, face: face))
+        Text(DS1Font.attributed(string.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression), scale: scale, face: face))
             .foregroundStyle(colour)
             .lineLimit(1)
-            .truncationMode(.tail)
+            .fixedSize(horizontal: true, vertical: true)
     }
 }
 
@@ -41,6 +41,7 @@ public struct DS1Badge: View {
         .frame(height: scale.unit)
         .frame(minWidth: scale.unit)
         .background(background)
+        .fixedSize(horizontal: true, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
     }
@@ -92,6 +93,7 @@ public struct DS1Token<Leading: View>: View {
         .padding(.trailing, removeLabel == nil ? scale(4) : 0)
         .frame(height: scale.unit)
         .background(DS1Color.fill, in: RoundedRectangle(cornerRadius: scale.radius, style: .continuous))
+        .fixedSize(horizontal: true, vertical: true)
     }
 }
 

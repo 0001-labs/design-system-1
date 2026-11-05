@@ -95,6 +95,9 @@ public struct DS1ToastHost: View {
             if !top { Spacer(minLength: 0) }
             ForEach(Array(store.items.prefix(DS1Toast.visible).enumerated()), id: \.element.id) { index, item in
                 DS1ToastChip(item: item, held: held, top: top, richColours: richColours, closeButton: closeButton)
+                    #if canImport(UIKit)
+                    .background(GeometryReader { geometry in Color.clear.preference(key: DS1ToastFrames.self, value: [geometry.frame(in: .global)]) }.allowsHitTesting(false))
+                    #endif
                     .transition(.move(edge: top ? .top : .bottom).combined(with: .opacity))
             }
             if top { Spacer(minLength: 0) }

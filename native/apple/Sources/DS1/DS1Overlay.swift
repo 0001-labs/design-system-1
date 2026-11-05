@@ -82,7 +82,7 @@ public final class DS1Overlays: ObservableObject {
 
     enum Kind { case alert, confirm(danger: Bool), prompt(label: String?, placeholder: String) }
     struct Request: Identifiable {
-        let id = UUID()
+        let id: UUID
         let kind: Kind
         let title: String
         let text: String?
@@ -93,31 +93,36 @@ public final class DS1Overlays: ObservableObject {
     }
 
     @Published var queue: [Request] = []
+    private var promptValues: [UUID: String] = [:]
 
+    private static func wait(kind: Kind, title: String, text: String?, confirm: String, cancel: String, value: String) async -> String? {
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                guard !Task.isCancelled else { continuation.resume(returning: nil); return }
+                shared.queue.append(Request(id: id, kind: kind, title: title, text: text, confirm: confirm, cancel: cancel, value: value) { continuation.resume(returning: $0) })
+            }
+        } onCancel: { Task { @MainActor in shared.cancel(id) } }
+    }
     public static func alert(_ title: String, text: String? = nil, confirm: String? = nil) async {
-        _ = await withCheckedContinuation { c in
-            shared.queue.append(Request(kind: .alert, title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"), cancel: "", value: "") { c.resume(returning: $0) })
-        }
+        _ = await wait(kind: .alert, title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"), cancel: "", value: "")
     }
-
     public static func confirm(_ title: String, text: String? = nil, confirm: String? = nil, cancel: String? = nil, danger: Bool = false) async -> Bool {
-        await withCheckedContinuation { c in
-            shared.queue.append(Request(kind: .confirm(danger: danger), title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"),
-                                        cancel: cancel ?? DS1Words.shared.text("Cancel"), value: "") { c.resume(returning: $0 != nil) })
-        }
+        await wait(kind: .confirm(danger: danger), title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"), cancel: cancel ?? DS1Words.shared.text("Cancel"), value: "") != nil
     }
-
     public static func prompt(_ title: String, text: String? = nil, label: String? = nil, value: String = "", placeholder: String = "", confirm: String? = nil, cancel: String? = nil) async -> String? {
-        await withCheckedContinuation { c in
-            shared.queue.append(Request(kind: .prompt(label: label, placeholder: placeholder), title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"),
-                                        cancel: cancel ?? DS1Words.shared.text("Cancel"), value: value) { c.resume(returning: $0) })
-        }
+        await wait(kind: .prompt(label: label, placeholder: placeholder), title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"), cancel: cancel ?? DS1Words.shared.text("Cancel"), value: value)
+    }
+    /// End pending reviews when an owner session ends. Every waiter resumes once, as cancelled.
+    public static func cancelAll() { for request in shared.queue { shared.finish(request, nil) } }
+    private func cancel(_ id: UUID) { if let request = queue.first(where: { $0.id == id }) { finish(request, nil) } }
+    func promptValue(_ request: Request) -> String { promptValues[request.id] ?? request.value }
+    func rememberPrompt(_ id: UUID, value: String) { if queue.contains(where: { $0.id == id }) { promptValues[id] = value } }
+    func finish(_ request: Request, _ value: String?) {
+        guard queue.contains(where: { $0.id == request.id }) else { return }
+        queue.removeAll { $0.id == request.id }; promptValues[request.id] = nil; request.done(value)
     }
 
-    func finish(_ request: Request, _ value: String?) {
-        queue.removeAll { $0.id == request.id }
-        request.done(value)
-    }
 }
 
 /// Shows `DS1Overlays`' requests one at a time. `.ds1Theme()` places it.
@@ -154,7 +159,8 @@ public struct DS1OverlayHost: View {
                     }
                 }
             }
-            .onAppear { value = request.value }
+            .onAppear { value = dialogs.promptValue(request) }
+            .onChange(of: value) { _, value in dialogs.rememberPrompt(request.id, value: value) }
             .id(request.id)
         }
     }

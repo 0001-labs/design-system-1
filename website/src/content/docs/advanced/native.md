@@ -46,6 +46,7 @@ Every public piece of the web library has a native counterpart with the same nam
 | `ds-switch` | `DS1SwitchStyle` (`.ds1Switch`) | `DS1Switch` |
 | `ds-select`, a field | `DS1Select` (the system's menu) | `DS1Select` |
 | `ds-tabs` | `DS1Tabs` | `DS1Tabs` |
+| `ds-tag` | `DS1Tag` (complete label, optional leading content) | Not yet available |
 | `ds-badge`, `ds-token`, `ds-swatch`, link, `ds-gap` | `DS1Badge`, `DS1Token`, `DS1Swatch`, `DS1Link`, `DS1Gap` | `DS1Badge`, `DS1Token`, `DS1Swatch`, `DS1Link`, `DS1Gap` |
 | `ds-avatar`, `ds-avatar-group` | `DS1Avatar`, `DS1AvatarGroup` | `DS1Avatar`, `DS1AvatarGroup` |
 | `ds-notice` (`banner`), `ds-empty`, `ds-loading` | `DS1Notice` (`banner:`), `DS1Empty`, `DS1Loading` | `DS1Notice(banner)`, `DS1Empty`, `DS1Loading` |

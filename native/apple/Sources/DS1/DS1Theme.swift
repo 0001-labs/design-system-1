@@ -58,8 +58,13 @@ private struct DS1Themed: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .overlay { if toasts { DS1ToastHost() } }
-            .overlay { if dialogs { DS1OverlayHost() } }
+            .overlay {
+                #if canImport(UIKit)
+                DS1PresentationLayer(toasts: toasts, confirmations: dialogs)
+                #else
+                ZStack { if toasts { DS1ToastHost() }; if dialogs { DS1OverlayHost() } }
+                #endif
+            }
             .ds1Scaled(corner: corner)
             .preferredColorScheme(preferences.theme.colorScheme)
             .environment(\.locale, Locale(identifier: words.language.code))
