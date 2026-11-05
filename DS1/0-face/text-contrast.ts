@@ -46,21 +46,33 @@ export function colorReader(document: Document) {
 }
 
 type TextSample = { element: Element; text: string; pseudo?: string; paintElement?: Element };
-function visible(e: Element) {
-  if (!e.getClientRects().length && styleOf(e).display !== 'contents') return false;
-  if (styleOf(e).visibility !== 'visible') return false;
-  for (let p: Element | null = e; p; p = paintedParent(p)) {
-    const s = styleOf(p);
-    if (s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0
-      || p.matches(':disabled, [aria-disabled="true"], [data-ds-constraint-panel]')) return false;
-  }
-  return true;
-}
 
 /** Text nodes are visited once in their composed position; hidden menus and inactive controls do not count. */
-function textSamples(root: ParentNode): TextSample[] {
+function textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclaration): TextSample[] {
   const samples: TextSample[] = [];
   const seen = new Set<Node>();
+  const excluded = new Map<Element, boolean>();
+  const visibility = new Map<Element, boolean>();
+  function excludedFromPaint(e: Element): boolean {
+    const cached = excluded.get(e);
+    if (cached !== undefined) return cached;
+    const s = style(e);
+    const parent = paintedParent(e);
+    const hidden = s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0
+      || e.matches(':disabled, [aria-disabled="true"], [data-ds-constraint-panel]')
+      || (parent !== null && excludedFromPaint(parent));
+    excluded.set(e, hidden);
+    return hidden;
+  }
+  function visible(e: Element): boolean {
+    const cached = visibility.get(e);
+    if (cached !== undefined) return cached;
+    const s = style(e);
+    const visible = s.visibility === 'visible' && !excludedFromPaint(e)
+      && (s.display === 'contents' || e.getClientRects().length > 0);
+    visibility.set(e, visible);
+    return visible;
+  }
   function visit(node: Node) {
     if (seen.has(node)) return;
     seen.add(node);
@@ -119,7 +131,7 @@ export function measureTextContrast(root: ParentNode): TextContrastResult[] {
   const read = colorReader(document);
   const styles = new Map<Element, CSSStyleDeclaration>();
   const style = (e: Element) => { if (!styles.has(e)) styles.set(e, styleOf(e)); return styles.get(e)!; };
-  return textSamples(root).map(({ element, text, pseudo, paintElement = element }) => {
+  return textSamples(root, style).map(({ element, text, pseudo, paintElement = element }) => {
     const result: TextContrastResult = { element, text: text.replace(/\s+/g, ' ').slice(0, 60) };
     const inkStyle = pseudo ? styleOf(element, pseudo) : style(paintElement);
     let foreground = read(inkStyle.getPropertyValue('-webkit-text-fill-color') || inkStyle.color);
