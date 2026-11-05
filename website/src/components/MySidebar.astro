@@ -2,7 +2,7 @@
 const { sidebar } = Astro.locals.starlightRoute;
 ---
 <div class="docs-sidebar-shell">
-  <ds-sidebar id="docs-navigation" label="Documentation" disclosure-position="start" expand-icon="chevron-down" collapse-icon="chevron-up" data-groups={JSON.stringify(sidebar)}>
+  <ds-sidebar id="docs-navigation" label="Documentation" narrow disclosure-position="start" expand-icon="chevron-down" collapse-icon="chevron-up" data-groups={JSON.stringify(sidebar)}>
     <div slot="header" class="docs-sidebar-header">
       <section id="workspace" hidden aria-label="Company workspace">
         <div class="workspace-heading"><div id="workspace-identity" class="ds-row">
@@ -11,9 +11,6 @@ const { sidebar } = Astro.locals.starlightRoute;
           </div>
         </div>
       </section>
-      <ds-button control="slotted" icon class="docs-sidebar-close">
-        <button id="sidebar-close-btn" type="button" aria-label="Close navigation menu"><ds-icon type="close"></ds-icon></button>
-      </ds-button>
     </div>
     <div slot="footer" class="docs-sidebar-footer">
       <ds-button href="https://github.com/0001-labs/Design-system-1">GitHub</ds-button>
@@ -56,6 +53,7 @@ const { sidebar } = Astro.locals.starlightRoute;
     Navigation: 'navigation', List: 'list', Panel: 'panel', Card: 'card', Layout: 'layout', Grid: 'grid',
   };
   function label(text: string): string {
+    if (text === 'Start Here') return 'Start here';
     const key = translationKeys[text] ?? text;
     const translated = translate(key);
     return translated === key ? text : translated;
@@ -171,8 +169,7 @@ const { sidebar } = Astro.locals.starlightRoute;
   .docs-sidebar-shell { display: flex; flex: 1; min-height: 0; height: 100%; padding: var(--site-unit); overflow: hidden; }
   ds-sidebar { width: 100%; height: 100%; }
   .docs-sidebar-header { display: flex; flex-direction: column; gap: 20px; }
-  .docs-sidebar-close { display: none; align-self: flex-end; }
-  .docs-sidebar-footer { display: flex; align-items: center; gap: calc(var(--site-unit) / 2); height: calc(2 * var(--site-unit)); border-top: 1px solid var(--ds1-docs-header-border); font-size: calc(10px * var(--sf, 1)); }
+  .docs-sidebar-footer { display: flex; align-items: center; gap: calc(var(--site-unit) / 2); height: calc(2 * var(--site-unit)); border-top: 1px solid var(--ds1-docs-header-border); font-size: var(--ds-type-size-default); }
   #workspace[hidden] { display: none; }
   #workspace { flex: none; }
   #docs-navigation :global(.private-component-link) { width: 100%; color: var(--ds-text-color-muted); text-decoration: none; padding-inline-start: calc(4px * var(--sf, 1) + 2 * var(--site-unit)); gap: calc(4px * var(--sf, 1)); }
@@ -183,6 +180,4 @@ const { sidebar } = Astro.locals.starlightRoute;
   #docs-account:hover { text-decoration: underline; }
   #docs-account:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   #docs-account [hidden] { display: none !important; }
-  @media (max-width: 768px) { .docs-sidebar-close { display: block; } }
-  :global(html[data-docs-compact]) .docs-sidebar-close { display: block; }
 </style>

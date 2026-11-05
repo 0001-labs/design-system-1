@@ -2,7 +2,6 @@
 import MyHeader from '../components/MyHeader.astro';
 import MySidebar from '../components/MySidebar.astro';
 import LibraryWorkspace from '../components/LibraryWorkspace.astro';
-import NavigationRail from '../components/NavigationRail.astro';
 
 const pathname = Astro.url.pathname.replace(/\/$/, '');
 const isTool = ['/2-core/icon/collection', '/components'].includes(pathname);
@@ -14,185 +13,34 @@ const libraryMode = pathname === '/libraries/playground' ? 'editor'
 // Starlight's PageFrame: drawn inside Starlight's own body, whose head is MyHead.
 ---
 
-    <script is:inline>
-      // On a wider screen the documentation's navigation is the rail, always: nothing collapses.
-      document.documentElement.setAttribute('data-sidebar-collapsed', '');
-    </script>
-    <!-- Header -->
-    <MyHeader />
-
-    <!-- Main Container with Sidebar and Content -->
-    <div class="main-container">
-      <!-- Sidebar -->
-      <aside id="sidebar" class="sidebar" aria-label="Documentation navigation">
-        <MySidebar />
-        <NavigationRail />
-      </aside>
-
-      <!-- On a phone the same navigation opens in Design system 1's dialog, filling the screen. -->
-      <ds-overlay id="mobile-navigation" type="screen"><dialog id="mobile-navigation-panel" aria-label="Documentation" data-ds-overlay-flush></dialog></ds-overlay>
-
-      <!-- Sidebar gap (desktop only) -->
-      <div class="sidebar-gap"></div>
-
-      <!-- Main Content -->
-      <main aria-label="Documentation content" class:list={['main-content', { 'main-content--app': libraryMode, 'main-content--tools': isTool || isExamples }]}>
-        {libraryMode ? <LibraryWorkspace mode={libraryMode} /> : <slot />}
-      </main>
-    </div>
-
-    <style is:global>
-      * {
-        font-family: 'GT-America-Standard-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        box-sizing: border-box;
-      }
-
-      html, body {
-        margin: 0;
-        padding: 0;
-        background: var(--ds1-docs-sidebar-bg);
-        color: var(--ds1-docs-header-text);
-      }
-
-      body {
-        overflow-x: hidden;
-      }
-
-      /* Main container */
-      .main-container {
-        display: flex;
-        height: calc(100dvh - var(--site-header-height));
-        overflow: hidden;
-      }
-
-      /* Sidebar */
-      .sidebar {
-        /* Fourteen squares, its hairline inside the last one. */
-        width: calc(280px * var(--sf, 1));
-        min-width: calc(280px * var(--sf, 1));
-        box-shadow: inset -1px 0 var(--ds1-docs-header-border);
-        overflow-y: auto;
-        background: var(--ds1-docs-sidebar-bg);
-        z-index: 100;
-      }
-
-      /* Sidebar gap */
-      .sidebar-gap {
-        width: calc(20px * var(--sf, 1));
-        min-width: calc(20px * var(--sf, 1));
-        height: 100%;
-        background: var(--ds1-docs-sidebar-bg);
-        box-shadow: inset -1px 0 var(--ds1-docs-header-border);
-      }
-
-      .docs-tool { container: tool / inline-size; min-width: 0; }
-      .main-content--tools .sl-container { max-width: none; }
-      .main-content--tools .content-panel { max-width: none; }
-      .main-content--tools .right-sidebar-container { display: none; }
-      /* Main content */
-      .main-content {
-        flex: 1;
-        min-width: 0;
-        overflow-y: auto;
-      }
-
-      .main-content--app {
-        padding: 0;
-        overflow: hidden;
-        background: var(--ds1-docs-content-bg);
-      }
-
-      html[data-private-app-document] .main-content--app { overflow-y: auto; }
-
-      #mobile-navigation { --ds-overlay-paper: var(--ds1-docs-sidebar-bg); }
-
-      /* Keep scroll geometry stable; only the thumb changes while active. */
-      :is(.sidebar, .main-content, .right-sidebar, .right-sidebar-panel) {
-        --docs-scroll-thumb: transparent;
-        scrollbar-width: thin;
-        scrollbar-color: var(--docs-scroll-thumb) transparent;
-      }
-      :is(.sidebar, .main-content, .right-sidebar, .right-sidebar-panel):is([data-scrolling], :focus-visible) {
-        --docs-scroll-thumb: var(--ds-grey);
-      }
-      :is(.sidebar, .main-content, .right-sidebar, .right-sidebar-panel)::-webkit-scrollbar { width: calc(var(--site-unit) / 2); height: calc(var(--site-unit) / 2); }
-      :is(.sidebar, .main-content, .right-sidebar, .right-sidebar-panel)::-webkit-scrollbar-track { background: transparent; }
-      :is(.sidebar, .main-content, .right-sidebar, .right-sidebar-panel)::-webkit-scrollbar-thumb { background: var(--docs-scroll-thumb); border-radius: var(--radius); }
-
-      /* Mobile Responsive Styles */
-      @media (max-width: 768px) {
-        .main-container {
-          height: calc(100dvh - var(--site-header-height));
-        }
-
-        .sidebar {
-          display: none;
-        }
-
-        .sidebar-gap {
-          display: none;
-        }
-
-        .main-content {
-          width: 100%;
-        }
-      }
-
-      /* Tablet adjustments */
-      @media (max-width: 1024px) and (min-width: 769px) {
-        .sidebar {
-          width: calc(240px * var(--sf, 1));
-          min-width: calc(240px * var(--sf, 1));
-        }
-      }
-      @media (min-width: 769px) {
-        html[data-sidebar-collapsed] .sidebar { width: calc(8 * var(--site-unit)); min-width: calc(8 * var(--site-unit)); scrollbar-width: none; }
-        html[data-sidebar-collapsed] .sidebar::-webkit-scrollbar { display: none; }
-        html[data-sidebar-collapsed] .sidebar > .docs-sidebar-shell { display: none; }
-        html[data-sidebar-collapsed] .sidebar-gap { display: none; }
-      }
-      html[data-docs-compact] :is(.sidebar, .sidebar-gap, .right-sidebar-container) { display: none; }
-      html[data-docs-compact] .main-content { width: 100%; }
-      html[data-docs-compact] .main-pane { padding: var(--site-unit); }
-    </style>
-
-    <script>
-      import '../../../DS1/4-page/ds-overlay';
-      import type { Overlay } from '../../../DS1/4-page/ds-overlay';
-      const scrollTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
-      document.addEventListener('scroll', event => {
-        const panel = event.target;
-        if (!(panel instanceof HTMLElement) || !panel.matches('.sidebar, .main-content, .right-sidebar, .right-sidebar-panel')) return;
-        panel.setAttribute('data-scrolling', '');
-        clearTimeout(scrollTimers.get(panel));
-        scrollTimers.set(panel, setTimeout(() => panel.removeAttribute('data-scrolling'), 700));
-      }, true);
-
-      // One navigation: it stands in the sidebar, and on a phone the menu button
-      // opens it in Design system 1's dialog, which owns the modal, its focus,
-      // Escape and the close button. Closing puts it back in the sidebar.
-      const sidebar = document.getElementById('sidebar');
-      const navigation = document.querySelector<Overlay>('ds-overlay#mobile-navigation');
-      const panel = navigation?.querySelector('dialog');
-      const shell = sidebar?.querySelector<HTMLElement>('.docs-sidebar-shell');
-      const menuButton = document.getElementById('mobile-menu-btn');
-
-      document.getElementById('sidebar-close-btn')?.setAttribute('data-ds-overlay-dismiss', '');
-
-      function restore() {
-        if (shell && sidebar && shell.parentElement !== sidebar) sidebar.append(shell);
-        menuButton?.setAttribute('aria-expanded', 'false');
-      }
-      menuButton?.addEventListener('click', () => {
-        if (!navigation || !panel || !shell) return;
-        if (navigation.open) { navigation.requestClose('button'); return; }
-        panel.append(shell);
-        menuButton.setAttribute('aria-expanded', 'true');
-        void navigation.show({ immediate: true });
-      });
-      panel?.addEventListener('close', restore);
-      shell?.addEventListener('sidebar-activate', () => { if (navigation?.open) navigation.requestClose('button'); });
-      const closeWideNavigation = () => { if (!document.documentElement.hasAttribute('data-docs-compact') && navigation?.open) navigation.close(); };
-      window.addEventListener('resize', closeWideNavigation);
-      window.addEventListener('scaling-changed', closeWideNavigation);
-    </script>
+<MyHeader />
+<ds-page id="docs-page" class="docs-page" layout="sidebar" nav-width="8" resizable resize-key="ds1-sidebar-width" divided fill drawer>
+  <aside slot="nav" id="sidebar" class="sidebar" aria-label="Documentation navigation"><MySidebar /></aside>
+  <main aria-label="Documentation content" class:list={['main-content', { 'main-content--app': libraryMode, 'main-content--tools': isTool || isExamples }]}>
+    {libraryMode ? <LibraryWorkspace mode={libraryMode} /> : <slot />}
+  </main>
+</ds-page>
+<style is:global>
+  html, body { margin: 0; padding: 0; background: var(--ds-paper, var(--background)); color: var(--ds-text-color); }
+  .docs-page { height: calc(100dvh - var(--site-header-height)); }
+  .docs-page::part(page) { padding: 0 var(--site-unit); padding-inline-end: 0; }
+  .docs-page::part(nav) { padding-block: var(--site-unit); }
+  .docs-page::part(main) { margin-inline-start: calc(-1 * var(--site-unit)); }
+  .sidebar { height: 100%; min-width: 0; }
+  .docs-page .docs-sidebar-shell { padding: 0; }
+  .main-content { height: 100%; min-width: 0; overflow-y: auto; }
+  .main-content--app { padding: 0; overflow: hidden; }
+  html[data-private-app-document] .main-content--app { overflow-y: auto; }
+  .docs-tool { container: tool / inline-size; min-width: 0; }
+  .main-content--tools :is(.sl-container, .content-panel) { max-width: none; }
+  .main-content--tools .right-sidebar-container { display: none; }
+  @media (max-width: 599px) {
+    .docs-page::part(page) { padding: var(--site-unit); }
+    .docs-page::part(main) { margin: 0; }
+  }
+</style>
+<script>
+  import '../../../DS1/4-page/ds-page';
+  const page = document.querySelector('ds-page#docs-page')!;
+  document.getElementById('sidebar')?.addEventListener('sidebar-activate', () => page.closeDrawer());
+</script>

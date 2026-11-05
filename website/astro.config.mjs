@@ -91,6 +91,7 @@ export default defineConfig({
         Header: "./src/components/MyHeader.astro",
         // Override the default PageFrame to use our custom layout
         PageFrame: "./src/layouts/Layout.astro",
+        TwoColumnContent: "./src/components/TwoColumnContent.astro",
         // Mark the Markdown body as prose for Design system 1's prose sheet
         MarkdownContent: "./src/components/MarkdownContent.astro",
         // The page's title, drawn as Design system 1's display text

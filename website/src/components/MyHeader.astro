@@ -8,7 +8,6 @@ import '../../../shared/site-navigation.css';
 <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
 <header class="ds-header ds-header--app site-navigation docs-header docs-header--with-sidebar">
   <nav class="system-breadcrumb" aria-label="System breadcrumb"><a class="site-brand" href="/">Design system 1</a><span id="private-component-context" hidden>App</span></nav>
-  <button id="mobile-menu-btn" class="site-brand docs-brand-menu" type="button" aria-label="Open documentation navigation" aria-controls="mobile-navigation-panel" aria-haspopup="dialog" aria-expanded="false"><ds-icon type="menu" aria-hidden="true"></ds-icon></button>
 </header>
 <iframe id="navigation-auth" title="Account status" hidden aria-hidden="true" tabindex="-1"></iframe>
 
@@ -20,8 +19,7 @@ import '../../../shared/site-navigation.css';
   import '../../../DS1/0-face/device';
   const updateLayout = () => {
     const root = document.documentElement;
-    const scale = Number.parseFloat(getComputedStyle(root).getPropertyValue('--sf')) || 1;
-    root.toggleAttribute('data-docs-compact', root.clientWidth / scale <= 768);
+    root.toggleAttribute('data-docs-compact', root.clientWidth <= 599);
   };
   updateLayout();
   window.addEventListener('scaling-changed', updateLayout);
@@ -50,12 +48,4 @@ import '../../../shared/site-navigation.css';
   .docs-header .system-breadcrumb .site-brand { text-decoration: none; }
   #private-component-context { color: var(--ds-text-color-muted); }
   #private-component-context[hidden] { display: none; }
-  .docs-header .docs-brand-menu { display: none; padding: 0; justify-content: flex-start; }
-  @media (max-width: 768px) {
-    .docs-header--with-sidebar .system-breadcrumb { flex: 1; min-width: 0; }
-    .docs-header .docs-brand-menu { display: inline-flex; width: var(--site-unit); overflow: hidden; font-size: 0; }
-
-  }
-  :global(html[data-docs-compact]) .docs-header--with-sidebar .system-breadcrumb { flex: 1; min-width: 0; }
-  :global(html[data-docs-compact]) .docs-header .docs-brand-menu { display: inline-flex; width: var(--site-unit); overflow: hidden; font-size: 0; }
 </style>
