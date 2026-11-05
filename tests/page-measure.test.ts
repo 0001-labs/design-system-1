@@ -133,3 +133,18 @@ test('sidebar and inspector edges follow the hand, cancel safely and remain reac
   // Both scroll viewports fit within the page while the separators stay at their boundaries.
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('remembered wide panes leave ten squares of work when the window narrows', async () => {
+  await page.evaluate(async () => {
+    const element = document.querySelector('ds-page')!;
+    element.setAttribute('nav-width', '24');
+    element.setAttribute('aside-width', '24');
+    await (element as any).updateComplete;
+  });
+  for (const [layout, width] of [['inspector', 768], ['inspector', 960], ['inspector', 1040], ['sidebar', 600], ['sidebar', 768]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await measure({ layout, width });
+    expect(box.width, `${layout} at ${width}`).toBeGreaterThanOrEqual(200);
+    expect(box.right).toBeGreaterThanOrEqual(20);
+  }
+});
