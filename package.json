@@ -92,7 +92,7 @@
     "app:dev": "cd app && vp run dev",
     "app:build": "cd app && vp run build",
     "app:deploy": "vp run site:deploy",
-    "test:unit": "vp test && (cd packages/css-validate && vp test) && (cd app && vp test) && (cd services && vp test)",
+    "test:unit": "vp test && vp exec --filter @ds-one/css-validate --fail-if-no-match -- vp test && vp exec --filter ds-one-app --fail-if-no-match -- vp test && vp exec --filter @ds-one/services --fail-if-no-match -- vp test",
     "test:e2e": "cd e2e && vp exec playwright test",
     "typecheck:all": "cd packages/css-validate && vp exec tsc --noEmit && cd ../../app && vp exec tsc --noEmit && cd ../services && vp exec tsc --noEmit",
     "services:dryrun": "cd services && vp run dryrun",
