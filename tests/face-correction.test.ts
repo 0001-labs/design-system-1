@@ -15,8 +15,9 @@ test('GT America is left as it is drawn', () => {
   expect(faceDescriptors({ ascent: 1, descent: 0.258, capHeight: 0.71 })).toEqual({ sizeAdjust: '100%', ascentOverride: '100%', descentOverride: '25.8%', lineGapOverride: '0%' });
 });
 
-test('every face offered stands on the sixteen: baseline 13.2px down the line, 3px above the square, capitals 10px', () => {
-  expect(Object.keys(metrics).sort()).toEqual([...GOOGLE_FONT_FAMILIES].sort());
+test('every offered face has metrics and every measured face stands on the sixteen', () => {
+  // Measuring another face does not add it to the curated picker.
+  for (const family of GOOGLE_FONT_FAMILIES) expect(metrics).toHaveProperty(family);
   for (const face of Object.values(metrics)) {
     const { baseline, capitals } = setting(face);
     expect(baseline).toBeCloseTo(13.194, 2);
