@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vite-plus/test';
 import { COMMON_FIELDS, KINDS, PRIMITIVE_KINDS, SECTION_KINDS, SECTIONS, TONES, isSlot, vocabularyJson, vocabularyRecord, type KindDefinition, type MemberDefinition } from '../shared/consistency-vocabulary';
-import { renderNativePage, validateNativePage, type NativeBlock, type NativePageDocument } from '../shared/consistency-native-page';
+import { renderNativeBlock, renderNativePage, validateNativePage, type NativeBlock, type NativePageDocument } from '../shared/consistency-native-page';
 
 const context = { images: ['/photos/harbour.jpg', '/photos/logo.svg'], collections: ['storefront'], runtimes: { MenuToggle: [], Theme: [], Cart: ['label'] }, bindings: [] };
 const page = (blocks: NativeBlock[]): NativePageDocument => ({ schema: 1, kind: 'native-page', lang: 'da', layout: { padding: 0, gap: 80 }, blocks });
@@ -34,14 +34,19 @@ describe('the vocabulary record', () => {
     for (const [name, field] of Object.entries(COMMON_FIELDS)) member(field, `common.${name}`);
     expect(TONES).toEqual(['paper', 'cream', 'dark', 'accent', 'highlight', 'band', 'pastel-1', 'pastel-2', 'pastel-3', 'pastel-4', 'pastel-5', 'pastel-6']);
   });
-  test('every example is a complete valid block that renders with its kind, slots and primitives', () => {
+  test.each([false, true])('every example renders its publication or editing contract (editor: %s)', editor => {
     for (const definition of KINDS) definition.examples.forEach((example, index) => {
       const label = `${definition.kind} example ${index}`;
       expect(example.kind, label).toBe(definition.kind);
       const checked = validateNativePage(page([structuredClone(example)]), context);
       expect(checked.blocks[0], label).toEqual(example);
-      const html = renderNativePage(checked, { images: context.images, collections: { storefront: { items: [{ id: 'a', title: 'A raft', href: '/a/', price: '100 kr' }] } }, runtime: block => `<span data-runtime="${block.name}"></span>` });
-      expect(html, label).toContain(`data-native-block="${example.id}"`);
+      const html = renderNativePage(checked, { editor, images: context.images, collections: { storefront: { items: [{ id: 'a', title: 'A raft', href: '/a/', price: '100 kr' }] } }, runtime: block => `<span data-runtime="${block.name}"></span>` });
+      if (example.kind === 'text' && (!editor || example.editable === false)) {
+        // Literal children must remain valid inside native options and textareas.
+        const literal = example.text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+        expect(renderNativeBlock(example, { editor }), label).toBe(literal);
+        expect(html, label).not.toContain(`data-native-block="${example.id}"`);
+      } else expect(html, label).toContain(`data-native-block="${example.id}"`);
       if (definition.layer === 'section') {
         expect(html, label).toContain(`class="c9y-native-node c9y-native-section`);
         expect(html, label).toContain(`data-section="${definition.kind}"`);

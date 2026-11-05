@@ -52,7 +52,8 @@ test('text stands on one-square lines, a title on two, with a square between blo
   expect(rule('h1')).toContain('line-height: calc(2 * var(--ds-unit))');
   expect(rules.find(({ selector }) => selector.includes(' + :where(:not('))?.body).toContain('margin-top: var(--ds-unit)');
   expect(rules.find(({ selector }) => selector.includes(' + :where(h1, h2, h3, h4, h5, h6)'))?.body).toContain('margin-top: calc(2 * var(--ds-unit))');
-  expect(rule('th, td')).toContain('padding: calc(var(--ds-unit) / 2)');
+  // Tables share the one-square row and spare-four inset of the table component.
+  expect(rule('th, td')).toContain('padding: 0 calc(4px * var(--ds-sf, 1))');
 });
 
 test('it draws headings, paragraphs, lists, links, quotes, code, rules and tables', () => {

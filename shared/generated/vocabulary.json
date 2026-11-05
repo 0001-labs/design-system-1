@@ -75,6 +75,12 @@
           "id": "words",
           "kind": "text",
           "text": "Welcome"
+        },
+        {
+          "id": "option-words",
+          "kind": "text",
+          "text": "Questions & answers",
+          "editable": false
         }
       ]
     },
@@ -148,6 +154,25 @@
               "id": "words",
               "kind": "text",
               "text": "Welcome"
+            }
+          ]
+        },
+        {
+          "id": "columns",
+          "kind": "component",
+          "name": "columns",
+          "children": [
+            {
+              "id": "first-column",
+              "kind": "component",
+              "name": "column",
+              "children": [
+                {
+                  "id": "column-words",
+                  "kind": "text",
+                  "text": "Words in a column"
+                }
+              ]
             }
           ]
         }

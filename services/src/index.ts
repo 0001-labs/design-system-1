@@ -103,7 +103,7 @@ export default {
     }
 
     if (url.hostname === "www.designsystem1.com" ||
-      (url.hostname === "dsone.dev" && !url.pathname.startsWith("/ds1/") && !url.pathname.startsWith("/api/"))) {
+      (["dsone.dev", "www.dsone.dev"].includes(url.hostname) && !url.pathname.startsWith("/ds1/") && !url.pathname.startsWith("/api/"))) {
       url.hostname = "designsystem1.com";
       return Response.redirect(url.toString(), 308);
     }

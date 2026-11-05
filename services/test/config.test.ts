@@ -41,6 +41,8 @@ describe("single Worker deployment", () => {
       { pattern: "designsystem1.com", custom_domain: true },
       { pattern: "www.designsystem1.com", custom_domain: true },
       { pattern: "dsone.dev/*", zone_name: "dsone.dev" },
+      { pattern: "dsone.dev", custom_domain: true },
+      { pattern: "www.dsone.dev", custom_domain: true },
     ]);
   });
 });

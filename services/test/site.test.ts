@@ -6,6 +6,16 @@ beforeAll(async () => { site = await startAssets(); });
 afterAll(async () => { await site.dispose(); });
 
 describe("combined website routes", () => {
+  it('redirects both legacy documentation hosts while preserving the path and query', async () => {
+    for (const host of ['dsone.dev', 'www.dsone.dev']) {
+      const response = await site.fetch(`https://${host}/2-core/button/?view=example`, { redirect: 'manual' });
+      expect(response.status).toBe(308);
+      expect(response.headers.get('location')).toBe('https://designsystem1.com/2-core/button/?view=example');
+      for (const path of ['/ds1/unknown/latest.css', '/api/libraries']) {
+        expect((await site.fetch(`https://${host}${path}`, { redirect: 'manual' })).status).not.toBe(308);
+      }
+    }
+  });
   it('requires an owner session for inline documentation editing, only on its canonical host', async () => {
     const path = '/api/consistency/sites/01Docs/api/docs-page?path=/1-root/device/';
     for (const method of ['GET', 'PUT']) {
