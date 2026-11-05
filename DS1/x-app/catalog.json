@@ -63,5 +63,15 @@
     "key": "airtable",
     "name": "Airtable",
     "source": "https://raw.githubusercontent.com/gilbarbara/logos/main/logos/airtable.svg"
+  },
+  {
+    "key": "chatgpt",
+    "name": "ChatGPT",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/openai.svg"
+  },
+  {
+    "key": "claude",
+    "name": "Claude",
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/claude-ai-icon.svg"
   }
 ]
