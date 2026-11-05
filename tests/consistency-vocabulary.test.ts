@@ -7,6 +7,7 @@ import { renderNativeBlock, renderNativePage, validateNativePage, type NativeBlo
 const context = { images: ['/photos/harbour.jpg', '/photos/logo.svg'], collections: ['storefront'], runtimes: { MenuToggle: [], Theme: [], Cart: ['label'] }, bindings: [] };
 const page = (blocks: NativeBlock[]): NativePageDocument => ({ schema: 1, kind: 'native-page', lang: 'da', layout: { padding: 0, gap: 80 }, blocks });
 const generated = join(import.meta.dirname, '../shared/generated/vocabulary.json');
+const literalExamples: Record<string, string> = { words: 'Welcome', 'option-words': 'Questions &amp; answers' };
 
 describe('the vocabulary record', () => {
   test('names every kind the renderer and validator know, primitives and sections, once', () => {
@@ -43,8 +44,8 @@ describe('the vocabulary record', () => {
       const html = renderNativePage(checked, { editor, images: context.images, collections: { storefront: { items: [{ id: 'a', title: 'A raft', href: '/a/', price: '100 kr' }] } }, runtime: block => `<span data-runtime="${block.name}"></span>` });
       if (example.kind === 'text' && (!editor || example.editable === false)) {
         // Literal children must remain valid inside native options and textareas.
-        const literal = example.text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-        expect(renderNativeBlock(example, { editor }), label).toBe(literal);
+        expect(literalExamples[example.id], label).toBeDefined();
+        expect(renderNativeBlock(example, { editor }), label).toBe(literalExamples[example.id]);
         expect(html, label).not.toContain(`data-native-block="${example.id}"`);
       } else expect(html, label).toContain(`data-native-block="${example.id}"`);
       if (definition.layer === 'section') {
