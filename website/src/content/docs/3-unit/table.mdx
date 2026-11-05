@@ -133,3 +133,9 @@ With `resizable`, column headers expose thin separator lines only while their bo
 Grid-row consumers keep padding inside `.ds-table-heading` and each body cell, never on the grid container: the column boundaries stay on whole squares while the words retain their four-pixel inset. Resize guides are centred on those boundaries.
 
 A resize boundary can be grabbed anywhere along the table’s height, including beside body rows; its one-square hit area stays centred on the column boundary.
+
+## Existing semantic tables
+
+`watchTableColumns(root, selector)` adds the same full-height column boundaries to existing native tables. It preserves cells, links, sorting and row handlers, supports grouped headings and later renders, and returns a disconnect function. Existing table content stays product-owned. The default selector is `table.ds-table`; provide a selector for a product’s specialised table faces.
+
+Pointer updates are coalesced to one layout write per animation frame, using the newest position when direction changes. Release applies the final grid snap immediately, and cancellation restores the original widths.

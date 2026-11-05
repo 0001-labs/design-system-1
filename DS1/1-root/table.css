@@ -370,3 +370,11 @@
 :is(.ds-table th, .ds-table-heading):last-child > .ds-table-column-resize::after { inset-inline-start: auto; inset-inline-end: 0; }
 
 .ds-table[data-column-widths] { min-width: 0; }
+
+/* Existing semantic tables can take the same interaction without changing their cell content. */
+[data-ds-table-viewport] { min-width: 0; max-width: 100%; }
+table[data-ds-column-resize] { min-width: 0; }
+table[data-ds-column-resize] :is(th, td) { min-width: 0; max-width: none; width: auto; }
+table[data-ds-column-resize] :is(th, td):has(> .ds-table-column-resize) { position: relative; overflow: visible; }
+table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize { inset-inline-end: 0; }
+table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize::after { inset-inline-start: auto; inset-inline-end: 0; }

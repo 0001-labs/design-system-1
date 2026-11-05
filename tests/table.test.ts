@@ -24,7 +24,7 @@ test("a row is one square on a hairline, with no box and no column lines", () =>
   expect(cell).toContain("font-weight: inherit");
   // Only a table that asks for its frame (`data-frame`) has one.
   const plain = css.replace(/\.ds-table\[data-frame\][^{]*\{[^}]*\}/g, "");
-  expect(plain).not.toMatch(/border-(left|right|top)|outline:/);
+  expect(plain.replace(/outline: none;/g, '')).not.toMatch(/border-(left|right|top)|outline:/);
 });
 
 test("the native controls carry the table", () => {

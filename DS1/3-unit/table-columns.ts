@@ -9,8 +9,9 @@ export class TableColumns implements ReactiveController {
   private watched?: HTMLElement;
   private content?: HTMLElement;
   private frame = 0;
+  private resizeFrame = 0;
   private drag?: { pointer: number; index: number; start: number; before: number[]; unit: number; minimum: number; rtl: boolean };
-  constructor(private host: ReactiveControllerHost & HTMLElement, private options: {
+  constructor(private host: ReactiveControllerHost & Pick<HTMLElement, 'dispatchEvent'>, private options: {
     scroller: () => HTMLElement | null;
     headers: () => HTMLElement[];
     apply: (widths: number[]) => void;
@@ -35,6 +36,7 @@ export class TableColumns implements ReactiveController {
   private disconnect() {
     this.observer?.disconnect(); this.watched?.removeEventListener('scroll', this.measure);
     cancelAnimationFrame(this.frame); this.frame = 0;
+    cancelAnimationFrame(this.resizeFrame); this.resizeFrame = 0;
   }
   private measure = () => {
     if (this.frame) return;
@@ -81,11 +83,15 @@ export class TableColumns implements ReactiveController {
   private move = (e: PointerEvent) => {
     const d = this.drag; if (!d || e.pointerId !== d.pointer) return;
     this.widths[d.index] = Math.max(d.minimum, d.before[d.index]! + (e.clientX - d.start) * (d.rtl ? -1 : 1));
-    this.options.apply(this.widths); this.measure();
+    if (!this.resizeFrame) this.resizeFrame = requestAnimationFrame(() => {
+      this.resizeFrame = 0;
+      this.options.apply(this.widths); this.measure();
+    });
   };
   private finish(handle: HTMLElement, cancelled: boolean) {
     const d = this.drag; if (!d) return;
     this.drag = undefined;
+    cancelAnimationFrame(this.resizeFrame); this.resizeFrame = 0;
     this.widths = cancelled ? d.before : this.widths.map((w, i) => snapColumn(w, d.unit, i === d.index ? d.minimum : 2 * d.unit));
     delete handle.dataset.resizing;
     if (handle.hasPointerCapture?.(d.pointer)) handle.releasePointerCapture(d.pointer);

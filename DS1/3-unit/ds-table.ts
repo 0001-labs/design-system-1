@@ -1,3 +1,4 @@
+export { watchTableColumns } from './native-table-columns';
 import { TableColumns } from "./table-columns";
 export { TableColumns } from "./table-columns";
 export type { ColumnResizeDetail } from "./table-columns";
