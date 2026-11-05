@@ -33,8 +33,11 @@
 .aa-stylesheet { height: 100%; overflow: auto; font-family: var(--ds-typeface-mono); font-size: calc(13px * var(--ds-sf)); line-height: var(--ds-unit); color: var(--ds-slate-light); }
 .aa-stylesheet > .aa-block { min-height: 100%; white-space: pre; outline: none; }
 
-.system-workbench { display: flex; flex-direction: column; }
+.workbench.system-workbench { display: flex; flex-direction: column; }
 .system-workbench-body { flex: 1; min-height: 0; --ds-page-gap: 0px; }
 .system-workbench-panes { height: 100%; min-height: 0; --ds-page-gap: 0px; }
 :is(.system-workbench-body, .system-workbench-panes)::part(page) { padding: 0; }
 .system-workbench-body > .css-file-panel { height: 100%; }
+
+.app-shell .workbench.system-workbench { height: calc(100dvh - var(--site-header-height)); min-height: 0; }
+[data-docs-embed] .app-shell .workbench.system-workbench { height: 100dvh; }
