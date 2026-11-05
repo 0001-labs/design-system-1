@@ -5,7 +5,7 @@ import styles from "./styles/ds-context.css?inline";
 import { Menu, type MenuAnchor, type MenuCloseReason } from "./ds-menu";
 
 const ROW = '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]';
-/** A refused change shows on its row this long, as Ezo shows it. */
+/** A refused change shows on its row this long. */
 const REFUSED = 1400;
 
 /**
@@ -15,7 +15,7 @@ const REFUSED = 1400;
  * from the keyboard. `context-selector` delegates one menu to many rows of a
  * long list, and focus returns to the row that opened it.
  *
- * It wears Ezo's gap face: each row is black with white words in both themes
+ * It wears the gap face: each row is black with white words in both themes
  * (the slate in dark, darker than the page), rows a pixel apart and groups two (an
  * `hr data-ds-menu-separator` between them, never a line), the page showing
  * through the gaps, the outer corners rounded as one silhouette, and an icon

@@ -1,6 +1,6 @@
 # Flags
 
-Drawn by country-flag-icons 1.6.20 (https://gitlab.com/catamphetamine/country-flag-icons), 3:2, under the MIT licence below; Japan's is Ezo's own drawing. `scripts/import-flags.mjs` writes this folder.
+Drawn by country-flag-icons 1.6.20 (https://gitlab.com/catamphetamine/country-flag-icons), 3:2, under the MIT licence below; Japan's is this system's own drawing. `scripts/import-flags.mjs` writes this folder.
 
 (The MIT License)
 

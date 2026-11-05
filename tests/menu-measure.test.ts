@@ -112,7 +112,7 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
-test("a Context's shared-button rows are Ezo's items: 19px on a square's pitch, words 4px in, an icon at the end", async () => {
+test("a Context's shared-button rows are items: 19px on a square's pitch, words 4px in, an icon at the end", async () => {
   const tab = await page();
   await tab.evaluate(() => {
     const row = (name: string, icon = "") => `<ds-button control="slotted" menu-item><button role="menuitem"><ds-text literal>${name}</ds-text>${icon ? `<ds-icon type="${icon}" size="large"></ds-icon>` : ""}</button></ds-button>`;

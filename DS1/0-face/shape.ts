@@ -1,6 +1,6 @@
 /**
  * Square, rounded or circular: the corners every component draws, chosen once
- * and remembered (Ezo's Shape setting, for every product).
+ * and remembered (a Shape setting, for every product).
  *
  * The runtime is the second part of `theme-bootstrap.js`, which a page inlines
  * in its <head> so the first paint already has the shape; imported here, it

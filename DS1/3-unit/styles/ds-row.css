@@ -1,7 +1,7 @@
 @import "../../1-root/component-metrics.css";
 
 /* ds-row.css: the same rows as the native .ds-row in 1-root/row.css. What a row holds
-   stands on the lower sixteen of its square with the spare four above, as Ezo sets every
+   stands on the lower sixteen of its square with the spare four above, as a list sets every
    row: words on a 16px line box, a 16px icon and a 16px control all end on the bottom line. */
 
 :host {

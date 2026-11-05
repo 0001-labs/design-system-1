@@ -8,7 +8,7 @@
  * With `trigger` (or `open`, or `items`) it is a menu: the shared engine on
  * `ds-select`, opened from the trigger, its entries either children (Button
  * `menuItem` rows, `hr data-ds-menu-separator`, labels) or `items`, entries as
- * data after Link's dropdowns: rows with an icon on the first square, details,
+ * data: rows with an icon on the first square, details,
  * a shortcut at the end, danger, checked, a link, rows that keep it open, and
  * nested menus; headings and separators between them.
  */
