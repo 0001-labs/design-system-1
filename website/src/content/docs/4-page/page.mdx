@@ -121,3 +121,8 @@ The adapter does not register the element: import `4-page/ds-page` once in the b
 [Grid](/4-page/grid/) · [Container](/4-page/container/) · [Sidebar](/3-unit/sidebar/) · [List](/3-unit/list/) · [Row](/3-unit/row/)
 
 Sidebar pages also accept `resizable`. Their navigation and content resize continuously during the drag, then snap on release. Set `nav-width` to a width in squares (4–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press resets to eight squares. The divider stays hidden in the phone drawer.
+
+
+Inspector pages accept `resizable` too: both navigation and properties have independent full-height boundaries. `aside-width` sets the inspector width in squares; `ds-page-resize` reports `detail.asideWidth` alongside `detail.navWidth`. The inspector edge hides when its area stacks below the work. Escape cancels an active drag, restoring the previous layout without saving.
+
+Set `resize-key="my-app-columns"` to remember widths in this browser across navigation and visits. Each independent pane uses its own key. Storage is optional: resizing still works if the browser refuses it. Sidebar and inspector widths stay between four and twenty-four squares and reserve ten squares for the work.

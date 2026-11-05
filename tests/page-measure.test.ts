@@ -99,3 +99,37 @@ test("phone width keeps the column on a whole square and inside the page's margi
     }
   }
 });
+
+test('sidebar and inspector edges follow the hand, cancel safely and remain reachable after scrolling', async () => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.evaluate(async () => {
+    document.getElementById('frame')!.style.cssText = 'width:1400px;height:700px';
+    const element = document.querySelector('ds-page')!;
+    element.setAttribute('layout', 'inspector');
+    element.setAttribute('resizable', '');
+    element.setAttribute('divided', '');
+    element.setAttribute('fill', '');
+    element.setAttribute('nav-width', '8');
+    element.innerHTML = '<div slot="nav" style="height:1600px">Navigation</div><p>Work</p><aside slot="aside" style="height:1600px">Inspector</aside>';
+    await (element as any).updateComplete;
+  });
+  const nav = page.locator('ds-page').locator('[part="nav"]');
+  const edge = page.getByRole('separator', { name: 'Resize sidebar' });
+  const before = await nav.boundingBox();
+  const box = (await edge.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 100);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 57, box.y + 100);
+  expect((await nav.boundingBox())!.width - before!.width).toBeCloseTo(57, 0);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  expect((await nav.boundingBox())!.width).toBe(before!.width);
+  await nav.evaluate(element => { element.scrollTop = 500; });
+  expect((await edge.boundingBox())!.y).toBe(box.y);
+  const inspector = page.getByRole('separator', { name: 'Resize inspector' });
+  await inspector.focus();
+  await page.keyboard.press('ArrowLeft');
+  expect(await page.locator('ds-page').getAttribute('aside-width')).toBe('13');
+  // Both scroll viewports fit within the page while the separators stay at their boundaries.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

@@ -43,7 +43,7 @@ test("a split's divider stands beside its column, so a scrolling column cannot c
   expect(area(page, "nav").querySelector('[role="separator"]')).toBeNull();
   page.layout = "sidebar";
   await page.updateComplete;
-  expect(area(page, "nav").querySelector('[role="separator"]')).not.toBeNull();
+  expect(handle.parentElement).toBe(page.shadowRoot!.querySelector(".page"));
 });
 
 test("layout, divided, fill and view reflect for styling", async () => {
@@ -138,4 +138,39 @@ test('sidebar resizing reports whole-square widths and can reset', async () => {
   handle.dispatchEvent(new KeyboardEvent('keydown', {key:'Home', bubbles:true}));
   await page.updateComplete;
   expect(page.navWidth).toBe(4);
+});
+
+
+test('inspector pages expose independent boundaries, and remember widths across visits', async () => {
+  localStorage.removeItem('page-width-test');
+  const page = await setup('<ds-page layout="inspector" resizable resize-key="page-width-test"><nav slot="nav">Places</nav><p>Work</p><aside slot="aside">Properties</aside></ds-page>');
+  Object.defineProperty(page.shadowRoot!.querySelector('.page'), 'clientWidth', { value: 1400 });
+  const handles = page.shadowRoot!.querySelectorAll<HTMLElement>('[role="separator"]');
+  expect(handles.length).toBe(2);
+  expect(handles[1].getAttribute('aria-label')).toBe('Resize inspector');
+  handles[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+  await page.updateComplete;
+  expect(page.asideWidth).toBe(13);
+  expect(page.navWidth).toBe(12);
+  const again = await setup('<ds-page layout="inspector" resizable resize-key="page-width-test"></ds-page>');
+  expect(again.asideWidth).toBe(13);
+  expect(again.navWidth).toBe(12);
+  localStorage.removeItem('page-width-test');
+});
+
+test('a cancelled drag restores layout and never persists a preview', async () => {
+  const page = await setup('<ds-page layout="sidebar" resizable nav-width="8"><nav slot="nav">Places</nav><p>Work</p></ds-page>');
+  Object.defineProperty(page.shadowRoot!.querySelector('.page'), 'clientWidth', { value: 1000 });
+  const handle = page.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
+  handle.setPointerCapture = () => {};
+  const pointer = (type: string, x: number) => handle.dispatchEvent(new PointerEvent(type, { pointerId: 1, clientX: x, button: 0, bubbles: true }));
+  pointer('pointerdown', 160);
+  pointer('pointermove', 217);
+  expect(page.shadowRoot!.querySelector<HTMLElement>('.page')!.style.getPropertyValue('--ds-page-resize-width')).toBe('217px');
+  handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  expect(page.navWidth).toBe(8);
+  expect(handle.hasAttribute('data-dragging')).toBe(false);
+  expect(page.shadowRoot!.querySelector<HTMLElement>('.page')!.style.getPropertyValue('--ds-page-resize-width')).toBe('');
+  pointer('pointerup', 217);
+  expect(page.navWidth).toBe(8);
 });
