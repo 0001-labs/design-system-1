@@ -5,8 +5,7 @@ description: Vertical space measured in the system’s squares.
 
 import ComponentExample from "../../../components/ComponentExample.astro";
 
-Vertical space measured in the system’s squares.
-
+Vertical space measured in the system’s squares. A gap is an empty block as wide as its column, and its height is the only thing it has. One square by default, it stands between two things that need room and keeps that room on the grid.
 
 ## Design examples
 
@@ -21,5 +20,36 @@ Vertical space measured in the system’s squares.
 Use `unit` for one square and `double` for two. The `size` attribute also selects a scale token, for example `size="05"` for half a square or `size="2"` for two squares.
 
 A gap is empty space. It does not wrap content and is not a flexbox gap between children.
+
+| Height | `size` | Attribute |
+| --- | --- | --- |
+| A tenth of a square | `01` | `tenth` |
+| A quarter of a square | `025` | `quarter` |
+| Half a square | `05` | `half` |
+| Four fifths of a square | `08` | `eight-tenth` |
+| One square | `1` | `unit` |
+| Two squares | `2` | `double` |
+| Three squares | `3` | `triple` |
+| Four squares | `4` | `quad` |
+| Eight squares | `8` | `oct` |
+| Twelve squares | `12` | `dozen` |
+
+## Behaviour
+
+A gap is a block that takes the column's width, and it does not shrink in a flex column. Its height is multiplied by the surface scale, so it stays on the grid on phones. With no `size` it is one square. Add `hidden` to take it out.
+
+## Accessibility
+
+A gap has no role, no words and no focus, and assistive technology passes over it. Space says nothing to a screen reader, so let a heading or a list show that two things are separate.
+
+## API
+
+`size` takes the values in the table, or use the attribute beside it. There are no slots or events.
+
+| Token | What it does |
+| --- | --- |
+| `--ds-gap-row-space` | Added once for each whole square of height, `0px` by default. Sizes under one square add none. |
+
+Copy `gap` through Sync 1. On Apple platforms and Android it is `DS1Gap`.
 
 [Styling and tokens](/1-root/overview/) · [Row](/3-unit/row/)

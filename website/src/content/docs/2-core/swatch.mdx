@@ -1,0 +1,49 @@
+---
+title: Swatch
+description: A small sample of a colour, beside a label or inside a button.
+---
+
+import ComponentExample from "../../../components/ComponentExample.astro";
+
+A swatch shows one colour in a square of its own, four fifths of a square wide and high (16px), so it stands on the sixteen beside words. A 1px line runs round the colour, so a pale colour still shows on the paper. It has square corners, and it draws nothing else.
+
+## Design examples
+
+<ComponentExample example="color-palette" />
+
+## Try it
+
+<ComponentExample example="swatch" />
+
+```html
+<ds-button control="slotted" icon>
+  <button type="button" aria-label="Apple green" aria-pressed="true">
+    <ds-swatch value="#99ff73" selected aria-hidden="true"></ds-swatch>
+  </button>
+</ds-button>
+```
+
+## Behaviour
+
+`value` takes any CSS colour, a token included. It sets only the swatch's background, so a value that is not a colour draws nothing and cannot add other styles. With no value it is `transparent`, and only the line shows.
+
+`selected` draws a 2px outline in the text's ink around the swatch. The swatch does not change it by itself: the page sets and clears it.
+
+A swatch has no press of its own. For a choice, put it in a shared button. [Select](/3-unit/select/) draws one in its control when given `swatch`. Colour data, saving and any contrast or permission rules belong to the product.
+
+## Accessibility
+
+A swatch has no role and no name, and a colour alone says nothing to someone who cannot see it. Mark it `aria-hidden="true"`, then name the colour on the button around it or in the words beside it. Show a choice with `aria-pressed` on the button: the outline is only drawn.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `value` | string | `transparent` | The CSS colour shown. |
+| `selected` | boolean | false | Draws the selection outline. |
+
+It has no slots, events or tokens of its own. The line is `--ds-border-color` and the outline `--ds-text-color`. Add `hidden` to hide it.
+
+Copy `swatch` through Sync 1. There is no React adapter: render `ds-swatch` itself after registering `DS1/2-core/ds-swatch`. On Apple platforms and Android it is `DS1Swatch`.
+
+[Color](/2-core/color/) · [Select](/3-unit/select/) · [Colours](/colours/)

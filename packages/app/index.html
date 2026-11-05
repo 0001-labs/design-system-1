@@ -61,33 +61,166 @@ html[data-component="indexeddb"] [data-component="indexeddb"],html[data-componen
 <article class="sl-markdown-content" data-component="keyboard-shortcut" data-ds-prose>
 <h1 id="_top" class="ds-text ds-text--display">Keyboard shortcut</h1>
 <p>A shortcut hint displays a command using the reader’s platform conventions. The application owns the action and its keyboard listener.</p>
+<p>A control in <strong>2 Core</strong>, private to App: it draws one hint, in a native <code>&lt;kbd&gt;</code>, and listens to no keys. Public Keys and the native <code>&lt;kbd&gt;</code> in prose stay public; only this element and its class are App’s.</p>
 <div class="preview" data-ds-not-prose><p>Search <ds-kbd shortcut="mod+k"></ds-kbd></p><p>Duplicate <ds-kbd shortcut="mod+shift+d"></ds-kbd></p><p>Close <ds-kbd shortcut="escape" plain></ds-kbd></p></div>
 <h2>Use it</h2><pre><code>import '@0001-labs/app/keyboard-shortcut';
 
 &lt;ds-kbd shortcut="mod+k"&gt;&lt;/ds-kbd&gt;
 &lt;ds-kbd shortcut="escape" plain&gt;&lt;/ds-kbd&gt;
 &lt;ds-kbd&gt;Fn&lt;/ds-kbd&gt;</code></pre>
+<p>Without <code>shortcut</code>, the words in the element show as written. With it, the slot is not drawn.</p>
+<h2>Written once</h2>
+<p>A shortcut is written in lower case with its parts joined by <code>+</code>: <code>mod+shift+d</code>, <code>mod+enter</code>, <code>escape</code>, <code>?</code>. <code>mod</code> is the platform’s command key. The hint uses the same notation as <a href="/1-root/keys/">Keys</a>, so one string can name the shortcut for both the listener and the hint. A shortcut Keys cannot read, with an unknown modifier such as <code>hyper+d</code>, shows as written rather than failing.</p>
 <h2>Platforms</h2><div class="preview" data-ds-not-prose><p>Apple <ds-kbd shortcut="mod+shift+d" platform="apple"></ds-kbd></p><p>Other <ds-kbd shortcut="mod+shift+d" platform="other"></ds-kbd></p></div>
 <dl><dt><code>shortcut</code></dt><dd>The command, written once: <code>mod+k</code>, <code>mod+shift+d</code> or <code>escape</code>.</dd><dt><code>plain</code></dt><dd>Muted text without a fill, for use beside an action.</dd><dt><code>platform</code></dt><dd>Optional <code>apple</code> or <code>other</code> override. By default, follows the reader’s device.</dd></dl>
+<p>Apple platforms write symbols in Apple’s order, as <code>⇧⌘D</code>. Others write words, as <code>Ctrl+Shift+D</code>. Those words follow the page’s language where it loads the shared words: the hint writes itself again on <code>language-changed</code> and <code>translations-loaded</code>.</p>
+<h2>Bind the action</h2>
+<p>The hint runs nothing. Bind the action with <code>onShortcut</code> from Keys, and name the shortcut on the control it presses.</p>
+<pre><code>import { ariaKeyShortcuts, onShortcut } from '@0001-labs/design-system-1';
+
+const off = onShortcut('mod+k', () =&gt; openSearch());
+search.setAttribute('aria-keyshortcuts', ariaKeyShortcuts('mod+k'));</code></pre>
+<h2>On the grid</h2>
+<table><thead><tr><th>Measure</th><th>Value</th></tr></thead><tbody>
+<tr><td>Height</td><td>One control (16px), in a line one square high: two pixels stand above and below it.</td></tr>
+<tr><td>Width</td><td>At least as wide as it is high, padded 4px at the sides.</td></tr>
+<tr><td>Face</td><td>The system’s 4px corners on the fill a control stands on.</td></tr>
+<tr><td>Type</td><td>The code face at 13px, as <code>&lt;kbd&gt;</code> is in prose. Arrows are Inter’s.</td></tr>
+<tr><td><code>plain</code></td><td>No fill or padding, in the title grey and the text’s own face and size, as a menu entry writes its shortcut.</td></tr>
+</tbody></table>
+<p>All of it is multiplied by the surface scale. A page without scripts puts the class <code>ds-kbd</code>, with <code>ds-kbd--plain</code> for the plain face, on a native <code>&lt;kbd&gt;</code>, and writes its words with <code>shortcutLabel()</code>.</p>
+<h2>Accessibility</h2>
+<p>The hint is text in a <code>&lt;kbd&gt;</code>. It has no role of its own, no focus and no press. A symbol such as <code>⇧</code> reads poorly aloud, so put the shortcut on the control itself with <code>aria-keyshortcuts</code>; do not count on the hint to announce it.</p>
+<h2>API</h2>
+<table><thead><tr><th>Name</th><th>Kind</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>shortcut</code></td><td>Attribute</td><td>The shortcut. Unset, the slot shows.</td></tr>
+<tr><td><code>plain</code></td><td>Attribute</td><td>The words alone in the title grey.</td></tr>
+<tr><td><code>platform</code></td><td>Attribute</td><td><code>apple</code> or <code>other</code>, for a help page showing both.</td></tr>
+<tr><td><code>label</code></td><td>Property</td><td>Reads the words the hint shows; empty when it shows its slot.</td></tr>
+<tr><td>Default slot</td><td>Slot</td><td>Words of the page’s own, when there is no <code>shortcut</code>.</td></tr>
+<tr><td><code>kbd</code></td><td>Part</td><td>The native <code>&lt;kbd&gt;</code>.</td></tr>
+<tr><td><code>--ds-kbd-background</code></td><td>Token</td><td>The fill, <code>--ds-fill</code> by default.</td></tr>
+<tr><td><code>--ds-kbd-color</code></td><td>Token</td><td>The ink: the text colour, or the title grey when <code>plain</code>.</td></tr>
+</tbody></table>
+<p>It sends no events. Add <code>hidden</code> to hide it.</p>
 <h2>React</h2><p>Sync 1's components export copies the React adapter with <code>kbd</code> (<code>react/kbd.ts</code>), unless the product asks for <code>"react": false</code>.</p><pre><code>import { Kbd } from './design/react/kbd';
 
 &lt;Kbd shortcut="mod+k" /&gt;</code></pre>
+<p>It takes <code>shortcut</code>, <code>plain</code>, <code>platform</code> and children, and renders <code>ds-kbd</code> with the ref on the element. Registering <code>ds-kbd</code> stays in the product’s browser entry.</p>
 </article>
 <article class="sl-markdown-content" data-component="spacing-handle" data-ds-prose>
-<h1 id="_top" class="ds-text ds-text--display">Spacing handle</h1><p>Adjust a spacing value by dragging or using the arrow keys. The application owns preview, commit and undo.</p><div class="preview" data-ds-not-prose><ds-spacing-handle label="Spacing"></ds-spacing-handle></div><h2>Use it</h2><pre><code>import '@0001-labs/app/spacing-handle';
+<h1 id="_top" class="ds-text ds-text--display">Spacing handle</h1>
+<p>Adjust a spacing value by dragging or using the arrow keys. The application owns preview, commit and undo.</p>
+<p>A control in <strong>2 Core</strong>, private to App, built for editors. It holds no product state: placement, undo snapshots and the surrounding document belong to the consumer. The value comes in through <code>options</code>, and changes go out through callbacks.</p>
+<div class="preview" data-ds-not-prose><ds-spacing-handle label="Spacing"></ds-spacing-handle></div>
+<h2>Use it</h2><pre><code>import '@0001-labs/app/spacing-handle';
 
 handle.options = {
   value: 20, min: 0, max: 100, step: 10,
   onPreview: value =&gt; preview(value),
   onCommit: value =&gt; save(value)
 };</code></pre>
+<p><code>options</code> is a property, not an attribute, and is read afresh at every event. Update its <code>value</code> after a commit: the handle never changes the value it was given.</p>
+<h2>A drag</h2>
+<ol>
+<li><strong>Press.</strong> A primary press with the main button takes the pointer and calls <code>onPointerStart</code>. The second press of a double click is ignored, so a double click stays the application’s. A disabled handle ignores the press.</li>
+<li><strong>Move past the threshold.</strong> Under <code>threshold</code> pixels (3 by default) nothing happens. Past it, <code>onStart("pointer")</code> runs and <code>onPreview</code> reports the starting value.</li>
+<li><strong>Preview.</strong> Each move previews the starting value plus the pointer’s travel times <code>gain</code>, within <code>min</code> and <code>max</code>. The preview is raw, following the hand, unless <code>snapPreview</code> rounds it to <code>step</code>.</li>
+<li><strong>Release.</strong> <code>onCommit</code> receives the value rounded to <code>step</code>, once, and then <code>onEnd(false)</code> runs.</li>
+<li><strong>Or cancel.</strong> Escape, a cancelled pointer, lost capture, the window losing focus, the handle becoming disabled or the handle being removed all stop the drag. <code>onPreview</code> receives the starting value, nothing commits, and <code>onEnd(true)</code> runs.</li>
+</ol>
+<p>A release without movement is a tap: <code>onTap</code> runs and nothing else. Set <code>gain</code> to 2 for a handle at the midpoint of a gap, which grows on both sides, so the midpoint stays under the pointer.</p>
+<h2>Keyboard</h2>
+<table><thead><tr><th>Key</th><th>What it does</th></tr></thead><tbody>
+<tr><td>Arrow Right, Arrow Up on a vertical handle</td><td>One <code>step</code> up.</td></tr>
+<tr><td>Arrow Left, Arrow Down on a vertical handle</td><td>One <code>step</code> down.</td></tr>
+<tr><td>Shift with an arrow</td><td>One <code>shiftStep</code>, ten steps by default.</td></tr>
+<tr><td>Home</td><td>To <code>min</code>.</td></tr>
+<tr><td>End</td><td>To <code>max</code>, when there is one.</td></tr>
+<tr><td>Escape</td><td>Cancels keys pressed so far: the preview goes back and nothing commits.</td></tr>
+</tbody></table>
+<p>By default keys accumulate in the preview and commit once, on key up or when the handle loses focus, so holding an arrow writes one change. <code>immediateKeyboard</code> commits on every key instead, with no preview. Removing the handle never reverses a commit already made. Set <code>keyboard: false</code> when a native input owns the keys.</p>
+<h2>On the grid</h2>
+<p>The handle is one square in each direction. A 1px line runs through its middle: upright for a horizontal handle, which moves across, and flat for a vertical one. The cursor follows the axis. Under the pointer or keyboard focus, the value shows beside the line in small type on a filled tag one square high. Focus is a 1px ring standing 2px off, and a disabled handle is at half strength.</p>
+<h2>Accessibility</h2>
+<p>The face is a <code>role="slider"</code> named by <code>label</code>, “Spacing” by default. Write what it changes: “Gap above the title”. It carries <code>aria-orientation</code>, <code>aria-valuemin</code>, <code>aria-valuemax</code> and <code>aria-valuenow</code>, and <code>aria-disabled</code> when disabled, when it also leaves the tab order. With no <code>min</code> the minimum is 0, and with no <code>max</code> the slider reports 1,000,000.</p>
+<h2>Options</h2>
+<table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>value</code></td><td>Required</td><td>The current value.</td></tr>
+<tr><td><code>min</code>, <code>max</code></td><td>0, none</td><td>The range.</td></tr>
+<tr><td><code>step</code></td><td>1</td><td>What a commit rounds to, and one key’s change.</td></tr>
+<tr><td><code>shiftStep</code></td><td>Ten steps</td><td>One key’s change with Shift.</td></tr>
+<tr><td><code>axis</code></td><td><code>horizontal</code></td><td><code>horizontal</code> or <code>vertical</code>.</td></tr>
+<tr><td><code>gain</code></td><td>1</td><td>Value per pixel of travel.</td></tr>
+<tr><td><code>threshold</code></td><td>3</td><td>Pixels of travel before a drag starts.</td></tr>
+<tr><td><code>snapPreview</code></td><td>false</td><td>Rounds the preview to <code>step</code> too.</td></tr>
+<tr><td><code>immediateKeyboard</code></td><td>false</td><td>Commits on each key.</td></tr>
+<tr><td><code>keyboard</code></td><td>true</td><td><code>false</code> leaves the keys alone.</td></tr>
+<tr><td><code>disabled</code></td><td>false</td><td>Ignores the pointer and the keys.</td></tr>
+<tr><td><code>onCommit(value)</code></td><td>Required</td><td>The change is final.</td></tr>
+<tr><td><code>onPreview(value)</code></td><td>None</td><td>Show this value without saving it.</td></tr>
+<tr><td><code>onStart(kind)</code></td><td>None</td><td>A drag or keyboard change began: <code>pointer</code> or <code>keyboard</code>.</td></tr>
+<tr><td><code>onEnd(cancelled)</code></td><td>None</td><td>It ended, and whether it was cancelled.</td></tr>
+<tr><td><code>onPointerStart(event)</code></td><td>None</td><td>The press, before any movement.</td></tr>
+<tr><td><code>onTap(event)</code></td><td>None</td><td>A press released without moving.</td></tr>
+</tbody></table>
+<h2>API</h2>
+<table><thead><tr><th>Name</th><th>Kind</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>label</code></td><td>Attribute</td><td>The slider’s accessible name.</td></tr>
+<tr><td><code>options</code></td><td>Property</td><td>The value and callbacks above.</td></tr>
+<tr><td><code>--ds-handle-ink</code></td><td>Token</td><td>The line and focus ring, <code>currentColor</code> by default.</td></tr>
+<tr><td><code>--ds-handle-label-ink</code></td><td>Token</td><td>The tag’s words.</td></tr>
+<tr><td><code>--ds-handle-label-paper</code></td><td>Token</td><td>The tag’s fill.</td></tr>
+</tbody></table>
+<p>It has no slots, parts or events. <code>bindSpacingHandle(target, () =&gt; options)</code> gives any element of your own the same pointer and keyboard behaviour, and returns a function that removes it, cancelling a drag in progress. Style that element with the class <code>ds-spacing-control</code> from <code>ds-spacing-handle.css</code>.</p>
+<h2>React</h2>
+<p>Sync 1's components export copies the React adapter with <code>spacing-handle</code> (<code>react/spacing-handle.ts</code>), unless the product asks for <code>"react": false</code>.</p>
+<pre><code>import { SpacingHandle } from './design/react/spacing-handle';
+
+&lt;SpacingHandle label="Gap above the title" value={gap} step={10} onCommit={save} /&gt;</code></pre>
+<p>It takes the options as props, reading the latest on each event, plus <code>label</code>, <code>valueText</code> for <code>aria-valuetext</code>, <code>className</code>, <code>style</code> and <code>onDoubleClick</code>. Children replace the value tag. It renders a native target and brings its styles with it, so it works before hydration, and it stops its clicks from bubbling up.</p>
 </article>
 <article class="sl-markdown-content" data-component="loading-indicator" data-ds-prose>
-<h1 id="_top" class="ds-text ds-text--display">Loading indicator</h1><p>Automatic pending-state feedback, with an accessible status label. Use a bar for a page or a spinner beside a control.</p><div class="preview" data-ds-not-prose><ds-loading label="Loading preview"></ds-loading><ds-loading label="Loading preview" variant="spinner"></ds-loading></div><h2>Colour</h2><p>A gradient indicator in the shared palette on a neutral track.</p><div class="preview" data-ds-not-prose><ds-loading gradient label="Loading preview"></ds-loading><ds-loading gradient variant="spinner" label="Loading preview"></ds-loading></div><h2>Use it</h2><pre><code>import '@0001-labs/app/loading';
+<h1 id="_top" class="ds-text ds-text--display">Loading indicator</h1>
+<p>Automatic pending-state feedback, with an accessible status label. Use a bar for a page or a spinner beside a control.</p>
+<p>A control in <strong>2 Core</strong>, private to App. It shows that the application is waiting, and for nothing else: it is not content a person adds, and it never stands for elapsed time or a percentage. The application mounts it while work is pending and removes it after.</p>
+<div class="preview" data-ds-not-prose><ds-loading label="Loading preview"></ds-loading><ds-loading label="Loading preview" variant="spinner"></ds-loading></div>
+<h2>Colour</h2><p>A gradient indicator in the shared palette on a neutral track.</p><div class="preview" data-ds-not-prose><ds-loading gradient label="Loading preview"></ds-loading><ds-loading gradient variant="spinner" label="Loading preview"></ds-loading></div>
+<p>By default it takes <code>currentColor</code>, on a track of the same colour at low strength, so it follows the words around it and preserves a surrounding brand. <code>gradient</code> is opt-in. <code>--ds-loading-fill</code> changes a bar’s fill.</p>
+<h2>Use it</h2><pre><code>import '@0001-labs/app/loading';
 
 &lt;ds-loading label="Loading document"&gt;&lt;/ds-loading&gt;
 &lt;ds-loading variant="spinner"&gt;&lt;/ds-loading&gt;
 &lt;ds-loading gradient&gt;&lt;/ds-loading&gt;
 &lt;ds-loading gradient variant="spinner"&gt;&lt;/ds-loading&gt;</code></pre>
+<h2>On the grid</h2>
+<table><thead><tr><th>Variant</th><th>Where</th><th>Size</th></tr></thead><tbody>
+<tr><td>Bar</td><td>Anywhere</td><td>Three squares wide (60px), two pixels high.</td></tr>
+<tr><td>Spinner</td><td>On its own</td><td>One square.</td></tr>
+<tr><td>Spinner</td><td>Inside a button or field</td><td>One control high (16px), the size of the icon it stands in for.</td></tr>
+</tbody></table>
+<p>The spinner finds out for itself whether it stands in a button or a field when it connects, through shadow roots too. The list is <code>LOADING_CONTROLS</code>: <code>button</code>, <code>[role="button"]</code>, <code>ds-button</code>, <code>ds-input</code>, <code>ds-select</code> and the native classes <code>.ds-button</code>, <code>.ds-field</code>, <code>.ds-input</code> and <code>.ds-select</code>. <code>--ds-loading-size</code> sets it outright. All measures are multiplied by the surface scale.</p>
+<h2>Motion</h2>
+<p>The bar’s fill slides across its track every 1.8 seconds, which <code>--ds-loading-duration</code> changes. The spinner turns every 0.72 seconds, in <code>transform</code> alone. Under reduced motion both stop: the bar stands as a full fill at lower strength, and the spinner as a still ring.</p>
+<h2>Accessibility</h2>
+<p>The element is a <code>role="status"</code> with <code>aria-busy="true"</code>, named by <code>label</code>; the moving fill is hidden from assistive technology. Write what is happening: “Opening document”. Unset, the label is the shared word “Loading” in the page’s language, which follows a change of language when the page loads the shared words. Without them it reads “Loading” in English.</p>
+<p>Where a surrounding status already speaks, use React’s <code>decorative</code>: the indicator then has no role or label and is hidden from assistive technology.</p>
+<h2>API</h2>
+<table><thead><tr><th>Name</th><th>Kind</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>label</code></td><td>Attribute</td><td>Names the operation. Empty by default, which reads the shared word.</td></tr>
+<tr><td><code>variant</code></td><td>Attribute</td><td><code>bar</code> (the default) or <code>spinner</code>.</td></tr>
+<tr><td><code>gradient</code></td><td>Attribute</td><td>Draws it in the shared palette.</td></tr>
+<tr><td><code>--ds-loading-width</code></td><td>Token</td><td>A bar’s width.</td></tr>
+<tr><td><code>--ds-loading-fill</code></td><td>Token</td><td>A bar’s fill.</td></tr>
+<tr><td><code>--ds-loading-duration</code></td><td>Token</td><td>A bar’s time across.</td></tr>
+<tr><td><code>--ds-loading-size</code></td><td>Token</td><td>A spinner’s size.</td></tr>
+</tbody></table>
+<p>It has no slots, parts or events. The module also exports <code>LOADING_LABEL</code>, <code>LOADING_CONTROLS</code> and <code>inLoadingControl(element)</code>. Add <code>hidden</code> to hide it.</p>
+<h2>React</h2>
+<p>Sync 1's components export copies the React adapter with <code>loading</code> (<code>react/loading.ts</code>), unless the product asks for <code>"react": false</code>.</p>
+<pre><code>import { LoadingIndicator } from './design/react/loading';
+
+&lt;LoadingIndicator label="Opening document" variant="spinner" /&gt;</code></pre>
+<p>It takes <code>label</code>, <code>variant</code>, <code>gradient</code>, <code>decorative</code>, <code>className</code> and <code>style</code>. It renders plain markup with its own styles and no DOM runtime, so it shows before hydration. Its spinner takes one control high from a surrounding button or field in the same document.</p>
 </article>
 </main></body></html>

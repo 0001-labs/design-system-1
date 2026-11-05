@@ -53,3 +53,27 @@ disabled fieldsets, narrow layouts and independent surface scales.
 ## Design examples
 
 <ComponentExample example="radio-editions" />
+
+## Try it
+
+<ComponentExample example="radio-choice" />
+
+## Accessibility
+
+The native input does everything assistive technology meets: its name, its group, its checked state and its keys. Focus shows as a 2px ring. Calling `focus()` on `ds-radio` moves focus to the input. A label on a `choice` is drawn in a face hidden from assistive technology, so name the input too, with `aria-label` or a `label`. Words that do not fit fade over their last square.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `choice` | boolean | false | A labelled choice four squares wide and one high. |
+| `compact` | boolean | false | With `choice`, one square wide. |
+| `preview` | boolean | false | With `choice`, adds the preview and stands three squares high. |
+| `label` | string | Empty | The words on a `choice`. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | One native `input type="radio"`. |
+| `preview` | The artwork above the label. |
+
+It has no events or tokens of its own: listen to the input's `change`, and set `name`, `value`, `checked`, `required` and `disabled` on the input. Add `hidden` to hide it. Copy `radio` through Sync 1. On Apple platforms and Android it is `DS1Radio`, or `DS1Choice` for a labelled choice.

@@ -120,6 +120,7 @@ setThemeMode('system'); // or 'light', 'dark'
 - On a page without the module, `window.DS_ONE_THEME` has `mode()`, `theme()`, `set(mode)` and `apply()`.
 
 <span id="copying-it"></span>
+
 A page without the components copies the module with Sync 1's `root` export, `"modules": ["theme"]`: `0-face/theme.ts`, the head script it runs and `preference-options.ts`, the type of `window.DS_ONE_PREFERENCES`. It needs `@lit-labs/signals`. `"modules": ["theme-bootstrap"]` copies the head script alone, for a page that uses `window.DS_ONE_THEME`.
 
 [Cycle](/2-core/cycle/) with `type="theme"` steps through Light, Dark and System. Keeping the choice on an account, the favicon and redrawing canvases belong to the application. See [Preferences](/1-root/preferences/) for the related storage topic.
@@ -192,4 +193,5 @@ Use the [Fonts catalogue](/1-root/fonts/) to inspect the available faces. This d
 5. Keep the shared grid, scale and type rules when customizing appearance.
 
 <span id="learn-more"></span>
+
 Related: [Root overview](/1-root/overview/) · [Colours](/colours/) · [Fonts](/1-root/fonts/) · [Preferences](/1-root/preferences/).

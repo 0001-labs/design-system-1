@@ -3,14 +3,44 @@ title: Activity
 description: A small grid mark for work that is running.
 ---
 
+import ComponentExample from "../../../components/ComponentExample.astro";
+
 Activity is a working mark, one square high. Four-pixel cells rearrange inside the lower sixteen, holding each arrangement for 200ms. It has no spinning ring or implied percentage. The text names the operation the application knows is happening.
+
+## Try it
+
+<ComponentExample example="activity" />
 
 ```html
 <ds-activity active role="status">Checking the changes</ds-activity>
 ```
 
-Set `active` only while work is running. Remove it for a question, failure, pause or completion. With reduced motion the mark stays still; the status text remains. Change `--ds-activity-color` to a library ink for the mark. Text keeps the library's text colour.
+## Behaviour
+
+Set `active` only while work is running. Remove it for a question, failure, pause or completion. The mark runs through eight arrangements in 1.6 seconds and starts again; without `active` it rests on the first. Stopping and starting leaves the words in place. With reduced motion the mark stays still; the status text remains. Change `--ds-activity-color` to a library ink for the mark. Text keeps the library's text colour.
+
+The words stand on the lower sixteen beside the mark, four pixels from it. With no words only the mark shows.
+
+## Accessibility
+
+Give the element `role="status"` and let the words announce the operation. The mark itself is hidden from assistive technology, and its frames are never announced.
 
 For an unlabelled decorative mark, use `aria-hidden="true"` and announce the operation separately. The component does not invent status messages, track elapsed time, or announce each animation frame.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `active` | boolean | false | Runs the mark. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | The words naming the operation. |
+
+| Token | What it does |
+| --- | --- |
+| `--ds-activity-color` | The mark's ink, the text colour by default. |
+
+It has no events. Add `hidden` to hide it.
 
 Copy `activity` with Sync 1's `components` export. The page owns the state; use [Message](/2-core/message/) for explanations, failures and actions.

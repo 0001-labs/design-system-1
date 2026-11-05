@@ -21,8 +21,8 @@ React products use `ColorInput` from `DS1/react/choice`. Native input props and
 refs pass through. Put layout classes and width on the host. The adapter is safe
 to render on the server; register the component before hydrating in the browser.
 
-`ds-swatch` displays a colour sample inside a shared button or beside a label.
-It is 16 units square, scaled with the surface, fitting within a 20-unit row.
+[`ds-swatch`](/2-core/swatch/) displays a colour sample inside a shared button or beside a label.
+It is four fifths of a square, scaled with the surface, fitting within a one-square row.
 Its `value` is a CSS colour; `selected` adds a visible selection outline.
 It is decorative: give its enclosing button an accessible name and pressed
 state, or supply adjacent text. Colour data and saving belong to the product.
@@ -43,6 +43,26 @@ those requirements separate from the native picker and shared visual controls.
 ## Design examples
 
 <ComponentExample example="color-palette" />
+
+## Behaviour
+
+The field is two squares wide and one high, and it fills that box with the input. The colour stands 2px inside a 1px line with the field's corners. A press opens the browser's own picker, and the value and its change events are the input's. `disabled` and a disabled `fieldset` dim the field to half and leave it unpressable.
+
+`ds-color` also works inside a shadow root: it adds its stylesheet to that root once.
+
+## Accessibility
+
+The native input is what assistive technology meets, so it needs a name: a `label` around it, or `aria-label` on it. Focus shows as a 2px ring. Calling `focus()` on `ds-color` moves focus to the input. Never let a colour alone carry a choice: name it in words too.
+
+## API
+
+`ds-color` has no attributes of its own. Set `name`, `value`, `disabled` and the rest on the input.
+
+| Slot | What it holds |
+| --- | --- |
+| Default | One `input type="color"`. |
+
+It has no events or tokens of its own. Copy `color` through Sync 1. React products use `ColorInput` from `DS1/react/choice`.
 
 ## Contrast
 

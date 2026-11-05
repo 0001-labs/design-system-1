@@ -5,8 +5,7 @@ description: A responsive vertical container that keeps its content within the a
 
 import ComponentExample from "../../../components/ComponentExample.astro";
 
-A responsive vertical container that keeps its content within the available width.
-
+A responsive vertical container that keeps its content within the available width. On a wide screen it stands centred at fifty squares (1000px); on a smaller one it takes the width there is. Use it for a page's single column when you need no more than that, and [Page](/4-page/page/) for navigation, columns or a reading measure in whole squares.
 
 ## Design examples
 
@@ -20,8 +19,24 @@ A responsive vertical container that keeps its content within the available widt
 
 The container stacks its default-slot content. At viewport widths above 820px it is centred with a maximum width of 1000px; on smaller viewports it follows the available width. Its children are constrained to the container’s width.
 
+```html
+<ds-container>
+  <ds-text size="display" literal>A room for reading</ds-text>
+  <ds-gap></ds-gap>
+  <ds-text literal wrap>Take a seat, choose a page and stay a while.</ds-text>
+</ds-container>
+```
+
+The children stand one below the other with nothing between them, so put a [Gap](/2-core/gap/) where they need room. The container adds no padding, and its widths are plain pixels: they read the viewport and are not multiplied by the surface scale.
+
+## Accessibility
+
+A container has no role and draws nothing. It adds no landmark, so wrap it in `main` or `section` where the page needs one. The reading order is the order of its children.
+
 ## API
 
-The component has a default slot and no public attributes. There is no `size` or `fluid` attribute.
+The component has a default slot and no public attributes. There is no `size` or `fluid` attribute. It has no parts, events or tokens either. Add `hidden` to hide it.
+
+Copy `container` through Sync 1.
 
 [Layout](/4-page/layout/) · [List](/3-unit/list/)

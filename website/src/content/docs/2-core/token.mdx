@@ -1,0 +1,67 @@
+---
+title: Token
+description: A removable value, one square high, that asks the page before it goes.
+---
+
+import ComponentExample from "../../../components/ComponentExample.astro";
+
+A token is one value a person has added: a keyword, a recipient, a filter. It is one square high on the fill, with its words 4px in and, when it can be removed, a close button at its end. The product owns the value and decides whether it goes. Tokens usually stand in a [Token field](/3-unit/token-field/), and work alone too.
+
+## Design examples
+
+<ComponentExample example="tokens-tags" />
+
+## Try it
+
+<ComponentExample example="token" />
+
+```html
+<ds-token value="rain" label="Rain" remove-label="Remove Rain"></ds-token>
+
+<ds-token value="nia" label="Nia Vale" detail="Editor" remove-label="Remove Nia Vale">
+  <ds-avatar slot="leading" initial="N" color="#99ff73"></ds-avatar>
+</ds-token>
+```
+
+## Behaviour
+
+The close button only asks. Pressing it sends `ds-token-remove` with the token's `value`, and the token stays until the page takes it out. A token with no `remove-label` has no close button: it is fixed.
+
+`label` holds the words and `detail` a second, muted value in small type after them. The default slot adds words of the page's own after the label. Words that do not fit fade over their last square, never an ellipsis, in both the label and the detail.
+
+`disabled` disables the close button and stops `requestRemove()`. A disabled `fieldset` around the token does the same, and so does a disabled Token field. A token takes part in a form only to follow that state: it sends no value with the form.
+
+## Accessibility
+
+`remove-label` is the close button's accessible name, so write the value into it: "Remove Rain", not "Remove". The button is a native `button`, reached with Tab. Put a picture in `leading` only where it adds to the words: the token's name comes from `label`.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `value` | string | Empty | The value `ds-token-remove` reports. |
+| `label` | string | Empty | The words shown. |
+| `detail` | string | Empty | A second value in small, muted type. |
+| `remove-label` | string | Empty | Names the close button and shows it. |
+| `disabled` | boolean | false | Disables the close button. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | Words after the label. |
+| `leading` | A picture at the start, such as an [Avatar](/2-core/avatar/). |
+
+| Part | What it is |
+| --- | --- |
+| `frame` | The token's face. |
+
+| Event | Detail | What it means |
+| --- | --- | --- |
+| `ds-token-remove` | `value` | Someone asked to remove the token. It bubbles, crosses shadow roots and can be cancelled. |
+
+`requestRemove()` sends the same request from a script, unless the token is disabled. `blocked` is true while the token is disabled by itself, its field or a `fieldset`.
+
+It has no design tokens of its own: its fill is `--ds-fill` and its corners `--ds-radius`.
+
+Copy `token` through Sync 1. React uses `Token` from `DS1/react/token-field`, with `value`, `label`, `detail`, `removeLabel`, `disabled` and `onRemove`. On Apple platforms and Android it is `DS1Token`.
+
+[Token field](/3-unit/token-field/) · [Tag](/2-core/tag/) · [Avatar](/2-core/avatar/)

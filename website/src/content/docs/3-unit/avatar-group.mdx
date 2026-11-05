@@ -1,0 +1,56 @@
+---
+title: Avatar group
+description: Avatars overlapping in a row, with an optional lead that stands apart.
+---
+
+import ComponentExample from "../../../components/ComponentExample.astro";
+
+An avatar group stands several marks together: the people on a record, the members of a workspace. The members overlap by 3px, scaled with the surface, and the first stands on top. The app chooses the people, any overflow count and what pressing one does.
+
+## Try it
+
+<ComponentExample example="avatar-group" />
+
+```html
+<ds-avatar-group role="group" aria-label="Three people">
+  <ds-avatar initial="A" color="#99ff73" outlined></ds-avatar>
+  <ds-avatar initial="J" color="#f5aad1" outlined></ds-avatar>
+  <ds-avatar initial="M" color="#fec20d" outlined></ds-avatar>
+</ds-avatar-group>
+```
+
+## Behaviour
+
+Each element directly in the default slot is a member, whatever it is: an avatar, a button around one, a count. The group gives each member its place and its stacking order, and keeps them right as members are added, moved or removed. A member with `hidden` leaves the group and takes up no room, and the next one then starts the row.
+
+An element in the `lead` slot stands before the members and does not overlap them: a workspace before its people. It stands 4px from the first member while there are members to stand beside.
+
+`vertical` stands the group in a column. Members do not overlap there: they stand 3px apart, and a lead stands 4px above them.
+
+The group owns no actions. A button in it keeps its own press, and a member moved out of the group, or into another one, gets back the styles it had.
+
+## Accessibility
+
+The group adds no role of its own. Where the marks say something together, give it `role="group"` and an `aria-label`. Each avatar keeps its own name. Controls inside it keep their order for the keyboard: the first in the markup comes first.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `vertical` | boolean | false | Stands the group in a column. |
+| `size` | string | `default` | Kept for products that still name `compact`. Avatars have one size, and it changes nothing. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | The members. |
+| `lead` | Marks before the members, not overlapped. |
+
+| Token | What it does |
+| --- | --- |
+| `--ds-avatar-group-members-display` | The display of the members' box, `inline-flex` by default. |
+
+The element sets `--ds-avatar-group-order` and `--ds-avatar-group-inset` on each member itself; do not set them by hand. It has no events.
+
+Copy `avatar` and `avatar-group` through Sync 1. React uses `AvatarGroup` from `DS1/react/avatar-group`, with `size` and `vertical`, and keeps its children as they are. On Apple platforms and Android it is `DS1AvatarGroup`.
+
+[Avatar](/2-core/avatar/) · [Row](/3-unit/row/)

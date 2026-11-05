@@ -5,8 +5,7 @@ description: Collect fields, validate them, and emit a submission event.
 
 import ComponentExample from "../../../components/ComponentExample.astro";
 
-Collect fields, validate them, and emit a submission event.
-
+Collect fields, validate them, and emit a submission event. `ds-form` stands what it holds in a column, checks it when submitted and reports the values. The page decides what happens to them: with no `action`, nothing leaves the browser.
 
 ## Design examples
 
@@ -24,6 +23,20 @@ The example has no `action` endpoint. Submit an empty field to see validation, t
 
 A submit or reset button works as it does in a native `<form>`: a `<button type="submit">` or `<button type="reset">`, the same inside `<ds-button control="slotted">`, or `<ds-button type="submit">`. A `<button>` without a `type` submits, as in HTML, so give every other button `type="button"`. Enter submits from a one-line field. On a button it presses that button, and in a multiline field it starts a new line.
 
+## Behaviour
+
+Each child takes the form's width, half a square from the next. The form reads every element with a `name` among its children and inside their shadow roots. A checkbox gives `true` or `false`, a radio group the value of its checked radio, and anything else its `value`.
+
+Submitting validates first. A `ds-input` with `required` and no value fails, and so does a native `input`, `textarea` or `select` that fails its own check. A failure sends `form-invalid` with a message for each field's name, and nothing is submitted. A valid form sends `form-submit`. A second submit while one is running is ignored.
+
+With an `action`, the form then sends the values with `fetch` as JSON, using `method`, and reports the answer in `form-response` or a failed request in `form-error`.
+
+Reset empties the fields and unticks the checkboxes. It does not put back the values they started with.
+
+## Accessibility
+
+The controls stay native, so their labels, required state and keyboard work as usual: name every field, with `label` on a `ds-input` or a native `label`. The form draws no error message of its own. Show what `form-invalid` reports beside its field, in words.
+
 ## Attributes
 
 | Attribute | Type | Default | What it does |
@@ -33,6 +46,11 @@ A submit or reset button works as it does in a native `<form>`: a `<button type=
 | `name` | string | Empty | Form name. |
 | `novalidate` | boolean | false | Skips validation. |
 | `autocomplete` | string | `on` | Autocomplete preference. |
+| `disabled` | boolean | false | Dims the form and stops the pointer. It is a look only: keys still work, so disable the controls too. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | The fields and buttons. |
 
 ## Events and methods
 
@@ -44,5 +62,24 @@ form.addEventListener('form-submit', (event) => {
 ```
 
 `form-invalid` reports validation errors. `form-reset`, `form-response` and `form-error` report reset and server outcomes. Methods are `getFormData()`, `validate()`, `reset()` and `submit()`.
+
+| Event | Detail | What it means |
+| --- | --- | --- |
+| `form-submit` | `data` | The form is valid; these are its values. |
+| `form-invalid` | An error message for each field's name | Validation failed. |
+| `form-reset` | None | The fields were cleared. |
+| `form-response` | `response`, `data` | The `action` answered. |
+| `form-error` | `error`, `data` | The request to `action` failed. |
+
+All five bubble.
+
+| Method | What it does |
+| --- | --- |
+| `getFormData()` | Returns the values, by name. |
+| `validate()` | Returns `valid` and `errors` without submitting. |
+| `reset()` | Clears the fields and sends `form-reset`. |
+| `submit()` | Validates, then submits. |
+
+It has no tokens of its own. Copy `form` through Sync 1. Native platforms use their own forms.
 
 [Input](/2-core/input/) · [Button](/2-core/button/)

@@ -8,6 +8,7 @@ import ComponentExample from "../../../components/ComponentExample.astro";
 Image displays a photograph at its natural proportions or inside a chosen frame. It follows the available width, with the system’s small rounded corners.
 
 <ComponentExample example="image-landscape" />
+
 <ComponentExample example="image-fit" />
 
 ## Use
@@ -32,6 +33,46 @@ Image displays a photograph at its natural proportions or inside a chosen frame.
 - `caption` adds visible text underneath. It does not replace `alt`.
 
 Copy `image` through Sync 1. React consumers can import `Image` from `DS1/react/image` after registering `DS1/2-core/ds-image`.
+
+## Behaviour
+
+The image takes the width of its column. While a picture loads, its frame shows the fill, so a reserved frame is not an empty hole. With a `ratio` the picture fills that frame; without one it keeps its own shape. An empty `src` requests nothing.
+
+`fit` is `cover` unless it says `contain`, and `loading` is `lazy` unless it says `eager`. The browser decodes the picture without holding up the page. Words below it stand half a square under the picture, in the muted ink, on one square a line.
+
+## Accessibility
+
+`alt` goes straight to the native `img`. Write what the picture shows, or `alt=""` when it only decorates. A `caption` becomes a `figcaption`, and the picture stands in a `figure` with it.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `src` | string | Empty | The picture's address. |
+| `alt` | string | Empty | The text alternative. |
+| `caption` | string | Empty | Words shown underneath. |
+| `srcset` | string | Empty | Sources for the browser to choose from. |
+| `sizes` | string | Empty | The widths those sources are shown at. |
+| `width` | number | Unset | The source's width, to reserve room. |
+| `height` | number | Unset | The source's height, to reserve room. |
+| `ratio` | string | Empty | The frame's shape, such as `16 / 9`. |
+| `fit` | string | `cover` | `cover` or `contain`. |
+| `position` | string | `center` | The focal point. |
+| `loading` | string | `lazy` | `lazy` or `eager`. |
+
+| Part | What it is |
+| --- | --- |
+| `media` | The frame around the picture. |
+| `image` | The native `img`. |
+| `caption` | The `figcaption`. |
+
+| Token | What it does |
+| --- | --- |
+| `--ds-image-background` | The frame's fill behind the picture, `--ds-fill` by default. |
+| `--ds-image-end-radius` | The corners at the end, for a container that cuts them. |
+| `--ds-image-foot-radius` | The corner at the foot and the start. |
+
+It has no slots or events. Add `hidden` to hide it.
 
 ## Example photographs
 

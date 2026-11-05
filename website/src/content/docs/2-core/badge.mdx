@@ -40,3 +40,33 @@ native attributes, children and the forwarded ref belong to the shared host.
 <ComponentExample example="badge-records" />
 
 <ComponentExample example="badge-actions" />
+
+## Behaviour
+
+A badge is one square high, on the fill, its words 4px from the edge. Without `icon-only` its width rounds up to whole squares, at most the room there is. Words that still do not fit fade over their last square, never an ellipsis, and the fill stays whole. With `icon-only` and an icon, it is one square wide.
+
+## Accessibility
+
+A badge has no role, no press and no tab stop. In `icon-only` mode its words are hidden from sight and kept for assistive technology, so always write them. The icon is hidden from assistive technology. A tooltip adds to the words and never replaces them.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `icon` | string | Empty | The shared icon before the words. |
+| `icon-only` | boolean | false | Shows the icon alone, with the words kept for assistive technology. |
+
+| Slot | What it holds |
+| --- | --- |
+| Default | The status words. |
+
+| Part | What it is |
+| --- | --- |
+| `frame` | The badge's face. |
+
+| Token | What it does |
+| --- | --- |
+| `--ds-badge-background` | The fill, `--ds-fill` by default. |
+| `--ds-badge-color` | The ink, `--ds-text-color` by default. |
+
+It has no events. Add `hidden` to hide it. On Apple platforms and Android it is `DS1Badge`.

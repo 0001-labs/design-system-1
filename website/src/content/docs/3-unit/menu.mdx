@@ -1,0 +1,139 @@
+---
+title: Menu
+description: The engine under Select and Context, which draws entries on squares and handles their keys, placing and closing.
+---
+
+import ComponentExample from "../../../components/ComponentExample.astro";
+
+`ds-menu` is the engine that [Select](/3-unit/select/) and [Context](/3-unit/context/) are built on. It draws a column of entries, one square each, moves through them with the keyboard, places itself by an anchor and closes when it should. Use Select for a menu from a button or a field, and Context for a menu where the pointer is. Reach for `ds-menu` itself for a list of choices under a field, or when a product decides for itself what a choice does.
+
+## Design examples
+
+<ComponentExample example="menu-recording" />
+
+## Try it
+
+<ComponentExample example="menu" />
+
+<ComponentExample example="menu-floating" />
+
+```html
+<ds-button id="recording-actions" secondary>Actions</ds-button>
+<ds-menu floating for="recording-actions" role="menu" aria-label="Recording actions">
+  <ds-button menu-item role="menuitem">Download</ds-button>
+  <ds-button menu-item role="menuitem">Duplicate</ds-button>
+  <ds-button menu-item role="menuitem">Archive</ds-button>
+</ds-menu>
+```
+
+## Entries
+
+An entry is a shared `ds-button` or `ds-file-picker`, a native `button` or `a`, or any element with the role `option`, `menuitem`, `menuitemradio` or `menuitemcheckbox`. Keyboard movement reads only those roles, so give every entry one. The menu is a `listbox` unless its `role` says otherwise; use `menu` for actions.
+
+Every entry is one square high, whatever button styles surround it. Between the entries there is nothing. A frame of half a square stands round them, its 1px line inside that half square, so n entries are n + 1 squares high. There is no shadow. A menu in place is at least eight squares wide and at most sixteen high, and scrolls past that.
+
+| Mark | On | What it does |
+| --- | --- | --- |
+| `data-ds-menu-separator` | An `hr` | A line, one square with the line. |
+| `data-ds-menu-label` | Words | A muted label on one square. |
+| `data-text-value` | An entry | The words typing searches, in place of its own. |
+| `data-ds-menu-row` | An entry in a grid | Takes the grid's whole width, as an action. |
+| `data-ds-menu-start` | An entry in a grid | Starts a new section at the first column. |
+
+`compact` draws filled rows with no frame, 19px with the 1px between them, a square's pitch. `columns` draws a small grid of one-square cells, for a palette.
+
+## Floating
+
+`floating` puts the menu in the browser's popover layer, over the page. `open` shows it. Without `floating` the menu stands in the page and `open` means nothing.
+
+A menu opens from the button `for` names, an id in the same document or shadow root. `trigger` sets the element from a script and wins when both are set. The opener gets `aria-haspopup`, `aria-expanded` and, when the menu has an id, `aria-controls`, and gets its own values back when the opener changes.
+
+`trigger-mode` says how it opens.
+
+| Mode | How it opens |
+| --- | --- |
+| `click` | A press on the trigger, or Arrow Down and Arrow Up on it. The default. |
+| `context` | A right click, the Context Menu key or Shift+F10, or a touch held for half a second, at that point. `context-selector` lets one container serve many rows. |
+| `submenu` | Beside its row: a press, hover, the forward arrow, Enter or Space. |
+| `manual` | Only from a script, with `open` or `openAt()`. |
+
+`hover` opens a menu while a mouse or pen rests on the trigger, and closes it 180ms after the pointer leaves, so the gap can be crossed, unless focus is inside it. A trigger that is a link then follows its link when pressed, and the arrow keys still open the menu. Touch does not hover.
+
+A menu stands half a square from its anchor, by default below it. `placement` asks for `top`, `right` or `left`. It flips when its side lacks the room and the other has more, and it stays on the visible screen. Its height and the room it takes round down to whole squares. Its width is `--ds-menu-width`, or else the anchor's width rounded up to whole squares and at least four. A `context`, `submenu` or `manual` menu is eight squares wide. `data-ds-hug` makes a menu as wide as its words instead, rounded up to whole squares.
+
+## Closing
+
+Escape closes the top menu only. A press or focus outside closes it, Tab closes the whole branch, and in a nested menu the back arrow closes that level. Closing a menu closes the menus inside it.
+
+The engine does not close on a choice: that is Select's and Context's rule, and the reason this page's example stays open. Call `select()` from a choice's own handler to close the whole branch the same way.
+
+Focus returns to the opener after Escape, a choice or the back arrow. After a press outside or Tab it stays where the reader moved it.
+
+Call `dismissMenusForNavigation()` before a route swap. It closes every floating menu, and a hover menu that appears under a resting pointer stays closed until the pointer has left it. Click and keyboard opening work at once. A menu reconnected from a page cache comes back closed.
+
+## Keyboard
+
+| Key | What it does |
+| --- | --- |
+| Arrow Down, Arrow Up | Move between entries, skipping disabled and hidden ones and wrapping at the ends. On the trigger they open the menu, at the checked entry or else the first or the last. |
+| Arrow Left, Arrow Right | In a grid, move between cells. With `aria-orientation="horizontal"`, in the reading direction. |
+| Home, End | Go to the first or the last enabled entry. |
+| A letter | Finds an entry by its first letters; repeating one letter cycles through them. |
+| Enter, Space | Press the entry, as any button. |
+| Escape, Tab | Close the menu. |
+
+Keys typed into a field inside the menu stay with the field. In a grid, Arrow Down and Arrow Up keep their column across short rows and full-width actions.
+
+## Suggestions under a field
+
+Set `controller` to a field and focus stays there. The arrows send `ds-menu-active` with the next entry's `id`, and unless that is cancelled the menu makes it current in `active-id`. Enter presses the active entry, and Home, End and modified keys stay with the field. A press on an entry does not take focus from the field. [Token field](/3-unit/token-field/) is built this way.
+
+## Accessibility
+
+Give the menu an `aria-label` unless a visible label names it. Hover opening never moves focus; every other opening moves it into the menu, unless a `controller` holds it. In a `role="menu"` a mouse moving over an entry focuses it. Set the `focusOnOpen` property to false to show a menu open without taking the reader's focus, as an example beside the page does. Disabled entries stay in the list and the arrows skip them. In a floating menu one entry holds the Tab stop at a time.
+
+## API
+
+| Attribute | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `floating` | boolean | false | Draws it in the popover layer. |
+| `open` | boolean | false | Shows a floating menu. |
+| `for` | string | Empty | The id of the button that opens it. |
+| `trigger-mode` | string | `click` | `click`, `context`, `submenu` or `manual`. |
+| `context-selector` | string | Empty | The rows a `context` trigger serves. |
+| `hover` | boolean | false | Opens under a resting pointer. |
+| `placement` | string | `bottom` | `top`, `bottom`, `right` or `left`. |
+| `compact` | boolean | false | Filled rows with no frame. |
+| `columns` | number | 1 | Grid columns; more than one makes a grid. |
+| `disabled` | boolean | false | Stops new requests to open, without closing one already shown. |
+| `active-id` | string | Empty | The current entry when a `controller` is set. |
+
+These are properties, not attributes: `trigger` (the opening element), `anchor` (an element or a rectangle to stand by, in place of the trigger), `controller` (the field that keeps focus) and `focusOnOpen`, true by default.
+
+| Event | Detail | What it means |
+| --- | --- | --- |
+| `ds-menu-toggle` | `open`, `trigger`, `point` | A trigger asked to open or close it. Cancel to decline. |
+| `ds-menu-close` | `reason` | The menu asked to close: `escape`, `outside`, `select`, `back`, `parent` or `navigation`. Cancel to keep it open. |
+| `ds-menu-close-focus` | none | Focus is about to return. Cancel to place it yourself. |
+| `ds-menu-active` | `id` | The arrows asked for this entry. Cancel to decline. |
+
+All four bubble and cross shadow roots.
+
+| Method | What it does |
+| --- | --- |
+| `openAt(point, control, options)` | Opens at a point on the screen, for `control`. `options.focus` false leaves focus where it is. |
+| `requestClose(reason)` | Asks to close, as the keys do, sending `ds-menu-close`. |
+| `select()` | Closes the whole branch with the reason `select`. |
+| `place()` | Places it again. |
+| `renderNow()` | Draws a newly inserted menu before focus moves into it. |
+
+| Token | What it does |
+| --- | --- |
+| `--ds-menu-width` | The width of a floating menu, in place of its anchor's. |
+| `--ds-menu-max-height` | The tallest it grows, sixteen squares by default. |
+
+The element sets `--ds-menu-anchor-width`, `--ds-menu-available-height` and `--ds-menu-columns` itself.
+
+Copy `menu` through Sync 1. Select and Context bring it with them. In React, `MenuHost` from `DS1/react/menu-engine` holds its state and events for Select, Context and token fields, and is not a component of its own: use `Select` or `Context`. On Apple platforms and Android it is `DS1Menu` with `DS1MenuItem`; on Apple platforms a floating menu is the system's own.
+
+[Select](/3-unit/select/) · [Context](/3-unit/context/) · [Token field](/3-unit/token-field/)

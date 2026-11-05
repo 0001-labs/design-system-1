@@ -585,7 +585,7 @@
     "label": "Swatch",
     "code": "SWAT",
     "kind": "component",
-    "url": "https://designsystem1.com/2-core/color/",
+    "url": "https://designsystem1.com/2-core/swatch/",
     "version": "0.1.0",
     "columnId": "swatch"
   },

@@ -711,6 +711,41 @@ document.querySelectorAll('[data-grid-option]').forEach(control => {
 });`,
     height: 360,
   },
+  'swatch': {
+    title: 'Colour choices', hint: 'Each sample stands in an icon button with its own name. The selected one carries the outline.',
+    html: '<ds-button control="slotted" icon><button type="button" aria-label="Apple green" aria-pressed="true"><ds-swatch value="#99ff73" selected aria-hidden="true"></ds-swatch></button></ds-button>\n<ds-button control="slotted" icon><button type="button" aria-label="Zenith blue" aria-pressed="false"><ds-swatch value="#ccccff" aria-hidden="true"></ds-swatch></button></ds-button>\n<ds-button control="slotted" icon><button type="button" aria-label="Pink" aria-pressed="false"><ds-swatch value="#f5aad1" aria-hidden="true"></ds-swatch></button></ds-button>',
+    height: 120,
+  },
+  'token': {
+    title: 'Removable values', hint: 'The close button only asks: the page decides whether a token goes, and nothing is removed in this preview. A token with no remove-label is fixed.',
+    html: '<ds-token value="rain" label="Rain" remove-label="Remove Rain"></ds-token>\n<ds-token value="nia" label="Nia Vale" detail="Editor" remove-label="Remove Nia Vale"><ds-avatar slot="leading" initial="N" color="#99ff73"></ds-avatar></ds-token>\n<ds-token value="archive" label="Archive"></ds-token>\n<ds-token value="draft" label="Draft" remove-label="Remove Draft" disabled></ds-token>',
+    height: 120,
+  },
+  'avatar-group': {
+    title: 'A group of people', hint: 'Members overlap by 3px, the first on top. A lead stands 4px apart from them.',
+    html: '<ds-avatar-group role="group" aria-label="Three people">\n  <ds-avatar initial="A" color="#99ff73" outlined></ds-avatar>\n  <ds-avatar initial="J" color="#f5aad1" outlined></ds-avatar>\n  <ds-avatar initial="M" color="#fec20d" outlined></ds-avatar>\n</ds-avatar-group>\n<ds-avatar-group role="group" aria-label="Studio and two people">\n  <ds-avatar slot="lead" shape="square" initial="S" color="#ccccff" label="Studio"></ds-avatar>\n  <ds-avatar initial="A" color="#99ff73" outlined></ds-avatar>\n  <ds-avatar initial="J" color="#f5aad1" outlined></ds-avatar>\n</ds-avatar-group>',
+    height: 120,
+  },
+  'menu': {
+    title: 'A menu in place', hint: 'The engine alone, standing on the page. Press an entry, then use the arrows, Home and End; a disabled entry is skipped.',
+    html: '<ds-menu role="menu" aria-label="Recording actions">\n  <ds-text data-ds-menu-label tone="muted" literal>Recording</ds-text>\n  <ds-button menu-item role="menuitem">Download</ds-button>\n  <ds-button menu-item role="menuitem">Duplicate</ds-button>\n  <hr data-ds-menu-separator>\n  <ds-button menu-item role="menuitem" disabled>Archive</ds-button>\n</ds-menu>',
+    height: 200,
+  },
+  'menu-floating': {
+    title: 'A menu from a button', hint: 'Press Actions. It stands half a square from its button. The engine leaves closing on a choice to its owner, so Escape or a press outside closes it here; Select closes on a choice by itself.',
+    html: '<ds-button id="recording-actions" secondary>Actions</ds-button>\n<ds-menu floating for="recording-actions" role="menu" aria-label="Recording actions">\n  <ds-button menu-item role="menuitem">Download</ds-button>\n  <ds-button menu-item role="menuitem">Duplicate</ds-button>\n  <ds-button menu-item role="menuitem">Archive</ds-button>\n</ds-menu>',
+    height: 200,
+  },
+  'activity': {
+    title: 'Work running and work stopped', hint: 'The mark moves only while active is set. The words stay the same, and name the operation.',
+    html: '<ds-activity active role="status">Checking the changes</ds-activity>\n<ds-activity role="status">Paused</ds-activity>',
+    height: 120,
+  },
+  'radio-choice': {
+    title: 'Choices with a preview', hint: 'A native radio group under labelled faces. The arrow keys move the choice.',
+    html: '<ds-radio choice preview label="Green"><input type="radio" name="ink" value="green" aria-label="Green" checked><ds-swatch slot="preview" value="#99ff73" aria-hidden="true"></ds-swatch></ds-radio>\n<ds-radio choice preview label="Blue"><input type="radio" name="ink" value="blue" aria-label="Blue"><ds-swatch slot="preview" value="#ccccff" aria-hidden="true"></ds-swatch></ds-radio>\n<ds-radio choice preview label="Pink"><input type="radio" name="ink" value="pink" aria-label="Pink"><ds-swatch slot="preview" value="#f5aad1" aria-hidden="true"></ds-swatch></ds-radio>',
+    height: 140,
+  },
   'page': {
     title: 'A standard page', hint: 'The sidebar layout: navigation on the left, a header and the work on the right. Every area is named.',
     html: '<ds-page layout="sidebar" divided view>\n  <ds-list slot="nav">\n    <ds-row><ds-text>Inbox</ds-text></ds-row>\n    <ds-row><ds-text>Projects</ds-text></ds-row>\n  </ds-list>\n  <ds-row slot="header" fill>\n    <ds-text literal strong>Projects</ds-text>\n    <ds-button primary>New item</ds-button>\n  </ds-row>\n  <ds-list>\n    <ds-row fill><ds-text>Write the brief</ds-text><ds-badge>Done</ds-badge></ds-row>\n    <ds-row fill><ds-text>Sketch the home page</ds-text><ds-badge>Next</ds-badge></ds-row>\n  </ds-list>\n</ds-page>',
@@ -740,6 +775,8 @@ export const PAGE_EXAMPLES: Record<string, string[]> = {
   '3-unit/table': ['table'],
   '4-page/container': ['container'], '4-page/grid': ['grid'],
   '4-page/page': ['page'],
+  '2-core/swatch': ['swatch'], '2-core/token': ['token'], '2-core/activity': ['activity'], '2-core/radio': ['radio-choice'],
+  '3-unit/menu': ['menu', 'menu-floating'], '3-unit/avatar-group': ['avatar-group'],
   '4-page/header': ['header'], '4-page/footer': ['footer', 'footer-contact'], '4-page/document': ['document'],
 };
 
