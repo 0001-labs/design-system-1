@@ -27,13 +27,7 @@ A panel is a column of chrome standing on the paper: a header pinned to its top,
 </ds-panel>
 ```
 
-Content goes to the default slot; `slot="header"` and `slot="footer"` pin to the top and bottom. Give the panel its height from the page's layout (a [page](/4-page/page/)'s columns, `fill`). The body takes the room between them and may shrink to nothing, and it has no scrolling of its own: give the `body` part `overflow-y: auto`, or let what it holds scroll, and only that scrolls. Rows inside it are one square high as everywhere; the panel adds no box or shadow of its own.
-
-```css
-ds-panel::part(body) {
-  overflow-y: auto;
-}
-```
+Content goes to the default slot; `slot="header"` and `slot="footer"` pin to the top and bottom. Give the panel its height from the page's layout (a [page](/4-page/page/)'s columns, `fill`). The body takes the room between them and may shrink to nothing, and when its content is taller it scrolls while the header and footer stay put. Rows inside it are one square high as everywhere; the panel adds no box or shadow of its own.
 
 | Slot | What it holds |
 | --- | --- |

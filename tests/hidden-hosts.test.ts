@@ -25,7 +25,7 @@ const stylesOf = (file: string, seen = new Set<string>()): string => {
 
 /** Rules as [selectors, declarations], at the top level or inside @media. */
 const rules = (css: string) =>
-  [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
+  [...css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@import[^;]+;/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
     ([, selectors, body]) => [selectors!.split(',').map(selector => selector.trim()), body!] as const,
   );
 
@@ -60,4 +60,8 @@ test('every element whose host sets a display hides with the hidden attribute', 
 test('a native ds-button hides, not only a slotted one', () => {
   const css = elements.find(element => element.tag === 'ds-button')!.css;
   expect(rules(css).some(([selectors, body]) => hidesHost(selectors, body))).toBe(true);
+});
+
+test('a stylesheet that starts with an import still counts its host', () => {
+  expect(rules('@import "x.css";\n:host { display: flex; }\n')[0]![0]).toEqual([':host']);
 });

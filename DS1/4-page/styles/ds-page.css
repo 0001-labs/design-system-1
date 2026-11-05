@@ -15,7 +15,7 @@
   --ds-page-line: var(--ds-border-color, var(--ds-slate-light));
   /* How far the content stands outside its column on each side, the column's place and the
      grid's lines kept: a phone's lists take a little more width, their words a longer line
-     (Money sets 4px). Zero by default. */
+     (4px, for one). Zero by default. */
   --ds-page-bleed: 0px;
   box-sizing: border-box;
   display: block;
@@ -29,7 +29,7 @@
   letter-spacing: var(--ds-type-letterspacing-default);
 }
 
-:host([hidden]) { display: none; }
+:host([hidden]) { display: none !important; }
 :host([fill]) { height: 100%; }
 
 .page {

@@ -17,6 +17,10 @@
   letter-spacing: var(--ds-type-letterspacing-default);
 }
 
+:host([hidden]) {
+  display: none !important;
+}
+
 slot[name="header"],
 slot[name="footer"] {
   display: block;
@@ -28,4 +32,6 @@ slot[name="footer"] {
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
+  /* The header and footer stay put while the words between them scroll. */
+  overflow: hidden auto;
 }
