@@ -5,7 +5,7 @@ import { type SourceCommentsOptions } from './comments-editor';
  * The browser types, spells and composes; Aa owns Enter, Backspace at an
  * edge, paste, marks, undo and the caret's way between blocks.
  */
-import { type AtomSyntax, type Block, type TextColor, type CalloutColor } from './markdown';
+import { type AtomSyntax, type Block, type TextColor, type BackgroundColor, type CalloutColor } from './markdown';
 import { type TurnKind } from './document';
 import { type Decoration } from './render';
 import { type TableAction } from './table';
@@ -130,6 +130,8 @@ export type Editor = {
     format(mark: 'bold' | 'italic' | 'strike' | 'underline' | 'code' | 'link' | 'equation' | 'highlight'): void;
     /** Write the selected words in one of `TEXT_COLORS` (`<span color="red">`), or in the text's own colour with `null`. */
     color(color: TextColor | null): void;
+    /** Put one of `BACKGROUND_COLORS` behind the selected words (yellow is the highlight, `==words==`), or none with `null`. */
+    background(color: BackgroundColor | null): void;
     turnInto(kind: TurnKind): void;
     blockAction(action: 'delete' | 'duplicate' | 'up' | 'down'): void;
     /** Move `count` blocks from `from` so the first stands at `to` once they have left; they stay selected, the editor focused. */
@@ -179,5 +181,15 @@ export type Editor = {
     /** The comments, where the editor has a `comments` store. */
     readonly comments?: EditorComments;
     destroy(): void;
+};
+/**
+ * The smallest replacement that turns `before` into `after`, the caret standing
+ * at `caret` in `after`: what was typed ends at the caret, which settles where
+ * in a row of like characters it went (a star typed beside bold's stars).
+ */
+export declare function textChange(before: string, after: string, caret: number): {
+    from: number;
+    to: number;
+    text: string;
 };
 export declare function createEditor(host: HTMLElement, options?: EditorOptions): Editor;

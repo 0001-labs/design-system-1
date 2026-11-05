@@ -38,6 +38,8 @@ declare const Base: {
 export declare class AaDiagramElement extends Base {
     #private;
     static observedAttributes: string[];
+    /** Called each time the drawing is made anew: every element in it is new, so what a board was carrying is found again. */
+    drawn?: () => void;
     /** Settles once the diagram has drawn what it was last given. */
     updateComplete: Promise<boolean>;
     get source(): string | undefined;

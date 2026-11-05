@@ -121,6 +121,8 @@ export type Run = {
     highlight?: true;
     /** `<span color="red">words</span>`, Notion's way of writing a text colour: one of `TEXT_COLORS`. */
     color?: string;
+    /** `<span color="red_background">words</span>`, Notion's way of writing a colour behind words: one of `BACKGROUND_COLORS`. */
+    background?: string;
     href?: string;
     /**
      * Syntax belongs to a mark: the range of the whole mark, delimiters
@@ -131,6 +133,12 @@ export type Run = {
     prefix?: true;
     /** An atom's kind: the run is drawn as one thing, never letter by letter. */
     atom?: string;
+    /** A bare address drawn as a link: `href` set with no brackets of its own in the text. */
+    autolink?: true;
+    /** The backslash of an escaped character (`\\*`): hidden, and what it escapes reads as itself. */
+    escape?: true;
+    /** A tag with no partner: hidden, as a tag is, but no pair for an edit to keep. */
+    lone?: true;
 };
 /**
  * A piece of writing drawn as one thing rather than as its letters: a
@@ -168,5 +176,8 @@ export declare const DEFAULT_ATOMS: readonly AtomSyntax[];
 /** The colours words can be written in, by Notion's names for them. */
 export declare const TEXT_COLORS: readonly ["gray", "red", "orange", "green", "blue", "purple"];
 export type TextColor = (typeof TEXT_COLORS)[number];
+/** The colours behind words. Yellow is the highlight, written `==words==`; the others as Notion writes them. */
+export declare const BACKGROUND_COLORS: readonly ["gray", "yellow", "orange", "green", "blue", "purple", "red"];
+export type BackgroundColor = (typeof BACKGROUND_COLORS)[number];
 /** Every run of a block, in order, covering its source from end to end. */
 export declare function blockRuns(block: Block, atoms?: readonly AtomSyntax[]): Run[];

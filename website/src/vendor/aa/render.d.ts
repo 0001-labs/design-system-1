@@ -26,8 +26,19 @@ export type Reveal = {
     from: number;
     to: number;
 } | null;
-/** The key of what a reveal shows: which groups, and whether the block is active. Same key, same drawing. */
+/**
+ * The key of what a reveal changes in a block's drawing: which atoms show their
+ * source, and whether the caret is in a callout's body. Same key, same drawing:
+ * delimiters are never shown, so the caret crossing bold redraws nothing.
+ */
 export declare function revealKey(block: Block, reveal: Reveal, atoms?: readonly AtomSyntax[]): string;
+/**
+ * Whether a block's element already shows `block`, the browser having typed
+ * the same words into it: same runs, same looks, same letters, and nothing
+ * that sets the block apart changed. Then nothing is drawn, so the text
+ * nodes, the caret, the spelling marks and a phone's keyboard all stay.
+ */
+export declare function stillShows(element: HTMLElement, was: Block, block: Block, atoms?: readonly AtomSyntax[]): boolean;
 export declare function renderBlock(element: HTMLElement, block: Block, reveal: Reveal, atoms?: readonly AtomSyntax[], draw?: AtomDrawer, decorations?: readonly Decoration[]): void;
 /** The block's source, read back from whatever the browser left in it. */
 export declare function readBlock(element: HTMLElement): string;

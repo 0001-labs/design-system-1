@@ -67,10 +67,10 @@ function x(e, t) {
 	let n = r.exec(e);
 	return !!n && n[1][0] === t[0] && n[1].length >= t.length && !e.slice(n[0].length).trim();
 }
-function S(a) {
+function ee(a) {
 	return !!a.trim() && !r.test(a) && !i.test(a) && !e.test(a) && !t.test(a) && !n.test(a) && !l.test(a) && !h.test(a) && !m.test(a);
 }
-function C(a) {
+function S(a) {
 	let o = a.replace(/\r\n?/g, "\n").split("\n"), d = [], f = 0;
 	for (let e of o) d.push(f), f += e.length + 1;
 	let p = [], _ = (e, t, n, r = {}) => {
@@ -163,7 +163,7 @@ function C(a) {
 			continue;
 		}
 		let b = v;
-		for (; b + 1 < o.length && S(o[b + 1]);) b++;
+		for (; b + 1 < o.length && ee(o[b + 1]);) b++;
 		_("paragraph", v, b), v = b + 1;
 	}
 	p.length || p.push({
@@ -172,25 +172,25 @@ function C(a) {
 		prefix: 0,
 		start: 0
 	});
-	let y = /^\n+/.exec(a)?.[0] ?? "", b = a.length > y.length ? /\n+$/.exec(a)?.[0] ?? "" : "", C = p[0], ee = p[p.length - 1];
-	return y && C.kind === "paragraph" && (C.source = y + C.source, C.start = 0), b && ee.kind === "paragraph" && (ee.source += b), p;
+	let y = /^\n+/.exec(a)?.[0] ?? "", b = a.length > y.length ? /\n+$/.exec(a)?.[0] ?? "" : "", S = p[0], C = p[p.length - 1];
+	return y && S.kind === "paragraph" && (S.source = y + S.source, S.start = 0), b && C.kind === "paragraph" && (C.source += b), p;
 }
-function ee(e) {
+function C(e) {
 	let t = "";
 	return e.forEach((n, r) => {
 		r && (t += e[r - 1].kind === "bullet" && n.kind === "bullet" ? "\n" : "\n\n"), t += n.source;
 	}), t;
 }
-function te(e) {
+function w(e) {
 	let t = e.source.split("\n");
 	return t.length > 1 && x(t[t.length - 1], r.exec(t[0])[1]);
 }
-function ne(e, t) {
-	if (e.kind !== "code" || !te(e)) return;
+function te(e, t) {
+	if (e.kind !== "code" || !w(e)) return;
 	let n = e.source.slice(0, e.prefix).replace(/^ {0,3}(`{3,}|~{3,})/, "").trim().toLowerCase().split(/\s+/)[0];
 	return n ? t.find((e) => e.fence?.toLowerCase() === n) : void 0;
 }
-function re(e, t, n) {
+function T(e, t, n) {
 	let r = new RegExp(t.source, t.flags.replace(/[gy]/g, "") + "y");
 	return {
 		name: e,
@@ -201,40 +201,216 @@ function re(e, t, n) {
 		}
 	};
 }
-var ie = [re("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), re("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], ae = /<u>|<span color="(gray|red|orange|green|blue|purple)">/y, oe = [
-	"**",
-	"__",
-	"~~",
-	"==",
-	"*",
-	"_"
-], se = {
-	"**": "bold",
-	__: "bold",
-	"~~": "strike",
-	"==": "highlight",
-	"*": "italic",
-	_: "italic"
-}, ce = /^\[([^[\]]*)\]\(([^\s()]*)\)/, le = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, ue = (e) => !!e && /[\p{L}\p{N}]/u.test(e), de = (e) => !e || /\s/.test(e);
-function fe(e, t, n, r) {
-	let i = 0;
-	for (; t + i < r && e[t + i] === n;) i++;
-	return i;
-}
-function pe(e, t, n, r) {
-	let i = fe(e, t, n[0], r);
-	return !(i < n.length || t + i >= r || de(e[t + i]) || n[0] === "_" && ue(e[t - 1]));
-}
-function me(e, t, n, r) {
-	for (let i = t; i < n; i++) {
-		if (e[i] !== r[0]) continue;
-		let a = fe(e, i, r[0], n), o = r.length === 1 ? i : i + a - r.length, s = e[i - 1] === "\n" && !de(e[i - 2]) && (i + a === n || e[i + a] === "\n");
-		if (a >= r.length && (!de(e[i - 1]) || s) && o > t && !(r[0] === "_" && ue(e[i + a]))) return o;
-		i += a - 1;
+var E = [T("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), T("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], D = /_background$/, O = /<u>|<span color="([a-z_]+)">/y, k = /\[([^[\]]*)\]\(([^\s()]*)\)/y, A = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, ne = /[!-/:-@[-`{-~]/, j = (e) => !!e && (/[A-Za-z0-9]/.test(e) || e > "" && /[\p{L}\p{N}]/u.test(e)), M = (e) => !e || /\s/.test(e), N = {
+	"*": {
+		one: "italic",
+		two: "bold"
+	},
+	_: {
+		one: "italic",
+		two: "bold"
+	},
+	"~": { two: "strike" },
+	"=": { two: "highlight" }
+};
+function P(e, t, n, r, i) {
+	let a = [], o = t, s = e.lastIndexOf("\n", t - 1) + 1, c = null, l = -1, u = -1, d = null, f = () => {
+		if (c === null) {
+			let t = e.indexOf("\n", s);
+			c = e.slice(s, t < 0 ? e.length : t);
+		}
+		return c;
+	};
+	for (; o < n;) {
+		if (o === l) {
+			a.push({
+				type: "link-end",
+				at: o,
+				end: u,
+				group: d.group
+			}), o = u, l = -1, d = null;
+			continue;
+		}
+		let p = e[o], m = l >= 0 ? l : n;
+		if (p === "\n") {
+			let t = i?.(o + 1) ?? 0;
+			a.push({
+				type: "break",
+				at: o,
+				prefix: t
+			}), o += 1 + t, s = e.lastIndexOf("\n", o - 1) + 1, c = null;
+		} else if (p === "\\" && o + 1 < m && ne.test(e[o + 1])) a.push({
+			type: "escape",
+			at: o
+		}), o += 2;
+		else if (p === "`") {
+			let t = 1;
+			for (; e[o + t] === "`";) t++;
+			let n = "`".repeat(t), r = e.indexOf(n, o + t);
+			for (; r >= 0 && r + t < m && e[r + t] === "`";) {
+				let t = r;
+				for (; e[t] === "`";) t++;
+				r = e.indexOf(n, t);
+			}
+			if (r >= 0 && r + t <= m && !(i && e.slice(o, r).includes("\n"))) {
+				a.push({
+					type: "code",
+					at: o,
+					ticks: t,
+					close: r
+				}), o = r + t;
+				continue;
+			}
+			o += t;
+		} else {
+			if (l < 0 && r.length) {
+				let e = 0, t = "";
+				for (let i of r) {
+					if (e = i.match(f(), o - s), e && o + e <= n) {
+						t = i.name;
+						break;
+					}
+					e = 0;
+				}
+				if (e) {
+					a.push({
+						type: "atom",
+						at: o,
+						length: e,
+						name: t
+					}), o += e;
+					continue;
+				}
+			}
+			if (p === "[" && l < 0) {
+				k.lastIndex = o;
+				let t = k.exec(e);
+				if (t && o + t[0].length <= n) {
+					d = {
+						type: "link",
+						at: o,
+						href: t[2],
+						close: o + 1 + t[1].length,
+						end: o + t[0].length,
+						group: [o, o + t[0].length]
+					}, a.push(d), l = d.close, u = d.end, o++;
+					continue;
+				}
+			}
+			if (p === "<") {
+				O.lastIndex = o;
+				let t = O.exec(e);
+				if (t && o + t[0].length <= m) {
+					a.push({
+						type: "tag",
+						at: o,
+						length: t[0].length,
+						mark: t[1] ? "color" : "underline",
+						color: t[1],
+						closing: !1,
+						group: [o, n],
+						lone: !0,
+						id: a.length
+					}), o += t[0].length;
+					continue;
+				}
+				let r = e.startsWith("</span>", o) ? 7 : e.startsWith("</u>", o) ? 4 : 0;
+				if (r && o + r <= m) {
+					a.push({
+						type: "tag",
+						at: o,
+						length: r,
+						mark: r === 7 ? "color" : "underline",
+						closing: !0,
+						group: [o, o + r],
+						lone: !0,
+						id: a.length
+					}), o += r;
+					continue;
+				}
+			}
+			if (N[p]) {
+				let n = 1;
+				for (; o + n < m && e[o + n] === p;) n++;
+				let r = n >= 2;
+				if (r || N[p].one) {
+					let i = a[a.length - 1], c = o === s || e[o - 1] === "\n" || i?.type === "break" && i.at + 1 + i.prefix === o, l = o === t ? void 0 : c ? "\n" : e[o - 1], u = o + n < m ? e[o + n] : void 0, d = c && o > t && !M(e[e.lastIndexOf("\n", o - 1) - 1]) && (!u || u === "\n"), f = !M(u) && !(p === "_" && j(l)), h = (!M(l) || d) && !(p === "_" && j(u));
+					a.push({
+						type: "delimiters",
+						run: {
+							at: o,
+							length: n,
+							char: p,
+							left: 0,
+							right: 0,
+							opens: f,
+							closes: h,
+							looseOpen: r && !f && !!u && M(l),
+							looseClose: r && !h && !!l && M(u),
+							used: []
+						}
+					});
+				}
+				o += n;
+			} else o++;
+		}
 	}
-	return -1;
+	return l >= 0 && a.push({
+		type: "link-end",
+		at: l,
+		end: u,
+		group: d.group
+	}), a;
 }
-function he(e, t, n, r, i, a) {
+function re(e) {
+	let t = e.flatMap((e) => e.type === "delimiters" ? [e.run] : []), n = (e) => e.length - e.left - e.right;
+	for (let e = 0; e < t.length; e++) {
+		let r = t[e];
+		if (r.closes || r.looseClose) for (; n(r) > 0;) {
+			let i = -1, a = 0;
+			for (let o = e - 1; o >= 0; o--) {
+				let e = t[o];
+				if (e.char !== r.char || !n(e) || !(e.opens || e.looseOpen) || !e.opens && !r.closes) continue;
+				let s = e.opens && e.closes || r.opens && r.closes, c = n(e), l = n(r);
+				if (!(s && (c + l) % 3 == 0 && (c % 3 || l % 3) && (c % 2 || l % 2)) && (a = Math.min(n(e), n(r)) >= 2 ? 2 : +!!N[r.char].one, a)) {
+					i = o;
+					break;
+				}
+			}
+			if (i < 0) break;
+			let o = t[i], s = o.at + o.length - o.right - a, c = r.at + r.left, l = a === 2 ? N[r.char].two : N[r.char].one, u = [s, c + a];
+			o.used.push({
+				at: s,
+				length: a,
+				mark: l,
+				opening: !0,
+				group: u
+			}), r.used.push({
+				at: c,
+				length: a,
+				mark: l,
+				opening: !1,
+				group: u
+			}), o.right += a, r.left += a;
+		}
+	}
+}
+function ie(e) {
+	let t = {
+		underline: [],
+		color: []
+	};
+	for (let n of e) {
+		if (n.type !== "tag") continue;
+		if (!n.closing) {
+			t[n.mark].push(n);
+			continue;
+		}
+		let e = t[n.mark].pop();
+		e && (e.lone = n.lone = !1, e.group = n.group = [e.at, n.at + n.length], n.id = e.id);
+	}
+}
+function ae(e, t, n, r, i, a) {
 	if (n <= t) return;
 	if (i.href || i.code) {
 		a.push({
@@ -246,7 +422,7 @@ function he(e, t, n, r, i, a) {
 		return;
 	}
 	let o = e.slice(t, n), s = 0;
-	for (let e of o.matchAll(le)) {
+	for (let e of o.matchAll(A)) {
 		let n = e.index;
 		n > s && a.push({
 			kind: "text",
@@ -260,6 +436,7 @@ function he(e, t, n, r, i, a) {
 			from: r + t + n,
 			to: r + t + n + o.length,
 			...i,
+			autolink: !0,
 			href: o.startsWith("www.") ? `https://${o}` : o
 		}), s = n + o.length;
 	}
@@ -270,147 +447,92 @@ function he(e, t, n, r, i, a) {
 		...i
 	});
 }
-function ge(e, t, n, r, i, a, o) {
-	let s = t, c = t, l = (t) => he(e, c, t, r, i, a);
-	for (; s < n;) {
-		let t = e[s];
-		if (t === "\n") {
-			l(s), a.push({
+function F(e, t, n, r, i, a, o) {
+	let s = P(e, t, n, a, o);
+	re(s), ie(s);
+	let c = {
+		bold: 0,
+		italic: 0,
+		strike: 0,
+		highlight: 0,
+		underline: 0
+	}, l = [], u, d = t, f = () => {
+		let e = {};
+		c.bold && (e.bold = !0), c.italic && (e.italic = !0), c.strike && (e.strike = !0), c.highlight && (e.highlight = !0), c.underline && (e.underline = !0);
+		for (let { color: t } of l) D.test(t) ? e.background = t.replace(D, "") : e.color = t;
+		return u !== void 0 && (e.href = u), e;
+	}, p = (t) => ae(e, d, t, r, f(), i), m = (e, t, n, a = !1) => {
+		p(e), i.push({
+			kind: "syntax",
+			from: r + e,
+			to: r + t,
+			group: [r + n[0], r + n[1]],
+			...a ? { lone: !0 } : {}
+		}), d = t;
+	};
+	for (let e of s) switch (e.type) {
+		case "break":
+			p(e.at), i.push({
 				kind: "break",
-				from: r + s,
-				to: r + s + 1
-			}), c = ++s;
-			continue;
-		}
-		if (t === "`" && !i.code) {
-			let t = 1;
-			for (; e[s + t] === "`";) t++;
-			let o = "`".repeat(t), u = e.indexOf(o, s + t);
-			for (; u >= 0 && u + t < n && e[u + t] === "`";) {
-				let t = u;
-				for (; e[t] === "`";) t++;
-				u = e.indexOf(o, t);
-			}
-			if (u >= 0 && u + t <= n) {
-				l(s);
-				let e = [r + s, r + u + t];
-				a.push({
-					kind: "syntax",
-					from: r + s,
-					to: r + s + t,
-					group: e
-				}), u > s + t && a.push({
-					kind: "text",
-					from: r + s + t,
-					to: r + u,
-					...i,
-					code: !0
-				}), a.push({
-					kind: "syntax",
-					from: r + u,
-					to: r + u + t,
-					group: e
-				}), s = u + t, c = s;
-				continue;
-			}
-		}
-		if (!i.href && !i.code && o.length) {
-			let t = 0, i = "", u = e.lastIndexOf("\n", s - 1) + 1, d = e.indexOf("\n", s), f = e.slice(u, d < 0 ? e.length : d);
-			for (let e of o) {
-				if (t = e.match(f, s - u), t && s + t <= n) {
-					i = e.name;
-					break;
-				}
-				t = 0;
-			}
-			if (t) {
-				l(s), a.push({
-					kind: "atom",
-					atom: i,
-					from: r + s,
-					to: r + s + t,
-					...i === "equation" ? { group: [r + s, r + s + t] } : {}
-				}), s += t, c = s;
-				continue;
-			}
-		}
-		if (t === "[" && !i.href && !i.code) {
-			let t = ce.exec(e.slice(s, n));
-			if (t) {
-				l(s);
-				let n = [r + s, r + s + t[0].length];
-				a.push({
-					kind: "syntax",
-					from: r + s,
-					to: r + s + 1,
-					group: n
-				}), ge(e, s + 1, s + 1 + t[1].length, r, {
-					...i,
-					href: t[2]
-				}, a, o), a.push({
-					kind: "syntax",
-					from: r + s + 1 + t[1].length,
-					to: r + s + t[0].length,
-					group: n
-				}), s += t[0].length, c = s;
-				continue;
-			}
-		}
-		if (t === "<" && !i.code) {
-			ae.lastIndex = s;
-			let t = ae.exec(e), u = t?.[1], d = u ? "</span>" : "</u>", f = t && !(u ? i.color : i.underline) ? e.indexOf(d, s + t[0].length) : -1;
-			if (t && f >= 0 && f + d.length <= n) {
-				l(s);
-				let n = [r + s, r + f + d.length];
-				a.push({
-					kind: "syntax",
-					from: r + s,
-					to: r + s + t[0].length,
-					group: n
-				}), ge(e, s + t[0].length, f, r, u ? {
-					...i,
-					color: u
-				} : {
-					...i,
-					underline: !0
-				}, a, o), a.push({
-					kind: "syntax",
-					from: r + f,
-					to: r + f + d.length,
-					group: n
-				}), s = f + d.length, c = s;
-				continue;
-			}
-		}
-		let u = !1;
-		if (!i.code) for (let t of oe) {
-			if (!e.startsWith(t, s) || i[se[t]] || !pe(e, s, t, n)) continue;
-			let d = me(e, s + t.length, n, t);
-			if (d < 0) continue;
-			l(s);
-			let f = [r + s, r + d + t.length];
-			a.push({
+				from: r + e.at,
+				to: r + e.at + 1
+			}), e.prefix && i.push({
 				kind: "syntax",
-				from: r + s,
-				to: r + s + t.length,
-				group: f
-			}), ge(e, s + t.length, d, r, {
-				...i,
-				[se[t]]: !0
-			}, a, o), a.push({
-				kind: "syntax",
+				from: r + e.at + 1,
+				to: r + e.at + 1 + e.prefix,
+				prefix: !0
+			}), d = e.at + 1 + e.prefix;
+			break;
+		case "code": {
+			let t = [e.at, e.close + e.ticks];
+			m(e.at, e.at + e.ticks, t), e.close > d && i.push({
+				kind: "text",
 				from: r + d,
-				to: r + d + t.length,
-				group: f
-			}), s = d + t.length, c = s, u = !0;
+				to: r + e.close,
+				...f(),
+				code: !0
+			}), d = e.close, m(e.close, e.close + e.ticks, t);
 			break;
 		}
-		u || s++;
+		case "atom":
+			p(e.at), i.push({
+				kind: "atom",
+				atom: e.name,
+				from: r + e.at,
+				to: r + e.at + e.length,
+				...f(),
+				...e.name === "equation" ? { group: [r + e.at, r + e.at + e.length] } : {}
+			}), d = e.at + e.length;
+			break;
+		case "escape":
+			p(e.at), i.push({
+				kind: "syntax",
+				from: r + e.at,
+				to: r + e.at + 1,
+				escape: !0
+			}), d = e.at + 1;
+			break;
+		case "delimiters":
+			for (let t of [...e.run.used].sort((e, t) => e.at - t.at)) t.opening || (p(t.at), c[t.mark]--, d = t.at), m(t.at, t.at + t.length, t.group), t.opening && c[t.mark]++;
+			break;
+		case "tag":
+			if (m(e.at, e.at + e.length, e.group, e.lone), e.closing) {
+				if (e.lone) break;
+				e.mark === "underline" ? c.underline-- : l.splice(l.findIndex((t) => t.id === e.id), 1);
+			} else e.mark === "underline" ? c.underline++ : l.push({
+				id: e.id,
+				color: e.color
+			});
+			break;
+		case "link":
+			m(e.at, e.at + 1, e.group), u = e.href;
+			break;
+		case "link-end": p(e.at), d = e.at, u = void 0, m(e.at, e.end, e.group);
 	}
-	l(n);
+	p(n);
 }
-function _e(e, t = ie) {
-	let r = [], i = e.source.split("\n"), a = e.kind === "code" && te(e);
+function oe(e, t = E) {
+	let r = [], i = e.source.split("\n"), a = e.kind === "code" && w(e);
 	if (e.kind === "equation") return [{
 		kind: "atom",
 		atom: "equation-block",
@@ -436,7 +558,7 @@ function _e(e, t = ie) {
 		from: 0,
 		to: e.source.length
 	}];
-	let o = ne(e, t);
+	let o = te(e, t);
 	if (o) return [{
 		kind: "atom",
 		atom: o.name,
@@ -444,45 +566,57 @@ function _e(e, t = ie) {
 		to: e.source.length,
 		group: [0, e.source.length]
 	}];
-	if (e.kind === "paragraph") return ge(e.source, 0, e.source.length, 0, {}, r, t), r;
+	if (e.kind === "paragraph") return F(e.source, 0, e.source.length, 0, r, t), r;
+	if (e.kind === "quote" || e.kind === "callout") {
+		let a = e.kind === "callout" ? e.prefix : n.exec(i[0])?.[0].length ?? 0;
+		return a && r.push({
+			kind: "syntax",
+			from: 0,
+			to: a,
+			prefix: !0
+		}), F(e.source, a, e.source.length, 0, r, t, (t) => {
+			let r = e.source.indexOf("\n", t);
+			return n.exec(e.source.slice(t, r < 0 ? e.source.length : r))?.[0].length ?? 0;
+		}), r;
+	}
 	let s = 0;
-	return i.forEach((o, c) => {
-		if (c && r.push({
+	return i.forEach((n, o) => {
+		if (o && r.push({
 			kind: "break",
 			from: s - 1,
 			to: s
-		}), e.kind === "code") c === 0 || a && c === i.length - 1 ? r.push({
+		}), e.kind === "code") o === 0 || a && o === i.length - 1 ? r.push({
 			kind: "syntax",
 			from: s,
-			to: s + o.length,
+			to: s + n.length,
 			prefix: !0
-		}) : o && r.push({
+		}) : n && r.push({
 			kind: "text",
 			from: s,
-			to: s + o.length,
+			to: s + n.length,
 			code: !0
 		});
 		else if (e.kind === "divider") r.push({
 			kind: "syntax",
 			from: s,
-			to: s + o.length,
+			to: s + n.length,
 			prefix: !0
 		});
 		else {
-			let i = 0;
-			c === 0 && (e.kind === "heading" || e.kind === "bullet") ? i = e.prefix : (e.kind === "quote" || e.kind === "callout") && (i = c === 0 && e.kind === "callout" ? e.prefix : n.exec(o)?.[0].length ?? 0), i && r.push({
+			let i = o === 0 && (e.kind === "heading" || e.kind === "bullet") ? e.prefix : 0;
+			i && r.push({
 				kind: "syntax",
 				from: s,
 				to: s + i,
 				prefix: !0
-			}), ge(o, i, o.length, s, {}, r, t);
+			}), F(n, i, n.length, s, r, t);
 		}
-		s += o.length + 1;
+		s += n.length + 1;
 	}), r;
 }
 //#endregion
 //#region src/table.ts
-function ve(e) {
+function se(e) {
 	let t = 0;
 	return e.split("\n").flatMap((e, n) => {
 		let r = t;
@@ -504,3952 +638,281 @@ function ve(e) {
 		return [o];
 	});
 }
-function ye(e) {
+function ce(e) {
 	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
 		let t = e.trim(), n = t.startsWith(":"), r = t.endsWith(":");
 		return n && r ? "center" : r ? "end" : n ? "start" : null;
 	});
 }
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/identity.js
-var be = Symbol.for("yaml.alias"), xe = Symbol.for("yaml.document"), w = Symbol.for("yaml.map"), Se = Symbol.for("yaml.pair"), T = Symbol.for("yaml.scalar"), E = Symbol.for("yaml.seq"), D = Symbol.for("yaml.node.type"), O = (e) => !!e && typeof e == "object" && e[D] === be, Ce = (e) => !!e && typeof e == "object" && e[D] === xe, we = (e) => !!e && typeof e == "object" && e[D] === w, k = (e) => !!e && typeof e == "object" && e[D] === Se, A = (e) => !!e && typeof e == "object" && e[D] === T, Te = (e) => !!e && typeof e == "object" && e[D] === E;
-function j(e) {
-	if (e && typeof e == "object") switch (e[D]) {
-		case w:
-		case E: return !0;
-	}
-	return !1;
-}
-function M(e) {
-	if (e && typeof e == "object") switch (e[D]) {
-		case be:
-		case w:
-		case T:
-		case E: return !0;
-	}
-	return !1;
-}
-var Ee = (e) => (A(e) || j(e)) && !!e.anchor, N = Symbol("break visit"), De = Symbol("skip children"), Oe = Symbol("remove node");
-function ke(e, t) {
-	let n = je(t);
-	Ce(e) ? Ae(null, e.contents, n, Object.freeze([e])) === Oe && (e.contents = null) : Ae(null, e, n, Object.freeze([]));
-}
-ke.BREAK = N, ke.SKIP = De, ke.REMOVE = Oe;
-function Ae(e, t, n, r) {
-	let i = Me(e, t, n, r);
-	if (M(i) || k(i)) return Ne(e, r, i), Ae(e, i, n, r);
-	if (typeof i != "symbol") {
-		if (j(t)) {
-			r = Object.freeze(r.concat(t));
-			for (let e = 0; e < t.items.length; ++e) {
-				let i = Ae(e, t.items[e], n, r);
-				if (typeof i == "number") e = i - 1;
-				else if (i === N) return N;
-				else i === Oe && (t.items.splice(e, 1), --e);
-			}
-		} else if (k(t)) {
-			r = Object.freeze(r.concat(t));
-			let e = Ae("key", t.key, n, r);
-			if (e === N) return N;
-			e === Oe && (t.key = null);
-			let i = Ae("value", t.value, n, r);
-			if (i === N) return N;
-			i === Oe && (t.value = null);
-		}
-	}
-	return i;
-}
-function je(e) {
-	return typeof e == "object" && (e.Collection || e.Node || e.Value) ? Object.assign({
-		Alias: e.Node,
-		Map: e.Node,
-		Scalar: e.Node,
-		Seq: e.Node
-	}, e.Value && {
-		Map: e.Value,
-		Scalar: e.Value,
-		Seq: e.Value
-	}, e.Collection && {
-		Map: e.Collection,
-		Seq: e.Collection
-	}, e) : e;
-}
-function Me(e, t, n, r) {
-	if (typeof n == "function") return n(e, t, r);
-	if (we(t)) return n.Map?.(e, t, r);
-	if (Te(t)) return n.Seq?.(e, t, r);
-	if (k(t)) return n.Pair?.(e, t, r);
-	if (A(t)) return n.Scalar?.(e, t, r);
-	if (O(t)) return n.Alias?.(e, t, r);
-}
-function Ne(e, t, n) {
-	let r = t[t.length - 1];
-	if (j(r)) r.items[e] = n;
-	else if (k(r)) e === "key" ? r.key = n : r.value = n;
-	else if (Ce(r)) r.contents = n;
-	else {
-		let e = O(r) ? "alias" : "scalar";
-		throw Error(`Cannot replace node with ${e} parent`);
-	}
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/doc/directives.js
-var Pe = {
-	"!": "%21",
-	",": "%2C",
-	"[": "%5B",
-	"]": "%5D",
-	"{": "%7B",
-	"}": "%7D"
-}, Fe = (e) => e.replace(/[!,[\]{}]/g, (e) => Pe[e]), P = class e {
-	constructor(t, n) {
-		this.docStart = null, this.docEnd = !1, this.yaml = Object.assign({}, e.defaultYaml, t), this.tags = Object.assign({}, e.defaultTags, n);
-	}
-	clone() {
-		let t = new e(this.yaml, this.tags);
-		return t.docStart = this.docStart, t;
-	}
-	atDocument() {
-		let t = new e(this.yaml, this.tags);
-		switch (this.yaml.version) {
-			case "1.1":
-				this.atNextDocument = !0;
-				break;
-			case "1.2": this.atNextDocument = !1, this.yaml = {
-				explicit: e.defaultYaml.explicit,
-				version: "1.2"
-			}, this.tags = Object.assign({}, e.defaultTags);
-		}
-		return t;
-	}
-	add(t, n) {
-		this.atNextDocument &&= (this.yaml = {
-			explicit: e.defaultYaml.explicit,
-			version: "1.1"
-		}, this.tags = Object.assign({}, e.defaultTags), !1);
-		let r = t.trim().split(/[ \t]+/), i = r.shift();
-		switch (i) {
-			case "%TAG": {
-				if (r.length !== 2 && (n(0, "%TAG directive should contain exactly two parts"), r.length < 2)) return !1;
-				let [e, t] = r;
-				return this.tags[e] = t, !0;
-			}
-			case "%YAML": {
-				if (this.yaml.explicit = !0, r.length !== 1) return n(0, "%YAML directive should contain exactly one part"), !1;
-				let [e] = r;
-				if (e === "1.1" || e === "1.2") return this.yaml.version = e, !0;
-				{
-					let t = /^\d+\.\d+$/.test(e);
-					return n(6, `Unsupported YAML version ${e}`, t), !1;
-				}
-			}
-			default: return n(0, `Unknown directive ${i}`, !0), !1;
-		}
-	}
-	tagName(e, t) {
-		if (e === "!") return "!";
-		if (e[0] !== "!") return t(`Not a valid tag: ${e}`), null;
-		if (e[1] === "<") {
-			let n = e.slice(2, -1);
-			return n === "!" || n === "!!" ? (t(`Verbatim tags aren't resolved, so ${e} is invalid.`), null) : (e[e.length - 1] !== ">" && t("Verbatim tags must end with a >"), n);
-		}
-		let [, n, r] = e.match(/^(.*!)([^!]*)$/s);
-		r || t(`The ${e} tag has no suffix`);
-		let i = this.tags[n];
-		if (i) try {
-			return i + decodeURIComponent(r);
-		} catch (e) {
-			return t(String(e)), null;
-		}
-		return n === "!" ? e : (t(`Could not resolve tag: ${e}`), null);
-	}
-	tagString(e) {
-		for (let [t, n] of Object.entries(this.tags)) if (e.startsWith(n)) return t + Fe(e.substring(n.length));
-		return e[0] === "!" ? e : `!<${e}>`;
-	}
-	toString(e) {
-		let t = this.yaml.explicit ? [`%YAML ${this.yaml.version || "1.2"}`] : [], n = Object.entries(this.tags), r;
-		if (e && n.length > 0 && M(e.contents)) {
-			let t = {};
-			ke(e.contents, (e, n) => {
-				M(n) && n.tag && (t[n.tag] = !0);
-			}), r = Object.keys(t);
-		} else r = [];
-		for (let [i, a] of n) (i !== "!!" || a !== "tag:yaml.org,2002:") && (!e || r.some((e) => e.startsWith(a))) && t.push(`%TAG ${i} ${a}`);
-		return t.join("\n");
-	}
-};
-P.defaultYaml = {
-	explicit: !1,
-	version: "1.2"
-}, P.defaultTags = { "!!": "tag:yaml.org,2002:" };
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/doc/anchors.js
-function Ie(e) {
-	if (/[\x00-\x19\s,[\]{}]/.test(e)) {
-		let t = `Anchor must not contain whitespace or control characters: ${JSON.stringify(e)}`;
-		throw Error(t);
-	}
-	return !0;
-}
-function Le(e) {
-	let t = /* @__PURE__ */ new Set();
-	return ke(e, { Value(e, n) {
-		n.anchor && t.add(n.anchor);
-	} }), t;
-}
-function Re(e, t) {
-	for (let n = 1;; ++n) {
-		let r = `${e}${n}`;
-		if (!t.has(r)) return r;
-	}
-}
-function ze(e, t) {
-	let n = [], r = /* @__PURE__ */ new Map(), i = null;
-	return {
-		onAnchor: (r) => {
-			n.push(r), i ??= Le(e);
-			let a = Re(t, i);
-			return i.add(a), a;
-		},
-		setAnchors: () => {
-			for (let e of n) {
-				let t = r.get(e);
-				if (typeof t == "object" && t.anchor && (A(t.node) || j(t.node))) t.node.anchor = t.anchor;
-				else {
-					let t = /* @__PURE__ */ Error("Failed to resolve repeated object (this should not happen)");
-					throw t.source = e, t;
-				}
-			}
-		},
-		sourceObjects: r
-	};
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/doc/applyReviver.js
-function F(e, t, n, r) {
-	if (r && typeof r == "object") {
-		if (Array.isArray(r)) for (let t = 0, n = r.length; t < n; ++t) {
-			let n = r[t], i = F(e, r, String(t), n);
-			i === void 0 ? delete r[t] : i !== n && (r[t] = i);
-		}
-		else if (r instanceof Map) for (let t of Array.from(r.keys())) {
-			let n = r.get(t), i = F(e, r, t, n);
-			i === void 0 ? r.delete(t) : i !== n && r.set(t, i);
-		}
-		else if (r instanceof Set) for (let t of Array.from(r)) {
-			let n = F(e, r, t, t);
-			n === void 0 ? r.delete(t) : n !== t && (r.delete(t), r.add(n));
-		}
-		else for (let [t, n] of Object.entries(r)) {
-			let i = F(e, r, t, n);
-			i === void 0 ? delete r[t] : i !== n && (r[t] = i);
-		}
-	}
-	return e.call(t, n, r);
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/toJS.js
-function I(e, t, n) {
-	if (Array.isArray(e)) return e.map((e, t) => I(e, String(t), n));
-	if (e && typeof e.toJSON == "function") {
-		if (!n || !Ee(e)) return e.toJSON(t, n);
-		let r = {
-			aliasCount: 0,
-			count: 1,
-			res: void 0
-		};
-		n.anchors.set(e, r), n.onCreate = (e) => {
-			r.res = e, delete n.onCreate;
-		};
-		let i = e.toJSON(t, n);
-		return n.onCreate && n.onCreate(i), i;
-	}
-	return typeof e == "bigint" && !n?.keep ? Number(e) : e;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/Node.js
-var Be = class {
-	constructor(e) {
-		Object.defineProperty(this, D, { value: e });
-	}
-	clone() {
-		let e = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
-		return this.range && (e.range = this.range.slice()), e;
-	}
-	toJS(e, { mapAsMap: t, maxAliasCount: n, onAnchor: r, reviver: i } = {}) {
-		if (!Ce(e)) throw TypeError("A document argument is required");
-		let a = {
-			anchors: /* @__PURE__ */ new Map(),
-			doc: e,
-			keep: !0,
-			mapAsMap: t === !0,
-			mapKeyWarned: !1,
-			maxAliasCount: typeof n == "number" ? n : 100
-		}, o = I(this, "", a);
-		if (typeof r == "function") for (let { count: e, res: t } of a.anchors.values()) r(t, e);
-		return typeof i == "function" ? F(i, { "": o }, "", o) : o;
-	}
-}, Ve = class extends Be {
-	constructor(e) {
-		super(be), this.source = e, Object.defineProperty(this, "tag", { set() {
-			throw Error("Alias nodes cannot have tags");
-		} });
-	}
-	resolve(e, t) {
-		if (t?.maxAliasCount === 0) throw ReferenceError("Alias resolution is disabled");
-		let n;
-		t?.aliasResolveCache ? n = t.aliasResolveCache : (n = [], ke(e, { Node: (e, t) => {
-			(O(t) || Ee(t)) && n.push(t);
-		} }), t && (t.aliasResolveCache = n));
-		let r;
-		for (let e of n) {
-			if (e === this) break;
-			e.anchor === this.source && (r = e);
-		}
-		if (r && t) {
-			let { anchors: e, doc: n, maxAliasCount: i } = t, a = e.get(r);
-			/* istanbul ignore if */
-			if (a ||= (I(r, null, t), e.get(r)), a?.res === void 0) throw ReferenceError("This should not happen: Alias anchor was not resolved?");
-			if (i >= 0 && (a.count += 1, a.aliasCount === 0 && (a.aliasCount = He(n, r, e)), a.count * a.aliasCount > i)) throw ReferenceError("Excessive alias count indicates a resource exhaustion attack");
-		}
-		return r;
-	}
-	toJSON(e, t) {
-		if (!t) return { source: this.source };
-		let n = this.resolve(t.doc, t);
-		if (!n) {
-			let e = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
-			throw ReferenceError(e);
-		}
-		return t.anchors.get(n).res;
-	}
-	toString(e, t, n) {
-		let r = `*${this.source}`;
-		if (e) {
-			if (Ie(this.source), e.options.verifyAliasOrder && !e.anchors.has(this.source)) {
-				let e = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
-				throw Error(e);
-			}
-			if (e.implicitKey) return `${r} `;
-		}
-		return r;
-	}
-};
-function He(e, t, n) {
-	if (O(t)) {
-		let r = t.resolve(e), i = n && r && n.get(r);
-		return i ? i.count * i.aliasCount : 0;
-	}
-	if (j(t)) {
-		let r = 0;
-		for (let i of t.items) {
-			let t = He(e, i, n);
-			t > r && (r = t);
-		}
-		return r;
-	}
-	if (k(t)) {
-		let r = He(e, t.key, n), i = He(e, t.value, n);
-		return Math.max(r, i);
-	}
-	return 1;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/Scalar.js
-var Ue = (e) => !e || typeof e != "function" && typeof e != "object", L = class extends Be {
-	constructor(e) {
-		super(T), this.value = e;
-	}
-	toJSON(e, t) {
-		return t?.keep ? this.value : I(this.value, e, t);
-	}
-	toString() {
-		return String(this.value);
-	}
-};
-L.BLOCK_FOLDED = "BLOCK_FOLDED", L.BLOCK_LITERAL = "BLOCK_LITERAL", L.PLAIN = "PLAIN", L.QUOTE_DOUBLE = "QUOTE_DOUBLE", L.QUOTE_SINGLE = "QUOTE_SINGLE";
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/doc/createNode.js
-var We = "tag:yaml.org,2002:";
-function Ge(e, t, n) {
-	if (t) {
-		let e = n.filter((e) => e.tag === t), r = e.find((e) => !e.format) ?? e[0];
-		if (!r) throw Error(`Tag ${t} not found`);
-		return r;
-	}
-	return n.find((t) => t.identify?.(e) && !t.format);
-}
-function Ke(e, t, n) {
-	if (Ce(e) && (e = e.contents), M(e)) return e;
-	if (k(e)) {
-		let t = n.schema[w].createNode?.(n.schema, null, n);
-		return t.items.push(e), t;
-	}
-	(e instanceof String || e instanceof Number || e instanceof Boolean || typeof BigInt < "u" && e instanceof BigInt) && (e = e.valueOf());
-	let { aliasDuplicateObjects: r, onAnchor: i, onTagObj: a, schema: o, sourceObjects: s } = n, c;
-	if (r && e && typeof e == "object") {
-		if (c = s.get(e), c) return c.anchor ?? (c.anchor = i(e)), new Ve(c.anchor);
-		c = {
-			anchor: null,
-			node: null
-		}, s.set(e, c);
-	}
-	t?.startsWith("!!") && (t = We + t.slice(2));
-	let l = Ge(e, t, o.tags);
-	if (!l) {
-		if (e && typeof e.toJSON == "function" && (e = e.toJSON()), !e || typeof e != "object") {
-			let t = new L(e);
-			return c && (c.node = t), t;
-		}
-		l = e instanceof Map ? o[w] : Symbol.iterator in Object(e) ? o[E] : o[w];
-	}
-	a && (a(l), delete n.onTagObj);
-	let u = l?.createNode ? l.createNode(n.schema, e, n) : typeof l?.nodeClass?.from == "function" ? l.nodeClass.from(n.schema, e, n) : new L(e);
-	return t ? u.tag = t : l.default || (u.tag = l.tag), c && (c.node = u), u;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/Collection.js
-function qe(e, t, n) {
-	let r = n;
-	for (let e = t.length - 1; e >= 0; --e) {
-		let n = t[e];
-		if (typeof n == "number" && Number.isInteger(n) && n >= 0) {
-			let e = [];
-			e[n] = r, r = e;
-		} else r = /* @__PURE__ */ new Map([[n, r]]);
-	}
-	return Ke(r, void 0, {
-		aliasDuplicateObjects: !1,
-		keepUndefined: !1,
-		onAnchor: () => {
-			throw Error("This should not happen, please report a bug.");
-		},
-		schema: e,
-		sourceObjects: /* @__PURE__ */ new Map()
+function le(e) {
+	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
+		let t = e.trim().replace(/:/g, "").length;
+		return t > 3 ? t : null;
 	});
 }
-var Je = (e) => e == null || typeof e == "object" && !!e[Symbol.iterator]().next().done, Ye = class extends Be {
-	constructor(e, t) {
-		super(e), Object.defineProperty(this, "schema", {
-			value: t,
-			configurable: !0,
-			enumerable: !1,
-			writable: !0
-		});
-	}
-	clone(e) {
-		let t = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
-		return e && (t.schema = e), t.items = t.items.map((t) => M(t) || k(t) ? t.clone(e) : t), this.range && (t.range = this.range.slice()), t;
-	}
-	addIn(e, t) {
-		if (Je(e)) this.add(t);
-		else {
-			let [n, ...r] = e, i = this.get(n, !0);
-			if (j(i)) i.addIn(r, t);
-			else if (i === void 0 && this.schema) this.set(n, qe(this.schema, r, t));
-			else throw Error(`Expected YAML collection at ${n}. Remaining path: ${r}`);
-		}
-	}
-	deleteIn(e) {
-		let [t, ...n] = e;
-		if (n.length === 0) return this.delete(t);
-		let r = this.get(t, !0);
-		if (j(r)) return r.deleteIn(n);
-		throw Error(`Expected YAML collection at ${t}. Remaining path: ${n}`);
-	}
-	getIn(e, t) {
-		let [n, ...r] = e, i = this.get(n, !0);
-		return r.length === 0 ? !t && A(i) ? i.value : i : j(i) ? i.getIn(r, t) : void 0;
-	}
-	hasAllNullValues(e) {
-		return this.items.every((t) => {
-			if (!k(t)) return !1;
-			let n = t.value;
-			return n == null || e && A(n) && n.value == null && !n.commentBefore && !n.comment && !n.tag;
-		});
-	}
-	hasIn(e) {
-		let [t, ...n] = e;
-		if (n.length === 0) return this.has(t);
-		let r = this.get(t, !0);
-		return j(r) ? r.hasIn(n) : !1;
-	}
-	setIn(e, t) {
-		let [n, ...r] = e;
-		if (r.length === 0) this.set(n, t);
-		else {
-			let e = this.get(n, !0);
-			if (j(e)) e.setIn(r, t);
-			else if (e === void 0 && this.schema) this.set(n, qe(this.schema, r, t));
-			else throw Error(`Expected YAML collection at ${n}. Remaining path: ${r}`);
-		}
-	}
-}, Xe = (e) => e.replace(/^(?!$)(?: $)?/gm, "#");
-function R(e, t) {
-	return /^\n+$/.test(e) ? e.substring(1) : t ? e.replace(/^(?! *$)/gm, t) : e;
-}
-var z = (e, t, n) => e.endsWith("\n") ? R(n, t) : n.includes("\n") ? "\n" + R(n, t) : (e.endsWith(" ") ? "" : " ") + n, Ze = "flow", Qe = "block", $e = "quoted";
-function et(e, t, n = "flow", { indentAtStart: r, lineWidth: i = 80, minContentWidth: a = 20, onFold: o, onOverflow: s } = {}) {
-	if (!i || i < 0) return e;
-	i < a && (a = 0);
-	let c = Math.max(1 + a, 1 + i - t.length);
-	if (e.length <= c) return e;
-	let l = [], u = {}, d = i - t.length;
-	typeof r == "number" && (r > i - Math.max(2, a) ? l.push(0) : d = i - r);
-	let f, p, m = !1, h = -1, g = -1, _ = -1;
-	n === "block" && (h = tt(e, h, t.length), h !== -1 && (d = h + c));
-	for (let r; r = e[h += 1];) {
-		if (n === "quoted" && r === "\\") {
-			switch (g = h, e[h + 1]) {
-				case "x":
-					h += 3;
-					break;
-				case "u":
-					h += 5;
-					break;
-				case "U":
-					h += 9;
-					break;
-				default: h += 1;
-			}
-			_ = h;
-		}
-		if (r === "\n") n === "block" && (h = tt(e, h, t.length)), d = h + t.length + c, f = void 0;
-		else {
-			if (r === " " && p && p !== " " && p !== "\n" && p !== "	") {
-				let t = e[h + 1];
-				t && t !== " " && t !== "\n" && t !== "	" && (f = h);
-			}
-			if (h >= d) {
-				if (f) l.push(f), d = f + c, f = void 0;
-				else if (n === "quoted") {
-					for (; p === " " || p === "	";) p = r, r = e[h += 1], m = !0;
-					let t = h > _ + 1 ? h - 2 : g - 1;
-					if (u[t]) return e;
-					l.push(t), u[t] = !0, d = t + c, f = void 0;
-				} else m = !0;
-			}
-		}
-		p = r;
-	}
-	if (m && s && s(), l.length === 0) return e;
-	o && o();
-	let v = e.slice(0, l[0]);
-	for (let r = 0; r < l.length; ++r) {
-		let i = l[r], a = l[r + 1] || e.length;
-		i === 0 ? v = `\n${t}${e.slice(0, a)}` : (n === "quoted" && u[i] && (v += `${e[i]}\\`), v += `\n${t}${e.slice(i + 1, a)}`);
-	}
-	return v;
-}
-function tt(e, t, n) {
-	let r = t, i = t + 1, a = e[i];
-	for (; a === " " || a === "	";) if (t < i + n) a = e[++t];
-	else {
-		do
-			a = e[++t];
-		while (a && a !== "\n");
-		r = t, i = t + 1, a = e[i];
-	}
-	return r;
-}
 //#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringifyString.js
-var nt = (e, t) => ({
-	indentAtStart: t ? e.indent.length : e.indentAtStart,
-	lineWidth: e.options.lineWidth,
-	minContentWidth: e.options.minContentWidth
-}), rt = (e) => /^(%|---|\.\.\.)/m.test(e);
-function it(e, t, n) {
-	if (!t || t < 0) return !1;
-	let r = t - n, i = e.length;
-	if (i <= r) return !1;
-	for (let t = 0, n = 0; t < i; ++t) if (e[t] === "\n") {
-		if (t - n > r) return !0;
-		if (n = t + 1, i - n <= r) return !1;
-	}
-	return !0;
+//#region src/comment-yaml.ts
+var I = (e, t) => {
+	throw Error(`Invalid comment YAML (line ${e + 1}: ${t}).`);
+}, ue = /^(?:~|[Nn]ull|NULL)?$/, de = /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/, fe = /^(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|0o[0-7]+|0x[0-9a-fA-F]+|[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/;
+function L(e) {
+	return ue.test(e) ? null : de.test(e) ? /^[tT]/.test(e) : fe.test(e) ? Number(e) : e;
 }
-function at(e, t) {
-	let n = JSON.stringify(e);
-	if (t.options.doubleQuotedAsJSON) return n;
-	let { implicitKey: r } = t, i = t.options.doubleQuotedMinMultiLineLength, a = t.indent || (rt(e) ? "  " : ""), o = "", s = 0;
-	for (let e = 0, t = n[e]; t; t = n[++e]) if (t === " " && n[e + 1] === "\\" && n[e + 2] === "n" && (o += n.slice(s, e) + "\\ ", e += 1, s = e, t = "\\"), t === "\\") switch (n[e + 1]) {
-		case "u":
-			{
-				o += n.slice(s, e);
-				let t = n.substr(e + 2, 4);
-				switch (t) {
-					case "0000":
-						o += "\\0";
-						break;
-					case "0007":
-						o += "\\a";
-						break;
-					case "000b":
-						o += "\\v";
-						break;
-					case "001b":
-						o += "\\e";
-						break;
-					case "0085":
-						o += "\\N";
-						break;
-					case "00a0":
-						o += "\\_";
-						break;
-					case "2028":
-						o += "\\L";
-						break;
-					case "2029":
-						o += "\\P";
-						break;
-					default: t.substr(0, 2) === "00" ? o += "\\x" + t.substr(2) : o += n.substr(e, 6);
-				}
-				e += 5, s = e + 1;
-			}
-			break;
-		case "n":
-			if (r || n[e + 2] === "\"" || n.length < i) e += 1;
-			else {
-				for (o += n.slice(s, e) + "\n\n"; n[e + 2] === "\\" && n[e + 3] === "n" && n[e + 4] !== "\"";) o += "\n", e += 2;
-				o += a, n[e + 2] === " " && (o += "\\"), e += 1, s = e + 1;
-			}
-			break;
-		default: e += 1;
-	}
-	return o = s ? o + n.slice(s) : n, r ? o : et(o, a, $e, nt(t, !1));
-}
-function ot(e, t) {
-	if (t.options.singleQuote === !1 || t.implicitKey && e.includes("\n") || /[ \t]\n|\n[ \t]/.test(e)) return at(e, t);
-	let n = t.indent || (rt(e) ? "  " : ""), r = "'" + e.replace(/'/g, "''").replace(/\n+/g, `$&\n${n}`) + "'";
-	return t.implicitKey ? r : et(r, n, Ze, nt(t, !1));
-}
-function B(e, t) {
-	let { singleQuote: n } = t.options, r;
-	if (n === !1) r = at;
-	else {
-		let t = e.includes("\""), i = e.includes("'");
-		r = t && !i ? ot : i && !t ? at : n ? ot : at;
-	}
-	return r(e, t);
-}
-var st;
-try {
-	st = /* @__PURE__ */ RegExp("(^|(?<!\n))\n+(?!\n|$)", "g");
-} catch {
-	st = /\n+(?!\n|$)/g;
-}
-function ct({ comment: e, type: t, value: n }, r, i, a) {
-	let { blockQuote: o, commentString: s, lineWidth: c } = r.options;
-	if (!o || /\n[\t ]+$/.test(n)) return B(n, r);
-	let l = r.indent || (r.forceBlockIndent || rt(n) ? "  " : ""), u = o === "literal" ? !0 : o === "folded" || t === L.BLOCK_FOLDED ? !1 : t === L.BLOCK_LITERAL || !it(n, c, l.length);
-	if (!n) return u ? "|\n" : ">\n";
-	let d, f;
-	for (f = n.length; f > 0; --f) {
-		let e = n[f - 1];
-		if (e !== "\n" && e !== "	" && e !== " ") break;
-	}
-	let p = n.substring(f), m = p.indexOf("\n");
-	m === -1 ? d = "-" : n === p || m !== p.length - 1 ? (d = "+", a && a()) : d = "", p &&= (n = n.slice(0, -p.length), p[p.length - 1] === "\n" && (p = p.slice(0, -1)), p.replace(st, `$&${l}`));
-	let h = !1, g, _ = -1;
-	for (g = 0; g < n.length; ++g) {
-		let e = n[g];
-		if (e === " ") h = !0;
-		else if (e === "\n") _ = g;
-		else break;
-	}
-	let v = n.substring(0, _ < g ? _ + 1 : g);
-	v &&= (n = n.substring(v.length), v.replace(/\n+/g, `$&${l}`));
-	let y = (h ? l ? "2" : "1" : "") + d;
-	if (e && (y += " " + s(e.replace(/ ?[\r\n]+/g, " ")), i && i()), !u) {
-		let e = n.replace(/\n+/g, "\n$&").replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, "$1$2").replace(/\n+/g, `$&${l}`), i = !1, a = nt(r, !0);
-		o !== "folded" && t !== L.BLOCK_FOLDED && (a.onOverflow = () => {
-			i = !0;
-		});
-		let s = et(`${v}${e}${p}`, l, Qe, a);
-		if (!i) return `>${y}\n${l}${s}`;
-	}
-	return n = n.replace(/\n+/g, `$&${l}`), `|${y}\n${l}${v}${n}${p}`;
-}
-function lt(e, t, n, r) {
-	let { type: i, value: a } = e, { actualString: o, implicitKey: s, indent: c, indentStep: l, inFlow: u } = t;
-	if (s && a.includes("\n") || u && /[[\]{},]/.test(a)) return B(a, t);
-	if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(a)) return s || u || !a.includes("\n") ? B(a, t) : ct(e, t, n, r);
-	if (!s && !u && i !== L.PLAIN && a.includes("\n")) return ct(e, t, n, r);
-	if (rt(a)) {
-		if (c === "") return t.forceBlockIndent = !0, ct(e, t, n, r);
-		if (s && c === l) return B(a, t);
-	}
-	let d = a.replace(/\n+/g, `$&\n${c}`);
-	if (o) {
-		let e = (e) => e.default && e.tag !== "tag:yaml.org,2002:str" && e.test?.test(d), { compat: n, tags: r } = t.doc.schema;
-		if (r.some(e) || n?.some(e)) return B(a, t);
-	}
-	return s ? d : et(d, c, Ze, nt(t, !1));
-}
-function ut(e, t, n, r) {
-	let { implicitKey: i, inFlow: a } = t, o = typeof e.value == "string" ? e : Object.assign({}, e, { value: String(e.value) }), { type: s } = e;
-	s !== L.QUOTE_DOUBLE && /[\x00-\x08\x0b-\x1f\x7f-\x9f\u{D800}-\u{DFFF}]/u.test(o.value) && (s = L.QUOTE_DOUBLE);
-	let c = (e) => {
-		switch (e) {
-			case L.BLOCK_FOLDED:
-			case L.BLOCK_LITERAL: return i || a ? B(o.value, t) : ct(o, t, n, r);
-			case L.QUOTE_DOUBLE: return at(o.value, t);
-			case L.QUOTE_SINGLE: return ot(o.value, t);
-			case L.PLAIN: return lt(o, t, n, r);
-			default: return null;
-		}
-	}, l = c(s);
-	if (l === null) {
-		let { defaultKeyType: e, defaultStringType: n } = t.options, r = i && e || n;
-		if (l = c(r), l === null) throw Error(`Unsupported default string type ${r}`);
-	}
-	return l;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringify.js
-function dt(e, t) {
-	let n = Object.assign({
-		blockQuote: !0,
-		commentString: Xe,
-		defaultKeyType: null,
-		defaultStringType: "PLAIN",
-		directives: null,
-		doubleQuotedAsJSON: !1,
-		doubleQuotedMinMultiLineLength: 40,
-		falseStr: "false",
-		flowCollectionPadding: !0,
-		indentSeq: !0,
-		lineWidth: 80,
-		minContentWidth: 20,
-		nullStr: "null",
-		simpleKeys: !1,
-		singleQuote: null,
-		trailingComma: !1,
-		trueStr: "true",
-		verifyAliasOrder: !0
-	}, e.schema.toStringOptions, t), r;
-	switch (n.collectionStyle) {
-		case "block":
-			r = !1;
-			break;
-		case "flow":
-			r = !0;
-			break;
-		default: r = null;
-	}
-	return {
-		anchors: /* @__PURE__ */ new Set(),
-		doc: e,
-		flowCollectionPadding: n.flowCollectionPadding ? " " : "",
-		indent: "",
-		indentStep: typeof n.indent == "number" ? " ".repeat(n.indent) : "  ",
-		inFlow: r,
-		options: n
-	};
-}
-function ft(e, t) {
-	if (t.tag) {
-		let n = e.filter((e) => e.tag === t.tag);
-		if (n.length > 0) return n.find((e) => e.format === t.format) ?? n[0];
-	}
-	let n, r;
-	if (A(t)) {
-		r = t.value;
-		let i = e.filter((e) => e.identify?.(r));
-		if (i.length > 1) {
-			let e = i.filter((e) => e.test);
-			e.length > 0 && (i = e);
-		}
-		n = i.find((e) => e.format === t.format) ?? i.find((e) => !e.format);
-	} else r = t, n = e.find((e) => e.nodeClass && r instanceof e.nodeClass);
-	if (!n) {
-		let e = r?.constructor?.name ?? (r === null ? "null" : typeof r);
-		throw Error(`Tag not resolved for ${e} value`);
-	}
-	return n;
-}
-function pt(e, t, { anchors: n, doc: r }) {
-	if (!r.directives) return "";
-	let i = [], a = (A(e) || j(e)) && e.anchor;
-	a && Ie(a) && (n.add(a), i.push(`&${a}`));
-	let o = e.tag ?? (t.default ? null : t.tag);
-	return o && i.push(r.directives.tagString(o)), i.join(" ");
-}
-function V(e, t, n, r) {
-	if (k(e)) return e.toString(t, n, r);
-	if (O(e)) {
-		if (t.doc.directives) return e.toString(t);
-		if (t.resolvedAliases?.has(e)) throw TypeError("Cannot stringify circular structure without alias nodes");
-		t.resolvedAliases ? t.resolvedAliases.add(e) : t.resolvedAliases = /* @__PURE__ */ new Set([e]), e = e.resolve(t.doc);
-	}
-	let i, a = M(e) ? e : t.doc.createNode(e, { onTagObj: (e) => i = e });
-	i ??= ft(t.doc.schema.tags, a);
-	let o = pt(a, i, t);
-	o.length > 0 && (t.indentAtStart = (t.indentAtStart ?? 0) + o.length + 1);
-	let s = typeof i.stringify == "function" ? i.stringify(a, t, n, r) : A(a) ? ut(a, t, n, r) : a.toString(t, n, r);
-	return o ? A(a) || s[0] === "{" || s[0] === "[" ? `${o} ${s}` : `${o}\n${t.indent}${s}` : s;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringifyPair.js
-function mt({ key: e, value: t }, n, r, i) {
-	let { allNullValues: a, doc: o, indent: s, indentStep: c, options: { commentString: l, indentSeq: u, simpleKeys: d } } = n, f = M(e) && e.comment || null;
-	if (d) {
-		if (f) throw Error("With simple keys, key nodes cannot have comments");
-		if (j(e) || !M(e) && typeof e == "object") throw Error("With simple keys, collection cannot be used as a key value");
-	}
-	let p = !d && (!e || f && t == null && !n.inFlow || j(e) || (A(e) ? e.type === L.BLOCK_FOLDED || e.type === L.BLOCK_LITERAL : typeof e == "object"));
-	n = Object.assign({}, n, {
-		allNullValues: !1,
-		implicitKey: !p && (d || !a),
-		indent: s + c
-	});
-	let m = !1, h = !1, g = V(e, n, () => m = !0, () => h = !0);
-	if (!p && !n.inFlow && g.length > 1024) {
-		if (d) throw Error("With simple keys, single line scalar must not span more than 1024 characters");
-		p = !0;
-	}
-	if (n.inFlow) {
-		if (a || t == null) return m && r && r(), g === "" ? "?" : p ? `? ${g}` : g;
-	} else if (a && !d || t == null && p) return g = `? ${g}`, f && !m ? g += z(g, n.indent, l(f)) : h && i && i(), g;
-	m && (f = null), p ? (f && (g += z(g, n.indent, l(f))), g = `? ${g}\n${s}:`) : (g = `${g}:`, f && (g += z(g, n.indent, l(f))));
-	let _, v, y;
-	M(t) ? (_ = !!t.spaceBefore, v = t.commentBefore, y = t.comment) : (_ = !1, v = null, y = null, t && typeof t == "object" && (t = o.createNode(t))), n.implicitKey = !1, !p && !f && A(t) && (n.indentAtStart = g.length + 1), h = !1, !u && c.length >= 2 && !n.inFlow && !p && Te(t) && !t.flow && !t.tag && !t.anchor && (n.indent = n.indent.substring(2));
-	let b = !1, x = V(t, n, () => b = !0, () => h = !0), S = " ";
-	if (f || _ || v) {
-		if (S = _ ? "\n" : "", v) {
-			let e = l(v);
-			S += `\n${R(e, n.indent)}`;
-		}
-		x === "" && !n.inFlow ? S === "\n" && y && (S = "\n\n") : S += `\n${n.indent}`;
-	} else if (!p && j(t)) {
-		let e = x[0], r = x.indexOf("\n"), i = r !== -1, a = n.inFlow ?? t.flow ?? t.items.length === 0;
-		if (i || !a) {
-			let t = !1;
-			if (i && (e === "&" || e === "!")) {
-				let n = x.indexOf(" ");
-				e === "&" && n !== -1 && n < r && x[n + 1] === "!" && (n = x.indexOf(" ", n + 1)), (n === -1 || r < n) && (t = !0);
-			}
-			t || (S = `\n${n.indent}`);
-		}
-	} else (x === "" || x[0] === "\n") && (S = "");
-	return g += S + x, n.inFlow ? b && r && r() : y && !b ? g += z(g, n.indent, l(y)) : h && i && i(), g;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/log.js
-function ht(e, t) {
-	(e === "debug" || e === "warn") && console.warn(t);
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/yaml-1.1/merge.js
-var gt = "<<", H = {
-	identify: (e) => e === gt || typeof e == "symbol" && e.description === gt,
-	default: "key",
-	tag: "tag:yaml.org,2002:merge",
-	test: /^<<$/,
-	resolve: () => Object.assign(new L(Symbol(gt)), { addToJSMap: vt }),
-	stringify: () => gt
-}, _t = (e, t) => (H.identify(t) || A(t) && (!t.type || t.type === L.PLAIN) && H.identify(t.value)) && e?.doc.schema.tags.some((e) => e.tag === H.tag && e.default);
-function vt(e, t, n) {
-	let r = bt(e, n);
-	if (Te(r)) for (let n of r.items) yt(e, t, n);
-	else if (Array.isArray(r)) for (let n of r) yt(e, t, n);
-	else yt(e, t, r);
-}
-function yt(e, t, n) {
-	let r = bt(e, n);
-	if (!we(r)) throw Error("Merge sources must be maps or map aliases");
-	let i = r.toJSON(null, e, Map);
-	for (let [e, n] of i) t instanceof Map ? t.has(e) || t.set(e, n) : t instanceof Set ? t.add(e) : Object.prototype.hasOwnProperty.call(t, e) || Object.defineProperty(t, e, {
-		value: n,
-		writable: !0,
-		enumerable: !0,
-		configurable: !0
-	});
-	return t;
-}
-function bt(e, t) {
-	return e && O(t) ? t.resolve(e.doc, e) : t;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/addPairToJSMap.js
-function xt(e, t, { key: n, value: r }) {
-	if (M(n) && n.addToJSMap) n.addToJSMap(e, t, r);
-	else if (_t(e, n)) vt(e, t, r);
-	else {
-		let i = I(n, "", e);
-		if (t instanceof Map) t.set(i, I(r, i, e));
-		else if (t instanceof Set) t.add(i);
-		else {
-			let a = St(n, i, e), o = I(r, a, e);
-			a in t ? Object.defineProperty(t, a, {
-				value: o,
-				writable: !0,
-				enumerable: !0,
-				configurable: !0
-			}) : t[a] = o;
-		}
-	}
-	return t;
-}
-function St(e, t, n) {
-	if (t === null) return "";
-	if (typeof t != "object") return String(t);
-	if (M(e) && n?.doc) {
-		let t = dt(n.doc, {});
-		t.anchors = /* @__PURE__ */ new Set();
-		for (let e of n.anchors.keys()) t.anchors.add(e.anchor);
-		t.inFlow = !0, t.inStringifyKey = !0;
-		let r = e.toString(t);
-		if (!n.mapKeyWarned) {
-			let e = JSON.stringify(r);
-			e.length > 40 && (e = e.substring(0, 36) + "...\""), ht(n.doc.options.logLevel, `Keys with collection values will be stringified due to JS Object restrictions: ${e}. Set mapAsMap: true to use object keys.`), n.mapKeyWarned = !0;
-		}
-		return r;
-	}
-	return JSON.stringify(t);
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/Pair.js
-function Ct(e, t, n) {
-	return new U(Ke(e, void 0, n), Ke(t, void 0, n));
-}
-var U = class e {
-	constructor(e, t = null) {
-		Object.defineProperty(this, D, { value: Se }), this.key = e, this.value = t;
-	}
-	clone(t) {
-		let { key: n, value: r } = this;
-		return M(n) && (n = n.clone(t)), M(r) && (r = r.clone(t)), new e(n, r);
-	}
-	toJSON(e, t) {
-		return xt(t, t?.mapAsMap ? /* @__PURE__ */ new Map() : {}, this);
-	}
-	toString(e, t, n) {
-		return e?.doc ? mt(this, e, t, n) : JSON.stringify(this);
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringifyCollection.js
-function wt(e, t, n) {
-	return (t.inFlow ?? e.flow ? Et : Tt)(e, t, n);
-}
-function Tt({ comment: e, items: t }, n, { blockItemPrefix: r, flowChars: i, itemIndent: a, onChompKeep: o, onComment: s }) {
-	let { indent: c, options: { commentString: l } } = n, u = Object.assign({}, n, {
-		indent: a,
-		type: null
-	}), d = !1, f = [];
-	for (let e = 0; e < t.length; ++e) {
-		let i = t[e], o = null;
-		if (M(i)) !d && i.spaceBefore && f.push(""), Dt(n, f, i.commentBefore, d), i.comment && (o = i.comment);
-		else if (k(i)) {
-			let e = M(i.key) ? i.key : null;
-			e && (!d && e.spaceBefore && f.push(""), Dt(n, f, e.commentBefore, d));
-		}
-		d = !1;
-		let s = V(i, u, () => o = null, () => d = !0);
-		o && (s += z(s, a, l(o))), d && o && (d = !1), f.push(r + s);
-	}
-	let p;
-	if (f.length === 0) p = i.start + i.end;
-	else {
-		p = f[0];
-		for (let e = 1; e < f.length; ++e) {
-			let t = f[e];
-			p += t ? `\n${c}${t}` : "\n";
-		}
-	}
-	return e ? (p += "\n" + R(l(e), c), s && s()) : d && o && o(), p;
-}
-function Et({ items: e }, t, { flowChars: n, itemIndent: r }) {
-	let { indent: i, indentStep: a, flowCollectionPadding: o, options: { commentString: s } } = t;
-	r += a;
-	let c = Object.assign({}, t, {
-		indent: r,
-		inFlow: !0,
-		type: null
-	}), l = !1, u = 0, d = [];
-	for (let n = 0; n < e.length; ++n) {
-		let i = e[n], a = null;
-		if (M(i)) i.spaceBefore && d.push(""), Dt(t, d, i.commentBefore, !1), i.comment && (a = i.comment);
-		else if (k(i)) {
-			let e = M(i.key) ? i.key : null;
-			e && (e.spaceBefore && d.push(""), Dt(t, d, e.commentBefore, !1), e.comment && (l = !0));
-			let n = M(i.value) ? i.value : null;
-			n ? (n.comment && (a = n.comment), n.commentBefore && (l = !0)) : i.value == null && e?.comment && (a = e.comment);
-		}
-		a && (l = !0);
-		let o = V(i, c, () => a = null);
-		l ||= d.length > u || o.includes("\n"), n < e.length - 1 ? o += "," : t.options.trailingComma && (t.options.lineWidth > 0 && (l ||= d.reduce((e, t) => e + t.length + 2, 2) + (o.length + 2) > t.options.lineWidth), l && (o += ",")), a && (o += z(o, r, s(a))), d.push(o), u = d.length;
-	}
-	let { start: f, end: p } = n;
-	if (d.length === 0) return f + p;
-	if (!l) {
-		let e = d.reduce((e, t) => e + t.length + 2, 2);
-		l = t.options.lineWidth > 0 && e > t.options.lineWidth;
-	}
-	if (l) {
-		let e = f;
-		for (let t of d) e += t ? `\n${a}${i}${t}` : "\n";
-		return `${e}\n${i}${p}`;
-	}
-	return `${f}${o}${d.join(" ")}${o}${p}`;
-}
-function Dt({ indent: e, options: { commentString: t } }, n, r, i) {
-	if (r && i && (r = r.replace(/^\n+/, "")), r) {
-		let i = R(t(r), e);
-		n.push(i.trimStart());
-	}
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/nodes/YAMLMap.js
-function W(e, t) {
-	let n = A(t) ? t.value : t;
-	for (let r of e) if (k(r) && (r.key === t || r.key === n || A(r.key) && r.key.value === n)) return r;
-}
-var G = class extends Ye {
-	static get tagName() {
-		return "tag:yaml.org,2002:map";
-	}
-	constructor(e) {
-		super(w, e), this.items = [];
-	}
-	static from(e, t, n) {
-		let { keepUndefined: r, replacer: i } = n, a = new this(e), o = (e, o) => {
-			if (typeof i == "function") o = i.call(t, e, o);
-			else if (Array.isArray(i) && !i.includes(e)) return;
-			(o !== void 0 || r) && a.items.push(Ct(e, o, n));
-		};
-		if (t instanceof Map) for (let [e, n] of t) o(e, n);
-		else if (t && typeof t == "object") for (let e of Object.keys(t)) o(e, t[e]);
-		return typeof e.sortMapEntries == "function" && a.items.sort(e.sortMapEntries), a;
-	}
-	add(e, t) {
-		let n;
-		n = k(e) ? e : !e || typeof e != "object" || !("key" in e) ? new U(e, e?.value) : new U(e.key, e.value);
-		let r = W(this.items, n.key), i = this.schema?.sortMapEntries;
-		if (r) {
-			if (!t) throw Error(`Key ${n.key} already set`);
-			A(r.value) && Ue(n.value) ? r.value.value = n.value : r.value = n.value;
-		} else if (i) {
-			let e = this.items.findIndex((e) => i(n, e) < 0);
-			e === -1 ? this.items.push(n) : this.items.splice(e, 0, n);
-		} else this.items.push(n);
-	}
-	delete(e) {
-		let t = W(this.items, e);
-		return t ? this.items.splice(this.items.indexOf(t), 1).length > 0 : !1;
-	}
-	get(e, t) {
-		let n = W(this.items, e)?.value;
-		return (!t && A(n) ? n.value : n) ?? void 0;
-	}
-	has(e) {
-		return !!W(this.items, e);
-	}
-	set(e, t) {
-		this.add(new U(e, t), !0);
-	}
-	toJSON(e, t, n) {
-		let r = n ? new n() : t?.mapAsMap ? /* @__PURE__ */ new Map() : {};
-		t?.onCreate && t.onCreate(r);
-		for (let e of this.items) xt(t, r, e);
-		return r;
-	}
-	toString(e, t, n) {
-		if (!e) return JSON.stringify(this);
-		for (let e of this.items) if (!k(e)) throw Error(`Map items must all be pairs; found ${JSON.stringify(e)} instead`);
-		return !e.allNullValues && this.hasAllNullValues(!1) && (e = Object.assign({}, e, { allNullValues: !0 })), wt(this, e, {
-			blockItemPrefix: "",
-			flowChars: {
-				start: "{",
-				end: "}"
-			},
-			itemIndent: e.indent || "",
-			onChompKeep: n,
-			onComment: t
-		});
-	}
-}, K = {
-	collection: "map",
-	default: !0,
-	nodeClass: G,
-	tag: "tag:yaml.org,2002:map",
-	resolve(e, t) {
-		return we(e) || t("Expected a mapping for this tag"), e;
-	},
-	createNode: (e, t, n) => G.from(e, t, n)
-}, q = class extends Ye {
-	static get tagName() {
-		return "tag:yaml.org,2002:seq";
-	}
-	constructor(e) {
-		super(E, e), this.items = [];
-	}
-	add(e) {
-		this.items.push(e);
-	}
-	delete(e) {
-		let t = Ot(e);
-		return typeof t == "number" && this.items.splice(t, 1).length > 0;
-	}
-	get(e, t) {
-		let n = Ot(e);
-		if (typeof n != "number") return;
-		let r = this.items[n];
-		return !t && A(r) ? r.value : r;
-	}
-	has(e) {
-		let t = Ot(e);
-		return typeof t == "number" && t < this.items.length;
-	}
-	set(e, t) {
-		let n = Ot(e);
-		if (typeof n != "number") throw Error(`Expected a valid index, not ${e}.`);
-		let r = this.items[n];
-		A(r) && Ue(t) ? r.value = t : this.items[n] = t;
-	}
-	toJSON(e, t) {
-		let n = [];
-		t?.onCreate && t.onCreate(n);
-		let r = 0;
-		for (let e of this.items) n.push(I(e, String(r++), t));
-		return n;
-	}
-	toString(e, t, n) {
-		return e ? wt(this, e, {
-			blockItemPrefix: "- ",
-			flowChars: {
-				start: "[",
-				end: "]"
-			},
-			itemIndent: (e.indent || "") + "  ",
-			onChompKeep: n,
-			onComment: t
-		}) : JSON.stringify(this);
-	}
-	static from(e, t, n) {
-		let { replacer: r } = n, i = new this(e);
-		if (t && Symbol.iterator in Object(t)) {
-			let e = 0;
-			for (let a of t) {
-				if (typeof r == "function") {
-					let n = t instanceof Set ? a : String(e++);
-					a = r.call(t, n, a);
-				}
-				i.items.push(Ke(a, void 0, n));
-			}
-		}
-		return i;
-	}
-};
-function Ot(e) {
-	let t = A(e) ? e.value : e;
-	return t && typeof t == "string" && (t = Number(t)), typeof t == "number" && Number.isInteger(t) && t >= 0 ? t : null;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/common/seq.js
-var J = {
-	collection: "seq",
-	default: !0,
-	nodeClass: q,
-	tag: "tag:yaml.org,2002:seq",
-	resolve(e, t) {
-		return Te(e) || t("Expected a sequence for this tag"), e;
-	},
-	createNode: (e, t, n) => q.from(e, t, n)
-}, kt = {
-	identify: (e) => typeof e == "string",
-	default: !0,
-	tag: "tag:yaml.org,2002:str",
-	resolve: (e) => e,
-	stringify(e, t, n, r) {
-		return t = Object.assign({ actualString: !0 }, t), ut(e, t, n, r);
-	}
-}, At = {
-	identify: (e) => e == null,
-	createNode: () => new L(null),
-	default: !0,
-	tag: "tag:yaml.org,2002:null",
-	test: /^(?:~|[Nn]ull|NULL)?$/,
-	resolve: () => new L(null),
-	stringify: ({ source: e }, t) => typeof e == "string" && At.test.test(e) ? e : t.options.nullStr
-}, jt = {
-	identify: (e) => typeof e == "boolean",
-	default: !0,
-	tag: "tag:yaml.org,2002:bool",
-	test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
-	resolve: (e) => new L(e[0] === "t" || e[0] === "T"),
-	stringify({ source: e, value: t }, n) {
-		return e && jt.test.test(e) && t === (e[0] === "t" || e[0] === "T") ? e : t ? n.options.trueStr : n.options.falseStr;
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringifyNumber.js
-function Y({ format: e, minFractionDigits: t, tag: n, value: r }) {
-	if (typeof r == "bigint") return String(r);
-	let i = typeof r == "number" ? r : Number(r);
-	if (!isFinite(i)) return isNaN(i) ? ".nan" : i < 0 ? "-.inf" : ".inf";
-	let a = Object.is(r, -0) ? "-0" : JSON.stringify(r);
-	if (!e && t && (!n || n === "tag:yaml.org,2002:float") && /^-?\d/.test(a) && !a.includes("e")) {
-		let e = a.indexOf(".");
-		e < 0 && (e = a.length, a += ".");
-		let n = t - (a.length - e - 1);
-		for (; n-- > 0;) a += "0";
-	}
-	return a;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/core/float.js
-var Mt = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-	resolve: (e) => e.slice(-3).toLowerCase() === "nan" ? NaN : e[0] === "-" ? -Infinity : Infinity,
-	stringify: Y
-}, Nt = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	format: "EXP",
-	test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
-	resolve: (e) => parseFloat(e),
-	stringify(e) {
-		let t = Number(e.value);
-		return isFinite(t) ? t.toExponential() : Y(e);
-	}
-}, Pt = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
-	resolve(e) {
-		let t = new L(parseFloat(e)), n = e.indexOf(".");
-		return n !== -1 && e[e.length - 1] === "0" && (t.minFractionDigits = e.length - n - 1), t;
-	},
-	stringify: Y
-}, Ft = (e) => typeof e == "bigint" || Number.isInteger(e), It = (e, t, n, { intAsBigInt: r }) => r ? BigInt(e) : parseInt(e.substring(t), n);
-function Lt(e, t, n) {
-	let { value: r } = e;
-	return Ft(r) && r >= 0 ? n + r.toString(t) : Y(e);
-}
-var Rt = {
-	identify: (e) => Ft(e) && e >= 0,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "OCT",
-	test: /^0o[0-7]+$/,
-	resolve: (e, t, n) => It(e, 2, 8, n),
-	stringify: (e) => Lt(e, 8, "0o")
-}, zt = {
-	identify: Ft,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	test: /^[-+]?[0-9]+$/,
-	resolve: (e, t, n) => It(e, 0, 10, n),
-	stringify: Y
-}, Bt = {
-	identify: (e) => Ft(e) && e >= 0,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "HEX",
-	test: /^0x[0-9a-fA-F]+$/,
-	resolve: (e, t, n) => It(e, 2, 16, n),
-	stringify: (e) => Lt(e, 16, "0x")
-}, Vt = [
-	K,
-	J,
-	kt,
-	At,
-	jt,
-	Rt,
-	zt,
-	Bt,
-	Mt,
-	Nt,
-	Pt
-];
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/json/schema.js
-function Ht(e) {
-	return typeof e == "bigint" || Number.isInteger(e);
-}
-var Ut = ({ value: e }) => JSON.stringify(e), Wt = [
-	{
-		identify: (e) => typeof e == "string",
-		default: !0,
-		tag: "tag:yaml.org,2002:str",
-		resolve: (e) => e,
-		stringify: Ut
-	},
-	{
-		identify: (e) => e == null,
-		createNode: () => new L(null),
-		default: !0,
-		tag: "tag:yaml.org,2002:null",
-		test: /^null$/,
-		resolve: () => null,
-		stringify: Ut
-	},
-	{
-		identify: (e) => typeof e == "boolean",
-		default: !0,
-		tag: "tag:yaml.org,2002:bool",
-		test: /^true$|^false$/,
-		resolve: (e) => e === "true",
-		stringify: Ut
-	},
-	{
-		identify: Ht,
-		default: !0,
-		tag: "tag:yaml.org,2002:int",
-		test: /^-?(?:0|[1-9][0-9]*)$/,
-		resolve: (e, t, { intAsBigInt: n }) => n ? BigInt(e) : parseInt(e, 10),
-		stringify: ({ value: e }) => Ht(e) ? e.toString() : JSON.stringify(e)
-	},
-	{
-		identify: (e) => typeof e == "number",
-		default: !0,
-		tag: "tag:yaml.org,2002:float",
-		test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
-		resolve: (e) => parseFloat(e),
-		stringify: Ut
-	}
-], Gt = [K, J].concat(Wt, {
-	default: !0,
-	tag: "",
-	test: /^/,
-	resolve(e, t) {
-		return t(`Unresolved plain scalar ${JSON.stringify(e)}`), e;
-	}
-}), Kt = {
-	identify: (e) => e instanceof Uint8Array,
-	default: !1,
-	tag: "tag:yaml.org,2002:binary",
-	resolve(e, t) {
-		if (typeof atob == "function") {
-			let t = atob(e.replace(/[\n\r]/g, "")), n = new Uint8Array(t.length);
-			for (let e = 0; e < t.length; ++e) n[e] = t.charCodeAt(e);
-			return n;
-		}
-		return t("This environment does not support reading binary tags; either Buffer or atob is required"), e;
-	},
-	stringify({ comment: e, type: t, value: n }, r, i, a) {
-		if (!n) return "";
-		let o = n, s;
-		if (typeof btoa == "function") {
-			let e = "";
-			for (let t = 0; t < o.length; ++t) e += String.fromCharCode(o[t]);
-			s = btoa(e);
-		} else throw Error("This environment does not support writing binary tags; either Buffer or btoa is required");
-		if (t ??= L.BLOCK_LITERAL, t !== L.QUOTE_DOUBLE) {
-			let e = Math.max(r.options.lineWidth - r.indent.length, r.options.minContentWidth), n = Math.ceil(s.length / e), i = Array(n);
-			for (let t = 0, r = 0; t < n; ++t, r += e) i[t] = s.substr(r, e);
-			s = i.join(t === L.BLOCK_LITERAL ? "\n" : " ");
-		}
-		return ut({
-			comment: e,
-			type: t,
-			value: s
-		}, r, i, a);
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/yaml-1.1/pairs.js
-function qt(e, t) {
-	if (Te(e)) for (let n = 0; n < e.items.length; ++n) {
-		let r = e.items[n];
-		if (!k(r)) {
-			if (we(r)) {
-				r.items.length > 1 && t("Each pair must have its own sequence indicator");
-				let e = r.items[0] || new U(new L(null));
-				if (r.commentBefore && (e.key.commentBefore = e.key.commentBefore ? `${r.commentBefore}\n${e.key.commentBefore}` : r.commentBefore), r.comment) {
-					let t = e.value ?? e.key;
-					t.comment = t.comment ? `${r.comment}\n${t.comment}` : r.comment;
-				}
-				r = e;
-			}
-			e.items[n] = k(r) ? r : new U(r);
-		}
-	}
-	else t("Expected a sequence for this tag");
-	return e;
-}
-function Jt(e, t, n) {
-	let { replacer: r } = n, i = new q(e);
-	i.tag = "tag:yaml.org,2002:pairs";
-	let a = 0;
-	if (t && Symbol.iterator in Object(t)) for (let e of t) {
-		typeof r == "function" && (e = r.call(t, String(a++), e));
-		let o, s;
-		if (Array.isArray(e)) {
-			if (e.length === 2) o = e[0], s = e[1];
-			else throw TypeError(`Expected [key, value] tuple: ${e}`);
-		} else if (e && e instanceof Object) {
-			let t = Object.keys(e);
-			if (t.length === 1) o = t[0], s = e[o];
-			else throw TypeError(`Expected tuple with one key, not ${t.length} keys`);
-		} else o = e;
-		i.items.push(Ct(o, s, n));
-	}
-	return i;
-}
-var Yt = {
-	collection: "seq",
-	default: !1,
-	tag: "tag:yaml.org,2002:pairs",
-	resolve: qt,
-	createNode: Jt
-}, Xt = class e extends q {
-	constructor() {
-		super(), this.add = G.prototype.add.bind(this), this.delete = G.prototype.delete.bind(this), this.get = G.prototype.get.bind(this), this.has = G.prototype.has.bind(this), this.set = G.prototype.set.bind(this), this.tag = e.tag;
-	}
-	toJSON(e, t) {
-		if (!t) return super.toJSON(e);
-		let n = /* @__PURE__ */ new Map();
-		t?.onCreate && t.onCreate(n);
-		for (let e of this.items) {
-			let r, i;
-			if (k(e) ? (r = I(e.key, "", t), i = I(e.value, r, t)) : r = I(e, "", t), n.has(r)) throw Error("Ordered maps must not include duplicate keys");
-			n.set(r, i);
-		}
-		return n;
-	}
-	static from(e, t, n) {
-		let r = Jt(e, t, n), i = new this();
-		return i.items = r.items, i;
-	}
-};
-Xt.tag = "tag:yaml.org,2002:omap";
-var Zt = {
-	collection: "seq",
-	identify: (e) => e instanceof Map,
-	nodeClass: Xt,
-	default: !1,
-	tag: "tag:yaml.org,2002:omap",
-	resolve(e, t) {
-		let n = qt(e, t), r = [];
-		for (let { key: e } of n.items) A(e) && (r.includes(e.value) ? t(`Ordered maps must not include duplicate keys: ${e.value}`) : r.push(e.value));
-		return Object.assign(new Xt(), n);
-	},
-	createNode: (e, t, n) => Xt.from(e, t, n)
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/yaml-1.1/bool.js
-function Qt({ value: e, source: t }, n) {
-	return t && (e ? $t : en).test.test(t) ? t : e ? n.options.trueStr : n.options.falseStr;
-}
-var $t = {
-	identify: (e) => e === !0,
-	default: !0,
-	tag: "tag:yaml.org,2002:bool",
-	test: /^(?:Y|y|[Yy]es|YES|[Tt]rue|TRUE|[Oo]n|ON)$/,
-	resolve: () => new L(!0),
-	stringify: Qt
-}, en = {
-	identify: (e) => e === !1,
-	default: !0,
-	tag: "tag:yaml.org,2002:bool",
-	test: /^(?:N|n|[Nn]o|NO|[Ff]alse|FALSE|[Oo]ff|OFF)$/,
-	resolve: () => new L(!1),
-	stringify: Qt
-}, tn = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-	resolve: (e) => e.slice(-3).toLowerCase() === "nan" ? NaN : e[0] === "-" ? -Infinity : Infinity,
-	stringify: Y
-}, nn = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	format: "EXP",
-	test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
-	resolve: (e) => parseFloat(e.replace(/_/g, "")),
-	stringify(e) {
-		let t = Number(e.value);
-		return isFinite(t) ? t.toExponential() : Y(e);
-	}
-}, rn = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
-	resolve(e) {
-		let t = new L(parseFloat(e.replace(/_/g, ""))), n = e.indexOf(".");
-		if (n !== -1) {
-			let r = e.substring(n + 1).replace(/_/g, "");
-			r[r.length - 1] === "0" && (t.minFractionDigits = r.length);
-		}
-		return t;
-	},
-	stringify: Y
-}, an = (e) => typeof e == "bigint" || Number.isInteger(e);
-function on(e, t, n, { intAsBigInt: r }) {
-	let i = e[0];
-	if ((i === "-" || i === "+") && (t += 1), e = e.substring(t).replace(/_/g, ""), r) {
-		switch (n) {
-			case 2:
-				e = `0b${e}`;
-				break;
-			case 8:
-				e = `0o${e}`;
-				break;
-			case 16: e = `0x${e}`;
-		}
-		let t = BigInt(e);
-		return i === "-" ? BigInt(-1) * t : t;
-	}
-	let a = parseInt(e, n);
-	return i === "-" ? -1 * a : a;
-}
-function sn(e, t, n) {
-	let { value: r } = e;
-	if (an(r)) {
-		let e = r.toString(t);
-		return r < 0 ? "-" + n + e.substr(1) : n + e;
-	}
-	return Y(e);
-}
-var cn = {
-	identify: an,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "BIN",
-	test: /^[-+]?0b[0-1_]+$/,
-	resolve: (e, t, n) => on(e, 2, 2, n),
-	stringify: (e) => sn(e, 2, "0b")
-}, ln = {
-	identify: an,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "OCT",
-	test: /^[-+]?0[0-7_]+$/,
-	resolve: (e, t, n) => on(e, 1, 8, n),
-	stringify: (e) => sn(e, 8, "0")
-}, un = {
-	identify: an,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	test: /^[-+]?[0-9][0-9_]*$/,
-	resolve: (e, t, n) => on(e, 0, 10, n),
-	stringify: Y
-}, dn = {
-	identify: an,
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "HEX",
-	test: /^[-+]?0x[0-9a-fA-F_]+$/,
-	resolve: (e, t, n) => on(e, 2, 16, n),
-	stringify: (e) => sn(e, 16, "0x")
-}, fn = class e extends G {
-	constructor(t) {
-		super(t), this.tag = e.tag;
-	}
-	add(e) {
-		let t;
-		t = k(e) ? e : e && typeof e == "object" && "key" in e && "value" in e && e.value === null ? new U(e.key, null) : new U(e, null), W(this.items, t.key) || this.items.push(t);
-	}
-	get(e, t) {
-		let n = W(this.items, e);
-		return !t && k(n) ? A(n.key) ? n.key.value : n.key : n;
-	}
-	set(e, t) {
-		if (typeof t != "boolean") throw Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof t}`);
-		let n = W(this.items, e);
-		n && !t ? this.items.splice(this.items.indexOf(n), 1) : !n && t && this.items.push(new U(e));
-	}
-	toJSON(e, t) {
-		return super.toJSON(e, t, Set);
-	}
-	toString(e, t, n) {
-		if (!e) return JSON.stringify(this);
-		if (this.hasAllNullValues(!0)) return super.toString(Object.assign({}, e, { allNullValues: !0 }), t, n);
-		throw Error("Set items must all have null values");
-	}
-	static from(e, t, n) {
-		let { replacer: r } = n, i = new this(e);
-		if (t && Symbol.iterator in Object(t)) for (let e of t) typeof r == "function" && (e = r.call(t, e, e)), i.items.push(Ct(e, null, n));
-		return i;
-	}
-};
-fn.tag = "tag:yaml.org,2002:set";
-var pn = {
-	collection: "map",
-	identify: (e) => e instanceof Set,
-	nodeClass: fn,
-	default: !1,
-	tag: "tag:yaml.org,2002:set",
-	createNode: (e, t, n) => fn.from(e, t, n),
-	resolve(e, t) {
-		if (we(e)) {
-			if (e.hasAllNullValues(!0)) return Object.assign(new fn(), e);
-			t("Set items must all have null values");
-		} else t("Expected a mapping for this tag");
-		return e;
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/yaml-1.1/timestamp.js
-function mn(e, t) {
-	let n = e[0], r = n === "-" || n === "+" ? e.substring(1) : e, i = (e) => t ? BigInt(e) : Number(e), a = r.replace(/_/g, "").split(":").reduce((e, t) => e * i(60) + i(t), i(0));
-	return n === "-" ? i(-1) * a : a;
-}
-function hn(e) {
-	let { value: t } = e, n = (e) => e;
-	if (typeof t == "bigint") n = (e) => BigInt(e);
-	else if (isNaN(t) || !isFinite(t)) return Y(e);
-	let r = "";
-	t < 0 && (r = "-", t *= n(-1));
-	let i = n(60), a = [t % i];
-	return t < 60 ? a.unshift(0) : (t = (t - a[0]) / i, a.unshift(t % i), t >= 60 && (t = (t - a[0]) / i, a.unshift(t))), r + a.map((e) => String(e).padStart(2, "0")).join(":").replace(/000000\d*$/, "");
-}
-var gn = {
-	identify: (e) => typeof e == "bigint" || Number.isInteger(e),
-	default: !0,
-	tag: "tag:yaml.org,2002:int",
-	format: "TIME",
-	test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
-	resolve: (e, t, { intAsBigInt: n }) => mn(e, n),
-	stringify: hn
-}, _n = {
-	identify: (e) => typeof e == "number",
-	default: !0,
-	tag: "tag:yaml.org,2002:float",
-	format: "TIME",
-	test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
-	resolve: (e) => mn(e, !1),
-	stringify: hn
-}, vn = {
-	identify: (e) => e instanceof Date,
-	default: !0,
-	tag: "tag:yaml.org,2002:timestamp",
-	test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
-	resolve(e) {
-		let t = e.match(vn.test);
-		if (!t) throw Error("!!timestamp expects a date, starting with yyyy-mm-dd");
-		let [, n, r, i, a, o, s] = t.map(Number), c = t[7] ? Number((t[7] + "00").substr(1, 3)) : 0, l = Date.UTC(n, r - 1, i, a || 0, o || 0, s || 0, c), u = t[8];
-		if (u && u !== "Z") {
-			let e = mn(u, !1);
-			Math.abs(e) < 30 && (e *= 60), l -= 6e4 * e;
-		}
-		return new Date(l);
-	},
-	stringify: ({ value: e }) => e?.toISOString().replace(/(T00:00:00)?\.000Z$/, "") ?? ""
-}, yn = [
-	K,
-	J,
-	kt,
-	At,
-	$t,
-	en,
-	cn,
-	ln,
-	un,
-	dn,
-	tn,
-	nn,
-	rn,
-	Kt,
-	H,
-	Zt,
-	Yt,
-	pn,
-	gn,
-	_n,
-	vn
-], bn = /* @__PURE__ */ new Map([
-	["core", Vt],
-	["failsafe", [
-		K,
-		J,
-		kt
-	]],
-	["json", Gt],
-	["yaml11", yn],
-	["yaml-1.1", yn]
-]), xn = {
-	binary: Kt,
-	bool: jt,
-	float: Pt,
-	floatExp: Nt,
-	floatNaN: Mt,
-	floatTime: _n,
-	int: zt,
-	intHex: Bt,
-	intOct: Rt,
-	intTime: gn,
-	map: K,
-	merge: H,
-	null: At,
-	omap: Zt,
-	pairs: Yt,
-	seq: J,
-	set: pn,
-	timestamp: vn
-}, Sn = {
-	"tag:yaml.org,2002:binary": Kt,
-	"tag:yaml.org,2002:merge": H,
-	"tag:yaml.org,2002:omap": Zt,
-	"tag:yaml.org,2002:pairs": Yt,
-	"tag:yaml.org,2002:set": pn,
-	"tag:yaml.org,2002:timestamp": vn
-};
-function Cn(e, t, n) {
-	let r = bn.get(t);
-	if (r && !e) return n && !r.includes(H) ? r.concat(H) : r.slice();
-	let i = r;
-	if (!i) {
-		if (Array.isArray(e)) i = [];
-		else {
-			let e = Array.from(bn.keys()).filter((e) => e !== "yaml11").map((e) => JSON.stringify(e)).join(", ");
-			throw Error(`Unknown schema "${t}"; use one of ${e} or define customTags array`);
-		}
-	}
-	if (Array.isArray(e)) for (let t of e) i = i.concat(t);
-	else typeof e == "function" && (i = e(i.slice()));
-	return n && (i = i.concat(H)), i.reduce((e, t) => {
-		let n = typeof t == "string" ? xn[t] : t;
-		if (!n) {
-			let e = JSON.stringify(t), n = Object.keys(xn).map((e) => JSON.stringify(e)).join(", ");
-			throw Error(`Unknown custom tag ${e}; use one of ${n}`);
-		}
-		return e.includes(n) || e.push(n), e;
-	}, []);
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/schema/Schema.js
-var wn = (e, t) => e.key < t.key ? -1 : +(e.key > t.key), Tn = class e {
-	constructor({ compat: e, customTags: t, merge: n, resolveKnownTags: r, schema: i, sortMapEntries: a, toStringDefaults: o }) {
-		this.compat = Array.isArray(e) ? Cn(e, "compat") : e ? Cn(null, e) : null, this.name = typeof i == "string" && i || "core", this.knownTags = r ? Sn : {}, this.tags = Cn(t, this.name, n), this.toStringOptions = o ?? null, Object.defineProperty(this, w, { value: K }), Object.defineProperty(this, T, { value: kt }), Object.defineProperty(this, E, { value: J }), this.sortMapEntries = typeof a == "function" ? a : a === !0 ? wn : null;
-	}
-	clone() {
-		let t = Object.create(e.prototype, Object.getOwnPropertyDescriptors(this));
-		return t.tags = this.tags.slice(), t;
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/stringify/stringifyDocument.js
-function En(e, t) {
-	let n = [], r = t.directives === !0;
-	if (t.directives !== !1 && e.directives) {
-		let t = e.directives.toString(e);
-		t ? (n.push(t), r = !0) : e.directives.docStart && (r = !0);
-	}
-	r && n.push("---");
-	let i = dt(e, t), { commentString: a } = i.options;
-	if (e.commentBefore) {
-		n.length !== 1 && n.unshift("");
-		let t = a(e.commentBefore);
-		n.unshift(R(t, ""));
-	}
-	let o = !1, s = null;
-	if (e.contents) {
-		if (M(e.contents)) {
-			if (e.contents.spaceBefore && r && n.push(""), e.contents.commentBefore) {
-				let t = a(e.contents.commentBefore);
-				n.push(R(t, ""));
-			}
-			i.forceBlockIndent = !!e.comment, s = e.contents.comment;
-		}
-		let t = s ? void 0 : () => o = !0, c = V(e.contents, i, () => s = null, t);
-		s && (c += z(c, "", a(s))), (c[0] === "|" || c[0] === ">") && n[n.length - 1] === "---" ? n[n.length - 1] = `--- ${c}` : n.push(c);
-	} else n.push(V(e.contents, i));
-	if (e.directives?.docEnd) {
-		if (e.comment) {
-			let t = a(e.comment);
-			t.includes("\n") ? (n.push("..."), n.push(R(t, ""))) : n.push(`... ${t}`);
-		} else n.push("...");
-	} else {
-		let t = e.comment;
-		t && o && (t = t.replace(/^\n+/, "")), t && ((!o || s) && n[n.length - 1] !== "" && n.push(""), n.push(R(a(t), "")));
-	}
-	return n.join("\n") + "\n";
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/doc/Document.js
-var Dn = class e {
-	constructor(e, t, n) {
-		this.commentBefore = null, this.comment = null, this.errors = [], this.warnings = [], Object.defineProperty(this, D, { value: xe });
-		let r = null;
-		typeof t == "function" || Array.isArray(t) ? r = t : n === void 0 && t && (n = t, t = void 0);
-		let i = Object.assign({
-			intAsBigInt: !1,
-			keepSourceTokens: !1,
-			logLevel: "warn",
-			prettyErrors: !0,
-			strict: !0,
-			stringKeys: !1,
-			uniqueKeys: !0,
-			version: "1.2"
-		}, n);
-		this.options = i;
-		let { version: a } = i;
-		n?._directives ? (this.directives = n._directives.atDocument(), this.directives.yaml.explicit && (a = this.directives.yaml.version)) : this.directives = new P({ version: a }), this.setSchema(a, n), this.contents = e === void 0 ? null : this.createNode(e, r, n);
-	}
-	clone() {
-		let t = Object.create(e.prototype, { [D]: { value: xe } });
-		return t.commentBefore = this.commentBefore, t.comment = this.comment, t.errors = this.errors.slice(), t.warnings = this.warnings.slice(), t.options = Object.assign({}, this.options), this.directives && (t.directives = this.directives.clone()), t.schema = this.schema.clone(), t.contents = M(this.contents) ? this.contents.clone(t.schema) : this.contents, this.range && (t.range = this.range.slice()), t;
-	}
-	add(e) {
-		X(this.contents) && this.contents.add(e);
-	}
-	addIn(e, t) {
-		X(this.contents) && this.contents.addIn(e, t);
-	}
-	createAlias(e, t) {
-		if (!e.anchor) {
-			let n = Le(this);
-			e.anchor = !t || n.has(t) ? Re(t || "a", n) : t;
-		}
-		return new Ve(e.anchor);
-	}
-	createNode(e, t, n) {
-		let r;
-		if (typeof t == "function") e = t.call({ "": e }, "", e), r = t;
-		else if (Array.isArray(t)) {
-			let e = t.filter((e) => typeof e == "number" || e instanceof String || e instanceof Number).map(String);
-			e.length > 0 && (t = t.concat(e)), r = t;
-		} else n === void 0 && t && (n = t, t = void 0);
-		let { aliasDuplicateObjects: i, anchorPrefix: a, flow: o, keepUndefined: s, onTagObj: c, tag: l } = n ?? {}, { onAnchor: u, setAnchors: d, sourceObjects: f } = ze(this, a || "a"), p = {
-			aliasDuplicateObjects: i ?? !0,
-			keepUndefined: s ?? !1,
-			onAnchor: u,
-			onTagObj: c,
-			replacer: r,
-			schema: this.schema,
-			sourceObjects: f
-		}, m = Ke(e, l, p);
-		return o && j(m) && (m.flow = !0), d(), m;
-	}
-	createPair(e, t, n = {}) {
-		return new U(this.createNode(e, null, n), this.createNode(t, null, n));
-	}
-	delete(e) {
-		return X(this.contents) ? this.contents.delete(e) : !1;
-	}
-	deleteIn(e) {
-		return Je(e) ? this.contents != null && (this.contents = null, !0) : X(this.contents) ? this.contents.deleteIn(e) : !1;
-	}
-	get(e, t) {
-		return j(this.contents) ? this.contents.get(e, t) : void 0;
-	}
-	getIn(e, t) {
-		return Je(e) ? !t && A(this.contents) ? this.contents.value : this.contents : j(this.contents) ? this.contents.getIn(e, t) : void 0;
-	}
-	has(e) {
-		return j(this.contents) ? this.contents.has(e) : !1;
-	}
-	hasIn(e) {
-		return Je(e) ? this.contents !== void 0 : j(this.contents) ? this.contents.hasIn(e) : !1;
-	}
-	set(e, t) {
-		this.contents == null ? this.contents = qe(this.schema, [e], t) : X(this.contents) && this.contents.set(e, t);
-	}
-	setIn(e, t) {
-		Je(e) ? this.contents = t : this.contents == null ? this.contents = qe(this.schema, Array.from(e), t) : X(this.contents) && this.contents.setIn(e, t);
-	}
-	setSchema(e, t = {}) {
-		typeof e == "number" && (e = String(e));
-		let n;
-		switch (e) {
-			case "1.1":
-				this.directives ? this.directives.yaml.version = "1.1" : this.directives = new P({ version: "1.1" }), n = {
-					resolveKnownTags: !1,
-					schema: "yaml-1.1"
-				};
-				break;
-			case "1.2":
-			case "next":
-				this.directives ? this.directives.yaml.version = e : this.directives = new P({ version: e }), n = {
-					resolveKnownTags: !0,
-					schema: "core"
-				};
-				break;
-			case null:
-				this.directives && delete this.directives, n = null;
-				break;
-			default: {
-				let t = JSON.stringify(e);
-				throw Error(`Expected '1.1', '1.2' or null as first argument, but found: ${t}`);
-			}
-		}
-		if (t.schema instanceof Object) this.schema = t.schema;
-		else if (n) this.schema = new Tn(Object.assign(n, t));
-		else throw Error("With a null YAML version, the { schema: Schema } option is required");
-	}
-	toJS({ json: e, jsonArg: t, mapAsMap: n, maxAliasCount: r, onAnchor: i, reviver: a } = {}) {
-		let o = {
-			anchors: /* @__PURE__ */ new Map(),
-			doc: this,
-			keep: !e,
-			mapAsMap: n === !0,
-			mapKeyWarned: !1,
-			maxAliasCount: typeof r == "number" ? r : 100
-		}, s = I(this.contents, t ?? "", o);
-		if (typeof i == "function") for (let { count: e, res: t } of o.anchors.values()) i(t, e);
-		return typeof a == "function" ? F(a, { "": s }, "", s) : s;
-	}
-	toJSON(e, t) {
-		return this.toJS({
-			json: !0,
-			jsonArg: e,
-			mapAsMap: !1,
-			onAnchor: t
-		});
-	}
-	toString(e = {}) {
-		if (this.errors.length > 0) throw Error("Document with errors cannot be stringified");
-		if ("indent" in e && (!Number.isInteger(e.indent) || Number(e.indent) <= 0)) {
-			let t = JSON.stringify(e.indent);
-			throw Error(`"indent" option must be a positive integer, not ${t}`);
-		}
-		return En(this, e);
-	}
-};
-function X(e) {
-	if (j(e)) return !0;
-	throw Error("Expected a YAML collection as document contents");
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/errors.js
-var On = class extends Error {
-	constructor(e, t, n, r) {
-		super(), this.name = e, this.code = n, this.message = r, this.pos = t;
-	}
-}, kn = class extends On {
-	constructor(e, t, n) {
-		super("YAMLParseError", e, t, n);
-	}
-}, An = class extends On {
-	constructor(e, t, n) {
-		super("YAMLWarning", e, t, n);
-	}
-}, jn = (e, t) => (n) => {
-	if (n.pos[0] === -1) return;
-	n.linePos = n.pos.map((e) => t.linePos(e));
-	let { line: r, col: i } = n.linePos[0];
-	n.message += ` at line ${r}, column ${i}`;
-	let a = i - 1, o = e.substring(t.lineStarts[r - 1], t.lineStarts[r]).replace(/[\n\r]+$/, "");
-	if (a >= 60 && o.length > 80) {
-		let e = Math.min(a - 39, o.length - 79);
-		o = "…" + o.substring(e), a -= e - 1;
-	}
-	if (o.length > 80 && (o = o.substring(0, 79) + "…"), r > 1 && /^ *$/.test(o.substring(0, a))) {
-		let n = e.substring(t.lineStarts[r - 2], t.lineStarts[r - 1]);
-		n.length > 80 && (n = n.substring(0, 79) + "…\n"), o = n + o;
-	}
-	if (/[^ ]/.test(o)) {
-		let e = 1, t = n.linePos[1];
-		t?.line === r && t.col > i && (e = Math.max(1, Math.min(t.col - i, 80 - a)));
-		let s = " ".repeat(a) + "^".repeat(e);
-		n.message += `:\n\n${o}\n${s}\n`;
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-props.js
-function Z(e, { flow: t, indicator: n, next: r, offset: i, onError: a, parentIndent: o, startOnNewline: s }) {
-	let c = !1, l = s, u = s, d = "", f = "", p = !1, m = !1, h = null, g = null, _ = null, v = null, y = null, b = null, x = null;
-	for (let i of e) switch (m &&= (i.type !== "space" && i.type !== "newline" && i.type !== "comma" && a(i.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space"), !1), h &&= (l && i.type !== "comment" && i.type !== "newline" && a(h, "TAB_AS_INDENT", "Tabs are not allowed as indentation"), null), i.type) {
-		case "space":
-			!t && (n !== "doc-start" || r?.type !== "flow-collection") && i.source.includes("	") && (h = i), u = !0;
-			break;
-		case "comment": {
-			u || a(i, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
-			let e = i.source.substring(1) || " ";
-			d ? d += f + e : d = e, f = "", l = !1;
-			break;
-		}
-		case "newline":
-			l ? d ? d += i.source : (!b || n !== "seq-item-ind") && (c = !0) : f += i.source, l = !0, p = !0, (g || _) && (v = i), u = !0;
-			break;
-		case "anchor":
-			g && a(i, "MULTIPLE_ANCHORS", "A node can have at most one anchor"), i.source.endsWith(":") && a(i.offset + i.source.length - 1, "BAD_ALIAS", "Anchor ending in : is ambiguous", !0), g = i, x ??= i.offset, l = !1, u = !1, m = !0;
-			break;
-		case "tag":
-			_ && a(i, "MULTIPLE_TAGS", "A node can have at most one tag"), _ = i, x ??= i.offset, l = !1, u = !1, m = !0;
-			break;
-		case n:
-			(g || _) && a(i, "BAD_PROP_ORDER", `Anchors and tags must be after the ${i.source} indicator`), b && a(i, "UNEXPECTED_TOKEN", `Unexpected ${i.source} in ${t ?? "collection"}`), b = i, l = n === "seq-item-ind" || n === "explicit-key-ind", u = !1;
-			break;
-		case "comma": if (t) {
-			y && a(i, "UNEXPECTED_TOKEN", `Unexpected , in ${t}`), y = i, l = !1, u = !1;
-			break;
-		}
-		default: a(i, "UNEXPECTED_TOKEN", `Unexpected ${i.type} token`), l = !1, u = !1;
-	}
-	let S = e[e.length - 1], C = S ? S.offset + S.source.length : i;
-	return m && r && r.type !== "space" && r.type !== "newline" && r.type !== "comma" && (r.type !== "scalar" || r.source !== "") && a(r.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space"), h && (l && h.indent <= o || r?.type === "block-map" || r?.type === "block-seq") && a(h, "TAB_AS_INDENT", "Tabs are not allowed as indentation"), {
-		comma: y,
-		found: b,
-		spaceBefore: c,
-		comment: d,
-		hasNewline: p,
-		anchor: g,
-		tag: _,
-		newlineAfterProp: v,
-		end: C,
-		start: x ?? C
-	};
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/util-contains-newline.js
-function Mn(e) {
-	if (!e) return null;
-	switch (e.type) {
-		case "alias":
-		case "scalar":
-		case "double-quoted-scalar":
-		case "single-quoted-scalar":
-			if (e.source.includes("\n")) return !0;
-			if (e.end) {
-				for (let t of e.end) if (t.type === "newline") return !0;
-			}
-			return !1;
-		case "flow-collection":
-			for (let t of e.items) {
-				for (let e of t.start) if (e.type === "newline") return !0;
-				if (t.sep) {
-					for (let e of t.sep) if (e.type === "newline") return !0;
-				}
-				if (Mn(t.key) || Mn(t.value)) return !0;
-			}
-			return !1;
-		default: return !0;
-	}
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/util-flow-indent-check.js
-function Nn(e, t, n) {
-	if (t?.type === "flow-collection") {
-		let r = t.end[0];
-		r.indent === e && (r.source === "]" || r.source === "}") && Mn(t) && n(r, "BAD_INDENT", "Flow end indicator should be more indented than parent", !0);
-	}
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/util-map-includes.js
-function Pn(e, t, n) {
-	let { uniqueKeys: r } = e.options;
-	if (r === !1) return !1;
-	let i = typeof r == "function" ? r : (e, t) => e === t || A(e) && A(t) && e.value === t.value;
-	return t.some((e) => i(e.key, n));
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-block-map.js
-var Fn = "All mapping items must start at the same column";
-function In({ composeNode: e, composeEmptyNode: t }, n, r, i, a) {
-	let o = new ((a?.nodeClass) ?? G)(n.schema);
-	n.atRoot &&= !1;
-	let s = r.offset, c = null;
-	for (let a of r.items) {
-		let { start: l, key: u, sep: d, value: f } = a, p = Z(l, {
-			indicator: "explicit-key-ind",
-			next: u ?? d?.[0],
-			offset: s,
-			onError: i,
-			parentIndent: r.indent,
-			startOnNewline: !0
-		}), m = !p.found;
-		if (m) {
-			if (u && (u.type === "block-seq" ? i(s, "BLOCK_AS_IMPLICIT_KEY", "A block sequence may not be used as an implicit map key") : "indent" in u && u.indent !== r.indent && i(s, "BAD_INDENT", Fn)), !p.anchor && !p.tag && !d) {
-				c = p.end, p.comment && (o.comment ? o.comment += "\n" + p.comment : o.comment = p.comment);
-				continue;
-			}
-			(p.newlineAfterProp || Mn(u)) && i(u ?? l[l.length - 1], "MULTILINE_IMPLICIT_KEY", "Implicit keys need to be on a single line");
-		} else p.found?.indent !== r.indent && i(s, "BAD_INDENT", Fn);
-		n.atKey = !0;
-		let h = p.end, g = u ? e(n, u, p, i) : t(n, h, l, null, p, i);
-		n.schema.compat && Nn(r.indent, u, i), n.atKey = !1, Pn(n, o.items, g) && i(h, "DUPLICATE_KEY", "Map keys must be unique");
-		let _ = Z(d ?? [], {
-			indicator: "map-value-ind",
-			next: f,
-			offset: g.range[2],
-			onError: i,
-			parentIndent: r.indent,
-			startOnNewline: !u || u.type === "block-scalar"
-		});
-		if (s = _.end, _.found) {
-			m && (f?.type === "block-map" && !_.hasNewline && i(s, "BLOCK_AS_IMPLICIT_KEY", "Nested mappings are not allowed in compact mappings"), n.options.strict && p.start < _.found.offset - 1024 && i(g.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key"));
-			let c = f ? e(n, f, _, i) : t(n, s, d, null, _, i);
-			n.schema.compat && Nn(r.indent, f, i), s = c.range[2];
-			let l = new U(g, c);
-			n.options.keepSourceTokens && (l.srcToken = a), o.items.push(l);
-		} else {
-			m && i(g.range, "MISSING_CHAR", "Implicit map keys need to be followed by map values"), _.comment && (g.comment ? g.comment += "\n" + _.comment : g.comment = _.comment);
-			let e = new U(g);
-			n.options.keepSourceTokens && (e.srcToken = a), o.items.push(e);
-		}
-	}
-	return c && c < s && i(c, "IMPOSSIBLE", "Map comment with trailing content"), o.range = [
-		r.offset,
-		s,
-		c ?? s
-	], o;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-block-seq.js
-function Ln({ composeNode: e, composeEmptyNode: t }, n, r, i, a) {
-	let o = new ((a?.nodeClass) ?? q)(n.schema);
-	n.atRoot &&= !1, n.atKey &&= !1;
-	let s = r.offset, c = null;
-	for (let { start: a, value: l } of r.items) {
-		let u = Z(a, {
-			indicator: "seq-item-ind",
-			next: l,
-			offset: s,
-			onError: i,
-			parentIndent: r.indent,
-			startOnNewline: !0
-		});
-		if (!u.found) {
-			if (u.anchor || u.tag || l) l?.type === "block-seq" ? i(u.end, "BAD_INDENT", "All sequence items must start at the same column") : i(s, "MISSING_CHAR", "Sequence item without - indicator");
-			else {
-				c = u.end, u.comment && (o.comment = u.comment);
-				continue;
-			}
-		}
-		let d = l ? e(n, l, u, i) : t(n, u.end, a, null, u, i);
-		n.schema.compat && Nn(r.indent, l, i), s = d.range[2], o.items.push(d);
-	}
-	return o.range = [
-		r.offset,
-		s,
-		c ?? s
-	], o;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-end.js
-function Rn(e, t, n, r) {
-	let i = "";
-	if (e) {
-		let a = !1, o = "";
-		for (let s of e) {
-			let { source: e, type: c } = s;
-			switch (c) {
-				case "space":
-					a = !0;
-					break;
-				case "comment": {
-					n && !a && r(s, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
-					let t = e.substring(1) || " ";
-					i ? i += o + t : i = t, o = "";
-					break;
-				}
-				case "newline":
-					i && (o += e), a = !0;
-					break;
-				default: r(s, "UNEXPECTED_TOKEN", `Unexpected ${c} at node end`);
-			}
-			t += e.length;
-		}
-	}
-	return {
-		comment: i,
-		offset: t
-	};
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-flow-collection.js
-var zn = "Block collections are not allowed within flow collections", Bn = (e) => e && (e.type === "block-map" || e.type === "block-seq");
-function Vn({ composeNode: e, composeEmptyNode: t }, n, r, i, a) {
-	let o = r.start.source === "{", s = o ? "flow map" : "flow sequence", c = new ((a?.nodeClass) ?? (o ? G : q))(n.schema);
-	c.flow = !0;
-	let l = n.atRoot;
-	l && (n.atRoot = !1), n.atKey &&= !1;
-	let u = r.offset + r.start.source.length;
-	for (let a = 0; a < r.items.length; ++a) {
-		let l = r.items[a], { start: d, key: f, sep: p, value: m } = l, h = Z(d, {
-			flow: s,
-			indicator: "explicit-key-ind",
-			next: f ?? p?.[0],
-			offset: u,
-			onError: i,
-			parentIndent: r.indent,
-			startOnNewline: !1
-		});
-		if (!h.found) {
-			if (!h.anchor && !h.tag && !p && !m) {
-				a === 0 && h.comma ? i(h.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${s}`) : a < r.items.length - 1 && i(h.start, "UNEXPECTED_TOKEN", `Unexpected empty item in ${s}`), h.comment && (c.comment ? c.comment += "\n" + h.comment : c.comment = h.comment), u = h.end;
-				continue;
-			}
-			!o && n.options.strict && Mn(f) && i(f, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
-		}
-		if (a === 0) h.comma && i(h.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${s}`);
-		else if (h.comma || i(h.start, "MISSING_CHAR", `Missing , between ${s} items`), h.comment) {
-			let e = "";
-			loop: for (let t of d) switch (t.type) {
-				case "comma":
-				case "space": break;
-				case "comment":
-					e = t.source.substring(1);
-					break loop;
-				default: break loop;
-			}
-			if (e) {
-				let t = c.items[c.items.length - 1];
-				k(t) && (t = t.value ?? t.key), t.comment ? t.comment += "\n" + e : t.comment = e, h.comment = h.comment.substring(e.length + 1);
-			}
-		}
-		if (!o && !p && !h.found) {
-			let r = m ? e(n, m, h, i) : t(n, h.end, p, null, h, i);
-			c.items.push(r), u = r.range[2], Bn(m) && i(r.range, "BLOCK_IN_FLOW", zn);
-		} else {
-			n.atKey = !0;
-			let a = h.end, g = f ? e(n, f, h, i) : t(n, a, d, null, h, i);
-			Bn(f) && i(g.range, "BLOCK_IN_FLOW", zn), n.atKey = !1;
-			let _ = Z(p ?? [], {
-				flow: s,
-				indicator: "map-value-ind",
-				next: m,
-				offset: g.range[2],
-				onError: i,
-				parentIndent: r.indent,
-				startOnNewline: !1
-			});
-			if (_.found) {
-				if (!o && !h.found && n.options.strict) {
-					if (p) for (let e of p) {
-						if (e === _.found) break;
-						if (e.type === "newline") {
-							i(e, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
-							break;
-						}
-					}
-					h.start < _.found.offset - 1024 && i(_.found, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit flow sequence key");
-				}
-			} else m && ("source" in m && m.source?.[0] === ":" ? i(m, "MISSING_CHAR", `Missing space after : in ${s}`) : i(_.start, "MISSING_CHAR", `Missing , or : between ${s} items`));
-			let v = m ? e(n, m, _, i) : _.found ? t(n, _.end, p, null, _, i) : null;
-			v ? Bn(m) && i(v.range, "BLOCK_IN_FLOW", zn) : _.comment && (g.comment ? g.comment += "\n" + _.comment : g.comment = _.comment);
-			let y = new U(g, v);
-			if (n.options.keepSourceTokens && (y.srcToken = l), o) {
-				let e = c;
-				Pn(n, e.items, g) && i(a, "DUPLICATE_KEY", "Map keys must be unique"), e.items.push(y);
-			} else {
-				let e = new G(n.schema);
-				e.flow = !0, e.items.push(y);
-				let t = (v ?? g).range;
-				e.range = [
-					g.range[0],
-					t[1],
-					t[2]
-				], c.items.push(e);
-			}
-			u = v ? v.range[2] : _.end;
-		}
-	}
-	let d = o ? "}" : "]", [f, ...p] = r.end, m = u;
-	if (f?.source === d) m = f.offset + f.source.length;
-	else {
-		let e = s[0].toUpperCase() + s.substring(1), t = l ? `${e} must end with a ${d}` : `${e} in block collection must be sufficiently indented and end with a ${d}`;
-		i(u, l ? "MISSING_CHAR" : "BAD_INDENT", t), f && f.source.length !== 1 && p.unshift(f);
-	}
-	if (p.length > 0) {
-		let e = Rn(p, m, n.options.strict, i);
-		e.comment && (c.comment ? c.comment += "\n" + e.comment : c.comment = e.comment), c.range = [
-			r.offset,
-			m,
-			e.offset
-		];
-	} else c.range = [
-		r.offset,
-		m,
-		m
-	];
-	return c;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/compose-collection.js
-function Hn(e, t, n, r, i, a) {
-	let o = n.type === "block-map" ? In(e, t, n, r, a) : n.type === "block-seq" ? Ln(e, t, n, r, a) : Vn(e, t, n, r, a), s = o.constructor;
-	return i === "!" || i === s.tagName ? (o.tag = s.tagName, o) : (i && (o.tag = i), o);
-}
-function Un(e, t, n, r, i) {
-	let a = r.tag, o = a ? t.directives.tagName(a.source, (e) => i(a, "TAG_RESOLVE_FAILED", e)) : null;
-	if (n.type === "block-seq") {
-		let { anchor: e, newlineAfterProp: t } = r, n = e && a ? e.offset > a.offset ? e : a : e ?? a;
-		n && (!t || t.offset < n.offset) && i(n, "MISSING_CHAR", "Missing newline after block sequence props");
-	}
-	let s = n.type === "block-map" ? "map" : n.type === "block-seq" ? "seq" : n.start.source === "{" ? "map" : "seq";
-	if (!a || !o || o === "!" || o === G.tagName && s === "map" || o === q.tagName && s === "seq") return Hn(e, t, n, i, o);
-	let c = t.schema.tags.find((e) => e.tag === o && e.collection === s);
-	if (!c) {
-		let r = t.schema.knownTags[o];
-		if (r?.collection === s) t.schema.tags.push(Object.assign({}, r, { default: !1 })), c = r;
-		else return r ? i(a, "BAD_COLLECTION_TYPE", `${r.tag} used for ${s} collection, but expects ${r.collection ?? "scalar"}`, !0) : i(a, "TAG_RESOLVE_FAILED", `Unresolved tag: ${o}`, !0), Hn(e, t, n, i, o);
-	}
-	let l = Hn(e, t, n, i, o, c), u = c.resolve?.(l, (e) => i(a, "TAG_RESOLVE_FAILED", e), t.options) ?? l, d = M(u) ? u : new L(u);
-	return d.range = l.range, d.tag = o, c?.format && (d.format = c.format), d;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-block-scalar.js
-function Wn(e, t, n) {
-	let r = t.offset, i = Gn(t, e.options.strict, n);
-	if (!i) return {
-		value: "",
-		type: null,
-		comment: "",
-		range: [
-			r,
-			r,
-			r
-		]
-	};
-	let a = i.mode === ">" ? L.BLOCK_FOLDED : L.BLOCK_LITERAL, o = t.source ? Kn(t.source) : [], s = o.length;
-	for (let e = o.length - 1; e >= 0; --e) {
-		let t = o[e][1];
-		if (t === "" || t === "\r") s = e;
-		else break;
-	}
-	if (s === 0) {
-		let e = i.chomp === "+" && o.length > 0 ? "\n".repeat(Math.max(1, o.length - 1)) : "", n = r + i.length;
-		return t.source && (n += t.source.length), {
-			value: e,
-			type: a,
-			comment: i.comment,
-			range: [
-				r,
-				n,
-				n
-			]
-		};
-	}
-	let c = t.indent + i.indent, l = t.offset + i.length, u = 0;
-	for (let t = 0; t < s; ++t) {
-		let [r, a] = o[t];
-		if (a === "" || a === "\r") i.indent === 0 && r.length > c && (c = r.length);
-		else {
-			r.length < c && n(l + r.length, "MISSING_CHAR", "Block scalars with more-indented leading empty lines must use an explicit indentation indicator"), i.indent === 0 && (c = r.length), u = t, c === 0 && !e.atRoot && n(l, "BAD_INDENT", "Block scalar values in collections must be indented");
-			break;
-		}
-		l += r.length + a.length + 1;
-	}
-	for (let e = o.length - 1; e >= s; --e) o[e][0].length > c && (s = e + 1);
-	let d = "", f = "", p = !1;
-	for (let e = 0; e < u; ++e) d += o[e][0].slice(c) + "\n";
-	for (let e = u; e < s; ++e) {
-		let [t, r] = o[e];
-		l += t.length + r.length + 1;
-		let s = r[r.length - 1] === "\r";
-		/* istanbul ignore if already caught in lexer */
-		if (s && (r = r.slice(0, -1)), r && t.length < c) {
-			let e = `Block scalar lines must not be less indented than their ${i.indent ? "explicit indentation indicator" : "first line"}`;
-			n(l - r.length - (s ? 2 : 1), "BAD_INDENT", e), t = "";
-		}
-		a === L.BLOCK_LITERAL ? (d += f + t.slice(c) + r, f = "\n") : t.length > c || r[0] === "	" ? (f === " " ? f = "\n" : !p && f === "\n" && (f = "\n\n"), d += f + t.slice(c) + r, f = "\n", p = !0) : r === "" ? f === "\n" ? d += "\n" : f = "\n" : (d += f + r, f = " ", p = !1);
-	}
-	switch (i.chomp) {
-		case "-": break;
-		case "+":
-			for (let e = s; e < o.length; ++e) d += "\n" + o[e][0].slice(c);
-			d[d.length - 1] !== "\n" && (d += "\n");
-			break;
-		default: d += "\n";
-	}
-	let m = r + i.length + t.source.length;
-	return {
-		value: d,
-		type: a,
-		comment: i.comment,
-		range: [
-			r,
-			m,
-			m
-		]
-	};
-}
-function Gn({ offset: e, props: t }, n, r) {
-	/* istanbul ignore if should not happen */
-	if (t[0].type !== "block-scalar-header") return r(t[0], "IMPOSSIBLE", "Block scalar header not found"), null;
-	let { source: i } = t[0], a = i[0], o = 0, s = "", c = -1;
-	for (let t = 1; t < i.length; ++t) {
-		let n = i[t];
-		if (!s && (n === "-" || n === "+")) s = n;
-		else {
-			let r = Number(n);
-			!o && r ? o = r : c === -1 && (c = e + t);
-		}
-	}
-	c !== -1 && r(c, "UNEXPECTED_TOKEN", `Block scalar header includes extra characters: ${i}`);
-	let l = !1, u = "", d = i.length;
-	for (let e = 1; e < t.length; ++e) {
-		let i = t[e];
-		switch (i.type) {
-			case "space": l = !0;
-			case "newline":
-				d += i.source.length;
-				break;
-			case "comment":
-				n && !l && r(i, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters"), d += i.source.length, u = i.source.substring(1);
-				break;
-			case "error":
-				r(i, "UNEXPECTED_TOKEN", i.message), d += i.source.length;
-				break;
-			/* istanbul ignore next should not happen */
-			default: {
-				r(i, "UNEXPECTED_TOKEN", `Unexpected token in block scalar header: ${i.type}`);
-				let e = i.source;
-				e && typeof e == "string" && (d += e.length);
-			}
-		}
-	}
-	return {
-		mode: a,
-		indent: o,
-		chomp: s,
-		comment: u,
-		length: d
-	};
-}
-function Kn(e) {
-	let t = e.split(/\n( *)/), n = t[0], r = n.match(/^( *)/), i = [r?.[1] ? [r[1], n.slice(r[1].length)] : ["", n]];
-	for (let e = 1; e < t.length; e += 2) i.push([t[e], t[e + 1]]);
-	return i;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/resolve-flow-scalar.js
-function qn(e, t, n) {
-	let { offset: r, type: i, source: a, end: o } = e, s, c, l = (e, t, i) => n(r + e, t, i);
-	switch (i) {
-		case "scalar":
-			s = L.PLAIN, c = Jn(a, l);
-			break;
-		case "single-quoted-scalar":
-			s = L.QUOTE_SINGLE, c = Yn(a, l);
-			break;
-		case "double-quoted-scalar":
-			s = L.QUOTE_DOUBLE, c = Zn(a, l);
-			break;
-		/* istanbul ignore next should not happen */
-		default: return n(e, "UNEXPECTED_TOKEN", `Expected a flow scalar value, but found: ${i}`), {
-			value: "",
-			type: null,
-			comment: "",
-			range: [
-				r,
-				r + a.length,
-				r + a.length
-			]
-		};
-	}
-	let u = r + a.length, d = Rn(o, u, t, n);
-	return {
-		value: c,
-		type: s,
-		comment: d.comment,
-		range: [
-			r,
-			u,
-			d.offset
-		]
-	};
-}
-function Jn(e, t) {
-	let n = "";
-	switch (e[0]) {
-		/* istanbul ignore next should not happen */
-		case "	":
-			n = "a tab character";
-			break;
-		case ",":
-			n = "flow indicator character ,";
-			break;
-		case "%":
-			n = "directive indicator character %";
-			break;
-		case "|":
-		case ">":
-			n = `block scalar indicator ${e[0]}`;
-			break;
-		case "@":
-		case "`": n = `reserved character ${e[0]}`;
-	}
-	return n && t(0, "BAD_SCALAR_START", `Plain value cannot start with ${n}`), Xn(e);
-}
-function Yn(e, t) {
-	return (e[e.length - 1] !== "'" || e.length === 1) && t(e.length, "MISSING_CHAR", "Missing closing 'quote"), Xn(e.slice(1, -1)).replace(/''/g, "'");
-}
-function Xn(e) {
-	let t = /(.*?)\r?\n/sy, n = t.exec(e);
-	if (!n) return e;
-	let r, i;
-	try {
-		r = /* @__PURE__ */ RegExp("(?<![ 	])[ 	]+$"), i = /* @__PURE__ */ RegExp("^[ 	]+|(?<![ 	])[ 	]+$", "g");
-	} catch {
-		r = /[ \t]+$/, i = /^[ \t]+|[ \t]+$/g;
-	}
-	let a = n[1].replace(r, ""), o = " ", s = t.lastIndex;
-	for (; n = t.exec(e);) {
-		let e = n[1].replace(i, "");
-		e === "" ? o === "\n" ? a += o : o = "\n" : (a += o + e, o = " "), s = t.lastIndex;
-	}
-	let c = /[ \t]*(.*)/sy;
-	return c.lastIndex = s, n = c.exec(e), a + o + (n?.[1] ?? "");
-}
-function Zn(e, t) {
-	let n = "";
-	for (let r = 1; r < e.length - 1; ++r) {
-		let i = e[r];
-		if (i !== "\r" || e[r + 1] !== "\n") {
-			if (i === "\n") {
-				let { fold: t, offset: i } = Qn(e, r);
-				n += t, r = i;
-			} else if (i === "\\") {
-				let i = e[++r], a = $n[i];
-				if (a) n += a;
-				else if (i === "\n") for (i = e[r + 1]; i === " " || i === "	";) i = e[++r + 1];
-				else if (i === "\r" && e[r + 1] === "\n") for (i = e[++r + 1]; i === " " || i === "	";) i = e[++r + 1];
-				else if (i === "x" || i === "u" || i === "U") {
-					let a = i === "x" ? 2 : i === "u" ? 4 : 8;
-					n += er(e, r + 1, a, t), r += a;
-				} else {
-					let i = e.substr(r - 1, 2);
-					t(r - 1, "BAD_DQ_ESCAPE", `Invalid escape sequence ${i}`), n += i;
-				}
-			} else if (i === " " || i === "	") {
-				let t = r, a = e[r + 1];
-				for (; a === " " || a === "	";) a = e[++r + 1];
-				a !== "\n" && (a !== "\r" || e[r + 2] !== "\n") && (n += r > t ? e.slice(t, r + 1) : i);
-			} else n += i;
-		}
-	}
-	return (e[e.length - 1] !== "\"" || e.length === 1) && t(e.length, "MISSING_CHAR", "Missing closing \"quote"), n;
-}
-function Qn(e, t) {
-	let n = "", r = e[t + 1];
-	for (; (r === " " || r === "	" || r === "\n" || r === "\r") && (r !== "\r" || e[t + 2] === "\n");) r === "\n" && (n += "\n"), t += 1, r = e[t + 1];
-	return n ||= " ", {
-		fold: n,
-		offset: t
-	};
-}
-var $n = {
+var R = {
 	0: "\0",
 	a: "\x07",
 	b: "\b",
-	e: "\x1B",
-	f: "\f",
-	n: "\n",
-	r: "\r",
 	t: "	",
+	"	": "	",
+	n: "\n",
 	v: "\v",
-	N: "",
-	_: "\xA0",
-	L: "\u2028",
-	P: "\u2029",
+	f: "\f",
+	r: "\r",
+	e: "\x1B",
 	" ": " ",
 	"\"": "\"",
 	"/": "/",
 	"\\": "\\",
-	"	": "	"
+	N: "",
+	_: "\xA0",
+	L: "\u2028",
+	P: "\u2029"
+}, z = {
+	x: 2,
+	u: 4,
+	U: 8
 };
-function er(e, t, n, r) {
-	let i = e.substr(t, n), a = i.length === n && /^[0-9a-fA-F]+$/.test(i) ? parseInt(i, 16) : NaN;
-	try {
-		return String.fromCodePoint(a);
-	} catch {
-		let i = e.substr(t - 2, n + 2);
-		return r(t - 2, "BAD_DQ_ESCAPE", `Invalid escape sequence ${i}`), i;
-	}
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/compose-scalar.js
-function tr(e, t, n, r) {
-	let { value: i, type: a, comment: o, range: s } = t.type === "block-scalar" ? Wn(e, t, r) : qn(t, e.options.strict, r), c = n ? e.directives.tagName(n.source, (e) => r(n, "TAG_RESOLVE_FAILED", e)) : null, l;
-	l = e.options.stringKeys && e.atKey ? e.schema[T] : c ? nr(e.schema, i, c, n, r) : t.type === "scalar" ? rr(e, i, t, r) : e.schema[T];
-	let u;
-	try {
-		let a = l.resolve(i, (e) => r(n ?? t, "TAG_RESOLVE_FAILED", e), e.options);
-		u = A(a) ? a : new L(a);
-	} catch (e) {
-		let a = e instanceof Error ? e.message : String(e);
-		r(n ?? t, "TAG_RESOLVE_FAILED", a), u = new L(i);
-	}
-	return u.range = s, u.source = i, a && (u.type = a), c && (u.tag = c), l.format && (u.format = l.format), o && (u.comment = o), u;
-}
-function nr(e, t, n, r, i) {
-	if (n === "!") return e[T];
-	let a = [];
-	for (let t of e.tags) if (!t.collection && t.tag === n) {
-		if (t.default && t.test) a.push(t);
-		else return t;
-	}
-	for (let e of a) if (e.test?.test(t)) return e;
-	let o = e.knownTags[n];
-	return o && !o.collection ? (e.tags.push(Object.assign({}, o, {
-		default: !1,
-		test: void 0
-	})), o) : (i(r, "TAG_RESOLVE_FAILED", `Unresolved tag: ${n}`, n !== "tag:yaml.org,2002:str"), e[T]);
-}
-function rr({ atKey: e, directives: t, schema: n }, r, i, a) {
-	let o = n.tags.find((t) => (t.default === !0 || e && t.default === "key") && t.test?.test(r)) || n[T];
-	if (n.compat) {
-		let e = n.compat.find((e) => e.default && e.test?.test(r)) ?? n[T];
-		o.tag !== e.tag && a(i, "TAG_RESOLVE_FAILED", `Value may be parsed as either ${t.tagString(o.tag)} or ${t.tagString(e.tag)}`, !0);
-	}
-	return o;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/util-empty-scalar-position.js
-function ir(e, t, n) {
-	if (t) {
-		n ??= t.length;
-		for (let r = n - 1; r >= 0; --r) {
-			let n = t[r];
-			switch (n.type) {
-				case "space":
-				case "comment":
-				case "newline":
-					e -= n.source.length;
-					continue;
+function B(e, t, n) {
+	let r = e[t], i = "", a = t + 1;
+	for (; a < e.length; a++) {
+		let t = e[a];
+		if (r === "'") {
+			if (t !== "'") {
+				i += t;
+				continue;
 			}
-			for (n = t[++r]; n?.type === "space";) e += n.source.length, n = t[++r];
-			break;
-		}
-	}
-	return e;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/compose-node.js
-var ar = {
-	composeNode: or,
-	composeEmptyNode: sr
-};
-function or(e, t, n, r) {
-	let i = e.atKey, { spaceBefore: a, comment: o, anchor: s, tag: c } = n, l, u = !0;
-	switch (t.type) {
-		case "alias":
-			l = cr(e, t, r), (s || c) && r(t, "ALIAS_PROPS", "An alias node must not specify any properties");
-			break;
-		case "scalar":
-		case "single-quoted-scalar":
-		case "double-quoted-scalar":
-		case "block-scalar":
-			l = tr(e, t, c, r), s && (l.anchor = s.source.substring(1));
-			break;
-		case "block-map":
-		case "block-seq":
-		case "flow-collection":
-			try {
-				l = Un(ar, e, t, n, r), s && (l.anchor = s.source.substring(1));
-			} catch (e) {
-				r(t, "RESOURCE_EXHAUSTION", e instanceof Error ? e.message : String(e));
+			if (e[a + 1] === "'") {
+				i += "'", a++;
+				continue;
 			}
-			break;
-		default: r(t, "UNEXPECTED_TOKEN", t.type === "error" ? t.message : `Unsupported token (type: ${t.type})`), u = !1;
-	}
-	return l ??= sr(e, t.offset, void 0, null, n, r), s && l.anchor === "" && r(s, "BAD_ALIAS", "Anchor cannot be an empty string"), i && e.options.stringKeys && (!A(l) || typeof l.value != "string" || l.tag && l.tag !== "tag:yaml.org,2002:str") && r(c ?? t, "NON_STRING_KEY", "With stringKeys, all keys must be strings"), a && (l.spaceBefore = !0), o && (t.type === "scalar" && t.source === "" ? l.comment = o : l.commentBefore = o), e.options.keepSourceTokens && u && (l.srcToken = t), l;
-}
-function sr(e, t, n, r, { spaceBefore: i, comment: a, anchor: o, tag: s, end: c }, l) {
-	let u = tr(e, {
-		type: "scalar",
-		offset: ir(t, n, r),
-		indent: -1,
-		source: ""
-	}, s, l);
-	return o && (u.anchor = o.source.substring(1), u.anchor === "" && l(o, "BAD_ALIAS", "Anchor cannot be an empty string")), i && (u.spaceBefore = !0), a && (u.comment = a, u.range[2] = c), u;
-}
-function cr({ options: e }, { offset: t, source: n, end: r }, i) {
-	let a = new Ve(n.substring(1));
-	a.source === "" && i(t, "BAD_ALIAS", "Alias cannot be an empty string"), a.source.endsWith(":") && i(t + n.length - 1, "BAD_ALIAS", "Alias ending in : is ambiguous", !0);
-	let o = t + n.length, s = Rn(r, o, e.strict, i);
-	return a.range = [
-		t,
-		o,
-		s.offset
-	], s.comment && (a.comment = s.comment), a;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/compose-doc.js
-function lr(e, t, { offset: n, start: r, value: i, end: a }, o) {
-	let s = new Dn(void 0, Object.assign({ _directives: t }, e)), c = {
-		atKey: !1,
-		atRoot: !0,
-		directives: s.directives,
-		options: s.options,
-		schema: s.schema
-	}, l = Z(r, {
-		indicator: "doc-start",
-		next: i ?? a?.[0],
-		offset: n,
-		onError: o,
-		parentIndent: 0,
-		startOnNewline: !0
-	});
-	l.found && (s.directives.docStart = !0, i && (i.type === "block-map" || i.type === "block-seq") && !l.hasNewline && o(l.end, "MISSING_CHAR", "Block collection cannot start on same line with directives-end marker")), s.contents = i ? or(c, i, l, o) : sr(c, l.end, r, null, l, o);
-	let u = s.contents.range[2], d = Rn(a, u, !1, o);
-	return d.comment && (s.comment = d.comment), s.range = [
-		n,
-		u,
-		d.offset
-	], s;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/compose/composer.js
-function ur(e) {
-	if (typeof e == "number") return [e, e + 1];
-	if (Array.isArray(e)) return e.length === 2 ? e : [e[0], e[1]];
-	let { offset: t, source: n } = e;
-	return [t, t + (typeof n == "string" ? n.length : 1)];
-}
-function dr(e) {
-	let t = "", n = !1, r = !1;
-	for (let i = 0; i < e.length; ++i) {
-		let a = e[i];
-		switch (a[0]) {
-			case "#":
-				t += (t === "" ? "" : r ? "\n\n" : "\n") + (a.substring(1) || " "), n = !0, r = !1;
-				break;
-			case "%":
-				e[i + 1]?.[0] !== "#" && (i += 1), n = !1;
-				break;
-			default: n || (r = !0), n = !1;
+			return {
+				value: i,
+				end: a + 1
+			};
 		}
+		if (t === "\"") return {
+			value: i,
+			end: a + 1
+		};
+		if (t !== "\\") {
+			i += t;
+			continue;
+		}
+		let o = e[++a], s = z[o];
+		if (s) {
+			let t = e.slice(a + 1, a + 1 + s);
+			(!/^[0-9a-fA-F]+$/.test(t) || t.length !== s) && I(n, "bad escape"), i += s === 8 ? String.fromCodePoint(parseInt(t, 16)) : String.fromCharCode(parseInt(t, 16)), a += s;
+		} else o in R ? i += R[o] : I(n, "bad escape");
 	}
-	return {
-		comment: t,
-		afterEmptyLine: r
+	return I(n, "quote not closed on its line");
+}
+function V(e, t, n) {
+	let r = e.slice(t);
+	/[^ \t]/.test(r) && !/^[ \t]+#/.test(r) && I(n, "text after a value");
+}
+var pe = (e) => /^[ \t]*(?:#.*)?$/.test(e), H = (e) => e.replace(/^[ \t]+|[ \t]+$/g, ""), U = /^(?:---|\.\.\.)(?:[ \t]|$)/, W = /^[^ \t\-?:,[\]{}#&*!|>'"%@`]|^[-?:][^ \t,[\]{}]/;
+function G(e, t) {
+	if (e[0] === "\"" || e[0] === "'") {
+		let { value: n, end: r } = B(e, 0, t), i = e.slice(r).replace(/^[ \t]+/, "");
+		return i[0] === ":" && (i.length === 1 || /[ \t]/.test(i[1])) ? {
+			key: n,
+			rest: i.slice(1)
+		} : null;
+	}
+	if (!W.test(e)) return null;
+	let n = e.search(/:(?:[ \t]|$)/);
+	return n < 0 || /[ \t]#/.test(e.slice(0, n)) ? null : {
+		key: H(e.slice(0, n)),
+		rest: e.slice(n + 1)
 	};
 }
-var fr = class {
-	constructor(e = {}) {
-		this.doc = null, this.atDirectives = !1, this.prelude = [], this.errors = [], this.warnings = [], this.onError = (e, t, n, r) => {
-			let i = ur(e);
-			r ? this.warnings.push(new An(i, t, n)) : this.errors.push(new kn(i, t, n));
-		}, this.directives = new P({ version: e.version || "1.2" }), this.options = e;
-	}
-	decorate(e, t) {
-		let { comment: n, afterEmptyLine: r } = dr(this.prelude);
-		if (n) {
-			let i = e.contents;
-			if (t) e.comment = e.comment ? `${e.comment}\n${n}` : n;
-			else if (r || e.directives.docStart || !i) e.commentBefore = n;
-			else if (j(i) && !i.flow && i.items.length > 0) {
-				let e = i.items[0];
-				k(e) && (e = e.key);
-				let t = e.commentBefore;
-				e.commentBefore = t ? `${n}\n${t}` : n;
-			} else {
-				let e = i.commentBefore;
-				i.commentBefore = e ? `${n}\n${e}` : n;
-			}
-		}
-		if (t) {
-			for (let t = 0; t < this.errors.length; ++t) e.errors.push(this.errors[t]);
-			for (let t = 0; t < this.warnings.length; ++t) e.warnings.push(this.warnings[t]);
-		} else e.errors = this.errors, e.warnings = this.warnings;
-		this.prelude = [], this.errors = [], this.warnings = [];
-	}
-	streamInfo() {
-		return {
-			comment: dr(this.prelude).comment,
-			directives: this.directives,
-			errors: this.errors,
-			warnings: this.warnings
+function K(e, t, n, r) {
+	r > 16 && I(n, "too deep");
+	let i = (t) => {
+		for (; e[t] === " " || e[t] === "	";) t++;
+		return t;
+	}, a = e[t], o = a === "[" ? "]" : "}", s = a === "[", c = [], l = {}, u = /* @__PURE__ */ new Set(), d = i(t + 1), f = (t) => {
+		let i = e[t];
+		if (i === "[" || i === "{") return {
+			...K(e, t, n, r + 1),
+			quoted: !0
 		};
-	}
-	*compose(e, t = !1, n = -1) {
-		for (let t of e) yield* this.next(t);
-		yield* this.end(t, n);
-	}
-	*next(e) {
-		switch (e.type) {
-			case "directive":
-				this.directives.add(e.source, (t, n, r) => {
-					let i = ur(e);
-					i[0] += t, this.onError(i, "BAD_DIRECTIVE", n, r);
-				}), this.prelude.push(e.source), this.atDirectives = !0;
-				break;
-			case "document": {
-				let t = lr(this.options, this.directives, e, this.onError);
-				this.atDirectives && !t.directives.docStart && this.onError(e, "MISSING_CHAR", "Missing directives-end/doc-start indicator line"), this.decorate(t, !1), this.doc && (yield this.doc), this.doc = t, this.atDirectives = !1;
-				break;
-			}
-			case "byte-order-mark":
-			case "space": break;
-			case "comment":
-			case "newline":
-				this.prelude.push(e.source);
-				break;
-			case "error": {
-				let t = e.source ? `${e.message}: ${JSON.stringify(e.source)}` : e.message, n = new kn(ur(e), "UNEXPECTED_TOKEN", t);
-				this.atDirectives || !this.doc ? this.errors.push(n) : this.doc.errors.push(n);
-				break;
-			}
-			case "doc-end": {
-				if (!this.doc) {
-					this.errors.push(new kn(ur(e), "UNEXPECTED_TOKEN", "Unexpected doc-end without preceding document"));
-					break;
-				}
-				this.doc.directives.docEnd = !0;
-				let t = Rn(e.end, e.offset + e.source.length, this.doc.options.strict, this.onError);
-				if (this.decorate(this.doc, !0), t.comment) {
-					let e = this.doc.comment;
-					this.doc.comment = e ? `${e}\n${t.comment}` : t.comment;
-				}
-				this.doc.range[2] = t.offset;
-				break;
-			}
-			default: this.errors.push(new kn(ur(e), "UNEXPECTED_TOKEN", `Unsupported token ${e.type}`));
-		}
-	}
-	*end(e = !1, t = -1) {
-		if (this.doc) this.decorate(this.doc, !0), yield this.doc, this.doc = null;
-		else if (e) {
-			let e = new Dn(void 0, Object.assign({ _directives: this.directives }, this.options));
-			this.atDirectives && this.onError(t, "MISSING_CHAR", "Missing directives-end indicator line"), e.range = [
-				0,
-				t,
-				t
-			], this.decorate(e, !1), yield e;
-		}
-	}
-}, pr = Symbol("break visit"), mr = Symbol("skip children"), hr = Symbol("remove item");
-function gr(e, t) {
-	"type" in e && e.type === "document" && (e = {
-		start: e.start,
-		value: e.value
-	}), _r(Object.freeze([]), e, t);
-}
-gr.BREAK = pr, gr.SKIP = mr, gr.REMOVE = hr, gr.itemAtPath = (e, t) => {
-	let n = e;
-	for (let [e, r] of t) {
-		let t = n?.[e];
-		if (t && "items" in t) n = t.items[r];
-		else return;
-	}
-	return n;
-}, gr.parentCollection = (e, t) => {
-	let n = gr.itemAtPath(e, t.slice(0, -1)), r = t[t.length - 1][0], i = n?.[r];
-	if (i && "items" in i) return i;
-	throw Error("Parent collection not found");
-};
-function _r(e, t, n) {
-	let r = n(t, e);
-	if (typeof r == "symbol") return r;
-	for (let i of ["key", "value"]) {
-		let a = t[i];
-		if (a && "items" in a) {
-			for (let t = 0; t < a.items.length; ++t) {
-				let r = _r(Object.freeze(e.concat([[i, t]])), a.items[t], n);
-				if (typeof r == "number") t = r - 1;
-				else if (r === pr) return pr;
-				else r === hr && (a.items.splice(t, 1), --t);
-			}
-			typeof r == "function" && i === "key" && (r = r(t, e));
-		}
-	}
-	return typeof r == "function" ? r(t, e) : r;
-}
-function vr(e) {
-	switch (e) {
-		case "﻿": return "byte-order-mark";
-		case "": return "doc-mode";
-		case "": return "flow-error-end";
-		case "": return "scalar";
-		case "---": return "doc-start";
-		case "...": return "doc-end";
-		case "":
-		case "\n":
-		case "\r\n": return "newline";
-		case "-": return "seq-item-ind";
-		case "?": return "explicit-key-ind";
-		case ":": return "map-value-ind";
-		case "{": return "flow-map-start";
-		case "}": return "flow-map-end";
-		case "[": return "flow-seq-start";
-		case "]": return "flow-seq-end";
-		case ",": return "comma";
-	}
-	switch (e[0]) {
-		case " ":
-		case "	": return "space";
-		case "#": return "comment";
-		case "%": return "directive-line";
-		case "*": return "alias";
-		case "&": return "anchor";
-		case "!": return "tag";
-		case "'": return "single-quoted-scalar";
-		case "\"": return "double-quoted-scalar";
-		case "|":
-		case ">": return "block-scalar-header";
-	}
-	return null;
-}
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/parse/lexer.js
-function Q(e) {
-	switch (e) {
-		case void 0:
-		case " ":
-		case "\n":
-		case "\r":
-		case "	": return !0;
-		default: return !1;
-	}
-}
-var yr = /* @__PURE__ */ new Set("0123456789ABCDEFabcdef"), br = /* @__PURE__ */ new Set("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-#;/?:@&=+$_.!~*'()"), xr = /* @__PURE__ */ new Set(",[]{}"), Sr = /* @__PURE__ */ new Set(" ,[]{}\n\r	"), Cr = (e) => !e || Sr.has(e), wr = class {
-	constructor() {
-		this.atEnd = !1, this.blockScalarIndent = -1, this.blockScalarKeep = !1, this.buffer = "", this.flowKey = !1, this.flowLevel = 0, this.indentNext = 0, this.indentValue = 0, this.lineEndPos = null, this.next = null, this.pos = 0;
-	}
-	*lex(e, t = !1) {
-		if (e) {
-			if (typeof e != "string") throw TypeError("source is not a string");
-			this.buffer = this.buffer ? this.buffer + e : e, this.lineEndPos = null;
-		}
-		this.atEnd = !t;
-		let n = this.next ?? "stream";
-		for (; n && (t || this.hasChars(1));) n = yield* this.parseNext(n);
-	}
-	atLineEnd() {
-		let e = this.pos, t = this.buffer[e];
-		for (; t === " " || t === "	";) t = this.buffer[++e];
-		return !t || t === "#" || t === "\n" || t === "\r" && this.buffer[e + 1] === "\n";
-	}
-	charAt(e) {
-		return this.buffer[this.pos + e];
-	}
-	continueScalar(e) {
-		let t = this.buffer[e];
-		if (this.indentNext > 0) {
-			let n = 0;
-			for (; t === " ";) t = this.buffer[++n + e];
-			if (t === "\r") {
-				let t = this.buffer[n + e + 1];
-				if (t === "\n" || !t && !this.atEnd) return e + n + 1;
-			}
-			return t === "\n" || n >= this.indentNext || !t && !this.atEnd ? e + n : -1;
-		}
-		if (t === "-" || t === ".") {
-			let t = this.buffer.substr(e, 3);
-			if ((t === "---" || t === "...") && Q(this.buffer[e + 3])) return -1;
-		}
-		return e;
-	}
-	getLine() {
-		let e = this.lineEndPos;
-		return (typeof e != "number" || e !== -1 && e < this.pos) && (e = this.buffer.indexOf("\n", this.pos), this.lineEndPos = e), e === -1 ? this.atEnd ? this.buffer.substring(this.pos) : null : (this.buffer[e - 1] === "\r" && --e, this.buffer.substring(this.pos, e));
-	}
-	hasChars(e) {
-		return this.pos + e <= this.buffer.length;
-	}
-	setNext(e) {
-		return this.buffer = this.buffer.substring(this.pos), this.pos = 0, this.lineEndPos = null, this.next = e, null;
-	}
-	peek(e) {
-		return this.buffer.substr(this.pos, e);
-	}
-	*parseNext(e) {
-		switch (e) {
-			case "stream": return yield* this.parseStream();
-			case "line-start": return yield* this.parseLineStart();
-			case "block-start": return yield* this.parseBlockStart();
-			case "doc": return yield* this.parseDocument();
-			case "flow": return yield* this.parseFlowCollection();
-			case "quoted-scalar": return yield* this.parseQuotedScalar();
-			case "block-scalar": return yield* this.parseBlockScalar();
-			case "plain-scalar": return yield* this.parsePlainScalar();
-		}
-	}
-	*parseStream() {
-		let e = this.getLine();
-		if (e === null) return this.setNext("stream");
-		if (e[0] === "﻿" && (yield* this.pushCount(1), e = e.substring(1)), e[0] === "%") {
-			let t = e.length, n = e.indexOf("#");
-			for (; n !== -1;) {
-				let r = e[n - 1];
-				if (r === " " || r === "	") {
-					t = n - 1;
-					break;
-				}
-				n = e.indexOf("#", n + 1);
-			}
-			for (;;) {
-				let n = e[t - 1];
-				if (n === " " || n === "	") --t;
-				else break;
-			}
-			let r = (yield* this.pushCount(t)) + (yield* this.pushSpaces(!0));
-			return yield* this.pushCount(e.length - r), this.pushNewline(), "stream";
-		}
-		if (this.atLineEnd()) {
-			let t = yield* this.pushSpaces(!0);
-			return yield* this.pushCount(e.length - t), yield* this.pushNewline(), "stream";
-		}
-		return yield "", yield* this.parseLineStart();
-	}
-	*parseLineStart() {
-		let e = this.charAt(0);
-		if (!e && !this.atEnd) return this.setNext("line-start");
-		if (e === "-" || e === ".") {
-			if (!this.atEnd && !this.hasChars(4)) return this.setNext("line-start");
-			let e = this.peek(3);
-			if ((e === "---" || e === "...") && Q(this.charAt(3))) return yield* this.pushCount(3), this.indentValue = 0, this.indentNext = 0, e === "---" ? "doc" : "stream";
-		}
-		return this.indentValue = yield* this.pushSpaces(!1), this.indentNext > this.indentValue && !Q(this.charAt(1)) && (this.indentNext = this.indentValue), yield* this.parseBlockStart();
-	}
-	*parseBlockStart() {
-		let [e, t] = this.peek(2);
-		if (!t && !this.atEnd) return this.setNext("block-start");
-		if ((e === "-" || e === "?" || e === ":") && Q(t)) {
-			let e = (yield* this.pushCount(1)) + (yield* this.pushSpaces(!0));
-			return this.indentNext = this.indentValue + 1, this.indentValue += e, "block-start";
-		}
-		return "doc";
-	}
-	*parseDocument() {
-		yield* this.pushSpaces(!0);
-		let e = this.getLine();
-		if (e === null) return this.setNext("doc");
-		let t = yield* this.pushIndicators();
-		switch (e[t]) {
-			case "#": yield* this.pushCount(e.length - t);
-			case void 0: return yield* this.pushNewline(), yield* this.parseLineStart();
-			case "{":
-			case "[": return yield* this.pushCount(1), this.flowKey = !1, this.flowLevel = 1, "flow";
-			case "}":
-			case "]": return yield* this.pushCount(1), "doc";
-			case "*": return yield* this.pushUntil(Cr), "doc";
-			case "\"":
-			case "'": return yield* this.parseQuotedScalar();
-			case "|":
-			case ">": return t += yield* this.parseBlockScalarHeader(), t += yield* this.pushSpaces(!0), yield* this.pushCount(e.length - t), yield* this.pushNewline(), yield* this.parseBlockScalar();
-			default: return yield* this.parsePlainScalar();
-		}
-	}
-	*parseFlowCollection() {
-		let e, t, n = -1;
-		do
-			e = yield* this.pushNewline(), e > 0 ? (t = yield* this.pushSpaces(!1), this.indentValue = n = t) : t = 0, t += yield* this.pushSpaces(!0);
-		while (e + t > 0);
-		let r = this.getLine();
-		if (r === null) return this.setNext("flow");
-		if ((n !== -1 && n < this.indentNext && r[0] !== "#" || n === 0 && (r.startsWith("---") || r.startsWith("...")) && Q(r[3])) && (n !== this.indentNext - 1 || this.flowLevel !== 1 || r[0] !== "]" && r[0] !== "}")) return this.flowLevel = 0, yield "", yield* this.parseLineStart();
-		let i = 0;
-		for (; r[i] === ",";) i += yield* this.pushCount(1), i += yield* this.pushSpaces(!0), this.flowKey = !1;
-		switch (i += yield* this.pushIndicators(), r[i]) {
-			case void 0: return "flow";
-			case "#": return yield* this.pushCount(r.length - i), "flow";
-			case "{":
-			case "[": return yield* this.pushCount(1), this.flowKey = !1, this.flowLevel += 1, "flow";
-			case "}":
-			case "]": return yield* this.pushCount(1), this.flowKey = !0, --this.flowLevel, this.flowLevel ? "flow" : "doc";
-			case "*": return yield* this.pushUntil(Cr), "flow";
-			case "\"":
-			case "'": return this.flowKey = !0, yield* this.parseQuotedScalar();
-			case ":": {
-				let e = this.charAt(1);
-				if (this.flowKey || Q(e) || e === ",") return this.flowKey = !1, yield* this.pushCount(1), yield* this.pushSpaces(!0), "flow";
-			}
-			default: return this.flowKey = !1, yield* this.parsePlainScalar();
-		}
-	}
-	*parseQuotedScalar() {
-		let e = this.charAt(0), t = this.buffer.indexOf(e, this.pos + 1);
-		if (e === "'") for (; t !== -1 && this.buffer[t + 1] === "'";) t = this.buffer.indexOf("'", t + 2);
-		else for (; t !== -1;) {
-			let e = 0;
-			for (; this.buffer[t - 1 - e] === "\\";) e += 1;
-			if (e % 2 == 0) break;
-			t = this.buffer.indexOf("\"", t + 1);
-		}
-		let n = this.buffer.substring(0, t), r = n.indexOf("\n", this.pos);
-		if (r !== -1) {
-			for (; r !== -1;) {
-				let e = this.continueScalar(r + 1);
-				if (e === -1) break;
-				r = n.indexOf("\n", e);
-			}
-			r !== -1 && (t = r - (n[r - 1] === "\r" ? 2 : 1));
-		}
-		if (t === -1) {
-			if (!this.atEnd) return this.setNext("quoted-scalar");
-			t = this.buffer.length;
-		}
-		return yield* this.pushToIndex(t + 1, !1), this.flowLevel ? "flow" : "doc";
-	}
-	*parseBlockScalarHeader() {
-		this.blockScalarIndent = -1, this.blockScalarKeep = !1;
-		let e = this.pos;
-		for (;;) {
-			let t = this.buffer[++e];
-			if (t === "+") this.blockScalarKeep = !0;
-			else if (t > "0" && t <= "9") this.blockScalarIndent = Number(t) - 1;
-			else if (t !== "-") break;
-		}
-		return yield* this.pushUntil((e) => Q(e) || e === "#");
-	}
-	*parseBlockScalar() {
-		let e = this.pos - 1, t = 0, n;
-		loop: for (let r = this.pos; n = this.buffer[r]; ++r) switch (n) {
-			case " ":
-				t += 1;
-				break;
-			case "\n":
-				e = r, t = 0;
-				break;
-			case "\r": {
-				let e = this.buffer[r + 1];
-				if (!e && !this.atEnd) return this.setNext("block-scalar");
-				if (e === "\n") break;
-			}
-			default: break loop;
-		}
-		if (!n && !this.atEnd) return this.setNext("block-scalar");
-		if (t >= this.indentNext) {
-			this.indentNext = this.blockScalarIndent === -1 ? t : this.blockScalarIndent + (this.indentNext === 0 ? 1 : this.indentNext);
-			do {
-				let t = this.continueScalar(e + 1);
-				if (t === -1) break;
-				e = this.buffer.indexOf("\n", t);
-			} while (e !== -1);
-			if (e === -1) {
-				if (!this.atEnd) return this.setNext("block-scalar");
-				e = this.buffer.length;
-			}
-		}
-		let r = e + 1;
-		for (n = this.buffer[r]; n === " ";) n = this.buffer[++r];
-		if (n === "	") {
-			for (; n === "	" || n === " " || n === "\r" || n === "\n";) n = this.buffer[++r];
-			e = r - 1;
-		} else if (!this.blockScalarKeep) do {
-			let n = e - 1, r = this.buffer[n];
-			r === "\r" && (r = this.buffer[--n]);
-			let i = n;
-			for (; r === " ";) r = this.buffer[--n];
-			if (r === "\n" && n >= this.pos && n + 1 + t > i) e = n;
-			else break;
-		} while (1);
-		return yield "", yield* this.pushToIndex(e + 1, !0), yield* this.parseLineStart();
-	}
-	*parsePlainScalar() {
-		let e = this.flowLevel > 0, t = this.pos - 1, n = this.pos - 1, r;
-		for (; r = this.buffer[++n];) if (r === ":") {
-			let r = this.buffer[n + 1];
-			if (Q(r) || e && xr.has(r)) break;
-			t = n;
-		} else if (Q(r)) {
-			let i = this.buffer[n + 1];
-			if (r === "\r" && (i === "\n" ? (n += 1, r = "\n", i = this.buffer[n + 1]) : t = n), i === "#" || e && xr.has(i)) break;
-			if (r === "\n") {
-				let e = this.continueScalar(n + 1);
-				if (e === -1) break;
-				n = Math.max(n, e - 2);
-			}
-		} else {
-			if (e && xr.has(r)) break;
-			t = n;
-		}
-		return !r && !this.atEnd ? this.setNext("plain-scalar") : (yield "", yield* this.pushToIndex(t + 1, !0), e ? "flow" : "doc");
-	}
-	*pushCount(e) {
-		return e > 0 ? (yield this.buffer.substr(this.pos, e), this.pos += e, e) : 0;
-	}
-	*pushToIndex(e, t) {
-		let n = this.buffer.slice(this.pos, e);
-		return n ? (yield n, this.pos += n.length, n.length) : (t && (yield ""), 0);
-	}
-	*pushIndicators() {
-		let e = 0;
-		loop: for (;;) {
-			switch (this.charAt(0)) {
-				case "!":
-					e += yield* this.pushTag(), e += yield* this.pushSpaces(!0);
-					continue loop;
-				case "&":
-					e += yield* this.pushUntil(Cr), e += yield* this.pushSpaces(!0);
-					continue loop;
-				case "-":
-				case "?":
-				case ":": {
-					let t = this.flowLevel > 0, n = this.charAt(1);
-					if (Q(n) || t && xr.has(n)) {
-						t ? this.flowKey &&= !1 : this.indentNext = this.indentValue + 1, e += yield* this.pushCount(1), e += yield* this.pushSpaces(!0);
-						continue loop;
-					}
-				}
-			}
-			break loop;
-		}
-		return e;
-	}
-	*pushTag() {
-		if (this.charAt(1) === "<") {
-			let e = this.pos + 2, t = this.buffer[e];
-			for (; !Q(t) && t !== ">";) t = this.buffer[++e];
-			return yield* this.pushToIndex(t === ">" ? e + 1 : e, !1);
-		}
-		{
-			let e = this.pos + 1, t = this.buffer[e];
-			for (; t;) if (br.has(t)) t = this.buffer[++e];
-			else if (t === "%" && yr.has(this.buffer[e + 1]) && yr.has(this.buffer[e + 2])) t = this.buffer[e += 3];
-			else break;
-			return yield* this.pushToIndex(e, !1);
-		}
-	}
-	*pushNewline() {
-		let e = this.buffer[this.pos];
-		return e === "\n" ? yield* this.pushCount(1) : e === "\r" && this.charAt(1) === "\n" ? yield* this.pushCount(2) : 0;
-	}
-	*pushSpaces(e) {
-		let t = this.pos - 1, n;
-		do
-			n = this.buffer[++t];
-		while (n === " " || e && n === "	");
-		let r = t - this.pos;
-		return r > 0 && (yield this.buffer.substr(this.pos, r), this.pos = t), r;
-	}
-	*pushUntil(e) {
-		let t = this.pos, n = this.buffer[t];
-		for (; !e(n);) n = this.buffer[++t];
-		return yield* this.pushToIndex(t, !1);
-	}
-}, Tr = class {
-	constructor() {
-		this.lineStarts = [], this.addNewLine = (e) => this.lineStarts.push(e), this.linePos = (e) => {
-			let t = 0, n = this.lineStarts.length;
-			for (; t < n;) {
-				let r = t + n >> 1;
-				this.lineStarts[r] < e ? t = r + 1 : n = r;
-			}
-			if (this.lineStarts[t] === e) return {
-				line: t + 1,
-				col: 1
-			};
-			if (t === 0) return {
-				line: 0,
-				col: e
-			};
-			let r = this.lineStarts[t - 1];
-			return {
-				line: t,
-				col: e - r + 1
-			};
+		if (i === "\"" || i === "'") return {
+			...B(e, t, n),
+			quoted: !0
 		};
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/parse/parser.js
-function $(e, t) {
-	for (let n = 0; n < e.length; ++n) if (e[n].type === t) return !0;
-	return !1;
-}
-function Er(e) {
-	for (let t = 0; t < e.length; ++t) switch (e[t].type) {
-		case "space":
-		case "comment":
-		case "newline": break;
-		default: return t;
-	}
-	return -1;
-}
-function Dr(e) {
-	switch (e?.type) {
-		case "alias":
-		case "scalar":
-		case "single-quoted-scalar":
-		case "double-quoted-scalar":
-		case "flow-collection": return !0;
-		default: return !1;
-	}
-}
-function Or(e) {
-	switch (e.type) {
-		case "document": return e.start;
-		case "block-map": {
-			let t = e.items[e.items.length - 1];
-			return t.sep ?? t.start;
-		}
-		case "block-seq": return e.items[e.items.length - 1].start;
-		/* istanbul ignore next should not happen */
-		default: return [];
-	}
-}
-function kr(e) {
-	if (e.length === 0) return [];
-	let t = e.length;
-	loop: for (; --t >= 0;) switch (e[t].type) {
-		case "doc-start":
-		case "explicit-key-ind":
-		case "map-value-ind":
-		case "seq-item-ind":
-		case "newline": break loop;
-	}
-	for (; e[++t]?.type === "space";);
-	return e.splice(t, e.length);
-}
-function Ar(e, t) {
-	if (t.length < 1e5) Array.prototype.push.apply(e, t);
-	else for (let n = 0; n < t.length; ++n) e.push(t[n]);
-}
-function jr(e) {
-	if (e.start.type === "flow-seq-start") for (let t of e.items) t.sep && !t.value && !$(t.start, "explicit-key-ind") && !$(t.sep, "map-value-ind") && (t.key && (t.value = t.key), delete t.key, Dr(t.value) ? t.value.end ? Ar(t.value.end, t.sep) : t.value.end = t.sep : Ar(t.start, t.sep), delete t.sep);
-}
-var Mr = class {
-	constructor(e) {
-		this.atNewLine = !0, this.atScalar = !1, this.indent = 0, this.offset = 0, this.onKeyLine = !1, this.stack = [], this.source = "", this.type = "", this.lexer = new wr(), this.onNewLine = e;
-	}
-	*parse(e, t = !1) {
-		this.onNewLine && this.offset === 0 && this.onNewLine(0);
-		for (let n of this.lexer.lex(e, t)) yield* this.next(n);
-		t || (yield* this.end());
-	}
-	*next(e) {
-		if (this.source = e, this.atScalar) {
-			this.atScalar = !1, yield* this.step(), this.offset += e.length;
-			return;
-		}
-		let t = vr(e);
-		if (!t) {
-			let t = `Not a YAML token: ${e}`;
-			yield* this.pop({
-				type: "error",
-				offset: this.offset,
-				message: t,
-				source: e
-			}), this.offset += e.length;
-		} else if (t === "scalar") this.atNewLine = !1, this.atScalar = !0, this.type = "scalar";
+		let a = t;
+		for (; a < e.length && !/[,[\]{}]/.test(e[a]) && !(e[a] === ":" && /[ \t,[\]{}]|^$/.test(e[a + 1] ?? ""));) a++;
+		let o = H(e.slice(t, a));
+		return (!o || !W.test(o) || /[ \t]#/.test(o) || /[&*!]/.test(o[0])) && I(n, "bad flow value"), {
+			value: L(o),
+			end: a,
+			quoted: !1
+		};
+	};
+	for (; e[d] !== o;) {
+		d >= e.length && I(n, "flow not closed on its line");
+		let t = f(d);
+		if (d = i(t.end), s) e[d] === ":" && I(n, "mapping in a flow sequence"), c.push(t.value);
 		else {
-			switch (this.type = t, yield* this.step(), t) {
-				case "newline":
-					this.atNewLine = !0, this.indent = 0, this.onNewLine && this.onNewLine(this.offset + e.length);
-					break;
-				case "space":
-					this.atNewLine && e[0] === " " && (this.indent += e.length);
-					break;
-				case "explicit-key-ind":
-				case "map-value-ind":
-				case "seq-item-ind":
-					this.atNewLine && (this.indent += e.length);
-					break;
-				case "doc-mode":
-				case "flow-error-end": return;
-				default: this.atNewLine = !1;
-			}
-			this.offset += e.length;
+			(typeof t.value != "string" || e[d] !== ":") && I(n, "bad flow key"), u.has(t.value) && I(n, "duplicate key"), u.add(t.value);
+			let r = f(i(d + 1));
+			q(l, t.value, r.value), d = i(r.end);
 		}
+		e[d] === "," ? d = i(d + 1) : e[d] !== o && I(n, "flow not closed on its line");
 	}
-	*end() {
-		for (; this.stack.length > 0;) yield* this.pop();
-	}
-	get sourceToken() {
-		return {
-			type: this.type,
-			offset: this.offset,
-			indent: this.indent,
-			source: this.source
-		};
-	}
-	*step() {
-		let e = this.peek(1);
-		if (this.type === "doc-end" && e?.type !== "doc-end") {
-			for (; this.stack.length > 0;) yield* this.pop();
-			this.stack.push({
-				type: "doc-end",
-				offset: this.offset,
-				source: this.source
-			});
-		} else {
-			if (!e) return yield* this.stream();
-			switch (e.type) {
-				case "document": return yield* this.document(e);
-				case "alias":
-				case "scalar":
-				case "single-quoted-scalar":
-				case "double-quoted-scalar": return yield* this.scalar(e);
-				case "block-scalar": return yield* this.blockScalar(e);
-				case "block-map": return yield* this.blockMap(e);
-				case "block-seq": return yield* this.blockSequence(e);
-				case "flow-collection": return yield* this.flowCollection(e);
-				case "doc-end": return yield* this.documentEnd(e);
+	return {
+		value: s ? c : l,
+		end: d + 1
+	};
+}
+function q(e, t, n) {
+	Object.defineProperty(e, t, {
+		value: n,
+		enumerable: !0,
+		writable: !0,
+		configurable: !0
+	});
+}
+function me(e) {
+	let t = e.split(/\r\n|\n/);
+	t[t.length - 1] === "" && t.pop();
+	let n = 0, r = !1, i = () => {
+		for (; n < t.length; n++) {
+			if (pe(t[n])) {
+				/^ *\t/.test(t[n]) && I(n, "a tab in the indent");
+				continue;
 			}
-			/* istanbul ignore next should not happen */
-			yield* this.pop();
-		}
-	}
-	peek(e) {
-		return this.stack[this.stack.length - e];
-	}
-	*pop(e) {
-		let t = e ?? this.stack.pop();
-		/* istanbul ignore if should not happen */
-		if (!t) yield {
-			type: "error",
-			offset: this.offset,
-			source: "",
-			message: "Tried to pop an empty stack"
-		};
-		else if (this.stack.length === 0) yield t;
-		else {
-			let e = this.peek(1);
-			switch (t.type === "block-scalar" ? t.indent = "indent" in e ? e.indent : 0 : t.type === "flow-collection" && e.type === "document" && (t.indent = 0), t.type === "flow-collection" && jr(t), e.type) {
-				case "document":
-					e.value = t;
-					break;
-				case "block-scalar":
-					e.props.push(t);
-					break;
-				case "block-map": {
-					let n = e.items[e.items.length - 1];
-					if (n.value) {
-						e.items.push({
-							start: [],
-							key: t,
-							sep: []
-						}), this.onKeyLine = !0;
-						return;
-					}
-					if (n.sep) n.value = t;
-					else {
-						Object.assign(n, {
-							key: t,
-							sep: []
-						}), this.onKeyLine = !n.explicitKey;
-						return;
-					}
-					break;
-				}
-				case "block-seq": {
-					let n = e.items[e.items.length - 1];
-					n.value ? e.items.push({
-						start: [],
-						value: t
-					}) : n.value = t;
-					break;
-				}
-				case "flow-collection": {
-					let n = e.items[e.items.length - 1];
-					!n || n.value ? e.items.push({
-						start: [],
-						key: t,
-						sep: []
-					}) : n.sep ? n.value = t : Object.assign(n, {
-						key: t,
-						sep: []
-					});
-					return;
-				}
-				/* istanbul ignore next should not happen */
-				default: yield* this.pop(), yield* this.pop(t);
-			}
-			if ((e.type === "document" || e.type === "block-map" || e.type === "block-seq") && (t.type === "block-map" || t.type === "block-seq")) {
-				let n = t.items[t.items.length - 1];
-				n && !n.sep && !n.value && n.start.length > 0 && Er(n.start) === -1 && (t.indent === 0 || n.start.every((e) => e.type !== "comment" || e.indent < t.indent)) && (e.type === "document" ? e.end = n.start : e.items.push({ start: n.start }), t.items.splice(-1, 1));
-			}
-		}
-	}
-	*stream() {
-		switch (this.type) {
-			case "directive-line":
-				yield {
-					type: "directive",
-					offset: this.offset,
-					source: this.source
-				};
-				return;
-			case "byte-order-mark":
-			case "space":
-			case "comment":
-			case "newline":
-				yield this.sourceToken;
-				return;
-			case "doc-mode":
-			case "doc-start": {
-				let e = {
-					type: "document",
-					offset: this.offset,
-					start: []
-				};
-				this.type === "doc-start" && e.start.push(this.sourceToken), this.stack.push(e);
-				return;
-			}
-		}
-		yield {
-			type: "error",
-			offset: this.offset,
-			message: `Unexpected ${this.type} token in YAML stream`,
-			source: this.source
-		};
-	}
-	*document(e) {
-		if (e.value) return yield* this.lineEnd(e);
-		switch (this.type) {
-			case "doc-start":
-				Er(e.start) === -1 ? e.start.push(this.sourceToken) : (yield* this.pop(), yield* this.step());
-				return;
-			case "anchor":
-			case "tag":
-			case "space":
-			case "comment":
-			case "newline":
-				e.start.push(this.sourceToken);
-				return;
-		}
-		let t = this.startBlockValue(e);
-		t ? this.stack.push(t) : yield {
-			type: "error",
-			offset: this.offset,
-			message: `Unexpected ${this.type} token in YAML document`,
-			source: this.source
-		};
-	}
-	*scalar(e) {
-		if (this.type === "map-value-ind") {
-			let t = kr(Or(this.peek(2))), n;
-			e.end ? (n = e.end, n.push(this.sourceToken), delete e.end) : n = [this.sourceToken];
-			let r = {
-				type: "block-map",
-				offset: e.offset,
-				indent: e.indent,
-				items: [{
-					start: t,
-					key: e,
-					sep: n
-				}]
+			let e = /^ */.exec(t[n])[0].length;
+			return t[n][e] === "	" && I(n, "a tab in the indent"), r && U.test(t[n]) && I(n, "one document only"), {
+				indent: e,
+				text: H(t[n].slice(e))
 			};
-			this.onKeyLine = !0, this.stack[this.stack.length - 1] = r;
-		} else yield* this.lineEnd(e);
-	}
-	*blockScalar(e) {
-		switch (this.type) {
-			case "space":
-			case "comment":
-			case "newline":
-				e.props.push(this.sourceToken);
-				return;
-			case "scalar":
-				if (e.source = this.source, this.atNewLine = !0, this.indent = 0, this.onNewLine) {
-					let e = this.source.indexOf("\n") + 1;
-					for (; e !== 0;) this.onNewLine(this.offset + e), e = this.source.indexOf("\n", e) + 1;
-				}
-				yield* this.pop();
-				break;
-			/* istanbul ignore next should not happen */
-			default: yield* this.pop(), yield* this.step();
-		}
-	}
-	*blockMap(e) {
-		let t = e.items[e.items.length - 1];
-		switch (this.type) {
-			case "newline":
-				if (this.onKeyLine = !1, t.value) {
-					let n = "end" in t.value ? t.value.end : void 0;
-					(Array.isArray(n) ? n[n.length - 1] : void 0)?.type === "comment" ? n?.push(this.sourceToken) : e.items.push({ start: [this.sourceToken] });
-				} else t.sep ? t.sep.push(this.sourceToken) : t.start.push(this.sourceToken);
-				return;
-			case "space":
-			case "comment":
-				if (t.value) e.items.push({ start: [this.sourceToken] });
-				else if (t.sep) t.sep.push(this.sourceToken);
-				else {
-					if (this.atIndentedComment(t.start, e.indent)) {
-						let n = e.items[e.items.length - 2]?.value?.end;
-						if (Array.isArray(n)) {
-							Ar(n, t.start), n.push(this.sourceToken), e.items.pop();
-							return;
-						}
-					}
-					t.start.push(this.sourceToken);
-				}
-				return;
-		}
-		if (this.indent >= e.indent) {
-			let n = !this.onKeyLine && this.indent === e.indent, r = n && (t.sep || t.explicitKey) && this.type !== "seq-item-ind", i = [];
-			if (r && t.sep && !t.value) {
-				let n = [];
-				for (let r = 0; r < t.sep.length; ++r) {
-					let i = t.sep[r];
-					switch (i.type) {
-						case "newline":
-							n.push(r);
-							break;
-						case "space": break;
-						case "comment":
-							i.indent > e.indent && (n.length = 0);
-							break;
-						default: n.length = 0;
-					}
-				}
-				n.length >= 2 && (i = t.sep.splice(n[1]));
-			}
-			switch (this.type) {
-				case "anchor":
-				case "tag":
-					r || t.value ? (i.push(this.sourceToken), e.items.push({ start: i }), this.onKeyLine = !0) : t.sep ? t.sep.push(this.sourceToken) : t.start.push(this.sourceToken);
-					return;
-				case "explicit-key-ind":
-					!t.sep && !t.explicitKey ? (t.start.push(this.sourceToken), t.explicitKey = !0) : r || t.value ? (i.push(this.sourceToken), e.items.push({
-						start: i,
-						explicitKey: !0
-					})) : this.stack.push({
-						type: "block-map",
-						offset: this.offset,
-						indent: this.indent,
-						items: [{
-							start: [this.sourceToken],
-							explicitKey: !0
-						}]
-					}), this.onKeyLine = !0;
-					return;
-				case "map-value-ind":
-					if (t.explicitKey) {
-						if (!t.sep) {
-							if ($(t.start, "newline")) Object.assign(t, {
-								key: null,
-								sep: [this.sourceToken]
-							});
-							else {
-								let e = kr(t.start);
-								this.stack.push({
-									type: "block-map",
-									offset: this.offset,
-									indent: this.indent,
-									items: [{
-										start: e,
-										key: null,
-										sep: [this.sourceToken]
-									}]
-								});
-							}
-						} else if (t.value) e.items.push({
-							start: [],
-							key: null,
-							sep: [this.sourceToken]
-						});
-						else if ($(t.sep, "map-value-ind")) this.stack.push({
-							type: "block-map",
-							offset: this.offset,
-							indent: this.indent,
-							items: [{
-								start: i,
-								key: null,
-								sep: [this.sourceToken]
-							}]
-						});
-						else if (Dr(t.key) && !$(t.sep, "newline")) {
-							let e = kr(t.start), n = t.key, r = t.sep;
-							r.push(this.sourceToken), delete t.key, delete t.sep, this.stack.push({
-								type: "block-map",
-								offset: this.offset,
-								indent: this.indent,
-								items: [{
-									start: e,
-									key: n,
-									sep: r
-								}]
-							});
-						} else i.length > 0 ? t.sep = t.sep.concat(i, this.sourceToken) : t.sep.push(this.sourceToken);
-					} else t.sep ? t.value || r ? e.items.push({
-						start: i,
-						key: null,
-						sep: [this.sourceToken]
-					}) : $(t.sep, "map-value-ind") ? this.stack.push({
-						type: "block-map",
-						offset: this.offset,
-						indent: this.indent,
-						items: [{
-							start: [],
-							key: null,
-							sep: [this.sourceToken]
-						}]
-					}) : t.sep.push(this.sourceToken) : Object.assign(t, {
-						key: null,
-						sep: [this.sourceToken]
-					});
-					this.onKeyLine = !0;
-					return;
-				case "alias":
-				case "scalar":
-				case "single-quoted-scalar":
-				case "double-quoted-scalar": {
-					let n = this.flowScalar(this.type);
-					r || t.value ? (e.items.push({
-						start: i,
-						key: n,
-						sep: []
-					}), this.onKeyLine = !0) : t.sep ? this.stack.push(n) : (Object.assign(t, {
-						key: n,
-						sep: []
-					}), this.onKeyLine = !0);
-					return;
-				}
-				default: {
-					let r = this.startBlockValue(e);
-					if (r) {
-						if (r.type === "block-seq") {
-							if (!t.explicitKey && t.sep && !$(t.sep, "newline")) {
-								yield* this.pop({
-									type: "error",
-									offset: this.offset,
-									message: "Unexpected block-seq-ind on same line with key",
-									source: this.source
-								});
-								return;
-							}
-						} else n && e.items.push({ start: i });
-						this.stack.push(r);
-						return;
-					}
-				}
-			}
-		}
-		yield* this.pop(), yield* this.step();
-	}
-	*blockSequence(e) {
-		let t = e.items[e.items.length - 1];
-		switch (this.type) {
-			case "newline":
-				if (t.value) {
-					let n = "end" in t.value ? t.value.end : void 0;
-					(Array.isArray(n) ? n[n.length - 1] : void 0)?.type === "comment" ? n?.push(this.sourceToken) : e.items.push({ start: [this.sourceToken] });
-				} else t.start.push(this.sourceToken);
-				return;
-			case "space":
-			case "comment":
-				if (t.value) e.items.push({ start: [this.sourceToken] });
-				else {
-					if (this.atIndentedComment(t.start, e.indent)) {
-						let n = e.items[e.items.length - 2]?.value?.end;
-						if (Array.isArray(n)) {
-							Ar(n, t.start), n.push(this.sourceToken), e.items.pop();
-							return;
-						}
-					}
-					t.start.push(this.sourceToken);
-				}
-				return;
-			case "anchor":
-			case "tag":
-				if (t.value || this.indent <= e.indent) break;
-				t.start.push(this.sourceToken);
-				return;
-			case "seq-item-ind":
-				if (this.indent !== e.indent) break;
-				t.value || $(t.start, "seq-item-ind") ? e.items.push({ start: [this.sourceToken] }) : t.start.push(this.sourceToken);
-				return;
-		}
-		if (this.indent > e.indent) {
-			let t = this.startBlockValue(e);
-			if (t) {
-				this.stack.push(t);
-				return;
-			}
-		}
-		yield* this.pop(), yield* this.step();
-	}
-	*flowCollection(e) {
-		let t = e.items[e.items.length - 1];
-		if (this.type === "flow-error-end") {
-			let e;
-			do
-				yield* this.pop(), e = this.peek(1);
-			while (e?.type === "flow-collection");
-		} else if (e.end.length === 0) {
-			switch (this.type) {
-				case "comma":
-				case "explicit-key-ind":
-					!t || t.sep ? e.items.push({ start: [this.sourceToken] }) : t.start.push(this.sourceToken);
-					return;
-				case "map-value-ind":
-					!t || t.value ? e.items.push({
-						start: [],
-						key: null,
-						sep: [this.sourceToken]
-					}) : t.sep ? t.sep.push(this.sourceToken) : Object.assign(t, {
-						key: null,
-						sep: [this.sourceToken]
-					});
-					return;
-				case "space":
-				case "comment":
-				case "newline":
-				case "anchor":
-				case "tag":
-					!t || t.value ? e.items.push({ start: [this.sourceToken] }) : t.sep ? t.sep.push(this.sourceToken) : t.start.push(this.sourceToken);
-					return;
-				case "alias":
-				case "scalar":
-				case "single-quoted-scalar":
-				case "double-quoted-scalar": {
-					let n = this.flowScalar(this.type);
-					!t || t.value ? e.items.push({
-						start: [],
-						key: n,
-						sep: []
-					}) : t.sep ? this.stack.push(n) : Object.assign(t, {
-						key: n,
-						sep: []
-					});
-					return;
-				}
-				case "flow-map-end":
-				case "flow-seq-end":
-					e.end.push(this.sourceToken);
-					return;
-			}
-			let n = this.startBlockValue(e);
-			/* istanbul ignore else should not happen */
-			n ? this.stack.push(n) : (yield* this.pop(), yield* this.step());
-		} else {
-			let t = this.peek(2);
-			if (t.type === "block-map" && (this.type === "map-value-ind" && t.indent === e.indent || this.type === "newline" && !t.items[t.items.length - 1].sep)) yield* this.pop(), yield* this.step();
-			else if (this.type === "map-value-ind" && t.type !== "flow-collection") {
-				let n = kr(Or(t));
-				jr(e);
-				let r = e.end.splice(1, e.end.length);
-				r.push(this.sourceToken);
-				let i = {
-					type: "block-map",
-					offset: e.offset,
-					indent: e.indent,
-					items: [{
-						start: n,
-						key: e,
-						sep: r
-					}]
-				};
-				this.onKeyLine = !0, this.stack[this.stack.length - 1] = i;
-			} else yield* this.lineEnd(e);
-		}
-	}
-	flowScalar(e) {
-		if (this.onNewLine) {
-			let e = this.source.indexOf("\n") + 1;
-			for (; e !== 0;) this.onNewLine(this.offset + e), e = this.source.indexOf("\n", e) + 1;
-		}
-		return {
-			type: e,
-			offset: this.offset,
-			indent: this.indent,
-			source: this.source
-		};
-	}
-	startBlockValue(e) {
-		switch (this.type) {
-			case "alias":
-			case "scalar":
-			case "single-quoted-scalar":
-			case "double-quoted-scalar": return this.flowScalar(this.type);
-			case "block-scalar-header": return {
-				type: "block-scalar",
-				offset: this.offset,
-				indent: this.indent,
-				props: [this.sourceToken],
-				source: ""
-			};
-			case "flow-map-start":
-			case "flow-seq-start": return {
-				type: "flow-collection",
-				offset: this.offset,
-				indent: this.indent,
-				start: this.sourceToken,
-				items: [],
-				end: []
-			};
-			case "seq-item-ind": return {
-				type: "block-seq",
-				offset: this.offset,
-				indent: this.indent,
-				items: [{ start: [this.sourceToken] }]
-			};
-			case "explicit-key-ind": {
-				this.onKeyLine = !0;
-				let t = kr(Or(e));
-				return t.push(this.sourceToken), {
-					type: "block-map",
-					offset: this.offset,
-					indent: this.indent,
-					items: [{
-						start: t,
-						explicitKey: !0
-					}]
-				};
-			}
-			case "map-value-ind": {
-				this.onKeyLine = !0;
-				let t = kr(Or(e));
-				return {
-					type: "block-map",
-					offset: this.offset,
-					indent: this.indent,
-					items: [{
-						start: t,
-						key: null,
-						sep: [this.sourceToken]
-					}]
-				};
-			}
 		}
 		return null;
-	}
-	atIndentedComment(e, t) {
-		return this.type !== "comment" || this.indent <= t ? !1 : e.every((e) => e.type === "newline" || e.type === "space");
-	}
-	*documentEnd(e) {
-		this.type !== "doc-mode" && (e.end ? e.end.push(this.sourceToken) : e.end = [this.sourceToken], this.type === "newline" && (yield* this.pop()));
-	}
-	*lineEnd(e) {
-		switch (this.type) {
-			case "comma":
-			case "doc-start":
-			case "doc-end":
-			case "flow-seq-end":
-			case "flow-map-end":
-			case "map-value-ind":
-				yield* this.pop(), yield* this.step();
-				break;
-			case "newline": this.onKeyLine = !1;
-			default: e.end ? e.end.push(this.sourceToken) : e.end = [this.sourceToken], this.type === "newline" && (yield* this.pop());
+	}, a = (e, r) => {
+		let [, i, a, o, s, c] = e;
+		c && !/^[ \t]/.test(c) && I(n, "bad block header");
+		let l = a || s, u = o ? r + Number(o) : -1, d = [], f = n + 1;
+		for (; f < t.length; f++) {
+			let e = t[f], i = /^ */.exec(e)[0].length;
+			if (U.test(e)) break;
+			if (e.length === i) d.push(u >= 0 ? e.slice(u) : "");
+			else {
+				if (u < 0) {
+					if (i <= r && r >= 0) break;
+					e[i] === "	" && i === 0 && I(f, "a tab in the indent"), u = i;
+					for (let e of t.slice(n + 1, f)) e.length > u && I(f, "indent");
+					d.length = 0;
+					for (let e = n + 1; e < f; e++) d.push("");
+				}
+				if (i < u) break;
+				d.push(e.slice(u));
+			}
 		}
-	}
-};
-//#endregion
-//#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/browser/dist/public-api.js
-function Nr(e) {
-	let t = e.prettyErrors !== !1;
-	return {
-		lineCounter: e.lineCounter || t && new Tr() || null,
-		prettyErrors: t
-	};
+		n = f;
+		let p = 0;
+		for (; d.length - p > 0 && d[d.length - 1 - p] === "";) p++;
+		let m = d.slice(0, d.length - p), h;
+		if (i === "|") h = m.join("\n");
+		else {
+			m.some((e) => /^[ \t]/.test(e)) && I(n, "a more-indented folded line"), h = "";
+			for (let e = 0; e < m.length; e++) e && m[e] && m[e - 1] ? h += " " : e && !m[e] && (h += "\n"), h += m[e];
+		}
+		return m.length ? l === "-" ? h : l === "+" ? `${h}\n${"\n".repeat(p)}` : `${h}\n` : l === "+" ? "\n".repeat(p) : "";
+	}, o = (e, t) => {
+		let r = n, i = /^([|>])([-+]?)([1-9]?)([-+]?)(.*)$/.exec(e);
+		if (i) return (i[2] && i[4] || /[^ \t]/.test(i[5]) && !/^[ \t]+#/.test(i[5])) && I(r, "bad block header"), a(i, t);
+		if (n++, e[0] === "\"" || e[0] === "'") {
+			let { value: t, end: n } = B(e, 0, r);
+			return V(e, n, r), t;
+		}
+		if (e[0] === "[" || e[0] === "{") {
+			let { value: t, end: n } = K(e, 0, r, 0);
+			return V(e, n, r), t;
+		}
+		let o = H(e.replace(/[ \t]+#.*$/, ""));
+		return /:(?:[ \t]|$)/.test(o) && I(r, "a mapping inside a plain value"), o[0] === "#" ? null : (W.test(o) || I(r, "anchors, aliases, tags and reserved characters are not read"), L(o));
+	}, s = (e, t) => {
+		t > 32 && I(n, "too deep");
+		let r = i();
+		return r.text === "-" || r.text.startsWith("- ") ? c(e, t) : l(e, t);
+	}, c = (e, r) => {
+		let a = [];
+		for (let c = i(); c && c.indent === e && (c.text === "-" || c.text.startsWith("- ")); c = i()) {
+			let l = H(c.text.slice(1));
+			if (!l || l[0] === "#") {
+				n++;
+				let t = i();
+				a.push(t && t.indent > e ? s(t.indent, r + 1) : null);
+				continue;
+			}
+			let u = c.text.length - l.length + e;
+			l === "-" || l.startsWith("- ") || G(l, n) ? (t[n] = " ".repeat(u) + l, a.push(s(u, r + 1))) : a.push(o(l, e));
+		}
+		let c = i();
+		return c && c.indent > e && I(n, "indent"), a;
+	}, l = (e, t) => {
+		let r = {}, a = /* @__PURE__ */ new Set();
+		for (let l = i(); l && l.indent === e; l = i()) {
+			let u = G(l.text, n);
+			u || I(n, "expected a key");
+			let { key: d, rest: f } = u;
+			a.has(d) && I(n, "duplicate key"), a.add(d);
+			let p = H(f);
+			if (p && p[0] !== "#") {
+				q(r, d, o(p, e));
+				continue;
+			}
+			p && !/^[ \t]/.test(f) && I(n, "expected a key"), n++;
+			let m = i();
+			m && m.indent > e ? q(r, d, s(m.indent, t + 1)) : m && m.indent === e && (m.text === "-" || m.text.startsWith("- ")) ? q(r, d, c(e, t + 1)) : q(r, d, null);
+		}
+		let l = i();
+		return l && l.indent > e && I(n, "indent"), r;
+	}, u = i();
+	if (!u || (u.text === "---" ? n++ : U.test(t[n]) && I(n, "one document only"), r = !0, !i())) return null;
+	let d = i();
+	d.indent !== 0 && d.text.match(/^-/) && I(n, "indent");
+	let f = d.text.startsWith("- ") || d.text === "-" || G(d.text, n) ? s(d.indent, 0) : o(d.text, -1);
+	return i() && I(n, "more than one value"), f;
 }
-function Pr(e, t = {}) {
-	let { lineCounter: n, prettyErrors: r } = Nr(t), i = new Mr(n?.addNewLine), a = new fr(t), o = null;
-	for (let t of a.compose(i.parse(e), !0, e.length)) if (!o) o = t;
-	else if (o.options.logLevel !== "silent") {
-		o.errors.push(new kn(t.range.slice(0, 2), "MULTIPLE_DOCS", "Source contains multiple documents; please use YAML.parseAllDocuments()"));
-		break;
-	}
-	return r && n && (o.errors.forEach(jn(e, n)), o.warnings.forEach(jn(e, n))), o;
-}
-var Fr = {
+var he = {
 	account: /^(?:[A-Za-z]{2}\d{4}|[A-Za-z]{4}\d{2})$/,
 	product: /^[A-Za-z]{4}\d{2}$/,
 	list: /^\d{2}[A-Za-z]{4}$/,
 	item: /^[A-Za-z]{2}\d{2}(?:[A-Za-z][A-Za-z0-9]|\d[A-Za-z])$/
-}, Ir = (e, t) => Fr[e].test(t), Lr = /<!--aa:(start|end) ([A-Za-z0-9]{6})-->/g, Rr = (e) => typeof e == "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(e) && Number.isFinite(Date.parse(e)), zr = (e) => typeof e == "string" && Ir("account", e), Br = (e) => typeof e == "string" && Ir("item", e), Vr = (e) => !!e && typeof e == "object" && !Array.isArray(e);
-function Hr(e) {
-	if (!Vr(e) || !Array.isArray(e.threads) || e.threads.length > 1e4) throw Error("Expected threads array (at most 10000 threads).");
+}, J = (e, t) => he[e].test(t), ge = /<!--aa:(start|end) ([A-Za-z0-9]{6})-->/g, Y = (e) => typeof e == "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(e) && Number.isFinite(Date.parse(e)), X = (e) => typeof e == "string" && J("account", e), Z = (e) => typeof e == "string" && J("item", e), Q = (e) => !!e && typeof e == "object" && !Array.isArray(e);
+function $(e) {
+	if (!Q(e) || !Array.isArray(e.threads) || e.threads.length > 1e4) throw Error("Expected threads array (at most 10000 threads).");
 	let t = /* @__PURE__ */ new Set(), n = (e) => {
-		if (!Br(e) || t.has(e)) throw Error("Thread and comment IDs must be unique IDv1 item codes.");
+		if (!Z(e) || t.has(e)) throw Error("Thread and comment IDs must be unique IDv1 item codes.");
 		t.add(e);
 	};
 	for (let t of e.threads) {
-		if (!Vr(t)) throw Error("Invalid thread.");
+		if (!Q(t)) throw Error("Invalid thread.");
 		if (n(t.id), typeof t.quote != "string" || !["open", "resolved"].includes(t.status) || !Array.isArray(t.comments) || !t.comments.length) throw Error("Invalid thread fields.");
-		if (t.status === "resolved" && (!Rr(t.resolved) || !zr(t.resolvedBy))) throw Error("Resolved threads need resolved and resolvedBy.");
+		if (t.status === "resolved" && (!Y(t.resolved) || !X(t.resolvedBy))) throw Error("Resolved threads need resolved and resolvedBy.");
 		for (let e of t.comments) {
-			if (!Vr(e)) throw Error("Invalid comment.");
-			if (n(e.id), !zr(e.author) || !Rr(e.created) || typeof e.body != "string" || !e.body.trim() || e.edited !== void 0 && !Rr(e.edited)) throw Error("Invalid comment author, date or body.");
-			if (e.mentions !== void 0 && (!Array.isArray(e.mentions) || !e.mentions.every(zr))) throw Error("Invalid mentions.");
-			if (e.reactions !== void 0 && (!Vr(e.reactions) || !Object.values(e.reactions).every((e) => Array.isArray(e) && e.every(zr)))) throw Error("Invalid reactions.");
+			if (!Q(e)) throw Error("Invalid comment.");
+			if (n(e.id), !X(e.author) || !Y(e.created) || typeof e.body != "string" || !e.body.trim() || e.edited !== void 0 && !Y(e.edited)) throw Error("Invalid comment author, date or body.");
+			if (e.mentions !== void 0 && (!Array.isArray(e.mentions) || !e.mentions.every(X))) throw Error("Invalid mentions.");
+			if (e.reactions !== void 0 && (!Q(e.reactions) || !Object.values(e.reactions).every((e) => Array.isArray(e) && e.every(X)))) throw Error("Invalid reactions.");
 		}
 	}
 	return e.threads;
 }
-function Ur(e) {
+function _e(e) {
 	let t = [], n = [], r = [...e.matchAll(/[^\n]*(?:\n|$)/g)].filter((e) => e[0]);
 	for (let i = 0; i < r.length; i++) {
 		let a = r[i], o = /^ {0,3}(`{3,}|~{3,})([^\r\n]*)/.exec(a[0]);
@@ -4492,8 +955,8 @@ function Ur(e) {
 		protectedAt: i
 	};
 }
-function Wr(e) {
-	let { fences: t, protectedAt: n } = Ur(e), r = [], i = [], a = [], o = t.filter((e) => /^aa-comments(?:\s|$)/.test(e.info));
+function ve(e) {
+	let { fences: t, protectedAt: n } = _e(e), r = [], i = [], a = [], o = t.filter((e) => /^aa-comments(?:\s|$)/.test(e.info));
 	for (let t of o) {
 		if (o.length > 1) {
 			i.push("Multiple aa-comments blocks.");
@@ -4503,15 +966,10 @@ function Wr(e) {
 		else if (!t.closed || e.slice(t.to).trim()) i.push("The aa-comments block must be closed and last.");
 		else try {
 			if (t.body.length > 2e6) throw Error("Comment metadata exceeds 2 MB.");
-			let n = Pr(t.body, {
-				schema: "core",
-				uniqueKeys: !0
-			});
-			if (n.errors.length || n.warnings.length) throw Error("Invalid comment YAML.");
-			a = Hr(n.toJS({ maxAliasCount: 0 }));
-			let i = e.slice(0, t.from), o = i.endsWith("\r\n\r\n") ? 4 : i.endsWith("\n\n") ? 2 : 0;
+			a = $(me(t.body));
+			let n = e.slice(0, t.from), i = n.endsWith("\r\n\r\n") ? 4 : n.endsWith("\n\n") ? 2 : 0;
 			r.push({
-				from: t.from - o,
+				from: t.from - i,
 				to: t.to,
 				metadata: !0
 			});
@@ -4520,8 +978,8 @@ function Wr(e) {
 		}
 	}
 	let s = /* @__PURE__ */ new Map();
-	for (let t of e.matchAll(Lr)) {
-		if (n(t.index) || e[t.index - 1] === "\\" || !Br(t[2])) continue;
+	for (let t of e.matchAll(ge)) {
+		if (n(t.index) || e[t.index - 1] === "\\" || !Z(t[2])) continue;
 		let i = {
 			from: t.index,
 			to: t.index + t[0].length
@@ -4552,11 +1010,11 @@ function Wr(e) {
 		spans: r
 	};
 }
-function Gr(e) {
-	let t = Wr(e);
+function ye(e) {
+	let t = ve(e);
 	if (t.diagnostics.length) throw Error(`Cannot export Markdown: ${t.diagnostics.join(" ")}`);
 	return t.markdown;
 }
 //#endregion
-export { ie as DEFAULT_ATOMS, _e as blockRuns, Gr as exportMarkdown, C as parseBlocks, p as readColumns, b as readTabs, ee as serialize, ye as tableAlignments, ve as tableRows };
+export { E as DEFAULT_ATOMS, oe as blockRuns, ye as exportMarkdown, S as parseBlocks, p as readColumns, b as readTabs, C as serialize, ce as tableAlignments, se as tableRows, le as tableWidths };
 

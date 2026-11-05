@@ -4,25 +4,34 @@
  * touched are read again, so a bullet typed at the start of a paragraph is a
  * bullet, and a paragraph that lost its `## ` is a paragraph.
  */
-import { serialize, type Block, type CalloutColor } from './markdown';
+import { serialize, type AtomSyntax, type Block, type CalloutColor } from './markdown';
+import { type Carry } from './rich';
 /** A place in the document: a block, and a character offset into its source. */
 export type Pos = {
     block: number;
     offset: number;
 };
+/** `carry` is what the next letters typed at the caret go on wearing. */
 export type Change = {
     blocks: Block[];
     caret: Pos;
+    carry?: Carry;
 };
 export declare function fromMarkdown(text: string): Block[];
 export declare const toMarkdown: typeof serialize;
 export declare function comparePos(a: Pos, b: Pos): number;
 /** The two ends of a selection, first one first. */
 export declare function order(a: Pos, b: Pos): [Pos, Pos];
-/** Replace what stands between `from` and `to` with `text`. The caret lands after the text. */
-export declare function replaceRange(blocks: readonly Block[], from: Pos, to: Pos, text: string): Change;
-/** The Markdown between two positions, as it would be copied. */
-export declare function sliceMarkdown(blocks: readonly Block[], from: Pos, to: Pos): string;
+/**
+ * Replace what stands between `from` and `to` with `text`. The caret lands
+ * after the text. Marks stay on their words: where the range would part a
+ * pair, the words are written again (`rich.ts`), so nothing shows as syntax.
+ */
+export declare function replaceRange(blocks: readonly Block[], from: Pos, to: Pos, text: string, atoms?: readonly AtomSyntax[]): Change;
+/** A block's source written anew and read again, exactly as given. */
+export declare function setSource(blocks: readonly Block[], index: number, source: string, caret?: number): Change;
+/** The Markdown between two positions, as it would be copied: a piece of a bold phrase is bold. */
+export declare function sliceMarkdown(blocks: readonly Block[], from: Pos, to: Pos, atoms?: readonly AtomSyntax[]): string;
 /**
  * Enter: the block ends at the caret and a new one begins with the rest. A
  * bullet goes on as a bullet (numbered one on, its box empty) and an empty
@@ -30,31 +39,40 @@ export declare function sliceMarkdown(blocks: readonly Block[], from: Pos, to: P
  * line in code is a line, and after a closed fence a paragraph follows; a
  * heading's rest is a paragraph.
  */
-export declare function splitAt(blocks: readonly Block[], pos: Pos): Change;
+export declare function splitAt(blocks: readonly Block[], pos: Pos, atoms?: readonly AtomSyntax[]): Change;
 /** Backspace at the start of a heading, bullet or quote: it becomes a paragraph. */
 export declare function liftPrefix(blocks: readonly Block[], index: number): Change | null;
 /** Backspace at the very start of a block: it joins the block before it. */
-export declare function joinWithPrevious(blocks: readonly Block[], index: number): Change | null;
+export declare function joinWithPrevious(blocks: readonly Block[], index: number, atoms?: readonly AtomSyntax[]): Change | null;
 /** Delete at the very end of a block: the next block joins it. */
-export declare function joinWithNext(blocks: readonly Block[], index: number): Change | null;
+export declare function joinWithNext(blocks: readonly Block[], index: number, atoms?: readonly AtomSyntax[]): Change | null;
 export type Wrapped = {
     blocks: Block[];
     anchor: Pos;
     focus: Pos;
 };
 /**
- * Put a mark round the selection, or take it off: `**` for bold. Within
- * each selected block. With nothing selected the delimiters are typed with the
- * caret between them.
+ * Put a mark on the selected words, or take it off: on unless every word
+ * already wears it, as a word processor decides. What the words wear already
+ * stays, wherever the selection starts and ends. Each selected block is marked
+ * on its own, and code and dividers are left. An equation's `$` is not a mark
+ * of words; with nothing selected its delimiters are typed, the caret between
+ * them. (Marks with nothing selected wait for the next letters: `Carry`.)
  */
-export declare function wrapSelection(blocks: readonly Block[], from: Pos, to: Pos, delimiter: string, closing?: string): Wrapped | null;
+export declare function wrapSelection(blocks: readonly Block[], from: Pos, to: Pos, delimiter: string, closing?: string, atoms?: readonly AtomSyntax[]): Wrapped | null;
 /**
  * Write the selected words in a colour (`<span color="red">`), or back in the
- * text's own with `null`: a colour already round exactly these words is
- * changed or taken off rather than nested, and colours wholly inside them go.
- * Across blocks each block's part is coloured on its own, as a mark is.
+ * text's own with `null`. A colour already on any of them gives way, so a word
+ * recoloured inside a coloured sentence parts it rather than nests in it. Across
+ * blocks each block's part is coloured on its own, as a mark is.
  */
-export declare function colorSelection(blocks: readonly Block[], from: Pos, to: Pos, color: string | null): Wrapped | null;
+export declare function colorSelection(blocks: readonly Block[], from: Pos, to: Pos, color: string | null, atoms?: readonly AtomSyntax[]): Wrapped | null;
+/**
+ * Put a colour behind the selected words, or none with `null`. Yellow is the
+ * highlight, `==words==`, so a highlight and a background are one choice and
+ * either gives way to the other.
+ */
+export declare function backgroundSelection(blocks: readonly Block[], from: Pos, to: Pos, color: string | null, atoms?: readonly AtomSyntax[]): Wrapped | null;
 /** Tick or untick a bullet's box. */
 export declare function toggleBox(blocks: readonly Block[], index: number): Change | null;
 export type TurnKind = 'paragraph' | 'h1' | 'h2' | 'h3' | 'todo' | 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' | 'callout' | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'table' | 'equation';
