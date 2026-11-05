@@ -376,5 +376,7 @@
 table[data-ds-column-resize] { min-width: 0; }
 table[data-ds-column-resize] :is(th, td) { min-width: 0; max-width: none; width: auto; }
 table[data-ds-column-resize] :is(th, td):has(> .ds-table-column-resize) { position: relative; overflow: visible; }
-table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize { inset-inline-end: 0; }
+/* Keep the last target inside the table without covering its neighbour in a one-square column. */
+table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize { inset-inline-end: 0; clip-path: inset(0 0 0 50%); }
+table[data-ds-column-resize]:dir(rtl) :is(th, td):last-child > .ds-table-column-resize { clip-path: inset(0 50% 0 0); }
 table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize::after { inset-inline-start: auto; inset-inline-end: 0; }
