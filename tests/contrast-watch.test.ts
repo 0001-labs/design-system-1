@@ -105,6 +105,24 @@ test('waits for startup appearance to settle before recording contrast', async (
   } finally { await page.close(); }
 });
 
+test('a tight idle budget yields before measuring text late in the document', async () => {
+  const page = await fixture(`<section>${'<p>Readable</p>'.repeat(800)}</section><p style="color:white">Faint</p>`);
+  try {
+    await page.evaluate(() => {
+      const browserIdle = window.requestIdleCallback;
+      let callbacks = 0;
+      window.requestIdleCallback = callback => browserIdle(deadline => {
+        callbacks++;
+        document.body.dataset.idleSlices = String(callbacks);
+        callback({ didTimeout: deadline.didTimeout, timeRemaining: () => 0 });
+      });
+    });
+    await start(page);
+    await page.waitForFunction(() => (window as any).reports.length === 1);
+    expect(await page.evaluate(() => Number(document.body.dataset.idleSlices))).toBeGreaterThan(2);
+  } finally { await page.close(); }
+});
+
 test('the stop function cancels the pending initial scan', async () => {
   const page = await fixture('<p style="color:#ddd">Faint</p>');
   try {

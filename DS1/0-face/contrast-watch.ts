@@ -8,7 +8,7 @@
  * Load it with a dynamic import once the page has loaded and gone idle, then call
  * `startContrastWatch()`; it does nothing per frame.
  */
-import { measureTextContrast, paintedParent, TEXT_CONTRAST_MINIMUM } from './text-contrast';
+import { scanTextContrast, paintedParent, TEXT_CONTRAST_MINIMUM } from './text-contrast';
 import { reportFailure, type Failure } from './failures';
 
 export type ContrastWatchOptions = {
@@ -121,24 +121,49 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
     // One run per theme and path, unless the theme changed since the last run.
     if (ran.has(page) && theme === lastTheme) return;
     if (now() < lastRun + interval) { schedule(); return; }
-    lastRun = now();
-    lastTheme = theme;
-    ran.add(page);
-    if (hasTooMuchText(root)) return;
+    const finish = () => {
+      lastRun = now();
+      lastTheme = theme;
+      ran.add(page);
+    };
+    if (hasTooMuchText(root)) { finish(); return; }
+    const scan = scanTextContrast(root);
     let count = 0;
-    for (const result of measureTextContrast(root)) {
-      if (count >= maxPerRun) break;
-      if (result.ratio === undefined || result.ratio >= minimum || !result.foreground || !result.background) continue;
-      const component = contrastComponent(result.element);
-      const key = [theme, path, component, result.foreground, result.background].join('|');
-      if (known.has(key)) continue;
-      remember(key);
-      count++;
-      // Rounded down, so a ratio just under the minimum never reads as meeting it.
-      const ratio = (Math.floor(result.ratio * 10) / 10).toFixed(1);
-      const message = `${result.foreground} on ${result.background}, ${ratio}:1 (${component} · ${elementLabel(result.element)}) on ${path}`.slice(0, 200);
-      report({ code: `contrast.${theme}.${slug(component)}`, message });
-      if (debug) console.warn(`[DS1 contrast] ${message}`, result.element);
+    function slice(idle?: IdleDeadline) {
+      if (stopped || settle !== undefined || document.visibilityState !== 'visible'
+        || location.pathname !== path || contrastTheme(document) !== theme) {
+        schedule();
+        return;
+      }
+      const end = performance.now() + Math.max(1, Math.min(8, idle?.timeRemaining() ?? 8));
+      do {
+        const next = scan.next();
+        if (next.done || count >= maxPerRun) { finish(); return; }
+        const result = next.value;
+        if (result?.ratio === undefined || result.ratio >= minimum || !result.foreground || !result.background) continue;
+        const component = contrastComponent(result.element);
+        const key = [theme, path, component, result.foreground, result.background].join('|');
+        if (known.has(key)) continue;
+        remember(key);
+        count++;
+        // Rounded down, so a ratio just under the minimum never reads as meeting it.
+        const ratio = (Math.floor(result.ratio * 10) / 10).toFixed(1);
+        const message = `${result.foreground} on ${result.background}, ${ratio}:1 (${component} · ${elementLabel(result.element)}) on ${path}`.slice(0, 200);
+        report({ code: `contrast.${theme}.${slug(component)}`, message });
+        if (debug) console.warn(`[DS1 contrast] ${message}`, result.element);
+      } while (performance.now() < end);
+      atIdle(slice);
+    }
+    atIdle(slice);
+  }
+
+  function atIdle(callback: (idle?: IdleDeadline) => void) {
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(idle => { cancelIdle = undefined; callback(idle); }, { timeout: 5_000 });
+      cancelIdle = () => window.cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(() => { cancelIdle = undefined; callback(); }, 1);
+      cancelIdle = () => clearTimeout(id);
     }
   }
 
@@ -146,13 +171,7 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
     if (stopped || settle !== undefined || timer !== undefined || cancelIdle || document.visibilityState !== 'visible') return;
     timer = setTimeout(() => {
       timer = undefined;
-      if ('requestIdleCallback' in window) {
-        const id = window.requestIdleCallback(() => { cancelIdle = undefined; run(); }, { timeout: 5_000 });
-        cancelIdle = () => window.cancelIdleCallback(id);
-      } else {
-        const id = setTimeout(() => { cancelIdle = undefined; run(); }, 1);
-        cancelIdle = () => clearTimeout(id);
-      }
+      atIdle(run);
     }, Math.max(0, lastRun + interval - now()));
   }
 
