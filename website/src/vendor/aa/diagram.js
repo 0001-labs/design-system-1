@@ -330,6 +330,7 @@ var ee = { da: {
 	"Background colour": "Baggrundsfarve",
 	Highlight: "Markering",
 	"Column width": "Kolonnebredde",
+	"Bold header": "Fed overskrift",
 	"Text formatting": "Tekstformatering",
 	"The microphone is blocked: allow it for this site in Safari › Settings › Websites › Microphone": "Mikrofonen er blokeret: tillad den for siden i Safari › Indstillinger › Websteder › Mikrofon",
 	"The microphone is blocked: allow it for this site in the browser’s settings": "Mikrofonen er blokeret: tillad den for siden i browserens indstillinger",

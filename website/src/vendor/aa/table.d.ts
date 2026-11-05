@@ -20,5 +20,5 @@ export declare function tableWidths(source: string): (number | null)[];
 export declare function setTableWidths(source: string, widths: readonly (number | null)[]): string;
 export declare function writeTable(rows: readonly (readonly string[])[], alignments?: readonly Alignment[], widths?: readonly (number | null)[]): string;
 export declare function fromTSV(text: string): string | null;
-export type TableAction = 'add-row' | 'delete-row' | 'add-column' | 'delete-column';
+export type TableAction = 'add-row' | 'delete-row' | 'add-column' | 'delete-column' | 'bold-header';
 export declare function editTable(block: Block, action: TableAction, row: number, column: number): string;
