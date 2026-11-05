@@ -3,6 +3,7 @@ import { define } from "../0-face/define";
 // Form component for handling form submissions and validation
 
 import { LitElement, html, css } from "lit";
+import { translate } from "../0-face/i18n";
 
 export interface FormData {
   [key: string]: string | number | boolean | null;
@@ -15,6 +16,8 @@ export interface FormValidationResult {
 
 /** Inputs Enter does not submit from: it presses or toggles them instead. */
 const IMPLICIT_SUBMIT_SKIPS = new Set(["button", "submit", "reset", "image", "checkbox", "radio", "file", "color", "range"]);
+/** Inputs whose value is their label or their data, so a reset leaves it alone. */
+const IMPLICIT_RESET_SKIPS = new Set(["button", "submit", "reset", "image", "hidden"]);
 
 export class Form extends LitElement {
   static properties = {
@@ -149,7 +152,7 @@ export class Form extends LitElement {
       const input = element as any;
       if (input.required && !input.value) {
         result.valid = false;
-        result.errors[name || "unknown"] = "This field is required";
+        result.errors[name || "unknown"] = translate("This field is required");
       }
     }
 
@@ -161,7 +164,8 @@ export class Form extends LitElement {
     ) {
       if (!element.checkValidity()) {
         result.valid = false;
-        result.errors[name || "unknown"] = element.validationMessage;
+        // A ds-input's own field comes after it: the words already given stand.
+        result.errors[name || "unknown"] ??= element.validationMessage;
       }
     }
 
@@ -188,21 +192,20 @@ export class Form extends LitElement {
   }
 
   private _resetElement(element: HTMLElement): void {
-    if (
-      element instanceof HTMLInputElement ||
-      element instanceof HTMLTextAreaElement ||
-      element instanceof HTMLSelectElement
-    ) {
-      if (element instanceof HTMLInputElement && element.type === "checkbox") {
-        element.checked = false;
-      } else {
-        element.value = "";
-      }
+    // A field of this system resets itself to what it started with, and owns what is inside it.
+    const field = element as HTMLElement & { formResetCallback?: () => void };
+    if (typeof field.formResetCallback === "function") {
+      field.formResetCallback();
+      return;
     }
 
-    // Handle ds-input elements
-    if (element.tagName.toLowerCase() === "ds-input") {
-      (element as any).value = "";
+    if (element instanceof HTMLInputElement) {
+      if (element.type === "checkbox" || element.type === "radio") element.checked = element.defaultChecked;
+      else if (!IMPLICIT_RESET_SKIPS.has(element.type)) element.value = element.defaultValue;
+    } else if (element instanceof HTMLTextAreaElement) {
+      element.value = element.defaultValue;
+    } else if (element instanceof HTMLSelectElement) {
+      for (const option of element.options) option.selected = option.hasAttribute("selected");
     }
 
     // Recursively reset children

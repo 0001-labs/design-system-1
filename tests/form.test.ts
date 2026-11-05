@@ -26,12 +26,47 @@ test('a slotted submit button submits the form drawn in the shadow', async () =>
   expect(submitted).toHaveBeenCalledWith({ name: 'Ada' });
 });
 
-test('a slotted reset button clears the form', async () => {
-  const { reset, submitted } = await form('<ds-button control="slotted"><button type="reset">Clear</button></ds-button>');
+test('a slotted reset button puts a ds-input back to the value it started with', async () => {
+  const { reset, submitted } = await form('<ds-button control="slotted"><button type="reset">Reset</button></ds-button>');
+  const input = document.querySelector('ds-input') as HTMLElement & { value: string };
+  input.value = 'Grace';
   document.querySelector('button')!.click();
   expect(reset).toHaveBeenCalledTimes(1);
   expect(submitted).not.toHaveBeenCalled();
-  expect((document.querySelector('ds-input') as HTMLElement & { value: string }).value).toBe('');
+  expect(input.value).toBe('Ada');
+});
+
+test('reset puts native fields back as a native form does, and a radio keeps its value', async () => {
+  const { element } = await form(`
+    <input type="text" name="city" value="Oslo">
+    <input type="checkbox" name="news" checked>
+    <input type="checkbox" name="terms">
+    <input type="radio" name="plan" value="free" checked>
+    <input type="radio" name="plan" value="paid">
+    <textarea name="note">First</textarea>
+    <select name="size"><option value="s">S</option><option value="m" selected>M</option></select>
+    <input type="hidden" name="token" value="kept">`);
+  const field = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+  field<HTMLInputElement>('[name="city"]').value = 'Bergen';
+  field<HTMLInputElement>('[name="news"]').checked = false;
+  field<HTMLInputElement>('[name="terms"]').checked = true;
+  field<HTMLInputElement>('[value="paid"]').checked = true;
+  field<HTMLTextAreaElement>('textarea').value = 'Second';
+  field<HTMLSelectElement>('select').value = 's';
+  element.reset();
+  expect(field<HTMLInputElement>('[name="city"]').value).toBe('Oslo');
+  expect(field<HTMLInputElement>('[name="news"]').checked).toBe(true);
+  expect(field<HTMLInputElement>('[name="terms"]').checked).toBe(false);
+  expect(field<HTMLInputElement>('[value="free"]').checked).toBe(true);
+  expect(field<HTMLInputElement>('[value="paid"]').value).toBe('paid');
+  expect(field<HTMLTextAreaElement>('textarea').value).toBe('First');
+  expect(field<HTMLSelectElement>('select').value).toBe('m');
+  expect(field<HTMLInputElement>('[name="token"]').value).toBe('kept');
+});
+
+test('a required ds-input says so in the page\'s words', async () => {
+  const { element } = await form('<ds-input name="mail" required></ds-input>');
+  expect(element.validate().errors.mail).toBe('This field is required');
 });
 
 test('ds-button with type="submit" submits, and a plain button does not', async () => {

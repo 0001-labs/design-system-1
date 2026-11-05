@@ -31,7 +31,7 @@ Submitting validates first. A `ds-input` with `required` and no value fails, and
 
 With an `action`, the form then sends the values with `fetch` as JSON, using `method`, and reports the answer in `form-response` or a failed request in `form-error`.
 
-Reset empties the fields and unticks the checkboxes. It does not put back the values they started with.
+Reset puts every field back to what it started with, as a native form does: the value it was written with, or empty if it had none, and each checkbox and radio as it first stood.
 
 ## Accessibility
 
@@ -67,7 +67,7 @@ form.addEventListener('form-submit', (event) => {
 | --- | --- | --- |
 | `form-submit` | `data` | The form is valid; these are its values. |
 | `form-invalid` | An error message for each field's name | Validation failed. |
-| `form-reset` | None | The fields were cleared. |
+| `form-reset` | None | The fields went back to what they started with. |
 | `form-response` | `response`, `data` | The `action` answered. |
 | `form-error` | `error`, `data` | The request to `action` failed. |
 
@@ -77,7 +77,7 @@ All five bubble.
 | --- | --- |
 | `getFormData()` | Returns the values, by name. |
 | `validate()` | Returns `valid` and `errors` without submitting. |
-| `reset()` | Clears the fields and sends `form-reset`. |
+| `reset()` | Puts the fields back to what they started with and sends `form-reset`. |
 | `submit()` | Validates, then submits. |
 
 It has no tokens of its own. Copy `form` through Sync 1. Native platforms use their own forms.
