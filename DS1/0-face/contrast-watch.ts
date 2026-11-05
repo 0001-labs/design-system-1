@@ -114,7 +114,7 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
   let burstStart = 0;
 
   function run() {
-    if (stopped || document.visibilityState !== 'visible') return;
+    if (stopped || settle !== undefined || document.visibilityState !== 'visible') return;
     const theme = contrastTheme(document);
     const path = location.pathname;
     const page = `${theme} ${path}`;
@@ -143,7 +143,7 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
   }
 
   function schedule() {
-    if (stopped || timer !== undefined || cancelIdle || document.visibilityState !== 'visible') return;
+    if (stopped || settle !== undefined || timer !== undefined || cancelIdle || document.visibilityState !== 'visible') return;
     timer = setTimeout(() => {
       timer = undefined;
       if ('requestIdleCallback' in window) {
@@ -158,13 +158,14 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
 
   // A burst of changes runs once it has been quiet for a moment; a page that never
   // stops changing still runs after five quiet periods.
-  const observer = new MutationObserver(() => {
+  const waitForQuiet = () => {
     const at = now();
     if (settle === undefined) burstStart = at;
     else if (at - burstStart > quiet * 5) return;
     clearTimeout(settle);
     settle = setTimeout(() => { settle = undefined; schedule(); }, quiet);
-  });
+  };
+  const observer = new MutationObserver(waitForQuiet);
   observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'theme'] });
   let media: MediaQueryList | null = null;
   try { media = window.matchMedia('(prefers-color-scheme: dark)'); } catch { /* No media queries. */ }
@@ -172,7 +173,7 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
   window.addEventListener('popstate', schedule);
   document.addEventListener('visibilitychange', schedule);
   media?.addEventListener?.('change', schedule);
-  schedule();
+  waitForQuiet();
 
   return () => {
     stopped = true;

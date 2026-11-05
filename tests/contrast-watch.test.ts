@@ -86,6 +86,25 @@ test('a readable page reports nothing', async () => {
   } finally { await page.close(); }
 });
 
+test('waits for startup appearance to settle before recording contrast', async () => {
+  const page = await fixture('<p style="color:white">Startup preview</p>');
+  try {
+    await page.evaluate(() => {
+      const browserIdle = window.requestIdleCallback;
+      window.requestIdleCallback = callback => browserIdle(() => {
+        callback({ didTimeout: false, timeRemaining: () => 20 });
+      });
+      (window as any).DSContrastWatch.startContrastWatch({
+        quiet: 400,
+        report: (finding: Report) => (window as any).reports.push(finding),
+      });
+      setTimeout(() => { document.querySelector('p')!.style.color = 'black'; }, 200);
+    });
+    await page.waitForTimeout(800);
+    expect(await reports(page)).toEqual([]);
+  } finally { await page.close(); }
+});
+
 test('the stop function cancels the pending initial scan', async () => {
   const page = await fixture('<p style="color:#ddd">Faint</p>');
   try {
