@@ -73,7 +73,7 @@ const code = sample.library ? `<link rel="stylesheet" href="${sample.library.hre
   .layout-example { --layout-unit: calc(20px * var(--sf, 1)); margin-block: var(--layout-unit) calc(2 * var(--layout-unit)); color: var(--text-color); font-size: 14px; line-height: var(--layout-unit); }
   .layout-example .layout-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--layout-unit) / 2) var(--layout-unit); padding-block: calc(var(--layout-unit) / 2); }
   .layout-example .layout-toolbar a { padding: 0 4px; color: inherit; }
-  .layout-example .layout-toolbar-end { display: flex; align-items: center; gap: calc(4px * var(--sf, 1)); margin-inline-start: auto; }
+  .layout-example .layout-toolbar-end { display: flex; flex-wrap: wrap; min-width: 0; align-items: center; gap: calc(4px * var(--sf, 1)); margin-inline-start: auto; }
   .layout-example .layout-toolbar a:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
   .layout-example .layout-stage { padding: var(--layout-unit); background: var(--ds-fill); }
   .layout-example .layout-readout { min-height: calc(2 * var(--layout-unit)); margin: calc(10px * var(--sf, 1)) 0 0; }
