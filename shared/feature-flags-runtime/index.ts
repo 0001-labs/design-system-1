@@ -3,6 +3,7 @@ export type FlagDefinition = { label: string; description?: string; defaultEnabl
 export type FlagDefinitions = Readonly<Record<string, FlagDefinition>>;
 export type ReleaseAudience = 'everyone' | 'owner' | 'accounts' | 'percentage';
 export type ReleaseRule = { enabled: boolean; audience: ReleaseAudience; accountIds?: string[]; percentage?: number };
+export type ManagedFlag = ReleaseRule & { key: string; label: string; description?: string; inherited?: boolean };
 export type FlagPrincipal = { accountId?: string | null; isOwner?: boolean };
 export type FlagRules = Readonly<Record<string, unknown>>;
 

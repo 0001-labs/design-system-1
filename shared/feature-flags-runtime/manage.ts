@@ -2,7 +2,7 @@ import type { ReleaseRule } from './index';
 import { mountAudienceMatrix, type ManagedFlags } from './matrix';
 export type { KnownAccount, ManagedFlags } from './matrix';
 export { managedFlags } from './matrix';
-export type ManagedFlag = ReleaseRule & { key: string; label: string; description?: string; inherited?: boolean };
+export type { ManagedFlag } from './index';
 export type FlagsAdapter = { manage(): Promise<ManagedFlags>; set(value: ReleaseRule & { key: string }): Promise<unknown> };
 /**
  * Shared management content: the flags matrix (matrix.ts), styled by
