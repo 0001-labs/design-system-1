@@ -87,3 +87,9 @@ Set `open` on the row whose details are showing. This fills it with the current-
 ```
 
 Native rows use `data-open` on `.ds-row`, including a row with a separate `.ds-row__target`. Remove it (or set it to `false`) when closed, and update `aria-expanded` on the button that opens the details. The application owns record identity and opening/closing; hover never clears the open state. A native table uses `data-open` on its body `<tr>` instead.
+
+## Large column lists
+
+Use `subgrid` when rows share the columns of a parent grid. Both the row and its press target follow those tracks, so a resize changes one grid template instead of cascading a changing custom property through every row’s controls.
+
+Fixed-height lists can also opt into `defer-offscreen`. Rows keep their DOM identity and square height while the browser defers offscreen rendering. Cut-text measurement skips deferred contents until they become visible; scrolling and keyboard focus reveal them normally. Auto-height and stacked rows keep their existing rendering.

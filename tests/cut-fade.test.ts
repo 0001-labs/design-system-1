@@ -166,3 +166,16 @@ test("a page without Lit marks DS1's native classes, and stops when asked", () =
   stop();
   expect(CUT_FADE_SELECTOR).toContain(".ds-sidebar__label");
 });
+
+test('offscreen deferred words keep their mark without forcing hidden layout', async () => {
+  const word=document.createElement('span');document.body.append(word);
+  word.setAttribute('data-cut','end');let reads=0;let visible=false;
+  word.checkVisibility=()=>visible;
+  Object.defineProperty(word,'scrollWidth',{get:()=>{reads++;return 30;}});
+  Object.defineProperty(word,'clientWidth',{get:()=>100});
+  const watcher=watchCuts();watcher.watch(word);await frame();
+  expect(reads).toBe(0);expect(word.getAttribute('data-cut')).toBe('end');
+  visible=true;watcher.measure();await frame();
+  expect(reads).toBeGreaterThan(0);expect(word.hasAttribute('data-cut')).toBe(false);
+  watcher.disconnect();
+});

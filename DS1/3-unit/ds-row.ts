@@ -17,6 +17,8 @@ const CURRENT = new Set(["page", "step", "location", "date", "time", "true"]);
  * (`aria-current="page"`); `nav` draws the row as a navigation row.
  *
  * @element ds-row
+ * @attr subgrid - Share the parent grid tracks through the row and its press target.
+ * @attr defer-offscreen - Defer rendering fixed-height rows outside the viewport.
  * @attr fill - Spread the children from edge to edge.
  * @attr centered - Centre the children.
  * @attr end - Push the children to the end.
@@ -46,6 +48,8 @@ const CURRENT = new Set(["page", "step", "location", "date", "time", "true"]);
  */
 export class Row extends LitElement {
   static properties = {
+    subgrid: { type: Boolean, reflect: true },
+    deferOffscreen: { type: Boolean, reflect: true, attribute: "defer-offscreen" },
     fill: { type: Boolean, reflect: true },
     centered: { type: Boolean, reflect: true },
     end: { type: Boolean, reflect: true },
@@ -62,6 +66,8 @@ export class Row extends LitElement {
     rel: { type: String },
   };
 
+  declare subgrid: boolean;
+  declare deferOffscreen: boolean;
   declare fill: boolean;
   declare centered: boolean;
   declare end: boolean;
@@ -79,6 +85,8 @@ export class Row extends LitElement {
 
   constructor() {
     super();
+    this.subgrid = false;
+    this.deferOffscreen = false;
     this.fill = false;
     this.centered = false;
     this.end = false;

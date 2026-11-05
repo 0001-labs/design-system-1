@@ -95,7 +95,11 @@ type Watched = {
 /** Reads every element's widths first, then writes every mark, so the page is laid out once for all of them. */
 function markAll(elements: Iterable<Element>) {
   const cuts: [Element, boolean][] = [];
-  for (const element of elements) if (element.isConnected) cuts.push([element, isCut(element)]);
+  for (const element of elements) {
+    // Measuring a locked subtree would force its offscreen contents to render.
+    // Its ResizeObserver will measure it when scrolling makes it visible again.
+    if (element.isConnected && element.checkVisibility?.({contentVisibilityAuto: true}) !== false) cuts.push([element, isCut(element)]);
+  }
   hookFonts();
   for (const [element, cut] of cuts) {
     const mark = element.getAttribute(CUT_ATTRIBUTE);

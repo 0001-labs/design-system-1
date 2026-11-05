@@ -171,3 +171,12 @@
   .target[aria-current]::after { outline: 1px solid Highlight; outline-offset: -1px; }
   .target:focus-visible::after { outline-color: Highlight; }
 }
+
+/* Share one column layout instead of cascading a changing variable through every control. */
+:host([subgrid]) { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 0; }
+:host([subgrid]) .target { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 0; }
+/* An opt-in for fixed-height lists; the DOM, keyboard navigation and row identity stay intact. */
+:host([defer-offscreen]:not([auto]):not([stacked])) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto var(--ds-row-default-height, var(--ds-row-height));
+}
