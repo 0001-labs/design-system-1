@@ -74,3 +74,5 @@ The packages give native controls Design system 1's measures and colours rather 
 - `vp run native:test`: writes the generated files, then builds and tests the Swift package.
 - `vp run native:test:android`: writes the generated files, then tests, lints and builds the Kotlin package.
 - `vp test`: holds the generated files to their sources and the Sync 1 exports to the package folders.
+
+On iPhone and iPad, `.ds1Theme()` owns one scene layer above presented sheets. Confirmations and prompts receive touches and the keyboard there; toast-only messages pass touches through outside their chips. Session owners can cancel all pending reviews with `DS1Overlays.cancelAll()` and clear messages with `DS1Toast.dismiss()`. macOS still uses a view overlay: keep sheet-specific reviews inline until that platform is verified. Other consumers receive this behavior when they next adopt the Swift snapshot.
