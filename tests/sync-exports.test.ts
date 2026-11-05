@@ -229,3 +229,16 @@ test('arrows survive token-only and font-free copies, and export as a standalone
   expect(copy['app-SVGL-LICENSE']).toContain('MIT');
   expect(copy['app-catalog.json']).toContain('google-drive');
 });
+
+test('documentation adapters import the consumer components and preserve named web-component slots', () => {
+  const copied = files('documentation', { componentPath: '../../../../src/vendor/ds1' });
+  expect(Object.keys(copied).sort()).toEqual(['columns.astro', 'frame.astro', 'sidebar.astro']);
+  for (const source of Object.values(copied)) {
+    expect(String(source)).not.toMatch(/from ['"]\.\.\/ds-page|from ['"]\.\.\/\.\.\/3-unit/);
+  }
+  expect(String(copied['frame.astro'])).toContain("'../../../../src/vendor/ds1/4-page/ds-page'");
+  expect(String(copied['sidebar.astro'])).toContain("'../../../../src/vendor/ds1/3-unit/ds-sidebar'");
+  expect(String(copied['frame.astro'])).toContain("{...{ slot: 'nav' }}");
+  expect(String(copied['columns.astro'])).toContain("{...{ slot: 'aside' }}");
+  expect(() => files('documentation', {})).toThrow('componentPath');
+});

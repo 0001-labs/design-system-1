@@ -304,6 +304,16 @@ export default {
         return files;
       },
     },
+    /** Build-time Starlight adapters over the canonical Page and Sidebar components. */
+    documentation: {
+      files({ read, options }) {
+        const componentPath = options.componentPath;
+        if (typeof componentPath !== 'string' || !/^\.{1,2}\/[a-zA-Z0-9_./-]+$/.test(componentPath)) throw new Error('documentation needs componentPath: the relative import path to the copied DS1 components');
+        return Object.fromEntries(['frame', 'columns', 'sidebar'].map(name => [`${name}.astro`, String(read(`DS1/4-page/docs/${name}.astro`))
+          .replaceAll("'../ds-page'", `'${componentPath}/4-page/ds-page'`)
+          .replaceAll("'../../3-unit/ds-sidebar'", `'${componentPath}/3-unit/ds-sidebar'`)]));
+      },
+    },
     /**
      * The Lit components named in `components`, with everything they import and
      * their React adapters (`empty` brings react/empty.ts, `notice`
