@@ -41,3 +41,5 @@
 
 .app-shell .workbench.system-workbench { height: calc(100dvh - var(--site-header-height)); min-height: 0; }
 [data-docs-embed] .app-shell .workbench.system-workbench { height: 100dvh; }
+
+.system-workbench-preview .app-panel-heading { flex-wrap: wrap; gap: calc(var(--site-unit) / 2); }

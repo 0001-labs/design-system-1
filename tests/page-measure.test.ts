@@ -148,3 +148,35 @@ test('remembered wide panes leave ten squares of work when the window narrows', 
     expect(box.right).toBeGreaterThanOrEqual(20);
   }
 });
+
+test('a narrow adjustable inspector keeps its work visible and closes empty panes without leaving a track', async () => {
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.evaluate(async () => {
+    document.getElementById('frame')!.style.cssText = 'width:900px;height:700px';
+    const element = document.querySelector('ds-page')!;
+    element.setAttribute('layout', 'inspector'); element.setAttribute('resizable', ''); element.setAttribute('fill', '');
+    element.setAttribute('nav-width', '8'); element.setAttribute('aside-width', '12');
+    element.innerHTML = '<div slot="nav">Navigation</div><p>Work</p><aside slot="aside" style="height:1600px">Long inspector</aside>';
+    await element.updateComplete;
+  });
+  await page.waitForTimeout(30);
+  const host = page.locator('ds-page');
+  const main = host.locator('[part="main"]');
+  const aside = host.locator('[part="aside"]');
+  expect((await main.boundingBox())!.height).toBeGreaterThan(500);
+  expect((await main.boundingBox())!.width).toBeGreaterThanOrEqual(200);
+  expect((await aside.boundingBox())!.y).toBe((await main.boundingBox())!.y);
+  expect(await host.getByRole('separator').count()).toBe(2);
+  const before = (await aside.boundingBox())!.width;
+  await host.getByRole('separator', { name: 'Resize inspector' }).focus();
+  await page.keyboard.press('ArrowLeft');
+  expect((await aside.boundingBox())!.width - before).toBe(20);
+  await host.locator('[slot="aside"]').evaluate(element => element.remove());
+  await page.waitForTimeout(30);
+  expect(await host.getByRole('separator').count()).toBe(1);
+  expect((await main.boundingBox())!.x + (await main.boundingBox())!.width).toBe(880);
+  await host.locator('[slot="nav"]').evaluate(element => element.remove());
+  await page.waitForTimeout(30);
+  expect(await host.getByRole('separator').count()).toBe(0);
+  expect((await main.boundingBox())!.width).toBe(860);
+});
