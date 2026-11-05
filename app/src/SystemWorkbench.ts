@@ -200,7 +200,7 @@ export class SystemWorkbench extends AppElement {
 
     return html`<div class=${`workbench system-workbench${this.stylesheetOpen ? "" : " system-workbench--no-stylesheet"}${routeSearch.get("view") === "overview" ? " system-workbench--overview" : ""}`} data-testid="workbench">
       ${this.header}
-      <ds-page class="system-workbench-body" .layout=${this.stylesheetOpen ? "split" : "column"} .split=${0.65} resizable resize-key="ds1-library-stylesheet-split" divided fill>
+      <ds-page class="system-workbench-body" .layout=${this.stylesheetOpen ? "split" : "inspector"} .split=${0.65} resizable resize-key="ds1-library-stylesheet-split" divided fill>
       <ds-page class="system-workbench-panes" .slot=${this.stylesheetOpen ? "nav" : ""} layout="inspector" nav-width="8" aside-width="20" resizable resize-key="ds1-library-workbench-panes" divided fill drawer>
         ${embeddedLibrary ? nothing : html`<aside slot="nav" class="library-panel system-library-panel">
           <h2 class="app-panel-label">Components</h2>

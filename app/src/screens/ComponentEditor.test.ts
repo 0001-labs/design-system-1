@@ -42,7 +42,7 @@ it('opens the stylesheet split while retaining the mounted library canvas', asyn
     await settle();
     const panes = workbench.querySelector('ds-page.system-workbench-panes')!;
     const outer = workbench.querySelector('ds-page.system-workbench-body')!;
-    expect(outer.getAttribute('layout')).toBe('column');
+    expect(outer.getAttribute('layout')).toBe('inspector');
     expect(panes.querySelector('[slot=nav]')).not.toBeNull();
     expect(panes.querySelector('[slot=aside]')).not.toBeNull();
     workbench.stylesheetOpen = true; await settle();
