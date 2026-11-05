@@ -262,3 +262,9 @@
     grid-template-areas: "header" "main" "aside" "footer";
   }
 }
+
+:host([layout="inspector"]) .page:has(.nav[data-empty]):has(.aside[data-empty]) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "main" "footer";
+}
+.resize.resize-aside { inset-inline-end: auto; }
