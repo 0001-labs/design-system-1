@@ -1,0 +1,11 @@
+/* The documentation on Consistency's canvas: the page's reading column, on the grid. */
+.docs-canvas { height: 100%; overflow-y: auto; }
+.docs-canvas__page { box-sizing: border-box; max-width: calc(800px * var(--sf, 1)); margin-inline: auto; padding: calc(40px * var(--sf, 1)) calc(20px * var(--sf, 1)) calc(80px * var(--sf, 1)); }
+.docs-canvas__problem { display: block; max-width: calc(760px * var(--sf, 1)); margin: calc(20px * var(--sf, 1)) auto 0; }
+.docs-canvas__description { margin-block: calc(20px * var(--sf, 1)); color: var(--ds-text-secondary, currentColor); }
+.docs-canvas__writing { min-height: calc(200px * var(--sf, 1)); }
+.docs-atom { display: block; margin-block: calc(20px * var(--sf, 1)); border: 1px solid var(--ds-border-color, currentColor); user-select: none; }
+.docs-atom__label { display: block; padding-inline: calc(10px * var(--sf, 1)); line-height: calc(20px * var(--sf, 1)); font-size: calc(13px * var(--sf, 1)); color: var(--ds-text-secondary, currentColor); }
+.docs-atom__body { overflow: hidden; max-height: calc(400px * var(--sf, 1)); pointer-events: none; }
+.docs-atom__body iframe { display: block; width: 100%; border: 0; }
+.docs-atom__body .example-toolbar, .docs-atom__body [data-example-source] { display: none; }

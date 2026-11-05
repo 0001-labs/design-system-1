@@ -8,6 +8,7 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { featureFlags, manageFeatureFlags, setFeatureFlag } from "./flags";
 import { dashboard, sessionRequest, DASHBOARD_HOST, ICON_HOST } from "./dashboard";
 import { filterDocExamples, listExamples, setExample } from './doc-examples';
+import { applyDocEdit } from './doc-pages';
 
 const PLAY_HOST = "play.designsystem1.com";
 import { libraryApi } from "./libraries";
@@ -156,6 +157,8 @@ export default {
       return Response.redirect(url.toString(), 308);
     }
 
+    // Every page's Markdown and HTML for Consistency: read by the Worker alone, through its own binding.
+    if (url.pathname.startsWith('/docs-pages/')) return new Response('Not found', { status: 404 });
     const response = await env.ASSETS.fetch(request);
     if (
       response.status === 404 &&
@@ -175,6 +178,8 @@ export default {
       return shell;
     }
     if (url.pathname.replace(/\/$/, '') === '/start-here/examples') return filterDocExamples(response, env);
+    // A page saved in Consistency, drawn over the build's page. No other host serves the documentation's words.
+    if (url.hostname === 'designsystem1.com' && request.method === 'GET') return reportPage(await applyDocEdit(response, url.pathname, env), url.pathname);
     return reportPage(response, url.pathname);
   },
 } satisfies ExportedHandler<Env>;

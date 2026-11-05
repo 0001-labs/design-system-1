@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import sitemap from "@astrojs/sitemap";
+import { remarkDocBlocks } from "./src/lib/remark-doc-blocks.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -18,6 +19,8 @@ export default defineConfig({
     "/1-root/pricing/": "/1-root/formatting/#prices",
     // The front page became the Overview, in the docs (21 October 2026).
     "/start-here/overview/": "/",
+    // The two installation pages were one page twice (5 November 2026).
+    "/start-here/installation/": "/getting-started/installation/",
     "/examples/": "/start-here/examples/",
     "/examples/settings/": "/start-here/examples/#general-settings",
     "/examples/shop/": "/start-here/examples/#shop",
@@ -26,6 +29,8 @@ export default defineConfig({
     "/examples/product/": "/start-here/examples/#product-showcase",
   },
   devToolbar: { enabled: false },
+  // Pairs each block's Markdown with the HTML it drew (scripts/docs-pages.mjs).
+  markdown: { remarkPlugins: [remarkDocBlocks] },
   vite: {
     // Preview frames load components dynamically. Prebundle their shared
     // dependencies before serving any frame so the first preview cannot
@@ -128,13 +133,18 @@ export default defineConfig({
         {
           label: "Core",
           items: [
+            { label: "Activity", slug: "2-core/activity" },
             { label: "Avatar", slug: "2-core/avatar" },
+            { label: "Badge", slug: "2-core/badge" },
             { label: "Button", slug: "2-core/button" },
             { label: "Card", slug: "2-core/card" },
             { label: "Chart", slug: "2-core/chart" },
             { label: "Checkbox", slug: "2-core/checkbox" },
+            { label: "Color", slug: "2-core/color" },
+            { label: "Composer", slug: "2-core/composer" },
             { label: "Cycle", slug: "2-core/cycle" },
             { label: "Empty state", slug: "2-core/empty" },
+            { label: "File picker", slug: "2-core/file-picker" },
             { label: "Gap", slug: "2-core/gap" },
             { label: "Icon", slug: "2-core/icon" },
             { label: "Image", slug: "2-core/image" },
@@ -143,10 +153,13 @@ export default defineConfig({
             { label: "Link", slug: "2-core/link" },
             { label: "Message", slug: "2-core/message" },
             { label: "Progress", slug: "2-core/progress" },
+            { label: "Radio", slug: "2-core/radio" },
             { label: "Stat", slug: "2-core/stat" },
             { label: "Switch", slug: "2-core/switch" },
+            { label: "Swatch", slug: "2-core/swatch" },
             { label: "Tag", slug: "2-core/tag" },
             { label: "Text", slug: "2-core/text" },
+            { label: "Token", slug: "2-core/token" },
             { label: "Tooltip", slug: "2-core/tooltip" },
           ],
         },
@@ -154,6 +167,7 @@ export default defineConfig({
           label: "Unit",
           items: [
             { label: "Accordion", slug: "3-unit/accordion" },
+            { label: "Avatar group", slug: "3-unit/avatar-group" },
             { label: "Calendar", slug: "3-unit/calendar" },
             { label: "Bento", slug: "3-unit/bento" },
             { label: "Carousel", slug: "3-unit/carousel" },
@@ -161,12 +175,14 @@ export default defineConfig({
             { label: "Form", slug: "3-unit/form" },
             { label: "List", slug: "3-unit/list" },
             { label: "Matrix", slug: "3-unit/matrix" },
+            { label: "Menu", slug: "3-unit/menu" },
             { label: "Row", slug: "3-unit/row" },
             { label: "Select", slug: "3-unit/select" },
             { label: "Sidebar", slug: "3-unit/sidebar" },
             { label: "Table", slug: "3-unit/table" },
             { label: "Table of contents", slug: "3-unit/table-of-contents" },
             { label: "Tabs", slug: "3-unit/tabs" },
+            { label: "Token field", slug: "3-unit/token-field" },
           ],
         },
         {
@@ -180,6 +196,7 @@ export default defineConfig({
             { label: "Overlay", slug: "4-page/overlay" },
             { label: "Page", slug: "4-page/page" },
             { label: "Panel", slug: "4-page/panel" },
+            { label: "Product guides", slug: "4-page/product-guides" },
           ],
         },
         { label: "Examples", slug: "start-here/examples" },

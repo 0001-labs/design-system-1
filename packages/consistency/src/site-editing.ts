@@ -10,7 +10,7 @@
  * address its pages are opened on, `address` its built-in colour address under c9y.site, `domain` a domain of its
  * own connected.
  */
-export interface SiteSummary { code: string; name: string; url: string; address?: string; domain?: string }
+export interface SiteSummary { code: string; name: string; url: string; address?: string; domain?: string; /** The documentation, this app's own site: it opens in Aa from its Markdown (`docs-site.ts`). */ docs?: boolean }
 export interface SitePage { path: string; lang: string; title: string; fields: number; edited: number }
 export interface SiteField { key: string; tag: string; kind: 'text' | 'meta' | 'image'; label: string; markdown: string; built?: string; edited?: boolean }
 export interface PageDetail { path: string; lang: string; title: string; fields: SiteField[] }
@@ -135,6 +135,8 @@ export function editKey(event: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey'
 export function failureWords(status: number, error?: string): string {
   if (status === 401 || status === 403) return 'Your session ended. Sign in again in another tab, then try again.';
   if (error === 'not-editable') return 'This site keeps its words in its own editor.';
+  if (error === 'bad-markup') return 'This page is not saved yet. Put < and { inside code, or take them out.';
+  if (error === 'unknown-block' || error === 'stale-build') return 'The site was published again. Open the page again to edit it.';
   if (error === 'unknown-field' || error === 'unknown-page') return 'The site was published again. Open the page again to edit it.';
   if (error === 'unknown-email-variable' || error === 'bad-email-variable') return 'Use a form field from the list, with both pairs of braces.';
   if (error === 'bad-email-template') return 'Enter a subject on one line and a message.';

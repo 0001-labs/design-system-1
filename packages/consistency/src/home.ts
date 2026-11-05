@@ -24,6 +24,7 @@ import '../../../DS1/3-unit/ds-avatar-group';
 import '../../../DS1/4-page/ds-overlay';
 import { activeWorkspace, canManage, draftWords, readFailure, readWorkspaces, setActiveWorkspace, storeWorkspaces, storedWorkspaces, workspaceHeaders, type ReadFailure, type WorkspaceSummary } from './workspace-choice';
 import { ConsistencySiteEditor } from './site-editor';
+import { ConsistencyDocsEditor } from './docs-site';
 import type { SiteSummary } from './site-editing';
 import { PLACES, shownPlaces, sitePlaces, type SitePlace } from './places/index';
 import { OPEN_PAGE } from './places/pages';
@@ -152,7 +153,7 @@ export class ConsistencyHome extends LitElement {
   readonly edge = new SidebarEdge(this);
   /** Every site opened so far, kept alive while hidden. */
   private stopAsk?:()=>void;
-  private readonly editors = new Map<string, ConsistencySiteEditor>();
+  private readonly editors = new Map<string, ConsistencySiteEditor | ConsistencyDocsEditor>();
   /** Each site's places, as stored or read, by site code. */
   private readonly places = new Map<string, SitePlace[]>();
   /** The sites whose places have been asked of the platform in this visit. */
@@ -319,9 +320,9 @@ export class ConsistencyHome extends LitElement {
   }
 
   /** The editor for a site, made once and kept. */
-  private editorFor(site: SiteSummary): ConsistencySiteEditor {
+  private editorFor(site: SiteSummary): ConsistencySiteEditor | ConsistencyDocsEditor {
     let editor = this.editors.get(site.code);
-    if (!editor) { editor = new ConsistencySiteEditor(); editor.site = site; editor.picker = false; this.editors.set(site.code, editor); }
+    if (!editor) { editor = site.docs ? new ConsistencyDocsEditor() : new ConsistencySiteEditor(); editor.site = site; editor.picker = false; this.editors.set(site.code, editor); }
     return editor;
   }
 

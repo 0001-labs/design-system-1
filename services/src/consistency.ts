@@ -3,6 +3,7 @@ import { dashboard, ownerSessionCookie, sessionRequest } from './dashboard';
 import { authorizeReport, isStudioOwner, signedIn, type ReportsEnv } from './reports';
 import { hasOwnerSignIn, ownerRoutes, ownerSignOut, systemOwner, type OwnerEnv } from './consistency-owner';
 import { personHeaders, sitesApi, type Person } from './consistency-sites';
+import { docsSiteApi, isDocsSiteRoute, withDocsSite } from './doc-pages';
 import { isLegalPath, legalPage } from './consistency-legal';
 import { consistencySocialAuth, isSocialAuthPath } from './consistency-social-auth';
 
@@ -165,6 +166,8 @@ export async function consistencyPreview(request: Request, env: ReportsEnv & Wor
   }
   if (url.pathname === '/api/dashboard/session' || url.pathname === '/app/signin' || /^\/app\/assets\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(url.pathname) || url.pathname === '/icons/design-system-1.svg') return protect(await dashboard(request, env, send));
   if (url.pathname.startsWith('/api/consistency/draft-sites') || url.pathname.startsWith('/api/consistency/pages') || url.pathname === '/api/consistency/sites' || url.pathname === '/api/consistency/workspaces' || url.pathname.startsWith('/api/consistency/workspaces/')) return protect(await workspaceApi(request,env,send));
+  // The documentation is this Worker's own site, answered here and never by the platform.
+  if (isDocsSiteRoute(url.pathname)) return protect(await docsSiteApi(request, env, asking => authorizePerson(asking, env, send)));
   // A site's words, edited in the editor as the person asking; its page and files for the editor's sandboxed frame.
   if (url.pathname.startsWith('/api/consistency/sites/')) return protect(await sitesApi(request, env, asking => authorizePerson(asking, env, send)), /\/files\//.test(url.pathname) ? 'private, no-cache' : undefined);
   if (url.pathname === '/api/consistency/domains' || url.pathname.startsWith('/api/consistency/domains/')) return protect(await domainsApi(request, env, send));
@@ -257,7 +260,13 @@ async function workspaceApi(request:Request,env:ReportsEnv & WorkspaceEnv,send:t
     if(reader)for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>800_000){await reader.cancel();return Response.json({error:'Document too large'},{status:413});}chunks.push(value);}
     body=new Uint8Array(size);let offset=0;for(const chunk of chunks){body.set(chunk,offset);offset+=chunk.length;}
   }
-  return env.CONSISTENCY_WORKSPACE.fetch(new Request('https://workspace.internal'+url.pathname,{method:request.method,body,headers:personHeaders(person,request,{'Content-Type':'application/json'})}));
+  const answer=await env.CONSISTENCY_WORKSPACE.fetch(new Request('https://workspace.internal'+url.pathname,{method:request.method,body,headers:personHeaders(person,request,{'Content-Type':'application/json'})}));
+  // The documentation is the owner's site in the app. The lab plays with sites and has no canvas for this one.
+  if(url.pathname!=='/api/consistency/sites'||url.hostname!==APP_HOST||!person.owner)return answer;
+  return withDocsSite(answer,async()=>{
+    const list=await env.CONSISTENCY_WORKSPACE!.fetch(new Request('https://workspace.internal/api/consistency/workspaces',{headers:personHeaders(person,request)}));
+    return ((await list.json()) as {workspaces?:{code?:string;name?:string}[]}).workspaces??[];
+  });
 }
 
 /**
