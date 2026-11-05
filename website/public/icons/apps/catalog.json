@@ -67,7 +67,8 @@
   {
     "key": "chatgpt",
     "name": "ChatGPT",
-    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/openai.svg"
+    "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/openai.svg",
+    "normalization": "Empty source canvas trimmed to the artwork bounds; paths, colours and proportions are unchanged."
   },
   {
     "key": "claude",

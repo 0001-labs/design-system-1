@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 import apps from '../DS1/x-app/catalog.json';
 import '../DS1/2-core/ds-icon';
@@ -27,4 +29,13 @@ test('app sizes are opt-in; ordinary interface sizes remain available', () => {
   expect(css).toContain(':host([size="app-large"]) { --ds-icon-size: 60px; }');
   expect(css).toContain('--ds-icon-size: 12px');
   expect(css).toContain('--ds-icon-size: 16px');
+});
+
+test('the assistant knot fills its display box instead of shrinking inside an empty canvas', async () => {
+  const sharp = createRequire(resolve('website/package.json'))('sharp');
+  const svg = readFileSync('DS1/x-app/chatgpt.svg');
+  const raster = await sharp(svg).resize(400, 400).flatten({ background: '#fff' }).png().toBuffer();
+  const { info } = await sharp(raster).trim({ background: '#fff' }).toBuffer({ resolveWithObject: true });
+  expect(info.width).toBeGreaterThanOrEqual(380);
+  expect(info.height).toBeGreaterThanOrEqual(380);
 });
