@@ -1128,7 +1128,18 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
   return app;
 }
 
-export function scanReport(studio = resolve(repository, "..")): AdoptionReport {
+/** Locate the studio even when this public source is checked out under Worktrees. */
+export function adoptionStudio(start = repository): string {
+  let directory = resolve(start);
+  while (true) {
+    if (existsSync(join(directory, "sync.sources.json"))) return directory;
+    const parent = dirname(directory);
+    if (parent === directory) return resolve(start, "..");
+    directory = parent;
+  }
+}
+
+export function scanReport(studio = adoptionStudio()): AdoptionReport {
   return {
     schema: 1, generatedAt: new Date().toISOString(), sourceCommit: git(repository, "rev-parse", "HEAD"), sourceDirty: Boolean(git(repository, "status", "--porcelain")),
     columns: COMPONENT_COLUMNS,
@@ -1162,7 +1173,7 @@ export function scanReport(studio = resolve(repository, "..")): AdoptionReport {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const report = scanReport(process.env.ADOPTION_STUDIO_ROOT ?? resolve(repository, ".."));
+  const report = scanReport(process.env.ADOPTION_STUDIO_ROOT ?? adoptionStudio());
   const output = join(repository, ".reports/component-adoption.json");
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
