@@ -1,4 +1,4 @@
-import { remoteConstraintPages } from './constraint-pages';
+import { remoteConstraintPages, visitAll } from './constraint-pages';
 // The constraints on a phone: opens every page of a site, as its sitemap lists them, in WebKit as an
 // iPhone at each phone width, scrolls it through so everything it loads late is drawn, and runs every
 // rule in DS1/0-face/constraints.ts on it, as five presses of C would. Prints what each page breaks,
@@ -162,17 +162,27 @@ const report: string[] = [];
 /** What the rules could not measure and a person must look at: listed, never a failure. */
 const reviews: string[] = [];
 let broken = 0;
+/** Pages that would not load even alone. They fail the run too, but they broke no rule. */
+let notOpened = 0;
 const measured: Record<string, number> = {};
 /** A page's address as the report names it: the production address for a page served here. */
 const shown = (url: string) => served ? new URL(new URL(url).pathname, origin).href : url;
 
-async function open({ width, url }: { width: number; url: string }) {
+/** Whether the page loaded. One that did not, on its first turn, is left for `visitAll` to try again alone. */
+async function open({ width, url }: { width: number; url: string }, last: boolean): Promise<boolean> {
   const context = await browser.newContext({ ...(width < 768 ? devices['iPhone 14'] : {}), viewport: { width, height: 844 }, screen: { width, height: 844 }, colorScheme: theme });
   const page = await context.newPage();
   try {
     // A page that does not settle in time gets a second chance: one slow load among many is not a broken rule.
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
-      .catch(() => page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 }));
+    const loaded = await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+      .catch(() => page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 }))
+      .then(() => null, (error: Error) => error);
+    if (loaded) {
+      if (!last) return false;
+      notOpened += 1;
+      report.push(`${width}px ${shown(url)}`, `  could not be opened, even alone: ${loaded.message.split('\n')[0]}`);
+      return true;
+    }
     if (option('theme')) await page.evaluate(appearance => {
       document.documentElement.classList.remove('light-theme', 'dark-theme');
       document.documentElement.classList.add(`${appearance}-theme`);
@@ -214,16 +224,15 @@ async function open({ width, url }: { width: number; url: string }) {
   } finally {
     await context.close();
   }
+  return true;
 }
 
-await Promise.all(Array.from({ length: workers }, async () => {
-  for (let next = queue.shift(); next; next = queue.shift()) await open(next);
-}));
+const retried = await visitAll(queue, workers, open);
 await browser.close();
 served?.server.close();
 
 console.log(report.join('\n'));
 if (reviews.length) console.log(`\nTo review by eye (not measured, so not counted as broken):\n${reviews.join('\n')}\n`);
 for (const [code, count] of Object.entries(measured)) console.log(`${code}: ${count} measured.`);
-console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers: ${broken ? `${broken} broken` : 'every rule kept'}.`);
-process.exit(broken ? 1 : 0);
+console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers: ${broken ? `${broken} broken` : 'every rule kept'}${notOpened ? `, ${notOpened} never opened` : ''}${retried.length ? ` (${retried.length} tried again alone after a slow load)` : ''}.`);
+process.exit(broken || notOpened ? 1 : 0);
