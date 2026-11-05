@@ -156,6 +156,7 @@ public struct DS1SwitchStyle: ToggleStyle {
                     }
                     .frame(width: scale(32), height: scale.control)
                 }
+                .contentShape(Rectangle())
                 .opacity(enabled ? 1 : 0.5)
             }
             .buttonStyle(.plain)
