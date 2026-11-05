@@ -36,6 +36,7 @@ import { hashEmail, LIMITS, PERF_KIND, PERF_NETS, TESTER, type FeedbackBatch, ty
 import { isStaleImportError } from './stale-reload';
 import { leaveContext } from './sudden-leave';
 import { errorOutbox } from './error-outbox';
+import { whenVisitorActs } from './replay-start';
 import { eventCodeCandidate } from './idv1/advanced';
 
 export interface FeedbackLoopOptions {
@@ -65,6 +66,8 @@ export interface FeedbackLoopOptions {
   interval?: number;
   /** Record sessions, all text masked: true for every session, or the share of sessions to record (0 to 1). Off by default. */
   replay?: boolean | number;
+  /** Public pages may defer the recorder import and snapshot until interaction or 15 seconds. Visits still report immediately. */
+  replayStart?: 'engaged';
   /** Measure what each page load cost and how fast it was (default true); sent once, on the page's first hide or a minute after it settled. */
   performance?: boolean;
 }
@@ -253,6 +256,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
   }
 
   let replay: { stop(): void } | null = null;
+  let cancelReplayStart: (() => void) | undefined;
   /** Whether this session is recorded, decided once per session so every page of it agrees. */
   const sampled = () => {
     const share = options.replay === true ? 1 : typeof options.replay === 'number' ? options.replay : 0;
@@ -266,6 +270,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
     } catch { return Math.random() < share; }
   };
   const startReplay = () => {
+    if (stopped) return;
     const base = new URL(endpoint);
     const recorder = new URL('/feedback/recorder.js', base).href;
     void import(/* @vite-ignore */ recorder).then((module: { startReplay(o: Record<string, unknown>): { stop(): void } }) => {
@@ -278,6 +283,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
         account: () => options.account?.() ?? null,
         person: () => { const email = options.email?.(); return email && person?.email === email ? person.hash : null; },
         privateSelector: options.privateSelector,
+        ready: options.replayStart === 'engaged',
       });
     }).catch(() => {});
   };
@@ -381,6 +387,7 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       if (retryTimer) clearInterval(retryTimer);
       window.removeEventListener('online', retryErrors);
       measure?.stop();
+      cancelReplayStart?.();
       replay?.stop();
       replay = null;
       if (timer) { clearTimeout(timer); timer = null; }
@@ -425,7 +432,10 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       return result;
     } as History['pushState'];
   }
-  if (!options.errorsOnly && sampled()) startReplay();
+  if (!options.errorsOnly && sampled()) {
+    if (options.replayStart === 'engaged') cancelReplayStart = whenVisitorActs(startReplay);
+    else startReplay();
+  }
   if (measure) settled(() => { const wait = setTimeout(sendMeasure, 60_000); measure.onStop(() => clearTimeout(wait)); });
   return loop;
 }
