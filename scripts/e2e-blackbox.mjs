@@ -710,6 +710,7 @@ if (PRODUCTION) {
       [PUBLIC, "/api/reports/architecture"],
       [PUBLIC, "/api/flags"],
       [PUBLIC, "/api/app-navigation"],
+      [PUBLIC, "/api/consistency/sites/01Docs/api/docs-page?path=/1-root/device/"],
     ].map(([origin, path]) => [
       `${new URL(origin).hostname}${path} without a session asks for one`,
       async () => {

@@ -7,3 +7,8 @@ import '../../../DS1/1-root/prose.css';
 ---
 
 <div class="sl-markdown-content" data-ds-prose><slot /></div>
+
+<script>
+  import { connectDocumentationEditor } from '../lib/documentation-editor';
+  connectDocumentationEditor();
+</script>

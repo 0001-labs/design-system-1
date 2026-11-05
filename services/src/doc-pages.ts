@@ -116,7 +116,7 @@ export async function docsSiteApi(request: Request, env: DocsEnv, authorize: Aut
   const saved = await savedEdit(env, path), base = await baseOf(page);
   // Words saved against an older build whose blocks have gone stay in the bucket for `docs:pull`, but the build's page is what opens.
   const edit = saved && !docRefusal(page, saved.source) ? saved : null;
-  const answer = (current: DocEdit | null) => ({ ...toEditable(page, current?.source ?? page.source), path, base, revision: current?.revision ?? 0, title: current?.title ?? page.title, description: current?.description ?? page.description, file: page.file, edited: !!current, superseded: !!saved && !edit });
+  const answer = (current: DocEdit | null) => ({ ...toEditable(page, current?.source ?? page.source), headings: renderDoc(page, current?.source ?? page.source).headings, path, base, revision: current?.revision ?? 0, title: current?.title ?? page.title, description: current?.description ?? page.description, file: page.file, edited: !!current, superseded: !!saved && !edit });
   if (request.method === 'GET') return Response.json(answer(edit));
   const body = await bounded(request).catch((failure: Response) => failure) as { base?: unknown; revision?: unknown; text?: unknown } | Response;
   if (body instanceof Response) return body;
@@ -126,7 +126,7 @@ export async function docsSiteApi(request: Request, env: DocsEnv, authorize: Aut
   const source = fromEditable(page, body.text), refusal = docRefusal(page, source);
   if (refusal) return refuse(refusal, 422);
   const record = await store(env, page, { title: edit?.title ?? page.title, description: edit?.description ?? page.description, source }, saved?.revision ?? 0);
-  return Response.json({ revision: record.revision, savedAt: record.savedAt });
+  return Response.json({ revision: record.revision, savedAt: record.savedAt, headings: renderDoc(page, source).headings });
 }
 
 /**

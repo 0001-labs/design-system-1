@@ -8,7 +8,8 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { featureFlags, manageFeatureFlags, setFeatureFlag } from "./flags";
 import { dashboard, sessionRequest, DASHBOARD_HOST, ICON_HOST } from "./dashboard";
 import { filterDocExamples, listExamples, setExample } from './doc-examples';
-import { applyDocEdit } from './doc-pages';
+import { applyDocEdit, docsSiteApi, isDocsSiteRoute } from './doc-pages';
+import { authorizeReport } from './reports';
 
 const PLAY_HOST = "play.designsystem1.com";
 import { libraryApi } from "./libraries";
@@ -143,6 +144,14 @@ export default {
     if (url.pathname === "/api/reports/components") return componentReport(sessionRequest(request), env);
     if (url.pathname === "/api/reports/architecture") return architectureReport(sessionRequest(request), env);
     if (url.pathname === "/api/base" || url.pathname === "/api/base/restore") return baseApi(request, env, ctx);
+
+    if (url.hostname === 'designsystem1.com' && isDocsSiteRoute(url.pathname)) {
+      const response = await docsSiteApi(request, env, async asking =>
+        await authorizeReport(sessionRequest(asking), env) ?? { owner: true });
+      response.headers.set('Cache-Control', 'private, no-store');
+      response.headers.set('Vary', 'Cookie, Authorization');
+      return response;
+    }
 
     if (/^\/(?:app\/)?reports(?:\/components)?\/?$/.test(url.pathname)) {
       return new Response(null, { status: 302, headers: { Location: "https://designsystem1.com/adoption/", "X-Robots-Tag": "noindex, nofollow", "Cache-Control": "private, no-store" } });

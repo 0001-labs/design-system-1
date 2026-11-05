@@ -6,6 +6,16 @@ beforeAll(async () => { site = await startAssets(); });
 afterAll(async () => { await site.dispose(); });
 
 describe("combined website routes", () => {
+  it('requires an owner session for inline documentation editing, only on its canonical host', async () => {
+    const path = '/api/consistency/sites/01Docs/api/docs-page?path=/1-root/device/';
+    for (const method of ['GET', 'PUT']) {
+      const response = await site.fetch(path, { method });
+      expect(response.status).toBe(401);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+    expect((await site.fetch('https://dsone.dev' + path)).status).toBe(404);
+    expect((await site.fetch('/docs-pages/1-root/device.json')).status).toBe(404);
+  });
   it("upgrades HTTP requests on every host before assets, private routes or APIs run", async () => {
     for (const host of ["designsystem1.com", "www.designsystem1.com", "play.designsystem1.com", "dsone.dev", "fonts.designsystem1.com", "icon.designsystem1.com", "system.designsystem1.com", "system.consistency.site", "consistency.site", "c9y.site", "editor.c9y.site", "neweditor.c9y.site"]) {
       for (const path of ["/", "/auth/start?next=%2F", "/api/consistency/ai", "/private-consistency/index.html"]) {

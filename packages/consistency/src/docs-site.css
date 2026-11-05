@@ -4,6 +4,9 @@
 .docs-canvas__problem { display: block; max-width: calc(760px * var(--sf, 1)); margin: calc(20px * var(--sf, 1)) auto 0; }
 .docs-canvas__description { margin-block: calc(20px * var(--sf, 1)); color: var(--ds-text-secondary, currentColor); }
 .docs-canvas__writing { min-height: calc(200px * var(--sf, 1)); }
+.docs-canvas--embedded { height: auto; overflow: visible; }
+.docs-canvas--embedded .docs-canvas__page { max-width: none; margin: 0; padding: 0; }
+.docs-canvas--embedded .docs-canvas__problem { margin: 0 0 var(--ds-unit); }
 .docs-atom { display: block; margin-block: calc(20px * var(--sf, 1)); border: 1px solid var(--ds-border-color, currentColor); user-select: none; }
 .docs-atom__label { display: block; padding-inline: calc(10px * var(--sf, 1)); line-height: calc(20px * var(--sf, 1)); font-size: calc(13px * var(--sf, 1)); color: var(--ds-text-secondary, currentColor); }
 .docs-atom__body { overflow: hidden; max-height: calc(400px * var(--sf, 1)); pointer-events: none; }
