@@ -44,6 +44,7 @@ export type Unit = {
     to: number;
     fixed?: boolean;
     breaks?: boolean;
+    bare?: string;
 };
 export declare const isWritten: (block: Block) => boolean;
 /** A block read into its units, every character accounted for but the delimiters. */
