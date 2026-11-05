@@ -53,9 +53,8 @@
       "pattern": "dsone.dev/*",
       "zone_name": "dsone.dev"
     },
-    // A route alone does not claim a registrar-parked hostname. Bind both legacy
-    // hosts directly so the Worker can redirect docs and retain its asset/API paths.
-    { "pattern": "dsone.dev", "custom_domain": true },
-    { "pattern": "www.dsone.dev", "custom_domain": true }
+    // Both legacy hosts have proxied CNAME records pointing to designsystem1.com.
+    // Keep their routes in front of that origin to redirect docs and retain asset/API paths.
+    { "pattern": "www.dsone.dev/*", "zone_name": "dsone.dev" }
   ]
 }
