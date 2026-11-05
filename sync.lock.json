@@ -9,8 +9,8 @@
     }
   },
   "Aa": {
-    "commit": "6e9bdd42bd73ae19055864f05ade20549ea7f9db",
-    "version": "0.11.0",
+    "commit": "873cc94d7ba06d22699a13bf1fafdd6822475591",
+    "version": "0.12.0",
     "owned": ["website/src/vendor/aa"],
     "files": {
       "website/src/vendor/aa/README.md": "1f81b66577d7c7674a3acf4f0e25bf541380f7cc259c03c244e9558a06159da7",
