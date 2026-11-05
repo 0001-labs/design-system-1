@@ -15,6 +15,7 @@ import "../../../DS1/3-unit/ds-sidebar";
 import type { SidebarItem } from "../../../DS1/3-unit/ds-sidebar";
 import "../../../DS1/3-unit/ds-tabs";
 import "../../../DS1/4-page/ds-grid";
+import "../../../DS1/4-page/ds-page";
 import { COLOURS, COMPONENTS, SQUARE, TEXT_SIZES, componentSpec, readLength, readWidth, tokenValue, type ComponentProperty, type ComponentSpec, type WidthMode } from "../component-specs";
 import { BaseDraft } from "../lib/baseDraft";
 import { AppElement, defineElement } from "../lib/element";
@@ -155,7 +156,7 @@ export class ComponentEditor extends AppElement {
       event.preventDefault();
       navigate(to);
     };
-    return html`<aside class="component-editor-navigation" data-ds-area="Components">
+    return html`<aside slot="nav" class="component-editor-navigation" data-ds-area="Components">
       <ds-sidebar label="Design system 1" disclosure-position="start" expand-icon="chevron-down" collapse-icon="chevron-up" .items=${items}
         @sidebar-activate=${activate}
         @sidebar-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => { if (event.detail.id === "components") this.collapsed = !event.detail.expanded; }}></ds-sidebar>
@@ -251,7 +252,7 @@ export class ComponentEditor extends AppElement {
     const embedded = document.documentElement.hasAttribute("data-docs-embed");
     const own = this.draft.overrides.filter(([token]) => spec.properties.some(property => property.token === token));
     const css = own.length ? `:root {\n${own.map(([token, value]) => `  ${token}: ${value};`).join("\n")}\n}` : "No changes yet.";
-    return html`<aside class="component-editor-inspector" data-ds-area="Properties" aria-label=${`${spec.name} properties`}>
+    return html`<aside slot="aside" class="component-editor-inspector" data-ds-area="Properties" aria-label=${`${spec.name} properties`}>
       <div class="component-editor-inspector-heading">
         <h2 class="ds-text">${spec.name}</h2>
         <a class="component-editor-link" href=${spec.href} target=${embedded ? "_top" : "_blank"} rel=${ifDefined(embedded ? undefined : "noreferrer")}>Documentation</a>
@@ -278,7 +279,9 @@ export class ComponentEditor extends AppElement {
     const { search } = currentLocation.get();
     const view = search.get("view") === "history" ? "history" : null;
     const spec = componentSpec(search.get("component"));
-    return html`${this.#navigation(spec, view)}
+    const embedded = document.documentElement.hasAttribute("data-docs-embed");
+    return html`<ds-page class="component-editor-page" layout="inspector" nav-width="8" aside-width="12" resizable resize-key="ds1-component-editor-panes" divided fill drawer>
+      ${embedded ? nothing : this.#navigation(spec, view)}
       <main class="component-editor-stage">
         ${draftNotices(draft)}
         ${view === "history" ? html`<section class="component-editor-history" aria-label="History">
@@ -286,7 +289,7 @@ export class ComponentEditor extends AppElement {
           ${draft.history.length ? draftHistory(draft) : html`<p class="ds-text ds-text--muted">Not edited yet</p>`}
         </section>` : this.#canvas(spec)}
       </main>
-      ${view === "history" ? nothing : this.#inspector(spec)}`;
+      ${view === "history" ? nothing : this.#inspector(spec)}</ds-page>`;
   }
 }
 defineElement("ds1-component-editor", ComponentEditor);

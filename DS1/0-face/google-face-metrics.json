@@ -4,6 +4,11 @@
     "descent": 0.31,
     "capHeight": 0.7
   },
+  "Inconsolata": {
+    "ascent": 0.859,
+    "descent": 0.19,
+    "capHeight": 0.623
+  },
   "Inter": {
     "ascent": 0.9688,
     "descent": 0.2412,

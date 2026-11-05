@@ -1,13 +1,11 @@
-/* The base system's component editor: the components down the side (twelve squares), the canvas
+/* The base system's component editor: the components down the side (eight squares), the canvas
    on the grid, the properties beside it (twelve squares). Everything stands on whole squares and
    on the lower sixteen of its square. */
 .component-editor {
   --editor-unit: var(--ds-unit);
   --editor-line: calc(16px * var(--ds-sf, 1));
   --editor-selection: color-mix(in srgb, var(--ds-text-color) 8%, transparent);
-  display: grid;
-  grid-template-columns: calc(12 * var(--editor-unit)) minmax(0, 1fr) calc(12 * var(--editor-unit));
-  grid-template-areas: "navigation stage inspector";
+  display: block;
   height: calc(100dvh - var(--site-header-height, 0px));
   height: round(down, calc(100dvh - var(--site-header-height, 0px)), var(--editor-unit));
   min-height: calc(20 * var(--editor-unit));
@@ -17,24 +15,17 @@
   line-height: var(--editor-line);
 }
 [data-docs-embed] .component-editor { height: 100dvh; }
-/* In the documentation's frame the docs sidebar lists the components (shared/editor-navigation.ts),
-   so the editor draws none of its own. */
-[data-docs-embed] .component-editor {
-  grid-template-columns: minmax(0, 1fr) calc(12 * var(--editor-unit));
-  grid-template-areas: "stage inspector";
-}
-[data-docs-embed] .component-editor-navigation { display: none; }
+.component-editor-page { height: 100%; --ds-page-gap: 0px; }
+.component-editor-page::part(page) { padding: 0; }
+
 
 .component-editor-navigation {
-  grid-area: navigation;
   min-width: 0;
   overflow: auto;
   padding: var(--editor-unit);
-  box-shadow: inset -1px 0 var(--ds-border-color);
 }
 
 .component-editor-stage {
-  grid-area: stage;
   min-width: 0;
   overflow: auto;
   display: flex;
@@ -102,11 +93,9 @@
 
 /* The properties: a label four squares wide, its control, a reset on the last square. */
 .component-editor-inspector {
-  grid-area: inspector;
   min-width: 0;
   overflow: auto;
   padding: 0 var(--editor-unit) var(--editor-unit);
-  box-shadow: inset 1px 0 var(--ds-border-color);
 }
 .component-editor-inspector-heading {
   display: flex;
@@ -154,33 +143,6 @@
   color: var(--ds-text-color-muted);
 }
 
-@media (max-width: 1100px) {
-  .component-editor {
-    grid-template-columns: calc(8 * var(--editor-unit)) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas: "navigation stage" "navigation inspector";
-  }
-  .component-editor-inspector { max-height: calc(14 * var(--editor-unit)); box-shadow: inset 0 1px var(--ds-border-color); }
-}
-@media (max-width: 600px) {
-  .component-editor {
-    height: auto;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    grid-template-areas: "navigation" "stage" "inspector";
-  }
-  .component-editor-navigation { max-height: calc(8 * var(--editor-unit)); box-shadow: inset 0 -1px var(--ds-border-color); }
+@media (max-width: 599px) {
   .component-editor-canvas { padding: var(--editor-unit); }
-  .component-editor-inspector { max-height: none; }
-}
-/* Framed in the documentation, narrower: the stage over the inspector, still with no sidebar. */
-@media (max-width: 1100px) {
-  [data-docs-embed] .component-editor {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas: "stage" "inspector";
-  }
-}
-@media (max-width: 600px) {
-  [data-docs-embed] .component-editor { grid-template-rows: auto auto; }
 }

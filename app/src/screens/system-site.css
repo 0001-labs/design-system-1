@@ -1,4 +1,4 @@
-.system-site { --ds-page-nav: calc(10 * var(--ds-unit)); min-height: 100dvh; }
+.system-site { min-height: 100dvh; }
 .system-navigation { display: flex; flex-direction: column; align-items: flex-start; gap: var(--ds-unit); }
 .system-navigation ds-sidebar { width: 100%; }
 .system-content { display: flex; flex-direction: column; gap: var(--ds-unit); min-width: 0; }
