@@ -180,7 +180,7 @@ export class Page extends LitElement {
     const style = getComputedStyle(page);
     const handle = this.renderRoot.querySelector<HTMLElement>('.resize');
     const unit = handle?.getBoundingClientRect().width || 20;
-    const other = this.layout === "inspector" && this.clientWidth >= 960 ? ((area === "nav" ? this.asideWidth : this.navWidth) * unit + (parseFloat(style.columnGap) || 0)) : 0;
+    const other = this.layout === "inspector" && this.clientWidth >= 960 ? (!this.renderRoot.querySelector(`[part="${area === "nav" ? "aside" : "nav"}"]`)?.hasAttribute("data-empty") ? (area === "nav" ? this.asideWidth : this.navWidth) * unit + (parseFloat(style.columnGap) || 0) : 0) : 0;
     const available = page.clientWidth - other - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0) - (parseFloat(style.columnGap) || 0);
     return { unit, available: Math.max(unit, available) };
   }
