@@ -339,3 +339,6 @@ html:root { --ds-sf: var(--sf, 1); }
 
 /* Root's topics: the names are the links, without an underline. */
 .sl-markdown-content .topic-table a { text-decoration: none; }
+
+/* Contents stays in its content viewport, below the page's own navigation controls. */
+mobile-starlight-toc > nav { position: relative; inset: auto; top: auto; }
