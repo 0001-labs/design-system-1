@@ -41,7 +41,7 @@ slot:not([name])::slotted(*) {
 }
 :host([vertical]) slot:not([name])::slotted(*) {
   margin-inline-start: 0 !important;
-  margin-block-start: calc(-1 * var(--ds-avatar-group-inset, 0px)) !important;
+  margin-block-start: var(--ds-avatar-group-inset, 0px) !important;
 }
 :host([vertical]) .members.separated {
   margin-inline-start: 0;

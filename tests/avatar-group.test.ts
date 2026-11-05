@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import "../DS1/3-unit/ds-avatar-group";
 afterEach(() => document.body.replaceChildren());
@@ -67,4 +69,9 @@ test("moving a member between groups restores its original styles after release"
   );
   expect(member.style.getPropertyPriority("--ds-avatar-group-order")).toBe("important");
   expect(member.style.getPropertyValue("--ds-avatar-group-inset")).toBe("");
+});
+
+test('a column overlaps by the same inset as a row, never doubling its sign', () => {
+  const css = readFileSync(join(import.meta.dirname, '../DS1/3-unit/styles/ds-avatar-group.css'), 'utf8');
+  expect(css).toMatch(/:host\(\[vertical\]\) slot:not\(\[name\]\)::slotted\(\*\) \{[^}]*margin-block-start: var\(--ds-avatar-group-inset, 0px\) !important;/);
 });
