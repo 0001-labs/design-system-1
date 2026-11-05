@@ -36,6 +36,16 @@ test("an area with nothing in it is marked empty and takes no room", async () =>
   expect(area(page, "footer").hasAttribute("data-empty")).toBe(false);
 });
 
+test("a split's divider stands beside its column, so a scrolling column cannot cut it off", async () => {
+  const page = await setup(`<ds-page layout="split" resizable fill><nav slot="nav">List</nav><p>Detail</p></ds-page>`);
+  const handle = page.shadowRoot!.querySelector<HTMLElement>('[role="separator"]')!;
+  expect(handle.parentElement).toBe(page.shadowRoot!.querySelector(".page"));
+  expect(area(page, "nav").querySelector('[role="separator"]')).toBeNull();
+  page.layout = "sidebar";
+  await page.updateComplete;
+  expect(area(page, "nav").querySelector('[role="separator"]')).not.toBeNull();
+});
+
 test("layout, divided, fill and view reflect for styling", async () => {
   const page = await setup(`<ds-page></ds-page>`);
   expect(page.getAttribute("layout")).toBe("sidebar");

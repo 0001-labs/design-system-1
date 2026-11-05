@@ -317,6 +317,7 @@ public enum DS1IconName: String, CaseIterable, Sendable {
     case star
     case starAlt = "star-alt"
     case starAlt2 = "star-alt-2"
+    case starOutline = "star-outline"
     case start
     case stats
     case status

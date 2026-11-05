@@ -321,6 +321,7 @@ enum class DS1IconName(val fileName: String, @DrawableRes val drawable: Int) {
     star("star", R.drawable.ds1_icon_star),
     starAlt("star-alt", R.drawable.ds1_icon_star_alt),
     starAlt2("star-alt-2", R.drawable.ds1_icon_star_alt_2),
+    starOutline("star-outline", R.drawable.ds1_icon_star_outline),
     start("start", R.drawable.ds1_icon_start),
     stats("stats", R.drawable.ds1_icon_stats),
     status("status", R.drawable.ds1_icon_status),

@@ -230,6 +230,9 @@
   --_split-max: round(down, calc(var(--_split-room) - var(--_split-min)), var(--ds-unit));
   grid-template-columns: minmax(0, var(--ds-page-resize-width, clamp(var(--_split-min), round(nearest, calc(var(--_split-room) * var(--ds-page-split, 0.5)), var(--ds-unit)), var(--_split-max)))) minmax(0, 1fr);
 }
+/* A split's divider is the page's own child, on the column's grid area: a column that scrolls cannot cut it off. */
+:host([layout="split"][resizable]) .page { position: relative; }
+:host([layout="split"][resizable]) .resize { grid-area: nav; }
 .resize { position: absolute; inset-block: 0; inset-inline-end: calc(-0.5 * var(--ds-page-gap) - 0.5 * var(--ds-unit)); width: var(--ds-unit); cursor: col-resize; touch-action: none; user-select: none; z-index: 2; }
 .resize::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 50%; width: 1px; background: var(--ds-line-color, var(--ds-page-line)); }
 .resize:hover::before, .resize:focus-visible::before, .resize[data-dragging]::before { background: var(--ds-text-color); width: 1px; }

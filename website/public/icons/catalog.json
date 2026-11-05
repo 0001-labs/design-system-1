@@ -1778,6 +1778,13 @@
     "shapes": 1
   },
   {
+    "key": "star-outline",
+    "name": "Star",
+    "source": "Library",
+    "url": "/icons/library/star-outline.svg",
+    "shapes": 1
+  },
+  {
     "key": "start",
     "name": "Start",
     "source": "Library",

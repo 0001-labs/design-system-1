@@ -228,6 +228,15 @@ export class Page extends LitElement {
     else this.resizeTo(0.5);
   }
 
+  /**
+   * The divider. A split's stands beside its column, not in it, so a column that scrolls on its own
+   * under `fill` cannot cut it off; a sidebar's stands in its column, which holds it visible.
+   */
+  private resizer() {
+    if (!this.resizable) return undefined;
+    return html`<div class="resize" part="resize" role="separator" tabindex="0" aria-label=${this.layout === "sidebar" ? "Resize sidebar" : "Resize columns"} aria-orientation="vertical" aria-valuemin=${this.layout === "sidebar" ? 4 : 0} aria-valuemax=${this.layout === "sidebar" ? 24 : 100} aria-valuenow=${this.layout === "sidebar" ? this.navWidth : Math.round(this.split * 100)} @pointerdown=${this.startResize} @pointermove=${this.resizePointer} @pointerup=${this.endResize} @pointercancel=${this.endResize} @lostpointercapture=${this.endResize} @keydown=${this.resizeKey} @dblclick=${() => this.resetResize()}></div>`;
+  }
+
   render() {
     const label = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     const close = getText("Close") || "Close";
@@ -243,7 +252,7 @@ export class Page extends LitElement {
             <ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
           </button></div>
         </dialog>
-        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot>${this.resizable && (this.layout === 'split' || this.layout === 'sidebar') ? html`<div class="resize" part="resize" role="separator" tabindex="0" aria-label=${this.layout === "sidebar" ? "Resize sidebar" : "Resize columns"} aria-orientation="vertical" aria-valuemin=${this.layout === "sidebar" ? 4 : 0} aria-valuemax=${this.layout === "sidebar" ? 24 : 100} aria-valuenow=${this.layout === "sidebar" ? this.navWidth : Math.round(this.split * 100)} @pointerdown=${this.startResize} @pointermove=${this.resizePointer} @pointerup=${this.endResize} @pointercancel=${this.endResize} @lostpointercapture=${this.endResize} @keydown=${this.resizeKey} @dblclick=${() => this.resetResize()}></div>` : undefined}</div>
+        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot>${this.layout === 'sidebar' ? this.resizer() : undefined}</div>${this.layout === 'split' ? this.resizer() : undefined}
         <div class="area header" part="header" data-area="header"><slot name="header"></slot></div>
         <div class="area main" part="main" data-area="main" role=${ifDefined(this.landmark ? "main" : undefined)}><slot @slotchange=${this.syncLandmark}></slot></div>
         <div class="area aside" part="aside" data-area="aside"><slot name="aside"></slot></div>
