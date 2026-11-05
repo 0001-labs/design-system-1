@@ -130,3 +130,17 @@ test("showTooltip and hideTooltip show and hide it from code", () => {
   showTooltip(element("", "span"));
   expect(visible()).toBe(false);
 });
+
+test("inside a data-tooltip-over element it stands over that element, not over its own cell", () => {
+  const bar = document.createElement("span");
+  bar.dataset.tooltipOver = "";
+  const cell = element("Link");
+  bar.append(cell);
+  document.body.append(bar);
+  const box = (top: number, height: number) => ({ top, bottom: top + height, left: 100, right: 120, width: 20, height, x: 100, y: top, toJSON() {} }) as DOMRect;
+  vi.spyOn(bar, "getBoundingClientRect").mockReturnValue(box(100, 40));
+  vi.spyOn(cell, "getBoundingClientRect").mockReturnValue(box(120, 20));
+  vi.spyOn(bubble(), "offsetHeight", "get").mockReturnValue(16);
+  showTooltip(cell);
+  expect(bubble().style.transform).toMatch(/, 82px\)$/);
+});
