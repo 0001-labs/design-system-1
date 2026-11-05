@@ -77,7 +77,7 @@ const code = sample.library ? `<link rel="stylesheet" href="${sample.library.hre
   .layout-example .layout-toolbar a:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
   .layout-example .layout-stage { padding: var(--layout-unit); background: var(--ds-fill); }
   .layout-example .layout-readout { min-height: calc(2 * var(--layout-unit)); margin: calc(10px * var(--sf, 1)) 0 0; }
-  .layout-example .layout-inside { display: grid; grid-template-columns: repeat(auto-fill, calc(12 * var(--layout-unit))); gap: 0 var(--layout-unit); margin: 0 0 calc(10px * var(--sf, 1)); }
+  .layout-example .layout-inside { display: grid; grid-template-columns: repeat(auto-fill, min(100%, calc(12 * var(--layout-unit)))); gap: 0 var(--layout-unit); margin: 0 0 calc(10px * var(--sf, 1)); }
   .layout-example .layout-inside ul { margin: 0; padding: 0; list-style: none; }
   .layout-example .layout-inside li { margin: 0; }
   /* Each layer is named as the sidebar names it: its colour's square, then its name. */
