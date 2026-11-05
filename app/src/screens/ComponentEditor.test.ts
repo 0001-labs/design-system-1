@@ -35,3 +35,21 @@ it('uses the surrounding documentation navigation without leaving a phantom pane
   expect(page.querySelector('[slot=aside]')).toBeNull();
   expect(page.shadowRoot!.querySelector('[data-area=aside]')!.hasAttribute('data-empty')).toBe(true);
 });
+it('opens the stylesheet split while retaining the mounted library canvas', async () => {
+  const workbench = document.createElement('ds1-system-workbench') as HTMLElement & { stylesheetOpen: boolean };
+  document.body.append(workbench);
+  try {
+    await settle();
+    const panes = workbench.querySelector('ds-page.system-workbench-panes')!;
+    const outer = workbench.querySelector('ds-page.system-workbench-body')!;
+    expect(outer.getAttribute('layout')).toBe('column');
+    expect(panes.querySelector('[slot=nav]')).not.toBeNull();
+    expect(panes.querySelector('[slot=aside]')).not.toBeNull();
+    workbench.stylesheetOpen = true; await settle();
+    expect(outer.getAttribute('layout')).toBe('split');
+    expect(workbench.querySelector('ds-page.system-workbench-panes')).toBe(panes);
+    expect(panes.getAttribute('slot')).toBe('nav');
+    expect(workbench.querySelector('#library-stylesheet')).not.toBeNull();
+    expect(outer.shadowRoot!.querySelectorAll('[role=separator]')).toHaveLength(1);
+  } finally { workbench.remove(); }
+});

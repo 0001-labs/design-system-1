@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { live } from "lit/directives/live.js";
 import { repeat } from "lit/directives/repeat.js";
 import "../../DS1/2-core/ds-button";
+import "../../DS1/4-page/ds-page";
 import "../../DS1/2-core/ds-composer";
 import "../../DS1/2-core/ds-input";
 import type { Input as InputElement } from "../../DS1/2-core/ds-input";
@@ -199,8 +200,9 @@ export class SystemWorkbench extends AppElement {
 
     return html`<div class=${`workbench system-workbench${this.stylesheetOpen ? "" : " system-workbench--no-stylesheet"}${routeSearch.get("view") === "overview" ? " system-workbench--overview" : ""}`} data-testid="workbench">
       ${this.header}
-      <div class=${`system-workbench-panes${embeddedLibrary ? " system-workbench-panes--external-navigation" : ""}`}>
-        ${embeddedLibrary ? nothing : html`<aside class="library-panel system-library-panel">
+      <ds-page class="system-workbench-body" .layout=${this.stylesheetOpen ? "split" : "column"} .split=${0.65} resizable resize-key="ds1-library-stylesheet-split" divided fill>
+      <ds-page class="system-workbench-panes" .slot=${this.stylesheetOpen ? "nav" : ""} layout="inspector" nav-width="8" aside-width="20" resizable resize-key="ds1-library-workbench-panes" divided fill drawer>
+        ${embeddedLibrary ? nothing : html`<aside slot="nav" class="library-panel system-library-panel">
           <h2 class="app-panel-label">Components</h2>
           <ds1-component-tree label="Component library" .nodes=${treeNodes} current=${selected}
             @tree-select=${(event: CustomEvent<string>) => { if (!event.detail.startsWith("layer-")) this.#setSelected(event.detail); }}></ds1-component-tree>
@@ -212,7 +214,7 @@ export class SystemWorkbench extends AppElement {
             @button-metrics=${(event: CustomEvent<ButtonMetrics>) => { if (JSON.stringify(this.buttonMetrics) !== JSON.stringify(event.detail)) this.buttonMetrics = event.detail; }}></ds1-example-preview></section>`)
             : html`<p>This composition is described in the <a href=${entry.href} target="_blank" rel="noreferrer">documentation</a>.</p>`}
         </main>
-        <aside class="system-workbench-tokens">
+        <aside slot="aside" class="system-workbench-tokens">
           ${buttonSelected ? html`<div class="library-button-mode">${splitButton("Button mode", [{ value: "single", label: "Single" }, { value: "split", label: "Split" }], this.buttonMode, mode => { this.buttonMode = mode; this.boxPreview = null; })}</div>
           <section class="controls-section controls-section--box-model library-button-properties" aria-label="Button properties">
             <h2 @mouseenter=${() => { this.hoverRegion = "all"; }} @mouseleave=${() => { this.hoverRegion = null; }}>Box model</h2>
@@ -228,11 +230,12 @@ export class SystemWorkbench extends AppElement {
           ${repeat(tokens, name => name, name => html`<label><span>${name}${FOUNDATION_TOKENS[name] ? " · Foundation" : ""}</span><ds-input variant="field" type="text" aria-label=${name} ?readonly=${Boolean(FOUNDATION_TOKENS[name]) && !foundationScale(name)} placeholder=${defaults.get(name) ?? "Inherited"} .value=${live(values.get(name) ?? "")}
             @input=${(event: Event) => this.#setToken(name, fieldValue(event))}></ds-input></label>`)}
         </aside>
-      </div>
+      </ds-page>
       ${this.stylesheetOpen ? html`<section id="library-stylesheet" aria-label="Live CSS file" class="css-file-panel">
         <div class="app-panel-heading"><h2>Stylesheet</h2>${button("Close stylesheet", () => this.#closeStylesheet())}</div>
         <div class="css-editor-shell"><ds1-aa-stylesheet .value=${css} @stylesheet-change=${(event: CustomEvent<string>) => this.#update(event.detail)}></ds1-aa-stylesheet></div>
       </section>` : nothing}
+      </ds-page>
     </div>`;
   }
 }
