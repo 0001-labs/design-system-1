@@ -1140,11 +1140,13 @@ export function adoptionStudio(start = repository): string {
 }
 
 export function scanReport(studio = adoptionStudio()): AdoptionReport {
+  // The report describes canonical apps, even when its scanner runs from a source worktree.
+  const dsRoot = dirname(git(repository, "rev-parse", "--path-format=absolute", "--git-common-dir"));
   return {
-    schema: 1, generatedAt: new Date().toISOString(), sourceCommit: git(repository, "rev-parse", "HEAD"), sourceDirty: Boolean(git(repository, "status", "--porcelain")),
+    schema: 1, generatedAt: new Date().toISOString(), sourceCommit: git(dsRoot, "rev-parse", "HEAD"), sourceDirty: Boolean(git(dsRoot, "status", "--porcelain")),
     columns: COMPONENT_COLUMNS,
-    icons: { names: [...ds1Icons(repository).keys()] },
-    apps: loadAppSpecs(studio).map(app => catalogueApp(scanApp(app, studio))),
+    icons: { names: [...ds1Icons(dsRoot).keys()] },
+    apps: loadAppSpecs(studio).map(app => catalogueApp(scanApp(app, studio, dsRoot))),
     method: [
       "Root counts authored stylesheet connections to Styling, Colours and Fonts, including their local CSS imports. Each foundation sheet is verified against its recorded source; these are connections, not rendered elements or individual token uses.",
       "Names and layers follow the shared DS1 catalogue (Root, Core, Unit and Page). Split compatibility uses are included under Button, and Switch uses under Toggle; original source tags remain in drilldowns. Specialist implementation components retain their source names. Internal Spacing handle and Loading are included in this private audit, not the public picker.",
