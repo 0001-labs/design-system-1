@@ -252,9 +252,9 @@ export class PrivateFonts extends AppElement {
     const tab = (label: string, view: typeof mode, choose: () => void) => button(label, choose, { secondary: false, active: mode === view, pressed: mode === view });
 
     return html`<main class=${`font-workspace${dark ? " font-workspace-dark" : ""}`} data-ds-surface>
-      <header class="fonts-header"><h1>Fonts</h1><span>Private workspace</span>${control("Sign out", leave)}</header>
-      <ds-page layout="sidebar" divided fill class="fonts-body">
-        <ds-sidebar slot="nav" label="Fonts" .items=${items} @sidebar-activate=${(event: CustomEvent<{ id: string }>) => void this.#choose(event.detail.id)}></ds-sidebar>
+      <header class="ds-header ds-header--app fonts-header"><h1 class="ds-header__brand">Fonts</h1><span>Private workspace</span><div class="ds-header__actions">${control("Sign out", leave)}</div></header>
+      <ds-page layout="sidebar" nav-width="8" resizable resize-key="ds1-font-sidebar" divided fill drawer class="fonts-body">
+        <ds-sidebar slot="nav" label="Fonts" .items=${items} @sidebar-activate=${(event: CustomEvent<{ id: string }>) => { (event.currentTarget as HTMLElement).closest("ds-page")?.closeDrawer(); void this.#choose(event.detail.id); }}></ds-sidebar>
         <header slot="header" class="font-heading"><h2>${active?.name}</h2><span>${active?.detail}</span></header>
         <section class="font-desk" aria-label=${active?.name ?? ""}>
           <div class="font-toolbar">
