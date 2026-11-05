@@ -17,7 +17,7 @@ const pages = {} as Record<Scheme, Page>;
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   const url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/site-chrome-measure.html`;
   for (const scheme of SCHEMES) {
     const page = await browser.newPage({ viewport: { width: 1200, height: 800 }, colorScheme: scheme });

@@ -13,7 +13,7 @@ let page: BrowserPage;
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   await page.goto(`http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/page-measure.html`);
   await page.waitForFunction(() => customElements.get("ds-page") !== undefined);
