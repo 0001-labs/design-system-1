@@ -9,6 +9,17 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 class DS1Test {
+    @Test fun comparisonKeepsUnknownZeroAndFixedDomainsDistinct() {
+        val empty = DS1ComparisonValues(null, 0.0)
+        assertNull(empty.currentFraction)
+        assertEquals(0.0, empty.previousFraction!!, 0.0001)
+        val fixed = DS1ComparisonValues(0.2, 1.5, 1.0)
+        assertEquals(0.2, fixed.currentFraction!!, 0.0001)
+        assertEquals(1.0, fixed.previousFraction!!, 0.0001)
+        assertNull(DS1ComparisonValues(Double.NaN, Double.POSITIVE_INFINITY).currentFraction)
+        assertEquals(20.0, DS1ComparisonValues(10.0, 20.0, 0.0).maximum, 0.0001)
+    }
+
     @Test fun paletteFollowsItsSource() {
         // palette.ts derives Apple green's dark version as the Figma file does.
         assertEquals(0x99ff73, DS1Colors.appleGreen.light)
