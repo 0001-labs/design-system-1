@@ -26,6 +26,7 @@ import { anchoredPanel, mobilePanel, panelViewport } from "../0-face/anchored-pa
 import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { define } from "../0-face/define";
 import { CutFades } from "../0-face/cut-fade";
+import { ChoiceContrast } from "../0-face/choice-contrast";
 import { getText } from "../0-face/i18n";
 import { dateFormatter, type DateLength } from "../0-face/format";
 import {
@@ -481,12 +482,18 @@ export class Calendar extends CalendarBase {
     this.browseYear = 0;
   }
 
+  // Reuse the painted-fill resolver: retain the library's muted/red label ink where readable.
+  private labelContrast = new ChoiceContrast(this, () => [...this.renderRoot.querySelectorAll<HTMLElement>(".today-button,.weekday-name,#title")]);
+
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener("resize", this.resetMonthMotion);
+    this.labelContrast.connect();
+    void this.updateComplete.then(() => { if (this.isConnected) this.labelContrast.resolve(); });
   }
 
   disconnectedCallback() {
+    this.labelContrast.disconnect();
     window.removeEventListener("resize", this.resetMonthMotion);
     this.hide(false);
     this.stopMonthMotion();
@@ -625,6 +632,7 @@ export class Calendar extends CalendarBase {
 
   protected updated(changed: PropertyValues<this>) {
     super.updated(changed);
+    if (this.isConnected) this.labelContrast.resolve();
     // A day opens its hours an hour before its first timed event, or at seven.
     if (this.shownView === "day" && (changed.has("view") || changed.has("date") || changed.has("events"))) {
       const hours = this.renderRoot.querySelector<HTMLElement>(".hours");

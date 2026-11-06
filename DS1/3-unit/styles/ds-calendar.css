@@ -108,7 +108,7 @@
   border: 0;
   border-radius: var(--ds-radius);
   background: transparent;
-  color: var(--ds-title-color);
+  color: var(--_ds-choice-ink, var(--ds-title-color));
   font: inherit;
   line-height: var(--ds-control-height);
   letter-spacing: inherit;
@@ -118,7 +118,7 @@
 }
 .nav { width: var(--ds-control-height); padding: 0; }
 .nav > ds-icon { --ds-icon-size: 16px; color: inherit; }
-:is(.nav, .today-button):hover:not(:disabled) { color: var(--ds-text-color); }
+:is(.nav, .today-button):hover:not(:disabled) { color: var(--_ds-choice-ink, var(--ds-text-color)); }
 :is(.nav, .today-button):focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
 .nav:disabled { cursor: default; opacity: 0.5; }
 :host(:dir(rtl)) .nav > ds-icon { transform: scaleX(-1); }
@@ -152,7 +152,7 @@
 :host(:dir(rtl)) .title-button { margin: 0 calc(-4px * var(--ds-sf, 1)) 0 0; }
 .title-button:hover { background: var(--ds-fill); }
 .title-button:focus-visible { outline: 2px solid var(--ds-focus-ring); outline-offset: -2px; }
-.title-text { min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; }
+.title-text { min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; color: var(--_ds-choice-ink, inherit); }
 /* Cut words fade over their last square, never an ellipsis: the title, a weekday's name and
    the picker's value (0-face/cut-fade.ts marks them; an event's name is drawn below). */
 :is(.title, .title-text, .weekday, .trigger .text, .swimlane-month)[data-cut="end"] { mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent); }
@@ -321,7 +321,8 @@
   color: var(--ds-title-color);
   white-space: nowrap;
 }
-.weekday-name[data-today] { color: var(--ds-calendar-today); }
+.weekday-name { color: var(--_ds-choice-ink, var(--ds-title-color)); }
+.weekday-name[data-today] { color: var(--_ds-choice-ink, var(--ds-calendar-today)); }
 .week-number { font-family: "Inter Arrows", var(--ds-calendar-week-typeface, var(--ds-typeface-compressed)); }
 .day.outside .date-line { justify-content: flex-start; }
 
