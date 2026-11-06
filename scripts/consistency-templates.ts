@@ -7,9 +7,12 @@ import { initialComposition } from '../packages/consistency/src/model';
 import { studioMarkup } from '../shared/consistency-studio';
 import { importComponentPage } from '../shared/consistency-import';
 import { SITE_TEMPLATES } from '../packages/consistency/src/template-catalogue';
+import { reconcileTemplateRegistry, type TemplateRegistry } from './consistency-template-registry';
+const update = process.argv.includes('--refresh');
+if (process.argv.some(arg => arg.startsWith('--') && arg !== '--refresh')) throw Error('Usage: vp exec tsx scripts/consistency-templates.ts [--refresh]. Default checks the committed registry; --refresh explicitly updates it while retaining history.');
 const properties = ['items', 'data', 'columns', 'values', 'value', 'figure', 'caption', 'label', 'segments', 'series', 'nodes', 'edges'];
-const previous=JSON.parse(await readFile('shared/consistency-template-pages.json','utf8').catch(()=>'{}'));
-function pinPresentations(id:string,imported:ReturnType<typeof importComponentPage>){const components={...previous[id]?.components},names=new Map<string,string>();for(const[name,definition]of Object.entries(imported.components)){const pin=`${id.replaceAll('-','_')}_${createHash('sha256').update(JSON.stringify(definition)).digest('hex').slice(0,20)}`;components[pin]=definition;names.set(name,pin);}const walk=(blocks:typeof imported.document.blocks)=>{for(const block of blocks){if(block.kind==='component')block.name=names.get(block.name)!;if('children'in block)walk(block.children);}};walk(imported.document.blocks);imported.components=components;return imported;}
+const previous = JSON.parse(await readFile('shared/consistency-template-pages.json', 'utf8').catch(() => { throw Error('Missing template registry. Restore shared/consistency-template-pages.json from Git; do not rebuild without its history.'); })) as TemplateRegistry;
+function pinPresentations(id:string,imported:ReturnType<typeof importComponentPage>){const components={...previous[id]?.components},names=new Map<string,string>();for(const[name,definition]of Object.entries(imported.components)){const pin=`${id.replaceAll('-','_')}_${createHash('sha256').update(JSON.stringify(definition)).digest('hex').slice(0,20)}`;if (components[pin] && JSON.stringify(components[pin]) !== JSON.stringify(definition)) throw Error(`Immutable template presentation collision: ${pin}`);components[pin]=definition;names.set(name,pin);}const walk=(blocks:typeof imported.document.blocks)=>{for(const block of blocks){if(block.kind==='component')block.name=names.get(block.name)!;if('children'in block)walk(block.children);}};walk(imported.document.blocks);imported.components=components;return imported;}
 const snapshots: Record<string, unknown> = {};
 const pages: Record<string, unknown> = {};
 for (const template of SITE_TEMPLATES) {
@@ -46,7 +49,8 @@ for (const template of SITE_TEMPLATES) {
   await window.happyDOM.close();
 }
 const studioWindow=new Window();studioWindow.document.body.innerHTML=studioMarkup;const studio=pinPresentations('studio',importComponentPage(studioWindow.document.body as never,{namespace:'studio'}));pages.studio={...studio,seed:initialComposition,library:await readFile('packages/consistency/src/style.css','utf8')};await studioWindow.happyDOM.close();
+const registry = reconcileTemplateRegistry(previous, pages as TemplateRegistry, update);
 await mkdir('packages/consistency/generated', { recursive: true });
 await writeFile('packages/consistency/generated/templates.json', JSON.stringify(snapshots));
-await writeFile('shared/consistency-template-pages.json', JSON.stringify(pages));
-console.log(`Prepared ${SITE_TEMPLATES.length} editable site templates from the DS1 catalogue.`);
+if (update && registry !== previous) await writeFile('shared/consistency-template-pages.json', JSON.stringify(registry));
+console.log(`${update ? 'Refreshed' : 'Checked'} ${SITE_TEMPLATES.length} editable site templates against the retained DS1 registry.`);
