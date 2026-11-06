@@ -1972,8 +1972,8 @@ export class Calendar extends CalendarBase {
         <div class="options" part="options">
           <div class="separator" aria-hidden="true"></div>
           <div class="option" @click=${this.passPress}>
-            <span>${this.pickerWords(undefined, "Include time")}</span>
-            <button class="ds-switch" type="button" role="switch" aria-label=${this.pickerWords(undefined, "Include time")} aria-checked=${String(this.time)} @click=${this.setTime}></button>
+            <span>${this.pickerWords(undefined, "Time")}</span>
+            <button class="ds-switch" type="button" role="switch" aria-label=${this.pickerWords(undefined, "Time")} aria-checked=${String(this.time)} @click=${this.setTime}></button>
           </div>
           ${this.required
             ? nothing
