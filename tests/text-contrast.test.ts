@@ -94,3 +94,27 @@ test("contrast thresholds use unrounded ratios and composite transparent ink", (
   expect(composite([0,0,0,.5],[1,1,1,1])).toEqual([.5,.5,.5,1]);
   expect(contrastRatio([119/255,119/255,119/255,1],[1,1,1,1])).toBeLessThan(4.5);
 });
+
+
+test('transparent glyphs are excluded without hiding faint or alternatively painted text', async () => {
+  const page = await fixture(`<style>
+    #placeholder::placeholder{color:transparent;opacity:1}
+    #pseudo::before{content:'Invisible';color:transparent}
+    #opacity-placeholder::placeholder{color:#ddd;opacity:0}
+    </style>
+    <span id="clock" style="color:transparent">00:01</span>
+    <span id="fill" style="color:#ddd;-webkit-text-fill-color:transparent">Hidden fill</span>
+    <span id="faint" style="color:rgba(0,0,0,.01)">Faint</span>
+    <span id="shadow" style="color:transparent;text-shadow:0 0 1px #ccc">Shadow text</span>
+    <span id="stroke" style="color:transparent;-webkit-text-stroke:1px #ccc">Outline text</span>
+    <span id="gradient-text" style="color:transparent;background:linear-gradient(#aaa,#ddd);background-clip:text">Gradient text</span>
+    <input id="placeholder" placeholder="Hidden placeholder">
+    <input id="opacity-placeholder" placeholder="Hidden placeholder opacity">
+    <span id="pseudo"></span>`);
+  try {
+    const broken = await findings(page);
+    expect(broken.map(f => f.id).sort()).toEqual(['faint', 'gradient-text', 'shadow', 'stroke']);
+    expect(broken.find(f => f.id === 'faint')!.message).toContain(':1 text contrast');
+    for (const id of ['gradient-text', 'shadow', 'stroke']) expect(broken.find(f => f.id === id)!.message).toContain('visual contrast review');
+  } finally { await page.close(); }
+});

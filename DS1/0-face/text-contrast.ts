@@ -148,7 +148,7 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
   const read = colorReader(document);
   const styles = new Map<Element, CSSStyleDeclaration>();
   const style = (e: Element) => { if (!styles.has(e)) styles.set(e, styleOf(e)); return styles.get(e)!; };
-  function measure({ element, text, pseudo, paintElement = element }: TextSample): TextContrastResult {
+  function measure({ element, text, pseudo, paintElement = element }: TextSample): TextContrastResult | undefined {
     const result: TextContrastResult = { element, text: text.replace(/\s+/g, ' ').slice(0, 60) };
     const inkStyle = pseudo ? styleOf(element, pseudo) : style(paintElement);
     let foreground = read(inkStyle.getPropertyValue('-webkit-text-fill-color') || inkStyle.color);
@@ -157,6 +157,15 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
     const chain: CSSStyleDeclaration[] = [];
     if (pseudo) chain.push(inkStyle);
     for (let p: Element | null = paintElement; p; p = paintedParent(p)) chain.push(style(p));
+    // Transparent text paints no glyphs. Keep text painted by shadows, outlines or clipped
+    // backgrounds in the review path, and keep every nonzero alpha in normal measurement.
+    if (Number(inkStyle.opacity) === 0) return;
+    if (foreground[3] === 0) {
+      const otherPaint = (inkStyle.textShadow && inkStyle.textShadow !== 'none')
+        || Number.parseFloat(inkStyle.getPropertyValue('-webkit-text-stroke-width')) > 0
+        || chain.some(s => (s.backgroundClip.includes('text') || s.getPropertyValue('-webkit-background-clip').includes('text')) && s.backgroundImage !== 'none');
+      return otherPaint ? { ...result, reason: 'Transparent text painted by a shadow, stroke or background needs a visual contrast review.' } : undefined;
+    }
     for (const s of chain) {
       if (s.mixBlendMode && s.mixBlendMode !== 'normal' || s.filter && s.filter !== 'none' || s.backdropFilter && s.backdropFilter !== 'none') {
         return { ...result, reason: 'A blend or filter needs a visual contrast review.' };
