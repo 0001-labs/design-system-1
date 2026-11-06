@@ -80,6 +80,7 @@ export class Avatar extends LitElement {
   static properties = {
     label: { type: String },
     initial: { type: String },
+    initials: { type: String },
     src: { type: String },
     icon: { type: String },
     color: { type: String },
@@ -96,7 +97,9 @@ export class Avatar extends LitElement {
     failed: { state: true },
   };
   declare label: string;
-  declare initial: string;
+  declare initial: string | undefined;
+  /** Derive one letter or the first and last initials from the label. */
+  declare initials: "single" | "pair" | undefined;
   declare src: string;
   declare icon: string;
   declare color: string;
@@ -117,7 +120,6 @@ export class Avatar extends LitElement {
   constructor() {
     super();
     this.label = "";
-    this.initial = "?";
     this.src = "";
     this.icon = "";
     this.color = "";
@@ -191,13 +193,17 @@ export class Avatar extends LitElement {
   }
   render() {
     const src = this.src;
+    const names = this.initials ? (this.label || "").trim().split(/\s+/).filter(Boolean) : [];
+    const first = Array.from(names[0] ?? "")[0] ?? "";
+    const last = this.initials === "pair" && names.length > 1 ? Array.from(names[names.length - 1])[0] : "";
+    const initial = this.initial ?? ((first + last).toLocaleUpperCase() || "?");
     const fallback = this.icon
       ? html`<ds-icon type=${this.icon} aria-hidden="true"></ds-icon>`
       : html`<span
           class="initial"
-          ?data-pair=${[...this.initial].length > 1 && !/^\d{1,2}$/.test(this.initial)}
-          style=${styleMap({ "--initial-count": String([...this.initial].length || 1) })}
-          >${this.initial}</span
+          ?data-pair=${[...initial].length > 1 && !/^\d{1,2}$/.test(initial)}
+          style=${styleMap({ "--initial-count": String([...initial].length || 1) })}
+          >${initial}</span
         >`;
     return html`<span
       class="frame"

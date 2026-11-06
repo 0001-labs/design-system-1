@@ -7,6 +7,7 @@ export type AvatarProps = Omit<HTMLAttributes<AvatarElement>, "children"> &
       AvatarElement,
       | "label"
       | "initial"
+      | "initials"
       | "src"
       | "icon"
       | "shape"

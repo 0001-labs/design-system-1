@@ -11,6 +11,22 @@ test("saved light and dark identity colours choose stable ink independently of p
   expect(avatarInk("var(--brand)")).toBeUndefined();
 });
 
+test("initials can use the first and last name while an explicit mark takes priority", async () => {
+  const avatar = document.createElement("ds-avatar");
+  avatar.label = "Ana María Rivera";
+  avatar.initials = "pair";
+  document.body.append(avatar);
+  await avatar.updateComplete;
+  const mark = () => avatar.shadowRoot!.querySelector(".initial")?.textContent;
+  expect(mark()).toBe("AR");
+  avatar.initials = "single";
+  await avatar.updateComplete;
+  expect(mark()).toBe("A");
+  avatar.initial = "AM";
+  await avatar.updateComplete;
+  expect(mark()).toBe("AM");
+});
+
 test("a masked picture is drawn as soon as it has a source, before its load event", async () => {
   const avatar = document.createElement("ds-avatar");
   avatar.mask = true;
