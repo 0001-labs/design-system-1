@@ -98,7 +98,7 @@
     }
   },
   "Feedback loop": {
-    "commit": "2ea00e313fe2e97ba69e82c0e9f4c66573c59213",
+    "commit": "d9cf0f64275004256ba6abeee8995509de815312",
     "version": null,
     "owned": ["website/src/vendor/feedback-loop"],
     "files": {
@@ -115,7 +115,7 @@
       "website/src/vendor/feedback-loop/report.ts": "430edca405be560c8a17ec1ce7fbd254d5d5c95dbf6cdf4eafe6437af78d60ac",
       "website/src/vendor/feedback-loop/stale-reload.ts": "9e4ca7a624af5294346b6bf57ae392561fe9e3f87d84dec1d7f15d59281288c9",
       "website/src/vendor/feedback-loop/sudden-leave-model.ts": "c7c6d8a2ada75bba939f93a561500913256532bbc27787c732824dc58649103f",
-      "website/src/vendor/feedback-loop/sudden-leave.ts": "7b12ddbaf4ad5a4eb62615cf045d976cfd0b992d63c64cb9b6304482be2d2061"
+      "website/src/vendor/feedback-loop/sudden-leave.ts": "6b90f138ed0c16d013d8d790999484f77ec77be5b3a352b5932cd41cd741f844"
     }
   },
   "Flavo website": {
