@@ -18,11 +18,11 @@ import { remoteConstraintPages, visitAll } from './constraint-pages';
 // It only reads: GETs, without cookies or credentials, so it is safe against production. It needs
 // Playwright's WebKit (`vp exec playwright install webkit`).
 import { build } from 'esbuild';
-import { mkdirSync, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { createHash } from 'node:crypto';
 import { extname, join, resolve } from 'node:path';
-import { devices, webkit } from 'playwright';
+import { devices, webkit, type Response } from 'playwright';
 
 /** Representative phone, tablet and desktop widths; --widths adds breakpoint boundaries. */
 const WIDTHS = [320, 375, 393, 430, 768, 1024, 1440];
@@ -153,8 +153,9 @@ type Broken = { code: string; message: string; element: string; review: boolean 
 const served = dist ? await serve(dist) : undefined;
 const base = served?.base ?? named!;
 const pages = await pagesOf(base);
-const theme = option('theme') ?? 'light';
-if (theme !== 'light' && theme !== 'dark') throw new Error('Use --theme light or --theme dark.');
+const requestedTheme = option('theme') ?? 'light';
+if (requestedTheme !== 'light' && requestedTheme !== 'dark') throw new Error('Use --theme light or --theme dark.');
+const theme: 'light' | 'dark' = requestedTheme;
 // Keep release checks invisible even when Playwright debugging is enabled in the shell.
 const browser = await webkit.launch({ headless: true });
 const queue = widths.flatMap(width => pages.map(url => ({ width, url })));
@@ -162,7 +163,7 @@ const report: string[] = [];
 /** What the rules could not measure and a person must look at: listed, never a failure. */
 const reviews: string[] = [];
 let broken = 0;
-/** Pages that would not load even alone. They fail the run too, but they broke no rule. */
+/** Failed documents are availability failures, not broken layout rules. */
 let notOpened = 0;
 const measured: Record<string, number> = {};
 /** A page's address as the report names it: the production address for a page served here. */
@@ -174,13 +175,45 @@ async function open({ width, url }: { width: number; url: string }, last: boolea
   const page = await context.newPage();
   try {
     // A page that does not settle in time gets a second chance: one slow load among many is not a broken rule.
-    const loaded = await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
-      .catch(() => page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 }))
-      .then(() => null, (error: Error) => error);
-    if (loaded) {
-      if (!last) return false;
+    const attempts: { error?: string; status?: number; url?: string; ray?: string }[] = [];
+    let documentResponse: Response | undefined;
+    page.on('response', response => {
+      if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponse = response;
+    });
+    const navigate = async (timeout: number) => {
+      documentResponse = undefined;
+      try {
+        const response = await page.goto(url, { waitUntil: 'networkidle', timeout });
+        attempts.push(response ? { status: response.status(), url: response.url(), ray: response.headers()['cf-ray'] } : { error: 'Navigation returned no document response' });
+        return response;
+      } catch (error) {
+        const response = documentResponse as Response | undefined;
+        attempts.push({ error: (error as Error).message, status: response?.status(), url: response?.url(), ray: response?.headers()['cf-ray'] });
+        if (response && !response.ok()) return response;
+        throw error;
+      }
+    };
+    const loaded = await navigate(30_000).catch(() => navigate(60_000))
+      .then(response => ({ response }), (error: Error) => ({ error }));
+    const failure = 'error' in loaded ? loaded.error.message
+      : !loaded.response ? 'Navigation returned no document response'
+      : !loaded.response.ok() ? `Document returned HTTP ${loaded.response.status()}` : undefined;
+    if (failure) {
+      // Keep the failed document before a retry replaces it. HTTP error pages are availability
+      // failures, never layout specimens, and must not become a green run after a retry.
+      const folder = resolve(option('artifacts') ?? 'test-results/constraints');
+      mkdirSync(folder, { recursive: true });
+      const suffix = createHash('sha256').update(shown(url)).digest('hex').slice(0, 12);
+      const artifact = join(folder, `${width}-${suffix}-${last ? 'retry' : 'first'}-navigation`);
+      const title = await page.title().catch(() => '');
+      const html = await page.content().catch(() => '');
+      writeFileSync(`${artifact}.json`, JSON.stringify({ requested: shown(url), actual: page.url(), width, title, failure, attempts }, null, 2));
+      writeFileSync(`${artifact}.html`, html);
+      await page.screenshot({ path: `${artifact}.png` }).catch(() => undefined);
+      console.log(`Navigation failure: ${shown(url)} at ${width}px → ${artifact}.json`);
+      if ('error' in loaded && !last) return false;
       notOpened += 1;
-      report.push(`${width}px ${shown(url)}`, `  could not be opened, even alone: ${loaded.message.split('\n')[0]}`);
+      report.push(`${width}px ${shown(url)}`, `  navigation failed: ${failure.split('\n')[0]} (evidence: ${artifact}.json)`);
       return true;
     }
     if (option('theme')) await page.evaluate(appearance => {
@@ -234,5 +267,5 @@ served?.server.close();
 console.log(report.join('\n'));
 if (reviews.length) console.log(`\nTo review by eye (not measured, so not counted as broken):\n${reviews.join('\n')}\n`);
 for (const [code, count] of Object.entries(measured)) console.log(`${code}: ${count} measured.`);
-console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers: ${broken ? `${broken} broken` : 'every rule kept'}${notOpened ? `, ${notOpened} never opened` : ''}${retried.length ? ` (${retried.length} tried again alone after a slow load)` : ''}.`);
+console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers: ${broken ? `${broken} broken` : notOpened ? 'no layout rules checked on failed documents' : 'every rule kept'}${notOpened ? `, ${notOpened} documents failed` : ''}${retried.length ? ` (${retried.length} tried again alone after a slow load)` : ''}.`);
 process.exit(broken || notOpened ? 1 : 0);
