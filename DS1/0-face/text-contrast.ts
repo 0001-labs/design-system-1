@@ -163,7 +163,7 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
     if (foreground[3] === 0) {
       const otherPaint = (inkStyle.textShadow && inkStyle.textShadow !== 'none')
         || Number.parseFloat(inkStyle.getPropertyValue('-webkit-text-stroke-width')) > 0
-        || chain.some(s => (s.backgroundClip.includes('text') || s.getPropertyValue('-webkit-background-clip').includes('text')) && s.backgroundImage !== 'none');
+        || chain.some(s => (s.backgroundClip.includes('text') || s.getPropertyValue('-webkit-background-clip').includes('text')) && (s.backgroundImage !== 'none' || (read(s.backgroundColor)?.[3] ?? 0) > 0));
       return otherPaint ? { ...result, reason: 'Transparent text painted by a shadow, stroke or background needs a visual contrast review.' } : undefined;
     }
     for (const s of chain) {

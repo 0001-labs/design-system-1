@@ -108,13 +108,14 @@ test('transparent glyphs are excluded without hiding faint or alternatively pain
     <span id="shadow" style="color:transparent;text-shadow:0 0 1px #ccc">Shadow text</span>
     <span id="stroke" style="color:transparent;-webkit-text-stroke:1px #ccc">Outline text</span>
     <span id="gradient-text" style="color:transparent;background:linear-gradient(#aaa,#ddd);background-clip:text">Gradient text</span>
+    <span id="solid-text" style="color:transparent;background:#ccc;background-clip:text">Solid clipped text</span>
     <input id="placeholder" placeholder="Hidden placeholder">
     <input id="opacity-placeholder" placeholder="Hidden placeholder opacity">
     <span id="pseudo"></span>`);
   try {
     const broken = await findings(page);
-    expect(broken.map(f => f.id).sort()).toEqual(['faint', 'gradient-text', 'shadow', 'stroke']);
+    expect(broken.map(f => f.id).sort()).toEqual(['faint', 'gradient-text', 'shadow', 'solid-text', 'stroke']);
     expect(broken.find(f => f.id === 'faint')!.message).toContain(':1 text contrast');
-    for (const id of ['gradient-text', 'shadow', 'stroke']) expect(broken.find(f => f.id === id)!.message).toContain('visual contrast review');
+    for (const id of ['gradient-text', 'shadow', 'solid-text', 'stroke']) expect(broken.find(f => f.id === id)!.message).toContain('visual contrast review');
   } finally { await page.close(); }
 });
