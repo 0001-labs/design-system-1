@@ -3,7 +3,8 @@ export const VISITOR_WAIT_MS = 15_000;
 
 /** Start once, at idle after interaction or the bounded quiet read; returns cancellation. */
 export function whenVisitorActs(run: () => void): () => void {
-  const signals = ['pointerdown', 'keydown', 'scroll', 'touchstart'] as const;
+  // A scroll event also fires when a page positions its own carousel or restores scroll.
+  const signals = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
   let stopped = false;
   let idle: number | undefined;
   let fallback: ReturnType<typeof setTimeout> | undefined;

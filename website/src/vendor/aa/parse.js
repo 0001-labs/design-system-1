@@ -1,5 +1,41 @@
+//#region src/table.ts
+function e(e) {
+	let t = 0;
+	return e.split("\n").flatMap((e, n) => {
+		let r = t;
+		if (t += e.length + 1, n === 1) return [];
+		let i = [-1], a = !1;
+		for (let t = 0; t < e.length; t++) e[t] === "\\" ? t++ : (e[t] === "`" && (a = !a), e[t] === "|" && !a && i.push(t));
+		i.push(e.length);
+		let o = [];
+		for (let t = 1; t < i.length; t++) {
+			let n = i[t - 1] + 1, a = i[t];
+			if ((t === 1 || t === i.length - 1) && !e.slice(n, a).trim()) continue;
+			let s = e.slice(n, a), c = n + (s.match(/^[ \t]?/)?.[0].length ?? 0), l = Math.max(c, a - (s.match(/[ \t]?$/)?.[0].length ?? 0));
+			o.push({
+				text: e.slice(c, l),
+				from: r + c,
+				to: r + l
+			});
+		}
+		return [o];
+	});
+}
+function t(e) {
+	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
+		let t = e.trim(), n = t.startsWith(":"), r = t.endsWith(":");
+		return n && r ? "center" : r ? "end" : n ? "start" : null;
+	});
+}
+function n(e) {
+	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
+		let t = e.trim().replace(/:/g, "").length;
+		return t > 3 ? t : null;
+	});
+}
+//#endregion
 //#region src/markdown.ts
-var e = /^ {0,3}(#{1,6})[ \t]+/, t = /^ *(?:([-*+])|(\d{1,9})[.)])[ \t]+(?:\[([ xX])\][ \t]+)?/, n = /^ {0,3}>[ \t]?/, r = /^ {0,3}(`{3,}|~{3,})/, i = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/, a = [
+var r = /^ {0,3}(#{1,6})[ \t]+/, i = /^ *(?:([-*+])|(\d{1,9})[.)])[ \t]+(?:\[([ xX])\][ \t]+)?/, a = /^ {0,3}>[ \t]?/, o = /^ {0,3}(`{3,}|~{3,})/, s = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/, c = [
 	"gray",
 	"brown",
 	"orange",
@@ -10,14 +46,14 @@ var e = /^ {0,3}(#{1,6})[ \t]+/, t = /^ *(?:([-*+])|(\d{1,9})[.)])[ \t]+(?:\[([ 
 	"pink",
 	"red",
 	"white"
-], o = /^>\s*\[!([^\]\n]*)\](-)?[ \t]*/;
-function s(e) {
-	let t = o.exec(e);
+], l = /^>\s*\[!([^\]\n]*)\](-)?[ \t]*/;
+function u(e) {
+	let t = l.exec(e);
 	if (!t) return null;
 	let n = "", r, i;
 	for (let e of t[1].trim().split(/\s+/).filter(Boolean)) {
 		let t = e.toLowerCase();
-		a.includes(t) ? i = t : /^[a-z]+$/i.test(e) ? n = t : r = e;
+		c.includes(t) ? i = t : /^[a-z]+$/i.test(e) ? n = t : r = e;
 	}
 	return {
 		kind: n,
@@ -27,32 +63,32 @@ function s(e) {
 		length: t[0].length
 	};
 }
-function c(e) {
+function d(e) {
 	return e.icon !== void 0 || e.color !== void 0 || !e.kind;
 }
-var l = /^\s*<columns>\s*$/, u = /^\s*<\/columns>\s*$/, d = /^\s*<column>\s*$/, f = /^\s*<\/column>\s*$/;
-function p(e) {
+var f = /^\s*<columns>\s*$/, p = /^\s*<\/columns>\s*$/, m = /^\s*<column>\s*$/, h = /^\s*<\/column>\s*$/;
+function g(e) {
 	let t = [], n = null;
-	for (let r of e.replace(/\r\n?/g, "\n").split("\n")) l.test(r) || u.test(r) || (d.test(r) ? (n = [], t.push(n)) : f.test(r) ? n = null : n && n.push(r.replace(/^\t{1,2}/, "")));
+	for (let r of e.replace(/\r\n?/g, "\n").split("\n")) f.test(r) || p.test(r) || (m.test(r) ? (n = [], t.push(n)) : h.test(r) ? n = null : n && n.push(r.replace(/^\t{1,2}/, "")));
 	let r = t.map((e) => e.join("\n").replace(/^\n+|\n+$/g, ""));
 	return r.length ? r : ["", ""];
 }
-var m = /^\s*<table_of_contents\s*\/>\s*$/, h = /^\s*<tabs>\s*$/, g = /^\s*<\/tabs>\s*$/, _ = /^\s*<tab\b([^>]*)>\s*$/, v = /^\s*<\/tab>\s*$/, y = (e) => e.replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-function b(e) {
+var _ = /^\s*<table_of_contents\s*\/>\s*$/, v = /^\s*<tabs>\s*$/, y = /^\s*<\/tabs>\s*$/, b = /^\s*<tab\b([^>]*)>\s*$/, x = /^\s*<\/tab>\s*$/, S = (e) => e.replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+function ee(e) {
 	let t = [], n = null;
 	for (let r of e.replace(/\r\n?/g, "\n").split("\n")) {
-		if (h.test(r) || g.test(r)) continue;
-		let e = _.exec(r);
+		if (v.test(r) || y.test(r)) continue;
+		let e = b.exec(r);
 		if (e) {
 			let r = {};
-			for (let t of e[1].matchAll(/([a-z]+)="([^"]*)"/g)) r[t[1]] = y(t[2]);
+			for (let t of e[1].matchAll(/([a-z]+)="([^"]*)"/g)) r[t[1]] = S(t[2]);
 			n = {
 				name: r.name ?? "",
 				...r.icon ? { icon: r.icon } : {},
 				content: "",
 				lines: []
 			}, t.push(n);
-		} else v.test(r) ? n = null : n && n.lines.push(r.replace(/^\t{1,2}/, ""));
+		} else x.test(r) ? n = null : n && n.lines.push(r.replace(/^\t{1,2}/, ""));
 	}
 	let r = t.map(({ lines: e, ...t }) => ({
 		...t,
@@ -63,134 +99,134 @@ function b(e) {
 		content: ""
 	}];
 }
-function x(e, t) {
-	let n = r.exec(e);
+function C(e, t) {
+	let n = o.exec(e);
 	return !!n && n[1][0] === t[0] && n[1].length >= t.length && !e.slice(n[0].length).trim();
 }
-function ee(a) {
-	return !!a.trim() && !r.test(a) && !i.test(a) && !e.test(a) && !t.test(a) && !n.test(a) && !l.test(a) && !h.test(a) && !m.test(a);
+function w(e) {
+	return !!e.trim() && !o.test(e) && !s.test(e) && !r.test(e) && !i.test(e) && !a.test(e) && !f.test(e) && !v.test(e) && !_.test(e);
 }
-function S(a) {
-	let o = a.replace(/\r\n?/g, "\n").split("\n"), d = [], f = 0;
-	for (let e of o) d.push(f), f += e.length + 1;
-	let p = [], _ = (e, t, n, r = {}) => {
-		p.push({
+function te(e) {
+	let t = e.replace(/\r\n?/g, "\n").split("\n"), n = [], c = 0;
+	for (let e of t) n.push(c), c += e.length + 1;
+	let l = [], m = (e, r, i, a = {}) => {
+		l.push({
 			kind: e,
-			source: o.slice(t, n + 1).join("\n"),
+			source: t.slice(r, i + 1).join("\n"),
 			prefix: 0,
-			...r,
-			start: d[t]
+			...a,
+			start: n[r]
 		});
-	}, v = 0;
-	for (; v < o.length;) {
-		let a = o[v];
-		if (a.trim() === "$$") {
-			let e = v + 1;
-			for (; e < o.length && o[e].trim() !== "$$";) e++;
-			_("equation", v, Math.min(e, o.length - 1), { prefix: a.length }), v = e + 1;
+	}, h = 0;
+	for (; h < t.length;) {
+		let e = t[h];
+		if (e.trim() === "$$") {
+			let n = h + 1;
+			for (; n < t.length && t[n].trim() !== "$$";) n++;
+			m("equation", h, Math.min(n, t.length - 1), { prefix: e.length }), h = n + 1;
 			continue;
 		}
-		if (v + 1 < o.length && a.includes("|") && /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(o[v + 1])) {
-			let e = v + 1;
-			for (; e + 1 < o.length && o[e + 1].trim() && o[e + 1].includes("|");) e++;
-			_("table", v, e), v = e + 1;
+		if (h + 1 < t.length && e.includes("|") && /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(t[h + 1])) {
+			let e = h + 1;
+			for (; e + 1 < t.length && t[e + 1].trim() && t[e + 1].includes("|");) e++;
+			m("table", h, e), h = e + 1;
 			continue;
 		}
-		if (l.test(a)) {
-			let e = v + 1;
-			for (; e < o.length && !u.test(o[e]);) e++;
-			_("columns", v, Math.min(e, o.length - 1), { prefix: a.length }), v = e + 1;
+		if (f.test(e)) {
+			let n = h + 1;
+			for (; n < t.length && !p.test(t[n]);) n++;
+			m("columns", h, Math.min(n, t.length - 1), { prefix: e.length }), h = n + 1;
 			continue;
 		}
-		if (m.test(a)) {
-			_("toc", v, v), v++;
+		if (_.test(e)) {
+			m("toc", h, h), h++;
 			continue;
 		}
-		if (h.test(a)) {
-			let e = v + 1;
-			for (; e < o.length && !g.test(o[e]);) e++;
-			_("tabs", v, Math.min(e, o.length - 1), { prefix: a.length }), v = e + 1;
+		if (v.test(e)) {
+			let n = h + 1;
+			for (; n < t.length && !y.test(t[n]);) n++;
+			m("tabs", h, Math.min(n, t.length - 1), { prefix: e.length }), h = n + 1;
 			continue;
 		}
-		let d = r.exec(a);
-		if (d) {
-			let e = v + 1;
-			for (; e < o.length && !x(o[e], d[1]);) e++;
-			_("code", v, Math.min(e, o.length - 1), { prefix: a.length }), v = e + 1;
+		let n = o.exec(e);
+		if (n) {
+			let r = h + 1;
+			for (; r < t.length && !C(t[r], n[1]);) r++;
+			m("code", h, Math.min(r, t.length - 1), { prefix: e.length }), h = r + 1;
 			continue;
 		}
-		if (!a.trim()) {
-			v++;
+		if (!e.trim()) {
+			h++;
 			continue;
 		}
-		if (i.test(a)) {
-			_("divider", v, v, { prefix: a.length }), v++;
+		if (s.test(e)) {
+			m("divider", h, h, { prefix: e.length }), h++;
 			continue;
 		}
-		let f = e.exec(a);
-		if (f) {
-			_("heading", v, v, {
-				level: f[1].length,
-				prefix: f[0].length
-			}), v++;
+		let c = r.exec(e);
+		if (c) {
+			m("heading", h, h, {
+				level: c[1].length,
+				prefix: c[0].length
+			}), h++;
 			continue;
 		}
-		let y = t.exec(a);
-		if (y) {
-			let e = /^ */.exec(a)[0].length, t = p[p.length - 1], n = 0;
-			e && t?.kind === "bullet" ? n = e > (t.indent ?? 0) ? (t.depth ?? 0) + 1 : [...p].reverse().find((t) => t.kind === "bullet" && (t.indent ?? 0) <= e)?.depth ?? 1 : e && (n = Math.floor(e / (y[2] ? 3 : 2))), _("bullet", v, v, {
-				prefix: y[0].length,
-				indent: e,
-				depth: n,
-				checked: y[3] === void 0 ? void 0 : y[3] !== " ",
-				number: y[2] ? Number(y[2]) : void 0
-			}), v++;
+		let g = i.exec(e);
+		if (g) {
+			let t = /^ */.exec(e)[0].length, n = l[l.length - 1], r = 0;
+			t && n?.kind === "bullet" ? r = t > (n.indent ?? 0) ? (n.depth ?? 0) + 1 : [...l].reverse().find((e) => e.kind === "bullet" && (e.indent ?? 0) <= t)?.depth ?? 1 : t && (r = Math.floor(t / (g[2] ? 3 : 2))), m("bullet", h, h, {
+				prefix: g[0].length,
+				indent: t,
+				depth: r,
+				checked: g[3] === void 0 ? void 0 : g[3] !== " ",
+				number: g[2] ? Number(g[2]) : void 0
+			}), h++;
 			continue;
 		}
-		if (n.test(a)) {
-			let e = v;
-			for (; e + 1 < o.length && n.test(o[e + 1]);) e++;
-			let t = s(a), r = t ? /^(#{1,6})\s+/.exec(a.slice(t.length)) : null;
-			_(t ? "callout" : "quote", v, e, t ? {
-				level: r?.[1].length,
-				prefix: t.length + (r?.[0].length ?? 0),
-				callout: t.kind,
-				folded: t.folded,
-				...t.icon === void 0 ? {} : { icon: t.icon },
-				...t.color ? { color: t.color } : {},
-				...c(t) ? { box: !0 } : {}
-			} : { prefix: n.exec(a)[0].length }), v = e + 1;
+		if (a.test(e)) {
+			let n = h;
+			for (; n + 1 < t.length && a.test(t[n + 1]);) n++;
+			let r = u(e), i = r ? /^(#{1,6})\s+/.exec(e.slice(r.length)) : null;
+			m(r ? "callout" : "quote", h, n, r ? {
+				level: i?.[1].length,
+				prefix: r.length + (i?.[0].length ?? 0),
+				callout: r.kind,
+				folded: r.folded,
+				...r.icon === void 0 ? {} : { icon: r.icon },
+				...r.color ? { color: r.color } : {},
+				...d(r) ? { box: !0 } : {}
+			} : { prefix: a.exec(e)[0].length }), h = n + 1;
 			continue;
 		}
-		let b = v;
-		for (; b + 1 < o.length && ee(o[b + 1]);) b++;
-		_("paragraph", v, b), v = b + 1;
+		let b = h;
+		for (; b + 1 < t.length && w(t[b + 1]);) b++;
+		m("paragraph", h, b), h = b + 1;
 	}
-	p.length || p.push({
+	l.length || l.push({
 		kind: "paragraph",
 		source: "",
 		prefix: 0,
 		start: 0
 	});
-	let y = /^\n+/.exec(a)?.[0] ?? "", b = a.length > y.length ? /\n+$/.exec(a)?.[0] ?? "" : "", S = p[0], C = p[p.length - 1];
-	return y && S.kind === "paragraph" && (S.source = y + S.source, S.start = 0), b && C.kind === "paragraph" && (C.source += b), p;
+	let g = /^\n+/.exec(e)?.[0] ?? "", b = e.length > g.length ? /\n+$/.exec(e)?.[0] ?? "" : "", x = l[0], S = l[l.length - 1];
+	return g && x.kind === "paragraph" && (x.source = g + x.source, x.start = 0), b && S.kind === "paragraph" && (S.source += b), l;
 }
-function C(e) {
+function ne(e) {
 	let t = "";
 	return e.forEach((n, r) => {
 		r && (t += e[r - 1].kind === "bullet" && n.kind === "bullet" ? "\n" : "\n\n"), t += n.source;
 	}), t;
 }
-function w(e) {
+function T(e) {
 	let t = e.source.split("\n");
-	return t.length > 1 && x(t[t.length - 1], r.exec(t[0])[1]);
+	return t.length > 1 && C(t[t.length - 1], o.exec(t[0])[1]);
 }
-function te(e, t) {
-	if (e.kind !== "code" || !w(e)) return;
+function re(e, t) {
+	if (e.kind !== "code" || !T(e)) return;
 	let n = e.source.slice(0, e.prefix).replace(/^ {0,3}(`{3,}|~{3,})/, "").trim().toLowerCase().split(/\s+/)[0];
 	return n ? t.find((e) => e.fence?.toLowerCase() === n) : void 0;
 }
-function T(e, t, n) {
+function E(e, t, n) {
 	let r = new RegExp(t.source, t.flags.replace(/[gy]/g, "") + "y");
 	return {
 		name: e,
@@ -201,7 +237,7 @@ function T(e, t, n) {
 		}
 	};
 }
-var E = [T("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), T("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], D = /_background$/, O = /<u>|<span color="([a-z_]+)">/y, k = /\[([^[\]]*)\]\(([^\s()]*)\)/y, A = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, ne = /[!-/:-@[-`{-~]/, j = (e) => !!e && (/[A-Za-z0-9]/.test(e) || e > "" && /[\p{L}\p{N}]/u.test(e)), M = (e) => !e || /\s/.test(e), N = {
+var D = [E("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), E("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], O = /_background$/, k = /<u>|<span color="([a-z_]+)">/y, A = /\[([^[\]]*)\]\(([^\s()]*)\)/y, ie = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, j = /[!-/:-@[-`{-~]/, M = (e) => !!e && (/[A-Za-z0-9]/.test(e) || e > "" && /[\p{L}\p{N}]/u.test(e)), N = (e) => !e || /\s/.test(e), P = {
 	"*": {
 		one: "italic",
 		two: "bold"
@@ -213,7 +249,7 @@ var E = [T("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), T("equation", /\$(
 	"~": { two: "strike" },
 	"=": { two: "highlight" }
 };
-function P(e, t, n, r, i) {
+function ae(e, t, n, r, i) {
 	let a = [], o = t, s = e.lastIndexOf("\n", t - 1) + 1, c = null, l = -1, u = -1, d = null, f = () => {
 		if (c === null) {
 			let t = e.indexOf("\n", s);
@@ -239,7 +275,7 @@ function P(e, t, n, r, i) {
 				at: o,
 				prefix: t
 			}), o += 1 + t, s = e.lastIndexOf("\n", o - 1) + 1, c = null;
-		} else if (p === "\\" && o + 1 < m && ne.test(e[o + 1])) a.push({
+		} else if (p === "\\" && o + 1 < m && j.test(e[o + 1])) a.push({
 			type: "escape",
 			at: o
 		}), o += 2;
@@ -283,8 +319,8 @@ function P(e, t, n, r, i) {
 				}
 			}
 			if (p === "[" && l < 0) {
-				k.lastIndex = o;
-				let t = k.exec(e);
+				A.lastIndex = o;
+				let t = A.exec(e);
 				if (t && o + t[0].length <= n) {
 					d = {
 						type: "link",
@@ -298,8 +334,8 @@ function P(e, t, n, r, i) {
 				}
 			}
 			if (p === "<") {
-				O.lastIndex = o;
-				let t = O.exec(e);
+				k.lastIndex = o;
+				let t = k.exec(e);
 				if (t && o + t[0].length <= m) {
 					a.push({
 						type: "tag",
@@ -329,12 +365,12 @@ function P(e, t, n, r, i) {
 					continue;
 				}
 			}
-			if (N[p]) {
+			if (P[p]) {
 				let n = 1;
 				for (; o + n < m && e[o + n] === p;) n++;
 				let r = n >= 2;
-				if (r || N[p].one) {
-					let i = a[a.length - 1], c = o === s || e[o - 1] === "\n" || i?.type === "break" && i.at + 1 + i.prefix === o, l = o === t ? void 0 : c ? "\n" : e[o - 1], u = o + n < m ? e[o + n] : void 0, d = c && o > t && !M(e[e.lastIndexOf("\n", o - 1) - 1]) && (!u || u === "\n"), f = !M(u) && !(p === "_" && j(l)), h = (!M(l) || d) && !(p === "_" && j(u));
+				if (r || P[p].one) {
+					let i = a[a.length - 1], c = o === s || e[o - 1] === "\n" || i?.type === "break" && i.at + 1 + i.prefix === o, l = o === t ? void 0 : c ? "\n" : e[o - 1], u = o + n < m ? e[o + n] : void 0, d = c && o > t && !N(e[e.lastIndexOf("\n", o - 1) - 1]) && (!u || u === "\n"), f = !N(u) && !(p === "_" && M(l)), h = (!N(l) || d) && !(p === "_" && M(u));
 					a.push({
 						type: "delimiters",
 						run: {
@@ -345,8 +381,8 @@ function P(e, t, n, r, i) {
 							right: 0,
 							opens: f,
 							closes: h,
-							looseOpen: r && !f && !!u && M(l),
-							looseClose: r && !h && !!l && M(u),
+							looseOpen: r && !f && !!u && N(l),
+							looseClose: r && !h && !!l && N(u),
 							used: []
 						}
 					});
@@ -362,7 +398,7 @@ function P(e, t, n, r, i) {
 		group: d.group
 	}), a;
 }
-function re(e) {
+function oe(e) {
 	let t = e.flatMap((e) => e.type === "delimiters" ? [e.run] : []), n = (e) => e.length - e.left - e.right;
 	for (let e = 0; e < t.length; e++) {
 		let r = t[e];
@@ -372,13 +408,13 @@ function re(e) {
 				let e = t[o];
 				if (e.char !== r.char || !n(e) || !(e.opens || e.looseOpen) || !e.opens && !r.closes) continue;
 				let s = e.opens && e.closes || r.opens && r.closes, c = n(e), l = n(r);
-				if (!(s && (c + l) % 3 == 0 && (c % 3 || l % 3) && (c % 2 || l % 2)) && (a = Math.min(n(e), n(r)) >= 2 ? 2 : +!!N[r.char].one, a)) {
+				if (!(s && (c + l) % 3 == 0 && (c % 3 || l % 3) && (c % 2 || l % 2)) && (a = Math.min(n(e), n(r)) >= 2 ? 2 : +!!P[r.char].one, a)) {
 					i = o;
 					break;
 				}
 			}
 			if (i < 0) break;
-			let o = t[i], s = o.at + o.length - o.right - a, c = r.at + r.left, l = a === 2 ? N[r.char].two : N[r.char].one, u = [s, c + a];
+			let o = t[i], s = o.at + o.length - o.right - a, c = r.at + r.left, l = a === 2 ? P[r.char].two : P[r.char].one, u = [s, c + a];
 			o.used.push({
 				at: s,
 				length: a,
@@ -395,7 +431,7 @@ function re(e) {
 		}
 	}
 }
-function ie(e) {
+function se(e) {
 	let t = {
 		underline: [],
 		color: []
@@ -410,7 +446,7 @@ function ie(e) {
 		e && (e.lone = n.lone = !1, e.group = n.group = [e.at, n.at + n.length], n.id = e.id);
 	}
 }
-function ae(e, t, n, r, i, a) {
+function ce(e, t, n, r, i, a) {
 	if (n <= t) return;
 	if (i.href || i.code) {
 		a.push({
@@ -422,7 +458,7 @@ function ae(e, t, n, r, i, a) {
 		return;
 	}
 	let o = e.slice(t, n), s = 0;
-	for (let e of o.matchAll(A)) {
+	for (let e of o.matchAll(ie)) {
 		let n = e.index;
 		n > s && a.push({
 			kind: "text",
@@ -448,8 +484,8 @@ function ae(e, t, n, r, i, a) {
 	});
 }
 function F(e, t, n, r, i, a, o) {
-	let s = P(e, t, n, a, o);
-	re(s), ie(s);
+	let s = ae(e, t, n, a, o);
+	oe(s), se(s);
 	let c = {
 		bold: 0,
 		italic: 0,
@@ -459,9 +495,9 @@ function F(e, t, n, r, i, a, o) {
 	}, l = [], u, d = t, f = () => {
 		let e = {};
 		c.bold && (e.bold = !0), c.italic && (e.italic = !0), c.strike && (e.strike = !0), c.highlight && (e.highlight = !0), c.underline && (e.underline = !0);
-		for (let { color: t } of l) D.test(t) ? e.background = t.replace(D, "") : e.color = t;
+		for (let { color: t } of l) O.test(t) ? e.background = t.replace(O, "") : e.color = t;
 		return u !== void 0 && (e.href = u), e;
-	}, p = (t) => ae(e, d, t, r, f(), i), m = (e, t, n, a = !1) => {
+	}, p = (t) => ce(e, d, t, r, f(), i), m = (e, t, n, a = !1) => {
 		p(e), i.push({
 			kind: "syntax",
 			from: r + e,
@@ -531,124 +567,103 @@ function F(e, t, n, r, i, a, o) {
 	}
 	p(n);
 }
-function oe(e, t = E) {
-	let r = [], i = e.source.split("\n"), a = e.kind === "code" && w(e);
-	if (e.kind === "equation") return [{
+function le(t, n = D) {
+	let r = [], i = t.source.split("\n"), o = t.kind === "code" && T(t);
+	if (t.kind === "equation") return [{
 		kind: "atom",
 		atom: "equation-block",
 		from: 0,
-		to: e.source.length,
-		group: [0, e.source.length]
+		to: t.source.length,
+		group: [0, t.source.length]
 	}];
-	if (e.kind === "columns") return [{
+	if (t.kind === "columns") return [{
 		kind: "atom",
 		atom: "columns",
 		from: 0,
-		to: e.source.length
+		to: t.source.length
 	}];
-	if (e.kind === "toc") return [{
+	if (t.kind === "toc") return [{
 		kind: "atom",
 		atom: "toc",
 		from: 0,
-		to: e.source.length
+		to: t.source.length
 	}];
-	if (e.kind === "tabs") return [{
+	if (t.kind === "tabs") return [{
 		kind: "atom",
 		atom: "tabs",
 		from: 0,
-		to: e.source.length
+		to: t.source.length
 	}];
-	let o = te(e, t);
-	if (o) return [{
+	let s = re(t, n);
+	if (s) return [{
 		kind: "atom",
-		atom: o.name,
+		atom: s.name,
 		from: 0,
-		to: e.source.length,
-		group: [0, e.source.length]
+		to: t.source.length,
+		group: [0, t.source.length]
 	}];
-	if (e.kind === "paragraph") return F(e.source, 0, e.source.length, 0, r, t), r;
-	if (e.kind === "quote" || e.kind === "callout") {
-		let a = e.kind === "callout" ? e.prefix : n.exec(i[0])?.[0].length ?? 0;
-		return a && r.push({
+	if (t.kind === "paragraph") return F(t.source, 0, t.source.length, 0, r, n), r;
+	if (t.kind === "quote" || t.kind === "callout") {
+		let e = t.kind === "callout" ? t.prefix : a.exec(i[0])?.[0].length ?? 0;
+		return e && r.push({
 			kind: "syntax",
 			from: 0,
-			to: a,
+			to: e,
 			prefix: !0
-		}), F(e.source, a, e.source.length, 0, r, t, (t) => {
-			let r = e.source.indexOf("\n", t);
-			return n.exec(e.source.slice(t, r < 0 ? e.source.length : r))?.[0].length ?? 0;
+		}), F(t.source, e, t.source.length, 0, r, n, (e) => {
+			let n = t.source.indexOf("\n", e);
+			return a.exec(t.source.slice(e, n < 0 ? t.source.length : n))?.[0].length ?? 0;
 		}), r;
 	}
-	let s = 0;
-	return i.forEach((n, o) => {
-		if (o && r.push({
-			kind: "break",
-			from: s - 1,
-			to: s
-		}), e.kind === "code") o === 0 || a && o === i.length - 1 ? r.push({
+	if (t.kind === "table") {
+		let i = 0;
+		for (let a of e(t.source).flat()) a.from > i && r.push({
 			kind: "syntax",
-			from: s,
-			to: s + n.length,
+			from: i,
+			to: a.from,
 			prefix: !0
-		}) : n && r.push({
+		}), F(a.text, 0, a.text.length, a.from, r, n), i = a.to;
+		return i < t.source.length && r.push({
+			kind: "syntax",
+			from: i,
+			to: t.source.length,
+			prefix: !0
+		}), r;
+	}
+	let c = 0;
+	return i.forEach((e, a) => {
+		if (a && r.push({
+			kind: "break",
+			from: c - 1,
+			to: c
+		}), t.kind === "code") a === 0 || o && a === i.length - 1 ? r.push({
+			kind: "syntax",
+			from: c,
+			to: c + e.length,
+			prefix: !0
+		}) : e && r.push({
 			kind: "text",
-			from: s,
-			to: s + n.length,
+			from: c,
+			to: c + e.length,
 			code: !0
 		});
-		else if (e.kind === "divider") r.push({
+		else if (t.kind === "divider") r.push({
 			kind: "syntax",
-			from: s,
-			to: s + n.length,
+			from: c,
+			to: c + e.length,
 			prefix: !0
 		});
 		else {
-			let i = o === 0 && (e.kind === "heading" || e.kind === "bullet") ? e.prefix : 0;
+			let i = a === 0 && (t.kind === "heading" || t.kind === "bullet") ? t.prefix : 0;
 			i && r.push({
 				kind: "syntax",
-				from: s,
-				to: s + i,
+				from: c,
+				to: c + i,
 				prefix: !0
-			}), F(n, i, n.length, s, r, t);
+			}), F(e, i, e.length, c, r, n);
 		}
-		s += n.length + 1;
+		c += e.length + 1;
 	}), r;
-}
-//#endregion
-//#region src/table.ts
-function se(e) {
-	let t = 0;
-	return e.split("\n").flatMap((e, n) => {
-		let r = t;
-		if (t += e.length + 1, n === 1) return [];
-		let i = [-1], a = !1;
-		for (let t = 0; t < e.length; t++) e[t] === "\\" ? t++ : (e[t] === "`" && (a = !a), e[t] === "|" && !a && i.push(t));
-		i.push(e.length);
-		let o = [];
-		for (let t = 1; t < i.length; t++) {
-			let n = i[t - 1] + 1, a = i[t];
-			if ((t === 1 || t === i.length - 1) && !e.slice(n, a).trim()) continue;
-			let s = e.slice(n, a), c = n + (s.match(/^[ \t]?/)?.[0].length ?? 0), l = Math.max(c, a - (s.match(/[ \t]?$/)?.[0].length ?? 0));
-			o.push({
-				text: e.slice(c, l),
-				from: r + c,
-				to: r + l
-			});
-		}
-		return [o];
-	});
-}
-function ce(e) {
-	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
-		let t = e.trim(), n = t.startsWith(":"), r = t.endsWith(":");
-		return n && r ? "center" : r ? "end" : n ? "start" : null;
-	});
-}
-function le(e) {
-	return (e.split("\n")[1] ?? "").replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((e) => {
-		let t = e.trim().replace(/:/g, "").length;
-		return t > 3 ? t : null;
-	});
 }
 //#endregion
 //#region src/comment-yaml.ts
@@ -1016,5 +1031,5 @@ function ye(e) {
 	return t.markdown;
 }
 //#endregion
-export { E as DEFAULT_ATOMS, oe as blockRuns, ye as exportMarkdown, S as parseBlocks, p as readColumns, b as readTabs, C as serialize, ce as tableAlignments, se as tableRows, le as tableWidths };
+export { D as DEFAULT_ATOMS, le as blockRuns, ye as exportMarkdown, te as parseBlocks, g as readColumns, ee as readTabs, ne as serialize, t as tableAlignments, e as tableRows, n as tableWidths };
 

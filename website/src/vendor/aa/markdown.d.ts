@@ -1,8 +1,3 @@
-/**
- * Aa's Markdown. What people write is Markdown, and this is how it is read:
- * block by block, then run by run within a block, with every character kept,
- * so what is drawn on the screen reads straight back into the text.
- */
 export type BlockKind = 'paragraph' | 'heading' | 'bullet' | 'quote' | 'code' | 'divider' | 'callout' | 'table' | 'equation' | 'columns' | 'tabs' | 'toc';
 export type Block = {
     kind: BlockKind;
