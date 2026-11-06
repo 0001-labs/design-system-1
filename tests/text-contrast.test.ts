@@ -61,6 +61,20 @@ test("contrast includes values, placeholders and visible decorative initials but
   } finally { await page.close(); }
 });
 
+test("fully clipped screen-reader text is excluded while partially clipped and decorative text still count", async () => {
+  const page = await fixture(`<style>.text { position:absolute; width:100px; height:20px; color:#aaa; white-space:nowrap }</style>
+    <span class="text" id="inset" style="clip-path:inset(50%)">Screen reader text</span>
+    <div class="text" style="clip:rect(0 0 0 0)"><span id="instructions">Keyboard instructions</span></div>
+    <span class="text" id="vertical" style="clip-path:inset(60% 0 40%)">Clipped vertically</span>
+    <span class="text" id="partial" style="clip-path:inset(10%)">Partially visible</span>
+    <span class="text" id="rectangle" style="clip:rect(0px, 100px, 20px, 0px)">Visible rectangle</span>
+    <span class="text" id="static" style="position:static;clip:rect(0 0 0 0)">Clip does not apply</span>
+    <span class="text" id="decorative" aria-hidden="true">Visible initials</span>`);
+  try {
+    expect((await findings(page)).map(f => f.id).sort()).toEqual(['decorative', 'partial', 'rectangle', 'static']);
+  } finally { await page.close(); }
+});
+
 test("unmeasurable backgrounds require review and opaque surfaces cover ancestor images", async () => {
   const page = await fixture(`<div style="background:linear-gradient(black,white)">
     <p id="gradient">Review this</p><p style="background:white">Opaque safe surface</p></div>

@@ -47,6 +47,22 @@ export function colorReader(document: Document) {
 
 type TextSample = { element: Element; text: string; pseudo?: string; paintElement?: Element };
 
+/** Screen-reader-only text still has layout rectangles, but a collapsed clip paints none of it. */
+function fullyClipped(style: CSSStyleDeclaration): boolean {
+  const rect = /^rect\(([^)]+)\)$/.exec(style.clip);
+  if (rect && (style.position === 'absolute' || style.position === 'fixed')) {
+    const edges = rect[1]!.split(/[\s,]+/).filter(Boolean);
+    if (edges.length === 4 && edges.every(value => /^-?[\d.]+px$/.test(value))) {
+      const [top, right, bottom, left] = edges.map(Number.parseFloat);
+      if (bottom! <= top! || right! <= left!) return true;
+    }
+  }
+  const inset = /^inset\(([^)]+)\)$/.exec(style.clipPath)?.[1]?.split(/\s+round\s+/)[0]?.trim().split(/\s+/);
+  if (!inset || inset.length > 4 || !inset.every(value => /^(?:-?[\d.]+%|0(?:px)?)$/.test(value))) return false;
+  const [top, right = top, bottom = top, left = right] = inset.map(Number.parseFloat);
+  return top! + bottom! >= 100 || right! + left! >= 100;
+}
+
 /** Text nodes are visited once in their composed position; hidden menus and inactive controls do not count. */
 function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclaration): Generator<TextSample | undefined> {
   const seen = new Set<Node>();
@@ -57,7 +73,7 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
     if (cached !== undefined) return cached;
     const s = style(e);
     const parent = paintedParent(e);
-    const hidden = s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0
+    const hidden = s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0 || fullyClipped(s)
       || e.matches(':disabled, [aria-disabled="true"], [data-ds-constraint-panel]')
       || (parent !== null && excludedFromPaint(parent));
     excluded.set(e, hidden);
