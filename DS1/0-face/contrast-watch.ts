@@ -1,7 +1,7 @@
 /**
  * Contrast watch: the `color.text-contrast` rule, run in the product on the theme the
  * person is using. Visible text under 4.5:1 is reported once per session as a
- * `contrast.<theme>.<component>` failure through `reportFailure`, which the Feedback loop
+ * `contrast.<theme>.element.<authored-key>` failure through `reportFailure`, which the Feedback loop
  * turns into an issue. The message names colours, ratio, component, element and path;
  * it never carries the page's text.
  *
@@ -10,8 +10,13 @@
  */
 import { scanTextContrast, paintedParent, TEXT_CONTRAST_MINIMUM } from './text-contrast';
 import { reportFailure, type Failure } from './failures';
+import { contrastIdentity, contrastSelectorRegistry, type ContrastSelector } from './contrast-selectors';
+export { contrastIdentity, contrastSelectorRegistry } from './contrast-selectors';
+export type { ContrastSelector } from './contrast-selectors';
 
 export type ContrastWatchOptions = {
+  /** At most 128 source-authored selector identities including DS1 defaults; never runtime/user data. */
+  selectors?: readonly ContrastSelector[];
   /** What is measured; the whole document by default. */
   root?: ParentNode;
   /** The least ratio, 4.5 by default. */
@@ -56,13 +61,6 @@ export function contrastComponent(element: Element): string {
   return element.localName;
 }
 
-const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9_.-]+/g, '-').replace(/^[^a-z0-9]+/, '').slice(0, 60) || 'text';
-// An id on a heading is often made from its words, so a heading is named by its class instead.
-const elementLabel = (e: Element) => {
-  const id = e.id && !/^h[1-6]$/.test(e.localName) ? `#${e.id.slice(0, 40)}` : '';
-  const name = e.classList[0];
-  return e.localName + (id || (name ? `.${name.slice(0, 40)}` : ''));
-};
 
 function hasTooMuchText(root: ParentNode) {
   const document = (root as Node).ownerDocument ?? root as Document;
@@ -84,6 +82,7 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
   if (typeof window === 'undefined' || typeof document === 'undefined') return () => {};
   const now = options.now ?? Date.now;
   const root = options.root ?? document;
+  const registry = contrastSelectorRegistry(document, options.selectors);
   const minimum = options.minimum ?? TEXT_CONTRAST_MINIMUM;
   const maxPerRun = options.maxPerRun ?? 10;
   const interval = options.interval ?? 10_000;
@@ -141,15 +140,15 @@ export function startContrastWatch(options: ContrastWatchOptions = {}): () => vo
         if (next.done || count >= maxPerRun) { finish(); return; }
         const result = next.value;
         if (result?.ratio === undefined || result.ratio >= minimum || !result.foreground || !result.background) continue;
-        const component = contrastComponent(result.element);
-        const key = [theme, path, component, result.foreground, result.background].join('|');
+        const identity = contrastIdentity(result.element, registry);
+        const key = `contrast.${theme}.${identity.key}`;
         if (known.has(key)) continue;
         remember(key);
         count++;
         // Rounded down, so a ratio just under the minimum never reads as meeting it.
         const ratio = (Math.floor(result.ratio * 10) / 10).toFixed(1);
-        const message = `${result.foreground} on ${result.background}, ${ratio}:1 (${component} · ${elementLabel(result.element)}) on ${path}`.slice(0, 200);
-        report({ code: `contrast.${theme}.${slug(component)}`, message });
+        const message = `${result.foreground} on ${result.background}, ${ratio}:1 (${identity.label}) on ${path}`.slice(0, 200);
+        report({ code: key, message });
         if (debug) console.warn(`[DS1 contrast] ${message}`, result.element);
       } while (performance.now() < end);
       atIdle(slice);

@@ -35,13 +35,13 @@ const rootFonts = ['GT-America-Standard-Regular.woff2', 'GT-America-Standard-Med
 const alwaysFonts = ['Inter-Arrows.woff2', 'Iosevka-Regular.woff2', 'Inter-LICENSE.md', 'Iosevka-LICENSE.md'];
 /** Page scripts in 0-face/, each with the modules it imports. */
 const rootModules = {
-  grid: ['grid.ts', 'layout-inspector.ts', 'grid-fit.ts', 'constraint-panel.ts', 'constraint-site.ts', 'constraints.ts', 'fault-lines.ts', 'button-label.ts', 'tag-label.ts', 'text-contrast.ts', 'word-wrap.ts', 'window-shape.ts', 'scaling.ts', 'contrast-watch.ts', 'failures.ts'],
+  grid: ['grid.ts', 'layout-inspector.ts', 'grid-fit.ts', 'constraint-panel.ts', 'constraint-site.ts', 'constraints.ts', 'fault-lines.ts', 'button-label.ts', 'tag-label.ts', 'text-contrast.ts', 'word-wrap.ts', 'window-shape.ts', 'scaling.ts', 'contrast-watch.ts', 'contrast-selectors.ts', 'failures.ts'],
   'grid-fit': ['grid-fit.ts'],
   'layout-inspector': ['layout-inspector.ts'],
   /** The constraint checker alone, five presses of C or ?constraints=1, for a product that takes no grid; `grid` brings it too. */
-  constraints: ['constraint-panel.ts', 'constraint-site.ts', 'constraints.ts', 'fault-lines.ts', 'button-label.ts', 'tag-label.ts', 'text-contrast.ts', 'word-wrap.ts', 'window-shape.ts', 'scaling.ts', 'contrast-watch.ts', 'failures.ts'],
-  /** Text contrast in the theme in use, reported as `contrast.<theme>.<component>` failures; `grid` and `constraints` bring it too. */
-  'contrast-watch': ['contrast-watch.ts', 'text-contrast.ts', 'failures.ts'],
+  constraints: ['constraint-panel.ts', 'constraint-site.ts', 'constraints.ts', 'fault-lines.ts', 'button-label.ts', 'tag-label.ts', 'text-contrast.ts', 'word-wrap.ts', 'window-shape.ts', 'scaling.ts', 'contrast-watch.ts', 'contrast-selectors.ts', 'failures.ts'],
+  /** Text contrast in the theme in use, reported as `contrast.<theme>.element.<authored-key>` failures; `grid` and `constraints` bring it too. */
+  'contrast-watch': ['contrast-watch.ts', 'contrast-selectors.ts', 'text-contrast.ts', 'failures.ts'],
   scaling: ['scaling.ts'],
   /** The classic head script that puts the theme on before the first paint; also a root `modules` choice. */
   'theme-bootstrap': ['theme-bootstrap.js'],

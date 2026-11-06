@@ -37,6 +37,21 @@ import('./0-face/contrast-watch').then(m => m.startContrastWatch());
 
 It measures when the browser is idle after it starts, again after every theme change, and when the path changes or the page has been quiet for two seconds after a burst of changes. It runs at most once every ten seconds and once per theme and path, never while the page is hidden, and leaves pages with more than 4,000 pieces of text alone. Each run reports at most ten findings.
 
-Each finding goes through `reportFailure` as `contrast.<theme>.<component>`, for example `contrast.dark.ds-avatar`, with the colours, the ratio, the component, the element and the path: `rgb(191, 194, 200) on rgb(133, 137, 235), 1.7:1 (ds-avatar · span.initials) on /lists`. The component is the nearest `ds-*` element across shadow roots, else the nearest `ds-*` class, else the element's own tag. The text itself is never sent, nor the query or fragment of the address. A finding is reported once per session for its theme, path, component and colours. In a development build it also warns in the console with the element.
+Each finding goes through `reportFailure` as `contrast.<theme>.element.<authored-key>`, for example `contrast.dark.element.ds1.tag.label`. The message contains the measured colours, ratio, authored selector and path, but no text, DOM IDs or unregistered class names. The query and fragment never enter a report.
 
-Sync 1's root modules `contrast-watch`, `constraints` and `grid` copy it, with `text-contrast.ts` and `failures.ts`, into the product's `0-face/` folder.
+Products can register known surfaces in source:
+
+```ts
+startContrastWatch({ selectors: [
+  { key: 'project.feedback', selector: '.project-feedback__question' },
+  { key: 'account.error', selector: '.error', within: 'account-form' },
+] });
+```
+
+Keys and selectors must be authored constants, never derived from DOM attributes, server data, user text or routes. Keys use lowercase letters, digits, dots and hyphens, start with a letter, and are at most 40 characters. The registry accepts at most 128 valid unique entries, including DS1 defaults for input values/errors, tags, buttons and badges. The nearest matching element wins; source order breaks ties, and `within` follows painted ancestors across shadow roots. Matching is bounded to 32 ancestors. Product entries precede defaults.
+
+Unregistered elements deliberately remain coarse: `contrast.<theme>.unregistered.<native-tag>`, using a finite native-tag vocabulary and `custom` for unknown tags. Classes and IDs never alter this fallback. Add a source-authored registry entry when distinct unregistered surfaces need separate issues; do not guess authorship from class spelling. Existing aggregate issues keep their original history and require separate review.
+
+One identity is reported once per session and theme, independent of path, colours, content and build hashes. The 200-key session cache and per-run limit remain bounded. All failure codes fit the Feedback loop's 80-character contract. A development build also warns locally with the element.
+
+Sync 1's root modules `contrast-watch`, `constraints` and `grid` copy it, with `contrast-selectors.ts`, `text-contrast.ts` and `failures.ts`, into the product's `0-face/` folder.

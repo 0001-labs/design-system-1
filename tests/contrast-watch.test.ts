@@ -50,15 +50,15 @@ test('reports failing text once per theme, with the component and without its wo
     await page.waitForFunction(() => (window as any).reports.length >= 1);
     await settle(page);
     let found = await reports(page);
-    expect(found).toEqual([{ code: 'contrast.light.ds-badge', message: 'rgb(191, 194, 200) on rgb(133, 137, 235), 1.7:1 (ds-badge · span.initials) on /lists' }]);
+    expect(found).toEqual([{ code: 'contrast.light.element.ds1.badge.label', message: 'rgb(191, 194, 200) on rgb(133, 137, 235), 1.7:1 (ds-badge) on /lists' }]);
 
     await toDark(page);
     await page.waitForFunction(() => (window as any).reports.length >= 2);
     await settle(page);
     found = await reports(page);
     // The badge draws its own surface, so it fails in dark as well; the paragraph only in dark.
-    expect(found.slice(1).map(f => f.code).sort()).toEqual(['contrast.dark.ds-badge', 'contrast.dark.p']);
-    expect(found.find(f => f.code === 'contrast.dark.p')!.message).toMatch(/^rgb\(85, 85, 85\) on rgb\(42, 42, 42\), \d\.\d:1 \(p · p#night\) on \/lists$/);
+    expect(found.slice(1).map(f => f.code).sort()).toEqual(['contrast.dark.element.ds1.badge.label', 'contrast.dark.unregistered.p']);
+    expect(found.find(f => f.code === 'contrast.dark.unregistered.p')!.message).toMatch(/^rgb\(85, 85, 85\) on rgb\(42, 42, 42\), \d\.\d:1 \(p\) on \/lists$/);
     const count = found.length;
 
     // The same findings, after a mutation and a return to light, are not reported again.
@@ -151,14 +151,14 @@ test('stopping after a scan prevents later theme and mutation reports', async ()
     // The changed theme really has a failing target: a new watcher must report it.
     await start(page);
     await page.waitForFunction(() => (window as any).reports.length === 1);
-    expect((await reports(page))[0]!.code).toBe('contrast.dark.p');
+    expect((await reports(page))[0]!.code).toBe('contrast.dark.unregistered.p');
   } finally { await page.close(); }
 });
 
 test('one run reports at most maxPerRun findings', async () => {
-  const page = await fixture(['#ddd', '#ccc', '#eee', '#d0d0d0', '#e0e0e0'].map(c => `<p style="color:${c}">Faint</p>`).join(''));
+  const page = await fixture(['#ddd', '#ccc', '#eee', '#d0d0d0', '#e0e0e0'].map((c, i) => `<p class="sample-${i}" style="color:${c}">Faint</p>`).join(''));
   try {
-    await start(page, { maxPerRun: 2 });
+    await start(page, { maxPerRun: 2, selectors: [0, 1, 2, 3, 4].map(i => ({ key: `sample-${i}`, selector: `.sample-${i}` })) });
     await page.waitForFunction(() => (window as any).reports.length >= 2);
     await settle(page);
     expect(await reports(page)).toHaveLength(2);
@@ -177,7 +177,7 @@ test('a hidden page is not measured until it is shown', async () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await page.waitForFunction(() => (window as any).reports.length >= 1);
-    expect((await reports(page))[0]!.code).toBe('contrast.light.p');
+    expect((await reports(page))[0]!.code).toBe('contrast.light.unregistered.p');
   } finally { await page.close(); }
 });
 
@@ -191,7 +191,7 @@ test('a finding reported this session is not reported again after a restart', as
     await start(page, { storage: undefined });
     await settle(page);
     expect(await reports(page)).toHaveLength(1);
-    expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('ds1:contrast-watch')!))).toEqual(['light|/lists|p|rgb(221, 221, 221)|rgb(255, 255, 255)']);
+    expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('ds1:contrast-watch')!))).toEqual(['contrast.light.unregistered.p']);
   } finally { await page.close(); }
 });
 
@@ -227,5 +227,72 @@ test('the component is the nearest ds- element, else a ds- class, else the tag',
         .concat(contrastComponent(host.shadowRoot!.querySelector('#inner')));
     });
     expect(names).toEqual(['ds-card', 'notice--app', 'em', 'ds-card']);
+  } finally { await page.close(); }
+});
+
+test('authored selectors separate identical colours and deduplicate across routes, content and build classes', async () => {
+  const page = await fixture('<p class="question build-a" id="private-one" style="color:#aaa">Private words</p><p class="caption build-b" style="color:#aaa">Other words</p>');
+  const selectors = [{ key: 'project.question', selector: '.question' }, { key: 'landing.caption', selector: '.caption' }];
+  try {
+    await start(page, { selectors });
+    await page.waitForFunction(() => (window as any).reports.length === 2);
+    expect((await reports(page)).map(f => f.code)).toEqual(['contrast.light.element.project.question', 'contrast.light.element.landing.caption']);
+    await page.evaluate(() => {
+      history.pushState({}, '', '/different-record');
+      const text = document.querySelector('p')!;
+      text.id = 'another-private-id'; text.className = 'generated-98362 question'; text.textContent = 'Changed user words';
+      (text as HTMLElement).style.color = '#bbb';
+      (window as any).stop();
+    });
+    await start(page, { selectors });
+    await settle(page);
+    expect(await reports(page)).toHaveLength(2);
+    expect(JSON.stringify(await reports(page))).not.toMatch(/Private|Changed|private-one|another-private|build-a|98362/);
+  } finally { await page.close(); }
+});
+
+test('unregistered dynamic classes, IDs and custom tags cannot increase identity cardinality', async () => {
+  const page = await fixture('<p>Text</p>');
+  try {
+    const keys = await page.evaluate(() => {
+      const { contrastIdentity, contrastSelectorRegistry } = (window as any).DSContrastWatch;
+      const registry = contrastSelectorRegistry(document);
+      const keys = new Set<string>();
+      for (let i = 0; i < 1000; i++) {
+        const element = document.createElement(i % 2 ? 'p' : `customer-${i}`);
+        element.id = `secret-record-${i}`;
+        element.className = `ds-private-${i} person-name-${i} generated-${i}`;
+        keys.add(contrastIdentity(element, registry).key);
+      }
+      return [...keys].sort();
+    });
+    expect(keys).toEqual(['unregistered.custom', 'unregistered.p']);
+  } finally { await page.close(); }
+});
+
+test('registry bounds, stable key syntax and shadow-scoped semantic parts are enforced', async () => {
+  const page = await fixture('<ds-input id="host"></ds-input>');
+  try {
+    const result = await page.evaluate(() => {
+      const { contrastIdentity, contrastSelectorRegistry } = (window as any).DSContrastWatch;
+      const authored = Array.from({ length: 200 }, (_, i) => ({ key: `label-${i}`, selector: `.label-${i}` }));
+      const registry = contrastSelectorRegistry(document, [
+        { key: 'private user words', selector: 'p' }, { key: 'x'.repeat(41), selector: 'p' },
+        { key: 'bad-selector', selector: '[' }, ...authored,
+      ]);
+      const shadow = document.querySelector('#host')!.attachShadow({ mode: 'open' });
+      shadow.innerHTML = '<input part="input"><span class="error-message">Private error</span>';
+      const defaults = contrastSelectorRegistry(document);
+      return {
+        length: registry.length, keys: registry.map((entry: any) => entry.key),
+        value: contrastIdentity(shadow.querySelector('input'), defaults).key,
+        error: contrastIdentity(shadow.querySelector('span'), defaults).key,
+      };
+    });
+    expect(result.length).toBe(128);
+    expect(result.keys).toEqual(Array.from({ length: 128 }, (_, i) => `label-${i}`));
+    expect(result.value).toBe('element.ds1.input.value');
+    expect(result.error).toBe('element.ds1.input.error');
+    expect(`contrast.light.element.${'a'.repeat(40)}`).toMatch(/^[a-z][a-z0-9_.-]{0,79}$/);
   } finally { await page.close(); }
 });
