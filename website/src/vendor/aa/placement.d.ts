@@ -15,3 +15,8 @@ export declare function sidePlacement(rects: readonly PlacementRect[], from: num
     at: 'start' | 'end';
     rect: PlacementRect;
 } | null;
+/** The place in the text a point on the screen falls on, in whichever way the browser says it. */
+export declare function caretAt(document: Document, x: number, y: number): {
+    node: Node;
+    offset: number;
+} | null;

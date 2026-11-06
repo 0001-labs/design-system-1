@@ -186,4 +186,4 @@ export declare function linkAround(source: string, from: number, to: number): {
     href: string;
 } | null;
 /** Every run of a block, in order, covering its source from end to end. */
-export declare function blockRuns(block: Block, atoms?: readonly AtomSyntax[]): Run[];
+export declare function blockRuns(block: Block, atoms?: readonly AtomSyntax[]): readonly Run[];

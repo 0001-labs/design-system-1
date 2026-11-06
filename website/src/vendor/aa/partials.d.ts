@@ -1,10 +1,9 @@
-import type { Atom, Editor } from './editor';
-import './vendor/ds1/2-core/ds-button';
-import './vendor/ds1/2-core/ds-input';
-import './vendor/ds1/3-unit/ds-select';
-import './vendor/ds1/4-page/ds-overlay';
-export { BUTTON_STATES, BUTTON_PARTIAL, readButtonPartial, writeButtonPartial, type ButtonState, type ButtonPartial } from './button-partial';
-/** A real component used as an illustration. The wrapper edits even a disabled specimen. */
-export declare function buttonPartialAtom(canWrite: () => boolean): Atom;
-/** Suggestions keep the caret in the sentence; DS1 owns placement and keyboard navigation. */
-export declare function createPartialPicker(editor: Editor): () => void;
+import type { Editor } from './editor';
+import type { Atom } from './atoms';
+import type { Block } from './markdown';
+export declare const loadComponents: () => Promise<typeof import("./components")>;
+/** A real component used as an illustration; its label stands in until the component has loaded. */
+export declare const buttonPartialAtom: (canWrite: () => boolean) => Atom;
+export declare const createPartialPicker: (editor: Editor) => () => void;
+/** A document-local outline, drawn once its component has loaded; the update it gives waits with it. */
+export declare function createTableOfContents(element: HTMLElement, blocks: () => readonly Block[], target: HTMLElement, navigate: (index: number) => void): () => void;

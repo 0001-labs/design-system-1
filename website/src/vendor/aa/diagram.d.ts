@@ -27,7 +27,7 @@
  * carries can be read on a server too.
  */
 import { type Diagram, type DiagramSegment } from './diagram-language';
-import type { Atom } from './editor';
+import type { Atom } from './atoms';
 export * from './diagram-language';
 export * from './diagram-edit';
 export { AaDiagramBoardElement, defineAaDiagramBoard } from './diagram-board';

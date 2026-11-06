@@ -59,5 +59,6 @@ export declare function selectionToolbarPosition(rect: Pick<DOMRect, 'left' | 't
     left: number;
     top: number;
 };
+export declare const loadDragging: () => Promise<typeof import("./drag")>;
 export declare function createControls(editor: Editor, options: EditorOptions): () => void;
 export {};

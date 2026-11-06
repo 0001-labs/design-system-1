@@ -12,7 +12,7 @@
  */
 import { type AnchoredThread, type CommentPerson, type CommentStore } from './comments';
 import type { Decoration } from './render';
-import { type Prompter } from './prompt';
+import type { Prompter } from './prompt';
 export type CommentsViewOptions = {
     store: CommentStore;
     /** The Markdown now. */

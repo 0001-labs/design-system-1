@@ -1,4 +1,3 @@
-import './vendor/ds1/2-core/ds-button';
 export declare const BUTTON_STATES: readonly ["default", "primary", "secondary", "active", "disabled", "danger"];
 export type ButtonState = typeof BUTTON_STATES[number];
 export type ButtonPartial = {

@@ -13,3 +13,12 @@ export declare const SHIMMER = 900;
 export declare function lightness(color: string): number | null;
 /** Shimmer the ranges of a block's source once; gives back what takes the shimmer away early. */
 export declare function shimmer(element: HTMLElement, ranges: readonly (readonly [number, number])[], root?: Element): () => void;
+/** Where the prompt stands in the document sent with it. */
+export declare const PROMPT_HERE = "\u27E6here\u27E7";
+/**
+ * A light passing again and again through elements' letters while something
+ * is worked on, as Ezo's harness glistens through an item's name: a band of
+ * the accent blended onto the page, moved by transform alone. Gives back
+ * what stops it.
+ */
+export declare function glisten(elements: readonly Element[], _root?: Element): () => void;
