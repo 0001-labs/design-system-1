@@ -119,6 +119,10 @@ export type Run = {
     /** `<span color="red_background">words</span>`, Notion's way of writing a colour behind words: one of `BACKGROUND_COLORS`. */
     background?: string;
     href?: string;
+    /** A link's title, shown when the pointer rests on it. */
+    title?: string;
+    /** A link's `(address "title")` as written, where `(href)` would not say the same. */
+    linkSource?: string;
     /**
      * Syntax belongs to a mark: the range of the whole mark, delimiters
      * included, shown together while the caret is in it. Prefix syntax has no
@@ -174,5 +178,12 @@ export type TextColor = (typeof TEXT_COLORS)[number];
 /** The colours behind words. Yellow is the highlight, written `==words==`; the others as Notion writes them. */
 export declare const BACKGROUND_COLORS: readonly ["gray", "yellow", "orange", "green", "blue", "purple", "red"];
 export type BackgroundColor = (typeof BACKGROUND_COLORS)[number];
+/** The link the range `from`..`to` of a block's source lies in, written or a bare address. */
+export declare function linkAround(source: string, from: number, to: number): {
+    from: number;
+    to: number;
+    words: string;
+    href: string;
+} | null;
 /** Every run of a block, in order, covering its source from end to end. */
 export declare function blockRuns(block: Block, atoms?: readonly AtomSyntax[]): Run[];

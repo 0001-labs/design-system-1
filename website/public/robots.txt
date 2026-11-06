@@ -1,0 +1,3 @@
+User-agent: *
+
+Sitemap: https://designsystem1.com/sitemap-index.xml

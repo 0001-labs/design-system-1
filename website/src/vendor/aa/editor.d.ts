@@ -20,6 +20,8 @@ import type { AnchoredThread, CommentStore } from './comments';
  */
 export type Atom = AtomSyntax & {
     draw?(element: HTMLElement, source: string): void | (() => void);
+    /** A person tagged: Backspace takes the space written after it along with it, so one press removes the tag however it was made. */
+    tag?: true;
     /** A block that starts one, offered in the toolbar and the slash menu: its name, icon and first source. */
     insert?: {
         label: string;
@@ -32,6 +34,12 @@ export type Atom = AtomSyntax & {
     };
 };
 /**
+ * A person tagged by name, `@Name`: words in the document, drawn and removed as
+ * one thing. `people` says who can be tagged, read each time so it can change;
+ * the longest name that fits wins, and letters after it make it plain words.
+ */
+export declare function personAtom(people: () => readonly string[], colour?: (name: string) => string): Atom;
+/**
  * A drawn picture made sizable: as wide as its Markdown says in squares (`![caption](address "w12")`),
  * or its own size up to sixteen, with the grip that sizes it. For a product's own picture atom too.
  */
@@ -43,9 +51,10 @@ export type EditorOptions = {
     readOnly?: boolean;
     placeholder?: string;
     /**
-     * What an empty block shows while the caret is in it, so the slash menu is
-     * found without a button beside the block: "Press space for AI or / for commands" where the product answers prompts, "Type / for commands" otherwise, unless set,
-     * nothing for ''. Never without menus or in a read-only editor.
+     * What an empty block shows while the caret is in it, such as "Type / for
+     * commands". Nothing unless it is given: an editor says nothing of its own over
+     * empty blocks. Given, an empty heading names its level too. Never without menus
+     * or in a read-only editor.
      */
     blockPlaceholder?: string;
     /** Called after every change the person made, and every correction, with the document as Markdown. */

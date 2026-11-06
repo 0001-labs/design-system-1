@@ -4,7 +4,7 @@
  * never displayed, while writing either, so the caret passes over it as if it
  * were not there, and the text still reads straight back.
  */
-import { type AtomSyntax, type Block } from './markdown';
+import { type AtomSyntax, type Block, type Run } from './markdown';
 /** A run of a block's words drawn with a class (and a title, and attributes a layer reads back, `data-comment` say); `from === to` is a caret. */
 export type Decoration = {
     from: number;
@@ -25,6 +25,18 @@ export declare function atomElement(name: string, source: string, document?: Doc
 export type Reveal = {
     from: number;
     to: number;
+} | null;
+/**
+ * How a link whose words are its own address reads: without `https://`,
+ * `www.` or a closing slash, and cut short at a word near `ADDRESS_LENGTH`,
+ * fading out there.
+ * The letters stay in the page and in the document; the caret entering the
+ * link brings them all back, so nothing is out of reach of editing.
+ */
+export declare function addressFold(run: Run, text: string): {
+    shown: number;
+    end: number;
+    more: boolean;
 } | null;
 /**
  * The key of what a reveal changes in a block's drawing: which atoms show their

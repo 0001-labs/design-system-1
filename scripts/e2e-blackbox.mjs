@@ -611,6 +611,21 @@ if (PRODUCTION) {
     ["System CI's Flags matrix, where /flags sends, asks to sign in", async () => expectRedirect(await request(FLAGS_MATRIX), 303, "https://system.0001.dev/login")],
   ]);
 
+  await step("Consistency public discovery", [
+    ["Marketing robots names its sitemap", async () => {
+      const answer = await request('https://consistency.site/robots.txt');
+      expectStatus(answer, 200); expectType(answer, 'text/plain');
+      expect(answer.text.includes('Sitemap: https://consistency.site/sitemap.xml'), 'missing sitemap');
+    }],
+    ["Only the two public marketing pages are in its sitemap", async () => {
+      const answer = await request('https://consistency.site/sitemap.xml');
+      expectStatus(answer, 200); expectType(answer, 'application/xml');
+      const urls = [...answer.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
+      expect(JSON.stringify(urls) === JSON.stringify(['https://consistency.site/', 'https://consistency.site/examples/']), 'unexpected sitemap pages');
+    }],
+    ["An unknown marketing URL is a real 404", async () => expectStatus(await request('https://consistency.site/search-check-not-a-page'), 404)],
+  ]);
+
   await step("Private hosts", [
     ["Consistency social callbacks refuse unsupported methods before provider routing", async () => {
       // No provider request, consent or account is created by these method refusals.

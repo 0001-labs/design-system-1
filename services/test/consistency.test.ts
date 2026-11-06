@@ -260,13 +260,17 @@ it('answers the legal pages itself', async () => {
   expect((await consistencyPreview(new Request(`${site}/privacy`, { method: 'POST' }), env, send)).status).toBe(405);
   expect(send).not.toHaveBeenCalled(); expect(assets).not.toHaveBeenCalled();
 });
-it('leads every other address of consistency.site to the front page, and finds nothing there for other methods', async () => {
+it('preserves retired app redirects without turning unknown public addresses into homepages', async () => {
   const { env, assets } = setup();
   const send = upstreams(() => undefined);
-  for (const path of ['/team', '/team/', '/edit', '/edit/home', '/login', '/admin', '/flags', '/api/legacy/sites', '/some-page?x=1', '/app/libraries', '/api/dashboard/other']) {
+  for (const path of ['/team', '/team/', '/edit', '/edit/home', '/login', '/admin', '/flags', '/api/legacy/sites', '/app/libraries', '/api/dashboard/other']) {
     const answer = await consistencyPreview(new Request(site + path, { headers }), env, send);
     expect([path, answer.status]).toEqual([path, 302]); expect(answer.headers.get('location')).toBe('/');
   }
+  const missing = await consistencyPreview(new Request(`${site}/some-page?x=1`), env, send);
+  expect(missing.status).toBe(404);
+  expect(missing.headers.get('location')).toBeNull();
+  expect(missing.headers.get('x-robots-tag')).toContain('noindex');
   expect((await consistencyPreview(new Request(`${site}/login`, { method: 'POST', headers }), env, send)).status).toBe(404);
   expect(send).not.toHaveBeenCalled(); expect(assets).not.toHaveBeenCalled();
 });
@@ -346,4 +350,20 @@ it('maps the root guide and protects internal build documents', async () => {
   const result=await consistencyPreview(new Request(origin+path,{headers}),env,send);
   expect(result.status).toBe(404);expect(result.headers.has('location')).toBe(false);
  }
+});
+it('serves public discovery files without authentication or private URLs', async () => {
+  const { env, assets } = setup();
+  const send = upstreams(() => undefined);
+  const robots = await consistencyPreview(new Request(`${site}/robots.txt`), env, send);
+  expect(robots.status).toBe(200);
+  expect(robots.headers.get('content-type')).toContain('text/plain');
+  expect(await robots.text()).toContain('Sitemap: https://consistency.site/sitemap.xml');
+  const sitemap = await consistencyPreview(new Request(`${site}/sitemap.xml`), env, send);
+  expect(sitemap.status).toBe(200);
+  expect(sitemap.headers.get('content-type')).toContain('application/xml');
+  expect([...((await sitemap.text()).matchAll(/<loc>([^<]+)<\/loc>/g))].map(match => match[1])).toEqual([`${site}/`, `${site}/examples/`]);
+  expect(await (await consistencyPreview(new Request(`${site}/sitemap.xml`, { method: 'HEAD' }), env, send)).text()).toBe('');
+  expect((await consistencyPreview(new Request(`${site}/robots.txt`, { method: 'POST' }), env, send)).status).toBe(405);
+  expect(send).not.toHaveBeenCalled();
+  expect(assets).not.toHaveBeenCalled();
 });

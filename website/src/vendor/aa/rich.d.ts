@@ -30,7 +30,7 @@ export declare const UNDERLINE: Mark;
 export declare const CODE: Mark;
 export declare const colorMark: (color: string) => Mark;
 export declare const backgroundMark: (color: string) => Mark;
-export declare const linkMark: (href: string) => Mark;
+export declare const linkMark: (href: string, source?: string) => Mark;
 /** The mark a toolbar's delimiters write; none for what is not a mark of words (an equation's `$`). */
 export declare function markOf(delimiter: string, closing: string): Mark | null;
 /**

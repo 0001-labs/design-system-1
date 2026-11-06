@@ -6,6 +6,7 @@ import { personHeaders, sitesApi, type Person } from './consistency-sites';
 import { docsSiteApi, isDocsSiteRoute, withDocsSite } from './doc-pages';
 import { isLegalPath, legalPage } from './consistency-legal';
 import { consistencySocialAuth, isSocialAuthPath } from './consistency-social-auth';
+import { consistencySearch } from './consistency-search';
 
 export const CONSISTENCY_HOST = 'c9y.site';
 /** The owner's editor lab: the page editor alone, at its root, behind the verified owner session. */
@@ -120,11 +121,16 @@ export async function filmKit(request: Request, send: typeof fetch = fetch): Pro
  */
 async function consistencySite(request: Request, send: typeof fetch): Promise<Response> {
   const url = new URL(request.url);
+  const search = consistencySearch(request);
+  if (search) return search;
   if (isLandingPath(url.pathname)) return landing(request, send);
   if (isLegalPath(url.pathname)) return legalPage(request);
   if (url.pathname.startsWith(FILM_KIT_PREFIX)) return filmKit(request, send);
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 404, headers: security });
-  return new Response(null, { status: 302, headers: { Location: '/', 'Cache-Control': 'no-store' } });
+  if (/^\/(?:team|edit|login|admin|flags|app|api)(?:\/|$)/.test(url.pathname)) {
+    return new Response(null, { status: 302, headers: { ...security, Location: '/' } });
+  }
+  return new Response('Not found', { status: 404, headers: security });
 }
 function protect(response: Response, cache?: string): Response {
   const result = new Response(response.body, response);
