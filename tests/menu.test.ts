@@ -76,6 +76,27 @@ test("floating menus restore focus on controlled unmount, but do not steal an ou
   expect(key(outside, "Escape").defaultPrevented).toBe(false);
 });
 
+test("a floating menu closes where the browser has no popovers", async () => {
+  const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
+  const saved = ["showPopover", "hidePopover"].map(name => [name, Object.getOwnPropertyDescriptor(proto, name)] as const);
+  const matches = vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, selector: string) {
+    if (selector.includes(":popover-open")) throw new DOMException("The string did not match the expected pattern.", "SyntaxError");
+    return Element.prototype.closest.call(this, selector) === this;
+  });
+  try {
+    for (const [name] of saved) delete proto[name];
+    const menu = document.createElement("ds-menu");
+    menu.innerHTML = '<button role="menuitem">Choice</button>';
+    menu.floating = menu.open = true; document.body.append(menu); await menu.updateComplete;
+    menu.open = false;
+    expect(() => menu.renderNow()).not.toThrow();
+    expect(menu.open).toBe(false);
+  } finally {
+    matches.mockRestore();
+    for (const [name, descriptor] of saved) if (descriptor) Object.defineProperty(proto, name, descriptor);
+  }
+});
+
 test("only the top floating menu receives Escape and declining dismissal keeps it open", async () => {
   const first = document.createElement("ds-menu"), second = document.createElement("ds-menu");
   for (const menu of [first, second]) { menu.floating = menu.open = true; menu.innerHTML = '<button role="menuitem">Choice</button>'; document.body.append(menu); await menu.updateComplete; }

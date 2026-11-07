@@ -1710,7 +1710,7 @@ export class Calendar extends CalendarBase {
     openPickers.delete(this);
     const panel = this.panel;
     const within = panel?.matches(":focus-within");
-    if (panel?.matches(":popover-open")) panel.hidePopover?.();
+    if (panel?.hidePopover && panel.matches(":popover-open")) panel.hidePopover();
     this.ownerDocument.removeEventListener("pointerdown", this.onOutside, true);
     this.ownerDocument.removeEventListener("scroll", this.place, true);
     window.removeEventListener("resize", this.place);

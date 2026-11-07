@@ -413,8 +413,9 @@ export class Menu extends LitElement {
     this.focusVersion++;
     const active = this.ownerDocument.activeElement;
     const within = active instanceof Node && this.contains(active);
-    // Removal closes a native popover before disconnectedCallback runs.
-    if (this.isConnected && this.matches(":popover-open")) this.hidePopover?.();
+    // Removal closes a native popover before disconnectedCallback runs. Without
+    // popovers (Safari before 17) `:popover-open` is not a selector and throws.
+    if (this.isConnected && this.hidePopover && this.matches(":popover-open")) this.hidePopover();
     openMenus.get(this.ownerDocument)?.delete(this);
     this.observer?.disconnect(); this.observer = undefined; this.observedAnchor = null;
     this.choicesObserver?.disconnect(); this.choicesObserver = undefined;
