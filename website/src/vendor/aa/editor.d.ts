@@ -27,6 +27,8 @@ export type EditorOptions = {
     blockPlaceholder?: string;
     /** Called after every change the person made, and every correction, with the document as Markdown. */
     onChange?: (value: string) => void;
+    /** Handle Command/Ctrl+Enter when this editor is used as a composer. */
+    onSubmit?: () => void;
     /** The atoms to read and draw; a picture unless told otherwise. */
     atoms?: readonly Atom[];
     /** Inline DS1 illustrations, inserted with @button. Opt in for documentation. */

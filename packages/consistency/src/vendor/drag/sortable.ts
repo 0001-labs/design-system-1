@@ -71,6 +71,13 @@ export type SortableContainerArgs = {
   lockAxis?: 'x' | 'y';
   /** The element drawn under the pointer for an item lifted from here; the engine's `renderPreview`, then a clone, when it gives none. */
   renderPreview?: (source: HTMLElement) => HTMLElement | null | undefined;
+  /**
+   * The element whose box accepts a drop, measured as it stands at each move
+   * (the room it reserves, a resize and its scroll all count); the list itself
+   * when left out. A column given here takes a drop over its header, its
+   * footer or the room below its last item into its list.
+   */
+  hitArea?: HTMLElement;
 };
 
 export type SortableItemArgs = {
@@ -151,7 +158,7 @@ export type SortableOptions = {
   outOfTheWay?: { duration: number; easing: string };
   /** The lifted item settling into its slot, its duration by distance. */
   drop?: { minDuration: number; maxDuration: number; easing: string };
-  /** How near an edge, in pixels, the pointer scrolls the list or the page. */
+  /** How near an edge, in pixels, the pointer scrolls the list or the page; never more than a fifth of the scroller's visible length. */
   autoScrollEdge?: number;
   /** Keep the lifted item on one line as the pointer moves: across ('x') or down ('y'). */
   lockAxis?: 'x' | 'y';
@@ -227,12 +234,13 @@ const handleStyles = `
 :root[data-drag-active],:root[data-drag-active] *{-webkit-user-select:none!important;user-select:none!important;cursor:grabbing!important}
 `;
 
-type ContainerRegistration = Required<Omit<SortableContainerArgs, 'isDropDisabled' | 'isCombineEnabled' | 'label' | 'lockAxis' | 'renderPreview'>> & {
+type ContainerRegistration = Required<Omit<SortableContainerArgs, 'isDropDisabled' | 'isCombineEnabled' | 'label' | 'lockAxis' | 'renderPreview' | 'hitArea'>> & {
   isDropDisabled: () => boolean;
   isCombineEnabled: () => boolean;
   label: () => string;
   lockAxis: SortableContainerArgs['lockAxis'];
   renderPreview: SortableContainerArgs['renderPreview'];
+  hitArea: HTMLElement | null;
 };
 
 type ItemRegistration = Required<Omit<SortableItemArgs, 'handle' | 'canDrag' | 'label' | 'text'>> & {
@@ -263,6 +271,8 @@ type ContainerSnapshot = {
   gap: number;
   paddingStart: number;
   scrollers: Scroller[];
+  /** The element that accepts a drop, measured live, and the scrollers that clip it; the list's box at lift when null. */
+  hitArea: { element: HTMLElement; scrollers: HTMLElement[] } | null;
   /** The items other than the source, in order. */
   slots: Slot[];
   /** The room the lifted item takes in this container, its margins and gap included. */
@@ -358,6 +368,7 @@ export function createSortable(options: SortableOptions = {}): SortableControlle
       still: args.still ?? false,
       lockAxis: args.lockAxis,
       renderPreview: args.renderPreview,
+      hitArea: args.hitArea ?? null,
     };
     containers.set(args.element, registration);
     return once(() => {
@@ -740,6 +751,7 @@ export function createSortable(options: SortableOptions = {}): SortableControlle
         gap,
         paddingStart: parsePixels(vertical ? style.paddingTop : style.paddingLeft) * scale,
         scrollers: ancestors,
+        hitArea: candidate.hitArea ? { element: candidate.hitArea, scrollers: scrollParents(candidate.hitArea) } : null,
         slots,
         // The lifted item's margin box and the list's gap: the room siblings give, none where they hold still.
         room: candidate.still ? 0 : (vertical ? liftBox.height + margins.vertical * itemScale : liftBox.width + margins.horizontal * itemScale) + gap,
@@ -857,7 +869,11 @@ export function createSortable(options: SortableOptions = {}): SortableControlle
     return { x, y };
   }
 
+  /** Where a drop lands in this container now: its hit area as it stands, or the list's box at lift moved by what has scrolled since. */
   function containerBox(current: Session, snapshot: ContainerSnapshot): Box {
+    if (snapshot.hitArea) {
+      return snapshot.hitArea.scrollers.reduce((clipped, element) => intersect(clipped, measure(element)), measure(snapshot.hitArea.element));
+    }
     const offset = offsetOf(current, snapshot);
     const box = snapshot.box;
     const visible = { ...box, left: box.left - offset.x, top: box.top - offset.y };
@@ -1188,8 +1204,10 @@ export function createSortable(options: SortableOptions = {}): SortableControlle
   }
 
   function edgeSpeed(current: Session, box: Box): { x: number; y: number } {
-    const edge = settings.autoScrollEdge;
     const along = (position: number, start: number, length: number) => {
+      // The band is at most a fifth of what is visible: a short list on a phone keeps a middle that holds still.
+      const edge = Math.min(settings.autoScrollEdge, length / 5);
+      if (edge <= 0) return 0;
       const fromStart = position - start;
       const fromEnd = start + length - position;
       if (fromStart < edge) return -maxScrollSpeed * ((edge - Math.max(fromStart, 0)) / edge) ** 2;
@@ -1676,6 +1694,13 @@ function cloneForPreview(source: HTMLElement): HTMLElement {
   originals.forEach((element, index) => {
     const target = copies[index];
     if (!target.style) return;
+    // A clone copies attributes, not properties: an element drawn from properties (a Lit element) gets them again.
+    const properties = (element.constructor as { elementProperties?: unknown }).elementProperties;
+    if (properties instanceof Map) {
+      for (const name of properties.keys() as Iterable<PropertyKey>) {
+        (target as unknown as Record<PropertyKey, unknown>)[name] = (element as unknown as Record<PropertyKey, unknown>)[name];
+      }
+    }
     const style = view.getComputedStyle(element);
     for (const property of Array.from(style)) {
       target.style.setProperty(property, style.getPropertyValue(property), 'important');

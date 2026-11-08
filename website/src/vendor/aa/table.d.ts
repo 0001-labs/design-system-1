@@ -7,6 +7,8 @@ export type Cell = {
 /** Cells keep offsets into the original Markdown, including escaped pipes. */
 export declare function tableRows(source: string): Cell[][];
 /** Whether a range stands inside one cell. */
+/** The cell a place in a table's source stands in. */
+export declare const cellAt: (source: string, offset: number) => Cell | undefined;
 export declare const inOneCell: (source: string, from: number, to: number) => boolean;
 /** A column's alignment, from the delimiter row: `:---` start, `:---:` centre, `---:` end. */
 export type Alignment = 'start' | 'center' | 'end' | null;

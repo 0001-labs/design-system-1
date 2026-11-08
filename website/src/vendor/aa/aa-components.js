@@ -6260,6 +6260,7 @@ var aa = { da: {
 	Text: "Tekst",
 	"Text colour": "Tekstfarve",
 	"Background colour": "Baggrundsfarve",
+	Header: "Overskrift",
 	"Column width": "Kolonnebredde",
 	"Text formatting": "Tekstformatering",
 	"The microphone is blocked: allow it for this site in Safari › Settings › Websites › Microphone": "Mikrofonen er blokeret: tillad den for siden i Safari › Indstillinger › Websteder › Mikrofon",

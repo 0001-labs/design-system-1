@@ -38,6 +38,8 @@ export declare class AaToolbarElement extends AaToolbarElement_base {
     connectedCallback(): void;
     refresh(): void;
 }
+/** A cell of a small menu: a press leaves the caret where it is. */
+export declare function menuCell(document: Document, label: string, text: string, run: () => void): HTMLButtonElement;
 export declare function defineAaToolbar(): void;
 /**
  * A command that starts a block an atom draws (a diagram): in place of an

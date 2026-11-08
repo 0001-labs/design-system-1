@@ -33,5 +33,11 @@ export declare function squareIn(element: HTMLElement): number;
  * or its own size up to sixteen, with the grip that sizes it. For a product's own picture atom too.
  */
 export declare function sizePicture(element: HTMLElement, source: string): void;
-/** A picture drawn as itself, as wide as its Markdown says in squares, or its own size up to sixteen. */
+export interface ImageAtomOptions {
+    /** Draw Markdown alt text as an editable caption. Defaults to true. */
+    caption?: boolean;
+}
+/** A sizable picture; hiding its caption preserves the image's alt text and Markdown. */
+export declare function createImageAtom({ caption: showCaption }?: ImageAtomOptions): Atom;
+/** A picture with an editable caption, sized in whole squares. */
 export declare const imageAtom: Atom;
