@@ -108,12 +108,12 @@
     }
   },
   "Feedback loop": {
-    "commit": "d9cf0f64275004256ba6abeee8995509de815312",
+    "commit": "382e7be1afba9137c75157ff35d6ec0a82758c00",
     "version": null,
     "owned": ["website/src/vendor/feedback-loop"],
     "files": {
       "website/src/vendor/feedback-loop/README.md": "18628e25dc23a90715383a435c82684b582ca714c131a0d049e3ce26891fa892",
-      "website/src/vendor/feedback-loop/client.ts": "c6a912bd79e896314485e595c62e9794617773467251d4a126d3fea3cd7847e6",
+      "website/src/vendor/feedback-loop/client.ts": "423c1323a7c845e8686a813418afd0d5f0a22e2449fca2c432b07dd521b11f76",
       "website/src/vendor/feedback-loop/error-outbox.ts": "b583a096726c2db38ee5868d1374bdefb1f800a585790168f1ed055490a858bd",
       "website/src/vendor/feedback-loop/events.ts": "013b35adb3b90073791d427875dd19ca08f4ac07aff9d67844d6f4adf082d0e9",
       "website/src/vendor/feedback-loop/idv1/advanced.ts": "9516a1706baf856caaabbb4ca62521aeb0ac0c12120347496d834874148d9f55",
@@ -123,7 +123,7 @@
       "website/src/vendor/feedback-loop/report-sheet.ts": "702266a48b447b532f68ed165d829ecaf43dc6b4d4e0ab6d311377fd77099b57",
       "website/src/vendor/feedback-loop/report-wake.ts": "083bfa7e9822126d53b0efc979315f359760d8fe56a3e55f9778d9cd5ff82b61",
       "website/src/vendor/feedback-loop/report.ts": "430edca405be560c8a17ec1ce7fbd254d5d5c95dbf6cdf4eafe6437af78d60ac",
-      "website/src/vendor/feedback-loop/stale-reload.ts": "9e4ca7a624af5294346b6bf57ae392561fe9e3f87d84dec1d7f15d59281288c9",
+      "website/src/vendor/feedback-loop/stale-reload.ts": "347ba428cd422d7d00fbe79bedf2e87bbe560e48fca0e727d1314a7d361cdeef",
       "website/src/vendor/feedback-loop/sudden-leave-model.ts": "c7c6d8a2ada75bba939f93a561500913256532bbc27787c732824dc58649103f",
       "website/src/vendor/feedback-loop/sudden-leave.ts": "6b90f138ed0c16d013d8d790999484f77ec77be5b3a352b5932cd41cd741f844"
     }

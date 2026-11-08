@@ -306,8 +306,13 @@ export function startFeedbackLoop(options: FeedbackLoopOptions): FeedbackLoop {
       ? { stack: `at ${event.filename}:${event.lineno || 0}:${event.colno || 0}` } : undefined;
     // A part of the app that failed to load may only be gone because the site was published again:
     // stale-reload.ts then loads the document afresh within a moment, and a failure the page
-    // recovered from is no failure. One it did not recover from is recorded after that moment.
-    if (isStaleImportError(error)) { setTimeout(() => { if (!stopped) loop.error(error, source); }, STALE_IMPORT_GRACE); return; }
+    // recovered from is no failure. One it did not recover from is recorded after that moment,
+    // unless the document went meanwhile: Safari words an import cut off by leaving the same way.
+    if (isStaleImportError(error)) {
+      const at = Date.now();
+      setTimeout(() => { if (!stopped && leftAt < at) loop.error(error, source); }, STALE_IMPORT_GRACE);
+      return;
+    }
     // A request cut off because the page is being left is no failure of the page.
     if (isNetworkFailure(error)) {
       const at = Date.now();

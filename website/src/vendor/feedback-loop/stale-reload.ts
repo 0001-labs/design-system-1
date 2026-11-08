@@ -12,9 +12,10 @@
  * that failed, is gone from it: answered 404, or with the site's HTML in a
  * script's place (a workspace host that falls back to its page, a redirect
  * to it). A part that failed for want of a connection, or a server that is
- * itself failing, leaves the page as it is; and the page is never reloaded
- * twice within a minute, so a publish that is itself broken cannot turn
- * the page round and round.
+ * itself failing, leaves the page as it is; and the same document is never
+ * reloaded twice within a minute, so a publish that is itself broken cannot
+ * turn the page round and round, while a page published again a moment
+ * after its last reload is still loaded afresh.
  *
  * Vite's own preload helper announces a failed part as `vite:preloadError`;
  * a dynamic import outside it fails as an uncaught rejection in the
@@ -104,20 +105,27 @@ export function reloadWhenStale(options: StaleReloadOptions = {}): () => void {
   const storage = options.storage === undefined ? sessionStorageIfAny() : options.storage;
   let asking = false;
 
-  const reloadedLately = () => {
+  // A reload remembers the document that asked for it. Within the minute that same document is
+  // not reloaded again (the reload did not help), but a newer one is: the site was published again.
+  const reloadedLately = (document: string) => {
     if (!storage) return true;
-    try { return now() - Number(storage.getItem(KEY) ?? 0) < ONCE_WITHIN; } catch { return true; }
+    try {
+      const [at, from] = (storage.getItem(KEY) ?? '0').split(' ');
+      return now() - Number(at) < ONCE_WITHIN && (from === undefined || from === document);
+    } catch { return true; }
   };
 
   const failed = (error: unknown) => {
-    if (asking || reloadedLately()) return;
+    const running = entries();
+    const document = running.join(',');
+    if (asking || reloadedLately(document)) return;
     asking = true;
     const part = failedPart(error, options.origin);
-    const parts = [...new Set([...(part ? [part] : []), ...entries()])];
+    const parts = [...new Set([...(part ? [part] : []), ...running])];
     void publishedAnew(parts, ask).then((stale) => {
       asking = false;
       if (!stale) return;
-      try { storage?.setItem(KEY, String(now())); } catch { return; }
+      try { storage?.setItem(KEY, `${now()} ${document}`); } catch { return; }
       reload();
     });
   };
