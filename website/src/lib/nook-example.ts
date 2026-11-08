@@ -26,8 +26,8 @@ const composition = `<style>
 .nook-bloom-b { background-image:radial-gradient(40% 55% at 0% 0%, rgba(255,196,160,.55), transparent 70%), radial-gradient(36% 50% at 100% 100%, rgba(196,238,96,.45), transparent 70%); }
 .nook-bloom-c { background-image:radial-gradient(40% 60% at 100% 50%, rgba(150,205,255,.5), transparent 70%), radial-gradient(36% 55% at 0% 0%, rgba(255,150,175,.4), transparent 70%); }
 
-/* Hero: a box ruled by hairlines, the heading at its start and a line drawing at its end. */
-.nook-hero { display:grid; grid-template-columns:minmax(0,31fr) minmax(0,30fr); border-block-end:1px solid var(--nook-line); }
+/* Hero: a box ruled by hairlines, split in half so its rule meets the middle rule of the four cells below. */
+.nook-hero { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-block-end:1px solid var(--nook-line); }
 .nook-hero-words { display:grid; gap:var(--ds-unit); align-content:center; padding:calc(4 * var(--ds-unit)) calc(2 * var(--ds-unit)); min-width:0; }
 .nook-hero-lead { max-width:calc(20 * var(--ds-unit)); }
 .nook-hero-art { display:grid; place-items:center; padding:calc(2 * var(--ds-unit)); border-inline-start:1px solid var(--nook-line); min-width:0; }
