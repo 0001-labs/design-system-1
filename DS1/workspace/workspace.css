@@ -51,7 +51,7 @@
 :where([data-workspace-shell]) .header-search > ds-input { width: 100%; }
 :where([data-workspace-shell]) .header-search > ds-input::part(input) { min-block-size: var(--header-control); }
 :where([data-workspace-shell]) .header-search > ds-select.results { height: auto; }
-:where([data-workspace-shell]) .workspace-wallpaper { isolation: isolate; }
-:where([data-workspace-shell]) .workspace-wallpaper::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--work-board-image) center / cover no-repeat; }
+:where([data-workspace-shell].workspace-wallpaper, [data-workspace-shell] .workspace-wallpaper) { isolation: isolate; }
+:where([data-workspace-shell].workspace-wallpaper, [data-workspace-shell] .workspace-wallpaper)::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--work-board-image) center / cover no-repeat; }
 :where([data-workspace-wallpaper]) .page-header { background: color-mix(in srgb, var(--ds-paper) 45%, transparent); backdrop-filter: blur(var(--ds-unit)) saturate(1.35); }
 @media (prefers-reduced-transparency: reduce) { :where([data-workspace-wallpaper]) .page-header { background: var(--ds-paper); backdrop-filter: none; } }

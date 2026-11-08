@@ -8,7 +8,11 @@ export function connectWorkspaceHeader(header:HTMLElement){
  const actions=header.querySelector<HTMLElement>('.actions');
  if(!views||!find||!actions)return ()=>{};
  const query=workspacePhoneQuery();
- const place=()=>{const parent=query.matches?find:actions;if(views.parentElement!==parent)parent.prepend(views);};
+ const place=()=>{
+  const parent=query.matches?find:actions;if(views.parentElement===parent)return;
+  const focused=views.contains(document.activeElement)?document.activeElement as HTMLElement:null;
+  parent.prepend(views);focused?.focus({preventScroll:true});
+ };
  place();query.addEventListener('change',place);
  return ()=>query.removeEventListener('change',place);
 }
