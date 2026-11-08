@@ -36,7 +36,7 @@ const composition = `<style>
 .nook-features > * { padding:calc(1.5 * var(--ds-unit)) var(--ds-unit); border-inline-start:1px solid var(--nook-line); min-width:0; }
 .nook-features > :first-child { border-inline-start:0; }
 .nook-video { display:grid; gap:var(--ds-unit); align-content:space-between; min-height:calc(7 * var(--ds-unit)); background:#0b0b0b; color:#fff; text-decoration:none; }
-.nook-video ds-text { --ds-text-color:#fff; }
+.nook-video ds-text { --ds-text-color:#fff; } .nook-video { --ds-text-color-muted:#a3a3a3; }
 .nook-play { display:block; width:calc(2 * var(--ds-unit)); height:calc(2 * var(--ds-unit)); border-radius:50%; background:#fff; position:relative; }
 .nook-play::after { content:""; position:absolute; inset-block-start:50%; inset-inline-start:calc(50% - 3px); width:calc(0.5 * var(--ds-unit)); height:calc(0.6 * var(--ds-unit)); background:#0b0b0b; clip-path:polygon(0 0, 100% 50%, 0 100%); transform:translateY(-50%); }
 
@@ -157,7 +157,7 @@ const drawing = `<svg viewBox="0 0 400 340" role="img" aria-label="A small house
 </svg>`;
 
 const tab = (name: string, controls: string, active: boolean) => `<ds-button control="host" role="tab" aria-controls="${controls}" aria-selected="${active}"${active ? ' active' : ''}>${name}</ds-button>`;
-const tabs = (label: string, group: string, items: [string, string][]) => `<ds-tabs aria-label="${label}" data-switch="${group}">${items.map(([name, id], index) => tab(name, id, index === 0)).join('')}</ds-tabs>`;
+const tabs = (label: string, group: string, items: [string, string][]) => `<ds-tabs wrap aria-label="${label}" data-switch="${group}">${items.map(([name, id], index) => tab(name, id, index === 0)).join('')}</ds-tabs>`;
 const pane = (id: string, content: string, shown: boolean) => `<div class="nook-pane" id="${id}" role="tabpanel"${shown ? '' : ' hidden'}>${content}</div>`;
 const check = (words: string, done = false) => `<div class="nook-check"><ds-checkbox><input type="checkbox" aria-label="${words}"${done ? ' checked' : ''}></ds-checkbox>${type('body', words)}</div>`;
 const tableRow = (name: string, status: string, due: string) => `<div>${type('body', name)}${body(status)}${body(due)}</div>`;
