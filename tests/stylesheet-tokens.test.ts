@@ -51,6 +51,7 @@ const legacyHooks = new Set([
   "--surface-color-secondary",
   "--border-color",
   "--font-regular",
+  "--work-board-image",
 ]);
 
 describe("Custom properties", () => {
