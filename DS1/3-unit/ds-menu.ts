@@ -272,12 +272,31 @@ export class Menu extends LitElement {
   }
   private onTriggerClick = (event: MouseEvent) => {
     if (this.triggerMode === "context" || this.triggerMode === "manual" || event.defaultPrevented) return;
-    // A hover menu's trigger that is a link (`a href`, `ds-button href`) follows its link when pressed.
-    if (this.hover && this.trigger?.matches("a[href], ds-button[href]")) return;
+    // A hover menu's trigger that is a link (`a href`, `ds-button href`) follows its link when pressed,
+    // unless the link leads to the page already shown: then the press opens the menu instead, since the
+    // link would go nowhere and a finger has no hover to open it with (a modifier press stays the browser's).
+    if (this.hover && this.trigger?.matches("a[href], ds-button[href]")) {
+      if (!this.triggerLinksHere() || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+    }
     this.focusOnOpen = true;
     this.openingEdge = "first";
     this.toggleFromTrigger(this.triggerMode === "submenu" || !this.open);
   };
+  /** Whether the trigger's link leads to the page already shown: same origin, path and query, and no fragment. */
+  private triggerLinksHere(): boolean {
+    const href = this.trigger?.getAttribute("href");
+    const view = this.ownerDocument.defaultView;
+    if (!href || !view) return false;
+    try {
+      const url = new URL(href, this.ownerDocument.baseURI);
+      const here = view.location;
+      const path = (pathname: string) => pathname.replace(/\/+$/, "") || "/";
+      return !url.hash && url.origin === here.origin && path(url.pathname) === path(here.pathname) && url.search === here.search;
+    } catch {
+      return false;
+    }
+  }
   private onTriggerKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented || event.isComposing || event.altKey || event.metaKey || event.ctrlKey || (event.shiftKey && !(this.triggerMode === "context" && event.key === "F10")) || !this.trigger || !this.enabled(this.trigger)) return;
     if (this.triggerMode === "context" || this.triggerMode === "manual") return;

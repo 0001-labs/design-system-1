@@ -198,6 +198,31 @@ test("a hover menu leaves a button link's press to its link", async () => {
   menu.remove(); trigger.remove();
 });
 
+test("a hover menu's link to the page already shown opens the menu when pressed", async () => {
+  const trigger = document.createElement("a"), menu = document.createElement("ds-menu");
+  trigger.href = location.pathname + "elsewhere"; menu.hover = menu.floating = true; menu.trigger = menu.anchor = trigger;
+  menu.innerHTML = '<button role="menuitem">Settings</button>';
+  document.body.append(trigger, menu); await menu.updateComplete;
+  const request = vi.fn(); menu.addEventListener("ds-menu-toggle", request);
+  // A link to another page is followed.
+  const away = vi.fn((event: MouseEvent) => { expect(event.defaultPrevented).toBe(false); event.preventDefault(); });
+  trigger.addEventListener("click", away, {once: true});
+  trigger.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true})); await menu.updateComplete;
+  expect(away).toHaveBeenCalledOnce(); expect(request).not.toHaveBeenCalled(); expect(menu.open).toBe(false);
+  // A link to the page already shown opens the menu, and a modifier press stays the browser's.
+  trigger.href = location.pathname + location.search;
+  const browsers = vi.fn((event: MouseEvent) => { expect(event.defaultPrevented).toBe(false); event.preventDefault(); });
+  trigger.addEventListener("click", browsers, {once: true});
+  trigger.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, metaKey: true})); await menu.updateComplete;
+  expect(browsers).toHaveBeenCalledOnce(); expect(request).not.toHaveBeenCalled();
+  const press = new MouseEvent("click", {bubbles: true, cancelable: true}); trigger.dispatchEvent(press); await menu.updateComplete;
+  expect(press.defaultPrevented).toBe(true); expect(request).toHaveBeenCalledTimes(1); expect(menu.open).toBe(true);
+  expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  const again = new MouseEvent("click", {bubbles: true, cancelable: true}); trigger.dispatchEvent(again); await menu.updateComplete;
+  expect(again.defaultPrevented).toBe(true); expect(menu.open).toBe(false);
+  menu.remove(); trigger.remove();
+});
+
 test("rectangle anchors share viewport placement and return focus to the invoking control", async () => {
   const opener = document.createElement("button"), menu = document.createElement("ds-menu");
   document.body.append(opener); opener.focus();
