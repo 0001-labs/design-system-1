@@ -498,8 +498,6 @@ await step("Redirects", [
 if (PRODUCTION)
   await step("Hosts", [
     ["www goes to the apex with its path and query", async () => expectRedirect(await request("https://www.designsystem1.com/2-core/button/?from=blackbox"), 308, `${PUBLIC}/2-core/button/?from=blackbox`)],
-    ["dsone.dev, the former address, goes to the apex", async () => expectRedirect(await request("https://dsone.dev/2-core/button/"), 308, `${PUBLIC}/2-core/button/`)],
-    ["www.dsone.dev retains the path and query on the canonical host", async () => expectRedirect(await request("https://www.dsone.dev/2-core/button/?view=example"), 308, `${PUBLIC}/2-core/button/?view=example`)],
   ]);
 
 await step("Files", [

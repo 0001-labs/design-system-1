@@ -26,7 +26,7 @@ describe("single Worker deployment", () => {
     expect(config.vars).toEqual({ MAX_CSS_BYTES: "524288" });
     expect(JSON.stringify(config)).not.toContain("PUBLISH_SECRET");
   });
-  it("attaches the product hostnames and legacy domain", () => {
+  it("attaches the product hostnames", () => {
     expect(config.routes).toEqual([
       { pattern: "c9y.site/*", zone_name: "c9y.site" },
       { pattern: "editor.c9y.site/*", zone_name: "c9y.site" },
@@ -40,8 +40,6 @@ describe("single Worker deployment", () => {
       { pattern: "play.designsystem1.com", custom_domain: true },
       { pattern: "designsystem1.com", custom_domain: true },
       { pattern: "www.designsystem1.com", custom_domain: true },
-      { pattern: "dsone.dev/*", zone_name: "dsone.dev" },
-      { pattern: "www.dsone.dev/*", zone_name: "dsone.dev" },
     ]);
   });
 });
