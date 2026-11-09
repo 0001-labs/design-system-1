@@ -128,3 +128,5 @@ CLAUDE.md
 
 # Built from the canonical documentation examples.
 /packages/consistency/generated/
+
+/.npm-package/

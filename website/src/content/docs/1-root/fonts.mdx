@@ -9,11 +9,9 @@ import FontCatalog from '../../../components/FontCatalog.astro';
 
 ## Using the system fonts
 
-`fonts.css` (`DS1/1-root/fonts.css`) holds the faces and the typeface tokens that name them: GT America Standard Regular and Medium, GT America Compressed Regular, the GT Canon trial, Inter Arrows and Iosevka Extended. Inter Arrows is embedded in the stylesheet; the other faces load from `fonts/` beside it. `one.css` imports it, so a page that links `one.css` has them; a page that does not links `fonts.css` on its own. Neither loads anything from another host. Inter Arrows leads every typeface token and supplies the arrows.
+The npm package includes Inter Arrows and Iosevka Extended. It uses a system font for interface text. Import the package stylesheet to load the fonts and typography tokens.
 
-Use `--typeface-regular` for body text, `--typeface-medium` for emphasis, `--typeface-compressed` for narrow display text and `--typeface-mono` for code, which is Iosevka Extended with a system monospace after it. `--typeface-canon` uses the bundled trial face. The component tokens in `component-tokens.css` (`--ds-typeface-regular`, `--ds-typeface-medium`, `--ds-typeface-mono` and the rest) name the same families, so either set of tokens finds the faces `fonts.css` loads. Check the original foundry's licence before using a commercial or trial font in your own work.
-
-With Sync 1, `root` with `"styles": ["fonts.css"]` copies the sheet with its faces in `fonts/`; `fonts` with `"stylesheet": true` copies it beside the faces instead, pointed at them: every face, or the ones `"fonts"` names with Inter Arrows and Iosevka always among them. `one.css` always arrives with `fonts.css`.
+Use `--ds-typeface-regular` for body text, `--ds-typeface-medium` for headings and `--ds-typeface-mono` for code. You can set those tokens to use your own typeface. We plan to develop an original typeface for the system.
 
 ### Japanese and Chinese
 

@@ -12,6 +12,11 @@ try {
   for (const file of ['fonts.css', 'component-tokens.css', 'inter-arrows.css', 'fonts/Inter-Arrows.woff2', 'fonts/Inter-LICENSE.md']) {
     if (!files.includes(`package/DS1/1-root/${file}`)) throw new Error(`Missing public typography asset: ${file}`);
   }
+  if (files.some(file => /GT-(?:America|Canon).*\.(?:woff2?|ttf|otf)$/i.test(file))) {
+    throw new Error('Studio font file in the public package.');
+  }
+  const fonts = execFileSync('tar', ['-xOzf', archive, 'package/DS1/1-root/fonts.css'], { encoding: 'utf8' });
+  if (/url\([^)]*GT-(?:America|Canon)/i.test(fonts)) throw new Error('Studio font URL in the public stylesheet.');
   const internal = /(?:ds-(?:kbd|loading|spacing-handle)|\/react\/(?:kbd|loading|spacing-handle)\.|\/spacing-handle\.|\/kbd\.css|packages\/app|\/app\/src|\/website\/)/;
   const leaked = files.filter(file => internal.test(file) || /packages\/(consistency|visual-kit)|private-consistency|private-assets|bezel-imports/.test(file));
   if (files.some(file => file.endsWith('/one.semantic.css'))) throw new Error('Retired classless stylesheet in public package.');

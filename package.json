@@ -74,6 +74,7 @@
     "build:core": "vp run build:component -- DS1/2-core",
     "build:units": "vp run build:component -- DS1/3-unit",
     "build:component": "vp exec tsx scripts/build-component.ts",
+    "prepack": "node scripts/stage-public-package.mjs",
     "prepublishOnly": "vp run check:versions",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
@@ -184,5 +185,6 @@
   "engines": {
     "node": ">=22.12.0"
   },
+  "publishConfig": { "directory": ".npm-package" },
   "packageManager": "pnpm@11.7.0"
 }

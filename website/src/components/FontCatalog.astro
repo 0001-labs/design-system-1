@@ -3,9 +3,6 @@ import '../../../DS1/1-root/controls.css';
 import '../vendor/aa/aa.css';
 
 const systemFonts = [
-  { name: 'GT America Standard', detail: 'Regular and Medium · Interface and text', face: 'regular', sample: 'Words to work with.' },
-  { name: 'GT America Compressed', detail: 'Regular · Narrow display', face: 'compressed', sample: 'A little more room.' },
-  { name: 'GT Canon', detail: 'M Standard Medium Trial · Serif', face: 'canon', sample: 'A different point of view.' },
   { name: 'Iosevka Extended', detail: 'Regular · Monospaced code', face: 'mono', sample: 'const square = 20;' },
 ];
 ---
@@ -65,12 +62,11 @@ const systemFonts = [
 
   <section id="system-fonts" aria-labelledby="system-fonts-title">
     <h2 id="system-fonts-title">System fonts</h2>
-    <p>The existing typefaces remain the foundation for interfaces, reading and code.</p>
+    <p>The public package includes Iosevka Extended for code and Inter for arrows. We plan to develop our own interface typeface.</p>
     {systemFonts.map(font => (
       <div class="system-family">
         <div class="family-heading"><h3>{font.name}</h3><span>{font.detail}</span></div>
         <div class={`system-specimen face-${font.face}`} data-font-editor role="textbox" aria-label={`Try ${font.name}`} aria-multiline="true" spellcheck="false">{font.sample}</div>
-        {font.face === 'regular' && <div class="medium-sample" data-font-editor role="textbox" aria-label="Try GT America Standard Medium" aria-multiline="true" spellcheck="false">The same words, with a little emphasis.</div>}
       </div>
     ))}
   </section>
@@ -154,11 +150,7 @@ const systemFonts = [
   .pending { color: var(--ds1-docs-header-text-secondary); }
   .system-family { margin-top: calc(2 * var(--square)); }
   .system-specimen { font-size: calc(2 * var(--square)); line-height: calc(3 * var(--square)); overflow-wrap: anywhere; }
-  .face-regular { font-family: var(--typeface-regular); }
-  .face-compressed { font-family: var(--typeface-compressed); }
-  .face-canon { font-family: var(--typeface-canon); }
   .face-mono { font-family: var(--typeface-mono); }
-  .medium-sample { font-family: var(--typeface-medium); font-size: var(--type-size-default); line-height: var(--square); }
   .font-catalog [data-font-editor]:focus { outline: none; }
   .font-catalog :is(a, button):focus-visible { outline: 2px solid currentColor; outline-offset: calc(4px * var(--sf)); }
   @media (max-width: 50rem) {
