@@ -8,7 +8,7 @@ import { remoteConstraintPages, visitAll } from './constraint-pages';
 //   vp run constraints:phone https://example.com --widths 320,393 --pages /,/about/
 //   vp run constraints:phone https://example.com --theme dark
 //   vp run constraints:phone --dist website/dist
-//   vp run constraints:phone --dist website/dist --workers 1
+//   vp run constraints:phone --dist website/dist --workers 2
 //
 // `--dist` checks a built site before it is uploaded: the folder is served here, every page in its
 // sitemap is opened on this machine, and the full-page layout examples under /examples/layouts/,
@@ -40,7 +40,8 @@ if (!named && !dist) {
   process.exit(2);
 }
 const widths = option('widths')?.split(',').map(Number) ?? WIDTHS;
-const workers = Number(args.includes('--workers') ? option('workers') : 6);
+// Run one page at a time on the release machine to bound concurrent WebKit renderers.
+const workers = Number(args.includes('--workers') ? option('workers') : 1);
 if (!Number.isSafeInteger(workers) || workers < 1 || workers > 6) throw new Error('Use an integer from 1 to 6 for --workers.');
 
 const TYPES: Record<string, string> = {
