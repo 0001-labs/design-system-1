@@ -105,6 +105,28 @@ test('waits for startup appearance to settle before recording contrast', async (
   } finally { await page.close(); }
 });
 
+test('text under a fade in flight is not measured until the fade has ended', async () => {
+  // Black on white once the fades end; halfway through, grey on a pale fill, far under the minimum.
+  const page = await fixture(`<style>@keyframes arrive { from { opacity:.1 } to { opacity:1 } }
+    #enter { animation: arrive 600ms linear both } #turn { opacity:.1; transition: opacity 600ms linear } #turn.on { opacity:1 }
+    #stays { opacity:.2 } #late { animation: arrive 600ms linear both }</style>
+    <div id="enter"><p>Arriving words</p></div><div id="turn"><p>Turning words</p></div>
+    <div id="late"><p style="color:#ddd">Pale once arrived</p></div><div id="stays"><span>Faded for good</span></div>`);
+  try {
+    await page.evaluate(() => document.querySelector('#turn')!.classList.add('on'));
+    await start(page, { interval: 100 });
+    await page.waitForFunction(() => (window as any).reports.length >= 1);
+    // A group that stays faded is a state of the page and is reported at once; nothing in flight is.
+    expect((await reports(page)).map(f => f.code)).toEqual(['contrast.light.unregistered.span']);
+    // What still fails once its fade has ended is reported then, without another change to the page.
+    await page.waitForFunction(() => (window as any).reports.length >= 2);
+    await settle(page);
+    const found = await reports(page);
+    expect(found.map(f => f.code)).toEqual(['contrast.light.unregistered.span', 'contrast.light.unregistered.p']);
+    expect(found[1]!.message).toMatch(/^rgb\(221, 221, 221\) on rgb\(255, 255, 255\), 1\.3:1 \(p\) on \/lists$/);
+  } finally { await page.close(); }
+});
+
 test('a tight idle budget yields before measuring text late in the document', async () => {
   const page = await fixture(`<section>${'<p>Readable</p>'.repeat(800)}</section><p style="color:white">Faint</p>`);
   try {
