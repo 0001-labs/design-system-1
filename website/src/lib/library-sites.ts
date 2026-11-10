@@ -5,7 +5,7 @@ import { choices, choose, icon, library, photo, text } from './library-example-p
 // launch, a bike maker, a festival, a developer platform and a magazine, made of headers, banners,
 // big cards in a bento, strips and slides of carousels, and footers.
 
-const composition = `<style>
+export const composition = `<style>
 .site { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(4 * var(--ds-unit)); min-width:0; padding-block:calc(2 * var(--ds-unit)); }
 .site-section { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(2 * var(--ds-unit)); min-width:0; }
 .site-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--ds-unit); min-width:0; align-content:start; }

@@ -464,6 +464,15 @@ export const LIBRARIES = {
     // Buttons in the code face, as a studio sets its labels apart from its prose; every size, the outlined face too.
     componentRules: 'ds-button { --ds-typeface-regular: var(--ds-typeface-mono); --ds-typeface-medium: var(--ds-typeface-mono); }',
   },
+  birdie: {
+    name: 'Birdie', note: 'A bird guide: white paper and slate ink, ink buttons, Metal green bands and Yellow under the figures that count.',
+    paper: ['#ffffff', '#101413'], text: ['#1e1e1e', '#f1f5f3'], muted: ['#5f5f5f', '#b3bab7'],
+    fill: ['#eef2f0', '#1e2422'], hover: ['#e3e9e6', '#28302d'], border: ['#dde4e0', '#333c38'], input: ['#eef2f0', '#191e1c'],
+    accent: ['#1e1e1e', '#f1f5f3'], onAccent: ['#ffffff', '#1e1e1e'], focus: ['#594dff', '#ccccff'],
+    chart: ['#026d5b', '#04cfad'], chartInk: ['#ffffff', '#0b221d'],
+    band: ['#026d5b', '#0b3d34'], bandInk: ['#ffffff', '#e8fbf6'], highlight: ['#eaff00', '#eaff00'],
+    corner: '4px', inset: '5px', card: '4px',
+  },
 };
 
 // Button sizes beyond the one control high: medium two squares, large three. Each face stands on

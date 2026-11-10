@@ -7,6 +7,7 @@ import { ISSUE_TRACKER_EXAMPLE } from './issue-tracker-example';
 import { SETTINGS_EXAMPLE } from './settings-example';
 import { STUDIO_EXAMPLE } from './studio-example';
 import { NOOK_EXAMPLE } from './nook-example';
+import { BIRDIE_EXAMPLES } from './birdie-example';
 import { PRICING_EXAMPLE, PRICING_JAPANESE_EXAMPLE } from './pricing-example';
 // The standard page layouts, each filled with the core and unit components a
 // real page would hold. The preview and the copyable code share one source;
@@ -69,6 +70,7 @@ export const LAYOUT_EXAMPLES: Record<string, LayoutExample> = {
   pricing: PRICING_EXAMPLE,
   'pricing-ja': PRICING_JAPANESE_EXAMPLE,
   nook: NOOK_EXAMPLE,
+  ...BIRDIE_EXAMPLES,
   ...PRODUCT_EXAMPLES,
   ...LIBRARY_EXAMPLES,
   ...LIBRARY_SITES,

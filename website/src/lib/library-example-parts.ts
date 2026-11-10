@@ -14,6 +14,7 @@ export const LIBRARIES = {
   studio: { name: 'Studio', id: 'STUDIO_ID', version: 1 },
   atelier: { name: 'Atelier', id: 'pzjtr1r25rp4b8xv6991', version: 1 },
   nook: { name: 'Nook', id: 'NOOK_ID', version: 1 },
+  birdie: { name: 'Birdie', id: 'BIRDIE_ID', version: 1 },
   tally: { name: 'Tally', id: 'bbw9m8gdy3815th5cgvx', version: 2 },
 } as const;
 
