@@ -139,14 +139,7 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
   yield* visit(root as Node);
 }
 
-export type TextContrastResult = { element: Element; text: string; ratio?: number; reason?: string; foreground?: string; background?: string;
-  /** A fade is in flight on the text or a surface it is drawn on: the colours are between two states of the page. */
-  moving?: boolean };
-/** Opacity or a colour on its way between two values, by a transition or an animation. */
-function fading(e: Element): boolean {
-  return (e.getAnimations?.() ?? []).some(animation => animation.playState === 'running'
-    && ((animation.effect as KeyframeEffect | null)?.getKeyframes?.() ?? []).some(frame => 'opacity' in frame || 'color' in frame || 'backgroundColor' in frame));
-}
+export type TextContrastResult = { element: Element; text: string; ratio?: number; reason?: string; foreground?: string; background?: string };
 const rgbLabel = (c: RGBA) => `rgb(${c.slice(0, 3).map(v => Math.round(v * 255)).join(', ')})`;
 
 /** Yields between DOM nodes so passive callers can scan in short idle slices. */
@@ -163,9 +156,7 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
     if (!foreground) return { ...result, reason: 'The rendered text colour could not be resolved.' };
     const chain: CSSStyleDeclaration[] = [];
     if (pseudo) chain.push(inkStyle);
-    let moving = false;
-    for (let p: Element | null = paintElement; p; p = paintedParent(p)) { chain.push(style(p)); moving ||= fading(p); }
-    if (moving) result.moving = true;
+    for (let p: Element | null = paintElement; p; p = paintedParent(p)) chain.push(style(p));
     // Transparent text paints no glyphs. Keep text painted by shadows, outlines or clipped
     // backgrounds in the review path, and keep every nonzero alpha in normal measurement.
     if (Number(inkStyle.opacity) === 0) return;
