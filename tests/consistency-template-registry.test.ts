@@ -2,6 +2,7 @@
 import { expect, test } from 'vite-plus/test';
 import { reconcileTemplateRegistry, type TemplateRegistry } from '../scripts/consistency-template-registry';
 import registry from '../shared/consistency-template-pages.json';
+import type { NativeComponents } from '../shared/consistency-components';
 import { renderNativePage, validateNativePage } from '../shared/consistency-native-page';
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, symlinkSync, rmSync } from 'node:fs';
 import exportsConfig from '../sync.exports.mjs';
@@ -65,9 +66,9 @@ test('old saved documents still validate and render after refreshed definitions 
   const old = previous.blank.document;
   const next = reconcileTemplateRegistry(previous, candidate, true);
   for (const [id, entry] of Object.entries(previous)) for (const [pin, definition] of Object.entries(entry.components)) expect(JSON.stringify(next[id].components[pin])).toBe(JSON.stringify(definition));
-  const context = (components: any) => ({ images: [], collections: [], runtimes: {}, components });
+  const context = (components: Record<string, unknown>) => ({ images: [], collections: [], runtimes: {}, components: components as NativeComponents });
   const validated = validateNativePage(old, context(next.blank.components));
-  expect(renderNativePage(validated, context(next.blank.components))).toBe(renderNativePage(validateNativePage(old, context(previous.blank.components)), context(previous.blank.components)));
+  expect(renderNativePage(validated, { components: context(next.blank.components).components })).toBe(renderNativePage(validateNativePage(old, context(previous.blank.components)), { components: context(previous.blank.components).components }));
 });
 test('default generator checks a fresh registry without writing it and fails clearly when stale or missing', () => {
   const scratch = mkdtempSync(join(tmpdir(), 'template-registry-'));

@@ -6,6 +6,9 @@
 //
 //   node scripts/example-libraries.mjs website/public/examples/libraries
 //
+// Nook is hand-authored in website/public/examples/libraries/nook.css and is intentionally
+// outside LIBRARIES; its single-mode bands and type rules are maintained there.
+//
 // Every colour is a palette colour, its pastel, its dark version, or a tint of the paper's own hue
 // for fills and lines, except in a library that stands for a brand of its own (Voyage), as a
 // client's library does. A library with a band (a coloured strip behind a header) also declares
