@@ -27,6 +27,12 @@ import { devices, webkit, type Response } from 'playwright';
 /** Representative phone, tablet and desktop widths; --widths adds breakpoint boundaries. */
 const WIDTHS = [320, 375, 393, 430, 768, 1024, 1440];
 
+/** Paused on 10 Nov 2026: the sweep opens every page at every width in WebKit and takes the Mac's sound and memory with it. Only Joachim switches it back on. */
+if (process.env.DS1_BROWSER_CONSTRAINTS !== '1') {
+  console.log('Browser constraints sweep is paused on this Mac. Set DS1_BROWSER_CONSTRAINTS=1 only when Joachim asks for a run.');
+  process.exit(0);
+}
+
 const args = process.argv.slice(2);
 const option = (name: string) => {
   const at = args.indexOf(`--${name}`);
