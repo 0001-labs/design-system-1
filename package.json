@@ -101,7 +101,7 @@
     "system:deploy": "sync1 guard && vp run system:package && node scripts/system-site-browser.mjs && cd services && vp exec wrangler deploy --config ../wrangler.system.jsonc",
     "system:examples": "vp exec tsx scripts/system-examples.ts",
     "site:build": "vp run docs:build && vp run app:build && vp run app-controls:build && vp run consistency:build && vp run c9y-system:build && vp run visual-kit:build && vp run system:examples",
-    "site:deploy": "sync1 guard && vp run site:build && vp run constraints:site && cd services && vp exec wrangler deploy --config ../wrangler.jsonc",
+    "site:deploy": "sync1 guard && vp run site:build && cd services && vp exec wrangler deploy --config ../wrangler.jsonc",
     "deploy": "vp run site:deploy",
     "check:versions": "node scripts/versions.mjs",
     "release": "node scripts/release.mjs",
