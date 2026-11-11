@@ -320,7 +320,7 @@ test.describe("cancelling a drag commits nothing and leaves nothing behind", () 
 
   test("another component opening, as the documentation's sidebar asks", async ({ page }) => {
     await held(page);
-    await page.evaluate(async () => { const { navigate } = await import("/app/src/router.ts"); navigate("/base?component=tag"); });
+    await page.evaluate(async () => { const { navigate } = await import(["", "app", "src", "router.ts"].join("/")) as { navigate(to: string): void }; navigate("/base?component=tag"); });
     await expect(page.locator(".component-editor-inspector h2")).toHaveText("Tag");
     await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("");
     await expect.poll(() => settled(page)).toEqual(clean);
@@ -384,7 +384,7 @@ test.describe("under a finger", () => {
   /** Real touches through the browser's input, which it turns into pointer events and scrolling. */
   const finger = async (page: Page, from: { x: number; y: number }, dx: number, dy: number) => {
     const cdp = await page.context().newCDPSession(page);
-    const touch = (type: string, x: number, y: number) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", x: number, y: number) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
     await touch("touchStart", from.x, from.y);
     for (let step = 1; step <= 8; step++) await touch("touchMove", from.x + dx * step / 8, from.y + dy * step / 8);
     await touch("touchEnd", 0, 0);
@@ -467,7 +467,7 @@ test("at 390px the readouts beside a face that fills the canvas move above it wh
   };
   // The input fills by default (the sidebar is a drawer at this width, so it opens by its address).
   await open(page);
-  await page.evaluate(async () => { const { navigate } = await import("/app/src/router.ts"); navigate("/base?component=input"); });
+  await page.evaluate(async () => { const { navigate } = await import(["", "app", "src", "router.ts"].join("/")) as { navigate(to: string): void }; navigate("/base?component=input"); });
   await expect(page.locator(".component-editor-inspector h2")).toHaveText("Input");
   await expect(page.getByTestId("handle-height")).toBeVisible();
   await press(page, "handle-height", 0, SQUARE + 2);
