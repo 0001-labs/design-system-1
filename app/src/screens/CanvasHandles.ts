@@ -75,7 +75,12 @@ export class CanvasHandles extends AppElement {
     this.#pointer = { x: event.clientX, y: event.clientY, shift: event.shiftKey };
     if (event.altKey || this.measuring) this.#measure(event.altKey);
   };
-  #key = (event: KeyboardEvent) => { if (event.key === "Alt") { if (event.type === "keydown") event.preventDefault(); this.#measure(event.type === "keydown"); } };
+  #key = (event: KeyboardEvent) => {
+    if (event.key !== "Alt") return;
+    this.#measure(event.type === "keydown");
+    // Alt is only the measure's while it shows one; elsewhere it keeps its own meaning.
+    if (this.measuring) event.preventDefault();
+  };
   #leave = () => { this.measuring = false; };
 
   /** Alt over the selected component, a square around it included, shows the measure. */
@@ -95,9 +100,10 @@ export class CanvasHandles extends AppElement {
     for (const [element, unbind] of this.#unbind) if (!element.isConnected) { unbind(); this.#unbind.delete(element); }
     for (const element of this.querySelectorAll<HTMLElement>(".component-editor-handle")) {
       if (this.#unbind.has(element)) continue;
-      const handle = () => this.#handles.find(candidate => candidate.kind === element.dataset.handle)!;
+      // This element's handle for its life: the element set is drawn anew for another component.
+      const current = this.#handles.find(candidate => candidate.kind === element.dataset.handle);
+      if (!current) continue;
       this.#unbind.set(element, bindSpacingHandle(element, () => {
-        const current = handle();
         const slider = this.#slider(current);
         return {
           ...slider, threshold: 3, immediateKeyboard: true,
@@ -117,6 +123,16 @@ export class CanvasHandles extends AppElement {
         };
       }));
     }
+    this.#placeReadouts();
+  }
+
+  /** Beside the foot when the canvas has room for it there, otherwise above the face at its end, so the number is never cut off. */
+  #placeReadouts() {
+    const side = this.querySelector<HTMLElement>(".component-editor-readouts[data-group='side']");
+    const canvas = this.closest(".component-editor-canvas") ?? this.parentElement;
+    if (!side || !canvas) return;
+    side.removeAttribute("data-flip");
+    side.toggleAttribute("data-flip", side.getBoundingClientRect().right > canvas.getBoundingClientRect().right);
   }
 
   #focus(kind: HandleKind, event: FocusEvent) {
@@ -154,7 +170,7 @@ export class CanvasHandles extends AppElement {
       ${(["side", "below"] as const).map(group => {
         const items = shown.filter(handle => readoutGroup(handle.kind) === group);
         return items.length ? html`<span class="component-editor-readouts" data-group=${group} aria-hidden="true"
-          style=${styleMap({ left: `${places[group].left}px`, top: `${places[group].top}px`, minWidth: `${places[group].width}px` })}>
+          style=${styleMap({ "--x": `${places[group].left}px`, "--y": `${places[group].top}px`, minWidth: `${places[group].width}px` })}>
           ${items.map(handle => html`<span class="component-editor-readout" data-readout=${handle.kind}>${readout(handle, this.#slider(handle).value)}</span>`)}
         </span>` : nothing;
       })}

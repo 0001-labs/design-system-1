@@ -29,6 +29,7 @@ const press = async (page: Page, testId: string, dx: number, dy: number) => {
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + dx, y + dy, { steps: 6 });
+  return { x, y };
 };
 /** Moves the pointer over a face: the states' bodies are inert, so the pointer is over the state itself. */
 const hover = async (page: Page, locator: Locator) => {
@@ -278,4 +279,234 @@ test("the checkbox's box takes its corner and its size from the far corner", asy
   await expect.poll(() => canvasToken(page, "--ds-checkbox-size")).toBe("20px");
   await page.mouse.up();
   await expect.poll(async () => (await page.getByTestId("canvas-handles").boundingBox())!.width).toBe(20);
+});
+
+/** The editor's state a cancelled drag must leave clean: no preview, no active handle, nothing captured. */
+const settled = (page: Page) => page.evaluate(() => {
+  const editor = document.querySelector("ds1-component-editor") as HTMLElement & { preview: unknown } | null;
+  const handles = [...document.querySelectorAll<HTMLElement>(".component-editor-handle")];
+  return { preview: editor?.preview ?? null, active: document.querySelector("[data-testid=canvas-handles]")?.hasAttribute("data-active") ?? false, captured: handles.some(handle => handle.hasPointerCapture(1)) };
+});
+const clean = { preview: null, active: false, captured: false };
+
+test.describe("cancelling a drag commits nothing and leaves nothing behind", () => {
+  const held = async (page: Page) => {
+    await open(page);
+    await press(page, "handle-height", 0, SQUARE + 2);
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("36px");
+  };
+  const nothingSaved = async (page: Page) => {
+    await page.mouse.up();
+    await page.waitForTimeout(PAUSE);
+    expect(await saves(page)).toHaveLength(0);
+    expect(await canvasToken(page, "--ds-button-size")).toBe("");
+  };
+
+  test("pointercancel", async ({ page }) => {
+    await held(page);
+    await page.evaluate(() => window.dispatchEvent(new PointerEvent("pointercancel", { pointerId: 1, isPrimary: true })));
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("");
+    expect(await settled(page)).toEqual(clean);
+    await nothingSaved(page);
+  });
+
+  test("the window losing focus", async ({ page }) => {
+    await held(page);
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("");
+    expect(await settled(page)).toEqual(clean);
+    await nothingSaved(page);
+  });
+
+  test("another component opening, as the documentation's sidebar asks", async ({ page }) => {
+    await held(page);
+    await page.evaluate(async () => { const { navigate } = await import("/app/src/router.ts"); navigate("/base?component=tag"); });
+    await expect(page.locator(".component-editor-inspector h2")).toHaveText("Tag");
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("");
+    await expect.poll(() => settled(page)).toEqual(clean);
+    // The held pointer moves on and lets go without touching the new component.
+    await page.mouse.move(400, 500, { steps: 3 });
+    await nothingSaved(page);
+    expect(await canvasToken(page, "--ds-tag-size")).toBe("");
+  });
+
+  test("another state being selected from the keyboard", async ({ page }) => {
+    await open(page);
+    await page.locator(".component-editor-specimen").first().focus();
+    await press(page, "handle-height", 0, SQUARE + 2);
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("36px");
+    await page.keyboard.press("ArrowDown");
+    await expect(page.locator(".component-editor-specimen").nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("");
+    await expect.poll(() => settled(page)).toEqual(clean);
+    await nothingSaved(page);
+  });
+
+  test("the editor leaving the page", async ({ page }) => {
+    await held(page);
+    const handle = await page.getByTestId("handle-height").elementHandle();
+    await page.evaluate(() => document.querySelector("ds1-component-editor")!.remove());
+    expect(await handle!.evaluate(element => element.hasPointerCapture(1))).toBe(false);
+    await page.mouse.move(400, 500, { steps: 3 });
+    await page.mouse.up();
+    await page.waitForTimeout(PAUSE);
+    expect(await saves(page)).toHaveLength(0);
+  });
+});
+
+test("at a property's limits the handle stays, the readout says the limit, and an unchanged value saves nothing", async ({ page }) => {
+  await open(page, "?saved=%20%20--ds-button-size%3A%2056px%3B");
+  await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("56px");
+  await press(page, "handle-height", 0, 3 * SQUARE);
+  expect(await readouts(page)).toEqual(["H 56"]);
+  await expect(page.getByTestId("handle-height")).toBeVisible();
+  await page.mouse.up();
+  // At the minimum the padding's band is gone but its handle still takes the pointer.
+  await press(page, "handle-padding-start", -30, 0);
+  await expect.poll(() => canvasToken(page, "--ds-button-padding-size")).toBe("0px");
+  expect(await readouts(page)).toEqual(["P 0"]);
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await expect(page.getByTestId("handle-padding-start")).toBeVisible();
+  // A drag that comes back to where it started.
+  const start = await press(page, "handle-height", 0, -SQUARE - 2);
+  await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("36px");
+  await page.mouse.move(start.x, start.y, { steps: 4 });
+  await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("56px");
+  await page.mouse.up();
+  await page.waitForTimeout(PAUSE);
+  expect(await saves(page)).toHaveLength(0);
+  expect(await settled(page)).toEqual(clean);
+});
+
+test.describe("under a finger", () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 360 } });
+  /** Real touches through the browser's input, which it turns into pointer events and scrolling. */
+  const finger = async (page: Page, from: { x: number; y: number }, dx: number, dy: number) => {
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, x: number, y: number) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
+    await touch("touchStart", from.x, from.y);
+    for (let step = 1; step <= 8; step++) await touch("touchMove", from.x + dx * step / 8, from.y + dy * step / 8);
+    await touch("touchEnd", 0, 0);
+    await cdp.detach();
+  };
+  const scrolled = (page: Page) => page.evaluate(() => document.scrollingElement!.scrollTop + document.querySelector(".component-editor-stage")!.scrollTop);
+
+  test("an edge and a padding band drag without scrolling; off a handle the finger scrolls", async ({ page }) => {
+    await open(page);
+    expect(await page.getByTestId("handle-height").evaluate(element => getComputedStyle(element).touchAction)).toBe("none");
+    await finger(page, await centre(page, "handle-height"), 0, SQUARE + 2);
+    await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("36px");
+    expect(await scrolled(page)).toBe(0);
+    await finger(page, await centre(page, "handle-padding-start"), 5, 0);
+    await expect.poll(() => canvasToken(page, "--ds-button-padding-size")).toBe("8px");
+    expect(await scrolled(page)).toBe(0);
+    await expect.poll(() => saves(page), { timeout: 5000 }).toHaveLength(1);
+    expect((await saves(page))[0]!.css).toContain("--ds-button-size: 36px;");
+    expect((await saves(page))[0]!.css).toContain("--ds-button-padding-size: 8px;");
+    const lower = (await page.locator(".component-editor-specimen").nth(2).boundingBox())!;
+    await finger(page, { x: lower.x + lower.width - 10, y: lower.y + 30 }, 0, -120);
+    await expect.poll(() => scrolled(page)).toBeGreaterThan(0);
+    expect(await settled(page)).toEqual(clean);
+  });
+});
+
+test.describe("inside the documentation's frame", () => {
+  const frameOf = async (page: Page) => {
+    await page.goto("/e2e/fixtures/component-editor-frame.html");
+    const frame = page.frames().find(candidate => candidate.url().includes("component-editor.html"))!;
+    await frame.waitForFunction(() => (window as unknown as { ready?: Promise<unknown> }).ready);
+    await expect(page.frameLocator("iframe").getByTestId("handle-height")).toBeVisible();
+    return frame;
+  };
+  const token = (frame: import("@playwright/test").Frame, name: string) => frame.evaluate(name => document.querySelector<HTMLElement>("[data-testid=component-canvas]")!.style.getPropertyValue(name), name);
+  const frameSaves = (frame: import("@playwright/test").Frame) => frame.evaluate(() => (window as unknown as { saves: { css: string }[] }).saves);
+
+  test("height and padding drag in the frame, and a drag let go outside it commits cleanly", async ({ page }) => {
+    const frame = await frameOf(page);
+    const handles = page.frameLocator("iframe");
+    const at = async (testId: string) => { const box = (await handles.getByTestId(testId).boundingBox())!; return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; };
+    let from = await at("handle-padding-start");
+    await page.mouse.move(from.x, from.y); await page.mouse.down();
+    await page.mouse.move(from.x + 5, from.y, { steps: 6 });
+    await expect.poll(() => token(frame, "--ds-button-padding-size")).toBe("8px");
+    await page.mouse.up();
+    // The height, pulled down past the frame's foot and let go on the page around it.
+    from = await at("handle-height");
+    await page.mouse.move(from.x, from.y); await page.mouse.down();
+    await page.mouse.move(from.x, from.y + SQUARE + 2, { steps: 4 });
+    await expect.poll(() => token(frame, "--ds-button-size")).toBe("36px");
+    await page.mouse.move(from.x + 700, 780, { steps: 6 });
+    await expect.poll(() => token(frame, "--ds-button-size")).toBe("56px");
+    await page.mouse.up();
+    await expect.poll(() => frame.evaluate(() => (document.querySelector("ds1-component-editor") as HTMLElement & { draft: { value(token: string): string | undefined } }).draft.value("--ds-button-size"))).toBe("56px");
+    expect(await settled(frame as unknown as Page)).toEqual(clean);
+    await expect.poll(() => frameSaves(frame), { timeout: 5000 }).toHaveLength(1);
+    expect((await frameSaves(frame))[0]!.css).toContain("--ds-button-size: 56px;");
+    expect((await frameSaves(frame))[0]!.css).toContain("--ds-button-padding-size: 8px;");
+    // A drag cancelled outside the frame leaves nothing either.
+    from = await at("handle-height");
+    await page.mouse.move(from.x, from.y); await page.mouse.down();
+    await page.mouse.move(from.x + 700, 20, { steps: 6 });
+    await expect.poll(() => token(frame, "--ds-button-size")).toBe("");
+    await frame.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await expect.poll(() => token(frame, "--ds-button-size")).toBe("56px");
+    await page.mouse.up();
+    expect(await settled(frame as unknown as Page)).toEqual(clean);
+  });
+});
+
+test("at 390px the readouts beside a face that fills the canvas move above it when they would be cut", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  const inside = async () => {
+    const canvas = (await page.getByTestId("component-canvas").boundingBox())!;
+    for (const box of await page.locator(".component-editor-readout").evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON() as DOMRect))) {
+      expect(box.left).toBeGreaterThanOrEqual(canvas.x);
+      expect(box.right).toBeLessThanOrEqual(canvas.x + canvas.width);
+    }
+  };
+  // The input fills by default (the sidebar is a drawer at this width, so it opens by its address).
+  await open(page);
+  await page.evaluate(async () => { const { navigate } = await import("/app/src/router.ts"); navigate("/base?component=input"); });
+  await expect(page.locator(".component-editor-inspector h2")).toHaveText("Input");
+  await expect(page.getByTestId("handle-height")).toBeVisible();
+  await press(page, "handle-height", 0, SQUARE + 2);
+  expect(await readouts(page)).toEqual(["H 36"]);
+  await inside();
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await hover(page, page.locator(".component-editor-specimen[aria-selected='true'] .component-editor-specimen-body > *"));
+  await page.keyboard.down("Alt");
+  expect(await readouts(page)).toEqual(["H 16", "R 4", "P 4", "W 16 sq"]);
+  // Height and corner together have no room beside the face's foot.
+  await expect(page.locator(".component-editor-readouts[data-group='side']")).toHaveAttribute("data-flip");
+  await inside();
+  await page.keyboard.up("Alt");
+  // The button set to fill.
+  await open(page);
+  await page.locator('ds-tabs[data-token="--ds-button-inline-size"] ds-button').filter({ hasText: "Fill" }).evaluate(element => (element as HTMLElement).click());
+  await press(page, "handle-height", 0, SQUARE + 2);
+  expect(await readouts(page)).toEqual(["H 36"]);
+  await inside();
+  await page.mouse.up();
+});
+
+test("at another scale the deltas, snapping and handles follow it", async ({ page }) => {
+  await open(page, "?sf=1.25");
+  const sf = 1.25;
+  await expect.poll(async () => (await page.getByTestId("canvas-handles").boundingBox())!.height).toBe(16 * sf);
+  await expect.poll(async () => page.getByTestId("canvas-handles").evaluate(element => { const r = element.getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round); })).toEqual(await face(page));
+  await press(page, "handle-height", 0, SQUARE * sf + 2);
+  await expect.poll(() => canvasToken(page, "--ds-button-size")).toBe("36px");
+  await page.mouse.up();
+  await expect.poll(async () => (await page.getByTestId("canvas-handles").boundingBox())!.height).toBe(36 * sf);
+  await press(page, "handle-padding-start", 5 * sf, 0);
+  await expect.poll(() => canvasToken(page, "--ds-button-padding-size")).toBe("8px");
+  await page.mouse.up();
+  await expect.poll(() => page.locator(".component-editor-band").first().evaluate(element => element.getBoundingClientRect().width)).toBe(8 * sf);
+  await press(page, "handle-width", SQUARE * sf + 2, 0);
+  await expect.poll(() => canvasToken(page, "--ds-button-inline-size")).toMatch(/^calc\(\d+ \* var\(--ds-unit, 20px\)\)$/);
+  const squares = Number(/\d+/.exec(await canvasToken(page, "--ds-button-inline-size"))![0]);
+  await page.mouse.up();
+  await expect.poll(async () => Math.round((await page.getByTestId("canvas-handles").boundingBox())!.width)).toBe(squares * SQUARE * sf);
 });

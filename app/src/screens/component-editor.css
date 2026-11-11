@@ -131,12 +131,16 @@
 /* Plain numbers in a soft highlight, beside the face's foot or on the size line's row. */
 .component-editor-readouts {
   position: absolute;
+  left: var(--x);
+  top: var(--y);
   display: flex;
   width: max-content;
   gap: calc(4px * var(--ds-sf, 1));
   pointer-events: none;
 }
 .component-editor-readouts[data-group="below"] { justify-content: space-between; }
+/* Beside a face that reaches the canvas's edge there is no room: above it, at its end. */
+.component-editor-readouts[data-group="side"][data-flip] { left: auto; right: 0; top: calc(-18px * var(--ds-sf, 1)); }
 .component-editor-readout {
   height: var(--editor-line);
   padding: 0 calc(4px * var(--ds-sf, 1));

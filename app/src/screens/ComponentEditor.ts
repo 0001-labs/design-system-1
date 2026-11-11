@@ -1,5 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { keyed } from "lit/directives/keyed.js";
 import { live } from "lit/directives/live.js";
 import { styleMap } from "lit/directives/style-map.js";
 import "../../../DS1/2-core/ds-button";
@@ -88,6 +89,7 @@ export class ComponentEditor extends AppElement {
   declare preview: HandleChange | null;
   readonly draft = new BaseDraft(this);
   #component = "";
+  #handlesFor = "";
   #cssId = accordionId();
   #observer: ResizeObserver | null = null;
   #frame = 0;
@@ -118,6 +120,10 @@ export class ComponentEditor extends AppElement {
     // A newly opened component starts on its first state.
     const id = componentSpec(currentLocation.get().search.get("component")).id;
     if (id !== this.#component) { this.#component = id; this.selected = 0; }
+    // Another component or state ends a drag on the last one: its handles are drawn anew (keyed in
+    // #canvas, so the old ones cancel as they disconnect) and its preview goes.
+    const handlesFor = `${id}:${this.selected}`;
+    if (handlesFor !== this.#handlesFor) { this.#handlesFor = handlesFor; this.preview = null; }
   }
 
   override updated() {
@@ -137,7 +143,9 @@ export class ComponentEditor extends AppElement {
     const element = canvas?.querySelector<HTMLElement>(".component-editor-specimen[aria-selected='true'] .component-editor-specimen-body > *");
     if (!canvas || !element) { if (this.measure) this.measure = null; return; }
     const face = this.#spec.face;
-    const target = (face && element.querySelector<HTMLElement>(face)) || element;
+    // A face the component does not draw shows no handles rather than handles on the wrong box.
+    const target = face ? element.querySelector<HTMLElement>(face) : element;
+    if (!target) { if (this.measure) this.measure = null; return; }
     const outer = canvas.getBoundingClientRect();
     const box = target.getBoundingClientRect();
     const sf = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--ds-sf")) || 1;
@@ -207,11 +215,17 @@ export class ComponentEditor extends AppElement {
           ${index === selected && measure ? html`<span class="component-editor-size" data-testid="component-size">${measure.width} × ${measure.height}</span>` : nothing}
         </div>`)}
       </div>
-      ${measure ? html`<ds1-canvas-handles .spec=${spec} .box=${measure}
+      ${measure ? keyed(`${spec.id}:${selected}`, html`<ds1-canvas-handles .spec=${spec} .box=${measure}
         .values=${Object.fromEntries(spec.properties.map(property => [property.token, this.#written(property.token)]))}
-        @handle-preview=${(event: CustomEvent<HandleChange | null>) => { this.preview = event.detail; }}
-        @handle-commit=${(event: CustomEvent<HandleChange>) => this.#commit(spec, event.detail)}></ds1-canvas-handles>` : nothing}
+        @handle-preview=${(event: CustomEvent<HandleChange | null>) => this.#preview(spec, event.detail)}
+        @handle-commit=${(event: CustomEvent<HandleChange>) => this.#commit(spec, event.detail)}></ds1-canvas-handles>`) : nothing}
     </div>`;
+  }
+
+  /** A drag's preview, only while its component is the one open (a cancelled drag's last word may come after). */
+  #preview(spec: ComponentSpec, change: HandleChange | null) {
+    if (change && spec.id !== this.#component) return;
+    this.preview = change;
   }
 
   /** A handle's release, through the same path as the inspector's fields. */
