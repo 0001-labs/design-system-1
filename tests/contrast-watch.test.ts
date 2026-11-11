@@ -108,13 +108,14 @@ test('waits for startup appearance to settle before recording contrast', async (
 test('text under a fade in flight is not measured until the fade has ended', async () => {
   // Black on white once the fades end; halfway through, grey on a pale fill, far under the minimum.
   const page = await fixture(`<style>@keyframes arrive { from { opacity:.1 } to { opacity:1 } }
-    #enter { animation: arrive 600ms linear both } #turn { opacity:.1; transition: opacity 600ms linear } #turn.on { opacity:1 }
-    #stays { opacity:.2 } #late { animation: arrive 600ms linear both }</style>
+    #enter { animation: arrive 1200ms linear both } #turn { opacity:.1; transition: opacity 1200ms linear } #turn.on { opacity:1 }
+    #stays { opacity:.2 } #late { animation: arrive 1200ms linear both }</style>
     <div id="enter"><p>Arriving words</p></div><div id="turn"><p>Turning words</p></div>
     <div id="late"><p style="color:#ddd">Pale once arrived</p></div><div id="stays"><span>Faded for good</span></div>`);
   try {
     await page.evaluate(() => document.querySelector('#turn')!.classList.add('on'));
-    await start(page, { interval: 100 });
+    // The watch measures a fading page three more times, an interval apart: those must outlast the fades.
+    await start(page, { interval: 450 });
     await page.waitForFunction(() => (window as any).reports.length >= 1);
     // A group that stays faded is a state of the page and is reported at once; nothing in flight is.
     expect((await reports(page)).map(f => f.code)).toEqual(['contrast.light.unregistered.span']);

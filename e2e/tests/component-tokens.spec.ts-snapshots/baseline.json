@@ -187,7 +187,7 @@
   "input-default.face.padding": "0px 2px 0px 2px",
   "input-default.face.radius": "4px 4px",
   "input-default.face.background": "rgb(232, 232, 232)",
-  "input-default.face.color": "rgb(121, 121, 121)",
+  "input-default.face.color": "rgb(42, 42, 42)",
   "input-default.face.font": "14px/16px",
   "checkbox-off.host.width": "20",
   "checkbox-off.host.height": "20",

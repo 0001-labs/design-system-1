@@ -32,7 +32,18 @@ function run(path: string) {
   });
 }
 
-test('HTTP error pages fail availability, preserve evidence, and never run layout rules', async () => {
+// The sweep is paused (see scripts/constraints-phone.ts): these open WebKit, so they run only when it is switched on.
+const sweep = process.env.DS1_BROWSER_CONSTRAINTS === '1';
+
+test.skipIf(sweep)('while the sweep is paused the script measures nothing and says so', async () => {
+  const result = await run('/ready');
+  expect(result.code).toBe(0);
+  expect(result.output).toContain('Browser constraints sweep is paused');
+  expect(result.output).not.toContain('measured.');
+  expect(await readdir(artifacts)).toEqual([]);
+}, 60_000);
+
+test.runIf(sweep)('HTTP error pages fail availability, preserve evidence, and never run layout rules', async () => {
   const result = await run('/unavailable');
   expect(result.code).toBe(1);
   expect(result.output).toContain('Document returned HTTP 503');
@@ -44,7 +55,7 @@ test('HTTP error pages fail availability, preserve evidence, and never run layou
   expect(names.some(name => name.endsWith('.png'))).toBe(true);
 }, 60_000);
 
-test('a successful document still runs the normal constraint measurement', async () => {
+test.runIf(sweep)('a successful document still runs the normal constraint measurement', async () => {
   const result = await run('/ready');
   expect(result.output).toContain('measured.');
   expect(result.output).not.toContain('navigation failed');

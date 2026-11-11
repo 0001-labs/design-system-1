@@ -9,6 +9,7 @@ import { expect, test, type Page } from "@playwright/test";
  *
  * The baseline in `component-tokens.spec.ts-snapshots/baseline.json` was written before the
  * tokens existed (`--update-snapshots`), from the markup of the components' documentation pages.
+ * One measure changed on purpose since: the default input's ink became whole, for its contrast.
  */
 
 type Measures = Record<string, string>;
@@ -71,6 +72,9 @@ async function withToken(page: Page, name: string, value: string) {
 }
 
 const changed = (before: Measures, after: Measures) => Object.keys({ ...before, ...after }).filter(key => before[key] !== after[key]);
+
+// Measures, not motion: without the thumb's transition a browser drawing few frames (a closed lid) reads the same values.
+test.use({ contextOptions: { reducedMotion: "reduce" } });
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/e2e/fixtures/component-tokens.html");

@@ -89,7 +89,8 @@ test('default generator checks a fresh registry without writing it and fails cle
     expect(JSON.parse(readFileSync(file, 'utf8')).blank.label).toBe('Blank site');
     rmSync(file); const missing = run(); expect(missing.status).not.toBe(0); expect(missing.stderr).toContain('Restore shared/consistency-template-pages.json from Git');
   } finally { rmSync(scratch, { recursive: true, force: true }); }
-}, 20_000);
+// Four runs of the generator, each its own process: beside the whole suite they have taken over 20 seconds.
+}, 60_000);
 
 
 test('fresh-checkout native exports carry the committed registry byte-for-byte', async () => {
