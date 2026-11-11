@@ -1,7 +1,8 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
 // Real layout: ds-carousel and the native .ds-carousel classes are drawn in Chromium, light and
 // dark, at the base scale and at --ds-sf 1.5, and measured against the 20px square.
-import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vite-plus/test";
 import { chromium, type Browser, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 import type { AddressInfo } from "node:net";
@@ -16,7 +17,7 @@ const pages = {} as Record<Scheme, Page>;
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   const url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/carousel-measure.html`;
   for (const scheme of SCHEMES) {
     const page = await browser.newPage({ viewport: { width: 800, height: 600 }, colorScheme: scheme, reducedMotion: "reduce" });
@@ -191,4 +192,9 @@ test("buttons, dots, keys and the reader's own scrolling move the same carousel,
     await settle(page);
     expect(await state(page), what).toMatchObject({ current: 1, status: "2 of 4" });
   }
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });

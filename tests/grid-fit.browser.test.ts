@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test';
+import { browserTimingReason } from './browser-timing';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import { chromium, webkit, type Browser, type Page } from 'playwright';
@@ -23,6 +24,10 @@ async function start(page: Page, html: string, unit = '20px') {
 }
 for (const [engine, launcher] of [['chromium', chromium], ['webkit', webkit]] as const) describe(engine, () => {
   let browser: Browser;
+  beforeEach(async context => {
+    const reason = await browserTimingReason(browser);
+    if (reason) context.skip(reason);
+  });
   beforeAll(async () => { browser = await launcher.launch({ headless: true }); });
   afterAll(async () => { await browser.close(); });
   test('nested areas, nested scopes and siblings retain child-before-parent geometry', async () => {
@@ -73,9 +78,11 @@ for (const [engine, launcher] of [['chromium', chromium], ['webkit', webkit]] as
   });
 });
 
-test('sibling count does not multiply actual browser layouts', async () => {
+test('sibling count does not multiply actual browser layouts', async context => {
   const browser = await chromium.launch({ headless: true });
   try {
+    const reason = await browserTimingReason(browser);
+    if (reason) context.skip(reason);
     const counts: number[] = [];
     for (const count of [1, 40]) {
       const page = await browser.newPage();

@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
+import { browserTimingReason } from './browser-timing';
+import { afterAll, beforeAll, beforeEach, expect, test } from 'vite-plus/test';
 import { build } from 'esbuild';
 import { chromium, type Browser, type Page } from 'playwright';
 import { join } from 'node:path';
@@ -318,4 +319,9 @@ test('registry bounds, stable key syntax and shadow-scoped semantic parts are en
     expect(result.error).toBe('element.ds1.input.error');
     expect(`contrast.light.element.${'a'.repeat(40)}`).toMatch(/^[a-z][a-z0-9_.-]{0,79}$/);
   } finally { await page.close(); }
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });

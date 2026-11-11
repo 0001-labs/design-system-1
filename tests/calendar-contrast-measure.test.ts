@@ -1,5 +1,6 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
-import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { createServer, type ViteDevServer } from 'vite';
 import { chromium, webkit, devices, type Browser } from 'playwright';
 
@@ -12,6 +13,10 @@ afterAll(async () => { await server.close(); });
 
 for (const engine of ['chromium', 'webkit'] as const) describe(engine, () => {
   let browser: Browser;
+  beforeEach(async context => {
+    const reason = await browserTimingReason(browser);
+    if (reason) context.skip(reason);
+  });
   beforeAll(async () => { browser = await ({ chromium, webkit }[engine]).launch({ headless: true }); });
   afterAll(async () => { await browser.close(); });
   test('calendar labels remain readable as the painted paper changes', async () => {

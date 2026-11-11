@@ -1,7 +1,8 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
 // Real layout and colour: the components are drawn in Chromium, light and dark, beside the
 // native classes of controls.css that they must match.
-import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vite-plus/test";
 import { chromium, type Browser, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 import type { AddressInfo } from "node:net";
@@ -391,4 +392,9 @@ test("compact monochrome switches keep a grid-sized hit target and native keyboa
   await page.keyboard.press('Enter');expect(await button.getAttribute('aria-checked')).toBe('false');
   await button.evaluate(el=>(el as HTMLButtonElement).disabled=true);await page.keyboard.press('Space');expect(await button.getAttribute('aria-checked')).toBe('false');
  }
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });

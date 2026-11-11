@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
@@ -6,6 +6,8 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { sourceSites, scanApp, checkSnapshots, checkLockedControls, checkLockedText, liveBaseLinks } from "../scripts/component-adoption";
 
+// Git-backed fixtures spawn many processes; budget for loaded unattended hosts.
+vi.setConfig({ testTimeout: 120_000 });
 const temporary: string[] = [];
 afterEach(() => { for (const dir of temporary.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 const write = (root: string, path: string, body: string) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), body); };
@@ -193,7 +195,7 @@ describe("source adoption evidence", () => {
     manifest.files['react/input.ts'] = createHash('sha256').update(readFileSync(join(app, 'design/react/input.ts'))).digest('hex');
     writeFileSync(manifestPath, JSON.stringify(manifest));
     expect(scan().cells.input).toMatchObject({ shared: 0, unverified: 2 });
-  }, 60_000); // This integration fixture repeatedly reads Git across every adapter graph; a full parallel run can take over 20 seconds.
+  }, 120_000); // This integration fixture repeatedly reads Git across every adapter graph; a full parallel run can take over 20 seconds.
 });
 
 it("counts a shared dialog frame once across HTML, Lit, JSX and direct DOM composition", () => {

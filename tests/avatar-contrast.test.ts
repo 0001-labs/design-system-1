@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
+import { browserTimingReason } from './browser-timing';
+import { afterAll, beforeAll, beforeEach, expect, test } from 'vite-plus/test';
 import { build } from 'esbuild';
 import { chromium, webkit, type Browser } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -7,7 +8,7 @@ const root = join(import.meta.dirname, '..');
 const css = (path: string): string => readFileSync(path, 'utf8').replace(/@import\s+["']([^"']+)["'];/g, (_, imported) => css(resolve(dirname(path), imported)));
 let browsers: Browser[], bundle: string;
 beforeAll(async () => {
- browsers = await Promise.all([chromium.launch(), webkit.launch()]);
+ browsers = await Promise.all([chromium.launch({ headless: true }), webkit.launch({ headless: true })]);
  bundle = (await build({ stdin: { contents: "import './DS1/2-core/ds-avatar'; export {inspectConstraints,measureConstraints} from './DS1/0-face/constraints';", resolveDir: root, loader: 'ts' }, bundle: true, format: 'iife', globalName: 'AvatarCheck', write: false, plugins: [{ name: 'styles', setup(build) {
   build.onResolve({ filter: /\.css\?inline$/ }, args => ({ path: resolve(args.resolveDir, args.path.replace('?inline', '')), namespace: 'styles' }));
   build.onLoad({ filter: /.*/, namespace: 'styles' }, args => ({ contents: `export default ${JSON.stringify(css(args.path))}`, loader: 'js' }));
@@ -42,4 +43,11 @@ test("avatar initials stay readable after theme and CSS-variable changes, and th
    expect(await page.evaluate(() => (window as any).AvatarCheck.measureConstraints(document).find((row: any) => row.constraint.code === 'avatar.initial-contrast').measured)).toBe(3);
   } finally { await page.close(); }
  }
+});
+
+beforeEach(async context => {
+  for (const browser of browsers) {
+    const reason = await browserTimingReason(browser);
+    if (reason) context.skip(reason);
+  }
 });

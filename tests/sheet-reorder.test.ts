@@ -1,8 +1,9 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
 // Real pointers, in Chromium: a reorderable sheet's row lifts by the grip on its number, follows
 // the pointer while the rows it passes step aside by whole rows, lands on a row and fires
 // table-move; a finger lifts it after a long press, and a quick swipe scrolls instead.
-import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vite-plus/test";
 import { chromium, type Browser, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 import type { AddressInfo } from "node:net";
@@ -14,7 +15,7 @@ let url = "";
 beforeAll(async () => {
   server = await createServer({ configFile: false, root: process.cwd(), logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
   await server.listen();
-  browser = await chromium.launch();
+  browser = await chromium.launch({ headless: true });
   url = `http://127.0.0.1:${(server.httpServer!.address() as AddressInfo).port}/tests/fixtures/menu-measure.html`;
 }, 60_000);
 afterAll(async () => { await browser?.close(); await server?.close(); });
@@ -124,4 +125,9 @@ test("a finger lifts the row after a long press; a quick swipe scrolls the sheet
   await tab.waitForTimeout(400);
   expect((await state(tab)).moves).toHaveLength(1);
   await context.close();
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });

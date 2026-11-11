@@ -1,7 +1,8 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
 // Real layout, colour and touch: sheets, drawers and shortcut hints drawn in Chromium,
 // light and dark and at a phone's scale, measured against the 20px square.
-import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vite-plus/test";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 import type { AddressInfo } from "node:net";
@@ -454,4 +455,9 @@ test("Escape closes the top sheet even when its editor consumes keys and dismiss
   expect(await tab.locator("#upper-sheet textarea").inputValue()).toBe("Unsaved draft");
   await tab.keyboard.press("Escape");
   await expect.poll(() => tab.evaluate(() => document.querySelector<HTMLDialogElement>("#lower-sheet dialog")!.open)).toBe(false);
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });

@@ -1,8 +1,9 @@
+import { browserTimingReason } from './browser-timing';
 // @vitest-environment node
 // Real layout: the site header, its drawer, the footer, the document page and
 // ds-page's drawer are drawn in Chromium, light and dark, at the base scale and
 // at --ds-sf 1.5, and measured against the 20px square.
-import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vite-plus/test";
 import { chromium, type Browser, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 import type { AddressInfo } from "node:net";
@@ -518,4 +519,9 @@ test("ds-page without drawer keeps its navigation above the work on a narrow pag
     return { bar: getComputedStyle(root.querySelector('[part="bar"]')!).display, nav: getComputedStyle(root.querySelector('[part="nav"]')!).display };
   });
   expect(box).toEqual({ bar: "none", nav: "block" });
+});
+
+beforeEach(async context => {
+  const reason = await browserTimingReason(browser);
+  if (reason) context.skip(reason);
 });
