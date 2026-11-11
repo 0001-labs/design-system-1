@@ -194,6 +194,33 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
     why: 'They are folded into one carrier, spaced as their list spaces them, before the lift is measured, so the room made is the room they take together and drag.one-movement holds.',
     check: { file: 'tests/drag-selection.mjs', test: 'Selected blocks move together' },
   },
+  {
+    code: 'drag.preview-as-drawn',
+    rule: 'The carried preview is the block as the page draws it: its components drawn as they stand and none of the editor\'s marks on it, so a selected block is carried without a wash.',
+    why: 'The preview is Drag\'s copy, not a block of the page: the editor takes its own marks off it, and Drag copies the tree of a component the canvas cannot draw a second time.',
+    check: { file: 'tests/drag-preview.mjs', test: 'A carried section looks as it did before the lift' },
+  },
+  {
+    code: 'drag.one-carrier',
+    rule: 'One press carries a block once: writing the page carries is not carried by its own editor as well, and that editor moves its own blocks again once the press is over.',
+    check: { file: 'tests/drag-preview.mjs', test: 'One press lifts one preview' },
+  },
+  {
+    code: 'drag.edge-intent',
+    rule: 'A block lifted beside the canvas\'s top or bottom edge scrolls nothing until the pointer leaves that edge\'s band or goes on towards it.',
+    why: 'Picking a block up is not asking to scroll: a page that runs away under a block just lifted loses the place it was to be dropped.',
+    check: { file: 'tests/drag-edge.mjs', test: 'A block lifted at the foot of the canvas stays put until it is carried on down' },
+  },
+  {
+    code: 'drag.regrab',
+    rule: 'A press while the last drop is still landing lands it at once and is itself carried, so rearranging several blocks never waits on an animation.',
+    check: { file: 'tests/drag-regrab.mjs', test: 'A block pressed while the last drop lands is carried at once' },
+  },
+  {
+    code: 'drag.always-ends',
+    rule: 'A drag always ends with the page usable: a drop the page cannot commit, a mouse released where the page could not see it, or a pointer pressed during a keyboard carry sends the block home with nothing left lifted.',
+    check: { file: 'src/c9y-constraints.test.ts', test: 'a drag that goes wrong ends at home' },
+  },
 ];
 
 export type BlockKind = NonNullable<SurfaceNode['kind']>;
@@ -255,6 +282,8 @@ export class MovementLedger {
   private scheduled = false;
   constructor(private readonly broken: (finding: C9yFinding) => void) {}
   record = (movement: SortableMovement) => {
+    // A long session carries thousands of blocks: the latest moves are kept, not every element ever moved.
+    if (this.movements.length >= 512) this.movements.splice(0, 256);
     this.movements.push(movement);
     if (movement.phase !== 'drop') return;
     this.pending.push(movement);

@@ -152,6 +152,52 @@ describe('drag', () => {
     sortable.destroy();
   });
 
+  test('a drag that goes wrong ends at home', async () => {
+    const reported = vi.fn();
+    (window as unknown as { reportError: unknown }).reportError = reported;
+    const list = document.createElement('section');
+    place(list, 0, 400);
+    const elements = [0, 1, 2].map(index => { const element = document.createElement('div'); element.textContent = `block ${index}`; list.append(element); place(element, index * 40, 40); return element; });
+    document.body.append(list);
+    const ended: string[] = [];
+    const sortable = createSortable({ prepareDrop: () => { throw new Error('The page refused the drop'); }, onDragEnd: result => ended.push(result.reason) });
+    sortable.container({ element: list, id: 'section' });
+    elements.forEach((element, index) => sortable.item({ element, id: String(index) }));
+    const mouse = (type: string, target: EventTarget, y: number, buttons: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, { pointerId: { value: 1 }, pointerType: { value: 'mouse' }, button: { value: 0 }, buttons: { value: buttons }, clientX: { value: 10 }, clientY: { value: y } });
+      target.dispatchEvent(event);
+    };
+    const home = () => {
+      expect(sortable.isDragging()).toBe(false);
+      expect(document.querySelector('[data-drag-overlay]')).toBeNull();
+      expect(document.documentElement.hasAttribute('data-drag-active')).toBe(false);
+      for (const element of elements) { expect(element.style.visibility).toBe(''); expect(element.style.translate || 'none').toBe('none'); }
+    };
+    // A drop the page cannot commit.
+    mouse('pointerdown', elements[0], 20, 1); mouse('pointermove', window, 26, 1); mouse('pointermove', window, 70, 1);
+    expect(sortable.isDragging()).toBe(true);
+    mouse('pointerup', window, 70, 0);
+    await vi.runAllTimersAsync();
+    home();
+    expect(reported).toHaveBeenCalledTimes(1);
+    // A mouse released where the page could not see it comes back with no button down.
+    mouse('pointerdown', elements[0], 20, 1); mouse('pointermove', window, 26, 1); mouse('pointermove', window, 70, 1);
+    expect(sortable.isDragging()).toBe(true);
+    mouse('pointermove', window, 90, 0);
+    await vi.runAllTimersAsync();
+    home();
+    // A pointer pressed while the keyboard carries a block.
+    key(elements[0], ' '); key(document.body, 'ArrowDown');
+    expect(sortable.isDragging()).toBe(true);
+    mouse('pointerdown', elements[2], 100, 1); mouse('pointerup', window, 100, 0);
+    await vi.runAllTimersAsync();
+    home();
+    expect(ended).toEqual(['CANCEL', 'CANCEL', 'CANCEL']);
+    sortable.destroy();
+    delete (window as unknown as { reportError?: unknown }).reportError;
+  });
+
   test('the ledger reports any movement after release as a broken constraint', async () => {
     const broken = vi.fn();
     const ledger = new MovementLedger(broken);
