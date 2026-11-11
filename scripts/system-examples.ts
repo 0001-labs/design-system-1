@@ -43,44 +43,48 @@ window.__systemInspect = () => measureConstraints(document).map(({ constraint, m
 }));`, resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'iife' })).outputFiles[0]!.text;
 await mkdir(join(folder, 'system-previews'), { recursive: true });
 await mkdir(join(folder, 'system-data'), { recursive: true });
-const browser = await webkit.launch();
 const results: ExampleResult[] = [];
 const queue = [...DOC_EXAMPLES];
 try {
   await Promise.all(Array.from({ length: 4 }, async () => {
     for (let example = queue.shift(); example; example = queue.shift()) {
       const result: ExampleResult = { id: example.id, checks: [], errors: [] };
-      const context = await browser.newContext({ ...devices['iPhone 14'], colorScheme: 'light' });
-      const page = await context.newPage();
+      // Bound WebKit's lifetime as well as its contexts: a long-lived browser can
+      // stop navigating after many examples on an unattended, closed-lid host.
+      const browser = await webkit.launch({ headless: true });
       try {
-        for (const width of widths) {
-          await page.setViewportSize({ width, height: 844 });
-          const response = await page.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle', timeout: 30_000 });
-          if (!response?.ok()) throw new Error(`${width}px: page returned ${response?.status() ?? 'no response'}`);
-          await page.evaluate(async () => { await document.fonts.ready; for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight) { scrollTo(0, y); await new Promise(done => setTimeout(done, 30)); } scrollTo(0, 0); });
-          await page.addScriptTag({ content: inspector });
-          for (const theme of themes) {
-            await page.evaluate(theme => (window as any).__systemTheme(theme), theme);
-            await page.waitForTimeout(350);
-            const checks = await page.evaluate(() => (window as any).__systemInspect()) as Omit<ExampleCheck, 'width' | 'theme'>[];
-            result.checks.push(...checks.map(check => ({ ...check, width, theme })));
-          }
-        }
-        const preview = await browser.newContext({ viewport: { width: 800, height: 500 }, colorScheme: 'light', deviceScaleFactor: 1 });
+        const context = await browser.newContext({ ...devices['iPhone 14'], colorScheme: 'light' });
+        const page = await context.newPage();
         try {
-          const picture = await preview.newPage();
-          await picture.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle' });
-          await picture.evaluate(() => document.fonts.ready);
-          await picture.screenshot({ path: join(folder, 'system-previews', `${example.id}.png`), type: 'png' });
-          result.preview = `/system-previews/${example.id}.png`;
-        } finally { await preview.close(); }
-      } catch (error) { result.errors.push((error as Error).message.split('\n')[0]!); }
-      finally { await context.close(); }
-      results.push(result);
-      console.log(`${example.id}: ${result.checks.filter(check => check.status === 'pass').length}/${result.checks.filter(check => check.status !== 'absent').length}${result.errors.length ? ' — incomplete' : ''}`);
+          for (const width of widths) {
+            await page.setViewportSize({ width, height: 844 });
+            const response = await page.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle', timeout: 30_000 });
+            if (!response?.ok()) throw new Error(`${width}px: page returned ${response?.status() ?? 'no response'}`);
+            await page.evaluate(async () => { await document.fonts.ready; for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight) { scrollTo(0, y); await new Promise(done => setTimeout(done, 30)); } scrollTo(0, 0); });
+            await page.addScriptTag({ content: inspector });
+            for (const theme of themes) {
+              await page.evaluate(theme => (window as any).__systemTheme(theme), theme);
+              await page.waitForTimeout(350);
+              const checks = await page.evaluate(() => (window as any).__systemInspect()) as Omit<ExampleCheck, 'width' | 'theme'>[];
+              result.checks.push(...checks.map(check => ({ ...check, width, theme })));
+            }
+          }
+          const preview = await browser.newContext({ viewport: { width: 800, height: 500 }, colorScheme: 'light', deviceScaleFactor: 1 });
+          try {
+            const picture = await preview.newPage();
+            await picture.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle' });
+            await picture.evaluate(() => document.fonts.ready);
+            await picture.screenshot({ path: join(folder, 'system-previews', `${example.id}.png`), type: 'png' });
+            result.preview = `/system-previews/${example.id}.png`;
+          } finally { await preview.close(); }
+        } catch (error) { result.errors.push((error as Error).message.split('\n')[0]!); }
+        finally { await context.close(); }
+        results.push(result);
+        console.log(`${example.id}: ${result.checks.filter(check => check.status === 'pass').length}/${result.checks.filter(check => check.status !== 'absent').length}${result.errors.length ? ' — incomplete' : ''}`);
+      } finally { await browser.close(); }
     }
   }));
-} finally { await browser.close(); server.close(); }
+} finally { server.close(); }
 const report: ExampleReport = { schema: 1, generatedAt: new Date().toISOString(), revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).trim(), widths, themes, examples: DOC_EXAMPLES.map(example => results.find(result => result.id === example.id)!) };
 await writeFile(join(folder, 'system-data/examples.json'), JSON.stringify(report));
 if (results.some(result => result.errors.length)) process.exitCode = 1;
