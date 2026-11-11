@@ -1,20 +1,44 @@
 ---
 import '../../../DS1/1-root/one.css';
 import '../../../shared/site-navigation.css';
+import { crumbScript, WORKSPACE_HREF } from '../lib/shell';
+
+// A documentation page's last crumb is its title, known to the build. The design system's own
+// pages name theirs from the frame (src/lib/shell.ts).
+const pageTitle = Astro.locals.starlightRoute?.entry?.data?.title ?? '';
+const account = Astro.url.pathname.replace(/\/$/, '') === '/account';
 ---
 
 {/* The live base: token values saved on this site. In the body, so it comes after every stylesheet the
     build gathers into the head and its tokens win; before the content, so nothing draws without it. */}
 <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
-<header class="ds-header ds-header--app site-navigation docs-header docs-header--with-sidebar">
-  <nav class="system-breadcrumb" aria-label="System breadcrumb"><a class="site-brand" href="/">Design system 1</a><span id="private-component-context" hidden>App</span></nav>
+<header id="shell-header" class="ds-header ds-header--app site-navigation docs-header" data-page-title={pageTitle}>
+  <nav class="system-breadcrumb" aria-label="Breadcrumb">
+    <a class="site-brand" href="/">Design system 1</a>
+    <ol class="shell-crumbs">
+      <li class="shell-crumb shell-crumb--workspace"><a id="shell-workspace" href={WORKSPACE_HREF} aria-label="My company"><ds-avatar id="shell-avatar" initial="M" aria-hidden="true"></ds-avatar><span id="shell-company" class="shell-words">My company</span></a></li>
+      <li class="shell-crumb shell-crumb--space"><span class="shell-separator" aria-hidden="true">/</span><a id="shell-space" class="shell-words" href="/">Documentation</a></li>
+      <li class="shell-crumb shell-crumb--page" hidden={!pageTitle}><span class="shell-separator" aria-hidden="true">/</span><span id="shell-page" class="shell-words" aria-current="page">{pageTitle}</span></li>
+    </ol>
+    <span id="private-component-context" hidden>App</span>
+  </nav>
+  <a id="shell-account" class="shell-account" href="/account/" aria-label="Account" aria-current={account ? 'page' : undefined}><ds-avatar icon="avatar" aria-hidden="true"></ds-avatar></a>
 </header>
+{/* Right after the crumbs' markup, before first paint: fill them from this browser's snapshot. */}
+<script is:inline set:html={crumbScript()} />
 <iframe id="navigation-auth" title="Account status" hidden aria-hidden="true" tabindex="-1"></iframe>
 
 <script>
   import '../lib/public-preferences';
   import { connectNavigationSession } from '../lib/navigation-session';
   import { connectCodeCopy } from '../lib/code-copy';
+  import '../../../DS1/2-core/ds-avatar';
+  import { watchCuts } from '../../../DS1/0-face/cut-fade';
+  import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, readActiveLibrary, type ActiveLibrary } from '../../../shared/active-library';
+  import { editorPage } from '../../../shared/editor-navigation';
+  import { libraryPage, type LibraryNavigation } from '../../../shared/library-navigation';
+  import type { NavigationSummary } from '../../../shared/navigation-cache';
+  import { drawCrumbs, forgetShell, hereKey, holdsSessionToken, readShellSnapshot, rememberShell, settleActiveLibrary, shellCrumbs } from '../lib/shell';
   connectCodeCopy();
   import '../../../DS1/0-face/device';
   const updateLayout = () => {
@@ -25,12 +49,51 @@ import '../../../shared/site-navigation.css';
   window.addEventListener('scaling-changed', updateLayout);
   window.addEventListener('resize', updateLayout);
 
+  // The breadcrumb, kept current: the live summary, what the frame has open, and the snapshot until they come.
+  const header = document.querySelector<HTMLElement>('#shell-header')!;
+  const cuts = watchCuts();
+  cuts.select(header, '.shell-words');
+  let summary: NavigationSummary | null = null;
+  let open: ActiveLibrary | null = null;
+  let page: string | null = null;
+  const paint = () => {
+    const snapshot = readShellSnapshot();
+    const at = hereKey(location.pathname, location.search);
+    const last = at === null ? header.dataset.pageTitle ?? '' : page ?? (snapshot?.here?.at === at ? snapshot.here.label : '');
+    const crumbs = shellCrumbs({ pathname: location.pathname, search: location.search, company: summary?.companyName ?? snapshot?.company ?? '', library: open ?? readActiveLibrary(), page: last });
+    drawCrumbs(document, crumbs);
+    header.querySelector('#shell-workspace')?.setAttribute('aria-label', crumbs.company);
+    cuts.measure();
+  };
+  /** A page whose last crumb only its frame knows: shown, and remembered for the next first paint. */
+  const name = (label: string) => {
+    page = label;
+    const at = hereKey(location.pathname, location.search);
+    // A private document's name stays out of storage; it comes again with the authorized document.
+    if (summary && at !== null && label && !at.startsWith('internal:')) rememberShell(summary, { at, label });
+    paint();
+  };
+  window.addEventListener('ds1-editor-navigation', event => name(editorPage((event as CustomEvent).detail.editor)));
+  window.addEventListener('ds1-library-navigation', event => {
+    const library = (event as CustomEvent).detail.library as LibraryNavigation | null;
+    open = library && { id: library.id, name: library.name };
+    name(library ? libraryPage(library) : '');
+  });
+  window.addEventListener('ds1-shell-page', event => name(String((event as CustomEvent).detail?.label ?? '')));
+  window.addEventListener(ACTIVE_LIBRARY_EVENT, paint);
+  window.addEventListener('storage', event => { if (event.key === ACTIVE_LIBRARY_KEY || event.key === null) paint(); });
+
   const frame = document.querySelector<HTMLIFrameElement>('#navigation-auth')!;
   const navigation = connectNavigationSession(frame, detail => {
     const authenticated = detail.authenticated === true;
+    if (!detail.loading && authenticated) { rememberShell(detail); settleActiveLibrary(detail); }
+    // Without a session token, signed out is confirmed; with one, the bridge is about to say.
+    if (!detail.loading && !authenticated && !holdsSessionToken()) forgetShell();
+    summary = authenticated ? detail : null;
     document.documentElement.toggleAttribute('data-signed-in', authenticated);
     document.documentElement.toggleAttribute('data-ds-owner', authenticated && detail.owner === true);
     window.dispatchEvent(new CustomEvent('ds1-navigation-auth', { detail: { ...detail, authenticated } }));
+    paint();
   });
   window.addEventListener('message', (event) => {
     if (event.origin !== location.origin || event.source !== frame?.contentWindow) return;
@@ -39,13 +102,42 @@ import '../../../shared/site-navigation.css';
       return;
     }
     if (event.data?.type !== 'ds1:navigation-auth') return;
+    if (event.data.authenticated !== true && !event.data.loading) forgetShell();
     navigation.receive(event.data);
   });
 </script>
 
 <style>
-  .docs-header { display: flex; align-items: center; }
+  .docs-header { display: flex; align-items: center; justify-content: space-between; gap: var(--site-unit); }
   .docs-header .system-breadcrumb .site-brand { text-decoration: none; }
-  #private-component-context { color: var(--ds-text-color-muted); }
+  #private-component-context { flex: none; color: var(--ds-text-color-muted); }
   #private-component-context[hidden] { display: none; }
+
+  /* Signed out: the brand. Signed in: the breadcrumb and the account, from the first frame. */
+  .shell-crumbs, .shell-account { display: none; }
+  :global(html[data-signed-in]) .site-brand { display: none; }
+  :global(html[data-signed-in]) .shell-crumbs { display: flex; }
+  :global(html[data-signed-in]) .shell-account { display: inline-flex; }
+
+  /* One row on the lower sixteen of its square. */
+  .shell-crumbs { align-items: flex-end; gap: calc(var(--site-unit) / 2); min-width: 0; height: var(--site-unit); margin: 0; padding: 0; list-style: none; }
+  .shell-crumb { display: flex; align-items: flex-end; gap: calc(var(--site-unit) / 2); flex: 0 1 auto; min-width: 0; height: var(--site-unit); line-height: var(--ds-type-lineheight-default); }
+  .shell-crumb[hidden] { display: none; }
+  .shell-crumb--workspace { flex-shrink: 2; }
+  .shell-crumb--page { flex-shrink: 0.5; }
+  .shell-crumb a { display: flex; align-items: flex-end; gap: calc(4px * var(--sf, 1)); min-width: 0; color: inherit; }
+  .shell-crumb a:not([href]) { text-decoration: none; cursor: default; }
+  .shell-crumb ds-avatar { flex: none; }
+  .shell-separator { flex: none; color: var(--ds-text-color-muted); }
+  /* Cut words fade over their last square, never an ellipsis (DS1/0-face/cut-fade.ts marks them). */
+  .shell-words { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+  .shell-words[data-cut="end"] { mask-image: linear-gradient(to right, #000 calc(100% - var(--site-unit)), transparent); }
+  .shell-account { flex: none; align-items: flex-end; height: var(--site-unit); color: inherit; }
+  .shell-account:focus-visible, .shell-crumb a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+  /* A phone keeps the workspace's avatar and the last crumb. */
+  @media (max-width: 599px) {
+    #shell-company { display: none; }
+    .shell-crumbs:has(.shell-crumb--page:not([hidden])) .shell-crumb--space { display: none; }
+  }
 </style>

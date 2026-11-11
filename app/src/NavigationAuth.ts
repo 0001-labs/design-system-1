@@ -3,12 +3,20 @@ import { api } from "../../convex/_generated/api";
 import { authState, authToken, authStorageKey, LiveQuery, mutation } from "./lib/backend";
 import { AppElement, defineElement } from "./lib/element";
 import { libraryTemplate, templateVersion } from "./lib/libraryTemplate";
+import type { Id } from "../../convex/_generated/dataModel";
+import { BASE_LIBRARY } from "../../shared/active-library";
 
 import { saveNavigationCache, clearNavigationCache, type NavigationSummary } from "../../shared/navigation-cache";
 
 type AppNavigation = { token: string; components: { name: string; href: string; layer: number }[] };
+const LIBRARY_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 
-/** Only the same-origin parent receives the signed-in workspace summary. Draws nothing. */
+/**
+ * Only the same-origin parent receives the signed-in workspace summary. Draws nothing.
+ * Asked with `ds1:active-library-request` `{ id }`, it also keeps that one library's draft
+ * stylesheet live for the parent's examples as `ds1:active-library-styles` `{ id, name, css }`,
+ * `css: null` when the library is not the caller's, is gone, or nobody is signed in.
+ */
 export class NavigationAuth extends AppElement {
   static properties = {
     appNavigation: { state: true },
@@ -24,6 +32,11 @@ export class NavigationAuth extends AppElement {
   #ready = () => { const { isLoading, isAuthenticated } = authState.get(); return !isLoading && isAuthenticated; };
   #profile = new LiveQuery(this, api.users.profile, () => this.#ready() ? {} : "skip");
   #libraries = new LiveQuery(this, api.libraries.list, () => this.#ready() ? {} : "skip");
+  /** The one library whose styles the parent asked for; null stops. */
+  #activeLibrary: string | null = null;
+  #activeStyles = new LiveQuery(this, api.libraries.get, () => this.#ready() && this.#activeLibrary ? { id: this.#activeLibrary as Id<"libraries"> } : "skip");
+  /** What was last sent for it, so each draft is sent once. */
+  #sentStyles: string | null = null;
   #pending = false;
   #reportVersion = 0;
   /** The session the navigation was last asked for, so it is asked once per change. */
@@ -102,6 +115,15 @@ export class NavigationAuth extends AppElement {
   #request = async (event: MessageEvent) => {
     if (event.origin !== window.location.origin || event.source !== window.parent) return;
     if (event.data?.type === "ds1:navigation-auth-request") this.#report();
+    if (event.data?.type === "ds1:active-library-request") {
+      const { id } = event.data;
+      if (id !== null && (typeof id !== "string" || !LIBRARY_ID.test(id) || id === BASE_LIBRARY)) return;
+      // Asking again for the same library answers again.
+      this.#activeLibrary = id;
+      this.#sentStyles = null;
+      this.requestUpdate();
+      return;
+    }
     if (event.data?.type !== "ds1:create-library" || !this.#ready() || this.#pending) return;
     this.#pending = true; this.creating = true; this.creationError = null;
     try {
@@ -121,7 +143,22 @@ export class NavigationAuth extends AppElement {
 
   /** Every change is reported to the parent. */
   override updated() {
-    if (this.isConnected) this.#report();
+    if (!this.isConnected) return;
+    this.#report();
+    this.#reportStyles();
+  }
+
+  /** The asked-for library's draft, once per change; nothing while the session or the draft is still loading. */
+  #reportStyles() {
+    const id = this.#activeLibrary;
+    if (!id || authState.get().isLoading) return;
+    const library = this.#ready() ? this.#activeStyles.value : null;
+    if (library === undefined || (library && library._id !== id)) return;
+    const answer = { type: "ds1:active-library-styles", id, name: library?.name ?? null, css: library?.draftCss ?? null };
+    const sent = JSON.stringify(answer);
+    if (sent === this.#sentStyles) return;
+    this.#sentStyles = sent;
+    window.parent.postMessage(answer, window.location.origin);
   }
 }
 defineElement("ds1-navigation-auth", NavigationAuth);

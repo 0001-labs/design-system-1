@@ -119,3 +119,41 @@ test('transparent glyphs are excluded without hiding faint or alternatively pain
     for (const id of ['gradient-text', 'shadow', 'solid-text', 'stroke']) expect(broken.find(f => f.id === id)!.message).toContain('visual contrast review');
   } finally { await page.close(); }
 });
+
+test("contrast leaves content-visibility skipped text asleep until it is rendered", async () => {
+  const page = await fixture(`<p id="shown" style="color:#ddd">Visible writing</p>
+    <div style="height:10000px"></div>
+    <div style="content-visibility:auto;contain-intrinsic-size:100px">
+      <div style="display:contents"><span id="skipped" style="color:#ddd">Deferred writing</span></div>
+    </div>`);
+  try {
+    await page.waitForFunction(() => !document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }));
+    expect((await findings(page)).map(f => f.id)).toEqual(['shown']);
+    expect(await page.evaluate(() => document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }))).toBe(false);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForFunction(() => document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }));
+    expect((await findings(page)).map(f => f.id)).toContain('skipped');
+  } finally { await page.close(); }
+});
+
+
+test("contrast does not force style or layout inside offscreen auto containers", async () => {
+  const page = await fixture(`<div style="height:10000px"></div>
+    <style>.deferred::before { content:'Deferred label' }</style>
+    <div class="deferred" style="content-visibility:auto;contain-intrinsic-size:100px">
+      <div style="display:contents"><span style="color:#ddd">Deferred writing</span></div>
+    </div>`);
+  try {
+    const textBundle = (await build({ entryPoints: [join(import.meta.dirname, '../DS1/0-face/text-contrast.ts')], bundle: true, format: 'iife', globalName: 'TextContrast', write: false })).outputFiles[0]!.text;
+    await page.addScriptTag({ content: textBundle });
+    await page.waitForTimeout(200);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Performance.enable');
+    const before = (await cdp.send('Performance.getMetrics')).metrics;
+    expect(await page.evaluate(() => (window as any).TextContrast.measureTextContrast(document).length)).toBe(0);
+    const after = (await cdp.send('Performance.getMetrics')).metrics;
+    for (const name of ['RecalcStyleCount', 'LayoutCount']) {
+      expect(after.find(m => m.name === name)!.value).toBe(before.find(m => m.name === name)!.value);
+    }
+  } finally { await page.close(); }
+});

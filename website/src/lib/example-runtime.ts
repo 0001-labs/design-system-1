@@ -187,15 +187,13 @@ sample.querySelectorAll('ds-tooltip').forEach(tooltip => {
 });
 parent.postMessage({ type: 'ds1-example-ready' }, location.origin);
 
-// Library previews use the identical examples and component runtime as the catalogue.
+// Library previews use the identical examples and component runtime as the catalogue:
+// the library workbench and, for a signed-in person's own design, the documentation send
+// `ds1-example-styles` with the library's stylesheet; an empty one puts the example back.
 const legacyPreviewStyle = document.createElement('style');
 const libraryStyle = document.createElement('style');
 document.head.append(legacyPreviewStyle, libraryStyle);
-window.addEventListener('message', event => {
-  if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'ds1-example-styles') return;
-  if (typeof event.data.css !== 'string' || new TextEncoder().encode(event.data.css).length > 524288) return;
-  libraryStyle.textContent = event.data.css;
-});
+const baseSheet = document.querySelector<HTMLLinkElement>('link[data-ds1-base]');
 
 // The library's box diagram measures the real shared control and never reaches
 // into its shadow root to override implementation styles. Editing uses its part.
@@ -228,9 +226,15 @@ function buttonMetrics() {
 }
 window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'ds1-example-styles' || typeof event.data.css !== 'string' || new TextEncoder().encode(event.data.css).length > 524288) return;
-  syncLegacyButtonPreview(event.data.css);
-  libraryRequestId = event.data.requestId;
-  libraryHoverRegion = ['margin', 'border', 'padding', 'content', 'all'].includes(event.data.hoverRegion) ? event.data.hoverRegion : null;
+  const css: string = event.data.css;
+  libraryStyle.textContent = css;
+  // A custom design does not inherit the live DS1 design: the base sheet applies only without one.
+  baseSheet?.toggleAttribute('disabled', css.trim() !== '');
+  syncLegacyButtonPreview(css);
+  // Only the workbench asks for the button's box, with a request id; anyone else gets no metrics or overlay.
+  libraryRequestId = typeof event.data.requestId === 'number' ? event.data.requestId : undefined;
+  libraryHoverRegion = libraryRequestId !== undefined && ['margin', 'border', 'padding', 'content', 'all'].includes(event.data.hoverRegion) ? event.data.hoverRegion : null;
+  if (libraryRequestId === undefined) boxOverlay.style.display = 'none';
   requestAnimationFrame(buttonMetrics);
 });
 const measuredButton = sample.querySelector('ds-button');

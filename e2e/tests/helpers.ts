@@ -27,7 +27,8 @@ export async function signIn(page: Page, email: string): Promise<void> {
   await page.goto("/app/signin");
 
   await page.locator("#sign-in-email").fill(email);
-  await page.locator("sign-in-screen button", { hasText: "Continue" }).click();
+  // Exact names: "Continue with Google" and "Continue with Apple" stand beside it once social sign-in is on.
+  await page.locator("sign-in-screen").getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.locator("#sign-in-secret")).toBeVisible();
 
   // The dev deployment keeps the latest code per address (DEV_LOGIN_LINKS=1), in the `url` field.
@@ -38,7 +39,7 @@ export async function signIn(page: Page, email: string): Promise<void> {
   const { url: code } = (await response.json()) as { url: string };
 
   await page.locator("#sign-in-secret").fill(code);
-  await page.locator("sign-in-screen button", { hasText: "Sign in" }).click();
+  await page.locator("sign-in-screen").getByRole("button", { name: "Sign in", exact: true }).click();
 
   await expect(page.getByTestId("library-list")).toBeVisible();
 }

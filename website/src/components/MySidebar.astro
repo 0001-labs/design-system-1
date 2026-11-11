@@ -3,21 +3,12 @@ const { sidebar } = Astro.locals.starlightRoute;
 ---
 <div class="docs-sidebar-shell">
   <ds-sidebar id="docs-navigation" label="Documentation" narrow disclosure-position="start" expand-icon="chevron-down" collapse-icon="chevron-up" data-groups={JSON.stringify(sidebar)}>
-    <div slot="header" class="docs-sidebar-header">
-      <section id="workspace" hidden aria-label="Company workspace">
-        <div class="workspace-heading"><div id="workspace-identity" class="ds-row">
-          <ds-avatar id="workspace-avatar" initial="?" aria-hidden="true"></ds-avatar>
-          <span id="workspace-name">My company</span>
-          </div>
-        </div>
-      </section>
-    </div>
+    {/* Signed in, the way between the two spaces: back to the documentation, or back into the design system.
+        The arrow stands in the disclosure column, so the words line up with every row's. */}
+    <a slot="header" id="shell-back" class="ds-row ds-row--nav shell-back" href="/" hidden><ds-icon type="left" aria-hidden="true"></ds-icon><span id="shell-back-words" class="ds-row__name">Back to documentation</span></a>
     <div slot="footer" class="docs-sidebar-footer">
       <ds-button href="https://github.com/0001-labs/Design-system-1">GitHub</ds-button>
-      <a id="docs-account" href="/app/signin" aria-label="Sign in">
-        <span data-account-signin>Sign in</span>
-        <ds-avatar data-account-avatar icon="avatar" aria-hidden="true" hidden></ds-avatar>
-      </a>
+      <a id="docs-account" href="/app/signin">Sign in</a>
     </div>
   </ds-sidebar>
 </div>
@@ -25,15 +16,16 @@ const { sidebar } = Astro.locals.starlightRoute;
 <script>
   import '../../../DS1/3-unit/ds-sidebar';
   import '../../../DS1/2-core/ds-tag';
-  import { hideSignedInLibraryEntry } from '../lib/sidebar-visibility';
+  import '../../../DS1/2-core/ds-icon';
+  import { watchCuts } from '../../../DS1/0-face/cut-fade';
   import { readAppComponents, placeAppNavigation, type AppComponent } from '../lib/app-navigation';
   import '../../../DS1/1-root/row.css';
-  import '../../../DS1/2-core/ds-avatar';
   import { translate } from '../../../DS1/0-face/i18n';
   import { LAYERS } from '../../../shared/component-directory';
   import { libraryWorkspaceHref, type LibraryNavigation } from '../../../shared/library-navigation';
-  import { ownerLibraryItems, readOwnerLibraries, MY_LIBRARIES_ID, type OwnerLibrary } from '../lib/owner-libraries';
-  import { editorChoice, editorSidebarItems, EDITOR_COMPONENTS_ID, type EditorNavigation } from '../../../shared/editor-navigation';
+  import { editorChoice, editorSidebarItems, type EditorNavigation } from '../../../shared/editor-navigation';
+  import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, readActiveLibrary } from '../../../shared/active-library';
+  import { backLink, readShellSnapshot, shellSpace } from '../lib/shell';
   import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
   const navigation = document.querySelector('ds-sidebar#docs-navigation')!;
   type Entry = { label: string; href?: string; isCurrent?: boolean; entries?: Entry[] };
@@ -42,10 +34,13 @@ const { sidebar } = Astro.locals.starlightRoute;
   // Design system 1's component editor, framed on its docs page: its components take the docs groups' place.
   let editor: EditorNavigation | null = null;
   let appComponents: AppComponent[] = [];
-  let ownerLibraries: OwnerLibrary[] = [];
   const collapsed = new Set<string>();
-  let owner = document.documentElement.hasAttribute("data-ds-owner");
+  // Until the server answers, the owner's System row follows this browser's snapshot: presentation only.
+  let owner = document.documentElement.hasAttribute("data-ds-owner") || (document.documentElement.hasAttribute("data-signed-in") && readShellSnapshot()?.owner === true);
   let signedIn = document.documentElement.hasAttribute("data-signed-in");
+  const path = location.pathname.replace(/\/$/, '');
+  // Signed in, the design system is its own space (the base editor, a library, the list, the account); every other page is the documentation.
+  const space = shellSpace(location.pathname, location.search);
   const translationKeys: Record<string, string> = {
     'Start Here': 'startHere', 'Built-ins': 'builtIns', Root: 'root', Core: 'core', Unit: 'unit', Page: 'page',
     Introduction: 'introduction', 'Manual Setup': 'manualSetup', Theming: 'theming', 'Mobile Detection': 'mobileDetection',
@@ -66,66 +61,75 @@ const { sidebar } = Astro.locals.starlightRoute;
   };
   function rows(entries: Entry[], depth = 0, parent = ''): SidebarItem[] {
     return entries.flatMap((entry, index) => {
-      if (signedIn && (entry.label === 'Start Here' || hideSignedInLibraryEntry(entry))) return [];
-      if (entry.href === '/app/libraries' && !signedIn) return [];
-      const href = (entry.href === "/app/libraries" ? "/libraries/workspace/" : entry.href) ?? (entry.entries ? overviewPaths[entry.label] : undefined);
+      const href = entry.href ?? (entry.entries ? overviewPaths[entry.label] : undefined);
       const id = href ?? `${parent}/group-${index}`;
-      const item: SidebarItem = { id, label: label(entry.label), depth, href, current: href ? location.pathname.replace(/\/$/, "") === href.replace(/\/$/, "") : entry.isCurrent };
+      const item: SidebarItem = { id, label: label(entry.label), depth, href, current: href ? path === href.replace(/\/$/, "") : entry.isCurrent };
       if (!entry.entries) return [item];
       item.expanded = !collapsed.has(id);
       return [item, ...(item.expanded ? rows(entry.entries, depth + 1, id) : [])];
     });
   }
-  const workspace = document.querySelector<HTMLElement>('#workspace')!;
-  const workspaceAvatar = document.querySelector('#workspace-avatar')!;
-  let workspaceName = 'My company';
-  function renderWorkspace() {
-    workspace.hidden = !signedIn;
-    document.querySelector('#workspace-name')!.textContent = workspaceName;
-    workspaceAvatar.setAttribute('initial', workspaceName.slice(0, 1).toUpperCase());
-    workspaceAvatar.setAttribute('label', workspaceName);
+  // One square between the design system's components and its own views.
+  const gap = document.createElement('div');
+  gap.slot = 'shell-gap';
+  gap.className = 'sidebar-gap';
+  gap.setAttribute('aria-hidden', 'true');
+  navigation.append(gap);
+  const gapAfterLast = (items: SidebarItem[]) => { if (items.length) items[items.length - 1] = { ...items[items.length - 1], afterSlot: gap.slot }; };
+  const back = document.querySelector<HTMLAnchorElement>('#shell-back')!;
+  watchCuts().watch(back.querySelector('#shell-back-words')!);
+  function renderBack() {
+    back.hidden = !signedIn;
+    const { label: words, href } = backLink(space, space === 'documentation' ? readActiveLibrary() : null);
+    back.querySelector('#shell-back-words')!.textContent = words;
+    back.href = href;
   }
-  const account = document.querySelector<HTMLAnchorElement>('#docs-account')!;
-  const signInLabel = account.querySelector<HTMLElement>('[data-account-signin]')!;
-  const avatar = account.querySelector<HTMLElement>('[data-account-avatar]')!;
-  function renderAccount() {
-    account.href = signedIn ? '/account/' : '/app/signin';
-    account.setAttribute('aria-label', signedIn ? 'Profile' : 'Sign in');
-    signInLabel.hidden = signedIn;
-    avatar.hidden = !signedIn;
-  }
-  function renderNavigation() {
-    navigation.label = library ? `${library.name} navigation` : editor ? 'Design system 1 components' : 'Documentation';
-    const items: SidebarItem[] = editor ? editorSidebarItems(editor, !collapsed.has(EDITOR_COMPONENTS_ID), location.pathname) : library ? [
-      { id: 'base-system', label: 'Design system 1', href: '/' },
-      { id: 'library-overview', label: library.name, href: libraryWorkspaceHref({ ...library, view: 'overview' }), current: library.view === 'overview' },
-      ...LAYERS.flatMap(layer => {
+  function designItems(): SidebarItem[] {
+    const items: SidebarItem[] = [];
+    if (space === 'base' && editor) {
+      const { components, views } = editorSidebarItems(editor, location.pathname);
+      items.push(...components);
+      gapAfterLast(items);
+      items.push(...views);
+    }
+    if (space === 'library' && library) {
+      const open = library;
+      items.push(...LAYERS.flatMap(layer => {
         const id = `library-layer-${layer.number}`;
         const expanded = !collapsed.has(id);
         return [{ id, label: `${layer.number} ${layer.name}`, expanded }, ...(expanded ? layer.entries.map(entry => ({
-          id: entry.href, label: entry.name, depth: 1, href: libraryWorkspaceHref({ ...library!, view: undefined }, entry.href), current: !library!.view && library!.component === entry.href,
+          id: entry.href, label: entry.name, depth: 1, href: libraryWorkspaceHref({ ...open, view: undefined }, entry.href), current: !open.view && open.component === entry.href,
         })) : [])];
-      }),
-    ] : rows(groups);
-    navigation.items = placeAppNavigation(navigation, items, appComponents);
-    if (owner) navigation.items = [...navigation.items,
-      { id: 'system', label: 'System', href: 'https://system.designsystem1.com/' },
-      // The owner's libraries come last: Design system 1, the base system, then each library.
-      // The frame reports the open library before the address catches up with it.
-      ...ownerLibraryItems(ownerLibraries, { pathname: location.pathname, search: library ? `?${new URLSearchParams({ library: library.id })}` : location.search }, !collapsed.has(MY_LIBRARIES_ID))];
+      }));
+      gapAfterLast(items);
+      items.push({ id: 'library-overview', label: 'Overview', href: libraryWorkspaceHref({ ...open, view: 'overview' }), current: open.view === 'overview' });
+    }
+    return items;
   }
+  function renderNavigation() {
+    renderBack();
+    const design = signedIn && space !== 'documentation';
+    navigation.label = !design ? 'Documentation' : library ? `${library.name} navigation` : editor ? 'Design system 1 components' : 'Design system navigation';
+    // The list of libraries and the account have only the way back; the base waits for its frame's components.
+    navigation.empty = design ? '' : 'No items';
+    if (design) { navigation.items = placeAppNavigation(navigation, designItems(), []); return; }
+    navigation.items = placeAppNavigation(navigation, rows(groups), appComponents);
+    if (owner) navigation.items = [...navigation.items, { id: 'system', label: 'System', href: 'https://system.designsystem1.com/' }];
+  }
+  const account = document.querySelector<HTMLAnchorElement>('#docs-account')!;
+  const renderAccount = () => { account.hidden = signedIn; };
   renderAccount();
-  renderWorkspace();
   renderNavigation();
   window.addEventListener('ds1-library-navigation', event => {
     library = (event as CustomEvent).detail.library;
-    renderWorkspace();
     renderNavigation();
   });
   window.addEventListener('ds1-editor-navigation', event => {
     editor = (event as CustomEvent).detail.editor;
     renderNavigation();
   });
+  window.addEventListener(ACTIVE_LIBRARY_EVENT, () => renderNavigation());
+  window.addEventListener('storage', event => { if (event.key === ACTIVE_LIBRARY_KEY || event.key === null) renderNavigation(); });
   navigation.addEventListener('sidebar-activate', event => {
     const id = (event as CustomEvent).detail.id;
     const choice = editor ? editorChoice(id) : null;
@@ -148,10 +152,8 @@ const { sidebar } = Astro.locals.starlightRoute;
     signedIn = detail.authenticated;
     owner = signedIn && detail.owner === true && !detail.loading;
     if (!detail.loading) appComponents = readAppComponents(detail);
-    if (!detail.loading) ownerLibraries = owner ? readOwnerLibraries(detail.libraries) : [];
     if (!signedIn) { library = null; editor = null; }
-    workspaceName = typeof detail.companyName === 'string' && detail.companyName.trim() ? detail.companyName : 'My company';
-    renderWorkspace(); renderNavigation(); renderAccount();
+    renderNavigation(); renderAccount();
   });
   window.addEventListener("translations-ready", () => { renderNavigation(); });
   window.addEventListener("language-changed", () => { renderNavigation(); });
@@ -168,16 +170,21 @@ const { sidebar } = Astro.locals.starlightRoute;
 <style>
   .docs-sidebar-shell { display: flex; flex: 1; min-height: 0; height: 100%; padding: var(--site-unit); overflow: hidden; }
   ds-sidebar { width: 100%; height: 100%; }
-  .docs-sidebar-header { display: flex; flex-direction: column; gap: 20px; }
   .docs-sidebar-footer { display: flex; align-items: center; gap: calc(var(--site-unit) / 2); height: calc(2 * var(--site-unit)); border-top: 1px solid var(--ds1-docs-header-border); font-size: var(--ds-type-size-default); }
-  #workspace[hidden] { display: none; }
-  #workspace { flex: none; }
   #docs-navigation :global(.private-component-link) { width: 100%; color: var(--ds-text-color-muted); text-decoration: none; padding-inline-start: calc(4px * var(--sf, 1) + 2 * var(--site-unit)); gap: calc(4px * var(--sf, 1)); }
-  .workspace-heading { display: flex; align-items: flex-end; }
-  #workspace-identity { flex: 1; width: auto; min-width: 0; }
-  #workspace-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Rows the page slots into the navigation keep their height when the list scrolls. */
+  #docs-navigation :global(:is(.sidebar-gap, .private-component-links)) { flex: none; }
+  #docs-navigation :global(.sidebar-gap) { height: var(--site-unit); }
+  /* The way back: one square, its arrow in the disclosure column and its words where every row's start, a square above the rows. */
+  #shell-back { width: fit-content; max-width: calc(100% + 8px * var(--sf, 1)); margin: 0 calc(-4px * var(--sf, 1)) var(--site-unit); padding-inline: calc(4px * var(--sf, 1)); gap: 0; align-items: flex-end; }
+  #shell-back[hidden] { display: none; }
+  .shell-back ds-icon { flex: none; display: flex; justify-content: center; width: var(--site-unit); }
+  .shell-back:hover { background: var(--ds-row-fill-hover, var(--ds-fill)); }
+  .shell-back:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
   #docs-account { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; min-width: var(--site-unit); height: var(--site-unit); color: inherit; text-decoration: none; }
   #docs-account:hover { text-decoration: underline; }
   #docs-account:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-  #docs-account [hidden] { display: none !important; }
+  #docs-account[hidden] { display: none; }
+  /* The account lives in the header once signed in, from the first frame. */
+  :global(html[data-signed-in]) #docs-account { display: none; }
 </style>

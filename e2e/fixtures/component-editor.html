@@ -25,6 +25,9 @@
   await import('/DS1/2-core/ds-icon.ts');
   const { startScaling } = await import('/DS1/0-face/scaling.ts');
   startScaling();
+  // ?sf= draws the page at another scale, as a phone or tablet would.
+  const sf = new URLSearchParams(location.search).get('sf');
+  if (sf) for (const name of ['--sf', '--ds-sf']) document.documentElement.style.setProperty(name, sf);
   if (new URLSearchParams(location.search).has('embed')) document.documentElement.dataset.docsEmbed = '';
   await import('/app/src/screens/ComponentEditor.ts');
   document.body.append(document.createElement('ds1-component-editor'));

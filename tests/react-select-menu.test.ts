@@ -79,3 +79,66 @@ test("with option children it is a field: a native select inside ds-select", asy
   expect(field.querySelector("select")!.value).toBe("m");
   expect(field.hasAttribute("native")).toBe(true);
 });
+
+/** A menu whose entries leave the document when it closes, as a product's own menu does. */
+function Unmounting({ items }: { items: SelectEntry[] }) {
+  const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(true);
+  return h("div", null,
+    h("button", { ref: setTrigger, type: "button" }, "More"),
+    open ? h(Select, { trigger, open, items, onOpenChange: (next: boolean) => setOpen(next) }) : null);
+}
+/** What the browser finds once every handler ran, when it decides whether to follow the link. */
+const followed = (link: HTMLElement) => new Promise<{ prevented: boolean; connected: boolean; href: string | null }>(resolve =>
+  window.addEventListener("click", event => resolve({ prevented: event.defaultPrevented, connected: link.isConnected, href: link.getAttribute("href") }), { once: true }));
+const settle = () => act(async () => { await new Promise(resolve => setTimeout(resolve)); });
+
+test("a link row is a real link the browser follows, and the menu closes after it", async () => {
+  const chosen = vi.fn();
+  await act(async () => root.render(h(Unmounting, { items: [{ label: "Documentation", href: "#documentation", onSelect: chosen }, { label: "Rename" }] })));
+  const link = row("Documentation");
+  expect(link.tagName).toBe("A");
+  expect(link.getAttribute("href")).toBe("#documentation");
+  expect(link.closest("ds-button")!.hasAttribute("menu-item")).toBe(true);
+  const state = followed(link);
+  await click(link);
+  expect(await state).toEqual({ prevented: false, connected: true, href: "#documentation" });
+  expect(chosen).toHaveBeenCalledOnce();
+  await settle();
+  expect(host.querySelector("ds-select")).toBeNull();
+});
+
+test("a link row keeps a modified click and the keyboard: Enter and Space follow it", async () => {
+  const items: SelectEntry[] = [{ label: "Documentation", href: "#documentation" }];
+  await act(async () => root.render(h(Unmounting, { items })));
+  let link = row("Documentation"), state = followed(link);
+  await act(async () => { link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true })); });
+  expect(await state).toEqual({ prevented: false, connected: true, href: "#documentation" });
+  await settle();
+  for (const key of ["Enter", " "]) {
+    await act(async () => root.render(h(Unmounting, { key, items })));
+    link = row("Documentation"); state = followed(link);
+    // The platform turns Enter on a link into a click by itself; Space is the row's own.
+    const press = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+    await act(async () => { link.dispatchEvent(press); if (key === "Enter" && !press.defaultPrevented) link.click(); });
+    expect(await state).toEqual({ prevented: false, connected: true, href: "#documentation" });
+    await settle();
+    expect(host.querySelector("ds-select")).toBeNull();
+  }
+});
+
+test("a link row stays put when disabled, kept open or declined", async () => {
+  const disabled = vi.fn();
+  const items: SelectEntry[] = [
+    { label: "Disabled", href: "#disabled", disabled: true, onSelect: disabled },
+    { label: "Kept", href: "#kept", keepOpen: true },
+    { label: "Declined", href: "#declined", onSelect: event => event.preventDefault() },
+  ];
+  await act(async () => root.render(h(Unmounting, { items })));
+  expect(row("Disabled").hasAttribute("href")).toBe(false);
+  expect(row("Disabled").getAttribute("aria-disabled")).toBe("true");
+  expect(row("Disabled").getAttribute("role")).toBe("menuitem");
+  for (const label of ["Disabled", "Kept", "Declined"]) { await click(row(label)); await settle(); }
+  expect(disabled).not.toHaveBeenCalled();
+  expect(host.querySelector("ds-select")).not.toBeNull();
+});

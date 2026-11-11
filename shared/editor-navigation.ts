@@ -6,9 +6,8 @@
  */
 export type EditorView = 'history' | 'tokens' | null;
 export interface EditorNavigation { components: { id: string; name: string }[]; component: string; view: EditorView }
-export interface EditorSidebarItem { id: string; label: string; depth?: number; href?: string; current?: boolean; expanded?: boolean }
+export interface EditorSidebarItem { id: string; label: string; href: string; current: boolean }
 
-export const EDITOR_COMPONENTS_ID = 'editor:components';
 const COMPONENT_PREFIX = 'editor:component:';
 const ID = /^[a-z0-9-]{1,40}$/;
 
@@ -35,17 +34,25 @@ export function editorSearch(component: string | null, chosen: EditorView, from:
   return search;
 }
 
-/** The docs sidebar's rows for the editor: its components, then History and All tokens. */
-export function editorSidebarItems(navigation: EditorNavigation, expanded: boolean, pathname: string): EditorSidebarItem[] {
+/** The docs sidebar's rows for the editor: only its components, flat, then its own views, History and All tokens. */
+export function editorSidebarItems(navigation: EditorNavigation, pathname: string): { components: EditorSidebarItem[]; views: EditorSidebarItem[] } {
   const link = (component: string | null, chosen: EditorView) => `${pathname}?${editorSearch(component, chosen)}`;
-  return [
-    { id: EDITOR_COMPONENTS_ID, label: 'Components', expanded },
-    ...(expanded ? navigation.components.map(entry => ({
-      id: `${COMPONENT_PREFIX}${entry.id}`, label: entry.name, depth: 1, href: link(entry.id, null), current: !navigation.view && entry.id === navigation.component,
-    })) : []),
-    { id: 'editor:history', label: 'History', href: link(null, 'history'), current: navigation.view === 'history' },
-    { id: 'editor:tokens', label: 'All tokens', href: link(null, 'tokens'), current: navigation.view === 'tokens' },
-  ];
+  return {
+    components: navigation.components.map(entry => ({
+      id: `${COMPONENT_PREFIX}${entry.id}`, label: entry.name, href: link(entry.id, null), current: !navigation.view && entry.id === navigation.component,
+    })),
+    views: [
+      { id: 'editor:history', label: 'History', href: link(null, 'history'), current: navigation.view === 'history' },
+      { id: 'editor:tokens', label: 'All tokens', href: link(null, 'tokens'), current: navigation.view === 'tokens' },
+    ],
+  };
+}
+
+/** The last crumb for what the editor has open: a component's name, History or All tokens. */
+export function editorPage(navigation: EditorNavigation): string {
+  if (navigation.view === 'history') return 'History';
+  if (navigation.view === 'tokens') return 'All tokens';
+  return navigation.components.find(entry => entry.id === navigation.component)?.name ?? '';
 }
 
 /** What a docs sidebar row asks the frame to open, or null when the row is not the editor's. */

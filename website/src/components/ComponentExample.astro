@@ -11,6 +11,8 @@ if (!sample) throw new Error(`Unknown component example: ${example}`);
 <section class="component-example not-content" data-ds-not-prose data-example-view data-example={example} aria-label={sample.title}>
   <div class="example-toolbar">
     <span>{sample.title}</span>
+    {/* Names the signed-in person's own design while the example is drawn with it. */}
+    <span class="example-library" data-example-library hidden></span>
     <ExampleViewToggle />
   </div>
   <div data-example-preview>
@@ -21,10 +23,12 @@ if (!sample) throw new Error(`Unknown component example: ${example}`);
 </section>
 <script>
   import { fitFrame, followPageTheme } from '../lib/example-controls';
+  import { connectPageLibraryStyles } from '../lib/active-library-styles';
   document.querySelectorAll<HTMLElement>('section[data-example]').forEach(example => {
     const frame = example.querySelector<HTMLIFrameElement>('iframe')!;
     followPageTheme(frame);
     fitFrame(frame);
   });
+  connectPageLibraryStyles();
 </script>
 

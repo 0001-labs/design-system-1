@@ -1,5 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { keyed } from "lit/directives/keyed.js";
 import { live } from "lit/directives/live.js";
 import { styleMap } from "lit/directives/style-map.js";
 import "../../../DS1/2-core/ds-button";
@@ -22,6 +23,8 @@ import { AppElement, defineElement } from "../lib/element";
 import { accordion, accordionId, loading } from "../lib/ui";
 import { currentLocation, href, navigate } from "../router";
 import { draftHistory, draftNotices } from "./BaseEditor";
+import "./CanvasHandles";
+import type { CanvasBox, HandleChange } from "./CanvasHandles";
 import "./component-editor.css";
 
 type Specimen = { name: string; render: () => TemplateResult };
@@ -63,7 +66,8 @@ const WIDTH_LABELS: Record<WidthMode, string> = { hug: "Hug", fill: "Fill", fixe
 /**
  * The base system's components on a canvas, edited by their own tokens: the components down the
  * side as the documentation lists them, the chosen one's states on the grid, and its properties
- * beside it in whole squares, as a design tool sets them. Every edit goes into the draft
+ * beside it in whole squares, as a design tool sets them, and on the selected state's own handles
+ * (`CanvasHandles.ts`), which preview a drag and commit on release. Every edit goes into the draft
  * (`lib/baseDraft.ts`), which makes it live after a pause; the canvas shows the draft at once.
  * The code stays behind the CSS disclosure. Every token of the base is still at `?view=tokens`.
  */
@@ -74,13 +78,18 @@ export class ComponentEditor extends AppElement {
     cssOpen: { state: true },
     collapsed: { state: true },
     measure: { state: true },
+    preview: { state: true },
   };
   declare selected: number;
   declare cssOpen: boolean;
   declare collapsed: boolean;
-  declare measure: { width: number; height: number; left: number; top: number } | null;
+  /** The selected component's face as drawn, relative to the canvas, at the surface's scale. */
+  declare measure: CanvasBox | null;
+  /** A handle's value while it is dragged: on the canvas and in the inspector, not in the draft. */
+  declare preview: HandleChange | null;
   readonly draft = new BaseDraft(this);
   #component = "";
+  #handlesFor = "";
   #cssId = accordionId();
   #observer: ResizeObserver | null = null;
   #frame = 0;
@@ -91,6 +100,7 @@ export class ComponentEditor extends AppElement {
     this.cssOpen = false;
     this.collapsed = false;
     this.measure = null;
+    this.preview = null;
   }
 
   override connectedCallback() {
@@ -110,6 +120,10 @@ export class ComponentEditor extends AppElement {
     // A newly opened component starts on its first state.
     const id = componentSpec(currentLocation.get().search.get("component")).id;
     if (id !== this.#component) { this.#component = id; this.selected = 0; }
+    // Another component or state ends a drag on the last one: its handles are drawn anew (keyed in
+    // #canvas, so the old ones cancel as they disconnect) and its preview goes.
+    const handlesFor = `${id}:${this.selected}`;
+    if (handlesFor !== this.#handlesFor) { this.#handlesFor = handlesFor; this.preview = null; }
   }
 
   override updated() {
@@ -123,16 +137,29 @@ export class ComponentEditor extends AppElement {
     this.#frame = requestAnimationFrame(() => this.#measure());
   }
 
-  /** The selected specimen's box, read from the component as drawn, for the selection and its numbers. */
+  /** The selected specimen's face, read from the component as drawn, for the selection, its handles and its numbers. */
   #measure() {
-    const frame = this.querySelector<HTMLElement>(".component-editor-specimen[aria-selected='true']");
-    const target = frame?.querySelector<HTMLElement>(".component-editor-specimen-body > *");
-    if (!frame || !target) { if (this.measure) this.measure = null; return; }
-    const outer = frame.getBoundingClientRect();
+    const canvas = this.querySelector<HTMLElement>(".component-editor-canvas");
+    const element = canvas?.querySelector<HTMLElement>(".component-editor-specimen[aria-selected='true'] .component-editor-specimen-body > *");
+    if (!canvas || !element) { if (this.measure) this.measure = null; return; }
+    const face = this.#spec.face;
+    // A face the component does not draw shows no handles rather than handles on the wrong box.
+    const target = face ? element.querySelector<HTMLElement>(face) : element;
+    if (!target) { if (this.measure) this.measure = null; return; }
+    const outer = canvas.getBoundingClientRect();
     const box = target.getBoundingClientRect();
-    const next = { width: Math.round(box.width), height: Math.round(box.height), left: Math.round(box.left - outer.left), top: Math.round(box.top - outer.top) };
+    const sf = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--ds-sf")) || 1;
+    const next = { width: Math.round(box.width), height: Math.round(box.height), left: Math.round(box.left - outer.left), top: Math.round(box.top - outer.top), sf };
     const current = this.measure;
-    if (!current || current.width !== next.width || current.height !== next.height || current.left !== next.left || current.top !== next.top) this.measure = next;
+    if (!current || (Object.keys(next) as (keyof CanvasBox)[]).some(key => current[key] !== next[key])) this.measure = next;
+  }
+
+  get #spec() { return componentSpec(currentLocation.get().search.get("component")); }
+
+  /** A property's written value, a drag's preview first. */
+  #written(token: string) {
+    const preview = this.preview;
+    return preview?.token === token ? preview.value || undefined : this.draft.value(token);
   }
 
   #link(query: Record<string, string>) {
@@ -166,7 +193,9 @@ export class ComponentEditor extends AppElement {
   #canvas(spec: ComponentSpec): TemplateResult {
     const specimens = SPECIMENS[spec.id] ?? [];
     const selected = Math.min(this.selected, specimens.length - 1);
-    const overrides = Object.fromEntries(this.draft.overrides);
+    const overrides: Record<string, string> = Object.fromEntries(this.draft.overrides);
+    const preview = this.preview;
+    if (preview) { if (preview.value) overrides[preview.token] = preview.value; else delete overrides[preview.token]; }
     const select = (index: number) => { this.selected = index; };
     const keys = (event: KeyboardEvent) => {
       const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
@@ -182,13 +211,27 @@ export class ComponentEditor extends AppElement {
         ${specimens.map((specimen, index) => html`<div class="component-editor-specimen" role="option" aria-selected=${String(index === selected)} tabindex=${index === selected ? 0 : -1}
           @click=${() => select(index)}>
           <span class="component-editor-specimen-name">${specimen.name}</span>
-          ${index === selected && measure ? html`<span class="component-editor-selection" aria-hidden="true"
-            style=${styleMap({ width: `${measure.width}px`, height: `${measure.height}px`, transform: `translate(${measure.left}px, ${measure.top}px)` })}></span>` : nothing}
           <div class="component-editor-specimen-body" inert>${specimen.render()}</div>
           ${index === selected && measure ? html`<span class="component-editor-size" data-testid="component-size">${measure.width} × ${measure.height}</span>` : nothing}
         </div>`)}
       </div>
+      ${measure ? keyed(`${spec.id}:${selected}`, html`<ds1-canvas-handles .spec=${spec} .box=${measure}
+        .values=${Object.fromEntries(spec.properties.map(property => [property.token, this.#written(property.token)]))}
+        @handle-preview=${(event: CustomEvent<HandleChange | null>) => this.#preview(spec, event.detail)}
+        @handle-commit=${(event: CustomEvent<HandleChange>) => this.#commit(spec, event.detail)}></ds1-canvas-handles>`) : nothing}
     </div>`;
+  }
+
+  /** A drag's preview, only while its component is the one open (a cancelled drag's last word may come after). */
+  #preview(spec: ComponentSpec, change: HandleChange | null) {
+    if (change && spec.id !== this.#component) return;
+    this.preview = change;
+  }
+
+  /** A handle's release, through the same path as the inspector's fields. */
+  #commit(spec: ComponentSpec, change: HandleChange) {
+    const property = spec.properties.find(candidate => candidate.token === change.token);
+    if (property) this.#edit(property, change.value);
   }
 
   #edit(property: ComponentProperty, value: string) {
@@ -210,7 +253,7 @@ export class ComponentEditor extends AppElement {
   }
 
   #control(property: ComponentProperty): TemplateResult {
-    const written = this.draft.value(property.token);
+    const written = this.#written(property.token);
     switch (property.kind) {
       case "width": {
         const { mode, squares } = readWidth(property, written);

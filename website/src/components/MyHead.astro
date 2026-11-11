@@ -6,7 +6,11 @@ import FeedbackLoop from './FeedbackLoop.astro';
 // The Languages page and the language picker show Japanese and Chinese. cjk.css is linked
 // as its own file, so its @import rules stay first in their sheet.
 import cjkStylesheet from '../../../DS1/1-root/cjk.css?url';
+import { bootScript } from '../lib/shell';
 ---
+
+{/* First, before anything paints: the signed-in shell from this browser's snapshot, and the front door. */}
+<script is:inline set:html={bootScript()} />
 
 <!-- Include default Starlight head elements -->
 <Default><slot /></Default>

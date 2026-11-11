@@ -39,6 +39,8 @@ export interface ComponentSpec {
   tag: string;
   /** The component's documentation page. */
   href: string;
+  /** The face the canvas measures and handles, where it is not the element's own box. */
+  face?: string;
   properties: ComponentProperty[];
 }
 
@@ -85,6 +87,8 @@ export const COMPONENTS: ComponentSpec[] = [
   },
   {
     id: "checkbox", name: "Checkbox", tag: "ds-checkbox", href: "/2-core/checkbox/",
+    // The box is one control square at the foot of the element's square.
+    face: "input",
     properties: [
       // The box stands in one square, so it is at most a square across.
       { token: "--ds-checkbox-size", label: "Size", lead: "S", kind: "length", group: "Layout", step: 4, bigStep: 4, min: 12, max: SQUARE, default: SQUARE - 4 },

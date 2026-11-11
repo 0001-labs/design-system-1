@@ -34,6 +34,31 @@ const libraryMode = pathname === '/libraries/playground' ? 'editor'
   .docs-tool { container: tool / inline-size; min-width: 0; }
   .main-content--tools :is(.sl-container, .content-panel) { max-width: none; }
   .main-content--tools .right-sidebar-container { display: none; }
+  /* Signed in, the design system's sidebar is the workspace's: it stands on the editor's square grid, over a
+     paper a faint step of Zenith blue away from the documentation's, so the two spaces tell apart at a glance.
+     The pane reaches the window's edge, and it is the one that scrolls, its grid with it (background-attachment:
+     local), so every row stays in a row of cells, scrolled or resized. The documentation's sidebar is unchanged. */
+  html[data-signed-in]:not([data-shell-space="documentation"]) {
+    --shell-paper: light-dark(color-mix(in srgb, var(--zenith-blue) 22%, var(--ds-paper, var(--background))), color-mix(in srgb, var(--zenith-blue) 7%, var(--ds-paper, var(--background))));
+    --shell-ink: color-mix(in srgb, var(--ds-text-color) 8%, transparent);
+  }
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(nav),
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(drawer) {
+    background-color: var(--shell-paper);
+    background-image: linear-gradient(to right, var(--shell-ink) 1px, transparent 1px), linear-gradient(to bottom, var(--shell-ink) 1px, transparent 1px);
+    background-size: var(--site-unit) var(--site-unit);
+    background-position: -0.5px -0.5px;
+    background-attachment: local;
+  }
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(nav) { display: flex; flex-direction: column; margin-inline-start: calc(-1 * var(--site-unit)); padding-inline-start: var(--site-unit); }
+  /* The sidebar grows with its rows instead of scrolling inside itself, and fills the pane when they are few. */
+  html[data-signed-in]:not([data-shell-space="documentation"]) :is(.sidebar, .docs-sidebar-shell) { display: flex; flex: 1 0 auto; height: auto; overflow: visible; }
+  /* The current and hovered rows' fills, drawn from the ink, so they read over the lines in both themes. */
+  html[data-signed-in]:not([data-shell-space="documentation"]) #docs-navigation {
+    height: auto;
+    --ds-row-fill-current: color-mix(in srgb, var(--ds-text-color) 14%, transparent);
+    --ds-row-fill-hover: color-mix(in srgb, var(--ds-text-color) 8%, transparent);
+  }
   @media (max-width: 599px) {
     .docs-page::part(page) { padding: var(--site-unit); }
     .docs-page::part(main) { margin: 0; }

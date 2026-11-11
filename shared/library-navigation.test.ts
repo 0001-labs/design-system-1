@@ -1,5 +1,5 @@
 import { expect, test } from 'vite-plus/test';
-import { libraryComponent, libraryHeading, libraryHref, libraryWorkspaceRedirect, readLibraryNavigation } from './library-navigation';
+import { libraryComponent, libraryHeading, libraryHref, libraryPage, libraryWorkspaceRedirect, readLibraryNavigation } from './library-navigation';
 
 test('unpublished libraries stay drafts, and only actual publication numbers are shown', () => {
   expect(libraryHeading({ name: 'Example', publishedVersion: null })).toBe('Example · Draft');
@@ -44,4 +44,10 @@ test('the base system opens as Design system 1 in the documentation shell, keepi
   expect(libraryWorkspaceRedirect('/base', new URLSearchParams('view=tokens&library=one'), false, false)).toBe('/libraries/design-system-1/?view=tokens');
   expect(libraryWorkspaceRedirect('/base', new URLSearchParams(), false, true)).toBe('/libraries/design-system-1/');
   expect(libraryWorkspaceRedirect('/base', new URLSearchParams('embed=docs'), true, false)).toBeNull();
+});
+
+test('the breadcrumb names a library\'s open component, or its overview', () => {
+  expect(libraryPage({ component: '/2-core/button/' })).toBe('Button');
+  expect(libraryPage({ component: '/2-core/button/', view: 'overview' })).toBe('Overview');
+  expect(libraryPage({ component: '/nowhere/' })).toBe('');
 });

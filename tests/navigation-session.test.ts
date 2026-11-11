@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, test, vi } from 'vite-plus/test';
 import { clearNavigationCache, readNavigationCache, saveNavigationCache, NAVIGATION_MAX_AGE, type NavigationSummary } from '../shared/navigation-cache';
-import { connectNavigationSession } from '../website/src/lib/navigation-session';
+import { connectNavigationSession, NAVIGATION_BRIDGE_REQUEST } from '../website/src/lib/navigation-session';
 const key = '__convexAuthJWT_test';
 const summary: NavigationSummary = { type: 'ds1:navigation-auth', authenticated: true, loading: false, owner: true, appComponents: [{ name: 'IndexedDB', layer: 1, href: '/libraries/workspace/?internal=indexeddb' }], companyName: 'Example', libraries: [], librariesLoaded: true, creating: false, creationError: null };
 const active: ReturnType<typeof connectNavigationSession>[] = [];
@@ -78,4 +78,18 @@ test('token refresh keeps the running bridge alive until its new owner check fin
   expect(reload).not.toHaveBeenCalled();
   session.receive(summary);
   expect(publish.mock.calls.at(-1)?.[0]).toMatchObject({ authenticated: true, owner: true });
+});
+
+test('another part of the page can start the bridge on a warm cache, once, and the cached summary still draws first', async () => {
+  localStorage.setItem(key, 'session-a');
+  await saveNavigationCache(key, 'session-a', summary);
+  const { frame, publish, session } = page();
+  const load = vi.spyOn(frame, 'src', 'set');
+  // Asked before the cache has been read: the summary is not held back for the bridge.
+  window.dispatchEvent(new Event(NAVIGATION_BRIDGE_REQUEST));
+  await session.ready;
+  expect(publish).toHaveBeenCalledWith(summary);
+  window.dispatchEvent(new Event(NAVIGATION_BRIDGE_REQUEST));
+  expect(load).toHaveBeenCalledOnce();
+  expect(load).toHaveBeenCalledWith('/app/navigation-auth');
 });

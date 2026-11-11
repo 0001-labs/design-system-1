@@ -14,7 +14,7 @@
  */
 import { createElement as h, forwardRef, useState, type ReactNode, type SelectHTMLAttributes } from "react";
 import { MenuHost, type MenuElement, type MenuProps } from "./menu-engine";
-import { Button, type ButtonProps } from "./button";
+import { Button, ButtonLink, type ButtonLinkProps, type ButtonProps } from "./button";
 import { shortcutLabel } from "../0-face/keys";
 
 export type SelectEntry =
@@ -61,16 +61,28 @@ function Entry({ entry, menu }: { entry: SelectEntry; menu: { current: MenuEleme
   if ("separator" in entry) return h("hr", { "data-ds-menu-separator": "" });
   if ("heading" in entry) return h("ds-text", { literal: true, tone: "muted", "data-ds-menu-label": "" }, entry.heading);
   if (entry.items) return h(Nested, { entry });
-  return h(Button, {
-    menuItem: true, href: entry.href, danger: entry.danger, disabled: entry.disabled,
+  const shared = {
+    menuItem: true, danger: entry.danger, disabled: entry.disabled,
     role: entry.checked === undefined ? "menuitem" : "menuitemcheckbox", "aria-checked": entry.checked, "data-keep-open": "",
     "data-text-value": entry.textValue ?? (typeof entry.label === "string" ? entry.label : undefined),
-    onClick: () => {
-      if (entry.disabled) return;
-      const select = new Event("ds-menu-select", { cancelable: true });
-      entry.onSelect?.(select);
-      if (!select.defaultPrevented && !entry.keepOpen) menu.current?.select();
-    },
+  };
+  /** The row's own action; true when the menu then closes. */
+  const choose = () => {
+    const select = new Event("ds-menu-select", { cancelable: true });
+    entry.onSelect?.(select);
+    return !select.defaultPrevented && !entry.keepOpen;
+  };
+  // A link row is a real link. A menu that unmounts its rows on close would take it out of
+  // the document before the browser follows it, so the close waits for the click to finish.
+  if (entry.href !== undefined) return h(ButtonLink, {
+    ...shared, href: entry.href,
+    onClick: () => { const host = menu.current; if (choose()) setTimeout(() => host?.select()); },
+    // A menu row answers Space; a link by itself only answers Enter.
+    onKeyDown: event => { if (event.key === " " && !entry.disabled) { event.preventDefault(); event.currentTarget.click(); } },
+  } as ButtonLinkProps, ...row(entry));
+  return h(Button, {
+    ...shared,
+    onClick: () => { if (!entry.disabled && choose()) menu.current?.select(); },
   } as ButtonProps, ...row(entry));
 }
 
