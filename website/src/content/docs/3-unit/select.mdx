@@ -154,7 +154,9 @@ An entry has a `label`, and may have `details`, an `icon`, a `shortcut`, an
 `href`, `danger`, `disabled`, `checked` (a checkbox row), `keepOpen`,
 `onSelect(event)` (prevent the event to keep the menu open) and `items` (a
 nested menu beside it). `{ heading }` and `{ separator: true }` stand between
-entries. Register `ds-select` in the browser before hydrating.
+entries. An entry with an `href` is a real link: the browser follows it, with
+Enter, Space and modified clicks, and the menu closes after it. Register
+`ds-select` in the browser before hydrating.
 
 Remove product select styles, popup positioning, keyboard listeners and
 duplicate arrows when moving to Select. Keep data and callbacks in the product,
