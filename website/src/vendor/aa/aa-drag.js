@@ -68,14 +68,14 @@ var c = {
 		easing: "cubic-bezier(.2, 1, .1, 1)"
 	},
 	autoScrollEdge: 60
-}, u = 1500, d = 24, f = [
+}, u = 1500, d = 24, f = 1e3 / 60, p = 10, m = [
 	"color",
 	"font",
 	"letter-spacing",
 	"line-height",
 	"-webkit-font-smoothing"
-], p = "input, textarea, select, option, button, a[href], [contenteditable]:not([contenteditable=\"false\"])", m = "data-0001-drag-sortable-style", h = "\n[data-drag-handle]:not([data-drag-handle=\"text\"]){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:grab;touch-action:manipulation}\n:root[data-drag-active],:root[data-drag-active] *{-webkit-user-select:none!important;user-select:none!important;cursor:grabbing!important}\n";
-function g(e = {}) {
+], h = "input, textarea, select, option, button, a[href], [contenteditable]:not([contenteditable=\"false\"])", g = "data-0001-drag-sortable-style", _ = "\n[data-drag-handle]:not([data-drag-handle=\"text\"]){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:grab;touch-action:manipulation}\n:root[data-drag-active],:root[data-drag-active] *{-webkit-user-select:none!important;user-select:none!important;cursor:grabbing!important;overflow-anchor:none!important}\n";
+function v(e = {}) {
 	let t = {
 		touchHold: e.touchHold ?? l.touchHold,
 		dragDistance: e.dragDistance ?? l.dragDistance,
@@ -88,8 +88,8 @@ function g(e = {}) {
 	}, r = e.pointerPoint ?? ((e) => ({
 		x: e.clientX,
 		y: e.clientY
-	})), i = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ new Map(), j = null, M = null, N = /* @__PURE__ */ new Map(), P = null, F = !1, I = !1, L = /* @__PURE__ */ new Set(), R = null;
-	function ie(e) {
+	})), i = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), F = null, I = null, L = /* @__PURE__ */ new Map(), R = null, z = !1, B = !1, V = /* @__PURE__ */ new Set(), H = null, U = null;
+	function re(e) {
 		let t = {
 			element: e.element,
 			id: e.id,
@@ -100,13 +100,14 @@ function g(e = {}) {
 			label: () => e.label ?? e.element.getAttribute("aria-label") ?? e.id,
 			still: e.still ?? !1,
 			lockAxis: e.lockAxis,
-			renderPreview: e.renderPreview
+			renderPreview: e.renderPreview,
+			hitArea: e.hitArea ?? null
 		};
 		return i.set(e.element, t), s(() => {
 			i.get(e.element) === t && i.delete(e.element);
 		});
 	}
-	function z(e) {
+	function ie(e) {
 		let t = e.handle ?? e.element, n = {
 			element: e.element,
 			id: e.id,
@@ -114,43 +115,43 @@ function g(e = {}) {
 			handle: t,
 			canDrag: e.canDrag ?? (() => !0),
 			allowInteractive: e.allowInteractive ?? !1,
-			label: () => e.label ?? C(e.element, t),
+			label: () => e.label ?? E(e.element, t),
 			text: e.text
 		};
-		o.set(e.element, n), g.set(t, n), t.setAttribute("data-drag-handle", e.text ? "text" : "");
-		let r = !e.text && !t.hasAttribute("tabindex") && !t.matches(p);
+		o.set(e.element, n), v.set(t, n), t.setAttribute("data-drag-handle", e.text ? "text" : "");
+		let r = !e.text && !t.hasAttribute("tabindex") && !t.matches(h);
 		r && (t.tabIndex = 0);
-		let i = t.getAttribute("aria-describedby"), { instructions: a } = B(t.ownerDocument);
+		let i = t.getAttribute("aria-describedby"), { instructions: a } = W(t.ownerDocument);
 		return e.text || t.setAttribute("aria-describedby", [i, a.id].filter(Boolean).join(" ")), s(() => {
-			if (o.get(e.element) === n && o.delete(e.element), g.get(t) === n) {
-				if (g.delete(t), t.removeAttribute("data-drag-handle"), r && t.removeAttribute("tabindex"), e.text) return;
+			if (o.get(e.element) === n && o.delete(e.element), v.get(t) === n) {
+				if (v.delete(t), t.removeAttribute("data-drag-handle"), r && t.removeAttribute("tabindex"), e.text) return;
 				i ? t.setAttribute("aria-describedby", i) : t.removeAttribute("aria-describedby");
 			}
 		});
 	}
-	function B(e) {
-		let t = N.get(e);
+	function W(e) {
+		let t = L.get(e);
 		if (t) return t;
 		let r = e.defaultView ?? window;
-		if (r.addEventListener("pointerdown", oe, !0), r.addEventListener("keydown", W, !0), !e.querySelector(`style[${m}]`)) {
+		if (r.addEventListener("pointerdown", le, !0), r.addEventListener("keydown", se, !0), !e.querySelector(`style[${g}]`)) {
 			let t = e.createElement("style");
-			t.setAttribute(m, ""), t.textContent = h, e.head.appendChild(t);
+			t.setAttribute(g, ""), t.textContent = _, e.head.appendChild(t);
 		}
-		let i = S(e, `0001-drag-instructions-${++y}`);
+		let i = T(e, `0001-drag-instructions-${++S}`);
 		i.textContent = n.instructions;
-		let a = S(e, `0001-drag-live-${y}`);
+		let a = T(e, `0001-drag-live-${S}`);
 		a.setAttribute("aria-live", "assertive"), a.setAttribute("aria-atomic", "true");
 		let o = {
 			view: r,
 			instructions: i,
 			liveRegion: a
 		};
-		return N.set(e, o), o;
+		return L.set(e, o), o;
 	}
-	function V(e) {
-		R && (R.textContent = e);
+	function G(e) {
+		H && (H.textContent = e);
 	}
-	function H(e) {
+	function ae(e) {
 		let t = e.destination;
 		return t ? {
 			item: e.item.label(),
@@ -159,41 +160,46 @@ function g(e = {}) {
 			count: t.container.slots.length + 1
 		} : null;
 	}
-	function U(e) {
-		let t = H(e);
-		V(t ? n.moved(t) : n.outside(e.item.label()));
+	function oe(e) {
+		let t = ae(e);
+		G(t ? n.moved(t) : n.outside(e.item.label()));
 	}
-	function W(e) {
-		if (F || M || j || e.key !== " " || e.defaultPrevented) return;
-		let t = v(e.target);
+	function se(e) {
+		if (z || I || F || e.key !== " " || e.defaultPrevented) return;
+		let t = x(e.target);
 		if (t?.matches("input, textarea, select, [contenteditable]:not([contenteditable=\"false\"])")) return;
-		let n = t ? g.get(t) : void 0;
+		let n = t ? v.get(t) : void 0;
 		if (!n || n.text || !n.canDrag({
 			input: "keyboard",
 			target: n.handle
 		})) return;
-		e.preventDefault(), e.stopPropagation(), ge(n.element.ownerDocument.defaultView ?? window);
-		let r = E(n.element);
-		ve(n, -1, r.left + r.width / 2, r.top + r.height / 2, "SNAP");
+		e.preventDefault(), e.stopPropagation(), ye(n.element.ownerDocument.defaultView ?? window);
+		let r = k(n.element);
+		Se(n, -1, r.left + r.width / 2, r.top + r.height / 2, "SNAP");
 	}
-	function ae(e) {
-		let t = v(e), n = !1;
+	function ce(e) {
+		let t = x(e), n = !1;
 		for (; t;) {
-			let e = g.get(t);
+			let e = v.get(t);
 			if (e) return n && !e.allowInteractive ? null : e;
-			t.matches(p) && (n = !0), t = t.parentElement;
+			t.matches(h) && (n = !0), t = t.parentElement;
 		}
 		return null;
 	}
-	function oe(e) {
-		if (F || M || j || e.pointerType === "mouse" && e.button !== 0) return;
-		let n = ae(e.target), i = v(e.target);
+	function le(e) {
+		if (z) return;
+		if (U?.(), I?.dropping && !F && I.land?.(), I && I.mode === "SNAP" && !I.dropping) {
+			Z("CANCEL");
+			return;
+		}
+		if (I || F || e.pointerType === "mouse" && e.button !== 0) return;
+		let n = ce(e.target), i = x(e.target);
 		if (!n || !n.canDrag({
 			input: e.pointerType || "mouse",
 			target: i
 		})) return;
 		let a = e.pointerType !== "touch" && n.text ? Math.max(0, n.text.hold()) : 0;
-		j = {
+		F = {
 			item: n,
 			pointerId: e.pointerId,
 			pointerType: e.pointerType,
@@ -201,83 +207,95 @@ function g(e = {}) {
 			startY: r(e).y,
 			timer: null,
 			held: a > 0
-		}, (e.pointerType === "touch" || a > 0) && (j.timer = setTimeout(() => {
-			j && ve(j.item, j.pointerId, j.startX, j.startY);
-		}, a || t.touchHold)), ge(n.element.ownerDocument.defaultView ?? window);
-	}
-	function se(e) {
-		if (j && e.pointerId === j.pointerId) {
-			let n = r(e);
-			if (Math.hypot(n.x - j.startX, n.y - j.startY) < t.dragDistance) return;
-			if (j.pointerType === "touch" || j.held) {
-				let e = j.pointerType === "touch" ? void 0 : j.item.text?.axis, t = Math.abs(e === "x" ? n.x - j.startX : n.y - j.startY), r = Math.abs(e === "x" ? n.y - j.startY : n.x - j.startX);
-				if (!e || t < 2 * r) {
-					q();
-					return;
-				}
-			}
-			ve(j.item, j.pointerId, j.startX, j.startY);
-		}
-		if (M && e.pointerId === M.pointerId && !M.dropping) {
-			let t = r(e);
-			ye(t.x, t.y);
-		}
-	}
-	function ce(e) {
-		j && e.pointerId === j.pointerId ? q() : M && e.pointerId === M.pointerId && !M.dropping && (_e(), X("DROP"));
-	}
-	function le(e) {
-		j && e.pointerId === j.pointerId && q(), M && e.pointerId === M.pointerId && !M.dropping && X("CANCEL");
+		}, (e.pointerType === "touch" || a > 0) && (F.timer = setTimeout(() => {
+			F && Se(F.item, F.pointerId, F.startX, F.startY);
+		}, a || t.touchHold)), ye(n.element.ownerDocument.defaultView ?? window);
 	}
 	function ue(e) {
-		let t = M;
+		if (e.pointerType === "mouse" && e.buttons === 0) F && e.pointerId === F.pointerId ? J() : I && I.mode === "FLUID" && e.pointerId === I.pointerId && !I.dropping && Z("CANCEL");
+		else {
+			if (F && e.pointerId === F.pointerId) {
+				let n = r(e);
+				if (Math.hypot(n.x - F.startX, n.y - F.startY) < t.dragDistance) return;
+				if (F.pointerType === "touch" || F.held) {
+					let e = F.pointerType === "touch" ? void 0 : F.item.text?.axis, t = Math.abs(e === "x" ? n.x - F.startX : n.y - F.startY), r = Math.abs(e === "x" ? n.y - F.startY : n.x - F.startX);
+					if (!e || t < 2 * r) {
+						J();
+						return;
+					}
+				}
+				Se(F.item, F.pointerId, F.startX, F.startY);
+			}
+			if (I && e.pointerId === I.pointerId && !I.dropping) {
+				let t = r(e);
+				Ce(t.x, t.y);
+			}
+		}
+	}
+	function de(e) {
+		F && e.pointerId === F.pointerId ? J() : I && e.pointerId === I.pointerId && !I.dropping && (xe(), Z("DROP"));
+	}
+	function fe(e) {
+		F && e.pointerId === F.pointerId && J(), I && e.pointerId === I.pointerId && !I.dropping && Z("CANCEL");
+	}
+	function pe(e) {
+		let t = I;
 		if (t && !t.dropping) {
-			if (e.key === "Escape") e.preventDefault(), e.stopPropagation(), X("CANCEL");
+			if (e.key === "Escape") e.preventDefault(), e.stopPropagation(), Z("CANCEL");
 			else if (t.mode === "SNAP") {
-				if (e.key === " " || e.key === "Enter") X("DROP");
-				else if (e.key in b) Se(t, b[e.key]);
+				if (e.key === " " || e.key === "Enter") Z("DROP");
+				else if (e.key in C) Ee(t, C[e.key]);
 				else if (e.key !== "Tab") return;
 				e.preventDefault(), e.stopPropagation();
 			}
 		}
 	}
-	function de(e) {
-		M && e.cancelable && e.preventDefault();
+	function me(e) {
+		I && e.cancelable && e.preventDefault();
 	}
-	function fe(e) {
-		(j || M) && e.preventDefault();
-	}
-	function pe(e) {
-		(j || M) && e.preventDefault();
-	}
-	function me() {
-		q(), M && !M.dropping && X("CANCEL");
-	}
-	function G(e) {
-		(e.type !== "visibilitychange" || P?.document.visibilityState === "hidden") && me();
-	}
-	function he() {
-		if (!M || M.dropping || M.impactFrame !== null) return;
-		let e = M.overlay.ownerDocument.defaultView;
-		e && (M.impactFrame = e.requestAnimationFrame(() => {
-			M && (M.impactFrame = null, M.mode === "SNAP" ? Te(M, !1) : xe(M));
-		}));
+	function he(e) {
+		(F || I) && e.preventDefault();
 	}
 	function ge(e) {
-		P !== e && (K(), P = e, R = N.get(e.document)?.liveRegion ?? null, e.addEventListener("pointermove", se, !0), e.addEventListener("pointerup", ce, !0), e.addEventListener("pointercancel", le, !0), e.addEventListener("touchmove", de, {
-			capture: !0,
-			passive: !1
-		}), e.addEventListener("contextmenu", fe, !0), e.addEventListener("dragstart", pe, !0), e.addEventListener("keydown", ue, !0), e.addEventListener("blur", me), e.addEventListener("pagehide", G), e.document.addEventListener("visibilitychange", G), e.addEventListener("scroll", he, !0));
-	}
-	function K() {
-		let e = P;
-		e && (P = null, e.removeEventListener("pointermove", se, !0), e.removeEventListener("pointerup", ce, !0), e.removeEventListener("pointercancel", le, !0), e.removeEventListener("touchmove", de, !0), e.removeEventListener("contextmenu", fe, !0), e.removeEventListener("dragstart", pe, !0), e.removeEventListener("keydown", ue, !0), e.removeEventListener("blur", me), e.removeEventListener("pagehide", G), e.document.removeEventListener("visibilitychange", G), e.removeEventListener("scroll", he, !0));
-	}
-	function q() {
-		j && (j.timer && clearTimeout(j.timer), j = null, M || K());
+		(F || I) && e.preventDefault();
 	}
 	function _e() {
-		let e = M?.overlay.ownerDocument.defaultView ?? P ?? window, t = (e) => {
+		J(), I && !I.dropping && Z("CANCEL");
+	}
+	function K(e) {
+		(e.type !== "visibilitychange" || R?.document.visibilityState === "hidden") && _e();
+	}
+	function ve() {
+		if (!I || I.dropping || I.impactFrame !== null) return;
+		let e = I.overlay.ownerDocument.defaultView;
+		e && (I.impactFrame = e.requestAnimationFrame(() => {
+			I && (I.impactFrame = null, I.mode === "SNAP" ? ke(I, !1) : Te(I));
+		}));
+	}
+	function ye(e) {
+		R !== e && (q(), R = e, H = L.get(e.document)?.liveRegion ?? null, e.addEventListener("pointermove", ue, !0), e.addEventListener("pointerup", de, !0), e.addEventListener("pointercancel", fe, !0), e.addEventListener("touchmove", me, {
+			capture: !0,
+			passive: !1
+		}), e.addEventListener("contextmenu", he, !0), e.addEventListener("dragstart", ge, !0), e.addEventListener("keydown", pe, !0), e.addEventListener("blur", _e), e.addEventListener("pagehide", K), e.document.addEventListener("visibilitychange", K), e.addEventListener("scroll", ve, !0));
+	}
+	function q() {
+		let e = R;
+		e && (R = null, e.removeEventListener("pointermove", ue, !0), e.removeEventListener("pointerup", de, !0), e.removeEventListener("pointercancel", fe, !0), e.removeEventListener("touchmove", me, !0), e.removeEventListener("contextmenu", he, !0), e.removeEventListener("dragstart", ge, !0), e.removeEventListener("keydown", pe, !0), e.removeEventListener("blur", _e), e.removeEventListener("pagehide", K), e.document.removeEventListener("visibilitychange", K), e.removeEventListener("scroll", ve, !0));
+	}
+	function J() {
+		F && (F.timer && clearTimeout(F.timer), F = null, I || q());
+	}
+	function be(e, t) {
+		U?.();
+		let n = (n) => {
+			n.pointerId === t && (U?.(), n.type === "pointerup" && xe(e));
+		};
+		e.addEventListener("pointerup", n, !0), e.addEventListener("pointercancel", n, !0), U = () => {
+			U = null, e.removeEventListener("pointerup", n, !0), e.removeEventListener("pointercancel", n, !0);
+		};
+	}
+	function xe(e = I?.overlay.ownerDocument.defaultView ?? R ?? window) {
+		let t = (e) => {
 			e.preventDefault(), e.stopPropagation();
 		};
 		e.addEventListener("click", t, {
@@ -285,72 +303,78 @@ function g(e = {}) {
 			once: !0
 		}), setTimeout(() => e.removeEventListener("click", t, !0), 0);
 	}
-	function ve(t, r, a, o, s = "FLUID") {
-		j?.timer && clearTimeout(j.timer), j = null, e.onBeforeCapture?.({
+	function Se(t, r, a, o, s = "FLUID") {
+		F?.timer && clearTimeout(F.timer), F = null, e.onBeforeCapture?.({
 			draggableId: t.id,
 			mode: s
 		});
-		for (let e of L) e.finish();
-		L.clear();
-		let c = Ke(t);
+		for (let e of V) e.finish();
+		V.clear();
+		let c = Ze(t);
 		if (!c) {
-			K();
+			q();
 			return;
 		}
-		let l = c.element.ownerDocument, u = l.defaultView ?? window, d = Ue(c);
+		let l = c.element.ownerDocument, u = l.defaultView ?? window, d = qe(c);
 		if (!d) {
-			K();
+			q();
 			return;
 		}
-		I = u.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? !1;
-		let p = E(c.element), m = u.getComputedStyle(c.element), h = {
-			top: A(m.marginTop),
-			left: A(m.marginLeft),
-			vertical: A(m.marginTop) + A(m.marginBottom),
-			horizontal: A(m.marginLeft) + A(m.marginRight)
-		}, g = w(c.element, p), _ = /* @__PURE__ */ new Map(), v = [], y = 0;
+		B = u.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? !1;
+		let f = k(c.element), p = u.getComputedStyle(c.element), h = {
+			top: N(p.marginTop),
+			left: N(p.marginLeft),
+			vertical: N(p.marginTop) + N(p.marginBottom),
+			horizontal: N(p.marginLeft) + N(p.marginRight)
+		}, g = D(c.element, f), _ = /* @__PURE__ */ new Map(), v = [], y = 0;
 		for (let e of i.values()) {
 			if (e.type !== c.type || !e.element.isConnected || e.element.ownerDocument !== l || c.element.contains(e.element)) continue;
-			let t = We(e), n = e === d, r = u.getComputedStyle(e.element), i = e.axis === "vertical", a = E(e.element), o = w(e.element, a), s = A(i ? r.rowGap : r.columnGap) * o, f = [], m = [], b = (e, t) => {
-				let n = u.getComputedStyle(e), r = w(e, t);
+			let t = Je(e), n = e === d, r = u.getComputedStyle(e.element), i = e.axis === "vertical", a = k(e.element), o = D(e.element, a), s = N(i ? r.rowGap : r.columnGap) * o, p = [], m = [], b = (e, t) => {
+				let n = u.getComputedStyle(e), r = D(e, t);
 				return {
 					start: i ? t.top : t.left,
 					size: i ? t.height : t.width,
-					marginStart: A(i ? n.marginTop : n.marginLeft) * r,
-					marginEnd: A(i ? n.marginBottom : n.marginRight) * r
+					marginStart: N(i ? n.marginTop : n.marginLeft) * r,
+					marginEnd: N(i ? n.marginBottom : n.marginRight) * r
 				};
 			};
 			t.forEach((t, n) => {
-				let r = t === c ? p : E(t.element);
-				e.still || m.push(b(t.element, r)), t === c ? y = n : f.push({
+				let r = t === c ? f : k(t.element);
+				e.still || m.push(b(t.element, r)), t === c ? y = n : p.push({
 					item: t,
 					original: n,
 					box: r
 				});
 			});
-			let x = ne(e.element), S = _.get(x) ?? null;
-			!S && x && (S = {
-				element: x,
-				liftLeft: x.scrollLeft,
-				liftTop: x.scrollTop,
-				box: E(x)
-			}, _.set(x, S)), v.push({
+			let x = P(e.element).map((e) => {
+				let t = _.get(e);
+				return t || (t = {
+					element: e,
+					liftLeft: e.scrollLeft,
+					liftTop: e.scrollTop
+				}, _.set(e, t)), t;
+			});
+			v.push({
 				registration: e,
 				box: a,
 				scale: o,
 				gap: s,
-				paddingStart: A(i ? r.paddingTop : r.paddingLeft) * o,
-				scroller: S,
-				slots: f,
-				room: e.still ? 0 : (i ? p.height + h.vertical * g : p.width + h.horizontal * g) + s,
+				paddingStart: N(i ? r.paddingTop : r.paddingLeft) * o,
+				scrollers: x,
+				hitArea: e.hitArea ? {
+					element: e.hitArea,
+					scrollers: P(e.hitArea)
+				} : null,
+				slots: p,
+				room: e.still ? 0 : (i ? f.height + h.vertical * g : f.width + h.horizontal * g) + s,
 				marginStart: (i ? h.top : h.left) * g,
 				isHome: n,
-				flow: e.still ? null : k(r, a, o, i, m, n ? m[y] : b(c.element, p))
+				flow: e.still ? null : ee(r, a, o, i, m, n ? m[y] : b(c.element, f))
 			});
 		}
 		let b = v.find((e) => e.isHome);
 		if (!b) {
-			K();
+			q();
 			return;
 		}
 		let x = l.createElement("div");
@@ -361,26 +385,27 @@ function g(e = {}) {
 			zIndex: "2147483000",
 			contain: "layout style"
 		});
-		for (let t of e.inheritProperties ?? []) x.style.setProperty(t, m.getPropertyValue(t));
-		let S = b.registration.renderPreview?.(c.element) ?? e.renderPreview?.(c.element), C = S ?? re(c.element);
-		for (let e of S ? f : []) C.style.setProperty(e, m.getPropertyValue(e));
-		C.setAttribute("data-drag-preview", ""), C.setAttribute("aria-hidden", "true"), Object.assign(C.style, {
+		for (let t of e.inheritProperties ?? []) x.style.setProperty(t, p.getPropertyValue(t));
+		let S = b.registration.renderPreview?.(c.element) ?? e.renderPreview?.(c.element), C = S ? null : ne(c.element), w = S ?? C.clone;
+		for (let e of S ? m : []) w.style.setProperty(e, p.getPropertyValue(e));
+		w.setAttribute("data-drag-preview", ""), w.setAttribute("aria-hidden", "true"), Object.assign(w.style, {
 			position: "absolute",
-			left: `${p.left}px`,
-			top: `${p.top}px`,
-			width: `${p.width / g}px`,
-			height: `${p.height / g}px`,
+			left: `${f.left}px`,
+			top: `${f.top}px`,
+			width: `${f.width / g}px`,
+			height: `${f.height / g}px`,
 			transformOrigin: "0 0",
 			margin: "0",
 			boxSizing: "border-box",
 			translate: "none",
-			transform: T(0, 0, g),
+			transform: O(0, 0, g),
 			transition: "none",
 			willChange: "transform",
 			pointerEvents: "none"
-		}), x.appendChild(C), l.body.appendChild(x);
-		let D = c.element;
-		M = {
+		}), x.appendChild(w), e.onPreview?.(w, c.element), l.body.appendChild(x);
+		for (let [e, t, n] of C?.scrolled ?? []) e.scrollLeft = t, e.scrollTop = n;
+		let T = c.element;
+		I = {
 			item: c,
 			mode: s,
 			pointerId: r,
@@ -388,80 +413,84 @@ function g(e = {}) {
 			startY: o,
 			lastX: a,
 			lastY: o,
-			liftBox: p,
+			liftBox: f,
 			previewScale: g,
 			sourceIndex: y,
 			home: b,
 			containers: v,
-			scrollers: [..._.values()],
 			windowLiftX: u.scrollX,
 			windowLiftY: u.scrollY,
 			overlay: x,
-			preview: C,
+			preview: w,
 			destination: {
 				container: b,
 				index: y
 			},
 			shifts: /* @__PURE__ */ new Map(),
-			sourceVisibility: D.style.visibility,
+			sourceVisibility: T.style.visibility,
 			reserved: null,
 			scrollFrame: null,
+			scrollTime: null,
+			scrollOwed: /* @__PURE__ */ new Map(),
+			scrollArmed: /* @__PURE__ */ new Map(),
 			impactFrame: null,
 			dropping: !1,
 			combine: null,
 			lockAxis: b.registration.lockAxis ?? e.lockAxis
-		}, D.style.visibility = "hidden", D.setAttribute("data-drag-source", ""), b.registration.element.setAttribute("data-drag-over", ""), l.documentElement.setAttribute("data-drag-active", c.type), e.onDragStart?.(Q(M));
-		let O = H(M);
-		O && V(n.lifted(O));
+		}, T.style.visibility = "hidden", T.setAttribute("data-drag-source", ""), b.registration.element.setAttribute("data-drag-over", ""), l.documentElement.setAttribute("data-drag-active", c.type), e.onDragStart?.($(I));
+		let E = ae(I);
+		E && G(n.lifted(E));
 	}
-	function ye(e, t) {
-		let n = M;
+	function Ce(e, t) {
+		let n = I;
 		if (!n) return;
 		n.lastX = e, n.lastY = t;
 		let r = n.lockAxis === "y" ? 0 : e - n.startX, i = n.lockAxis === "x" ? 0 : t - n.startY;
-		n.preview.style.transform = T(r, i, n.previewScale), xe(n), Pe(n);
+		n.preview.style.transform = O(r, i, n.previewScale), Te(n), Re(n);
 	}
-	function J(e, t) {
-		let n = e.overlay.ownerDocument.defaultView ?? window, r = n.scrollX - e.windowLiftX, i = n.scrollY - e.windowLiftY, a = t.scroller;
-		return a?.element && (r += a.element.scrollLeft - a.liftLeft, i += a.element.scrollTop - a.liftTop), {
+	function Y(e, t) {
+		let n = e.overlay.ownerDocument.defaultView ?? window, r = n.scrollX - e.windowLiftX, i = n.scrollY - e.windowLiftY;
+		for (let e of t.scrollers) r += e.element.scrollLeft - e.liftLeft, i += e.element.scrollTop - e.liftTop;
+		return {
 			x: r,
 			y: i
 		};
 	}
-	function be(e, t) {
-		let n = J(e, t), r = t.box, i = t.scroller, a = {
+	function we(e, t) {
+		if (t.hitArea) return t.hitArea.scrollers.reduce((e, t) => A(e, k(t)), k(t.hitArea.element));
+		let n = Y(e, t), r = t.box, i = {
 			...r,
 			left: r.left - n.x,
 			top: r.top - n.y
 		};
-		return i?.element ? D(a, i.box) : a;
+		return t.scrollers.reduce((e, { element: t }) => A(e, k(t)), i);
 	}
-	function xe(t) {
+	function Te(t) {
 		let r = t.lastX, i = t.lastY, a = null, o = Infinity;
 		for (let e of t.containers) {
 			if (e.registration.isDropDisabled()) continue;
-			let n = be(t, e);
-			if (!O(n, r, i)) continue;
+			let n = we(t, e);
+			if (!j(n, r, i)) continue;
 			let s = n.width * n.height;
 			s < o && (a = e, o = s);
 		}
-		let s = a && t.mode === "FLUID" ? Oe(t, a) : null;
+		let s = a && t.mode === "FLUID" ? Me(t, a) : null;
 		if (s && a) {
-			ke(t, {
+			Ne(t, {
 				container: a,
 				slot: s
-			}) && (e.onDragUpdate?.($(t)), V(n.combining(t.item.label(), s.item.label())));
+			}) && (e.onDragUpdate?.(Ye(t)), G(n.combining(t.item.label(), s.item.label())));
 			return;
 		}
-		let c = ke(t, null), l = null;
+		let c = Ne(t, null), l = null;
 		a && (l = {
 			container: a,
-			index: Ae(t, a)
+			index: Pe(t, a)
 		});
 		let u = t.destination;
-		u?.container === l?.container && u?.index === l?.index ? c && (e.onDragUpdate?.($(t)), U(t)) : (t.destination = l, je(t, u?.container ?? null), t.overlay.ownerDocument.documentElement.toggleAttribute("data-drag-outside", !l), e.onDragUpdate?.($(t)), U(t));
+		u?.container === l?.container && u?.index === l?.index ? c && (e.onDragUpdate?.(Ye(t)), oe(t)) : (t.destination = l, Fe(t, u?.container ?? null), t.overlay.ownerDocument.documentElement.toggleAttribute("data-drag-outside", !l), e.onDragUpdate?.(Ye(t)), oe(t));
 	}
-	function Se(t, n) {
+	function Ee(t, n) {
 		let r = t.destination ?? {
 			container: t.home,
 			index: t.sourceIndex
@@ -473,80 +502,78 @@ function g(e = {}) {
 				index: e
 			});
 		} else {
-			let e = Ce(t, r.container, n);
+			let e = De(t, r.container, n);
 			e && (a = {
 				container: e,
-				index: we(t, e)
+				index: Oe(t, e)
 			});
 		}
 		if (!a) return;
 		let o = t.destination?.container ?? null;
-		t.destination = a, je(t, o), Te(t, !0), Ee(t), e.onDragUpdate?.($(t)), U(t);
+		t.destination = a, Fe(t, o), ke(t, !0), Ae(t), e.onDragUpdate?.(Ye(t)), oe(t);
 	}
-	function Ce(e, t, n) {
-		let r = x(be(e, t)), i = null, a = Infinity;
+	function De(e, t, n) {
+		let r = w(we(e, t)), i = null, a = Infinity;
 		for (let o of e.containers) {
 			if (o === t || o.registration.isDropDisabled()) continue;
-			let s = x(be(e, o)), c = (s.x - r.x) * n.x + (s.y - r.y) * n.y;
+			let s = w(we(e, o)), c = (s.x - r.x) * n.x + (s.y - r.y) * n.y;
 			if (c <= 1) continue;
 			let l = c + (Math.abs((s.x - r.x) * n.y) + Math.abs((s.y - r.y) * n.x)) * 2;
 			l < a && (i = o, a = l);
 		}
 		return i;
 	}
-	function we(e, t) {
-		let n = t.registration.axis === "vertical", r = J(e, t), i = te(e.preview.style.transform), a = n ? e.liftBox.top + i.y + e.liftBox.height / 2 : e.liftBox.left + i.x + e.liftBox.width / 2;
-		return t.slots.filter((i) => Y(e, t, i) - (n ? r.y : r.x) + (n ? i.box.height : i.box.width) / 2 < a).length;
+	function Oe(e, t) {
+		let n = t.registration.axis === "vertical", r = Y(e, t), i = te(e.preview.style.transform), a = n ? e.liftBox.top + i.y + e.liftBox.height / 2 : e.liftBox.left + i.x + e.liftBox.width / 2;
+		return t.slots.filter((i) => X(e, t, i) - (n ? r.y : r.x) + (n ? i.box.height : i.box.width) / 2 < a).length;
 	}
-	function Te(e, n) {
-		let r = Le(e), { duration: i, easing: a } = t.outOfTheWay;
-		e.preview.style.transition = n && !I ? `transform ${i}ms ${a}` : "none", e.preview.style.transform = T(r.x, r.y, e.previewScale);
+	function ke(e, n) {
+		let r = Ve(e), { duration: i, easing: a } = t.outOfTheWay;
+		e.preview.style.transition = n && !B ? `transform ${i}ms ${a}` : "none", e.preview.style.transform = O(r.x, r.y, e.previewScale);
 	}
-	function Ee(e) {
+	function Ae(e) {
 		let n = e.overlay.ownerDocument.defaultView;
 		if (!n) return;
-		let r = Le(e), i = {
-			left: e.liftBox.left + r.x,
-			top: e.liftBox.top + r.y,
-			width: e.liftBox.width,
-			height: e.liftBox.height
-		}, a = t.autoScrollEdge, o = e.destination?.container.scroller, s = (e) => ({
-			x: Math.min(0, i.left - a - e.left) + Math.max(0, i.left + i.width + a - e.left - e.width),
-			y: Math.min(0, i.top - a - e.top) + Math.max(0, i.top + i.height + a - e.top - e.height)
-		});
-		if (o?.element) {
-			let e = s(o.box);
-			(e.x || e.y) && o.element.scrollBy(e.x, e.y);
+		let r = t.autoScrollEdge, i = (t) => {
+			let n = Ve(e), i = e.liftBox.left + n.x, a = e.liftBox.top + n.y;
+			return {
+				x: Math.min(0, i - r - t.left) + Math.max(0, i + e.liftBox.width + r - t.left - t.width),
+				y: Math.min(0, a - r - t.top) + Math.max(0, a + e.liftBox.height + r - t.top - t.height)
+			};
+		};
+		for (let { element: t } of e.destination?.container.scrollers ?? []) {
+			let e = i(k(t));
+			(e.x || e.y) && t.scrollBy(e.x, e.y);
 		}
-		let c = s({
+		let a = i({
 			left: 0,
 			top: 0,
 			width: n.innerWidth,
 			height: n.innerHeight
 		});
-		(c.x || c.y) && n.scrollBy(c.x, c.y), Te(e, !0);
+		(a.x || a.y) && n.scrollBy(a.x, a.y), ke(e, !0);
 	}
-	function De(e, t) {
+	function je(e, t) {
 		let n = t.registration.axis === "vertical", r = n ? e.liftBox.top : e.liftBox.left, i = n ? e.liftBox.height : e.liftBox.width, a = n ? e.lockAxis === "x" ? 0 : e.lastY - e.startY : e.lockAxis === "y" ? 0 : e.lastX - e.startX;
 		return {
 			start: r + a,
 			end: r + a + i
 		};
 	}
-	function Oe(e, t) {
+	function Me(e, t) {
 		let n = e.destination;
 		if (!n || n.container !== t || !t.registration.isCombineEnabled()) return null;
-		let r = t.registration.axis === "vertical", i = r ? J(e, t).y : J(e, t).x, a = De(e, t);
+		let r = t.registration.axis === "vertical", i = r ? Y(e, t).y : Y(e, t).x, a = je(e, t);
 		return t.slots.find((o, s) => {
-			let c = r ? o.box.height : o.box.width, l = s >= n.index, u = Y(e, t, o) - i + (l ? t.room : 0), d = c / 4, f = l ? a.end : a.start;
+			let c = r ? o.box.height : o.box.width, l = s >= n.index, u = X(e, t, o) - i + (l ? t.room : 0), d = c / 4, f = l ? a.end : a.start;
 			return f > u + d && f < u + c - d;
 		}) ?? null;
 	}
-	function ke(e, t) {
+	function Ne(e, t) {
 		return e.combine?.slot !== t?.slot && (e.combine?.slot.item.element.removeAttribute("data-drag-combine"), t?.slot.item.element.setAttribute("data-drag-combine", ""), e.combine = t, !0);
 	}
-	function Ae(e, t) {
-		let n = t.registration.axis === "vertical", r = J(e, t), { start: i, end: a } = De(e, t), o = n ? r.y : r.x, s = t.slots.map((r) => Y(e, t, r) - o + (n ? r.box.height : r.box.width) / 2), c = s.length;
+	function Pe(e, t) {
+		let n = t.registration.axis === "vertical", r = Y(e, t), { start: i, end: a } = je(e, t), o = n ? r.y : r.x, s = t.slots.map((r) => X(e, t, r) - o + (n ? r.box.height : r.box.width) / 2), c = s.length;
 		if (e.destination?.container !== t) {
 			let e = (i + a) / 2;
 			return s.filter((t) => t < e).length;
@@ -557,25 +584,25 @@ function g(e = {}) {
 		for (; l < c && a > s[l] + t.room;) l++;
 		return l;
 	}
-	function Y(e, t, n) {
+	function X(e, t, n) {
 		let r = t.registration.axis === "vertical" ? n.box.top : n.box.left;
 		return t.isHome && n.original > e.sourceIndex ? r - t.room : r;
 	}
-	function je(e, t) {
+	function Fe(e, t) {
 		let n = e.destination, r = /* @__PURE__ */ new Set([e.home]);
 		t && r.add(t), n && r.add(n.container);
 		for (let t of r) {
-			let r = Me(e, t);
+			let r = Ie(e, t);
 			t.slots.forEach((i, a) => {
 				let o = 0;
-				r ? o = r.shifts[a] : (t.isHome && i.original > e.sourceIndex && (o -= t.room), n?.container === t && a >= n.index && (o += t.room)), Ne(e, i.item.element, o, t);
+				r ? o = r.shifts[a] : (t.isHome && i.original > e.sourceIndex && (o -= t.room), n?.container === t && a >= n.index && (o += t.room)), Le(e, i.item.element, o, t);
 			});
 		}
 		let i = n && !n.container.isHome ? n.container : null;
 		e.reserved !== i && (e.reserved?.registration.element.style.removeProperty("--drag-reserve"), e.reserved?.registration.element.removeAttribute("data-drag-over"), i && !i.registration.still && i.registration.element.style.setProperty("--drag-reserve", `${i.room}px`), e.reserved = i);
 		for (let t of e.containers) n?.container === t ? t.registration.element.setAttribute("data-drag-over", "") : t.registration.element.removeAttribute("data-drag-over");
 	}
-	function Me(e, t) {
+	function Ie(e, t) {
 		let n = t.flow;
 		if (!n) return null;
 		let r = t.slots.map((e) => n.items[e.original]), i = e.destination?.container === t ? e.destination.index : -1;
@@ -586,7 +613,7 @@ function g(e = {}) {
 			source: i >= 0 ? o[i] : null
 		};
 	}
-	function Ne(n, r, i, a) {
+	function Le(n, r, i, a) {
 		let o = a.registration.axis, s = i / a.scale, c = n.shifts.get(r), l = c?.value ?? 0;
 		if (Math.abs(l - s) < .01) return;
 		if (c) c.value = s;
@@ -598,7 +625,7 @@ function g(e = {}) {
 				transition: r.style.transition
 			});
 			let { duration: e, easing: i } = t.outOfTheWay;
-			r.style.transition = I ? "none" : `translate ${e}ms ${i}`;
+			r.style.transition = B ? "none" : `translate ${e}ms ${i}`;
 		}
 		let u = (s - l) * a.scale;
 		e.onMovement?.({
@@ -608,79 +635,99 @@ function g(e = {}) {
 			y: o === "vertical" ? u : 0
 		}), r.style.translate = s === 0 ? "none" : o === "vertical" ? `0 ${s}px` : `${s}px 0`, r.style.setProperty("--drag-shift", `${s}px`);
 	}
-	function Pe(e) {
+	function Re(e) {
 		if (e.scrollFrame !== null) return;
 		let t = e.overlay.ownerDocument.defaultView;
 		if (!t) return;
-		let n = () => {
-			M !== e || e.dropping || (e.scrollFrame = null, Fe(e) && (xe(e), e.scrollFrame = t.requestAnimationFrame(n)));
+		let n = (r) => {
+			if (I !== e || e.dropping) return;
+			e.scrollFrame = null;
+			let i = e.scrollTime === null ? f : r - e.scrollTime;
+			e.scrollTime = r, ze(e, Math.min(2, Math.max(.25, i / f))) ? (Te(e), e.scrollFrame = t.requestAnimationFrame(n)) : e.scrollTime = null;
 		};
-		Ie(e, e.destination?.container.scroller ?? null, t) && (e.scrollFrame = t.requestAnimationFrame(n));
+		e.scrollFrame = t.requestAnimationFrame(n);
 	}
-	function Fe(e) {
-		let t = e.overlay.ownerDocument.defaultView;
-		if (!t) return !1;
-		let n = e.destination?.container.scroller ?? null, r = Ie(e, n, t);
-		if (!r) return !1;
-		if (n?.element) {
-			let e = {
-				left: n.element.scrollLeft,
-				top: n.element.scrollTop
+	function ze(e, t) {
+		let n = e.overlay.ownerDocument.defaultView;
+		if (!n) return !1;
+		let r = !1, i = !1, a = !1, o = (n, o, s, c) => {
+			let l = r ? 0 : o.x, u = i ? 0 : o.y, d = e.scrollOwed.get(n) ?? {
+				x: 0,
+				y: 0
 			};
-			if (n.element.scrollBy(r.x, r.y), n.element.scrollLeft !== e.left || n.element.scrollTop !== e.top) return !0;
+			if (e.scrollOwed.set(n, d), d.x = l ? d.x + l * t : 0, d.y = u ? d.y + u * t : 0, !l && !u) return;
+			let f = Math.trunc(d.x), p = Math.trunc(d.y);
+			d.x -= f, d.y -= p;
+			let m = c();
+			(f || p) && s(f, p);
+			let h = c(), g = f ? h.x !== m.x : !!l, _ = p ? h.y !== m.y : !!u;
+			r ||= g, i ||= _, a ||= g || _;
+		}, s = e.destination?.container.scrollers ?? e.home.scrollers;
+		for (let { element: t } of s) {
+			let n = k(t);
+			if (j(n, e.lastX, e.lastY) && (o(t, Be(e, t, n), (e, n) => t.scrollBy(e, n), () => ({
+				x: t.scrollLeft,
+				y: t.scrollTop
+			})), r && i)) return !0;
 		}
-		let i = Ie(e, null, t);
-		if (!i) return !1;
-		let a = {
-			x: t.scrollX,
-			y: t.scrollY
-		};
-		return t.scrollBy(i.x, i.y), t.scrollX !== a.x || t.scrollY !== a.y;
-	}
-	function Ie(e, n, r) {
-		let i = n?.element ? n.box : {
+		return o(n, Be(e, n, {
 			left: 0,
 			top: 0,
-			width: r.innerWidth,
-			height: r.innerHeight
-		}, a = t.autoScrollEdge, o = (e, t, n) => {
-			let r = e - t, i = t + n - e;
-			return r < a ? -24 * ((a - Math.max(r, 0)) / a) ** 2 : i < a ? d * ((a - Math.max(i, 0)) / a) ** 2 : 0;
-		}, s = o(e.lastX, i.left, i.width), c = o(e.lastY, i.top, i.height);
-		return s || c ? {
-			x: s,
-			y: c
-		} : null;
+			width: n.innerWidth,
+			height: n.innerHeight
+		}), (e, t) => n.scrollBy(e, t), () => ({
+			x: n.scrollX,
+			y: n.scrollY
+		})), a;
 	}
-	async function X(n) {
-		let r = M;
+	function Be(e, n, r) {
+		let i = e.scrollArmed.get(n) ?? {
+			left: !1,
+			right: !1,
+			top: !1,
+			bottom: !1
+		};
+		e.scrollArmed.set(n, i);
+		let a = (e, n, r, a, o, s) => {
+			let c = Math.min(t.autoScrollEdge, a / 5);
+			if (c <= 0) return 0;
+			let l = e - r, u = r + a - e;
+			return (l >= c || e <= n - p) && (i[o] = !0), (u >= c || e >= n + p) && (i[s] = !0), l < c ? i[o] ? -24 * ((c - Math.max(l, 0)) / c) ** 2 : 0 : u < c && i[s] ? d * ((c - Math.max(u, 0)) / c) ** 2 : 0;
+		};
+		return {
+			x: a(e.lastX, e.startX, r.left, r.width, "left", "right"),
+			y: a(e.lastY, e.startY, r.top, r.height, "top", "bottom")
+		};
+	}
+	async function Z(n) {
+		let r = I;
 		if (!r || r.dropping) return;
 		r.dropping = !0;
 		let i = r.overlay.ownerDocument.defaultView ?? window;
 		if (r.scrollFrame !== null && i.cancelAnimationFrame(r.scrollFrame), r.impactFrame !== null && i.cancelAnimationFrame(r.impactFrame), n === "DROP" && r.combine) {
 			let { container: e, slot: i } = r.combine, a = {
-				...Q(r),
+				...$(r),
 				destination: null,
-				combine: Ge(r),
+				combine: Xe(r),
 				reason: n
-			}, o = e.registration.axis === "vertical", s = J(r, e), c = e.slots.indexOf(i), l = Y(r, e, i) + (r.destination && c >= r.destination.index ? e.room : 0), u = (o ? i.box.left : l) - s.x - r.liftBox.left, d = (o ? l : i.box.top) - s.y - r.liftBox.top, { maxDuration: f, easing: p } = t.drop;
-			if (I) {
-				Z(r, a);
+			}, o = e.registration.axis === "vertical", s = Y(r, e), c = e.slots.indexOf(i), l = X(r, e, i) + (r.destination && c >= r.destination.index ? e.room : 0), u = (o ? i.box.left : l) - s.x - r.liftBox.left, d = (o ? l : i.box.top) - s.y - r.liftBox.top, { maxDuration: f, easing: p } = t.drop;
+			if (B) {
+				Q(r, a);
 				return;
 			}
-			r.preview.style.transition = `transform ${f}ms ${p}, opacity ${f}ms ${p}`, r.preview.style.transform = T(u, d, r.previewScale * .75), r.preview.style.opacity = "0";
+			r.preview.style.transition = `transform ${f}ms ${p}, opacity ${f}ms ${p}`, r.preview.style.transform = O(u, d, r.previewScale * .75), r.preview.style.opacity = "0";
 			let m = !1, h = () => {
-				m || (m = !0, Z(r, a));
+				m || (m = !0, Q(r, a));
 			};
-			r.preview.addEventListener("transitionend", h, { once: !0 }), setTimeout(h, f + 50);
+			r.land = h, r.preview.addEventListener("transitionend", h, { once: !0 }), setTimeout(h, f + 50);
 			return;
 		}
-		if (ke(r, null), n === "DROP" && !r.destination && r.mode === "FLUID" && e.onDropOutside?.(Q(r), {
+		if (Ne(r, null), n === "CANCEL" && r.mode === "FLUID" && be(i, r.pointerId), n === "DROP" && !r.destination && r.mode === "FLUID" && e.onDropOutside?.($(r), {
 			x: r.lastX,
 			y: r.lastY
 		})) {
-			Z(r, {
-				...Q(r),
+			Q(r, {
+				...$(r),
 				destination: null,
 				combine: null,
 				reason: "DROP"
@@ -693,78 +740,108 @@ function g(e = {}) {
 			r.destination = {
 				container: r.home,
 				index: r.sourceIndex
-			}, je(r, e);
+			}, Fe(r, e);
 		}
-		let o = null;
+		let o = null, s = null;
 		if (n === "DROP" && e.prepareDrop) {
 			r.preparing = !0;
-			let i = ze(r), s = new Map(i.map((e) => [e, e.getBoundingClientRect()])), c = Be(r, i);
+			let c = Ue(r), l = new Map(c.map((e) => [e, e.getBoundingClientRect()])), u = We(r, c);
 			for (let [e, t] of r.shifts) e.style.transition = "none", e.style.translate = t.translate;
 			r.reserved?.registration.element.style.removeProperty("--drag-reserve");
-			let l = e.prepareDrop({
-				...Q(r),
-				destination: a ? null : qe(r.destination),
-				combine: null,
-				reason: n
-			}), u = _(l) ? await l : l, d = typeof u == "function" ? u : () => u;
-			if (o = d(), M !== r || (o?.isConnected && (r.landing = {
-				element: o,
-				visibility: o.style.visibility
-			}, o.style.visibility = "hidden"), await new Promise((e) => (r.overlay.ownerDocument.defaultView ?? window).requestAnimationFrame(() => e())), M !== r)) return;
-			let f = d();
-			f !== o && (r.landing && (r.landing.element.style.visibility = r.landing.visibility), o = f, o?.isConnected && (r.landing = {
-				element: o,
-				visibility: o.style.visibility
-			}, o.style.visibility = "hidden"));
-			for (let e of i) {
+			try {
+				let t = e.prepareDrop({
+					...$(r),
+					destination: a ? null : Qe(r.destination),
+					combine: null,
+					reason: n
+				}), i = b(t) ? await t : t, s = typeof i == "function" ? i : () => i;
+				if (o = s(), I !== r || (o?.isConnected && (r.landing = {
+					element: o,
+					visibility: o.style.visibility
+				}, o.style.visibility = "hidden"), await new Promise((e) => (r.overlay.ownerDocument.defaultView ?? window).requestAnimationFrame(() => e())), I !== r)) return;
+				let c = s();
+				c !== o && (r.landing && (r.landing.element.style.visibility = r.landing.visibility), o = c, o?.isConnected && (r.landing = {
+					element: o,
+					visibility: o.style.visibility
+				}, o.style.visibility = "hidden"));
+			} catch (e) {
+				I === r && Q(r, {
+					...$(r),
+					destination: null,
+					combine: null,
+					reason: "CANCEL"
+				}), y(i, e);
+				return;
+			}
+			s = o?.isConnected ? o.getBoundingClientRect() : null;
+			let d = /* @__PURE__ */ new Map();
+			r.committed = {
+				boxes: /* @__PURE__ */ new Map(),
+				scrollX: i.scrollX,
+				scrollY: i.scrollY
+			};
+			for (let e of c) {
 				if (!e.isConnected || e === o) continue;
-				let n = s.get(e), r = e.getBoundingClientRect();
-				Ve(e, c.get(e), r);
-				let i = n.left - r.left, a = n.top - r.top;
-				if (!I && (i || a)) {
-					let n = e.animate([{ translate: `${i}px ${a}px` }, { translate: (e.ownerDocument.defaultView ?? window).getComputedStyle(e).translate }], {
-						duration: t.outOfTheWay.duration,
-						easing: t.outOfTheWay.easing
-					});
-					if (!n) continue;
-					L.add(n), n.addEventListener?.("finish", () => L.delete(n)), n.addEventListener?.("cancel", () => L.delete(n));
-				}
+				let t = l.get(e), n = e.getBoundingClientRect();
+				Ge(e, u.get(e), n), d.set(e, {
+					x: t.left - n.left,
+					y: t.top - n.top
+				}), r.committed.boxes.set(e, {
+					left: n.left,
+					top: n.top,
+					width: n.width,
+					height: n.height
+				});
+			}
+			for (let [e, n] of B ? [] : d) {
+				let r = e.parentElement;
+				for (; r && !d.has(r);) r = r.parentElement;
+				let i = r ? d.get(r) : {
+					x: 0,
+					y: 0
+				}, a = n.x - i.x, o = n.y - i.y;
+				if (Math.abs(a) < .01 && Math.abs(o) < .01) continue;
+				let s = e.animate([{ translate: `${a}px ${o}px` }, { translate: (e.ownerDocument.defaultView ?? window).getComputedStyle(e).translate }], {
+					duration: t.outOfTheWay.duration,
+					easing: t.outOfTheWay.easing
+				});
+				s && (V.add(s), s.addEventListener?.("finish", () => V.delete(s)), s.addEventListener?.("cancel", () => V.delete(s)));
 			}
 		}
-		let s = o?.isConnected ? o.getBoundingClientRect() : null, c = s ? {
+		let c = s ? {
 			x: s.left - r.liftBox.left,
 			y: s.top - r.liftBox.top
-		} : Le(r), l = te(r.preview.style.transform), d = Math.hypot(c.x - l.x, c.y - l.y), { minDuration: f, maxDuration: p, easing: m } = t.drop, h = !a && !!r.destination?.container.registration.still, g = d < .5 || I || h ? 0 : f + (p - f) * Math.min(d / u, 1), v = {
-			...Q(r),
-			destination: a || !r.destination ? null : qe(r.destination),
+		} : Ve(r), l = te(r.preview.style.transform), d = Math.hypot(c.x - l.x, c.y - l.y), { minDuration: f, maxDuration: p, easing: m } = t.drop, h = !a && !!r.destination?.container.registration.still, g = d < .5 || B || h ? 0 : f + (p - f) * Math.min(d / u, 1), _ = {
+			...$(r),
+			destination: a || !r.destination ? null : Qe(r.destination),
 			combine: null,
 			reason: n
 		};
 		if (g === 0) {
-			Z(r, v);
+			Q(r, _);
 			return;
 		}
-		r.preview.style.transition = `transform ${g}ms ${m}`, r.preview.style.transform = T(c.x, c.y, r.previewScale);
-		let y = !1, b = () => {
-			y || (y = !0, Z(r, v));
+		r.preview.style.transition = `transform ${g}ms ${m}`, r.preview.style.transform = O(c.x, c.y, r.previewScale);
+		let v = !1, x = () => {
+			v || (v = !0, Q(r, _));
 		};
-		r.preview.addEventListener("transitionend", b, { once: !0 }), setTimeout(b, g + 50);
+		r.land = x, r.preview.addEventListener("transitionend", x, { once: !0 }), setTimeout(x, g + 50);
 	}
-	function Le(e) {
+	function Ve(e) {
 		let t = e.destination ?? {
 			container: e.home,
 			index: e.sourceIndex
-		}, n = t.container, r = n.registration.axis === "vertical", i = J(e, n), a = n.slots, o, s = n.registration.still, c = s ? Re(n, t.index) : void 0, l = s ? null : Me(e, n)?.source ?? null;
+		}, n = t.container, r = n.registration.axis === "vertical", i = Y(e, n), a = n.slots, o, s = n.registration.still, c = s ? He(n, t.index) : void 0, l = s ? null : Ie(e, n)?.source ?? null;
 		if (n.isHome && t.index === e.sourceIndex) o = r ? e.liftBox.top : e.liftBox.left;
 		else if (l !== null) o = l;
 		else if (c) o = r ? c.box.top : c.box.left;
 		else if (s && a.length > 0) {
 			let e = a[a.length - 1];
 			o = (r ? e.box.top + e.box.height : e.box.left + e.box.width) + n.gap;
-		} else if (t.index < a.length) o = Y(e, n, a[t.index]);
+		} else if (t.index < a.length) o = X(e, n, a[t.index]);
 		else if (a.length > 0) {
 			let t = a[a.length - 1], i = r ? e.liftBox.height : e.liftBox.width;
-			o = Y(e, n, t) + (r ? t.box.height : t.box.width) + n.room - i;
+			o = X(e, n, t) + (r ? t.box.height : t.box.width) + n.room - i;
 		} else o = (r ? n.box.top : n.box.left) + n.paddingStart + n.marginStart;
 		let u = r ? e.liftBox.left - e.home.box.left : e.liftBox.top - e.home.box.top, d = n.isHome ? r ? e.liftBox.left : e.liftBox.top : (r ? n.box.left : n.box.top) + u, f = o - (r ? i.y : i.x), p = d - (r ? i.x : i.y);
 		return {
@@ -772,32 +849,46 @@ function g(e = {}) {
 			y: (r ? f : p) - e.liftBox.top
 		};
 	}
-	function Re(e, t) {
+	function He(e, t) {
 		return e.isHome ? e.slots.find((e) => e.original === t) : e.slots[t];
 	}
-	function Z(t, r) {
-		let i = H(t), a = e.onMovement && !t.preparing ? ze(t) : [], s = Be(t, a);
+	function Q(t, r) {
+		let i = ae(t), a = e.onMovement && !t.preparing ? Ue(t) : [], s = We(t, a);
 		try {
 			e.onDragEnd?.(r);
 		} finally {
-			He(t);
+			Ke(t);
 		}
-		if (a.length && (t.overlay.ownerDocument.defaultView ?? window).requestAnimationFrame(() => {
-			for (let e of a) e.isConnected && Ve(e, s.get(e), e.getBoundingClientRect());
-		}), r.combine && t.combine ? V(n.combined(t.item.label(), t.combine.slot.item.label())) : i && V(r.reason === "DROP" && r.destination ? n.dropped(i) : n.returned(i)), t.mode === "SNAP") {
+		let c = t.overlay.ownerDocument.defaultView ?? window;
+		a.length && c.requestAnimationFrame(() => {
+			for (let e of a) e.isConnected && Ge(e, s.get(e), e.getBoundingClientRect());
+		});
+		let l = e.onMovement ? t.committed : void 0;
+		if (l && c.requestAnimationFrame(() => {
+			let e = c.scrollX - l.scrollX, n = c.scrollY - l.scrollY;
+			for (let [r, i] of l.boxes) {
+				if (!r.isConnected) continue;
+				let a = M(r, t.shifts);
+				Ge(r, i, {
+					...a,
+					left: a.left + e,
+					top: a.top + n
+				});
+			}
+		}), r.combine && t.combine ? G(n.combined(t.item.label(), t.combine.slot.item.label())) : i && G(r.reason === "DROP" && r.destination ? n.dropped(i) : n.returned(i)), t.mode === "SNAP") {
 			for (let e of o.values()) if (e.id === t.item.id && e.element.isConnected) {
 				e.handle.focus({ preventScroll: !0 });
 				break;
 			}
 		}
 	}
-	function ze(e) {
+	function Ue(e) {
 		return [...new Set(e.containers.flatMap((e) => e.slots.map((e) => e.item.element)))].filter((e) => e.isConnected);
 	}
-	function Be(e, t) {
-		return new Map(t.map((t) => [t, ee(t, e.shifts.get(t)?.scale ?? 1)]));
+	function We(e, t) {
+		return new Map(t.map((t) => [t, M(t, e.shifts)]));
 	}
-	function Ve(t, n, r) {
+	function Ge(t, n, r) {
 		let i = r.left - n.left, a = r.top - n.top;
 		(Math.abs(i) > 1 || Math.abs(a) > 1) && e.onMovement?.({
 			element: t,
@@ -806,7 +897,7 @@ function g(e = {}) {
 			y: a
 		});
 	}
-	function He(e) {
+	function Ke(e) {
 		let t = e.item.element, n = e.overlay.ownerDocument.defaultView ?? window;
 		for (let [t, n] of e.shifts) t.style.transition = "none", t.style.translate = n.translate, t.style.removeProperty("--drag-shift");
 		let r = [...e.shifts];
@@ -816,9 +907,9 @@ function g(e = {}) {
 			});
 		}), e.landing && (e.landing.element.style.visibility = e.landing.visibility), t.style.visibility = e.sourceVisibility, t.removeAttribute("data-drag-source"), e.combine?.slot.item.element.removeAttribute("data-drag-combine"), e.reserved?.registration.element.style.removeProperty("--drag-reserve");
 		for (let t of e.containers) t.registration.element.removeAttribute("data-drag-over");
-		e.overlay.remove(), t.ownerDocument.documentElement.removeAttribute("data-drag-active"), t.ownerDocument.documentElement.removeAttribute("data-drag-outside"), M = null, K();
+		e.overlay.remove(), t.ownerDocument.documentElement.removeAttribute("data-drag-active"), t.ownerDocument.documentElement.removeAttribute("data-drag-outside"), I = null, q();
 	}
-	function Ue(e) {
+	function qe(e) {
 		let t = e.element.parentElement;
 		for (; t;) {
 			let n = i.get(t);
@@ -827,12 +918,12 @@ function g(e = {}) {
 		}
 		return null;
 	}
-	function We(e) {
+	function Je(e) {
 		let t = [];
-		for (let n of o.values()) n.type === e.type && n.element.isConnected && Ue(n) === e && t.push(n);
+		for (let n of o.values()) n.type === e.type && n.element.isConnected && qe(n) === e && t.push(n);
 		return t.sort((e, t) => e.element.compareDocumentPosition(t.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
 	}
-	function Q(e) {
+	function $(e) {
 		return {
 			draggableId: e.item.id,
 			type: e.item.type,
@@ -843,51 +934,57 @@ function g(e = {}) {
 			mode: e.mode
 		};
 	}
-	function $(e) {
+	function Ye(e) {
 		return {
-			...Q(e),
-			destination: e.destination && !e.combine ? qe(e.destination) : null,
-			combine: Ge(e)
+			...$(e),
+			destination: e.destination && !e.combine ? Qe(e.destination) : null,
+			combine: Xe(e)
 		};
 	}
-	function Ge(e) {
+	function Xe(e) {
 		return e.combine ? {
 			draggableId: e.combine.slot.item.id,
 			droppableId: e.combine.container.registration.id
 		} : null;
 	}
-	function Ke(e) {
+	function Ze(e) {
 		if (e.element.isConnected && o.get(e.element) === e) return e;
 		for (let t of o.values()) if (t.id === e.id && t.type === e.type && t.element.isConnected) return t;
 		return null;
 	}
-	function qe(e) {
+	function Qe(e) {
 		return {
 			droppableId: e.container.registration.id,
 			index: e.index
 		};
 	}
 	return {
-		container: ie,
-		item: z,
-		isDragging: () => M !== null,
+		container: re,
+		item: ie,
+		isDragging: () => I !== null,
 		cancel: () => {
-			q(), M && !M.dropping && X("CANCEL");
+			J(), I && !I.dropping && Z("CANCEL");
 		},
 		destroy: () => {
-			F = !0, q(), M && !M.preparing && He(M);
-			for (let { view: e, instructions: t, liveRegion: n } of N.values()) e.removeEventListener("pointerdown", oe, !0), e.removeEventListener("keydown", W, !0), t.remove(), n.remove();
-			N.clear(), i.clear(), o.clear(), g.clear();
+			z = !0, J(), U?.(), I && !I.preparing && Ke(I);
+			for (let { view: e, instructions: t, liveRegion: n } of L.values()) e.removeEventListener("pointerdown", le, !0), e.removeEventListener("keydown", se, !0), t.remove(), n.remove();
+			L.clear(), i.clear(), o.clear(), v.clear();
 		}
 	};
 }
-function _(e) {
+function y(e, t) {
+	let n = e.reportError;
+	typeof n == "function" ? n.call(e, t) : setTimeout(() => {
+		throw t;
+	});
+}
+function b(e) {
 	return !!e && typeof e.then == "function";
 }
-function v(e) {
+function x(e) {
 	return e && e.nodeType === 1 ? e : null;
 }
-var y = 0, b = {
+var S = 0, C = {
 	ArrowUp: {
 		x: 0,
 		y: -1
@@ -905,13 +1002,13 @@ var y = 0, b = {
 		y: 0
 	}
 };
-function x(e) {
+function w(e) {
 	return {
 		x: e.left + e.width / 2,
 		y: e.top + e.height / 2
 	};
 }
-function S(e, t) {
+function T(e, t) {
 	let n = e.createElement("div");
 	return n.id = t, Object.assign(n.style, {
 		position: "absolute",
@@ -925,19 +1022,19 @@ function S(e, t) {
 		border: "0"
 	}), e.body.appendChild(n), n;
 }
-function C(e, t) {
+function E(e, t) {
 	let n = e.getAttribute("aria-label") ?? t.getAttribute("aria-label") ?? e.textContent?.replace(/\s+/g, " ").trim() ?? "";
 	return n.length > 60 ? `${n.slice(0, 59)}…` : n || "Item";
 }
-function w(e, t) {
+function D(e, t) {
 	if (e.offsetWidth <= 0 || t.width <= 0) return 1;
 	let n = t.width / e.offsetWidth;
 	return Math.abs(n - 1) < .02 ? 1 : n;
 }
-function T(e, t, n) {
+function O(e, t, n) {
 	return `translate3d(${e}px, ${t}px, 0)${n === 1 ? "" : ` scale(${n})`}`;
 }
-function E(e) {
+function k(e) {
 	let t = e.getBoundingClientRect();
 	return {
 		left: t.left,
@@ -946,7 +1043,7 @@ function E(e) {
 		height: t.height
 	};
 }
-function D(e, t) {
+function A(e, t) {
 	let n = Math.max(e.left, t.left), r = Math.max(e.top, t.top), i = Math.min(e.left + e.width, t.left + t.width), a = Math.min(e.top + e.height, t.top + t.height);
 	return {
 		left: n,
@@ -955,11 +1052,11 @@ function D(e, t) {
 		height: Math.max(0, a - r)
 	};
 }
-function O(e, t, n) {
+function j(e, t, n) {
 	return t >= e.left && t < e.left + e.width && n >= e.top && n < e.top + e.height;
 }
-function k(e, t, n, r, i, a) {
-	let s = r && /^(block|flow-root|list-item)$/.test(e.display), c = s ? 0 : A(r ? e.rowGap : e.columnGap) * n, l = (r ? t.top : t.left) + (A(r ? e.borderTopWidth : e.borderLeftWidth) + A(r ? e.paddingTop : e.paddingLeft)) * n, u = i[0], d = {
+function ee(e, t, n, r, i, a) {
+	let s = r && /^(block|flow-root|list-item)$/.test(e.display), c = s ? 0 : N(r ? e.rowGap : e.columnGap) * n, l = (r ? t.top : t.left) + (N(r ? e.borderTopWidth : e.borderLeftWidth) + N(r ? e.paddingTop : e.paddingLeft)) * n, u = i[0], d = {
 		gap: c,
 		collapse: s,
 		through: s && !!u && u.marginStart > .5 && Math.abs(u.start - l) <= 1
@@ -971,25 +1068,31 @@ function k(e, t, n, r, i, a) {
 		origin: l
 	} : null;
 }
-function ee(e, t) {
-	let n = E(e), r = (e) => {
+function M(e, t) {
+	let n = k(e), r = e.ownerDocument.defaultView ?? window, i = (e) => {
 		if (!e || e === "none") return {
 			x: 0,
 			y: 0
 		};
 		let [t = "0", n = "0"] = e.trim().split(/\s+/);
 		return {
-			x: A(t),
-			y: A(n)
+			x: N(t),
+			y: N(n)
 		};
-	}, i = r(e.style.translate), a = r((e.ownerDocument.defaultView ?? window).getComputedStyle(e).translate);
+	}, a = n.left, o = n.top;
+	for (let n = e; n; n = n.parentElement) {
+		let e = n.style.translate, s = r.getComputedStyle(n).translate;
+		if (e === s || !e && s === "none") continue;
+		let c = i(e), l = i(s), u = t.get(n)?.scale ?? 1;
+		a += (c.x - l.x) * u, o += (c.y - l.y) * u;
+	}
 	return {
 		...n,
-		left: n.left + (i.x - a.x) * t,
-		top: n.top + (i.y - a.y) * t
+		left: a,
+		top: o
 	};
 }
-function A(e) {
+function N(e) {
 	let t = Number.parseFloat(e);
 	return Number.isFinite(t) ? t : 0;
 }
@@ -1003,24 +1106,69 @@ function te(e) {
 		y: 0
 	};
 }
-function ne(e) {
-	let t = e.ownerDocument.defaultView, n = e.parentElement;
-	for (; n && n !== e.ownerDocument.body && n !== e.ownerDocument.documentElement;) {
-		let e = t?.getComputedStyle(n), r = (e) => e === "auto" || e === "scroll" || e === "overlay";
-		if (e && (r(e.overflowY) || r(e.overflowX))) return n;
-		n = n.parentElement;
+function P(e) {
+	let t = [], n = e.ownerDocument.defaultView, r = e.parentElement;
+	for (; r && r !== e.ownerDocument.body && r !== e.ownerDocument.documentElement;) {
+		let e = n?.getComputedStyle(r), i = (e) => e === "auto" || e === "scroll" || e === "overlay";
+		e && (i(e.overflowY) || i(e.overflowX)) && t.push(r), r = r.parentElement;
 	}
-	return null;
+	return t;
 }
-function re(e) {
-	let t = e.cloneNode(!0), n = e.ownerDocument.defaultView, r = [e, ...e.querySelectorAll("*")], i = [t, ...t.querySelectorAll("*")];
-	r.forEach((e, t) => {
-		let r = i[t];
-		if (!r.style) return;
-		let a = n.getComputedStyle(e);
-		for (let e of Array.from(a)) r.style.setProperty(e, a.getPropertyValue(e), "important");
-		r.removeAttribute("contenteditable");
-	});
+var F = /^(style|script|template|link|meta|title|head)$/;
+function ne(e) {
+	let t = e.cloneNode(!0), n = e.ownerDocument.defaultView, r = [], i = n.getComputedStyle(e), a = Array.from(i).filter((e) => !e.startsWith("--")), o = a.length > 100 ? a : null, s = /* @__PURE__ */ new Map(), c = (e, t) => {
+		try {
+			t.getContext("2d")?.drawImage(e, 0, 0);
+		} catch {}
+	}, l = (e, t) => {
+		let r = n.getComputedStyle(e, t).content;
+		return !!r && r !== "none" && r !== "normal";
+	}, u = (t, i, a = !1) => {
+		let u = i;
+		if (a) (t.scrollLeft || t.scrollTop) && r.push([
+			i,
+			t.scrollLeft,
+			t.scrollTop
+		]), t.localName === "canvas" && c(t, i);
+		else if (u.style && !F.test(t.localName)) {
+			let a = t.constructor.elementProperties;
+			if (a instanceof Map) for (let e of a.keys()) i[e] = t[e];
+			let d = n.getComputedStyle(t);
+			if (t !== e && d.display === "none") {
+				u.style.setProperty("display", "none", "important");
+				return;
+			}
+			if (!o || t === e) for (let e of Array.from(d)) {
+				let t = d.getPropertyValue(e);
+				e.startsWith("--") && s.set(e, t), u.style.setProperty(e, t, "important");
+			}
+			else {
+				for (let e of o) u.style.setProperty(e, d.getPropertyValue(e), "important");
+				if (t.localName.includes("-") || t.shadowRoot || l(t, "::before") || l(t, "::after")) for (let e = 0; e < d.length; e++) {
+					let t = d[e];
+					if (!t.startsWith("--")) continue;
+					let n = d.getPropertyValue(t);
+					s.get(t) !== n && u.style.setProperty(t, n, "important");
+				}
+			}
+			u.style.setProperty("pointer-events", "none", "important"), i.removeAttribute("contenteditable"), (t.scrollLeft || t.scrollTop) && r.push([
+				i,
+				t.scrollLeft,
+				t.scrollTop
+			]), t.localName === "canvas" && c(t, i);
+		}
+		let f = t.shadowRoot;
+		if (f && !i.shadowRoot && !n.customElements?.get(t.localName)) try {
+			let e = i.attachShadow({ mode: "open" });
+			for (let t of Array.from(f.childNodes)) e.appendChild(t.cloneNode(!0));
+			f.adoptedStyleSheets?.length && (e.adoptedStyleSheets = [...f.adoptedStyleSheets]), d(f, e, !0);
+		} catch {}
+		d(t, i, a);
+	}, d = (e, t, n) => {
+		let r = e.children, i = t.children;
+		for (let e = 0; e < r.length && e < i.length; e++) u(r[e], i[e], n);
+	};
+	u(e, t);
 	for (let e of [
 		"inset",
 		"inset-block",
@@ -1043,21 +1191,24 @@ function re(e) {
 	t.removeAttribute("id"), t.removeAttribute("data-drag-source"), t.style.visibility = "visible";
 	for (let e of t.querySelectorAll("[id]")) e.removeAttribute("id");
 	for (let e of t.querySelectorAll("[data-drag-handle]")) e.removeAttribute("data-drag-handle");
-	return t.removeAttribute("data-drag-handle"), t;
+	return t.removeAttribute("data-drag-handle"), {
+		clone: t,
+		scrolled: r
+	};
 }
 //#endregion
 //#region src/drag.ts
-var j = 400, M = 400, N = 8, P = "button, input, textarea, select, video, audio, .aa-caption, [data-aa-interactive]", F = (e, t) => {
-	let n = e?.closest(P);
+var I = 400, L = 400, R = 8, z = "button, input, textarea, select, video, audio, .aa-caption, [data-aa-interactive]", B = (e, t) => {
+	let n = e?.closest(z);
 	return !!n && t.contains(n);
-}, I = [
+}, V = [
 	"--aa-unit",
 	"--aa-sf",
 	"--aa-rule-color",
 	"--aa-gap",
 	"--aa-indent"
 ];
-function L(i, a, o) {
+function H(i, a, o) {
 	let s = new AbortController(), { signal: c } = s, l = i.element, u = l.ownerDocument, d = u.defaultView, f = u.createElement("div");
 	f.className = "aa-drop-line", f.hidden = !0, o.append(f);
 	let p = u.createElement("div");
@@ -1069,7 +1220,7 @@ function L(i, a, o) {
 			height: `${n}px`,
 			width: r
 		}), p.hidden = !1;
-	}, h = null, _ = null, v = () => Array.from(l.children), y = () => !i.readOnly && a.menus !== !1 && (i.reordering || i.placing), b = () => y() && i.placing;
+	}, h = null, g = null, _ = () => Array.from(l.children), y = () => !i.readOnly && a.menus !== !1 && (i.reordering || i.placing), b = () => y() && i.placing;
 	l.toggleAttribute("data-movable", y());
 	let x = null, S = null, C = (e, t) => {
 		let n = d.getSelection();
@@ -1082,18 +1233,18 @@ function L(i, a, o) {
 	}, E = [], D = {
 		x: 0,
 		y: 0
-	}, O = !1, k = g({
-		inheritProperties: I,
+	}, O = !1, k = v({
+		inheritProperties: V,
 		onDragStart: (e) => {
-			let t = v()[e.source.index], n = x?.selected ?? [], r = t && n.includes(t) ? n : [];
-			E = v().map((e) => e.getBoundingClientRect()), D = {
+			let t = _()[e.source.index], n = x?.selected ?? [], r = t && n.includes(t) ? n : [];
+			E = _().map((e) => e.getBoundingClientRect()), D = {
 				x: d.scrollX,
 				y: d.scrollY
 			}, S = {
 				caret: r.length ? null : i.selection(),
 				group: r,
 				from: e.source.index
-			}, u.addEventListener("pointermove", A, {
+			}, u.addEventListener("pointermove", j, {
 				capture: !0,
 				signal: c
 			});
@@ -1102,10 +1253,10 @@ function L(i, a, o) {
 		},
 		prepareDrop: (e) => {
 			O = !0;
-			let t = v()[e.source.index], n = t?.textContent, r = t?.querySelector(":scope > .aa-atom")?.dataset.source, i = l;
+			let t = _()[e.source.index], n = t?.textContent, r = t?.querySelector(":scope > .aa-atom")?.dataset.source, i = l;
 			for (let e = l.parentElement; e; e = e.parentElement) e.classList.contains("aa") && (i = e);
-			let a = new Set(i.querySelectorAll(".aa-block")), o = _ && { ..._ }, s = h && { ...h }, c = l.parentElement?.classList.contains("aa-columns") ? l.parentElement : null, u = c ? Array.from(i.querySelectorAll(".aa-columns")).indexOf(c) : -1, d = e.source.index, f = s ? s.index - +(d < s.index) : -1;
-			return ee(e), () => {
+			let a = new Set(i.querySelectorAll(".aa-block")), o = g && { ...g }, s = h && { ...h }, c = l.parentElement?.classList.contains("aa-columns") ? l.parentElement : null, u = c ? Array.from(i.querySelectorAll(".aa-columns")).indexOf(c) : -1, d = e.source.index, f = s ? s.index - +(d < s.index) : -1;
+			return A(e), () => {
 				if (o) {
 					let e = c?.isConnected ? c : i.querySelectorAll(".aa-columns")[u], t = "swap" in o ? o.swap : o.slot, n = (e?.querySelectorAll(":scope > .aa-column")[t])?.querySelector(":scope > .aa-block");
 					if (n) return n;
@@ -1120,21 +1271,21 @@ function L(i, a, o) {
 			};
 		},
 		onDragEnd: (e) => {
-			O || ee(e), O = !1;
+			O || A(e), O = !1;
 		}
 	});
-	function ee(e) {
+	function A(e) {
 		let { caret: t, group: n } = S ?? {
 			caret: null,
 			group: []
 		};
-		S = null, E = [], u.removeEventListener("pointermove", A, !0);
-		let r = h, a = _;
-		h = null, _ = null, p.hidden = !0, p.removeAttribute("data-swap");
+		S = null, E = [], u.removeEventListener("pointermove", j, !0);
+		let r = h, a = g;
+		h = null, g = null, p.hidden = !0, p.removeAttribute("data-swap");
 		for (let e of l.querySelectorAll(":scope > [data-ghost]")) e.removeAttribute("data-ghost");
 		l.removeAttribute("data-dragging"), u.removeEventListener("selectionchange", T);
-		let o = v(), s = e.source.index, c = e.destination?.index;
-		if (!(e.reason === "DROP" && r && n.length <= 1 && b() && re(s, r.index, r.at))) {
+		let o = _(), s = e.source.index, c = e.destination?.index;
+		if (!(e.reason === "DROP" && r && n.length <= 1 && b() && N(s, r.index, r.at))) {
 			if (e.reason === "DROP" && a && n.length <= 1 && b()) l.dispatchEvent(new CustomEvent("aa-column-carry", {
 				bubbles: !0,
 				detail: {
@@ -1168,8 +1319,8 @@ function L(i, a, o) {
 		type: "aa-block",
 		isDropDisabled: () => !y()
 	});
-	function A(e) {
-		if (!S || S.group.length > 1 || !b() || te(e)) return;
+	function j(e) {
+		if (!S || S.group.length > 1 || !b() || ee(e)) return;
 		let t = parseFloat(getComputedStyle(l).getPropertyValue("--aa-unit")) || 20, r = d.scrollX - D.x, i = d.scrollY - D.y, a = e.clientX + r, o = e.clientY + i, s = n(E, S.from, {
 			x: a,
 			y: o
@@ -1179,8 +1330,8 @@ function L(i, a, o) {
 			at: u
 		}, m(u === "start" ? g.left : g.right, g.top, g.height));
 	}
-	function te(e) {
-		_ = null;
+	function ee(e) {
+		g = null;
 		let t = l.parentElement;
 		if (!l.classList.contains("aa-column") || !t?.classList.contains("aa-columns")) return !1;
 		let n = parseFloat(getComputedStyle(l).getPropertyValue("--aa-unit")) || 20, r = t.getBoundingClientRect();
@@ -1195,97 +1346,97 @@ function L(i, a, o) {
 		}) : -1;
 		if (u >= 0) {
 			let e = (a[u].querySelector(":scope > .aa-block") ?? a[u]).getBoundingClientRect();
-			return _ = { swap: u }, h = null, p.setAttribute("data-swap", ""), m(e.left, e.top, e.height, `${e.width}px`), !0;
+			return g = { swap: u }, h = null, p.setAttribute("data-swap", ""), m(e.left, e.top, e.height, `${e.width}px`), !0;
 		}
 		let d = c.map((e) => e.getBoundingClientRect()), f = d.filter((t) => t.left + t.width / 2 < e.clientX).length;
 		if (p.hidden = !0, s && f === o) return !0;
-		_ = { slot: f };
-		let g = d.length > 1 ? d[1].left - d[0].right : 2 * n, v = f === 0 ? d[0].left - g / 2 : f === d.length ? d[d.length - 1].right + g / 2 : (d[f - 1].right + d[f].left) / 2;
+		g = { slot: f };
+		let _ = d.length > 1 ? d[1].left - d[0].right : 2 * n, v = f === 0 ? d[0].left - _ / 2 : f === d.length ? d[d.length - 1].right + _ / 2 : (d[f - 1].right + d[f].left) / 2;
 		return h = null, m(v, r.top, r.height), !0;
 	}
-	function ne(e) {
-		let n = t(i.value)[v().indexOf(e)];
+	function M(e) {
+		let n = t(i.value)[_().indexOf(e)];
 		return !!n && /^(?:!\[[^\]\n]*\]\([^)\n]*\)\s*)+$/.test(n.source.trim());
 	}
-	function re(n, r, a) {
-		if (t(i.value).length !== v().length) return !1;
+	function N(n, r, a) {
+		if (t(i.value).length !== _().length) return !1;
 		let o = e(i.value, n, r, a);
 		return o ? (i.replace(o.start, o.end, o.text), !0) : !1;
 	}
 	d.addEventListener("pointerdown", (e) => {
-		let t = e.target?.nodeType === 1 ? e.target : null, n = t?.closest?.(".aa-block"), r = !!n && B === n;
-		if (V(), !n || n.parentElement !== l) {
+		let t = e.target?.nodeType === 1 ? e.target : null, n = t?.closest?.(".aa-block"), r = !!n && H === n;
+		if (U(), !n || n.parentElement !== l) {
 			x = null;
 			return;
 		}
-		P();
-		let i = v().filter((e) => e.hasAttribute("data-selected")), a = i.includes(n) ? i : [];
+		F();
+		let i = _().filter((e) => e.hasAttribute("data-selected")), a = i.includes(n) ? i : [];
 		x = {
 			block: n,
 			mouse: e.pointerType === "mouse" && e.button === 0,
 			plain: !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey,
-			own: F(t, n),
+			own: B(t, n),
 			inSelection: C(e.clientX, e.clientY),
 			selected: a,
 			grabbed: r,
 			x: e.clientX,
 			y: e.clientY
-		}, (a.length || r || ne(n)) && x.mouse && x.plain && !x.own && !x.inSelection && y() && e.preventDefault();
+		}, (a.length || r || M(n)) && x.mouse && x.plain && !x.own && !x.inSelection && y() && e.preventDefault();
 	}, {
 		capture: !0,
 		signal: c
 	});
-	let j = 0, M = /* @__PURE__ */ new Map();
-	function P() {
-		for (let [e, t] of M) e.parentElement !== l && (t(), M.delete(e));
-		for (let e of v()) !M.has(e) && e.classList.contains("aa-block") && M.set(e, k.item({
+	let te = 0, P = /* @__PURE__ */ new Map();
+	function F() {
+		for (let [e, t] of P) e.parentElement !== l && (t(), P.delete(e));
+		for (let e of _()) !P.has(e) && e.classList.contains("aa-block") && P.set(e, k.item({
 			element: e,
-			id: `aa-block-${++j}`,
+			id: `aa-block-${++te}`,
 			type: "aa-block",
 			text: {
-				hold: () => x?.block === e && (x.selected.length || x.grabbed || ne(e)) ? 0 : 400,
+				hold: () => x?.block === e && (x.selected.length || x.grabbed || M(e)) ? 0 : 400,
 				axis: "y"
 			},
 			canDrag: ({ input: t }) => t === "mouse" && y() && !!x && x.block === e && x.mouse && x.plain && !x.own && !x.inSelection
 		}));
 	}
-	P();
-	let L = new MutationObserver(P);
-	L.observe(l, { childList: !0 });
-	let R = (e) => {
+	F();
+	let ne = new MutationObserver(F);
+	ne.observe(l, { childList: !0 });
+	let I = (e) => {
 		e.detail > 1 && !k.isDragging() && k.cancel();
-	}, ie = (e) => {
+	}, L = (e) => {
 		let t = x;
 		x = null, !(!(t?.selected.length || t?.grabbed) || t.inSelection || k.isDragging() || S || !y() || e.type !== "pointerup") && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 5 && w(e.clientX, e.clientY);
 	};
-	l.addEventListener("mousedown", R, {
+	l.addEventListener("mousedown", I, {
 		capture: !0,
 		signal: c
-	}), d.addEventListener("pointerup", ie, {
+	}), d.addEventListener("pointerup", L, {
 		capture: !0,
 		signal: c
-	}), d.addEventListener("pointercancel", ie, {
+	}), d.addEventListener("pointercancel", L, {
 		capture: !0,
 		signal: c
 	});
-	let z = null, B = null;
-	function V() {
-		z && clearTimeout(z.timer), z = null, B?.removeAttribute("data-grab"), B = null;
+	let z = null, H = null;
+	function U() {
+		z && clearTimeout(z.timer), z = null, H?.removeAttribute("data-grab"), H = null;
 	}
 	l.addEventListener("pointermove", (e) => {
 		if (e.pointerType !== "mouse" || e.buttons || k.isDragging() || !y()) {
-			V();
+			U();
 			return;
 		}
 		let t = e.target?.nodeType === 1 ? e.target : null, n = t?.closest?.(".aa-block");
-		if (!n || n.parentElement !== l || F(t, n)) {
-			V();
+		if (!n || n.parentElement !== l || B(t, n)) {
+			U();
 			return;
 		}
-		if (z?.block === n && Math.hypot(e.clientX - z.x, e.clientY - z.y) < N) return;
-		V();
+		if (z?.block === n && Math.hypot(e.clientX - z.x, e.clientY - z.y) < R) return;
+		U();
 		let r = setTimeout(() => {
-			z?.block === n && y() && (B = n, n.setAttribute("data-grab", ""));
+			z?.block === n && y() && (H = n, n.setAttribute("data-grab", ""));
 		}, 400);
 		z = {
 			block: n,
@@ -1293,42 +1444,42 @@ function L(i, a, o) {
 			y: e.clientY,
 			timer: r
 		};
-	}, { signal: c }), l.addEventListener("pointerleave", V, { signal: c }), l.addEventListener("keydown", V, { signal: c });
-	let H = (e) => {
-		let t = v().findIndex((t) => {
+	}, { signal: c }), l.addEventListener("pointerleave", U, { signal: c }), l.addEventListener("keydown", U, { signal: c });
+	let re = (e) => {
+		let t = _().findIndex((t) => {
 			let n = t.getBoundingClientRect();
 			return e < n.top + n.height / 2;
 		});
 		return t < 0 ? l.children.length : t;
-	}, U = (e) => {
-		let t = v(), n = t[e], r = t[e - 1];
+	}, ie = (e) => {
+		let t = _(), n = t[e], r = t[e - 1];
 		if (e < 0 || !n && !r) {
 			f.hidden = !0;
 			return;
 		}
 		let i = (n ?? r).getBoundingClientRect(), a = n && r ? (r.getBoundingClientRect().bottom + i.top) / 2 : n ? i.top : i.bottom;
 		f.style.left = `${i.left}px`, f.style.top = `${a}px`, f.style.width = `${i.width}px`, f.hidden = !1;
-	}, W = -1, ae = (e) => !i.readOnly && i.placing && !!a.onFiles && Array.from(e.dataTransfer?.types ?? []).includes("Files");
+	}, W = -1, G = (e) => !i.readOnly && i.placing && !!a.onFiles && Array.from(e.dataTransfer?.types ?? []).includes("Files");
 	return l.addEventListener("aa-movement-change", () => {
-		k.cancel(), x = null, V(), h = null, _ = null, p.hidden = !0, f.hidden = !0, W = -1, l.toggleAttribute("data-movable", y());
+		k.cancel(), x = null, U(), h = null, g = null, p.hidden = !0, f.hidden = !0, W = -1, l.toggleAttribute("data-movable", y());
 	}, { signal: c }), l.addEventListener("dragover", (e) => {
-		ae(e) && (e.preventDefault(), W = H(e.clientY), U(W));
+		G(e) && (e.preventDefault(), W = re(e.clientY), ie(W));
 	}, { signal: c }), l.addEventListener("dragleave", (e) => {
 		l.contains(e.relatedTarget) || (f.hidden = !0, W = -1);
 	}, { signal: c }), l.addEventListener("drop", (e) => {
 		f.hidden = !0;
 		let t = W;
-		if (W = -1, t < 0 || !ae(e) || !e.dataTransfer?.files.length) return;
+		if (W = -1, t < 0 || !G(e) || !e.dataTransfer?.files.length) return;
 		e.preventDefault(), e.stopImmediatePropagation();
-		let n = v(), r = n[t] ?? n[n.length - 1];
+		let n = _(), r = n[t] ?? n[n.length - 1];
 		r.focus({ preventScroll: !0 }), d.getSelection()?.collapse(r, n[t] ? 0 : r.childNodes.length), a.onFiles(Array.from(e.dataTransfer.files));
 	}, {
 		capture: !0,
 		signal: c
 	}), () => {
-		s.abort(), L.disconnect(), k.destroy(), M.clear(), S = null, x = null, f.remove(), p.remove(), l.removeAttribute("data-movable"), l.removeAttribute("data-dragging"), V();
+		s.abort(), ne.disconnect(), k.destroy(), P.clear(), S = null, x = null, f.remove(), p.remove(), l.removeAttribute("data-movable"), l.removeAttribute("data-dragging"), U();
 	};
 }
 //#endregion
-export { j as HOLD, M as REST, L as createDragging };
+export { I as HOLD, L as REST, H as createDragging };
 
