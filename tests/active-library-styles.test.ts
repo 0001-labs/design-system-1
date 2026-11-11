@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, test, vi } from 'vite-plus/test';
 import { ACTIVE_LIBRARY_KEY, writeActiveLibrary } from '../shared/active-library';
-import { connectActiveLibraryStyles, LIBRARY_STYLES_KEY } from '../website/src/lib/active-library-styles';
+import { connectActiveLibraryStyles } from '../website/src/lib/active-library-styles';
+import { LIBRARY_STYLES_KEY } from '../shared/active-library';
 import { NAVIGATION_BRIDGE_REQUEST } from '../website/src/lib/navigation-session';
 
 const pink = ':root { --ds-button-primary-fill: var(--pink); }';

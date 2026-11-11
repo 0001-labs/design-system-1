@@ -24,8 +24,8 @@ const { sidebar } = Astro.locals.starlightRoute;
   import { LAYERS } from '../../../shared/component-directory';
   import { libraryWorkspaceHref, type LibraryNavigation } from '../../../shared/library-navigation';
   import { editorChoice, editorSidebarItems, type EditorNavigation } from '../../../shared/editor-navigation';
-  import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, activeLibraryHref, readActiveLibrary } from '../../../shared/active-library';
-  import { WORKSPACE_HREF } from '../lib/shell';
+  import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, readActiveLibrary } from '../../../shared/active-library';
+  import { backLink, readShellSnapshot, shellSpace } from '../lib/shell';
   import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
   const navigation = document.querySelector('ds-sidebar#docs-navigation')!;
   type Entry = { label: string; href?: string; isCurrent?: boolean; entries?: Entry[] };
@@ -35,14 +35,12 @@ const { sidebar } = Astro.locals.starlightRoute;
   let editor: EditorNavigation | null = null;
   let appComponents: AppComponent[] = [];
   const collapsed = new Set<string>();
-  let owner = document.documentElement.hasAttribute("data-ds-owner");
+  // Until the server answers, the owner's System row follows this browser's snapshot: presentation only.
+  let owner = document.documentElement.hasAttribute("data-ds-owner") || (document.documentElement.hasAttribute("data-signed-in") && readShellSnapshot()?.owner === true);
   let signedIn = document.documentElement.hasAttribute("data-signed-in");
   const path = location.pathname.replace(/\/$/, '');
   // Signed in, the design system is its own space (the base editor, a library, the list, the account); every other page is the documentation.
-  const space = path === '/libraries/design-system-1' ? 'base'
-    : path === '/libraries/workspace' && new URLSearchParams(location.search).has('library') ? 'library'
-    : (path === '/libraries/workspace' && !new URLSearchParams(location.search).has('internal')) || path === '/account' ? 'list'
-    : 'documentation';
+  const space = shellSpace(location.pathname, location.search);
   const translationKeys: Record<string, string> = {
     'Start Here': 'startHere', 'Built-ins': 'builtIns', Root: 'root', Core: 'core', Unit: 'unit', Page: 'page',
     Introduction: 'introduction', 'Manual Setup': 'manualSetup', Theming: 'theming', 'Mobile Detection': 'mobileDetection',
@@ -82,9 +80,7 @@ const { sidebar } = Astro.locals.starlightRoute;
   watchCuts().watch(back.querySelector('#shell-back-words')!);
   function renderBack() {
     back.hidden = !signedIn;
-    const active = space === 'documentation' ? readActiveLibrary() : null;
-    // From the documentation, back into the active design system (or the list of them); from the design system, back to reading.
-    const [words, href] = space !== 'documentation' ? ['Back to documentation', '/'] : active ? [active.name, activeLibraryHref(active)] : ['My libraries', WORKSPACE_HREF];
+    const { label: words, href } = backLink(space, space === 'documentation' ? readActiveLibrary() : null);
     back.querySelector('#shell-back-words')!.textContent = words;
     back.href = href;
   }

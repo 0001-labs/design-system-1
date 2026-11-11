@@ -6,6 +6,8 @@
  */
 export const ACTIVE_LIBRARY_KEY = 'ds1:active-library:v1';
 export const ACTIVE_LIBRARY_EVENT = 'ds1-active-library';
+/** The active library's draft stylesheet, kept per tab (sessionStorage) for the documentation's examples; forgotten on signing out. */
+export const LIBRARY_STYLES_KEY = 'ds1:active-library-styles:v1';
 /** Design system 1 itself, the base system, which only its owner opens. */
 export const BASE_LIBRARY = 'base';
 export const BASE_LIBRARY_NAME = 'Design system 1';

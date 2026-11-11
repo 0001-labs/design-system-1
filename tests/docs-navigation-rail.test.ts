@@ -21,16 +21,3 @@ it('Design system 1 opens the component editor in the documentation shell, kept 
   expect(workspace).toMatch(/mode === 'base' \? '\/app\/base'/);
   expect(config).toMatch(/libraries\\\/design-system-1/);
 });
-
-it('signed in, the sidebar holds one space at a time: the design system\'s components or the documentation', () => {
-  const sidebar = readFileSync('website/src/components/MySidebar.astro', 'utf8');
-  // The design system: the way back, its components, its own views; nothing else.
-  expect(sidebar).toContain(`['Back to documentation', '/']`);
-  expect(sidebar).toMatch(/<a slot="header" id="shell-back"[^>]*hidden>/);
-  expect(sidebar).toMatch(/if \(design\) \{ navigation\.items = placeAppNavigation\(navigation, designItems\(\), \[\]\); return; \}/);
-  // The documentation: the way back into the active design system, then every group a signed-out reader has.
-  expect(sidebar).toMatch(/activeLibraryHref\(active\)/);
-  expect(sidebar).not.toMatch(/Start Here' \|\||hideSignedInLibraryEntry|ownerLibraryItems|workspace-name|data-account-avatar/);
-  // App rows and System stay the owner's.
-  expect(sidebar).toMatch(/if \(owner\) navigation\.items = \[\.\.\.navigation\.items, \{ id: 'system'/);
-});

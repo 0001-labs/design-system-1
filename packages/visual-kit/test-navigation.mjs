@@ -13,7 +13,7 @@ try{
  await page.waitForFunction(()=>!!document.querySelector('.example-device ds-device-bezel')?.shadowRoot);
  for (const path of ['/account/', '/libraries/workspace/', '/libraries/playground/', '/visual-kit/gallery/', '/visual-kit/']) {
    await page.goto(`http://127.0.0.1:${server.address().port}${path}`);
-   await page.locator('.docs-navigation-rail').waitFor({state:'visible'});
+   await page.locator('ds-sidebar#docs-navigation').waitFor({state:'visible'});
    if(path==='/account/') assert.equal(await page.locator('#library-app').getAttribute('data-src'),'/app/profile?embed=docs');
  }
  assert.equal(await page.locator('.platform-examples ds-window').count(),8);

@@ -69,7 +69,8 @@ const account = Astro.url.pathname.replace(/\/$/, '') === '/account';
   const name = (label: string) => {
     page = label;
     const at = hereKey(location.pathname, location.search);
-    if (summary && at !== null && label) rememberShell(summary, { at, label });
+    // A private document's name stays out of storage; it comes again with the authorized document.
+    if (summary && at !== null && label && !at.startsWith('internal:')) rememberShell(summary, { at, label });
     paint();
   };
   window.addEventListener('ds1-editor-navigation', event => name(editorPage((event as CustomEvent).detail.editor)));

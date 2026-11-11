@@ -1,4 +1,4 @@
-import { ACTIVE_LIBRARY_KEY, BASE_LIBRARY, BASE_LIBRARY_NAME, readActiveLibrary, writeActiveLibrary, type ActiveLibrary } from '../../../shared/active-library';
+import { ACTIVE_LIBRARY_KEY, BASE_LIBRARY, BASE_LIBRARY_NAME, LIBRARY_STYLES_KEY, activeLibraryHref, readActiveLibrary, writeActiveLibrary, type ActiveLibrary } from '../../../shared/active-library';
 
 /**
  * The signed-in shell: the header's breadcrumb, the sidebar's two spaces and the front door.
@@ -9,18 +9,43 @@ import { ACTIVE_LIBRARY_KEY, BASE_LIBRARY, BASE_LIBRARY_NAME, readActiveLibrary,
  * know) draws the shell on the first frame; the live summary then reconciles it. It is
  * presentation only and grants nothing: every private read still authorizes on the server.
  *
- * `readShellBoot`, `frontDoor`, `shellCrumbs`, `hereKey` and `drawCrumbs` are serialized into
- * inline scripts (`shellScript`), so each references nothing outside its own body and arguments.
+ * `shellSpace`, `readShellBoot`, `frontDoor`, `shellCrumbs`, `hereKey` and `drawCrumbs` are serialized into
+ * inline scripts (`bootScript`, `crumbScript`), so each references nothing outside its own body and arguments.
  */
 export const SHELL_KEY = 'ds1:shell:v1';
 export const WORKSPACE_HREF = '/libraries/workspace/';
 
 export type ShellSnapshot = { owner: boolean; company: string; here: { at: string; label: string } | null };
 export type ShellBoot = ShellSnapshot & { library: ActiveLibrary | null };
-export type Here = { pathname: string; referrer: string; origin: string; navigation: string };
+/** The arrival: the address, where it came from, how, and whether this browser still holds a session token. */
+export type Here = { pathname: string; search: string; hash: string; referrer: string; origin: string; navigation: string; session: boolean };
 export type Crumb = { label: string; href: string | null };
 export type Crumbs = { company: string; space: Crumb; page: string };
 export type CrumbInput = { pathname: string; search: string; company: string; library: ActiveLibrary | null; page: string };
+
+export type ShellSpace = 'base' | 'library' | 'list' | 'documentation';
+
+/**
+ * Which space an address belongs to: the design system (its base editor, one library, the list of
+ * libraries and the account) or the documentation. A private App document is documentation. Self-contained.
+ */
+export function shellSpace(pathname: string, search: string): ShellSpace {
+  const path = pathname.replace(/\/$/, '');
+  const query = new URLSearchParams(search);
+  if (path === '/libraries/design-system-1') return 'base';
+  if (path === '/libraries/workspace' && query.has('library')) return 'library';
+  if ((path === '/libraries/workspace' && !query.has('internal')) || path === '/account') return 'list';
+  return 'documentation';
+}
+
+/**
+ * The sidebar's way between the two spaces: from the design system back to the documentation; from
+ * the documentation back into the active design system, or the list of them when there is none.
+ */
+export function backLink(space: ShellSpace, active: ActiveLibrary | null): { label: string; href: string } {
+  if (space !== 'documentation') return { label: 'Back to documentation', href: '/' };
+  return active ? { label: active.name, href: activeLibraryHref(active) } : { label: 'My libraries', href: WORKSPACE_HREF };
+}
 
 /** The snapshot and the stored active design system, or null when this browser is not signed in. Self-contained. */
 export function readShellBoot(snapshotJson: string | null, activeJson: string | null): ShellBoot | null {
@@ -38,11 +63,12 @@ export function readShellBoot(snapshotJson: string | null, activeJson: string | 
 }
 
 /**
- * Where a signed-in person who arrives at the front page from outside the site lands: their
- * design system. Navigating to `/` inside the site, reloading or going back shows the documentation. Self-contained.
+ * Where a signed-in person who arrives at the bare front page from outside the site lands: their
+ * design system. Navigating to `/` inside the site, reloading, going back, an address with a query
+ * or a fragment, or a browser without a session token shows the documentation. Self-contained.
  */
 export function frontDoor(boot: ShellBoot | null, here: Here): string | null {
-  if (!boot || !boot.library || here.pathname !== '/') return null;
+  if (!boot || !boot.library || !here.session || here.pathname !== '/' || here.search || here.hash) return null;
   if (here.navigation === 'reload' || here.navigation === 'back_forward') return null;
   let from = '';
   try { from = here.referrer ? new URL(here.referrer).origin : ''; } catch { from = ''; }
@@ -106,17 +132,21 @@ export function drawCrumbs(root: Document, crumbs: Crumbs): void {
 
 /** The inline head script: draws the signed-in state before first paint and opens the front door. */
 export function bootScript(): string {
-  return `(function (read, door) {
+  return `(function (read, door, space) {
+  var root = document.documentElement;
+  // The space is the address's alone, signed in or not; the styles draw it only for a signed-in person.
+  root.setAttribute('data-shell-space', space(location.pathname, location.search));
   try {
     var boot = read(localStorage.getItem(${JSON.stringify(SHELL_KEY)}), localStorage.getItem(${JSON.stringify(ACTIVE_LIBRARY_KEY)}));
-    var root = document.documentElement;
+    // Presentation only: data-ds-owner waits for the server's answer (the live summary).
     root.toggleAttribute('data-signed-in', !!boot);
-    root.toggleAttribute('data-ds-owner', !!boot && boot.owner);
+    var session = false;
+    for (var index = 0; index < localStorage.length; index++) if ((localStorage.key(index) || '').indexOf('__convexAuthJWT_') === 0) session = true;
     var entry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-    var target = door(boot, { pathname: location.pathname, referrer: document.referrer, origin: location.origin, navigation: entry ? entry.type : 'navigate' });
+    var target = door(boot, { pathname: location.pathname, search: location.search, hash: location.hash, referrer: document.referrer, origin: location.origin, navigation: entry ? entry.type : 'navigate', session: session });
     if (target) location.replace(target);
   } catch (error) { /* Storage is optional: the live summary draws the shell. */ }
-})(${readShellBoot}, ${frontDoor});`;
+})(${readShellBoot}, ${frontDoor}, ${shellSpace});`;
 }
 
 /** The inline header script: fills the crumbs from the snapshot right after their markup. */
@@ -135,25 +165,31 @@ export function crumbScript(): string {
 
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const safeStorage = (): globalThis.Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; } };
+const safeSession = (): globalThis.Storage | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; } catch { return null; } };
 
 export function readShellSnapshot(storage: Storage | null = safeStorage()): ShellSnapshot | null {
   try { return readShellBoot(storage?.getItem(SHELL_KEY) ?? null, null); } catch { return null; }
 }
 
-/** Keeps the snapshot for a signed-in summary; `here` is the page's last crumb when only its frame names it. */
+/**
+ * Keeps the snapshot for a signed-in summary; `here` is the page's last crumb when only its frame names it.
+ * A private document's name is never kept: its crumb comes with the authorized document.
+ */
 export function rememberShell(summary: { owner?: unknown; companyName?: unknown }, here?: ShellSnapshot['here'], storage: Storage | null = safeStorage()): void {
   const before = readShellSnapshot(storage);
+  const kept = here === undefined ? before?.here ?? null : here;
   const next: ShellSnapshot = {
     owner: summary.owner === true,
     company: typeof summary.companyName === 'string' ? summary.companyName.trim().slice(0, 80) : '',
-    here: here === undefined ? before?.here ?? null : here,
+    here: kept && !kept.at.startsWith('internal:') ? kept : null,
   };
   try { storage?.setItem(SHELL_KEY, JSON.stringify(next)); } catch { /* Storage is optional. */ }
 }
 
-/** A confirmed signed-out summary: the shell and the active design system are forgotten. */
-export function forgetShell(storage: Storage | null = safeStorage()): void {
+/** A confirmed signed-out summary: the shell, the active design system and its cached draft styles are forgotten. */
+export function forgetShell(storage: Storage | null = safeStorage(), session: Pick<globalThis.Storage, 'removeItem'> | null = safeSession()): void {
   try { storage?.removeItem(SHELL_KEY); } catch { /* Storage is optional. */ }
+  try { session?.removeItem(LIBRARY_STYLES_KEY); } catch { /* Storage is optional. */ }
   writeActiveLibrary(null, storage);
 }
 
@@ -172,12 +208,22 @@ export function defaultActiveLibrary(summary: { owner?: unknown; libraries?: unk
   return readLibraries(summary.libraries)[0] ?? null;
 }
 
-/** Stores the default once the summary has loaded, when nothing is stored yet. */
+/**
+ * Keeps the active design system true to the signed-in account. Once the summary's libraries have
+ * loaded, a stored library the account does not have (another account's, a deleted one, or the base
+ * for anyone but its owner) gives way to the default, and a renamed one takes its new name. Before
+ * they load, only the owner's default (the base) is stored when nothing is.
+ */
 export function settleActiveLibrary(summary: { owner?: unknown; libraries?: unknown; librariesLoaded?: unknown }, storage: Storage | null = safeStorage()): void {
-  if (readActiveLibrary(storage)) return;
-  if (summary.owner !== true && summary.librariesLoaded !== true) return;
-  const library = defaultActiveLibrary(summary);
-  if (library) writeActiveLibrary(library, storage);
+  const stored = readActiveLibrary(storage);
+  const owner = summary.owner === true;
+  if (summary.librariesLoaded !== true) {
+    if (!stored && owner) writeActiveLibrary(defaultActiveLibrary(summary), storage);
+    return;
+  }
+  if (stored?.id === BASE_LIBRARY && owner) return;
+  const match = stored ? readLibraries(summary.libraries).find(library => library.id === stored.id) : undefined;
+  writeActiveLibrary(match ?? defaultActiveLibrary(summary), storage);
 }
 
 /** Whether this browser still holds a session token: without one a signed-out summary is confirmed. */

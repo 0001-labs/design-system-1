@@ -1,4 +1,4 @@
-import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, BASE_LIBRARY, parseActiveLibrary, readActiveLibrary, type ActiveLibrary } from '../../../shared/active-library';
+import { ACTIVE_LIBRARY_EVENT, ACTIVE_LIBRARY_KEY, BASE_LIBRARY, LIBRARY_STYLES_KEY, parseActiveLibrary, readActiveLibrary, type ActiveLibrary } from '../../../shared/active-library';
 import { NAVIGATION_BRIDGE_REQUEST } from './navigation-session';
 
 /**
@@ -9,7 +9,6 @@ import { NAVIGATION_BRIDGE_REQUEST } from './navigation-session';
  * same-origin frames of this tab and is kept, for the first frame of the next page, in this tab's
  * `sessionStorage` alone.
  */
-export const LIBRARY_STYLES_KEY = 'ds1:active-library-styles:v1';
 /** The frames refuse a larger stylesheet, so none is kept or sent. */
 export const LIBRARY_STYLES_MAX = 524288;
 
