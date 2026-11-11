@@ -53,3 +53,21 @@ it('opens the stylesheet split while retaining the mounted library canvas', asyn
     expect(outer.shadowRoot!.querySelectorAll('[role=separator]')).toHaveLength(1);
   } finally { workbench.remove(); }
 });
+it('previews a handle on the canvas and in the inspector without the draft, and commits it once through the draft', async () => {
+  document.body.append(host); await settle();
+  const editor = host as HTMLElement & { draft: { value(token: string): string | undefined } };
+  const handles = host.querySelector('ds1-canvas-handles')!;
+  expect([...handles.querySelectorAll('[role=slider]')].map(handle => handle.getAttribute('aria-label'))).toEqual(['Height', 'Padding at the start', 'Padding at the end', 'Width', 'Corner']);
+  const canvas = host.querySelector<HTMLElement>('[data-testid=component-canvas]')!;
+  const send = (type: string, detail: unknown) => handles.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }));
+  send('handle-preview', { token: '--ds-button-size', value: '36px' }); await settle();
+  expect(canvas.style.getPropertyValue('--ds-button-size')).toBe('36px');
+  expect((host.querySelector('ds-number[data-token="--ds-button-size"]') as HTMLElement & { value: number }).value).toBe(36);
+  expect(editor.draft.value('--ds-button-size')).toBeUndefined();
+  send('handle-preview', null); await settle();
+  expect(canvas.style.getPropertyValue('--ds-button-size')).toBe('');
+  send('handle-commit', { token: '--ds-button-size', value: '36px' }); await settle();
+  expect(editor.draft.value('--ds-button-size')).toBe('36px');
+  send('handle-commit', { token: '--ds-button-size', value: '' }); await settle();
+  expect(editor.draft.value('--ds-button-size')).toBeUndefined();
+});
