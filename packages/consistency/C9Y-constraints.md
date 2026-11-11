@@ -284,6 +284,40 @@ They are folded into one carrier, spaced as their list spaces them, before the l
 
 Held by `tests/drag-selection.mjs`: “Selected blocks move together”.
 
+### `drag.preview-as-drawn`
+
+The carried preview is the block as the page draws it: its components drawn as they stand and none of the editor's marks on it, so a selected block is carried without a wash.
+
+The preview is Drag's copy, not a block of the page: the editor takes its own marks off it, and Drag copies the tree of a component the canvas cannot draw a second time.
+
+Held by `tests/drag-preview.mjs`: “A carried section looks as it did before the lift”.
+
+### `drag.one-carrier`
+
+One press carries a block once: writing the page carries is not carried by its own editor as well, and that editor moves its own blocks again once the press is over.
+
+Held by `tests/drag-preview.mjs`: “One press lifts one preview”.
+
+### `drag.edge-intent`
+
+A block lifted beside the canvas's top or bottom edge scrolls nothing until the pointer leaves that edge's band or goes on towards it.
+
+Picking a block up is not asking to scroll: a page that runs away under a block just lifted loses the place it was to be dropped.
+
+Held by `tests/drag-edge.mjs`: “A block lifted at the foot of the canvas stays put until it is carried on down”.
+
+### `drag.regrab`
+
+A press while the last drop is still landing lands it at once and is itself carried, so rearranging several blocks never waits on an animation.
+
+Held by `tests/drag-regrab.mjs`: “A block pressed while the last drop lands is carried at once”.
+
+### `drag.always-ends`
+
+A drag always ends with the page usable: a drop the page cannot commit, a mouse released where the page could not see it, or a pointer pressed during a keyboard carry sends the block home with nothing left lifted.
+
+Held by `src/c9y-constraints.test.ts`: “a drag that goes wrong ends at home”.
+
 ## Blocks
 
 Capabilities come from the platform; `reorder` is added where `blocks.reorder` allows it. Measures are whole 20px squares multiplied by `--sf`.
