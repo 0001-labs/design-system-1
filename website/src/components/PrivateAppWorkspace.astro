@@ -1,30 +1,25 @@
 ---
-import TwoColumnContent from '@astrojs/starlight/components/TwoColumnContent.astro';
-import PageSidebar from '@astrojs/starlight/components/PageSidebar.astro';
+import TwoColumnContent from './TwoColumnContent.astro';
 import ContentPanel from '@astrojs/starlight/components/ContentPanel.astro';
 import MarkdownContent from './MarkdownContent.astro';
 ---
 <section id="private-component-workspace" hidden aria-label="Internal component documentation">
   <p id="private-component-status" role="status">Checking access…</p>
   <div id="private-component-document" hidden>
+    {/* Only the signed-in owner reads it, so like every signed-in page it has no On this page column. */}
     <TwoColumnContent>
-      <div slot="right-sidebar" id="private-component-sidebar"></div>
       <ContentPanel><h1 id="_top" class="ds-text ds-text--display"></h1></ContentPanel>
       <ContentPanel><MarkdownContent><div id="private-component-body"></div></MarkdownContent></ContentPanel>
     </TwoColumnContent>
   </div>
-  <template id="private-component-sidebar-template"><PageSidebar /></template>
 </section>
 
 <script>
-  import '../../../DS1/3-unit/ds-table-of-contents';
   import { readAppComponents } from '../lib/app-navigation';
   const workspace = document.querySelector<HTMLElement>('#private-component-workspace')!;
   const content = document.querySelector<HTMLElement>('#private-component-document')!;
   const body = document.querySelector<HTMLElement>('#private-component-body')!;
   const title = content.querySelector<HTMLElement>('h1')!;
-  const sidebar = document.querySelector<HTMLElement>('#private-component-sidebar')!;
-  const sidebarTemplate = document.querySelector<HTMLTemplateElement>('#private-component-sidebar-template')!;
   const status = document.querySelector<HTMLElement>('#private-component-status')!;
   const context = document.querySelector<HTMLElement>('#private-component-context');
   const requested = new URLSearchParams(location.search).get('internal');
@@ -32,7 +27,6 @@ import MarkdownContent from './MarkdownContent.astro';
   let loaded = false;
   if (requested !== null) {
     workspace.hidden = false;
-    document.documentElement.setAttribute('data-has-toc', '');
     window.addEventListener('ds1-navigation-auth', async event => {
       const detail = (event as CustomEvent).detail;
       if (detail.loading) return;
@@ -44,11 +38,12 @@ import MarkdownContent from './MarkdownContent.astro';
         content.hidden = true;
         body.replaceChildren();
         title.textContent = '';
-        sidebar.replaceChildren();
         status.hidden = false;
         status.textContent = detail.authenticated ? 'This component is available only to the owner.' : 'Sign in with the owner account to view this component.';
         return;
       }
+      // The header's last crumb names the document as soon as the owner is known.
+      window.dispatchEvent(new CustomEvent('ds1-shell-page', { detail: { label: component.name } }));
       if (loaded) return;
       request?.abort();
       const current = request = new AbortController();
@@ -70,27 +65,6 @@ import MarkdownContent from './MarkdownContent.astro';
         body.replaceChildren(...article.childNodes);
         title.textContent = component.name;
         window.document.title = `${component.name} — Design system 1`;
-        sidebar.replaceChildren();
-        const sidebarContent = sidebarTemplate.content.cloneNode(true) as DocumentFragment;
-        const toc = sidebarContent.querySelector('ds-table-of-contents')!;
-        toc.replaceChildren();
-        const mobileList = sidebarContent.querySelector('mobile-starlight-toc ul')!;
-        const mobileItem = mobileList.firstElementChild!.cloneNode(true) as HTMLElement;
-        mobileList.replaceChildren();
-        for (const [index, heading] of [title, ...body.querySelectorAll<HTMLElement>('h2, h3')].entries()) {
-          heading.id ||= `section-${index}`;
-          const link = window.document.createElement('a');
-          link.href = `#${heading.id}`;
-          link.textContent = heading.textContent;
-          link.dataset.depth = heading.tagName === 'H3' ? '1' : '0';
-          toc.append(link);
-          const item = mobileItem.cloneNode(true) as HTMLElement;
-          const mobileLink = item.querySelector('a')!;
-          mobileLink.href = link.href;
-          mobileLink.querySelector('span')!.textContent = link.textContent;
-          mobileList.append(item);
-        }
-        sidebar.append(sidebarContent);
         content.hidden = false;
         status.hidden = true;
         loaded = true;
@@ -112,7 +86,6 @@ import MarkdownContent from './MarkdownContent.astro';
         content.hidden = true;
         body.replaceChildren();
         title.textContent = '';
-        sidebar.replaceChildren();
         status.hidden = false;
         status.textContent = error instanceof Error ? error.message : 'This component could not be loaded.';
       }

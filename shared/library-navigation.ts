@@ -8,6 +8,11 @@ export function libraryComponent(value: string | null): string {
 export function libraryHeading(library: Pick<LibraryNavigation, "name" | "publishedVersion">): string {
   return `${library.name} · ${library.publishedVersion === null ? "Draft" : `v${library.publishedVersion}`}`;
 }
+/** The last crumb for what a library has open: Overview, or the component's name. */
+export function libraryPage(library: Pick<LibraryNavigation, "component" | "view">): string {
+  if (library.view === "overview") return "Overview";
+  return LAYERS.flatMap(layer => layer.entries).find(entry => entry.href === library.component)?.name ?? "";
+}
 export function libraryHref(library: LibraryNavigation, component = library.component): string {
   return `/app/l/${encodeURIComponent(library.id)}?${new URLSearchParams({ component, ...(library.view ? { view: library.view } : {}) })}`;
 }

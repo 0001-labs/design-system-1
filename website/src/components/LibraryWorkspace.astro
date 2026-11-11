@@ -39,6 +39,7 @@ const frameTitle = mode === 'editor' ? 'Design system 1 editor' : mode === 'acco
 <script>
   import { libraryHeading, libraryHref, libraryWorkspaceHref, readLibraryNavigation, type LibraryNavigation } from '../../../shared/library-navigation';
   import { editorSearch, readEditorNavigation, readEditorView } from '../../../shared/editor-navigation';
+  import { BASE_LIBRARY, BASE_LIBRARY_NAME, writeActiveLibrary } from '../../../shared/active-library';
   const frame = document.querySelector<HTMLIFrameElement>('#library-app');
   if (frame && !new URLSearchParams(location.search).has('internal')) {
     frame.src = frame.dataset.src!;
@@ -73,6 +74,8 @@ const frameTitle = mode === 'editor' ? 'Design system 1 editor' : mode === 'acco
       // The first component is the editor's own default: the address stays plain for it.
       const address = !editor.view && editor.component === editor.components[0]?.id ? location.pathname : `${location.pathname}?${search}`;
       if (`${location.pathname}${location.search}` !== address) history.replaceState({}, '', address);
+      // The design system open here is the one the person is working in.
+      writeActiveLibrary({ id: BASE_LIBRARY, name: BASE_LIBRARY_NAME });
       window.dispatchEvent(new CustomEvent('ds1-editor-navigation', { detail: { editor } }));
     });
     requestLibrary();
@@ -80,13 +83,15 @@ const frameTitle = mode === 'editor' ? 'Design system 1 editor' : mode === 'acco
     const renderLibrary = (library: LibraryNavigation | null) => {
       if (frame.dataset.mode === 'account' || !libraryNavigation) return;
       document.documentElement.toggleAttribute('data-library-workspace', library !== null);
+      // The address first, so whoever hears what is open reads the address that names it.
+      if (library) history.replaceState({}, '', libraryWorkspaceHref(library));
+      if (library) writeActiveLibrary({ id: library.id, name: library.name });
       window.dispatchEvent(new CustomEvent('ds1-library-navigation', { detail: { library } }));
       const heading = document.querySelector('#library-title');
       if (heading) heading.textContent = library ? libraryHeading(library) : 'Design system 1';
       const fullScreen = document.querySelector<HTMLAnchorElement>('.library-heading > a');
       if (fullScreen) fullScreen.href = library ? `${libraryHref(library)}&standalone=1` : '/app/libraries?standalone=1';
       frame.title = library ? libraryHeading(library) : 'My libraries';
-      if (library) history.replaceState({}, '', libraryWorkspaceHref(library));
     };
     window.addEventListener('ds1-navigation-auth', event => {
       if ((event as CustomEvent).detail.authenticated) requestLibrary();

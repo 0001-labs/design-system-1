@@ -1,5 +1,5 @@
 import { expect, test } from 'vite-plus/test';
-import { editorChoice, editorSearch, editorSidebarItems, readEditorNavigation, EDITOR_COMPONENTS_ID } from './editor-navigation';
+import { editorChoice, editorPage, editorSearch, editorSidebarItems, readEditorNavigation } from './editor-navigation';
 
 const reported = { components: [{ id: 'button', name: 'Button' }, { id: 'input', name: 'Input' }], component: 'input', view: null };
 
@@ -12,13 +12,21 @@ test('reads only what an editor frame reports', () => {
   }
 });
 
-test('the docs sidebar lists the components, then History and All tokens, marking what is open', () => {
-  const items = editorSidebarItems(reported, true, '/libraries/design-system-1/');
-  expect(items.map(item => item.label)).toEqual(['Components', 'Button', 'Input', 'History', 'All tokens']);
-  expect(items.find(item => item.current)?.label).toBe('Input');
-  expect(items[2]!.href).toBe('/libraries/design-system-1/?component=input');
-  expect(editorSidebarItems({ ...reported, view: 'tokens' }, true, '/x/').find(item => item.current)?.label).toBe('All tokens');
-  expect(editorSidebarItems(reported, false, '/x/').map(item => item.id)).toEqual([EDITOR_COMPONENTS_ID, 'editor:history', 'editor:tokens']);
+test('the docs sidebar lists only the components, flat, then History and All tokens, marking what is open', () => {
+  const { components, views } = editorSidebarItems(reported, '/libraries/design-system-1/');
+  expect(components.map(item => item.label)).toEqual(['Button', 'Input']);
+  expect(views.map(item => item.label)).toEqual(['History', 'All tokens']);
+  expect([...components, ...views].find(item => item.current)?.label).toBe('Input');
+  expect(components[1]!.href).toBe('/libraries/design-system-1/?component=input');
+  const tokens = editorSidebarItems({ ...reported, view: 'tokens' }, '/x/');
+  expect([...tokens.components, ...tokens.views].filter(item => item.current).map(item => item.label)).toEqual(['All tokens']);
+});
+
+test('the breadcrumb names the open component or view', () => {
+  expect(editorPage(reported)).toBe('Input');
+  expect(editorPage({ ...reported, view: 'history' })).toBe('History');
+  expect(editorPage({ ...reported, view: 'tokens' })).toBe('All tokens');
+  expect(editorPage({ ...reported, component: 'missing' })).toBe('');
 });
 
 test('a row becomes what the frame opens, and an address names one component or one view', () => {

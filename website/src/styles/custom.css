@@ -296,6 +296,17 @@ body.sidebar-open {
   outline-offset: calc(-2px * var(--ds-sf));
 }
 
+/* Signed in there is no On this page, on any page: the page's column takes the room, with no line,
+   handle or gap left where it stood (src/components/TwoColumnContent.astro). Signed out it stays. */
+html[data-signed-in] :is(.docs-contents, .right-sidebar-container, mobile-starlight-toc) { display: none; }
+html[data-signed-in] .docs-columns::part(aside),
+html[data-signed-in] .docs-columns::part(resize-aside) { display: none; }
+html[data-signed-in] .docs-columns::part(page) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "main" "footer";
+  column-gap: 0;
+}
+
 /* On this page: twelve squares, its writing starting level with the page's. */
 .right-sidebar-container { width: calc(240px * var(--sf, 1)); flex: none; }
 .right-sidebar { width: calc(240px * var(--sf, 1)); box-shadow: inset 1px 0 var(--ds1-docs-header-border); border: 0; }
