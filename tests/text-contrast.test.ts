@@ -119,3 +119,19 @@ test('transparent glyphs are excluded without hiding faint or alternatively pain
     for (const id of ['gradient-text', 'shadow', 'solid-text', 'stroke']) expect(broken.find(f => f.id === id)!.message).toContain('visual contrast review');
   } finally { await page.close(); }
 });
+
+test("contrast leaves content-visibility skipped text asleep until it is rendered", async () => {
+  const page = await fixture(`<p id="shown" style="color:#ddd">Visible writing</p>
+    <div style="height:10000px"></div>
+    <div style="content-visibility:auto;contain-intrinsic-size:100px">
+      <div style="display:contents"><span id="skipped" style="color:#ddd">Deferred writing</span></div>
+    </div>`);
+  try {
+    await page.waitForFunction(() => !document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }));
+    expect((await findings(page)).map(f => f.id)).toEqual(['shown']);
+    expect(await page.evaluate(() => document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }))).toBe(false);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForFunction(() => document.querySelector('#skipped')!.checkVisibility({ contentVisibilityAuto: true }));
+    expect((await findings(page)).map(f => f.id)).toContain('skipped');
+  } finally { await page.close(); }
+});

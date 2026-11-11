@@ -71,6 +71,9 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
   function excludedFromPaint(e: Element): boolean {
     const cached = excluded.get(e);
     if (cached !== undefined) return cached;
+    // Check before computed styles can wake skipped layout. The default check
+    // distinguishes skipped boxes from display:contents, whose children still count.
+    if (e.checkVisibility && !e.checkVisibility({ contentVisibilityAuto: true }) && e.checkVisibility()) return true;
     const s = style(e);
     const parent = paintedParent(e);
     const hidden = s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0 || fullyClipped(s)
