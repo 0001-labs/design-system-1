@@ -6,19 +6,25 @@ const scaled = (value: number | undefined) => `calc(${value ?? 0}px * var(--ds-s
 const SINGLE = ['/* ds1:button-box:start */', '/* ds1:button-box:end */'] as const;
 /**
  * The button's tokens a single button's box block pins, each with what the block draws instead:
- * its padding and corner in px, its height `auto`. The block overrides those tokens on the part,
- * so the canvas shows them as measures and leaves editing them to the box model. Empty without
- * the block. (A split block styles only split buttons, which the canvas does not draw.)
+ * its padding (inline) and corner in px, its height `auto`; "" where the block does not say a
+ * length plainly (the canvas then reads it from the component as drawn). The block overrides those
+ * tokens on the part, so the canvas shows them as measures and leaves editing them to the box
+ * model. The last block counts, as in the browser. Empty without one. (A split block styles only
+ * split buttons, which the canvas does not draw.)
  */
 export function buttonBoxPins(css: string): Map<string, string> {
-  const from = css.indexOf(SINGLE[0]); const to = from < 0 ? -1 : css.indexOf(SINGLE[1], from);
+  const from = css.lastIndexOf(SINGLE[0]); const to = from < 0 ? -1 : css.indexOf(SINGLE[1], from);
   if (to < 0) return new Map();
   const block = css.slice(from, to);
-  const px = (pattern: RegExp) => { const value = pattern.exec(block)?.[1]; return value === undefined ? '' : `${Number(value)}px`; };
+  // Each length of a declaration, as written by writeButtonBox (`calc(Npx * var(--ds-sf, 1))`) or by hand (`Npx`).
+  const lengths = (name: string) => [...(new RegExp(`${name}\\s*:\\s*([^;]+);`).exec(block)?.[1] ?? '').matchAll(/(?:calc\(\s*)?(-?[\d.]+)px(?:\s*\*\s*var\([^)]*\)\s*\))?|(\S+)/g)].map(match => match[2] === undefined ? Number(match[1]) : NaN);
+  const px = (value: number | undefined) => value === undefined || !Number.isFinite(value) ? '' : `${value}px`;
+  const padding = lengths('--ds-button-padding');
+  const radius = lengths('--ds-radius');
   return new Map([
     ['--ds-button-size', 'auto'],
-    ['--ds-button-padding-size', px(/--ds-button-padding:\s*calc\([\d.]+px[^)]*\)\)\s*calc\(([\d.]+)px/)],
-    ['--ds-button-corner-size', px(/--ds-radius:\s*calc\(([\d.]+)px/)],
+    ['--ds-button-padding-size', px(padding.length > 1 ? padding[1] : padding[0])],
+    ['--ds-button-corner-size', px(radius.length === 1 ? radius[0] : undefined)],
   ]);
 }
 /** An opt-in rule for the shared button; no unrelated component rules are rebuilt. */

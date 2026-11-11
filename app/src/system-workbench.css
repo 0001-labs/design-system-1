@@ -45,4 +45,4 @@
 .system-workbench-preview .app-panel-heading { flex-wrap: wrap; gap: calc(var(--site-unit) / 2); }
 
 /* A covered component's property groups (PropertyGroups.ts) lead the aside, a square above what follows. */
-.system-workbench-tokens > .component-editor-group:last-of-type { margin-bottom: var(--site-unit); }
+.system-workbench-tokens > .component-editor-group:not(:has(~ .component-editor-group)) { margin-bottom: var(--site-unit); }

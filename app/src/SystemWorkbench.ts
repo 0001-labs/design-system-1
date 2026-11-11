@@ -224,7 +224,7 @@ export class SystemWorkbench extends AppElement {
         </aside>`}
         <main class="system-workbench-preview">
           <div class="app-panel-heading"><h1>${entry.name}</h1>${button(this.stylesheetOpen ? "Hide stylesheet" : "Show stylesheet", () => { this.stylesheetOpen = !this.stylesheetOpen; }, { expanded: this.stylesheetOpen, controls: "library-stylesheet" })}<a class="system-workbench-docs" href=${entry.href} target="_blank" rel="noreferrer">Documentation<ds-icon type="up-right" aria-hidden="true"></ds-icon></a></div>
-          ${spec ? html`<ds1-component-canvas .spec=${spec} .editing=${this.editing} .stylesheet=${previewCss} .locked=${locked}></ds1-component-canvas>
+          ${spec ? html`<ds1-component-canvas .spec=${spec} .editing=${this.editing} .stylesheet=${css} .overlay=${this.boxPreview ? writeButtonBox("", shownBox, this.buttonMode) : ""} .locked=${locked}></ds1-component-canvas>
           <h2 class="app-panel-label system-workbench-examples">Examples</h2>` : nothing}
           ${examples.length ? repeat(examples, example => example, (example, index) => html`<section><h2>${EXAMPLES[example]!.title}</h2><ds1-example-preview example=${example} css=${previewCss}
             .hoverRegion=${buttonSelected ? this.hoverRegion : null} ?metrics=${buttonSelected && index === 0}

@@ -30,11 +30,18 @@ export function propertyGroups(editing: PropertyEditing, spec: ComponentSpec, lo
         return html`<div class="component-editor-property" data-property=${property.token} data-kind=${property.kind}>
           <span class="component-editor-label">${property.label}</span>
           ${pinned === undefined ? html`${control(editing, property)}${reset(editing, property)}`
-            : html`<span class="component-editor-pinned" data-token=${property.token}>${/^[\d.]+px$/.test(pinned) ? `${readLength(property, pinned)} px` : "Auto"}</span>`}
+            : html`<span class="component-editor-pinned" data-token=${property.token}>${pinnedText(editing, property, pinned)}</span>`}
         </div>`;
       })}
     </section>`] : [];
   });
+}
+
+/** A pinned property's value: the height "Auto", a length as written, or as the canvas measured it where it is not written plainly. */
+function pinnedText(editing: PropertyEditing, property: ComponentProperty, pinned: string) {
+  if (pinned === "auto") return "Auto";
+  const drawn = editing.drawn.get().get(property.token);
+  return pinned ? `${readLength(property, pinned)} px` : drawn === undefined ? "" : `${drawn} px`;
 }
 
 function reset(editing: PropertyEditing, property: ComponentProperty) {

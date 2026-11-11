@@ -1,18 +1,40 @@
 import { expect, it, vi } from "vite-plus/test";
-import { setLibraryToken } from "./libraryTokens";
+import { libraryTokenValues, setLibraryToken } from "./libraryTokens";
 import { libraryDraft, PropertyEditing } from "./propertyEditing";
 
-it("reads a library's tokens from its stylesheet, its template's own values as unset, and writes through the caller", () => {
-  let css = ":root { --ds-switch-track-on: #529d36; --ds-button-size: 36px; }";
+const library = (initial: string, template = "") => {
+  let css = initial;
   const write = vi.fn((token: string, value: string) => { css = setLibraryToken(css, token, value); });
-  const draft = libraryDraft(() => css, write, ":root { --ds-switch-track-on: #529d36; }");
+  return { draft: libraryDraft(() => css, write, template), write, css: () => css };
+};
+
+it("reads a library's tokens from its stylesheet, its template's own values as unset, and writes through the caller", () => {
+  const { draft, write } = library(":root { --ds-switch-track-on: #529d36; }", ":root { --ds-switch-track-on: #529d36; }");
   expect(draft.value("--ds-switch-track-on")).toBeUndefined();
-  expect(draft.value("--ds-button-size")).toBe("36px");
   draft.edit("--ds-button-size", "56px");
   expect(draft.value("--ds-button-size")).toBe("56px");
   draft.remove("--ds-button-size");
   expect(write).toHaveBeenLastCalledWith("--ds-button-size", "");
-  expect(draft.value("--ds-button-size")).toBe("36px");
+  expect(draft.value("--ds-button-size")).toBeUndefined();
+  expect(draft.unset!("--ds-switch-track-on")).toBe("#529d36");
+  expect(draft.unset!("--ds-button-size")).toBe("initial");
+});
+
+it("takes out a token the library sets in a block of its own by writing the default over it", () => {
+  const own = library(":root { --ds-button-primary-fill: rgb(255, 0, 102); --ds-switch-track-on: red; }", ":root { --ds-switch-track-on: #529d36; }");
+  expect(own.draft.value("--ds-button-primary-fill")).toBe("rgb(255, 0, 102)");
+  own.draft.remove("--ds-button-primary-fill");
+  expect(own.write).toHaveBeenLastCalledWith("--ds-button-primary-fill", "initial");
+  expect(libraryTokenValues(own.css()).get("--ds-button-primary-fill")).toBe("initial");
+  expect(own.draft.value("--ds-button-primary-fill")).toBeUndefined();
+  // A token the template defines goes back to the template's value, and then reads as unset.
+  own.draft.remove("--ds-switch-track-on");
+  expect(own.write).toHaveBeenLastCalledWith("--ds-switch-track-on", "#529d36");
+  expect(own.draft.value("--ds-switch-track-on")).toBeUndefined();
+  // Set again and taken out again: only the override block's line goes.
+  own.draft.edit("--ds-button-primary-fill", "blue");
+  own.draft.remove("--ds-button-primary-fill");
+  expect(libraryTokenValues(own.css()).get("--ds-button-primary-fill")).toBe("initial");
 });
 
 it("shows a drag's preview before the draft, and an empty value removes the token", () => {

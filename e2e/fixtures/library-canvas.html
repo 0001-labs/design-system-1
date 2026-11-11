@@ -1,12 +1,13 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Library canvas</title>
 <script type="module">
   // A library's workbench as a saved library opens it, without an account: the stylesheet it opens
-  // with (?library=custom|box, else a new library's template), the open component (?component=),
-  // the documentation's frame (?embed), another scale (?sf=) and dark (?dark), and every
+  // with (?library=custom|box|handbox|themed, else a new library's template), the open component
+  // (?component=), the documentation's frame (?embed), another scale (?sf=), a chosen theme
+  // (?dark or ?light, else the system's), and every
   // `workbench-dirty` (each one a save) recorded in `window.dirty`.
   const query = new URLSearchParams(location.search);
   if (query.has('embed')) document.documentElement.dataset.docsEmbed = '';
-  if (query.has('dark')) { document.documentElement.classList.add('dark-theme'); document.documentElement.style.colorScheme = 'dark'; }
+  for (const theme of ['dark', 'light']) if (query.has(theme)) { document.documentElement.classList.add(`${theme}-theme`); document.documentElement.style.colorScheme = theme; }
   await import('/DS1/1-root/one.css');
   await import('/shared/site-navigation.css');
   await import('/app/src/app.css');
@@ -23,6 +24,10 @@
     // Another primary fill, a rounder corner, a part rule and a plain element rule: none may reach the workbench around the specimens.
     custom: `${libraryTemplate}\n:root { --ds-button-primary-fill: rgb(255, 0, 102); --ds-corner-size: 10px; }\nds-button::part(control) { letter-spacing: 3px; }\nspan, h1, h2, h3 { color: rgb(255, 0, 102); }\n`,
     box: writeButtonBox(libraryTemplate, { ...defaultButtonBox, paddingX: 12, radius: 8 }),
+    // A block written by hand, its padding not in plain px: the canvas reads it from the button as drawn.
+    handbox: `${libraryTemplate}\n/* ds1:button-box:start */\nds-button:not([split]) { --ds-button-padding: 0 0.5em; --ds-radius: 2px; }\nds-button:not([split])::part(control) { padding: 0 10px; border-radius: 2px; height: auto; }\n/* ds1:button-box:end */\n`,
+    // A chosen dark theme in blue; the system's dark, with no theme chosen, in green.
+    themed: `${libraryTemplate}\n:root.dark-theme { --ds-button-primary-fill: rgb(0, 0, 255); }\n@media (prefers-color-scheme: dark) { :root:not(.light-theme):not(.dark-theme) { --ds-button-primary-fill: rgb(0, 128, 0); } }\n`,
   };
   await import('/app/src/SystemWorkbench.ts');
   const shell = document.createElement('div');

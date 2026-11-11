@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { bindSpacingHandle } from "../../../packages/app/src/2-core/spacing-handle";
 import { SQUARE, readLength, type ComponentSpec } from "../component-specs";
@@ -166,7 +167,7 @@ export class CanvasHandles extends AppElement {
       style=${styleMap(px(box))}>
       ${padding ? (["padding-start", "padding-end"] as const).map(kind => html`<span class="component-editor-band" data-band=${kind} aria-hidden="true"
         style=${styleMap(px(bandRect(kind, box, values.padding, box.sf)))}></span>`) : nothing}
-      ${handles.map(handle => {
+      ${repeat(handles, handle => handle.kind, handle => {
         const slider = this.#slider(handle);
         return html`<div class="component-editor-handle" data-handle=${handle.kind} data-testid=${`handle-${handle.kind}`} role="slider" tabindex="0"
           aria-label=${LABELS[handle.kind]} aria-orientation=${slider.axis}

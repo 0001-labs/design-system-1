@@ -1,4 +1,5 @@
 import { html, LitElement, nothing, type TemplateResult } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import "../../../DS1/2-core/ds-button";
@@ -61,17 +62,18 @@ const HOVER = sheet(`:host([data-hover]) > :not(ds-checkbox), :host([data-hover]
  * page around it reaches in but what is inherited, and nothing of the design reaches out.
  */
 export class SpecimenBody extends LitElement {
-  static override properties = { content: { attribute: false }, design: { attribute: false } };
+  static override properties = { content: { attribute: false }, designs: { attribute: false } };
   declare content: TemplateResult;
-  declare design: CSSStyleSheet | null;
+  /** The design's sheets, in order: its stylesheet, then a preview drawn over it. */
+  declare designs: (CSSStyleSheet | null)[];
 
   constructor() {
     super();
-    this.design = null;
+    this.designs = [];
   }
 
   override willUpdate() {
-    (this.renderRoot as ShadowRoot).adoptedStyleSheets = [this.design, HOVER].filter((item): item is CSSStyleSheet => !!item);
+    (this.renderRoot as ShadowRoot).adoptedStyleSheets = [...this.designs, HOVER].filter((item): item is CSSStyleSheet => !!item);
   }
 
   override render() { return this.content; }
@@ -91,7 +93,9 @@ export class ComponentCanvas extends AppElement {
     editing: { attribute: false },
     tokens: { attribute: false },
     stylesheet: { attribute: false },
+    overlay: { attribute: false },
     locked: { attribute: false },
+    theme: { state: true },
     selected: { state: true },
     hovered: { state: true },
     measure: { state: true },
@@ -102,22 +106,30 @@ export class ComponentCanvas extends AppElement {
   declare tokens: Record<string, string>;
   /** A design's whole stylesheet, drawn on the specimens alone (a library); undefined for the base. */
   declare stylesheet: string | undefined;
+  /** A short sheet drawn over the stylesheet on the specimens while something else previews (the box model's drag), scoped on its own so the stylesheet is not. */
+  declare overlay: string;
   /** Properties something else draws, each with its value: shown, not edited (`buttonBoxPins`). */
   declare locked: ReadonlyMap<string, string>;
   declare selected: number;
   declare hovered: number;
   /** The selected component's face as drawn, relative to the canvas, at the surface's scale. */
   declare measure: CanvasBox | null;
+  /** The document's theme, mirrored onto each specimen so a design's theme selectors match as on its page. */
+  declare theme: SpecimenTheme;
   #component = "";
   #handlesFor = "";
   #observer: ResizeObserver | null = null;
   #frame = 0;
   #design: { css: string; sheet: CSSStyleSheet | null; faces: HTMLStyleElement } | null = null;
+  #overlay: { css: string; sheet: CSSStyleSheet | null } = { css: "", sheet: null };
+  #themes = typeof MutationObserver === "undefined" ? null : new MutationObserver(() => { this.theme = documentTheme(); });
 
   constructor() {
     super();
     this.tokens = {};
     this.stylesheet = undefined;
+    this.overlay = "";
+    this.theme = documentTheme();
     this.locked = new Map();
     this.selected = 0;
     this.hovered = -1;
@@ -127,10 +139,13 @@ export class ComponentCanvas extends AppElement {
   override connectedCallback() {
     super.connectedCallback();
     if (typeof ResizeObserver !== "undefined") this.#observer = new ResizeObserver(() => this.#scheduleMeasure());
+    this.#themes?.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "data-docs-theme"] });
+    this.theme = documentTheme();
   }
 
   override disconnectedCallback() {
     this.#observer?.disconnect();
+    this.#themes?.disconnect();
     cancelAnimationFrame(this.#frame);
     this.#design?.faces.remove();
     this.#design = null;
@@ -140,11 +155,13 @@ export class ComponentCanvas extends AppElement {
   override willUpdate() {
     // A newly opened component starts on its first state.
     if (this.spec.id !== this.#component) { this.#component = this.spec.id; this.selected = 0; }
-    // Another component or state ends a drag on the last one: its handles are drawn anew (keyed in
-    // render, so the old ones cancel as they disconnect) and its preview goes.
-    const handlesFor = `${this.spec.id}:${this.selected}`;
+    // Another component, state or set of locked properties ends a drag on the last one: its handles
+    // are drawn anew (keyed in render, so the old ones cancel as they disconnect) and its preview goes.
+    const handlesFor = this.#handlesKey();
     if (handlesFor !== this.#handlesFor) { this.#handlesFor = handlesFor; this.editing.preview.set(null); }
   }
+
+  #handlesKey() { return `${this.spec.id}:${this.selected}:${[...this.locked.keys()].join(",")}`; }
 
   override updated() {
     const canvas = this.querySelector(".component-editor-canvas");
@@ -171,6 +188,12 @@ export class ComponentCanvas extends AppElement {
     const next = { width: Math.round(box.width), height: Math.round(box.height), left: Math.round(box.left - outer.left), top: Math.round(box.top - outer.top), sf };
     const current = this.measure;
     if (!current || (Object.keys(next) as (keyof CanvasBox)[]).some(key => current[key] !== next[key])) this.measure = next;
+    // A locked length whose value the block does not say plainly is read from the component as drawn.
+    const part = target.shadowRoot?.querySelector<HTMLElement>("[part~='control']") ?? target;
+    const drawn = new Map(this.spec.properties.flatMap(({ token, label }) => this.locked.get(token) === "" && DRAWN[label]
+      ? [[token, Math.round(Number.parseFloat(getComputedStyle(part).getPropertyValue(DRAWN[label])) / sf)] as const] : []));
+    const known = this.editing.drawn.get();
+    if (drawn.size !== known.size || [...drawn].some(([token, value]) => known.get(token) !== value)) this.editing.drawn.set(drawn);
   }
 
   /**
@@ -184,10 +207,16 @@ export class ComponentCanvas extends AppElement {
     const scoped = scopeLibrary(css);
     const faces = this.#design?.faces ?? document.createElement("style");
     faces.dataset.ds1LibraryFaces = "";
-    faces.textContent = scoped.faces;
+    // Faces set again would be loaded again, with a flash of the fallback face and a moving measure.
+    if (faces.textContent !== scoped.faces) faces.textContent = scoped.faces;
     if (!faces.isConnected) document.head.append(faces);
     this.#design = { css, sheet: sheet(scoped.rules), faces };
     return this.#design.sheet;
+  }
+
+  #overlaySheet(): CSSStyleSheet | null {
+    if (this.#overlay.css !== this.overlay) this.#overlay = { css: this.overlay, sheet: this.overlay ? sheet(scopeLibrary(this.overlay).rules) : null };
+    return this.#overlay.sheet;
   }
 
   /** A drag's preview, only while its component is the one open (a cancelled drag's last word may come after). */
@@ -198,7 +227,7 @@ export class ComponentCanvas extends AppElement {
 
   /** A handle's release, through the same path as the property groups' fields. */
   #commit(spec: ComponentSpec, change: HandleChange) {
-    if (spec.properties.some(property => property.token === change.token)) this.editing.edit(change.token, change.value);
+    if (spec.properties.some(property => property.token === change.token) && !this.locked.has(change.token)) this.editing.edit(change.token, change.value);
   }
 
   /** What each property's handle shows: a drag's preview first, a locked one's drawn value (a height as measured). */
@@ -206,7 +235,9 @@ export class ComponentCanvas extends AppElement {
     return Object.fromEntries(this.spec.properties.map(({ token, kind }) => {
       const locked = this.locked.get(token);
       if (locked === undefined) return [token, this.editing.written(token)];
-      return [token, kind === "control" || kind === "row" ? `${Math.round(measure.height / measure.sf)}px` : locked || undefined];
+      if (kind === "control" || kind === "row") return [token, `${Math.round(measure.height / measure.sf)}px`];
+      const drawn = this.editing.drawn.get().get(token);
+      return [token, locked || (drawn === undefined ? undefined : `${drawn}px`)];
     }));
   }
 
@@ -217,10 +248,11 @@ export class ComponentCanvas extends AppElement {
     const preview = editing.preview.get();
     const overrides = { ...this.tokens };
     if (preview) { if (preview.value) overrides[preview.token] = preview.value; else delete overrides[preview.token]; }
-    const design = this.#sheet();
+    const designs = [this.#sheet(), this.#overlaySheet()];
+    const { theme } = this;
     // A design's own `:host` values are the specimen's, so the scale and a drag's preview are set on
     // the specimen itself, where they win over them ("initial" being a token's unset value).
-    const own = this.stylesheet !== undefined ? { "--ds-sf": "inherit", "--sf": "inherit", ...(preview ? { [preview.token]: preview.value || "initial" } : {}) } : {};
+    const own = this.stylesheet !== undefined ? { "--ds-sf": "inherit", "--sf": "inherit", ...(preview ? { [preview.token]: preview.value || (editing.draft.unset?.(preview.token) ?? "initial") } : {}) } : {};
     const keys = (event: KeyboardEvent) => {
       const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
       if (!step) return;
@@ -236,12 +268,13 @@ export class ComponentCanvas extends AppElement {
         ${specimens.map((specimen, index) => html`<div class="component-editor-specimen" role="option" aria-selected=${String(index === selected)} tabindex=${index === selected ? 0 : -1}
           @click=${() => { this.selected = index; }} @pointerenter=${() => { this.hovered = index; }} @pointerleave=${() => { if (this.hovered === index) this.hovered = -1; }}>
           <span class="component-editor-specimen-name">${specimen.name}</span>
-          <ds1-specimen class="component-editor-specimen-body" inert ?data-hover=${index === this.hovered && index !== selected}
-            style=${styleMap(own)} .design=${design} .content=${specimen.render()}></ds1-specimen>
+          <ds1-specimen class=${`component-editor-specimen-body${theme.name ? ` ${theme.name}-theme` : ""}`} inert ?data-hover=${index === this.hovered && index !== selected}
+            data-theme=${ifDefined(theme.data)} data-docs-theme=${ifDefined(theme.docs)}
+            style=${styleMap(own)} .designs=${designs} .content=${specimen.render()}></ds1-specimen>
           ${index === selected && measure ? html`<span class="component-editor-size" data-testid="component-size">${measure.width} × ${measure.height}</span>` : nothing}
         </div>`)}
       </div>
-      ${measure ? keyed(`${spec.id}:${selected}`, html`<ds1-canvas-handles .spec=${spec} .box=${measure} .values=${this.#values(measure)} .locked=${new Set(this.locked.keys())}
+      ${measure ? keyed(this.#handlesKey(), html`<ds1-canvas-handles .spec=${spec} .box=${measure} .values=${this.#values(measure)} .locked=${new Set(this.locked.keys())}
         @handle-preview=${(event: CustomEvent<HandleChange | null>) => this.#preview(spec, event.detail)}
         @handle-commit=${(event: CustomEvent<HandleChange>) => this.#commit(spec, event.detail)}></ds1-canvas-handles>`) : nothing}
     </div>
@@ -249,6 +282,22 @@ export class ComponentCanvas extends AppElement {
   }
 }
 defineElement("ds1-component-canvas", ComponentCanvas);
+
+/** The CSS property a locked length is measured by on the drawn component, by its label. */
+const DRAWN: Record<string, string> = { Padding: "padding-left", Corner: "border-top-left-radius" };
+
+type SpecimenTheme = { name: "dark" | "light" | ""; data: string | undefined; docs: string | undefined };
+
+/**
+ * The document's theme as the specimens carry it: the root's `dark-theme`/`light-theme` class, or
+ * the documentation's theme (`data-docs-theme`) when the app stands in its frame, as the example
+ * frames take it, and the root's `data-theme` and `data-docs-theme` as they are.
+ */
+export function documentTheme(root: Element = document.documentElement): SpecimenTheme {
+  const docs = root.getAttribute("data-docs-theme") ?? undefined;
+  const name = root.classList.contains("dark-theme") ? "dark" : root.classList.contains("light-theme") ? "light" : docs === "dark" || docs === "light" ? docs : "";
+  return { name, data: root.getAttribute("data-theme") ?? undefined, docs };
+}
 
 /** "height, padding and corner" → "Height, padding and corner". */
 const sentence = (words: string[]) => {

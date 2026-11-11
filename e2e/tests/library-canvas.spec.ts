@@ -202,3 +202,114 @@ test.describe("under a finger", () => {
     expect(await scrolled()).toBe(before);
   });
 });
+
+/** The workbench's stylesheet as it stands. */
+const stylesheet = (page: Page) => page.evaluate(() => (document.querySelector("ds1-system-workbench") as HTMLElement & { css: string }).css);
+const overrides = (css: string) => css.slice(css.lastIndexOf("/* ds1:tokens:start */"));
+
+test("a box block written while the button is open locks its handles, and the width handle edits only the width; taking the block out brings every handle back", async ({ page }) => {
+  await open(page);
+  await expect(page.locator(".component-editor-handle")).toHaveCount(5);
+  // The box model's own field writes the block.
+  await page.getByRole("spinbutton", { name: "Padding right", exact: true }).fill("12");
+  await expect(page.getByTestId("canvas-pinned")).toBeVisible();
+  await expect(page.locator(".component-editor-handle")).toHaveCount(1);
+  await expect(page.getByTestId("handle-width")).toHaveAttribute("aria-label", "Width");
+  await expect.poll(() => specimenStyle(page, "padding-left")).toBe("12px");
+  const before = (await dirty(page)).length;
+  await press(page, "handle-width", SQUARE + 2, 0);
+  await expect.poll(() => readouts(page)).toEqual([expect.stringMatching(/^W \d+ sq$/)]);
+  await page.mouse.up();
+  await expect.poll(() => dirty(page)).toHaveLength(before + 1);
+  let css = await stylesheet(page);
+  expect(overrides(css)).toContain("--ds-button-inline-size: calc(");
+  expect(css).not.toMatch(/--ds-button-(size|padding-size|corner-size):/);
+  await page.getByTestId("handle-width").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => dirty(page)).toHaveLength(before + 2);
+  expect(await stylesheet(page)).not.toMatch(/--ds-button-(size|padding-size|corner-size):/);
+  // The block taken out in the stylesheet: every handle again, each bound to its own property.
+  css = (await stylesheet(page)).replace(/\/\* ds1:button-box:start \*\/[\s\S]*?\/\* ds1:button-box:end \*\/\n?/, "");
+  await page.getByRole("button", { name: "Show stylesheet" }).click();
+  await page.locator("ds1-aa-stylesheet").evaluate((editor, css) => editor.dispatchEvent(new CustomEvent("stylesheet-change", { detail: css, bubbles: true })), css);
+  await expect(page.getByTestId("canvas-pinned")).toHaveCount(0);
+  await expect(page.locator(".component-editor-handle")).toHaveCount(5);
+  expect(await page.locator(".component-editor-handle").evaluateAll(handles => handles.map(handle => handle.getAttribute("aria-label")))).toEqual(["Height", "Padding at the start", "Padding at the end", "Width", "Corner"]);
+  await press(page, "handle-height", 0, SQUARE + 2);
+  await page.mouse.up();
+  await expect.poll(async () => overrides(await stylesheet(page))).toContain("--ds-button-size: 36px;");
+  await press(page, "handle-padding-start", 5, 0);
+  await page.mouse.up();
+  await expect.poll(async () => overrides(await stylesheet(page))).toContain("--ds-button-padding-size: 8px;");
+});
+
+test("a hand-written block's padding is read from the button as drawn", async ({ page }) => {
+  await open(page, "&library=handbox");
+  await expect(page.getByTestId("canvas-pinned")).toBeVisible();
+  await expect.poll(() => page.locator(".component-editor-pinned").allTextContents()).toEqual(["Auto", "10 px", "2 px"]);
+  const face = (await page.getByTestId("canvas-handles").boundingBox())!;
+  await page.mouse.move(face.x + face.width / 2, face.y + face.height / 2);
+  await page.keyboard.down("Alt");
+  await expect.poll(() => readouts(page)).toContain("P 10");
+  await page.keyboard.up("Alt");
+});
+
+test("resetting a colour the library sets in its own block writes the default over it and saves once", async ({ page }) => {
+  await open(page, "&library=custom");
+  await expect.poll(() => specimenStyle(page, "background-color")).toBe("rgb(255, 0, 102)");
+  await page.getByTestId("reset--ds-button-primary-fill").click();
+  await expect.poll(() => dirty(page)).toHaveLength(1);
+  expect(overrides((await dirty(page))[0]!)).toContain("--ds-button-primary-fill: initial;");
+  await expect.poll(() => specimenStyle(page, "background-color")).not.toBe("rgb(255, 0, 102)");
+  await expect(page.getByTestId("reset--ds-button-primary-fill")).toHaveCount(0);
+  await expect(page.locator('select[data-token="--ds-button-primary-fill"]')).toHaveValue("");
+  await page.waitForTimeout(300);
+  expect(await dirty(page)).toHaveLength(1);
+});
+
+test("a library's theme rules follow the page's chosen theme and the system's on the specimens", async ({ page }) => {
+  const fill = async (scheme: "light" | "dark", query: string) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await open(page, `&library=themed${query}`);
+    await expect(page.getByTestId("handle-height")).toBeVisible();
+    return specimenStyle(page, "background-color");
+  };
+  const plain = await fill("light", "");
+  expect(plain).not.toMatch(/rgb\(0, (0, 255|128, 0)\)/);
+  expect(await fill("dark", "&light"), "light chosen on a dark system").toBe(plain);
+  expect(await fill("light", "&dark"), "dark chosen on a light system").toBe("rgb(0, 0, 255)");
+  expect(await fill("dark", ""), "the system's dark").toBe("rgb(0, 128, 0)");
+  // The choice changing on the page follows at once.
+  await page.evaluate(() => document.documentElement.classList.add("dark-theme"));
+  await expect.poll(() => specimenStyle(page, "background-color")).toBe("rgb(0, 0, 255)");
+});
+
+test("a box model drag previews on the specimens without scoping the stylesheet again or reloading its faces", async ({ page }) => {
+  await page.addInitScript(() => {
+    const counts = { large: 0, small: 0 };
+    (window as unknown as { scopes: typeof counts }).scopes = counts;
+    const replace = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, "replaceSync")!.value as (this: CSSStyleSheet, text: string) => void;
+    CSSStyleSheet.prototype.replaceSync = function (text: string) { counts[text.length > 5000 ? "large" : "small"] += 1; return replace.call(this, text); };
+  });
+  await open(page);
+  await expect(page.getByTestId("handle-height")).toBeVisible();
+  const scopes = () => page.evaluate(() => ({ ...(window as unknown as { scopes: { large: number; small: number } }).scopes }));
+  const start = await scopes();
+  await page.evaluate(() => {
+    (window as unknown as { faceChanges: number }).faceChanges = 0;
+    new MutationObserver(() => { (window as unknown as { faceChanges: number }).faceChanges += 1; }).observe(document.querySelector("style[data-ds1-library-faces]")!, { childList: true, characterData: true, subtree: true });
+  });
+  const field = (await page.getByRole("spinbutton", { name: "Padding right", exact: true }).boundingBox())!;
+  await page.mouse.move(field.x + 5, field.y + 5);
+  await page.mouse.down();
+  for (let step = 1; step <= 20; step++) await page.mouse.move(field.x + 5 + step * 3, field.y + 5);
+  await expect.poll(() => specimenStyle(page, "padding-left")).not.toBe("4px");
+  const during = await scopes();
+  expect(during.large, "the stylesheet is not scoped again while the box model previews").toBe(start.large);
+  expect(during.small).toBeGreaterThan(start.small);
+  expect(during.small - start.small, "the preview is scoped once per changed value").toBeLessThanOrEqual(10);
+  await page.mouse.up();
+  await expect.poll(() => dirty(page)).toHaveLength(1);
+  await expect.poll(async () => (await scopes()).large).toBe(start.large + 1);
+  expect(await page.evaluate(() => (window as unknown as { faceChanges: number }).faceChanges)).toBe(0);
+});
