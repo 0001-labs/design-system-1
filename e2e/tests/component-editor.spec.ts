@@ -283,9 +283,9 @@ test("the checkbox's box takes its corner and its size from the far corner", asy
 
 /** The editor's state a cancelled drag must leave clean: no preview, no active handle, nothing captured. */
 const settled = (page: Page) => page.evaluate(() => {
-  const editor = document.querySelector("ds1-component-editor") as HTMLElement & { preview: unknown } | null;
+  const editor = document.querySelector("ds1-component-editor") as HTMLElement & { editing: { preview: { get(): unknown } } } | null;
   const handles = [...document.querySelectorAll<HTMLElement>(".component-editor-handle")];
-  return { preview: editor?.preview ?? null, active: document.querySelector("[data-testid=canvas-handles]")?.hasAttribute("data-active") ?? false, captured: handles.some(handle => handle.hasPointerCapture(1)) };
+  return { preview: editor?.editing.preview.get() ?? null, active: document.querySelector("[data-testid=canvas-handles]")?.hasAttribute("data-active") ?? false, captured: handles.some(handle => handle.hasPointerCapture(1)) };
 });
 const clean = { preview: null, active: false, captured: false };
 

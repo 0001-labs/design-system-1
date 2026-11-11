@@ -14,13 +14,17 @@ import "./BoxModel";
 import type { BoxModelConfig, BoxRegion } from "./BoxModel";
 import "./ComponentTree";
 import type { TreeNode } from "./ComponentTree";
-import { defaultButtonBox, writeButtonBox, type ButtonBox } from "./lib/buttonBoxModel";
+import { COMPONENTS } from "./component-specs";
+import { buttonBoxPins, defaultButtonBox, writeButtonBox, type ButtonBox } from "./lib/buttonBoxModel";
 import { AppElement, defineElement } from "./lib/element";
 import { libraryTokenValues, setLibraryToken } from "./lib/libraryTokens";
+import { libraryDraft, PropertyEditing } from "./lib/propertyEditing";
 import { FOUNDATION_TOKENS, foundationScale } from "../../DS1/1-root/foundation";
 import { libraryTemplate } from "./lib/libraryTemplate";
 import { button, splitButton } from "./lib/ui";
 import { currentLocation, navigate } from "./router";
+import "./screens/ComponentCanvas";
+import { propertyGroups } from "./screens/PropertyGroups";
 import "./system-workbench.css";
 
 /** The public catalogue as a tree: each layer opens onto its components, each row naming its element. */
@@ -105,6 +109,11 @@ defineElement("ds1-example-preview", ExamplePreview);
  * tokens, and the stylesheet. `initialCss` and `initialConfig` seed it once;
  * every edit is a `workbench-dirty` with the CSS and the configuration.
  * `header` stands at its top (a library's own actions).
+ *
+ * A component the base editor's specs cover (`component-specs.ts`) leads with the
+ * same canvas and property groups (`screens/ComponentCanvas.ts`, `PropertyGroups.ts`),
+ * over the library's stylesheet: a token reads from it and writes through
+ * `#setToken`, so autosave, the stylesheet and the token list follow at once.
  */
 export class SystemWorkbench extends AppElement {
   static properties = {
@@ -130,6 +139,8 @@ export class SystemWorkbench extends AppElement {
   declare boxPreview: Partial<ButtonBox> | null;
   declare hoverRegion: BoxRegion | null;
   #config: LibraryWorkbenchConfig | undefined;
+  /** The library's stylesheet as the canvas's draft: one handle's release is one `workbench-dirty`. */
+  readonly editing = new PropertyEditing(libraryDraft(() => this.css ?? this.initialCss ?? libraryTemplate, (name, value) => this.#setToken(name, value), libraryTemplate));
 
   constructor() {
     super();
@@ -170,7 +181,8 @@ export class SystemWorkbench extends AppElement {
     let next = setLibraryToken(this.css!, name, value);
     const alias = aliases[name];
     if (alias && libraryTokenValues(this.css!).get(alias) !== undefined) next = setLibraryToken(next, alias, value);
-    this.#update(next);
+    // An unchanged stylesheet (a drag let go where it began) is no edit.
+    if (next !== this.css) this.#update(next);
   }
 
   #commitBox(patch: Partial<BoxModelConfig> & { gap?: number }) {
@@ -192,11 +204,14 @@ export class SystemWorkbench extends AppElement {
     const examples = (PAGE_EXAMPLES[selected.replace(/^\/|\/$/g, "")] ?? []).filter(example => entry.tag !== "ds-button" || (this.buttonMode === "split" ? example === "split" : example !== "split"));
     const own = Object.entries(sources).filter(([file]) => entry.tag && file.includes(entry.tag)).map(([, source]) => source).join("\n");
     const used = [...own.matchAll(/var\((--ds-[a-zA-Z0-9_-]+)/g)].map(match => match[1]!);
-    const tokens = [...new Set([...sharedTokens, ...used, ...properties(css)])].filter(name => !this.search || name.toLowerCase().includes(this.search.toLowerCase())).sort();
+    const spec = COMPONENTS.find(candidate => candidate.href === selected);
+    const tokens = [...new Set([...sharedTokens, ...used, ...properties(css), ...spec?.properties.map(property => property.token) ?? []])].filter(name => !this.search || name.toLowerCase().includes(this.search.toLowerCase())).sort();
     const buttonSelected = entry.tag === "ds-button";
     const shownBox = { ...this.buttonMetrics.box, ...this.boxPreview };
     const previewCss = this.boxPreview ? writeButtonBox(css, shownBox, this.buttonMode) : css;
     const fieldValue = (event: Event) => (event.currentTarget as InputElement).value;
+    // The box model's block pins the single button's height, padding and corner over their tokens.
+    const locked = spec?.id === "button" ? buttonBoxPins(css) : new Map<string, string>();
 
     return html`<div class=${`workbench system-workbench${this.stylesheetOpen ? "" : " system-workbench--no-stylesheet"}${routeSearch.get("view") === "overview" ? " system-workbench--overview" : ""}`} data-testid="workbench">
       ${this.header}
@@ -209,12 +224,15 @@ export class SystemWorkbench extends AppElement {
         </aside>`}
         <main class="system-workbench-preview">
           <div class="app-panel-heading"><h1>${entry.name}</h1>${button(this.stylesheetOpen ? "Hide stylesheet" : "Show stylesheet", () => { this.stylesheetOpen = !this.stylesheetOpen; }, { expanded: this.stylesheetOpen, controls: "library-stylesheet" })}<a class="system-workbench-docs" href=${entry.href} target="_blank" rel="noreferrer">Documentation<ds-icon type="up-right" aria-hidden="true"></ds-icon></a></div>
+          ${spec ? html`<ds1-component-canvas .spec=${spec} .editing=${this.editing} .stylesheet=${previewCss} .locked=${locked}></ds1-component-canvas>
+          <h2 class="app-panel-label system-workbench-examples">Examples</h2>` : nothing}
           ${examples.length ? repeat(examples, example => example, (example, index) => html`<section><h2>${EXAMPLES[example]!.title}</h2><ds1-example-preview example=${example} css=${previewCss}
             .hoverRegion=${buttonSelected ? this.hoverRegion : null} ?metrics=${buttonSelected && index === 0}
             @button-metrics=${(event: CustomEvent<ButtonMetrics>) => { if (JSON.stringify(this.buttonMetrics) !== JSON.stringify(event.detail)) this.buttonMetrics = event.detail; }}></ds1-example-preview></section>`)
             : html`<p>This composition is described in the <a href=${entry.href} target="_blank" rel="noreferrer">documentation</a>.</p>`}
         </main>
         <aside slot="aside" class="system-workbench-tokens">
+          ${spec ? propertyGroups(this.editing, spec, locked) : nothing}
           ${buttonSelected ? html`<div class="library-button-mode">${splitButton("Button mode", [{ value: "single", label: "Single" }, { value: "split", label: "Split" }], this.buttonMode, mode => { this.buttonMode = mode; this.boxPreview = null; })}</div>
           <section class="controls-section controls-section--box-model library-button-properties" aria-label="Button properties">
             <h2 @mouseenter=${() => { this.hoverRegion = "all"; }} @mouseleave=${() => { this.hoverRegion = null; }}>Box model</h2>

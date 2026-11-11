@@ -3,10 +3,27 @@ import { libraryTokenValues, setLibraryToken } from './libraryTokens';
 export type ButtonBox = BoxModelConfig & { gap: number };
 export const defaultButtonBox: ButtonBox = { paddingX: 4, paddingY: 0, radius: 4, gap: 4, borderTop: 0, borderRight: 0, borderBottom: 0, borderLeft: 0, marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
 const scaled = (value: number | undefined) => `calc(${value ?? 0}px * var(--ds-sf, 1))`;
+const SINGLE = ['/* ds1:button-box:start */', '/* ds1:button-box:end */'] as const;
+/**
+ * The button's tokens a single button's box block pins, each with what the block draws instead:
+ * its padding and corner in px, its height `auto`. The block overrides those tokens on the part,
+ * so the canvas shows them as measures and leaves editing them to the box model. Empty without
+ * the block. (A split block styles only split buttons, which the canvas does not draw.)
+ */
+export function buttonBoxPins(css: string): Map<string, string> {
+  const from = css.indexOf(SINGLE[0]); const to = from < 0 ? -1 : css.indexOf(SINGLE[1], from);
+  if (to < 0) return new Map();
+  const block = css.slice(from, to);
+  const px = (pattern: RegExp) => { const value = pattern.exec(block)?.[1]; return value === undefined ? '' : `${Number(value)}px`; };
+  return new Map([
+    ['--ds-button-size', 'auto'],
+    ['--ds-button-padding-size', px(/--ds-button-padding:\s*calc\([\d.]+px[^)]*\)\)\s*calc\(([\d.]+)px/)],
+    ['--ds-button-corner-size', px(/--ds-radius:\s*calc\(([\d.]+)px/)],
+  ]);
+}
 /** An opt-in rule for the shared button; no unrelated component rules are rebuilt. */
 export function writeButtonBox(css: string, box: ButtonBox, mode: 'single' | 'split' = 'single'): string {
-  const start = mode === 'single' ? '/* ds1:button-box:start */' : '/* ds1:button-split-box:start */';
-  const end = mode === 'single' ? '/* ds1:button-box:end */' : '/* ds1:button-split-box:end */';
+  const [start, end] = mode === 'single' ? SINGLE : ['/* ds1:button-split-box:start */', '/* ds1:button-split-box:end */'];
   const selector = mode === 'single' ? 'ds-button:not([split])' : 'ds-button[split]';
   const a = css.indexOf(start); const b = a < 0 ? -1 : css.indexOf(end, a);
   let base = a >= 0 && b >= 0 ? css.slice(0, a) + css.slice(b + end.length) : css;

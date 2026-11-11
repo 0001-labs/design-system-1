@@ -1,9 +1,15 @@
 /* The base system's component editor: the components down the side (eight squares), the canvas
    on the grid, the properties beside it (twelve squares). Everything stands on whole squares and
-   on the lower sixteen of its square. */
-.component-editor {
+   on the lower sixteen of its square. The canvas and the property groups are shared with a
+   library's workbench (ComponentCanvas.ts, PropertyGroups.ts), so they take their measures there too. */
+.component-editor,
+.component-editor-canvas,
+.component-editor-note,
+.component-editor-group {
   --editor-unit: var(--ds-unit);
   --editor-line: calc(16px * var(--ds-sf, 1));
+}
+.component-editor {
   display: block;
   height: calc(100dvh - var(--site-header-height, 0px));
   height: round(down, calc(100dvh - var(--site-header-height, 0px)), var(--editor-unit));
@@ -75,10 +81,17 @@
   /* Whole squares however tall the component is drawn, the component at their foot. */
   height: calc-size(max-content, round(up, size, var(--editor-unit)));
 }
-/* Another state under the pointer: a faint outline on its face, as a design tool hovers. */
-.component-editor-specimen[aria-selected="false"]:hover .component-editor-specimen-body > :is(:not(ds-checkbox), ds-checkbox > input) {
-  outline: 1px solid color-mix(in srgb, var(--sharp-blue) 40%, transparent);
-  outline-offset: 0;
+/* The faint outline another state under the pointer takes on its face, drawn inside the specimen's
+   shadow root (ComponentCanvas.ts) in the canvas's colour, which a design's stylesheet cannot reach. */
+.component-editor-canvas { --component-editor-hover-line: color-mix(in srgb, var(--sharp-blue) 40%, transparent); }
+/* A line under the canvas, as muted text on the lower sixteen of its square. */
+.component-editor-note {
+  margin: 0;
+  padding: calc(4px * var(--ds-sf, 1)) calc(2 * var(--editor-unit)) 0;
+  min-height: var(--editor-unit);
+  color: var(--ds-text-color-muted);
+  font-size: var(--ds-type-size-default);
+  line-height: var(--editor-line);
 }
 
 /* The selected face's handles, positioned from its measured box (CanvasHandles.ts): a crisp 1px
@@ -193,6 +206,7 @@
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > .component-editor-label { grid-column: 1 / 3; }
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > :nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > .component-editor-reset { grid-row: 1; }
+.component-editor-pinned { display: block; padding-top: calc(4px * var(--ds-sf, 1)); color: var(--ds-text-color-muted); font-variant-numeric: tabular-nums; }
 .component-editor-label { display: block; padding-top: calc(4px * var(--ds-sf, 1)); color: var(--ds-text-color-muted); white-space: nowrap; }
 /* A link in running text, as Design system 1's link. */
 .component-editor-link {
@@ -218,4 +232,5 @@
 
 @media (max-width: 599px) {
   .component-editor-canvas { padding: var(--editor-unit); }
+  .component-editor-note { padding-inline: var(--editor-unit); }
 }

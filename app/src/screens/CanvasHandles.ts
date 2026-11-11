@@ -20,13 +20,15 @@ const px = (rect: Rect) => ({ left: `${rect.left}px`, top: `${rect.top}px`, widt
  * each side, a corner handle inset at the radius and a size handle on the far corner, each only
  * where the component has that property. A drag previews (`handle-preview`) without touching the
  * draft; letting go commits once (`handle-commit`); Escape restores. Holding Alt over the component
- * shows every measure at once. Each handle is a slider for the keyboard too.
+ * shows every measure at once. Each handle is a slider for the keyboard too. A `locked` property
+ * (one something else draws over its token) keeps its measure, for Alt, and takes no pointer.
  */
 export class CanvasHandles extends AppElement {
   static properties = {
     spec: { attribute: false },
     box: { attribute: false },
     values: { attribute: false },
+    locked: { attribute: false },
     active: { state: true },
     measuring: { state: true },
   };
@@ -34,6 +36,8 @@ export class CanvasHandles extends AppElement {
   declare box: CanvasBox;
   /** Each property's written value, a drag's preview included; undefined while unset. */
   declare values: Record<string, string | undefined>;
+  /** Tokens shown as measures only: their handles are not drawn. */
+  declare locked: ReadonlySet<string>;
   /** The handle being dragged or stepped from the keyboard, whose readout shows. */
   declare active: HandleKind | null;
   declare measuring: boolean;
@@ -44,6 +48,7 @@ export class CanvasHandles extends AppElement {
   constructor() {
     super();
     this.values = {};
+    this.locked = new Set();
     this.active = null;
     this.measuring = false;
   }
@@ -67,7 +72,10 @@ export class CanvasHandles extends AppElement {
     super.disconnectedCallback();
   }
 
-  get #handles() { return canvasHandles(this.spec); }
+  /** Every handle of the spec, the locked ones' measures included. */
+  get #all() { return canvasHandles(this.spec); }
+  /** The handles that take the pointer and the keyboard. */
+  get #handles() { return this.#all.filter(handle => !this.locked.has(handle.property.token)); }
 
   #slider(handle: CanvasHandle) { return handleSlider(handle, this.values[handle.property.token], this.box, this.box.sf); }
 
@@ -142,17 +150,18 @@ export class CanvasHandles extends AppElement {
 
   override render() {
     const { box } = this;
+    const all = this.#all;
     const handles = this.#handles;
     const kinds = handles.map(handle => handle.kind);
-    const padding = handles.find(handle => handle.kind === "padding-start");
-    const corner = handles.find(handle => handle.kind === "corner");
+    const padding = all.find(handle => handle.kind === "padding-start");
+    const corner = all.find(handle => handle.kind === "corner");
     const values = {
       padding: padding ? readLength(padding.property, this.values[padding.property.token]) : 0,
       corner: corner ? readLength(corner.property, this.values[corner.property.token]) : 0,
     };
     // The measure shows every readout but the second padding; a drag or a focused handle its own.
     const places = readoutPlaces(box, box.sf);
-    const shown = this.measuring ? handles.filter(handle => handle.kind !== "padding-end") : handles.filter(handle => handle.kind === this.active);
+    const shown = this.measuring ? all.filter(handle => handle.kind !== "padding-end") : handles.filter(handle => handle.kind === this.active);
     return html`<div class="component-editor-handles" data-testid="canvas-handles" data-active=${this.active ?? nothing} ?data-measuring=${this.measuring}
       style=${styleMap(px(box))}>
       ${padding ? (["padding-start", "padding-end"] as const).map(kind => html`<span class="component-editor-band" data-band=${kind} aria-hidden="true"
