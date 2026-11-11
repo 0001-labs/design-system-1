@@ -1,5 +1,8 @@
 import { clearNavigationCache, readNavigationCache, type NavigationSummary } from '../../../shared/navigation-cache';
 
+/** Another part of the page needs the running bridge (a custom design's live styles): it starts it once. */
+export const NAVIGATION_BRIDGE_REQUEST = 'ds1:navigation-bridge-request';
+
 /** Keep a tab's navigation warm across documents; start the hidden app only when needed. */
 export function connectNavigationSession(frame: HTMLIFrameElement, publish: (summary: NavigationSummary) => void) {
   const listeners = new AbortController();
@@ -26,8 +29,9 @@ export function connectNavigationSession(frame: HTMLIFrameElement, publish: (sum
   const restore = async () => {
     const current = ++generation;
     const cached = await readNavigationCache();
-    if (current !== generation || bridgeStarted) return;
-    if (cached) { summary = cached.summary; publish(summary); schedule(cached.expires); }
+    if (current !== generation) return;
+    // A bridge started for another reason still answers later: the cached summary draws first.
+    if (cached) { summary = cached.summary; publish(summary); if (!bridgeStarted) schedule(cached.expires); }
     else startBridge();
   };
   const invalidate = () => {
@@ -42,6 +46,7 @@ export function connectNavigationSession(frame: HTMLIFrameElement, publish: (sum
   };
   frame.addEventListener('load', request, options);
   window.addEventListener('ds1:navigation-auth-request', request, options);
+  window.addEventListener(NAVIGATION_BRIDGE_REQUEST, startBridge, options);
   window.addEventListener('ds1:access-invalidated', invalidate, options);
   window.addEventListener('storage', event => {
     if (event.storageArea === localStorage && (event.key === null || event.key.startsWith('__convexAuthJWT_'))) invalidate();
