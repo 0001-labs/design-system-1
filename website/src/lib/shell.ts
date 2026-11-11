@@ -138,10 +138,11 @@ export function bootScript(): string {
   root.setAttribute('data-shell-space', space(location.pathname, location.search));
   try {
     var boot = read(localStorage.getItem(${JSON.stringify(SHELL_KEY)}), localStorage.getItem(${JSON.stringify(ACTIVE_LIBRARY_KEY)}));
-    // Presentation only: data-ds-owner waits for the server's answer (the live summary).
-    root.toggleAttribute('data-signed-in', !!boot);
     var session = false;
     for (var index = 0; index < localStorage.length; index++) if ((localStorage.key(index) || '').indexOf('__convexAuthJWT_') === 0) session = true;
+    // Presentation only: data-ds-owner waits for the server's answer (the live summary). Without a
+    // session token signed out is already certain, so a snapshot left behind never draws.
+    root.toggleAttribute('data-signed-in', !!boot && session);
     var entry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
     var target = door(boot, { pathname: location.pathname, search: location.search, hash: location.hash, referrer: document.referrer, origin: location.origin, navigation: entry ? entry.type : 'navigate', session: session });
     if (target) location.replace(target);

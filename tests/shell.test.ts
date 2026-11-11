@@ -90,7 +90,8 @@ test('the inline head script is the same decision, and sets the signed-in state 
   expect(run(signedIn, { id: 'base' })).toEqual({ replaced: '/libraries/design-system-1/', signedIn: true, owner: false, space: 'documentation' });
   expect(run({ ...signedIn, owner: false }, { id: 'lib1', name: 'Shop' })).toEqual({ replaced: '/libraries/workspace/?library=lib1', signedIn: true, owner: false, space: 'documentation' });
   expect(run(signedIn, { id: 'base' }, { referrer: 'https://designsystem1.com/colours/' }).replaced).toBeNull();
-  expect(run(signedIn, { id: 'base' }, { token: false }).replaced).toBeNull();
+  // Without a session token a snapshot left behind draws nothing: signed out is already certain.
+  expect(run(signedIn, { id: 'base' }, { token: false })).toEqual({ replaced: null, signedIn: false, owner: false, space: 'documentation' });
   expect(run(signedIn, { id: 'base' }, { search: '?q=1' }).replaced).toBeNull();
   expect(run(signedIn, { id: 'base' }, { hash: '#top' }).replaced).toBeNull();
   expect(run(null, { id: 'base' })).toEqual({ replaced: null, signedIn: false, owner: false, space: 'documentation' });
