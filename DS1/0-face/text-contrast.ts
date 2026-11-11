@@ -71,10 +71,17 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
   function excludedFromPaint(e: Element): boolean {
     const cached = excluded.get(e);
     if (cached !== undefined) return cached;
-    // Check before computed styles can wake skipped layout. The default check
-    // distinguishes skipped boxes from display:contents, whose children still count.
-    if (e.checkVisibility && !e.checkVisibility({ contentVisibilityAuto: true }) && e.checkVisibility()) return true;
     const s = style(e);
+    // The auto container has a box even while its contents are skipped. Stop
+    // here before querying descendants or pseudo styles can wake that layout.
+    if (s.contentVisibility === 'auto' && s.display !== 'contents') {
+      const rect = e.getBoundingClientRect();
+      const view = e.ownerDocument.defaultView!;
+      if (rect.bottom <= 0 || rect.top >= view.innerHeight || rect.right <= 0 || rect.left >= view.innerWidth) {
+        excluded.set(e, true);
+        return true;
+      }
+    }
     const parent = paintedParent(e);
     const hidden = s.display === 'none' || s.contentVisibility === 'hidden' || Number(s.opacity) === 0 || fullyClipped(s)
       || e.matches(':disabled, [aria-disabled="true"], [data-ds-constraint-panel]')
