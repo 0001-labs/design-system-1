@@ -34,6 +34,7 @@ try {
   frame.locator('[data-native-block="other"]'),
  ]) {
  const before = await paragraph.evaluate(appearance), saved = JSON.stringify((await fixture.read()).document);
+ const stoodOn = await paragraph.evaluate(element => { for (let node = element.parentElement; node; node = node.parentElement) { const style = getComputedStyle(node); if (style.backgroundImage === 'none' && !/^(transparent|rgba\([^)]*,\s*0\))$/.test(style.backgroundColor)) return style.backgroundColor; if (style.backgroundImage !== 'none') return null; } return null; });
  const box = await paragraph.boundingBox(), point = {x: box.x+100, y: box.y+10};
  const input = await page.context().newCDPSession(page);
  await input.send('Input.dispatchMouseEvent', {type:'mouseMoved', ...point});
@@ -41,6 +42,9 @@ try {
  for (let n=1;n<=10;n++) await input.send('Input.dispatchMouseEvent', {type:'mouseMoved', x:point.x, y:point.y+n*3, buttons:1});
  const preview = frame.locator('[data-drag-preview]'); await preview.waitFor();
  const during = await preview.evaluate(appearance);
+ // A block that paints no background is carried on the colour it stood on, so it covers what it passes:
+ // that alone may differ, and only to exactly that colour.
+ if (/^(transparent|rgba\([^)]*,\s*0\))$/.test(before[0].background) && stoodOn && during[0].background === stoodOn) during[0].background = before[0].background;
  await page.keyboard.press('Escape');
  await input.send('Input.dispatchMouseEvent', {type:'mouseReleased', ...point, button:'left', buttons:0, clickCount:1});
  await input.detach();

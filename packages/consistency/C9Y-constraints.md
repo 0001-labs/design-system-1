@@ -74,7 +74,7 @@ Held by `tests/text-selection.mjs`: “Canvas selection stays within active writ
 
 ### `drag.appearance`
 
-Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes.
+Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes. One that paints no background is carried on the colour it stood on, so the words it passes never show through its own.
 
 Held by `tests/drag-appearance.mjs`: “Dragged content preserves typography, wrapping and appearance”.
 

@@ -34,7 +34,7 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
   {code:'selection.writing-only',rule:'Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.',check:{file:'tests/text-selection.mjs',test:'Canvas selection stays within active writing'}},
   {
     code: 'drag.appearance',
-    rule: 'Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes.',
+    rule: 'Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes. One that paints no background is carried on the colour it stood on, so the words it passes never show through its own.',
     check: { file: 'tests/drag-appearance.mjs', test: 'Dragged content preserves typography, wrapping and appearance' },
   },
   {code:'native.templates',rule:'Every authored template retains its words and desktop/phone layout through the shared block renderer.',check:{file:'tests/template-native.mjs',test:'content and design preserved through shared blocks'}},
