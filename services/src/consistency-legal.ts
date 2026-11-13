@@ -314,15 +314,18 @@ const COOKIES_HTML = `<!DOCTYPE html>
   <body>
     <main class="wrap">
       <h1>Cookie Policy</h1>
-      <p class="meta">Last updated: May 17, 2026</p>
+      <p class="meta">Last updated: November 13, 2026</p>
 
       <p>This Cookie Policy explains how Consistency uses cookies and similar browser storage.</p>
 
       <h2>Necessary cookies</h2>
       <p>Necessary cookies support sign-in, security, edit sessions, password-gated published pages, billing state, and user preferences. The Service cannot operate correctly without them.</p>
 
+      <h2>Measurement</h2>
+      <p>The public pages at consistency.site use Google Analytics cookies to count visits, where they came from and when someone writes to us. Google receives the page's address, the referring site and a random visitor code, never your name or email. Advertising features, ad personalization and Google signals are off. It does not run when your browser sends Do Not Track or Global Privacy Control, or after you open <a href="https://consistency.site/?ph=out">consistency.site/?ph=out</a> in this browser. <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from websites</a>.</p>
+
       <h2>Optional cookies</h2>
-      <p>Analytics and marketing cookies are optional. They remain disabled unless you consent through the in-app cookie banner.</p>
+      <p>Other analytics and marketing cookies are optional. They remain disabled unless you consent through the in-app cookie banner.</p>
 
       <h2>Managing choices</h2>
       <p>You can accept all optional cookies, keep only necessary cookies, or customize analytics and marketing choices. Your selection is stored in your browser and can be reset by clearing site data.</p>
