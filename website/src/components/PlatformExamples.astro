@@ -1,17 +1,20 @@
 ---
-interface Props { mode: 'windows' | 'chrome'; }
+interface Props { mode: 'windows' | 'apps' | 'chrome'; }
 const { mode } = Astro.props;
 const kinds = mode === 'windows'
   ? [['macos', 'macOS'], ['safari', 'Safari'], ['chrome', 'Google Chrome'], ['edge', 'Microsoft Edge']]
+  : mode === 'apps' ? [['claude', 'Claude'], ['codex', 'Codex'], ['figma', 'Figma']]
   : [['macos', 'macOS'], ['macos-compact', 'Compact Mac'], ['safari', 'Safari'], ['chrome', 'Google Chrome'], ['edge', 'Microsoft Edge'], ['ios', 'iPhone status'], ['ipados', 'iPad status'], ['safari-ios', 'iPhone Safari']];
 ---
 <div class="platform-examples not-content" data-ds-not-prose>
-  {kinds.map(([kind, label]) => <section aria-label={`${label} ${mode === 'windows' ? 'window' : 'controls'}`}>
+  {kinds.map(([kind, label]) => <section aria-label={`${label} ${mode === 'chrome' ? 'controls' : 'window'}`}>
     <h3>{label}</h3>
     {['light', 'dark'].map(appearance => <figure>
       <figcaption>{appearance === 'light' ? 'Light' : 'Dark'}</figcaption>
       <div class="platform-fit" aria-label={`${label}, ${appearance} appearance`}>
         {mode === 'windows' ? <ds-window kind={kind} appearance={appearance} label="Room shop" address="shop.example" class="window-example">
+          <iframe title={`${label} shop preview, ${appearance}`} src="/examples/layouts/shop/" loading="lazy"></iframe>
+        </ds-window> : mode === 'apps' ? <ds-window kind={kind} appearance={appearance} label="Room shop" address="https://shop.example" username="Studio" model={kind === 'claude' ? 'Opus 5.5' : ''} items={kind === 'figma' ? 'Header, Rooms, Footer' : 'Booking form, Dark mode'} prompt="Give the shop a calmer header with the rooms first." reply="Done. The header is quieter and the rooms lead the page; the preview shows it." class="window-example">
           <iframe title={`${label} shop preview, ${appearance}`} src="/examples/layouts/shop/" loading="lazy"></iframe>
         </ds-window> : <div class:list={['chrome-example', { phone: kind === 'ios' || kind === 'safari-ios' }]} data-appearance={appearance}>
           <ds-app-chrome kind={kind} appearance={appearance} label="Room shop" address="shop.example" time="00:01"></ds-app-chrome>

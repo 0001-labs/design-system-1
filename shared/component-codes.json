@@ -509,7 +509,7 @@
     "code": "WNDW",
     "kind": "component",
     "url": "https://designsystem1.com/visual-kit/windows/",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   {
     "id": "component:/visual-kit/device-bezels/",
@@ -525,7 +525,7 @@
     "code": "APCH",
     "kind": "component",
     "url": "https://designsystem1.com/visual-kit/app-chrome/",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   {
     "id": "component:/1-root/material/",
