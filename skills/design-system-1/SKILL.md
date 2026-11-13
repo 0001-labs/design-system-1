@@ -27,6 +27,8 @@ Always make the best decision that elevates all three: the user experience (UX),
 
 Use the Lit `ds-*` components for web controls, including plain HTML pages: a stylesheet link loads the foundations and a module script registers the elements. React uses the same components through adapters, which Sync 1's `components` export copies with them; a product without React leaves them out with `"react": false` beside its `"components"`. Libraries customize their public tokens. CLASSless and the vanilla stylesheet are retired. Native classes and page helpers mentioned below describe existing implementation/consumer compatibility; select the Lit component for new work. Keep semantic HTML inside/slotted into controls and for prose. Swift, Kotlin and email keep their platform renderers.
 
+When existing DS1 components do not cover a web control's interaction, consult the [ui-sdk skill](/Users/joachim/.agents/skills/ui-sdk/SKILL.md) before choosing or writing a primitive. Check whether Vercel's UI SDK can supply the needed keyboard, focus, selection or dismissal behavior inside the canonical Lit component. Preserve the DS1 public API, tokens, geometry and accessibility requirements.
+
 ## Non-modal apps
 
 Keep the working page usable. Edit values inline; open small choices in an anchored dropdown; use a page or a non-modal side panel for larger work. Link follows this rule alongside Money and Ezo. A date opens the compact DS1 calendar dropdown, with no outer border or padding, no gap from its trigger or between its control groups, and single-day/range selection and Clear; a status opens DS1 Select. Neither gets a centred form with a backdrop or a separate Cancel/Save ceremony.
