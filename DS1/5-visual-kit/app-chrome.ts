@@ -1,11 +1,24 @@
-import { LitElement, adoptStyles, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, adoptStyles, css, html, nothing, type CSSResult, type PropertyValues, type TemplateResult } from 'lit';
 import { instagramFrame, instagramFrameStyles } from './instagram-frame';
+import { isWorkspace, workspaceFrame, workspaceFrameStyles, type WorkspaceKind } from './workspace-frame';
 import { define } from '../0-face/define';
 import '../2-core/ds-icon';
 import { browserStyles } from './browser-styles';
 import { mobileChromeStyles, cellularSignal } from './mobile-chrome';
 
-export type AppChromeKind = 'macos' | 'macos-compact' | 'ios' | 'ipados' | 'safari' | 'chrome' | 'edge' | 'safari-ios' | 'instagram';
+export type AppChromeKind = 'macos' | 'macos-compact' | 'ios' | 'ipados' | 'safari' | 'chrome' | 'edge' | 'safari-ios' | 'instagram' | WorkspaceKind;
+
+/** A presentation whose drawing loads on demand: no other kind carries its code. Its frame is drawn at once, so the slotted content shows and nothing moves meanwhile. */
+interface Overlay { styles: CSSResult; draw: (chrome: DsAppChrome) => TemplateResult }
+const action = (chrome: DsAppChrome) => (name: string) => chrome.dispatchEvent(new CustomEvent('chrome-action', { detail: { action: name }, bubbles: true, composed: true }));
+const workspace = () => import('./workspace').then((module): Overlay => ({ styles: module.workspaceStyles, draw: (c) => module.workspace({
+  kind: c.kind as WorkspaceKind, label: c.label, address: c.address, username: c.username, prompt: c.prompt, reply: c.reply, model: c.model,
+  items: c.items.split(',').map(item => item.trim()).filter(Boolean), stageSize: c.stageSize, lights: () => c.lights(),
+}) }));
+const overlays: Partial<Record<AppChromeKind, () => Promise<Overlay>>> = {
+  instagram: () => import('./instagram').then((module): Overlay => ({ styles: module.instagramStyles, draw: (c) => module.instagram({ interactive: c.interactive, username: c.username, caption: c.caption, avatar: c.avatar, verified: c.verified, likes: c.likes, comments: c.comments, reposts: c.reposts, shares: c.shares, progress: c.progress, action: action(c) }) })),
+  figma: workspace, codex: workspace, claude: workspace,
+};
 /** Platform presentation chrome. Controls emit requests; they never navigate or close the host app. */
 export class DsAppChrome extends LitElement {
   static properties = {
@@ -14,6 +27,7 @@ export class DsAppChrome extends LitElement {
     network: {}, battery: {type:Number}, dualSim: {type:Boolean,attribute:'dual-sim'},
     favicon: {}, backAvailable: {type:Boolean, attribute:'back-available'}, forwardAvailable: {type:Boolean, attribute:'forward-available'},
     assetBase: { attribute: 'asset-base' }, interactive: { type: Boolean, reflect: true },
+    prompt: {}, reply: {}, model: {}, items: {}, stageSize: { state: true },
   };
   declare username:string; declare caption:string; declare avatar:string; declare verified:boolean; declare likes:string; declare comments:string; declare reposts:string; declare shares:string; declare progress:number;
   declare kind: AppChromeKind;
@@ -30,7 +44,10 @@ export class DsAppChrome extends LitElement {
   declare dualSim: boolean;
   declare backAvailable: boolean;
   declare forwardAvailable: boolean;
-  constructor(){super();this.username='account';this.caption='';this.avatar='';this.verified=false;this.likes='';this.comments='';this.reposts='';this.shares='';this.progress=0;this.kind='macos';this.appearance='light';this.time='00:01';this.address='';this.label='Application';this.href='';this.assetBase='';this.interactive=false;this.favicon='';this.network='4G';this.battery=80;this.dualSim=false;this.backAvailable=true;this.forwardAvailable=false;}
+  /** Figma, Codex and Claude: the person's message, the reply beneath it, the model named under the composer and the side panel's other rows (comma-separated). */
+  declare prompt: string; declare reply: string; declare model: string; declare items: string;
+  declare stageSize: { width: number; height: number } | null;
+  constructor(){super();this.username='account';this.caption='';this.avatar='';this.verified=false;this.likes='';this.comments='';this.reposts='';this.shares='';this.progress=0;this.kind='macos';this.appearance='light';this.time='00:01';this.address='';this.label='Application';this.href='';this.assetBase='';this.interactive=false;this.favicon='';this.network='4G';this.battery=80;this.dualSim=false;this.backAvailable=true;this.forwardAvailable=false;this.prompt='';this.reply='';this.model='';this.items='';this.stageSize=null;}
   static styles = [css`
     :host { display:block; color:#202124; background:#f4f4f4; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:13px; --chrome-line:#d6d6d6; --chrome-field:#fff; --chrome-selected:#fff; }
     :host([appearance=dark]) { color:#efefef; background:#292a2d; --chrome-line:#444; --chrome-field:#202124; --chrome-selected:#35363a; }
@@ -71,34 +88,43 @@ export class DsAppChrome extends LitElement {
     .mobile { padding:8px 16px; background:var(--chrome-selected); }
     .mobile .address { height:44px; border-radius:22px; }
     .mobile-actions { display:flex; justify-content:space-between; margin-top:8px; }
-  `, browserStyles, mobileChromeStyles, instagramFrameStyles];
+  `, browserStyles, mobileChromeStyles, instagramFrameStyles, workspaceFrameStyles];
   private drawIcon?: typeof import('./browser-icons').browserIcon;
-  /** The Reels overlay, loaded only when this chrome is Instagram: no other presentation carries it. */
-  private reels?: typeof import('./instagram');
-  private reelsLoading?: Promise<void>;
+  private overlay?: Overlay;
+  private overlayFor?: () => Promise<Overlay>;
+  private overlayLoading?: Promise<void>;
+  private stageObserver?: ResizeObserver;
+  private observedStage?: Element | null;
   protected willUpdate(changed: PropertyValues<this>) {
-    if (!changed.has('kind') || this.kind !== 'instagram' || this.reelsLoading) return;
-    this.reelsLoading = import('./instagram').then((reels) => {
-      adoptStyles(this.renderRoot as ShadowRoot, [...DsAppChrome.elementStyles, reels.instagramStyles]);
-      this.reels = reels;
+    if (!changed.has('kind')) return;
+    const load = overlays[this.kind];
+    if (load === this.overlayFor) return;
+    this.overlay = undefined; this.overlayFor = load; this.overlayLoading = undefined;
+    if (!load) return;
+    const loading: Promise<void> = this.overlayLoading = load().then((overlay) => {
+      if (this.overlayFor !== load) return;
+      adoptStyles(this.renderRoot as ShadowRoot, [...DsAppChrome.elementStyles, overlay.styles]);
+      this.overlay = overlay;
       this.requestUpdate();
     }).catch(() => {
-      this.reelsLoading = undefined;
+      if (this.overlayLoading === loading) { this.overlayLoading = undefined; this.overlayFor = undefined; }
       this.dispatchEvent(new CustomEvent('chrome-error', { detail: { kind: this.kind }, bubbles: true, composed: true }));
     });
   }
-  /** Settles once Instagram's overlay is drawn too, so a capture never takes the frame without it. */
+  /** Settles once an on-demand presentation is drawn too, so a capture never takes the frame without it. */
   protected async getUpdateComplete(): Promise<boolean> {
     const settled = await super.getUpdateComplete();
-    if (this.kind !== 'instagram' || this.reels || !this.reelsLoading) return settled;
-    await this.reelsLoading;
+    if (this.overlay || !this.overlayLoading) return settled;
+    await this.overlayLoading;
     return super.getUpdateComplete();
   }
+  disconnectedCallback() { super.disconnectedCallback(); this.stageObserver?.disconnect(); this.observedStage = undefined; }
   protected updated(changed: Map<string, unknown>) {
+    this.observeStage();
     if (!changed.has('kind') && !changed.has('interactive')) return;
     if (this.kind === 'instagram') return;
     if (this.kind === 'ios' || this.kind === 'ipados') return;
-    if ((this.kind === 'macos' || this.kind === 'macos-compact') && !this.interactive) return;
+    if ((this.kind === 'macos' || this.kind === 'macos-compact' || isWorkspace(this.kind)) && !this.interactive) return;
     void import('./browser-icons').then(async (icons) => {
       await icons.loadBrowserIcons(this.kind);
       this.drawIcon = icons.browserIcon;
@@ -107,15 +133,30 @@ export class DsAppChrome extends LitElement {
       this.dispatchEvent(new CustomEvent('chrome-error', { detail: { kind: this.kind }, bubbles: true, composed: true }));
     });
   }
+  /** Figma names its frame's size: the stage's, as drawn. */
+  private observeStage() {
+    const stage = this.kind === 'figma' ? this.renderRoot.querySelector('.ws-stage') : null;
+    if (stage === this.observedStage) return;
+    this.stageObserver?.disconnect(); this.observedStage = stage;
+    if (!stage) { this.stageSize = null; return; }
+    if (typeof ResizeObserver === 'undefined') return;
+    this.stageObserver ??= new ResizeObserver(([entry]) => {
+      const width = Math.round(entry!.contentRect.width), height = Math.round(entry!.contentRect.height);
+      if (width !== this.stageSize?.width || height !== this.stageSize?.height) this.stageSize = width && height ? { width, height } : null;
+    });
+    this.stageObserver.observe(stage);
+  }
   private icon(name: string) {
     return this.drawIcon?.(name, this.kind) ?? nothing;
   }
   private control(action: string, label: string, available = true) {
     return html`<button type="button" aria-label=${label} class=${available?'':'unavailable'} ?disabled=${!this.interactive || !available} tabindex=${this.interactive&&available?0:-1} @click=${()=>this.dispatchEvent(new CustomEvent('chrome-action',{detail:{action},bubbles:true,composed:true}))}>${this.icon(action)}</button>`;
   }
-  private lights() { return html`<div class="lights">${this.control('close','Close window')}${this.control('minimize','Minimize window')}${this.control('zoom','Zoom window')}</div>`; }
+  lights() { return html`<div class="lights">${this.control('close','Close window')}${this.control('minimize','Minimize window')}${this.control('zoom','Zoom window')}</div>`; }
   render() {
-    if(this.kind==='instagram') return !this.reels ? instagramFrame() : this.reels.instagram({...this, interactive:this.interactive, username:this.username, caption:this.caption, avatar:this.avatar, verified:this.verified, likes:this.likes, comments:this.comments, reposts:this.reposts, shares:this.shares, progress:this.progress, action:(action:string)=>this.dispatchEvent(new CustomEvent('chrome-action',{detail:{action},bubbles:true,composed:true}))});
+    if(this.overlay) return this.overlay.draw(this);
+    if(this.kind==='instagram') return instagramFrame();
+    if(isWorkspace(this.kind)) return workspaceFrame(this.kind, this.lights());
     if(this.kind==='ios'||this.kind==='ipados') return html`<div class="status"><span class="clock">${this.time}</span><span class="island-space"></span><span class="levels">${this.dualSim ? cellularSignal(true) : html`<span class="cellular" role="img" aria-label="Full signal"><i></i><i></i><i></i><i></i></span>`}${this.network==='wifi' ? (this.assetBase ? html`<img class="wifi" alt="Wi-Fi" src=${this.assetBase+'status-wifi.svg'}>` : html`<ds-icon type="wifi" class="wifi" aria-label="Wi-Fi" style="--ds-icon-size:19px"></ds-icon>`) : html`<span class="network">${this.network}</span>`}${this.assetBase ? html`<span class="battery-art" role="img" aria-label=${`Battery ${Math.min(100,Math.max(0,this.battery))}%`}><img class="battery" alt="" src=${this.assetBase+'status-battery.svg'}><img class="battery charge-art" alt="" src=${this.assetBase+'status-battery.svg'} style=${`clip-path:inset(0 ${100-Math.min(100,Math.max(0,this.battery))}% 0 0)`}></span>` : html`<span class="battery-meter" role="img" aria-label=${`Battery ${Math.min(100,Math.max(0,this.battery))}%`} style=${`--battery-charge:${Math.min(100,Math.max(0,this.battery))}%`}><span class="charge"></span></span>`}</span></div>`;
     if(this.kind==='macos-compact') return html`<div class="compact">${this.lights()}${this.href?html`<a class="title" href=${this.href} target="_blank" rel="noopener noreferrer" title=${this.href}>${this.address || this.label}</a>`:html`<span class="title">${this.address || this.label}</span>`}</div>`;
     if(this.kind==='macos') return html`<div class="native">${this.lights()}<span class="title">${this.label}</span><slot name="controls"></slot></div>`;

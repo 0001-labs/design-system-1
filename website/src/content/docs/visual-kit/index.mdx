@@ -15,6 +15,7 @@ VisualKit supplies the surroundings for showing an app: desktop windows, device 
 | Layer | Contains |
 | --- | --- |
 | [Windows](#windows) | macOS app windows, Safari, Google Chrome and Microsoft Edge |
+| [App frames](#app-frames) | The product being built in Claude, Codex or Figma |
 | [Device Bezels](#device-bezels) | Measured iPhone and iPad artwork with a live app viewport |
 | [AppChrome](#app-chrome) | Window controls, browser toolbars, status bars and device time |
 | [App content](#app-content) | The product’s real, revision-pinned app on sample data |
@@ -56,6 +57,33 @@ A 30px title bar, multiplied by DS1’s `--sf`, with three muted window controls
   <iframe title="Shop design" src="/examples/layouts/shop/"></iframe>
 </ds-window>
 ```
+
+## App frames
+
+<PlatformExamples mode="apps" />
+
+Show what is being built in the app it is built in: Claude’s Code tab with the product in its preview pane, Codex beside its preview, or Figma with the product as the selected frame on the canvas. The product is the window’s content as in any other window, a live iframe or the product’s kit; the app around it is drawn.
+
+```html
+<ds-window kind="claude" label="Room shop" address="https://shop.example"
+  prompt="Give the shop a calmer header." reply="Done. The preview shows it."
+  model="Opus 5.5" items="Booking form, Dark mode" username="Studio">
+  <iframe title="Room shop preview" src="/examples/layouts/shop/"></iframe>
+</ds-window>
+```
+
+Choose `kind="claude|codex|figma"` and `appearance="light|dark"`. The scene owns every word:
+
+| Attribute | Claude | Codex | Figma |
+| --- | --- | --- | --- |
+| `label` | The session, current in the sidebar and named above the thread | The thread | The file, in its tab and the layers panel |
+| `address` | The preview pane’s address | The preview’s address | Not shown |
+| `prompt`, `reply` | The person’s message and the reply beneath it | The same | Not shown |
+| `model` | Named under the composer | A chip in the composer | Not shown |
+| `items` | Other sessions, comma-separated | Other threads | Layers in the frame |
+| `username` | The account at the sidebar’s foot | Not shown | The avatar’s initial |
+
+Figma’s frame badge and its width and height fields show the stage’s size as drawn. Narrow windows drop the side panels first, so the product keeps the room: Claude and Codex lose the sidebar under 900px and the thread under 520px; Figma loses the properties panel under 1000px and the layers under 600px. The panels load on demand, after the layout, so nothing moves and other kinds never carry them. The glyphs are drawn for these frames and carry no app logos. Claude follows the supplied 13 November 2026 screenshot of its Code tab; Codex and Figma follow each app’s layout without a measured reference. All three are presentation templates, not version-certified replicas.
 
 ## Device bezels
 
@@ -112,7 +140,7 @@ Set `username`, `avatar`, `caption`, `verified`, `likes`, `comments`, `reposts` 
 
 <PlatformExamples mode="chrome" />
 
-`ds-app-chrome` draws the controls independently of the window or device artwork. Available kinds are `macos`, `macos-compact`, `safari`, `chrome`, `edge`, `ios`, `ipados` and `safari-ios`.
+`ds-app-chrome` draws the controls independently of the window or device artwork. Available kinds are `macos`, `macos-compact`, `safari`, `chrome`, `edge`, `ios`, `ipados`, `safari-ios`, `instagram`, and the [app frames](#app-frames) `claude`, `codex` and `figma`, which hold their content in their own stage.
 
 ```html
 <ds-app-chrome kind="ios" time="00:01"></ds-app-chrome>

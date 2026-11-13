@@ -54,7 +54,7 @@ const styleOf = (element: Element) => (element.ownerDocument.defaultView ?? wind
 
 /** Every window with a computer's chrome as drawn: a `ds-window`, or the frame a `ds-app-chrome` heads. */
 function windows(root: ParentNode) {
-  return Array.from(root.querySelectorAll<HTMLElement>('ds-window:not([frameless]), ds-app-chrome:is([kind=macos], [kind=macos-compact], [kind=safari], [kind=chrome], [kind=edge])')).flatMap(element => {
+  return Array.from(root.querySelectorAll<HTMLElement>('ds-window:not([frameless]), ds-app-chrome:is([kind=macos], [kind=macos-compact], [kind=safari], [kind=chrome], [kind=edge], [kind=figma], [kind=codex], [kind=claude])')).flatMap(element => {
     const frame = element.localName === 'ds-window' ? element : element.parentElement;
     const box = frame?.getBoundingClientRect();
     return frame && box?.width && box.height ? [{ frame, box }] : [];
