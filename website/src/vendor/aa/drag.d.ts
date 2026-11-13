@@ -6,12 +6,10 @@
  * sheet rows and Ezo's lists move.
  *
  * A mouse pressed on a block and held still for a moment lifts it, and it
- * goes where the press is let go. Words are selected along a line, so a
- * press that first moves up or down lifts its block at once, and one that
- * first moves along the line selects words, as it always has. A pointer that
- * rests on a block for a moment takes it in hand (the cursor turns to a
- * grab), and a press then lifts it at once, whichever way it moves. A lifted
- * block let go where it began leaves the caret where the press put it. Blocks already selected (Escape,
+ * goes where the press is let go. A press that moves sooner, any way, selects
+ * words, across blocks too (`src/span.ts`): writing is selected by dragging,
+ * so only a still press carries a block. A lifted block let go where it began
+ * leaves the caret where the press put it. Blocks already selected (Escape,
  * Shift-arrows, a block just moved) are dragged at once, the one pressed
  * carried and the others dimmed in their places, and they land together.
  * Touch keeps its long press for the system's own selection: there the block
@@ -28,6 +26,4 @@
 import type { Editor, EditorOptions } from './editor';
 /** How long a still press waits before it lifts its block, in milliseconds. */
 export declare const HOLD = 400;
-/** How long a pointer rests on a block before it takes the block in hand, in milliseconds. */
-export declare const REST = 400;
 export declare function createDragging(editor: Editor, options: EditorOptions, root: Element): () => void;

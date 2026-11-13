@@ -96,6 +96,12 @@ export declare function besideChange(text: string, from: number, to: number, at:
     end: number;
     text: string;
 } | null;
+/**
+ * What a line break inside a block writes (Shift-Enter): a bare break in a paragraph or code, the quote mark
+ * in a quote or callout, the item's indent in a list item; null where the block cannot hold one (a heading,
+ * a table's cell, a divider).
+ */
+export declare function lineBreakIn(block: Block): string | null;
 /** Read a text into its blocks. A text with nothing in it is one empty paragraph. */
 export declare function parseBlocks(text: string): Placed[];
 /** Write blocks back as one text: a blank line between blocks, none between two bullets, so a list stays a list. */

@@ -39,6 +39,8 @@ try {
  const input = await page.context().newCDPSession(page);
  await input.send('Input.dispatchMouseEvent', {type:'mouseMoved', ...point});
  await input.send('Input.dispatchMouseEvent', {type:'mousePressed', ...point, button:'left', buttons:1, clickCount:1});
+ // Held still, as writing is carried: a press that moves at once selects words, across blocks too.
+ await page.waitForTimeout(450);
  for (let n=1;n<=10;n++) await input.send('Input.dispatchMouseEvent', {type:'mouseMoved', x:point.x, y:point.y+n*3, buttons:1});
  const preview = frame.locator('[data-drag-preview]'); await preview.waitFor();
  const during = await preview.evaluate(appearance);

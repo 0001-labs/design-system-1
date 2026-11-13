@@ -29,6 +29,12 @@ export declare function personAtom(people: () => readonly string[], colour?: (na
 /** One square in pixels where it is drawn, at the page's scale. */
 export declare function squareIn(element: HTMLElement): number;
 /**
+ * A picture on the squares: as many whole squares wide as its Markdown asks (else its own size, up to
+ * sixteen) and its place holds, and as many whole squares high as is nearest its own shape, the image
+ * filling that box as `object-fit: cover` fills it. Fitted again whenever its place changes width.
+ */
+export declare function fitPicture(element: HTMLElement): void;
+/**
  * A drawn picture made sizable: as wide as its Markdown says in squares (`![caption](address "w12")`),
  * or its own size up to sixteen, with the grip that sizes it. For a product's own picture atom too.
  */
@@ -39,5 +45,7 @@ export interface ImageAtomOptions {
 }
 /** A sizable picture; hiding its caption preserves the image's alt text and Markdown. */
 export declare function createImageAtom({ caption: showCaption }?: ImageAtomOptions): Atom;
+/** Open an empty caption from the editor's block menu. */
+export declare function addPictureCaption(caption: HTMLElement): void;
 /** A picture with an editable caption, sized in whole squares. */
 export declare const imageAtom: Atom;

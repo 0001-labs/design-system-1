@@ -106,6 +106,10 @@ function w(e, t) {
 	let n = o.exec(e);
 	return !!n && n[1][0] === t[0] && n[1].length >= t.length && !e.slice(n[0].length).trim();
 }
+function T(e) {
+	let t = i.exec(e);
+	return t ? /^ */.exec(e)[0].length + (t[1] ? 1 : t[2].length + 1) + 1 : 0;
+}
 function te(e) {
 	return !!e.trim() && !o.test(e) && !s.test(e) && !r.test(e) && !i.test(e) && !a.test(e) && !f.test(e) && !y.test(e) && !v.test(e);
 }
@@ -172,14 +176,17 @@ function ne(e) {
 		}
 		let _ = i.exec(e);
 		if (_) {
-			let t = /^ */.exec(e)[0].length, n = l[l.length - 1], r = 0;
-			t && n?.kind === "bullet" ? r = t > (n.indent ?? 0) ? (n.depth ?? 0) + 1 : [...l].reverse().find((e) => e.kind === "bullet" && (e.indent ?? 0) <= t)?.depth ?? 1 : t && (r = Math.floor(t / (_[2] ? 3 : 2))), m("bullet", h, h, {
+			let n = /^ */.exec(e)[0].length, r = l[l.length - 1], a = 0;
+			n && r?.kind === "bullet" ? a = n > (r.indent ?? 0) ? (r.depth ?? 0) + 1 : [...l].reverse().find((e) => e.kind === "bullet" && (e.indent ?? 0) <= n)?.depth ?? 1 : n && (a = Math.floor(n / (_[2] ? 3 : 2)));
+			let o = " ".repeat(T(e)), s = h;
+			for (; s + 1 < t.length && t[s + 1].startsWith(o) && t[s + 1].trim() && !i.test(t[s + 1]);) s++;
+			m("bullet", h, s, {
 				prefix: _[0].length,
-				indent: t,
-				depth: r,
+				indent: n,
+				depth: a,
 				checked: _[3] === void 0 ? void 0 : _[3] !== " ",
 				number: _[2] ? Number(_[2]) : void 0
-			}), h++;
+			}), h = s + 1;
 			continue;
 		}
 		if (a.test(e)) {
@@ -208,7 +215,11 @@ function ne(e) {
 		start: 0
 	});
 	let _ = /^\n+/.exec(e)?.[0] ?? "", x = e.length > _.length ? /\n+$/.exec(e)?.[0] ?? "" : "", S = l[0], C = l[l.length - 1];
-	return _ && S.kind === "paragraph" && (S.source = _ + S.source, S.start = 0), x && C.kind === "paragraph" && (C.source += x), l;
+	if (_ && S.kind === "paragraph" && (S.source = _ + S.source, S.start = 0), x && C.kind === "paragraph" && (C.source += x), C.kind === "bullet") {
+		let t = "\n" + " ".repeat(T(C.source.split("\n")[0]));
+		e.endsWith(t) && !C.source.endsWith(t) && (C.source += t);
+	}
+	return l;
 }
 function re(e) {
 	let t = "";
@@ -216,16 +227,16 @@ function re(e) {
 		r && (t += e[r - 1].kind === "bullet" && n.kind === "bullet" ? "\n" : "\n\n"), t += n.source;
 	}), t;
 }
-function T(e) {
+function E(e) {
 	let t = e.source.split("\n");
 	return t.length > 1 && w(t[t.length - 1], o.exec(t[0])[1]);
 }
 function ie(e, t) {
-	if (e.kind !== "code" || !T(e)) return;
+	if (e.kind !== "code" || !E(e)) return;
 	let n = e.source.slice(0, e.prefix).replace(/^ {0,3}(`{3,}|~{3,})/, "").trim().toLowerCase().split(/\s+/)[0];
 	return n ? t.find((e) => e.fence?.toLowerCase() === n) : void 0;
 }
-function E(e, t, n) {
+function D(e, t, n) {
 	let r = new RegExp(t.source, t.flags.replace(/[gy]/g, "") + "y");
 	return {
 		name: e,
@@ -236,9 +247,9 @@ function E(e, t, n) {
 		}
 	};
 }
-var D = [E("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), E("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], O = /_background$/, k = /<u>|<span color="([a-z_]+)">/y, ae = String.raw`\[((?:\\.|[^[\]\\])*)\]\(\s*(<(?:\\.|[^<>\\\n])*>|(?:\\.|[^\s()\\]|\((?:\\.|[^\s()\\])*\))*)(?:\s+("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^()\\])*\)))?\s*\)`, A = new RegExp(ae, "y"), oe = /^[\s\u200b-\u200d\u2060\ufeff]*$/u, se = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, ce = /[!-/:-@[-`{-~]/, j = (e) => e.replace(/\\([!-/:-@[-`{-~])/g, "$1");
-function le(e, t) {
-	let [n, r, i, a] = e, o = a ? j(a.slice(1, -1)) : "", s = !oe.test(o), c = j(i.replace(/^<([^]*)>$/, "$1")), l = `(${i}${s ? ` ${a}` : ""})`;
+var O = [D("image", /!\[[^\]\n]*\]\([^\s()]+(?: "w\d+")?\)/), D("equation", /\$(?!\$)(?:\\.|[^$\n])+\$/)], ae = /_background$/, k = /<u>|<span color="([a-z_]+)">/y, oe = String.raw`\[((?:\\.|[^[\]\\])*)\]\(\s*(<(?:\\.|[^<>\\\n])*>|(?:\\.|[^\s()\\]|\((?:\\.|[^\s()\\])*\))*)(?:\s+("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^()\\])*\)))?\s*\)`, A = new RegExp(oe, "y"), se = /^[\s\u200b-\u200d\u2060\ufeff]*$/u, ce = /(?:https?:\/\/|www\.)[^\s<>()]*[^\s<>().,;:!?'"]/g, le = /[!-/:-@[-`{-~]/, j = (e) => e.replace(/\\([!-/:-@[-`{-~])/g, "$1");
+function ue(e, t) {
+	let [n, r, i, a] = e, o = a ? j(a.slice(1, -1)) : "", s = !se.test(o), c = j(i.replace(/^<([^]*)>$/, "$1")), l = `(${i}${s ? ` ${a}` : ""})`;
 	return {
 		words: r,
 		href: c,
@@ -260,7 +271,7 @@ var M = (e) => !!e && (/[A-Za-z0-9]/.test(e) || e > "" && /[\p{L}\p{N}]/u.test(
 	"~": { two: "strike" },
 	"=": { two: "highlight" }
 };
-function ue(e, t, n, r, i) {
+function de(e, t, n, r, i) {
 	let a = [], o = t, s = e.lastIndexOf("\n", t - 1) + 1, c = null, l = -1, u = -1, d = null, f = () => {
 		if (c === null) {
 			let t = e.indexOf("\n", s);
@@ -286,7 +297,7 @@ function ue(e, t, n, r, i) {
 				at: o,
 				prefix: t
 			}), o += 1 + t, s = e.lastIndexOf("\n", o - 1) + 1, c = null;
-		} else if (p === "\\" && o + 1 < m && ce.test(e[o + 1])) a.push({
+		} else if (p === "\\" && o + 1 < m && le.test(e[o + 1])) a.push({
 			type: "escape",
 			at: o
 		}), o += 2;
@@ -333,7 +344,7 @@ function ue(e, t, n, r, i) {
 				A.lastIndex = o;
 				let t = A.exec(e);
 				if (t && o + t[0].length <= n) {
-					let { words: e, ...n } = le(t, o);
+					let { words: e, ...n } = ue(t, o);
 					d = {
 						type: "link",
 						at: o,
@@ -408,7 +419,7 @@ function ue(e, t, n, r, i) {
 		group: d.group
 	}), a;
 }
-function de(e) {
+function fe(e) {
 	let t = e.flatMap((e) => e.type === "delimiters" ? [e.run] : []), n = (e) => e.length - e.left - e.right;
 	for (let e = 0; e < t.length; e++) {
 		let r = t[e];
@@ -441,7 +452,7 @@ function de(e) {
 		}
 	}
 }
-function fe(e) {
+function pe(e) {
 	let t = {
 		underline: [],
 		color: []
@@ -456,7 +467,7 @@ function fe(e) {
 		e && (e.lone = n.lone = !1, e.group = n.group = [e.at, n.at + n.length], n.id = e.id);
 	}
 }
-function pe(e, t, n, r, i, a) {
+function me(e, t, n, r, i, a) {
 	if (n <= t) return;
 	if (i.href || i.code) {
 		a.push({
@@ -468,7 +479,7 @@ function pe(e, t, n, r, i, a) {
 		return;
 	}
 	let o = e.slice(t, n), s = 0;
-	for (let e of o.matchAll(se)) {
+	for (let e of o.matchAll(ce)) {
 		let n = e.index;
 		n > s && a.push({
 			kind: "text",
@@ -494,8 +505,8 @@ function pe(e, t, n, r, i, a) {
 	});
 }
 function F(e, t, n, r, i, a, o) {
-	let s = ue(e, t, n, a, o);
-	de(s), fe(s);
+	let s = de(e, t, n, a, o);
+	fe(s), pe(s);
 	let c = {
 		bold: 0,
 		italic: 0,
@@ -505,9 +516,9 @@ function F(e, t, n, r, i, a, o) {
 	}, l = [], u, d, f, p = t, m = () => {
 		let e = {};
 		c.bold && (e.bold = !0), c.italic && (e.italic = !0), c.strike && (e.strike = !0), c.highlight && (e.highlight = !0), c.underline && (e.underline = !0);
-		for (let { color: t } of l) O.test(t) ? e.background = t.replace(O, "") : e.color = t;
+		for (let { color: t } of l) ae.test(t) ? e.background = t.replace(ae, "") : e.color = t;
 		return u !== void 0 && (e.href = u), d !== void 0 && (e.title = d), f !== void 0 && (e.linkSource = f), e;
-	}, h = (t) => pe(e, p, t, r, m(), i), g = (e, t, n, a = !1) => {
+	}, h = (t) => me(e, p, t, r, m(), i), g = (e, t, n, a = !1) => {
 		h(e), i.push({
 			kind: "syntax",
 			from: r + e,
@@ -577,11 +588,11 @@ function F(e, t, n, r, i, a, o) {
 	}
 	h(n);
 }
-function me(e, t = D) {
+function he(e, t = O) {
 	let n = I.get(e);
 	n || I.set(e, n = /* @__PURE__ */ new WeakMap());
 	let r = n.get(t);
-	return r || (r = L && L.atoms === t && L.source === e.source && L.kind === e.kind && L.prefix === e.prefix ? L.runs : he(e, t), n.set(t, r), L = {
+	return r || (r = L && L.atoms === t && L.source === e.source && L.kind === e.kind && L.prefix === e.prefix ? L.runs : ge(e, t), n.set(t, r), L = {
 		atoms: t,
 		source: e.source,
 		kind: e.kind,
@@ -590,8 +601,8 @@ function me(e, t = D) {
 	}), r;
 }
 var I = /* @__PURE__ */ new WeakMap(), L = null;
-function he(t, n) {
-	let r = [], i = t.source.split("\n"), o = t.kind === "code" && T(t);
+function ge(t, n) {
+	let r = [], i = t.source.split("\n"), o = t.kind === "code" && E(t);
 	if (t.kind === "equation") return [{
 		kind: "atom",
 		atom: "equation-block",
@@ -638,6 +649,12 @@ function he(t, n) {
 			return a.exec(t.source.slice(e, n < 0 ? t.source.length : n))?.[0].length ?? 0;
 		}), r;
 	}
+	if (t.kind === "bullet" && i.length > 1) return r.push({
+		kind: "syntax",
+		from: 0,
+		to: t.prefix,
+		prefix: !0
+	}), F(t.source, t.prefix, t.source.length, 0, r, n, (e) => /^ */.exec(t.source.slice(e))[0].length), r;
 	if (t.kind === "table") {
 		let i = 0;
 		for (let a of e(t.source).flat()) a.from > i && r.push({
@@ -692,9 +709,9 @@ function he(t, n) {
 //#region src/comment-yaml.ts
 var R = (e, t) => {
 	throw Error(`Invalid comment YAML (line ${e + 1}: ${t}).`);
-}, ge = /^(?:~|[Nn]ull|NULL)?$/, _e = /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/, ve = /^(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|0o[0-7]+|0x[0-9a-fA-F]+|[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/;
+}, _e = /^(?:~|[Nn]ull|NULL)?$/, ve = /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/, ye = /^(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|0o[0-7]+|0x[0-9a-fA-F]+|[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/;
 function z(e) {
-	return ge.test(e) ? null : _e.test(e) ? /^[tT]/.test(e) : ve.test(e) ? Number(e) : e;
+	return _e.test(e) ? null : ve.test(e) ? /^[tT]/.test(e) : ye.test(e) ? Number(e) : e;
 }
 var B = {
 	0: "\0",
@@ -715,7 +732,7 @@ var B = {
 	_: "\xA0",
 	L: "\u2028",
 	P: "\u2029"
-}, ye = {
+}, be = {
 	x: 2,
 	u: 4,
 	U: 8
@@ -746,7 +763,7 @@ function V(e, t, n) {
 			i += t;
 			continue;
 		}
-		let o = e[++a], s = ye[o];
+		let o = e[++a], s = be[o];
 		if (s) {
 			let t = e.slice(a + 1, a + 1 + s);
 			(!/^[0-9a-fA-F]+$/.test(t) || t.length !== s) && R(n, "bad escape"), i += s === 8 ? String.fromCodePoint(parseInt(t, 16)) : String.fromCharCode(parseInt(t, 16)), a += s;
@@ -758,7 +775,7 @@ function H(e, t, n) {
 	let r = e.slice(t);
 	/[^ \t]/.test(r) && !/^[ \t]+#/.test(r) && R(n, "text after a value");
 }
-var be = (e) => /^[ \t]*(?:#.*)?$/.test(e), U = (e) => e.replace(/^[ \t]+|[ \t]+$/g, ""), W = /^(?:---|\.\.\.)(?:[ \t]|$)/, G = /^[^ \t\-?:,[\]{}#&*!|>'"%@`]|^[-?:][^ \t,[\]{}]/;
+var xe = (e) => /^[ \t]*(?:#.*)?$/.test(e), U = (e) => e.replace(/^[ \t]+|[ \t]+$/g, ""), W = /^(?:---|\.\.\.)(?:[ \t]|$)/, G = /^[^ \t\-?:,[\]{}#&*!|>'"%@`]|^[-?:][^ \t,[\]{}]/;
 function K(e, t) {
 	if (e[0] === "\"" || e[0] === "'") {
 		let { value: n, end: r } = V(e, 0, t), i = e.slice(r).replace(/^[ \t]+/, "");
@@ -822,12 +839,12 @@ function J(e, t, n) {
 		configurable: !0
 	});
 }
-function xe(e) {
+function Se(e) {
 	let t = e.split(/\r\n|\n/);
 	t[t.length - 1] === "" && t.pop();
 	let n = 0, r = !1, i = () => {
 		for (; n < t.length; n++) {
-			if (be(t[n])) {
+			if (xe(t[n])) {
 				/^ *\t/.test(t[n]) && R(n, "a tab in the indent");
 				continue;
 			}
@@ -925,13 +942,13 @@ function xe(e) {
 	let f = d.text.startsWith("- ") || d.text === "-" || K(d.text, n) ? s(d.indent, 0) : o(d.text, -1);
 	return i() && R(n, "more than one value"), f;
 }
-var Se = {
+var Ce = {
 	account: /^(?:[A-Za-z]{2}\d{4}|[A-Za-z]{4}\d{2})$/,
 	product: /^[A-Za-z]{4}\d{2}$/,
 	list: /^\d{2}[A-Za-z]{4}$/,
 	item: /^[A-Za-z]{2}\d{2}(?:[A-Za-z][A-Za-z0-9]|\d[A-Za-z])$/
-}, Y = (e, t) => Se[e].test(t), Ce = /<!--aa:(start|end) ([A-Za-z0-9]{6})-->/g, X = (e) => typeof e == "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(e) && Number.isFinite(Date.parse(e)), Z = (e) => typeof e == "string" && Y("account", e), Q = (e) => typeof e == "string" && Y("item", e), $ = (e) => !!e && typeof e == "object" && !Array.isArray(e);
-function we(e) {
+}, Y = (e, t) => Ce[e].test(t), we = /<!--aa:(start|end) ([A-Za-z0-9]{6})-->/g, X = (e) => typeof e == "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(e) && Number.isFinite(Date.parse(e)), Z = (e) => typeof e == "string" && Y("account", e), Q = (e) => typeof e == "string" && Y("item", e), $ = (e) => !!e && typeof e == "object" && !Array.isArray(e);
+function Te(e) {
 	if (!$(e) || !Array.isArray(e.threads) || e.threads.length > 1e4) throw Error("Expected threads array (at most 10000 threads).");
 	let t = /* @__PURE__ */ new Set(), n = (e) => {
 		if (!Q(e) || t.has(e)) throw Error("Thread and comment IDs must be unique IDv1 item codes.");
@@ -950,7 +967,7 @@ function we(e) {
 	}
 	return e.threads;
 }
-function Te(e) {
+function Ee(e) {
 	let t = [], n = [], r = [...e.matchAll(/[^\n]*(?:\n|$)/g)].filter((e) => e[0]);
 	for (let i = 0; i < r.length; i++) {
 		let a = r[i], o = /^ {0,3}(`{3,}|~{3,})([^\r\n]*)/.exec(a[0]);
@@ -993,8 +1010,8 @@ function Te(e) {
 		protectedAt: i
 	};
 }
-function Ee(e) {
-	let { fences: t, protectedAt: n } = Te(e), r = [], i = [], a = [], o = t.filter((e) => /^aa-comments(?:\s|$)/.test(e.info));
+function De(e) {
+	let { fences: t, protectedAt: n } = Ee(e), r = [], i = [], a = [], o = t.filter((e) => /^aa-comments(?:\s|$)/.test(e.info));
 	for (let t of o) {
 		if (o.length > 1) {
 			i.push("Multiple aa-comments blocks.");
@@ -1004,7 +1021,7 @@ function Ee(e) {
 		else if (!t.closed || e.slice(t.to).trim()) i.push("The aa-comments block must be closed and last.");
 		else try {
 			if (t.body.length > 2e6) throw Error("Comment metadata exceeds 2 MB.");
-			a = we(xe(t.body));
+			a = Te(Se(t.body));
 			let n = e.slice(0, t.from), i = n.endsWith("\r\n\r\n") ? 4 : n.endsWith("\n\n") ? 2 : 0;
 			r.push({
 				from: t.from - i,
@@ -1016,7 +1033,7 @@ function Ee(e) {
 		}
 	}
 	let s = /* @__PURE__ */ new Map();
-	for (let t of e.matchAll(Ce)) {
+	for (let t of e.matchAll(we)) {
 		if (n(t.index) || e[t.index - 1] === "\\" || !Q(t[2])) continue;
 		let i = {
 			from: t.index,
@@ -1048,11 +1065,11 @@ function Ee(e) {
 		spans: r
 	};
 }
-function De(e) {
-	let t = Ee(e);
+function Oe(e) {
+	let t = De(e);
 	if (t.diagnostics.length) throw Error(`Cannot export Markdown: ${t.diagnostics.join(" ")}`);
 	return t.markdown;
 }
 //#endregion
-export { D as DEFAULT_ATOMS, me as blockRuns, De as exportMarkdown, ne as parseBlocks, g as readColumns, ee as readTabs, re as serialize, t as tableAlignments, e as tableRows, n as tableWidths };
+export { O as DEFAULT_ATOMS, he as blockRuns, Oe as exportMarkdown, ne as parseBlocks, g as readColumns, ee as readTabs, re as serialize, t as tableAlignments, e as tableRows, n as tableWidths };
 

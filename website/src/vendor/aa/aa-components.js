@@ -4980,8 +4980,24 @@ var Ai = class e extends R {
 		return null;
 	}
 	onTriggerClick = (e) => {
-		this.triggerMode === "context" || this.triggerMode === "manual" || e.defaultPrevented || this.hover && this.trigger?.matches("a[href], ds-button[href]") || (this.focusOnOpen = !0, this.openingEdge = "first", this.toggleFromTrigger(this.triggerMode === "submenu" || !this.open));
+		if (!(this.triggerMode === "context" || this.triggerMode === "manual" || e.defaultPrevented)) {
+			if (this.hover && this.trigger?.matches("a[href], ds-button[href]")) {
+				if (!this.triggerLinksHere() || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				e.preventDefault();
+			}
+			this.focusOnOpen = !0, this.openingEdge = "first", this.toggleFromTrigger(this.triggerMode === "submenu" || !this.open);
+		}
 	};
+	triggerLinksHere() {
+		let e = this.trigger?.getAttribute("href"), t = this.ownerDocument.defaultView;
+		if (!e || !t) return !1;
+		try {
+			let n = new URL(e, this.ownerDocument.baseURI), r = t.location, i = (e) => e.replace(/\/+$/, "") || "/";
+			return !n.hash && n.origin === r.origin && i(n.pathname) === i(r.pathname) && n.search === r.search;
+		} catch {
+			return !1;
+		}
+	}
 	onTriggerKey = (e) => {
 		if (!(e.defaultPrevented || e.isComposing || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey && (this.triggerMode !== "context" || e.key !== "F10") || !this.trigger || !this.enabled(this.trigger)) && this.triggerMode !== "context" && this.triggerMode !== "manual") {
 			if (this.triggerMode === "submenu") {
@@ -5067,7 +5083,7 @@ var Ai = class e extends R {
 		for (let e of this.querySelectorAll(X)) e.open && e.requestClose("parent");
 		clearTimeout(this.hoverTimer), this.focusVersion++;
 		let t = this.ownerDocument.activeElement, n = t instanceof Node && this.contains(t);
-		this.isConnected && this.matches(":popover-open") && this.hidePopover?.(), Z.get(this.ownerDocument)?.delete(this), this.observer?.disconnect(), this.observer = void 0, this.observedAnchor = null, this.choicesObserver?.disconnect(), this.choicesObserver = void 0, this.ownerDocument.removeEventListener("pointerdown", this.onOutside, !0), this.ownerDocument.removeEventListener("focusin", this.onOutside), this.ownerDocument.removeEventListener("keydown", this.onEscape, !0), this.ownerDocument.removeEventListener("scroll", this.place, !0), this.ownerDocument.defaultView?.removeEventListener("resize", this.place), this.ownerDocument.defaultView?.visualViewport?.removeEventListener("resize", this.place), this.ownerDocument.defaultView?.visualViewport?.removeEventListener("scroll", this.place);
+		this.isConnected && this.hidePopover && this.matches(":popover-open") && this.hidePopover(), Z.get(this.ownerDocument)?.delete(this), this.observer?.disconnect(), this.observer = void 0, this.observedAnchor = null, this.choicesObserver?.disconnect(), this.choicesObserver = void 0, this.ownerDocument.removeEventListener("pointerdown", this.onOutside, !0), this.ownerDocument.removeEventListener("focusin", this.onOutside), this.ownerDocument.removeEventListener("keydown", this.onEscape, !0), this.ownerDocument.removeEventListener("scroll", this.place, !0), this.ownerDocument.defaultView?.removeEventListener("resize", this.place), this.ownerDocument.defaultView?.visualViewport?.removeEventListener("resize", this.place), this.ownerDocument.defaultView?.visualViewport?.removeEventListener("scroll", this.place);
 		let r = new CustomEvent("ds-menu-close-focus", {
 			bubbles: !0,
 			composed: !0,

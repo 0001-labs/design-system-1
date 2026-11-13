@@ -8,6 +8,10 @@
 /* The toolbar is Design system 1's context bar, drawn by its own sheet
    (ds1/, copied with Sync 1), which draws without the tokens too. */
 @import "./ds1/context.css";
+/* Aa's own colour, blue: Design system 1's sharp blue, the colour of its focus ring. Where a line shows a
+   drop, a button is lit, a box is ticked or a mention is made, it is this; a product gives --aa-accent its own
+   colour, and --aa-on-accent the colour of what stands on it. Weightless, so a page's rule wins. */
+:where(:root) { --aa-accent: var(--ds-sharp-blue, #594dff); --aa-on-accent: #fff; }
 /* On touch, Insert block and Turn into are a sheet from the foot of the
    screen (sheet.ts): Design system 1's, its sheet drawn by overlay.css. */
 @import "./ds1/overlay.css";
@@ -75,7 +79,7 @@
 .aa-block[data-selected], .aa-block[data-lifted] { border-radius: calc(2px * var(--aa-sf)); }
 /* No handle beside a block: a selected block is taken by the hand, any other
    after a still press (drag.ts), and the hand holds while it is carried. */
-.aa[data-movable] > .aa-block[data-selected], .aa[data-movable] > .aa-block[data-grab] { cursor: grab; }
+.aa[data-movable] > .aa-block[data-selected] { cursor: grab; }
 .aa[data-dragging], .aa[data-dragging] *, .aa[data-dragging] *::before { cursor: grabbing; -webkit-user-select: none; user-select: none; }
 /* Selected blocks carried with the one lifted wait dimmed in their places. */
 .aa-block[data-ghost] { opacity: 0.4; }
@@ -187,7 +191,7 @@ a.aa-link { text-decoration-line: underline; text-decoration-thickness: 1px; tex
 }
 .aa-block[data-kind="bullet"][data-checked="true"]::before {
   border-color: transparent;
-  background: var(--ds-accent-color, var(--accent-color, #99ff73)) url("data:image/svg+xml,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6.68649%2011.884L12.443%206.13601L11.736%205.42715L6.68835%2010.4827L4.26399%208.0501L3.55696%208.74525L6.68649%2011.884Z%22%20fill%3D%22%232a2a2a%22%2F%3E%3C%2Fsvg%3E") center / 100% no-repeat;
+  background: var(--aa-accent) url("data:image/svg+xml,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6.68649%2011.884L12.443%206.13601L11.736%205.42715L6.68835%2010.4827L4.26399%208.0501L3.55696%208.74525L6.68649%2011.884Z%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E") center / 100% no-repeat;
 }
 .aa-block[data-kind="bullet"][data-checked="true"] { color: var(--aa-done, var(--ds-text-color-muted, color-mix(in srgb, currentColor 55%, transparent))); }
 
@@ -236,7 +240,7 @@ a.aa-link { text-decoration-line: underline; text-decoration-thickness: 1px; tex
 
 /* An atom: one thing to the caret, drawn by the product or as its own words. */
 .aa-atom { -webkit-user-modify: read-only; cursor: default; }
-.aa-atom[data-atom="person"] { color: var(--aa-person, var(--ds-accent-color, currentColor)); font-weight: var(--ds-type-weight-medium, 500); white-space: nowrap; }
+.aa-atom[data-atom="person"] { color: var(--aa-person, var(--aa-accent)); font-weight: var(--ds-type-weight-medium, 500); white-space: nowrap; }
 .aa-atom[data-atom="image"] { position: relative; display: inline-block; max-width: 100%; vertical-align: top; }
 .aa-atom[data-atom="image"] img { display: block; max-width: 100%; height: auto; border-radius: var(--aa-picture-radius, var(--ds-radius, calc(4px * var(--aa-sf)))); }
 /* A picture is its own size, up to sixteen squares, until it is given a width; then that many whole
@@ -247,6 +251,14 @@ a.aa-link { text-decoration-line: underline; text-decoration-thickness: 1px; tex
 .aa-atom[data-atom="image"][data-settling] { transition: width 0.14s cubic-bezier(0.2, 1, 0.1, 1); }
 @media (prefers-reduced-motion: reduce) { .aa-atom[data-atom="image"][data-settling] { transition: none; } }
 .aa-atom[data-atom="image"][data-width] img { width: 100%; }
+/* On the squares (fitPicture): whole squares wide and high, the image filling its box as cover fills it. */
+.aa-atom[data-atom="image"][data-fitted] { width: calc(var(--aa-picture-across) * var(--aa-unit)); max-width: none; }
+.aa-atom[data-atom="image"][data-fitted] img { width: 100%; height: calc(var(--aa-picture-down) * var(--aa-unit)); object-fit: cover; }
+.aa-atom[data-atom="image"][data-settling] img { transition: height 0.14s cubic-bezier(0.2, 1, 0.1, 1); }
+@media (prefers-reduced-motion: reduce) { .aa-atom[data-atom="image"][data-settling] img { transition: none; } }
+/* Shift held on a picture's grip: the pictures of its width in its row, which are sized with it. */
+.aa-atom[data-atom="image"][data-linked] img { outline: calc(2px * var(--aa-sf)) solid var(--aa-accent); outline-offset: calc(2px * var(--aa-sf)); }
+.aa-atom[data-atom="image"][data-linked] .aa-picture-grip { opacity: 1; }
 /* The grip on its end edge, seen while the pointer is over the picture or it is being sized: a short
    bar a square in from the edge, pulled sideways, in whole squares. */
 .aa-picture-grip { position: absolute; top: 50%; inset-inline-end: calc(6px * var(--aa-sf)); width: calc(4px * var(--aa-sf)); height: min(40%, calc(2 * var(--aa-unit))); border-radius: calc(2px * var(--aa-sf)); background: rgb(0 0 0 / 0.55); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.8); cursor: ew-resize; opacity: 0; transform: translateY(-50%); transition: opacity 120ms ease-out; touch-action: none; }
@@ -278,9 +290,9 @@ a.aa-link { text-decoration-line: underline; text-decoration-thickness: 1px; tex
   color: inherit; font: inherit; cursor: pointer; display: inline-flex;
   align-items: center; justify-content: center; flex-shrink: 0;
 }
-.aa-controls button[data-current] { background: var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight))); }
+.aa-controls button[data-current] { background: var(--aa-accent); color: var(--aa-on-accent); }
 /* The pointer's row, only where there is a pointer: a finger's tap leaves nothing lit behind it. */
-@media (hover: hover) { .aa-controls button:hover { background: var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight))); } }
+@media (hover: hover) { .aa-controls button:hover { background: var(--aa-accent); color: var(--aa-on-accent); } }
 .aa-controls button:focus-visible { outline: 2px solid var(--ds-focus-ring, currentColor); outline-offset: -2px; }
 .aa-icon { display: inline-block; width: calc(16px * var(--aa-sf, var(--sf, 1))); height: calc(16px * var(--aa-sf, var(--sf, 1))); background: currentColor; mask-size: contain; mask-repeat: no-repeat; mask-position: center; flex-shrink: 0; }
 /* The toolbar is Design system 1's context bar itself (.ds-context--bar in
@@ -393,7 +405,7 @@ dialog.aa-sheet::backdrop { background: color-mix(in srgb, var(--ds-black, #2a2a
 .aa-sheet-row > .aa-icon { margin-right: calc(var(--aa-square) - 16px * var(--aa-sf)); }
 .aa-sheet-words { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aa-sheet-key { color: var(--ds-text-color-muted, GrayText); font-family: "Inter Arrows", var(--aa-typeface-mono, var(--typeface-mono, "Aa Mono")), "Aa Mono", ui-monospace, monospace; font-size: calc(var(--ds-code-text-size, 13px) * var(--aa-sf)); letter-spacing: 0; }
-.aa-drop-line { position: fixed; z-index: 1000; height: 1px; background: var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight))); pointer-events: none; }
+.aa-drop-line { position: fixed; z-index: 1000; height: calc(2px * var(--aa-sf, 1)); margin-top: calc(-1px * var(--aa-sf, 1)); background: var(--aa-accent); pointer-events: none; }
 .aa-find { display: flex; flex-wrap: wrap; width: calc(16 * var(--aa-square)); max-width: calc(100vw - 2 * var(--aa-square) - 2px); border: 1px solid var(--aa-rule, var(--ds-border-color, currentColor)); color: var(--ds-text-color, var(--text-color, CanvasText)); background: var(--ds-paper, var(--background, Canvas)); }
 .aa-find input { box-sizing: border-box; font: inherit; color: inherit; background: transparent; width: 50%; min-width: 0; height: var(--aa-square); padding: 0 calc(4px * var(--aa-sf)); border: 0; border-right: 1px solid var(--ds-border-color, currentColor); border-radius: 0; }
 .aa-find span[aria-live] { padding-inline: calc(4px * var(--aa-sf)); white-space: nowrap; }
@@ -478,6 +490,7 @@ dialog.aa-sheet::backdrop { background: color-mix(in srgb, var(--ds-black, #2a2a
 .aa-atom video, .aa-atom audio { display: block; max-width: 100%; }
 .aa-caption { display: block; font: inherit; font-size: var(--ds-type-size-small, calc(10px * var(--aa-sf))); color: var(--ds-text-color-muted, inherit); min-height: 1lh; outline: none; cursor: text; -webkit-user-modify: read-write-plaintext-only; }
 .aa-caption:empty::before { content: attr(data-placeholder); color: var(--aa-placeholder, var(--ds-input-placeholder-color, GrayText)); }
+.aa-caption:empty:not([data-open]), .aa-block[data-readonly="true"] .aa-caption:empty { display: none; }
 .aa-atom[data-atom="equation-block"] { display: block; }
 
 /* A fenced block an atom draws whole, a diagram: the drawing on the paper, not
@@ -523,7 +536,7 @@ dialog.aa-sheet::backdrop { background: color-mix(in srgb, var(--ds-black, #2a2a
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, var(--aa-shimmer-color, var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight)))) 50%, transparent);
+  background: linear-gradient(90deg, transparent, var(--aa-shimmer-color, var(--aa-accent)) 50%, transparent);
   transform: translateX(-100%);
   animation: aa-shimmer-pass 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
   animation-delay: inherit;
@@ -531,7 +544,7 @@ dialog.aa-sheet::backdrop { background: color-mix(in srgb, var(--ds-black, #2a2a
 @keyframes aa-shimmer-pass { to { transform: translateX(100%); } }
 @keyframes aa-shimmer-show { 0% { opacity: 0; } 15%, 70% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .aa-shimmer::after { transform: none; animation: none; background: var(--aa-shimmer-color, var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight)))); }
+  .aa-shimmer::after { transform: none; animation: none; background: var(--aa-shimmer-color, var(--aa-accent)); }
 }
 @media (forced-colors: active) {
   .aa-shimmer { display: none; }
@@ -906,13 +919,19 @@ button.aa-thread-head:focus-visible { outline: 2px solid var(--ds-focus-ring, #5
 /* A carried block let go at another's side stands beside it: a line down that side shows where. */
 .aa-drop-line.aa-drop-side { width: calc(2px * var(--aa-sf)); }
 /* Let go on another column, the two trade places: that column is ringed in the line's colour. */
-.aa-drop-line.aa-drop-side[data-swap] { background: none; box-shadow: inset 0 0 0 calc(2px * var(--aa-sf)) var(--ds-accent-color, var(--accent-color, var(--apple-green, Highlight))); border-radius: var(--ds-radius, calc(4px * var(--aa-sf))); }
+.aa-drop-line.aa-drop-side[data-swap] { background: none; box-shadow: inset 0 0 0 calc(2px * var(--aa-sf)) var(--aa-accent); border-radius: var(--ds-radius, calc(4px * var(--aa-sf))); }
+
+/* A block carried into a list from another (the page into a column, a column onto the page) is given its
+   room at the list's end by the drag engine, so what follows makes way rather than being drawn over. */
+.aa[style*="--drag-reserve"], .aa-column[style*="--drag-reserve"] { padding-bottom: var(--drag-reserve); }
 
 /* Pictures in columns fill their column, a square apart down it, as Notion lays out a set of pictures. */
 .aa-column .aa-atom:has(> img):not([data-width]),
 .aa-column .aa-atom[data-atom="image"]:not([data-width]) { display: block; width: 100%; max-width: 100%; }
 .aa-column .aa-atom[data-atom="image"][data-width] { display: block; }
 .aa-column .aa-atom > img { width: 100%; }
+/* On the squares, a picture in a column takes the whole squares its column holds. */
+.aa-column .aa-atom[data-atom="image"][data-fitted] { width: calc(var(--aa-picture-across) * var(--aa-unit)); }
 
 /* Contents are always visible, drawn by the shared component. */
 :where(.aa-toc) { display: block; white-space: normal; }
@@ -981,7 +1000,7 @@ button.aa-thread-head:focus-visible { outline: 2px solid var(--ds-focus-ring, #5
   height: var(--aa-square); min-width: calc(3 * var(--aa-square)); margin: 0; padding-inline: calc(var(--aa-square) / 2);
   border: 0; border-radius: calc(4px * var(--aa-sf)); font: inherit; cursor: pointer;
 }
-.aa-writer-save { background: var(--ds-accent-color, var(--accent-color, Highlight)); color: var(--ds-button-text-color-on-accent, var(--ds-black, #2a2a2a)); }
+.aa-writer-save { background: var(--aa-accent); color: var(--aa-on-accent); }
 .aa-writer-cancel { background: none; color: inherit; }
 @media (hover: hover) { .aa-writer-cancel:hover:not(:disabled) { background: var(--ds-fill, light-dark(#f2f2f2, #2c2c2c)); } }
 .aa-writer-foot button:disabled { opacity: 0.4; cursor: default; }
