@@ -65,6 +65,8 @@
 }
 
 :host([text]) ::slotted(ds-button) {
+  /* The words at the tab's start, so the first stands on the column's edge. */
+  --ds-button-align: flex-start;
   --ds-text-tab-padding: 0 calc(4px * var(--ds-sf));
   --ds-button-color: var(--ds-text-color-muted);
 }
@@ -90,7 +92,7 @@
 
 :host([split]) ::slotted(ds-button) {
   --ds-button-height: var(--ds-control-height);
-  --ds-button-padding: 0 calc(5px * var(--ds-sf));
+  --ds-button-padding: 0 calc(4px * var(--ds-sf));
   --ds-button-background: var(--ds-button-background-color-secondary);
   --ds-button-color: var(--ds-text-color-muted);
 }
@@ -107,8 +109,8 @@
 
 /*
  * Paper tabs (`paper`): a notebook's tabs hanging from a page's top edge.
- * Each tab is a row high with its words on the sixteen, half a square of room
- * at its sides, the tabs 4px apart, rounded at the top and square at the foot
+ * Each tab is a row high with its words on the sixteen, 4px of room at its
+ * sides, as every hugging face, the tabs 4px apart, rounded at the top and square at the foot
  * where they join the page (each tab's `paper` mark, which the run sets):
  * the current one on the paper's colour in the ink, so it reads as part of
  * the page below; the others on the quiet fill in the muted ink, lit under
@@ -122,7 +124,7 @@
 
 :host([paper]) ::slotted(ds-button) {
   --ds-button-height: var(--ds-row-height);
-  --ds-button-padding: 0 calc(10px * var(--ds-sf));
+  --ds-button-padding: 0 calc(4px * var(--ds-sf));
   --ds-button-background: var(--ds-button-background-color-secondary);
   --ds-button-color: var(--ds-text-color-muted);
 }

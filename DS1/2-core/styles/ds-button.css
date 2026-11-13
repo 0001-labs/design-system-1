@@ -196,14 +196,14 @@
 }
 
 /* A paper tab (`ds-tabs paper`) on this face: a row high with its words on
-   the sixteen, half a square of room at its sides, in the run's colours,
+   the sixteen, 4px of room at its sides, in the run's colours,
    rounded at the top only and square at the foot, where it joins the page. */
 :host([paper]) :is(button, a) {
   height: var(--ds-row-height);
   min-height: var(--ds-row-height);
   max-height: var(--ds-row-height);
   align-items: flex-end;
-  padding: 0 calc(10px * var(--ds-sf));
+  padding: 0 calc(4px * var(--ds-sf));
   border-radius: var(--ds-radius) var(--ds-radius) 0 0;
   background-color: var(--ds-button-background, transparent);
   color: var(--ds-button-color, var(--button-text-color));
@@ -224,10 +224,19 @@
 }
 
 /* A label is never truncated to meet a chosen width. Round its minimum up,
-   so explicit widths and flex layouts retain enough space for all the words. */
-:host(:not([icon]):not([split]):not([menu-item])) {
+   so explicit widths and flex layouts retain enough space for all the words.
+   Tabs are not rounded: each hugs its words with the run's own padding, so
+   every tab in a run has the same room around its words. */
+:host(:not([icon]):not([split]):not([menu-item]):not([segment]):not([paper]):not([role="tab"])) {
   min-width: max-content;
   min-width: calc-size(max-content, round(up, size, var(--ds-unit)));
+}
+/* The rounding leaves room beyond the words; share it on both sides, so the
+   words never hug the start with the spare room piled up at the end. Menu
+   entries and options keep their words at the start; --ds-button-align still
+   chooses. */
+:host(:not([icon]):not([split]):not([menu-item]):not([role="option"]):not([role^="menuitem"])) :is(button, a) {
+  justify-content: var(--ds-button-align, center);
 }
 /* A menu entry keeps a fixed width, so its words may still be cut and fade. */
 :host(:not([menu-item])) :is(button, a),

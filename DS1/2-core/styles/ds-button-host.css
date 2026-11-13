@@ -261,9 +261,14 @@
   border-end-end-radius: var(--ds-radius) !important;
 }
 
-:host([control="host"]:not([icon]):not([split]):not([menu-item])) {
+/* Tabs hug their words with the run's padding, unrounded, as on the shadow face. */
+:host([control="host"]:not([icon]):not([split]):not([menu-item]):not([segment]):not([paper]):not([role="tab"])) {
   min-width: var(--ds-button-min-width, max-content) !important;
   min-width: var(--ds-button-min-width, calc-size(max-content, round(up, size, var(--ds-unit)))) !important;
+}
+/* The rounding's spare room on both sides of the words, as on the shadow face. */
+:host([control="host"]:not([icon]):not([split]):not([menu-item]):not([role="option"]):not([role^="menuitem"])) {
+  justify-content: var(--ds-button-align, center) !important;
 }
 :host([control="slotted"]) ::slotted(:is(button, a)) {
   min-width: max-content !important;
