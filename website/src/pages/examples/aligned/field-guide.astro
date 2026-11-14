@@ -1,0 +1,249 @@
+---
+// After a bird field guide open on its plate: the left page the birds, each with leader lines to its
+// field marks; the right page the accounts, each with a range map drawn in quarter squares. The
+// book lies on a green cloth; both pages, the photographs and the maps are whole squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type Mark = { at: [number, number]; text: string };
+const BIRDS = [
+  { n: 1, id: 'blue', name: 'Blue tit', latin: 'Cyanistes caeruleus', img: 'birdie-blue-tit.jpg', sex: 'adult',
+    marks: [{ at: [0.32, 0.2], text: 'Blue cap, white rim' }, { at: [0.27, 0.29], text: 'Dark line through the eye' }, { at: [0.6, 0.38], text: 'Blue wings, one bar' }, { at: [0.36, 0.5], text: 'Plain yellow belly' }] as Mark[] },
+  { n: 2, id: 'great', name: 'Great tit', latin: 'Parus major', img: 'birdie-great-tit.jpg', sex: 'male',
+    marks: [{ at: [0.36, 0.2], text: 'Glossy black head' }, { at: [0.38, 0.3], text: 'White cheek' }, { at: [0.66, 0.34], text: 'White wing bar' }, { at: [0.27, 0.42], text: 'Black tie, broad in male' }] as Mark[] },
+  { n: 3, id: 'longtail', name: 'Long-tailed tit', latin: 'Aegithalos c. caudatus', img: 'birdie-long-tailed-tit.jpg', sex: 'northern race',
+    marks: [{ at: [0.31, 0.26], text: 'Tail longer than the bird' }, { at: [0.48, 0.38], text: 'Pink on the shoulder' }, { at: [0.6, 0.48], text: 'All-white head' }, { at: [0.45, 0.62], text: 'Body a ball' }] as Mark[] },
+  { n: 4, id: 'wren', name: 'Wren', latin: 'Troglodytes troglodytes', img: 'birdie-wren.jpg', sex: 'singing',
+    marks: [{ at: [0.08, 0.38], text: 'Tail cocked upright' }, { at: [0.33, 0.24], text: 'Pale stripe over the eye' }, { at: [0.42, 0.26], text: 'Song loud for its size' }, { at: [0.24, 0.55], text: 'Finely barred flanks' }] as Mark[] },
+];
+
+// Photo of P squares; the labels sit on the squares to its right, each on the row nearest its mark.
+const P = 8;
+const placed = (marks: Mark[]) => {
+  let last = -2;
+  const rows = marks
+    .map((mark, index) => ({ ...mark, index }))
+    .sort((a, b) => a.at[1] - b.at[1])
+    .map(mark => {
+      const row = Math.max(last + 2, Math.min(P - 1, Math.round(mark.at[1] * P - 0.5)));
+      last = row;
+      return { ...mark, row };
+    });
+  // Two squares apart, and none below the photo: push the lowest back up.
+  rows.forEach((mark, i) => (mark.row = Math.min(mark.row, P - 1 - 2 * (rows.length - 1 - i))));
+  return rows;
+};
+
+const ACCOUNTS = [
+  { id: 'blue', n: 1, name: 'Blue tit', latin: 'Cyanistes caeruleus', size: '11.5 cm',
+    text: 'The only small bird here with a blue cap. Acrobatic at feeders, hanging beneath the nuts to eat. Sexes alike, the female’s blue a shade duller, the young washed yellow on the face.',
+    voice: 'A scolding churr; song a high tsee-tsee-tsuhuhuhu.' },
+  { id: 'great', n: 2, name: 'Great tit', latin: 'Parus major', size: '14 cm',
+    text: 'Largest of the tits, a black tie the length of its yellow breast: broad to the legs in the male, narrow and broken in the female. Has more than forty calls; a call you cannot place is probably this.',
+    voice: 'A ringing teacher, teacher, teacher.' },
+  { id: 'longtail', n: 3, name: 'Long-tailed tit', latin: 'Aegithalos caudatus', size: '14 cm, of which tail 8',
+    text: 'A pink and black ball of feathers on a stick. Moves in chattering family parties that cross a gap one bird at a time. Shown: the white-headed northern race, a winter visitor to the north-east.',
+    voice: 'A thin srih-srih-srih and a rolling tsirrrup.' },
+  { id: 'wren', n: 4, name: 'Wren', latin: 'Troglodytes troglodytes', size: '9.5 cm',
+    text: 'Tiny, round and brown, the tail cocked straight up. Creeps like a mouse in the bottom of hedges, then sings from a stump: a clattering trill of five seconds, ten times louder than seems possible.',
+    voice: 'A hard tek-tek and a dry churr.' },
+];
+
+// The same isles in every map, 24 quarter squares a side; each species colours them by its range.
+const MASK = [
+  '..............##........', '.............###...#....', '..........#..##.........', '.........####...........',
+  '........######..........', '.......#######..........', '........#######.........', '.......#########........',
+  '..##...#########........', '.####..##########.......', '.####...#########.......', '..##....##########......',
+  '.........#########......', '........###########.....', '.......############.....', '.......#############....',
+  '........#############...', '.........##############.', '........###############.', '.......###############..',
+  '......###############...', '.....##############.....', '....#########...........', '.....####...............',
+];
+type Range = 'r' | 'w' | 's' | '-';
+const RANGE: Record<string, (r: number, c: number) => Range> = {
+  blue: r => (r >= 6 ? 'r' : 's'),
+  great: r => (r >= 3 ? 'r' : '-'),
+  longtail: (r, c) => (c < 6 ? '-' : r >= 12 ? 'r' : r >= 3 ? 'w' : '-'),
+  wren: () => 'r',
+};
+const FILL: Record<Range, string> = { r: '#4f8f4a', w: '#5b86c2', s: 'url(#fg-dots)', '-': '#d9d9cf' };
+const map = (id: string) => {
+  let cells = '';
+  MASK.forEach((line, r) => [...line].forEach((ch, c) => {
+    if (ch === '#') cells += `<rect x="${c}" y="${r}" width="1" height="1" fill="${FILL[RANGE[id](r, c)]}"/>`;
+  }));
+  return cells;
+};
+---
+<AlignedStudy slug="field-guide" theme="light">
+  <main class="stage fg">
+    <div class="fg-page fg-verso" aria-hidden="true"></div>
+    <div class="fg-page fg-recto" aria-hidden="true"></div>
+
+    <header class="fg-plate-head">
+      <p class="fg-plate-no">Plate 38</p>
+      <h1>Tits and the Wren</h1>
+    </header>
+
+    {BIRDS.map(bird => (
+      <figure class={`fg-bird fg-bird-${bird.n}`} id={`bird-${bird.id}`} tabindex="0" aria-labelledby={`cap-${bird.id}`}>
+        <img src={`/examples/images/${bird.img}`} alt={`${bird.name}, ${bird.sex}`} />
+        <svg class="fg-leaders" viewBox={`0 0 14 ${P}`} preserveAspectRatio="none" aria-hidden="true">
+          {placed(bird.marks).map(mark => (
+            <g>
+              <path d={`M ${mark.at[0] * P} ${mark.at[1] * P} L ${P + 0.2} ${mark.row + 0.5} L ${P + 0.8} ${mark.row + 0.5}`} />
+              <circle cx={mark.at[0] * P} cy={mark.at[1] * P} r="0.09" />
+            </g>
+          ))}
+        </svg>
+        <ul class="fg-marks">
+          {placed(bird.marks).map(mark => <li style={`grid-row: ${mark.row + 1}`}>{mark.text}</li>)}
+        </ul>
+        <figcaption id={`cap-${bird.id}`}><b>{bird.n}</b> {bird.name} <i>{bird.sex}</i></figcaption>
+      </figure>
+    ))}
+
+    <section class="fg-confuse" aria-labelledby="fg-confuse-title">
+      <h2 id="fg-confuse-title">Not to be confused</h2>
+      <div class="fg-head fg-head-blue" role="img" aria-label="Head of a blue tit"></div>
+      <div class="fg-head fg-head-great" role="img" aria-label="Head of a great tit"></div>
+      <dl>
+        <div class="fg-cols"><dt></dt><dd>1 Blue tit</dd><dd>2 Great tit</dd></div>
+        <div><dt>Cap</dt><dd>blue, rimmed white</dd><dd>glossy black</dd></div>
+        <div><dt>Breast</dt><dd>plain, a smudge at most</dd><dd>split by a black tie</dd></div>
+        <div><dt>Size</dt><dd>11.5 cm, a sparrow less</dd><dd>14 cm, a sparrow</dd></div>
+        <div><dt>Call</dt><dd>tsee-tsee-tsuhuhu</dd><dd>teacher, teacher</dd></div>
+      </dl>
+    </section>
+    <p class="fg-folio fg-folio-l">76</p>
+
+    <svg class="fg-defs" aria-hidden="true" width="0" height="0">
+      <defs><pattern id="fg-dots" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#d9d9cf"/><circle cx="0.5" cy="0.5" r="0.28" fill="#4f8f4a"/></pattern></defs>
+    </svg>
+
+    <div class="fg-accounts">
+      {ACCOUNTS.map(account => (
+        <article class="fg-account" id={`acc-${account.id}`}>
+          <svg class="fg-map" viewBox="0 0 24 24" role="img" aria-label={`Range of the ${account.name.toLowerCase()}`} set:html={map(account.id)} />
+          <h3><b>{account.n}</b> {account.name} <i>{account.latin}</i></h3>
+          <p class="fg-size">{account.size}</p>
+          <p class="fg-text">{account.text}</p>
+          <p class="fg-voice"><span>Voice</span> {account.voice}</p>
+        </article>
+      ))}
+    </div>
+
+    <ul class="fg-legend" aria-label="Map key">
+      <li><i style="background:#4f8f4a"></i>All year</li>
+      <li><i style="background:#5b86c2"></i>Winter only</li>
+      <li><i class="fg-scarce"></i>Scarce, local</li>
+      <li><i style="background:#d9d9cf"></i>Absent</li>
+    </ul>
+    <p class="fg-folio fg-folio-r">77</p>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #3d5241; }
+  .fg {
+    --paper: #fbfbf7;
+    --ink: #22251f;
+    --soft: #6c6f63;
+    color: var(--ink);
+    background: #3d5241;
+    font-family: Charter, 'Iowan Old Style', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .fg-page { grid-row: 2 / -2; background: var(--paper); }
+  .fg-verso { grid-column: 2 / span 32; background: linear-gradient(to left, rgb(0 0 0 / 0.1), transparent calc(2 * var(--u))) var(--paper); box-shadow: calc(-4px * var(--sf)) calc(4px * var(--sf)) 0 #2b3b2e; }
+  .fg-recto { grid-column: 34 / -2; background: linear-gradient(to right, rgb(0 0 0 / 0.13), transparent calc(2 * var(--u))) var(--paper); box-shadow: calc(4px * var(--sf)) calc(4px * var(--sf)) 0 #2b3b2e; }
+  .fg :is(h1, h2, h3, p, ul, dl, dd, figure) { margin: 0; }
+  .fg-sans, .fg h1, .fg h2, .fg h3, .fg figcaption, .fg-marks, .fg-folio, .fg-legend, .fg dt { font-family: 'Gill Sans', 'Gill Sans MT', Optima, sans-serif; }
+
+  .fg-plate-head { grid-column: 4 / span 28; grid-row: 3 / span 2; display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; align-items: end; }
+  .fg-plate-no { font: 300 calc(15px * var(--sf)) / var(--u) 'Gill Sans', Optima, sans-serif; color: var(--soft); }
+  .fg h1 { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 400; letter-spacing: -0.01em; }
+
+  /* A bird: the photo eight squares a side, its field marks on the five squares to its right. */
+  .fg-bird { display: grid; grid-template-columns: repeat(14, var(--u)); grid-template-rows: repeat(8, var(--u)) var(--u); position: relative; outline: none; }
+  .fg-bird-1 { grid-column: 4 / span 14; grid-row: 6 / span 9; }
+  .fg-bird-2 { grid-column: 19 / span 14; grid-row: 6 / span 9; }
+  .fg-bird-3 { grid-column: 4 / span 14; grid-row: 17 / span 9; }
+  .fg-bird-4 { grid-column: 19 / span 14; grid-row: 17 / span 9; }
+  .fg-bird img { grid-column: 1 / span 8; grid-row: 1 / span 8; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fg-leaders { grid-column: 1 / -1; grid-row: 1 / span 8; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .fg-leaders path { fill: none; stroke: var(--ink); stroke-width: 0.045; vector-effect: non-scaling-stroke; stroke-width: 1px; }
+  .fg-leaders circle { fill: var(--paper); stroke: var(--ink); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .fg-marks { grid-column: 10 / span 5; grid-row: 1 / span 8; display: grid; grid-template-rows: repeat(8, var(--u)); padding: 0; list-style: none; font-size: calc(11.5px * var(--sf)); line-height: calc(16px * var(--sf)); }
+  .fg-marks li { align-self: center; padding-left: calc(3px * var(--sf)); }
+  .fg-bird figcaption { grid-column: 1 / -1; grid-row: 9; font-size: calc(14px * var(--sf)); }
+  .fg-bird figcaption b, .fg h3 b { display: inline-block; width: var(--u); font-weight: 600; }
+  .fg-bird figcaption i { color: var(--soft); font-family: Charter, Georgia, serif; font-size: calc(12px * var(--sf)); }
+  .fg-bird:focus-visible { outline: 2px solid #4f8f4a; outline-offset: calc(4px * var(--sf)); }
+
+  /* The two that are mistaken for each other, head to head. */
+  .fg-confuse { grid-column: 4 / span 29; grid-row: 28 / span 9; display: grid; grid-template-columns: repeat(5, var(--u)) var(--u) repeat(5, var(--u)) var(--u) 1fr; grid-template-rows: var(--u) var(--u) repeat(5, var(--u)); border-top: 1px solid var(--ink); }
+  .fg-confuse h2 { grid-column: 1 / -1; font-size: calc(14px * var(--sf)); font-weight: 600; }
+  .fg-head { grid-row: 3 / span 5; background-size: 260%; border-radius: 50%; }
+  .fg-head-blue { grid-column: 1 / span 5; background-image: url(/examples/images/birdie-blue-tit.jpg); background-position: 15% 3%; }
+  .fg-head-great { grid-column: 7 / span 5; background-image: url(/examples/images/birdie-great-tit.jpg); background-position: 21% 3%; }
+  .fg-confuse dl { grid-column: 13 / -1; grid-row: 3 / span 5; font-size: calc(12px * var(--sf)); }
+  .fg-confuse dl div { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr 1fr; gap: 0 calc(var(--u) / 2); }
+  .fg-confuse dt { color: var(--soft); }
+  .fg-cols dd { font-family: 'Gill Sans', Optima, sans-serif; font-weight: 600; }
+  .fg-confuse dd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fg-confuse dl::before { content: '1 Blue tit    2 Great tit'; display: none; }
+
+  .fg-folio { grid-row: -4; font-size: calc(12px * var(--sf)); color: var(--soft); }
+  .fg-folio-l { grid-column: 4 / span 2; }
+  .fg-folio-r { grid-column: -6 / span 2; text-align: right; }
+
+  /* The accounts: a range map of six squares, the words beside it. */
+  .fg-accounts { grid-column: 36 / -4; grid-row: 4 / span 32; display: grid; grid-template-rows: repeat(4, calc(8 * var(--u))); }
+  .fg-account { display: grid; grid-template-columns: calc(6 * var(--u)) var(--u) 1fr; grid-template-rows: repeat(7, var(--u)); grid-auto-rows: var(--u); align-content: start; transition: background-color 160ms; }
+  .fg-map { grid-column: 1; grid-row: 1 / span 6; width: 100%; height: 100%; background: #e8eef0; }
+  .fg-account > :not(svg) { grid-column: 3; }
+  .fg-account h3 { font-size: calc(15px * var(--sf)); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fg-account h3 i { font-family: Charter, Georgia, serif; font-weight: 400; font-size: calc(13px * var(--sf)); }
+  .fg-size { color: var(--soft); font-size: calc(12px * var(--sf)); }
+  .fg-text { grid-row: span 4; max-height: calc(4 * var(--u)); overflow: hidden; }
+  .fg-voice { font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fg-voice span { font-style: normal; font-family: 'Gill Sans', Optima, sans-serif; font-weight: 600; margin-right: calc(4px * var(--sf)); }
+  .fg:has(#bird-blue:is(:hover, :focus-visible)) #acc-blue,
+  .fg:has(#bird-great:is(:hover, :focus-visible)) #acc-great,
+  .fg:has(#bird-longtail:is(:hover, :focus-visible)) #acc-longtail,
+  .fg:has(#bird-wren:is(:hover, :focus-visible)) #acc-wren { background: #eef3e4; box-shadow: 0 0 0 calc(var(--u) / 2) #eef3e4; }
+
+  .fg-legend { grid-column: 36 / -4; grid-row: -6 / span 1; display: flex; gap: var(--u); padding: 0; list-style: none; font-size: calc(12px * var(--sf)); flex-wrap: wrap; overflow: hidden; height: var(--u); }
+  .fg-legend li { display: flex; align-items: center; gap: calc(6px * var(--sf)); white-space: nowrap; }
+  .fg-legend i { display: block; width: calc(10px * var(--sf)); height: calc(10px * var(--sf)); }
+  .fg-scarce { background: radial-gradient(circle, #4f8f4a 0 30%, #d9d9cf 32%); }
+  @media (prefers-reduced-motion: reduce) { .fg-account { transition: none; } }
+
+  /* Narrow: one page, the birds one under another, their marks listed beneath. */
+  :root[data-narrow] .fg { padding-block: var(--u) calc(2 * var(--u)); background: var(--paper); }
+  :root[data-narrow] { background: #fbfbf7; }
+  :root[data-narrow] .fg-page, :root[data-narrow] .fg-leaders, :root[data-narrow] .fg-defs { display: none; }
+  :root[data-narrow] .fg > :not(.fg-page) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .fg-plate-head { grid-template-columns: 1fr; margin-bottom: var(--u); }
+  :root[data-narrow] .fg-bird { grid-template-columns: repeat(12, var(--u)); grid-template-rows: repeat(12, var(--u)) auto auto; margin-bottom: var(--u); }
+  :root[data-narrow] .fg-bird img { grid-column: 1 / -1; grid-row: 1 / span 12; }
+  :root[data-narrow] .fg-bird figcaption { grid-row: 13; }
+  :root[data-narrow] .fg-marks { grid-column: 1 / -1; grid-row: 14; display: block; padding-left: var(--u); }
+  :root[data-narrow] .fg-marks li { list-style: disc; padding: 0; line-height: var(--u); }
+  :root[data-narrow] .fg-confuse { grid-template-columns: repeat(5, var(--u)) 1fr repeat(5, var(--u)); grid-template-rows: var(--u) var(--u) repeat(5, var(--u)) auto; margin-bottom: var(--u); }
+  :root[data-narrow] .fg-head-great { grid-column: 7 / span 5; }
+  :root[data-narrow] .fg-confuse dl { grid-column: 1 / -1; grid-row: 8; margin-top: var(--u); }
+  :root[data-narrow] .fg-confuse dl div { grid-template-columns: calc(3 * var(--u)) 1fr 1fr; }
+  :root[data-narrow] .fg-confuse dd { white-space: normal; }
+  :root[data-narrow] .fg-folio { display: none; }
+  :root[data-narrow] .fg-accounts { grid-template-rows: none; gap: var(--u); margin-top: var(--u); }
+  :root[data-narrow] .fg-account { grid-template-columns: calc(5 * var(--u)) var(--u) 1fr; grid-template-rows: repeat(5, var(--u)) auto auto; }
+  :root[data-narrow] .fg-map { grid-row: 1 / span 5; }
+  :root[data-narrow] .fg-account h3 { grid-row: 1 / span 3; white-space: normal; line-height: var(--u); }
+  :root[data-narrow] .fg-account h3 i { display: block; }
+  :root[data-narrow] .fg-size { grid-row: 4; }
+  :root[data-narrow] .fg-account > :is(.fg-text, .fg-voice) { grid-column: 1 / -1; }
+  :root[data-narrow] .fg-text { grid-row: 6; max-height: none; margin-top: var(--u); }
+  :root[data-narrow] .fg-voice { grid-row: 7; white-space: normal; }
+  :root[data-narrow] .fg-legend { height: auto; margin-top: var(--u); }
+</style>

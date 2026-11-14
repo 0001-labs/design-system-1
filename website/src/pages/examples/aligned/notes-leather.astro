@@ -1,0 +1,288 @@
+---
+// After the skeuomorphic notes apps of around 2011: stitched leather, glossy buttons, a pad of
+// yellow paper with the torn stubs of earlier pages at the top. The ruled lines are the squares:
+// one line a square, the margin three squares in, and the writing sits on them.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const NOTES = [
+  { time: '16:20', text: `Hardware shop, Saturday
+- 40 mm wood screws (brass, not the zinc ones)
+- sandpaper, 120 and 240
+- a hinge that doesn’t squeak; ask Morten which
+- picture wire
+- the little felt dots for under the chairs
+
+Do NOT come home with another tape measure.` },
+  { time: '08:47', text: `Overheard on the 14 bus
+“He’s not lost, he’s between addresses.”
+
+“I only eat soup that’s been reheated at least once.”
+
+“The dog knows the timetable better than the driver does.”
+
+A woman with a cello case, to the cello case: “Nearly there.”` },
+  { time: 'Yesterday', text: `Names for the cat
+Marmalade
+The Duchess
+Socks (vetoed: she has no socks)
+Pilchard
+Mrs Henderson
+Biscuit
+
+Currently answers to: the sound of a tin opening.` },
+  { time: 'Tuesday', text: `Bread, attempt 4
+500 g flour, 350 g water, 10 g salt, a spoon of yesterday.
+Fold four times, half an hour apart.
+Overnight in the fridge.
+45 min at 240°, lid off for the last 15.
+
+Attempt 3 was a doorstop. Attempt 4 is a doorstop with ambitions.` },
+  { time: '2 Nov', text: `Things to do when it rains
+Re-alphabetise the spice drawer (cumin is not under K)
+Learn the bass line of one song properly
+Write to Aunt Hedda: a real letter, with a stamp
+Find out what the knocking in the boiler is` },
+  { time: '29 Oct', text: `Books Jens lent me (give back!)
+The one about lighthouses
+The cookbook with the egg on the cover
+A field guide to mushrooms, which I have not used, which is probably wise` },
+  { time: '21 Oct', text: `Questions for the dentist
+Is it normal that the left side hums when I drink cold water?
+Does flossing count if I only do it the night before?` },
+  { time: '12 Oct', text: `Ida’s birthday, 23rd
+She said “nothing”. Last year that meant a blue teapot.
+Look for: a blue teapot. A different blue.` },
+];
+const firstLine = (text: string) => text.split('\n')[0];
+---
+<AlignedStudy slug="notes-leather" theme="dark">
+  <main class="stage lea">
+    <div class="lea-stitch" aria-hidden="true"></div>
+
+    <header class="lea-bar">
+      <span class="lea-count" id="count">{NOTES.length} Notes</span>
+      <h1 id="title">{firstLine(NOTES[0].text)}</h1>
+      <button type="button" class="lea-btn lea-add" id="add" aria-label="New note">+</button>
+    </header>
+
+    <nav class="lea-list" aria-label="Notes">
+      <input class="lea-search" id="search" type="search" placeholder="Search" aria-label="Search notes" />
+      <ul id="list">
+        {NOTES.map((note, index) => (
+          <li><button type="button" data-index={index} aria-current={index === 0 ? 'true' : undefined}><span>{firstLine(note.text)}</span><time>{note.time}</time></button></li>
+        ))}
+      </ul>
+    </nav>
+
+    <section class="lea-pad" aria-label="Note">
+      <svg class="lea-torn" id="torn" aria-hidden="true" preserveAspectRatio="none"></svg>
+      <p class="lea-date" id="date">Today 16:20</p>
+      <textarea id="page" class="lea-page" spellcheck="false" aria-label="Note text">{NOTES[0].text}</textarea>
+    </section>
+
+    <footer class="lea-tools" aria-label="Note tools">
+      <button type="button" class="lea-icon" id="prev" aria-label="Previous note"><svg viewBox="0 0 20 20"><path d="M 13 4 L 6 10 L 13 16 Z" /></svg></button>
+      <button type="button" class="lea-icon" id="mail" aria-label="Email this note"><svg viewBox="0 0 20 20"><path d="M 3 5 H 17 V 15 H 3 Z M 3 5 L 10 11 L 17 5" class="lea-o" /></svg></button>
+      <button type="button" class="lea-icon" id="trash" aria-label="Delete this note"><svg viewBox="0 0 20 20"><path d="M 5 6 H 15 L 14 17 H 6 Z M 4 4 H 16 M 8 4 V 2.5 H 12 V 4" class="lea-o" /></svg></button>
+      <button type="button" class="lea-icon" id="next" aria-label="Next note"><svg viewBox="0 0 20 20"><path d="M 7 4 L 14 10 L 7 16 Z" /></svg></button>
+      <p class="lea-said" id="said" aria-live="polite"></p>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The notes, as written in the page; edits stay in this visit.
+  const list = document.getElementById('list')!;
+  const page = document.getElementById('page') as HTMLTextAreaElement;
+  const title = document.getElementById('title')!;
+  const date = document.getElementById('date')!;
+  const count = document.getElementById('count')!;
+  const said = document.getElementById('said')!;
+  const search = document.getElementById('search') as HTMLInputElement;
+  const torn = document.getElementById('torn') as unknown as SVGSVGElement;
+
+  type Note = { text: string; time: string };
+  const notes: Note[] = [...list.querySelectorAll<HTMLButtonElement>('button')].map((button, index) => ({
+    text: index === 0 ? page.value : '',
+    time: button.querySelector('time')!.textContent || '',
+  }));
+  // The other notes' words are kept in the page's source as data on each row.
+  const SOURCE = JSON.parse(document.getElementById('lea-notes')!.textContent || '[]') as string[];
+  SOURCE.forEach((text, index) => (notes[index].text = text));
+  let current = 0;
+
+  const first = (text: string) => text.split('\n')[0].trim() || 'New Note';
+  function render() {
+    const query = search.value.trim().toLowerCase();
+    list.innerHTML = '';
+    notes.forEach((note, index) => {
+      if (query && !note.text.toLowerCase().includes(query)) return;
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.index = String(index);
+      if (index === current) button.setAttribute('aria-current', 'true');
+      const name = document.createElement('span');
+      name.textContent = first(note.text);
+      const time = document.createElement('time');
+      time.textContent = note.time;
+      button.append(name, time);
+      li.append(button);
+      list.append(li);
+    });
+    count.textContent = `${notes.length} ${notes.length === 1 ? 'Note' : 'Notes'}`;
+  }
+  function open(index: number) {
+    if (!notes.length) return;
+    current = (index + notes.length) % notes.length;
+    page.value = notes[current].text;
+    title.textContent = first(notes[current].text);
+    const t = notes[current].time;
+    date.textContent = /^\d/.test(t) && t.includes(':') ? `Today ${t}` : t;
+    render();
+  }
+
+  list.addEventListener('click', event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('button[data-index]');
+    if (button) open(Number(button.dataset.index));
+  });
+  page.addEventListener('input', () => {
+    notes[current].text = page.value;
+    notes[current].time = 'Just now';
+    title.textContent = first(page.value);
+    const row = list.querySelector(`button[data-index="${current}"]`);
+    if (row) { row.querySelector('span')!.textContent = first(page.value); row.querySelector('time')!.textContent = 'Just now'; }
+  });
+  search.addEventListener('input', render);
+  document.getElementById('prev')!.addEventListener('click', () => open(current - 1));
+  document.getElementById('next')!.addEventListener('click', () => open(current + 1));
+  document.getElementById('add')!.addEventListener('click', () => {
+    notes.unshift({ text: '', time: 'Just now' });
+    current = 0;
+    open(0);
+    date.textContent = 'Just now';
+    page.focus();
+  });
+  document.getElementById('trash')!.addEventListener('click', () => {
+    if (notes.length <= 1) { said.textContent = 'The last page stays on the pad.'; return; }
+    const gone = first(notes[current].text);
+    notes.splice(current, 1);
+    open(Math.min(current, notes.length - 1));
+    said.textContent = `Tore out “${gone}”.`;
+  });
+  document.getElementById('mail')!.addEventListener('click', () => {
+    said.textContent = 'No post office in a study: the note stays here.';
+  });
+
+  // The stubs of torn-out pages along the top of the pad, ragged at a new place every square.
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  onSquares(({ across, narrow }) => {
+    const wide = narrow ? across - 2 : across - 24;
+    torn.setAttribute('viewBox', `0 0 ${wide} 1`);
+    const random = seeded(7);
+    let edges = '';
+    for (const [depth, fill] of [[0.85, '#efe39a'], [0.6, '#f6eca8'], [0.35, '#fdf6bf']] as const) {
+      let d = `M 0 0 L ${wide} 0 `;
+      for (let x = wide; x >= 0; x -= 0.25) d += `L ${x.toFixed(2)} ${(depth - random() * 0.22).toFixed(3)} `;
+      edges += `<path d="${d}Z" fill="${fill}"/>`;
+    }
+    torn.innerHTML = `<rect width="${wide}" height="1" fill="#6b3f1f"/>${edges}`;
+  });
+</script>
+<script is:inline type="application/json" id="lea-notes" set:html={JSON.stringify(NOTES.map(note => note.text))} />
+
+<style is:global>
+  html { background: #6b3f1f; }
+  .lea {
+    --leather: #6b3f1f;
+    --paper: #fdf6bf;
+    --rule: #b8c4cf;
+    --thread: #e9cf9c;
+    color: #3a2412;
+    background-color: var(--leather);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.06  0 0 0 0 0.02  1.6 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 35% 25%, #94603a, transparent 65%),
+      radial-gradient(ellipse at 85% 95%, #3e210c, transparent 55%),
+      radial-gradient(ellipse at 0% 100%, #3e210c, transparent 45%);
+    font-family: 'Marker Felt', 'Noteworthy', 'Chalkboard SE', sans-serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .lea :is(h1, p, ul) { margin: 0; }
+
+  /* The stitching: a thread half a square inside the edge, sunk into the hide. */
+  .lea-stitch {
+    grid-column: 1 / -1; grid-row: 1 / -1; margin: calc(var(--u) / 2);
+    border: calc(2px * var(--sf)) dashed var(--thread);
+    border-radius: calc(var(--u) / 2);
+    box-shadow: 0 0 0 calc(1px * var(--sf)) rgb(0 0 0 / 0.35), inset 0 0 0 calc(1px * var(--sf)) rgb(0 0 0 / 0.35);
+    pointer-events: none;
+  }
+
+  .lea-bar { grid-column: 3 / -3; grid-row: 2 / span 2; display: grid; grid-template-columns: calc(18 * var(--u)) 1fr calc(18 * var(--u)); align-items: center; }
+  .lea-bar h1 { text-align: center; font: calc(24px * var(--sf)) / calc(2 * var(--u)) 'Marker Felt', 'Noteworthy', sans-serif; color: #fbe9c9; text-shadow: 0 calc(-1px * var(--sf)) 0 rgb(0 0 0 / 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lea-count { color: #e3c79a; text-shadow: 0 calc(-1px * var(--sf)) 0 rgb(0 0 0 / 0.6); }
+  .lea-btn {
+    justify-self: end; height: calc(2 * var(--u) - 6px); min-width: calc(3 * var(--u));
+    border: 1px solid #2f1a0a; border-radius: calc(5px * var(--sf));
+    background: linear-gradient(#a57446, #7a4b24 50%, #6a3e1b 51%, #5a3313);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 1px 0 rgb(255 255 255 / 0.15);
+    color: #fff; font: 700 calc(22px * var(--sf)) / 1 'Helvetica Neue', Helvetica, sans-serif; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.6); cursor: pointer;
+  }
+  .lea-btn:active { background: linear-gradient(#5a3313, #7a4b24); }
+  .lea :is(button, input, textarea):focus-visible { outline: 2px solid #ffd76a; outline-offset: 2px; }
+
+  /* The list: a stack of paper in the leather, one note to two squares. */
+  .lea-list { grid-column: 3 / span 18; grid-row: 5 / -4; background: #fbf8ec; box-shadow: 0 calc(2px * var(--sf)) calc(6px * var(--sf)) rgb(0 0 0 / 0.5); display: grid; grid-template-rows: calc(2 * var(--u)) 1fr; overflow: hidden; }
+  .lea-search { margin: calc(var(--u) / 4) calc(var(--u) / 2); height: calc(1.5 * var(--u)); box-sizing: border-box; border: 1px solid #c9bfa5; border-radius: calc(var(--u)); padding: 0 calc(var(--u) / 2); background: #fff; font: calc(13px * var(--sf)) 'Helvetica Neue', Helvetica, sans-serif; color: #3a2412; }
+  .lea-list ul { padding: 0; list-style: none; overflow: auto; }
+  .lea-list li { border-bottom: 1px solid #e3dccb; height: calc(2 * var(--u)); box-sizing: border-box; }
+  .lea-list button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: calc(var(--u) / 2); align-items: center; width: 100%; height: 100%; padding: 0 calc(var(--u) / 2); cursor: pointer; color: #4a2c14; }
+  .lea-list button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: calc(17px * var(--sf)); }
+  .lea-list time { font: calc(12px * var(--sf)) 'Helvetica Neue', Helvetica, sans-serif; color: #8c6a45; }
+  .lea-list button[aria-current] { background: linear-gradient(#e7b86a, #d79a3e); color: #3a1f08; }
+  .lea-list button[aria-current] time { color: #5c3a14; }
+
+  /* The pad: torn stubs on top, then lines a square apart with the double margin three squares in. */
+  .lea-pad { grid-column: 23 / -3; grid-row: 5 / -4; display: grid; grid-template-rows: var(--u) var(--u) 1fr; box-shadow: 0 calc(2px * var(--sf)) calc(8px * var(--sf)) rgb(0 0 0 / 0.55); background: var(--paper); }
+  .lea-torn { width: 100%; height: var(--u); display: block; }
+  .lea-date { padding-right: var(--u); text-align: right; font: calc(12px * var(--sf)) / var(--u) 'Helvetica Neue', Helvetica, sans-serif; color: #9a8650; background: var(--paper); }
+  .lea-page {
+    display: block; width: 100%; height: 100%; box-sizing: border-box; resize: none; border: 0; margin: 0;
+    --m: 3;
+    padding: 0 var(--u) 0 calc((var(--m) + 1) * var(--u));
+    font: calc(17px * var(--sf)) / var(--u) Noteworthy, 'Marker Felt', 'Bradley Hand', cursive;
+    color: #2d2a6e;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, transparent calc(var(--m) * var(--u) - 4px), #e59a9a calc(var(--m) * var(--u) - 4px), #e59a9a calc(var(--m) * var(--u) - 3px), transparent calc(var(--m) * var(--u) - 3px), transparent calc(var(--m) * var(--u) - 1px), #e59a9a calc(var(--m) * var(--u) - 1px), #e59a9a calc(var(--m) * var(--u)), transparent calc(var(--m) * var(--u))),
+      repeating-linear-gradient(to bottom, transparent 0 calc(var(--u) - 1px), var(--rule) calc(var(--u) - 1px) var(--u));
+    background-attachment: local;
+    outline: none;
+  }
+  .lea-page:focus-visible { outline: none; box-shadow: inset 0 0 0 2px #ffd76a; }
+
+  .lea-tools { grid-column: 23 / -3; grid-row: -3 / span 2; display: grid; grid-template-columns: repeat(4, calc(3 * var(--u))) 1fr; align-items: center; }
+  .lea-icon { all: unset; display: grid; place-items: center; height: calc(2 * var(--u)); cursor: pointer; }
+  .lea-icon svg { width: var(--u); height: var(--u); fill: #f3e0bd; filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.6)); }
+  .lea-icon .lea-o { fill: none; stroke: #f3e0bd; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+  .lea-icon:active svg { fill: #fff; }
+  .lea-said { color: #e3c79a; font-size: calc(14px * var(--sf)); padding-right: calc(12 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.5); }
+
+  /* Narrow: the bar, the pad, the tools, then the list of notes beneath. */
+  :root[data-narrow] .lea { padding-block: var(--u) calc(2 * var(--u)); }
+  :root[data-narrow] .lea-stitch { position: absolute; inset: 0; grid-area: auto; }
+  :root[data-narrow] .lea > :not(.lea-stitch) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .lea-bar { grid-template-columns: calc(4 * var(--u)) 1fr calc(4 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .lea-count { font-size: calc(12px * var(--sf)); }
+  :root[data-narrow] .lea-bar h1 { font-size: calc(17px * var(--sf)); }
+  :root[data-narrow] .lea-page { --m: 1; font-size: calc(15px * var(--sf)); }
+  :root[data-narrow] .lea-list ul { max-height: calc(16 * var(--u)); }
+  :root[data-narrow] .lea-pad { order: 1; height: calc(20 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .lea-tools { order: 2; grid-template-columns: repeat(4, 1fr); }
+  :root[data-narrow] .lea-said { grid-column: 1 / -1; padding: 0; white-space: normal; }
+  :root[data-narrow] .lea-list { order: 3; height: auto; margin-top: var(--u); grid-template-rows: calc(2 * var(--u)) auto; }
+</style>
