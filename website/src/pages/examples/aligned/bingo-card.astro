@@ -1,0 +1,448 @@
+---
+// After a bingo hall's pink paper: the whole window is one sheet, printed in blue. A card of five by
+// five, the caller's flashboard of seventy-five, and a ball with its call. Press Call, then dab your
+// own numbers with translucent ink; a line wins. Every cell, bulb and daub sits on whole squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const CARD = [
+  [7, 22, 33, 52, 66],
+  [12, 17, 41, 47, 71],
+  [3, 29, 0, 60, 63],
+  [14, 19, 38, 55, 75],
+  [9, 26, 44, 49, 68],
+];
+const LETTERS = ['B', 'I', 'N', 'G', 'O'];
+---
+<AlignedStudy slug="bingo-card" theme="light">
+  <main class="stage bingo" id="bingo">
+    <header class="bg-hall">
+      <p class="bg-name">The Lantern Rooms</p>
+      <p class="bg-session">Tuesday evening session, eyes down at half seven</p>
+    </header>
+    <p class="bg-game">Game 4 of 9<br /><b>One line wins £25</b><br />Full house £120</p>
+
+    <section class="bg-card" aria-label="Your card, number 0417">
+      <div class="bg-letters" aria-hidden="true">{LETTERS.map(l => <span>{l}</span>)}</div>
+      <div class="bg-cells" id="cells" role="grid" aria-label="Card numbers">
+        {CARD.map((row, r) => (
+          <div role="row" class="bg-row">
+            {row.map((n, c) => n === 0
+              ? <span role="gridcell" class="bg-cell bg-free is-dabbed" data-r={r} data-c={c} aria-label="Free space, dabbed"><i class="bg-daub" aria-hidden="true"></i><em>Free</em></span>
+              : <button type="button" role="gridcell" class="bg-cell" data-n={n} data-r={r} data-c={c} aria-label={`${LETTERS[c]} ${n}`} aria-pressed="false"><i class="bg-daub" aria-hidden="true"></i><span>{n}</span></button>)}
+          </div>
+        ))}
+      </div>
+      <svg class="bg-strike" id="strike" aria-hidden="true"></svg>
+      <p class="bg-serial"><span>Card 0417</span><span>Sheet 3, pink</span></p>
+    </section>
+
+    <section class="bg-caller" aria-label="The caller">
+      <div class="bg-ball" id="ball" aria-hidden="true"><span class="bg-ball-letter" id="ball-letter">G</span><span class="bg-ball-n" id="ball-n">47</span></div>
+      <div class="bg-call">
+        <p class="bg-said" id="said" aria-live="polite">Four and seven, forty-seven</p>
+        <p class="bg-count" id="count">Call 12 of 75</p>
+        <p class="bg-hint" id="hint" aria-live="polite">Dab the numbers you have. A line across, down or corner to corner wins.</p>
+      </div>
+      <button type="button" class="bg-go" id="go">Call the next number</button>
+    </section>
+
+    <section class="bg-board" aria-label="Flashboard of called numbers">
+      <svg id="board" role="img" aria-label="Numbers called so far"></svg>
+    </section>
+
+    <section class="bg-night" aria-label="Tonight's games">
+      <h2>Tonight</h2>
+      <ol>
+        <li><span>Early bird</span><span>£10</span></li>
+        <li><span>Two lines</span><span>£15</span></li>
+        <li><span>Four corners</span><span>£12</span></li>
+        <li class="is-now"><span>Line and house</span><span>£25, £120</span></li>
+        <li><span>The kite</span><span>£20</span></li>
+        <li><span>Pie and peas</span><span>£3.50</span></li>
+        <li><span>Postage stamp</span><span>£15</span></li>
+        <li><span>Blackout</span><span>£60</span></li>
+        <li><span>Snowball, 52 calls</span><span>£340</span></li>
+      </ol>
+    </section>
+
+    <p class="bg-small">Shout before the next number is called or the prize rolls over. Dabbers are 80p at the bar. Please do not dab the tables.</p>
+
+    <div class="bg-win" id="win" hidden>
+      <p class="bg-win-word">House!</p>
+      <p class="bg-win-line">A line on card 0417. Stay in your seat, a checker is coming over with £25.</p>
+      <button type="button" class="bg-again" id="again">Play the next game</button>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const LETTERS = ['B', 'I', 'N', 'G', 'O'];
+  const letterOf = (n: number) => LETTERS[Math.floor((n - 1) / 15)];
+  // Called before you sat down, then the order the machine will blow the next few balls.
+  const BEFORE = [40, 3, 18, 71, 55, 2, 60, 35, 22, 64, 12, 47];
+  const NEXT = [58, 29, 6, 41, 74, 63];
+
+  const CALLS: Record<number, string> = {
+    1: "Kelly's eye", 2: 'One little duck', 3: 'Cup of tea', 4: 'Knock at the door', 5: 'Man alive', 7: 'Lucky seven',
+    8: 'Garden gate', 9: "Doctor's orders", 10: 'Cock and hen', 11: 'Legs eleven', 12: 'One dozen', 13: 'Unlucky for some',
+    16: 'Sweet sixteen', 17: 'Dancing queen', 21: 'Key of the door', 22: 'Two little ducks', 23: 'Thee and me',
+    26: 'Pick and mix', 27: 'Gateway to heaven', 30: 'Dirty Gertie', 31: 'Get up and run', 32: 'Buckle my shoe',
+    36: 'Three dozen', 39: 'Thirty-nine steps', 44: 'Droopy drawers', 45: 'Halfway there', 48: 'Four dozen',
+    52: 'Deck of cards', 55: 'Snakes alive', 59: 'Brighton line', 62: 'Tickety-boo', 66: 'Clickety click',
+    71: 'Bang on the drum', 72: 'Six dozen', 73: 'Queen bee', 74: 'Hit the floor', 75: 'Strive and strive',
+  };
+  const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const TEENS = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy'];
+  const words = (n: number) => n < 10 ? ONES[n] : n < 20 ? TEENS[n - 10] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '');
+  const say = (n: number) => {
+    const name = words(n);
+    if (CALLS[n]) return `${CALLS[n]}, ${name}`;
+    if (n < 10) return `On its own, number ${name}`;
+    if (n % 11 === 0 || n % 10 === 0 || n < 20) return `${name[0].toUpperCase()}${name.slice(1)}`;
+    return `${ONES[Math.floor(n / 10)][0].toUpperCase()}${ONES[Math.floor(n / 10)].slice(1)} and ${ONES[n % 10]}, ${name}`;
+  };
+
+  const $ = <T extends Element>(id: string) => document.getElementById(id) as unknown as T;
+  const stage = $<HTMLElement>('bingo');
+  const board = $<SVGSVGElement>('board');
+  const strike = $<SVGSVGElement>('strike');
+  const ball = $<HTMLElement>('ball');
+  const go = $<HTMLButtonElement>('go');
+  const win = $<HTMLElement>('win');
+  const hint = $<HTMLElement>('hint');
+  const cells = [...document.querySelectorAll<HTMLElement>('.bg-cell')];
+
+  let called: number[] = [];
+  let queue: number[] = [];
+  let won = false;
+  let cell = 2;
+
+  function shuffled(): number[] {
+    const rest = Array.from({ length: 75 }, (_, i) => i + 1).filter(n => !BEFORE.includes(n) && !NEXT.includes(n));
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    return [...NEXT, ...rest];
+  }
+
+  function reset() {
+    called = [...BEFORE];
+    queue = shuffled();
+    won = false;
+    win.hidden = true;
+    strike.innerHTML = '';
+    go.disabled = false;
+    cells.forEach(el => {
+      const n = Number(el.dataset.n);
+      const on = !el.dataset.n || called.includes(n);
+      el.classList.toggle('is-dabbed', on);
+      el.setAttribute('aria-pressed', String(on));
+    });
+    show(called[called.length - 1], false);
+    hint.textContent = 'Dab the numbers you have. A line across, down or corner to corner wins.';
+    drawBoard();
+  }
+
+  function show(n: number, animate: boolean) {
+    $<HTMLElement>('ball-letter').textContent = letterOf(n);
+    $<HTMLElement>('ball-n').textContent = String(n);
+    $<HTMLElement>('said').textContent = say(n);
+    $<HTMLElement>('count').textContent = `Call ${called.length} of 75`;
+    ball.dataset.letter = letterOf(n);
+    if (animate && !reducedMotion()) {
+      ball.animate([
+        { transform: 'translateY(-60%) rotate(-200deg)', opacity: 0 },
+        { transform: 'translateY(6%) rotate(8deg)', opacity: 1, offset: 0.7 },
+        { transform: 'none', opacity: 1 },
+      ], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
+    }
+  }
+
+  function drawBoard() {
+    const narrow = document.documentElement.hasAttribute('data-narrow');
+    // Wide: five rows of fifteen with the letters down the left. Narrow: five columns of fifteen.
+    const w = narrow ? 2 : cell;
+    const h = narrow ? 1 : cell;
+    const cols = narrow ? 5 : 16;
+    const rows = narrow ? 16 : 5;
+    const vw = cols * w;
+    const vh = rows * h;
+    board.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+    board.style.setProperty('--board-w', String(vw));
+    board.style.setProperty('--board-h', String(vh));
+    let out = '';
+    LETTERS.forEach((letter, i) => {
+      const x = narrow ? i * w : 0;
+      const y = narrow ? 0 : i * h;
+      out += `<text class="bg-b-letter" x="${x + w / 2}" y="${y + h / 2}">${letter}</text>`;
+      for (let k = 0; k < 15; k++) {
+        const n = i * 15 + k + 1;
+        const bx = narrow ? x : (k + 1) * w;
+        const by = narrow ? (k + 1) * h : y;
+        const on = called.includes(n);
+        const last = n === called[called.length - 1];
+        const r = Math.min(w, h) / 2 - 0.08;
+        out += `<g class="bg-bulb${on ? ' is-on' : ''}${last ? ' is-last' : ''}"><circle cx="${bx + w / 2}" cy="${by + h / 2}" r="${r}" /><text x="${bx + w / 2}" y="${by + h / 2}">${n}</text></g>`;
+      }
+    });
+    board.innerHTML = out;
+    board.setAttribute('aria-label', `Numbers called so far: ${[...called].sort((a, b) => a - b).join(', ')}`);
+  }
+
+  // Lines that win: five rows, five columns, two diagonals.
+  const LINES: [number, number][][] = [];
+  for (let i = 0; i < 5; i++) {
+    LINES.push([0, 1, 2, 3, 4].map(j => [i, j]));
+    LINES.push([0, 1, 2, 3, 4].map(j => [j, i]));
+  }
+  LINES.push([0, 1, 2, 3, 4].map(j => [j, j]));
+  LINES.push([0, 1, 2, 3, 4].map(j => [j, 4 - j]));
+  const at = (r: number, c: number) => cells.find(el => el.dataset.r === String(r) && el.dataset.c === String(c))!;
+
+  function check() {
+    const line = LINES.find(line => line.every(([r, c]) => at(r, c).classList.contains('is-dabbed')));
+    if (!line || won) return;
+    won = true;
+    go.disabled = true;
+    const [r0, c0] = line[0];
+    const [r1, c1] = line[4];
+    strike.setAttribute('viewBox', '0 0 5 5');
+    strike.innerHTML = `<line x1="${c0 + 0.5}" y1="${r0 + 0.5}" x2="${c1 + 0.5}" y2="${r1 + 0.5}" pathLength="1" />`;
+    win.hidden = false;
+    hint.textContent = 'House! Hold your card up.';
+    if (!reducedMotion()) strike.querySelector('line')!.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 400, easing: 'ease-out' });
+    $<HTMLButtonElement>('again').focus();
+  }
+
+  function waiting() {
+    const owed = cells.filter(el => el.dataset.n && called.includes(Number(el.dataset.n)) && !el.classList.contains('is-dabbed'));
+    hint.textContent = owed.length
+      ? `You have ${owed.map(el => el.dataset.n).join(' and ')}. Dab ${owed.length > 1 ? 'them' : 'it'}.`
+      : 'Nothing for you that time. Eyes down.';
+  }
+
+  go.addEventListener('click', () => {
+    const n = queue.shift();
+    if (!n) return;
+    called.push(n);
+    show(n, true);
+    drawBoard();
+    waiting();
+  });
+
+  cells.forEach(el => {
+    if (!el.dataset.n) return;
+    el.addEventListener('click', () => {
+      if (won) return;
+      const n = Number(el.dataset.n);
+      if (!called.includes(n)) {
+        hint.textContent = `${letterOf(n)} ${n} hasn't been called yet. Steady.`;
+        if (!reducedMotion()) el.animate([{ transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'none' }], { duration: 180, iterations: 2 });
+        return;
+      }
+      const on = !el.classList.contains('is-dabbed');
+      el.classList.toggle('is-dabbed', on);
+      el.setAttribute('aria-pressed', String(on));
+      if (on) { waiting(); check(); }
+    });
+  });
+
+  $<HTMLButtonElement>('again').addEventListener('click', () => { reset(); go.focus(); });
+
+  onSquares(({ across, down, narrow }) => {
+    // Card cells of four squares when the window has the height; the flashboard's bulbs two squares when it has the width.
+    // As big as the height allows, but never so wide that the flashboard loses its two-square bulbs.
+    let c = narrow ? 2 : Math.max(2, Math.min(5, Math.floor((down - 11) / 5)));
+    while (!narrow && c > 2 && across - 8 - (5 * c + 2) < 32) c--;
+    const cardW = 5 * c + 2;
+    const right = across - (3 + cardW + 3) - 2;
+    cell = right >= 32 ? 2 : 1;
+    stage.style.setProperty('--c', String(c));
+    stage.style.setProperty('--card-w', String(cardW));
+    stage.style.setProperty('--card-h', String(3 + 5 * c + 3));
+    stage.style.setProperty('--right', String(3 + cardW + 3 + 1));
+    drawBoard();
+  });
+
+  reset();
+</script>
+
+<style is:global>
+  html { background: #ffd2dc; }
+  .bingo {
+    --paper: #ffd2dc;
+    --ink: #1f2c8f;
+    --daub: rgba(216, 0, 124, 0.62);
+    --c: 4;
+    --cell: calc(var(--c) * var(--u));
+    color: var(--ink);
+    background: var(--paper);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .bingo p { margin: 0; }
+  .bingo button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .bg-hall { grid-column: 3 / span 40; grid-row: 2 / span 3; }
+  .bg-name { font: calc(32px * var(--sf)) / calc(2 * var(--u)) Superclarendon, 'Rockwell', Georgia, serif; letter-spacing: -0.01em; }
+  .bg-game { grid-column: -16 / -3; grid-row: 2 / span 3; text-align: right; }
+  .bg-game b { font-family: var(--typeface-medium); font-weight: normal; }
+
+  /* The card: a blue frame a square in, five letters three squares high, five rows of cells. */
+  .bg-card {
+    grid-column: 3 / span var(--card-w);
+    grid-row: 6 / span var(--card-h);
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: calc(3 * var(--u)) calc(5 * var(--cell)) var(--u) var(--u);
+    padding: 0 var(--u);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+  .bg-letters { display: grid; grid-template-columns: repeat(5, var(--cell)); align-items: center; text-align: center; font: calc(36px * var(--sf)) / calc(2 * var(--u)) Superclarendon, Rockwell, Georgia, serif; }
+  .bg-cells { display: grid; grid-template-rows: repeat(5, var(--cell)); }
+  .bg-row { display: grid; grid-template-columns: repeat(5, var(--cell)); }
+  .bg-cell {
+    all: unset;
+    position: relative;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 0 0 1px var(--ink);
+    margin: 0 -1px -1px 0;
+    font-family: var(--typeface-compressed);
+    font-size: calc(var(--c) * 11px * var(--sf));
+    line-height: 1;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .bg-cell > span, .bg-cell > em { position: relative; z-index: 1; }
+  .bg-free em { font-family: Superclarendon, Rockwell, Georgia, serif; font-style: normal; font-size: calc(var(--c) * 4px * var(--sf)); }
+  .bg-cell:focus-visible { outline: 2px solid var(--ink); outline-offset: -5px; }
+  /* A daub: a disc of ink one square inside the cell, darker at its rim where the felt pressed. */
+  .bg-daub {
+    position: absolute;
+    inset: calc(var(--u) / 2);
+    border-radius: 50%;
+    background: radial-gradient(circle at 48% 52%, var(--daub) 0 62%, rgba(176, 0, 102, 0.72) 70%, var(--daub) 100%);
+    mix-blend-mode: multiply;
+    transform: scale(0);
+    transition: transform 160ms cubic-bezier(.3, 1.4, .5, 1);
+  }
+  .bg-cell.is-dabbed .bg-daub { transform: scale(1); }
+  .bg-strike { position: absolute; left: var(--u); top: calc(3 * var(--u)); width: calc(5 * var(--cell)); height: calc(5 * var(--cell)); pointer-events: none; overflow: visible; }
+  .bg-strike line { stroke: var(--ink); stroke-width: 0.07; stroke-linecap: round; stroke-dasharray: 1; }
+  .bg-serial { grid-row: 4; display: flex; justify-content: space-between; font-size: calc(12px * var(--sf)); }
+
+  /* The caller: the ball, what was said, and the button. */
+  .bg-caller { grid-column: var(--right) / -3; grid-row: 6 / span 7; display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; grid-template-rows: calc(5 * var(--u)) var(--u) calc(2 * var(--u)); column-gap: var(--u); }
+  .bg-ball {
+    grid-row: 1 / span 3;
+    width: calc(7 * var(--u));
+    height: calc(7 * var(--u));
+    border-radius: 50%;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    background: radial-gradient(circle at 35% 30%, #fff 0 30%, #f3f1f6 60%, #d9d4e2 100%);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.75) var(--band, #1f2c8f), inset 0 0 0 calc(var(--u) * 0.75 + 2px) #fff;
+  }
+  .bg-ball[data-letter='B'] { --band: #1f6fd1; }
+  .bg-ball[data-letter='I'] { --band: #d7262e; }
+  .bg-ball[data-letter='N'] { --band: #e0a800; }
+  .bg-ball[data-letter='G'] { --band: #1c9a4f; }
+  .bg-ball[data-letter='O'] { --band: #7a3cc2; }
+  .bg-ball-letter { font: calc(16px * var(--sf)) / var(--u) var(--typeface-medium); }
+  .bg-ball-n { font: calc(48px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); color: #1a1a2e; }
+  .bg-call { grid-column: 2; grid-row: 1 / span 2; }
+  .bg-said { font: italic calc(28px * var(--sf)) / calc(2 * var(--u)) var(--typeface-canon); }
+  .bg-count { font-family: var(--typeface-medium); }
+  .bg-hint { color: color-mix(in srgb, var(--ink) 80%, var(--paper)); }
+  .bg-go, .bg-again {
+    all: unset;
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: start;
+    align-self: end;
+    height: calc(2 * var(--u));
+    padding: 0 var(--u);
+    line-height: calc(2 * var(--u));
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--typeface-medium);
+    border-radius: var(--u);
+    cursor: pointer;
+  }
+  .bg-go:hover, .bg-again:hover { background: #0e1666; }
+  .bg-go:disabled { opacity: 0.35; cursor: default; }
+
+  .bg-board { grid-column: var(--right) / -3; grid-row: 15 / span 11; }
+  .bg-board svg { display: block; width: calc(var(--board-w, 32) * var(--u)); height: calc(var(--board-h, 10) * var(--u)); overflow: visible; }
+  .bg-board text { text-anchor: middle; dominant-baseline: central; font-family: var(--typeface-compressed); font-size: 0.72px; fill: var(--ink); }
+  .bg-board .bg-b-letter { font-family: Superclarendon, Rockwell, Georgia, serif; font-size: 0.8px; }
+  :root:not([data-narrow]) .bg-board svg[viewBox$=' 5'] .bg-b-letter { font-size: 0.7px; }
+  .bg-bulb circle { fill: none; stroke: var(--ink); stroke-width: 0.04; stroke-dasharray: 0.06 0.08; }
+  .bg-bulb.is-on circle { fill: var(--ink); stroke: none; }
+  .bg-bulb.is-on text { fill: var(--paper); }
+  .bg-bulb.is-last circle { fill: #d8007c; }
+
+  /* The evening's games, in the order they are played; the one on now is filled. */
+  .bg-night { grid-column: var(--right) / -3; grid-row: 27 / -4; overflow: hidden; }
+  .bg-night h2 { margin: 0; font: calc(16px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); }
+  .bg-night ol { margin: 0; padding: 0; list-style: none; columns: 3 calc(10 * var(--u)); column-gap: var(--u); counter-reset: game; }
+  .bg-night li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr auto; break-inside: avoid; box-shadow: inset 0 -1px color-mix(in srgb, var(--ink) 35%, transparent); counter-increment: game; column-gap: calc(var(--u) / 2); }
+  .bg-night li::before { content: counter(game); font-family: var(--typeface-compressed); }
+  .bg-night li > span:last-child { font-variant-numeric: tabular-nums; }
+  .bg-night li.is-now { background: var(--ink); color: var(--paper); box-shadow: none; padding-inline-end: calc(var(--u) / 2); }
+  .bg-night li.is-now::before { padding-inline-start: calc(var(--u) / 2); }
+  .bg-small { grid-column: 3 / span 36; grid-row: -3 / span 1; font-size: calc(12px * var(--sf)); }
+
+  /* The win: a stamp over the caller's corner. */
+  .bg-win {
+    grid-column: var(--right) / -3;
+    grid-row: 6 / span 10;
+    z-index: 2;
+    display: grid;
+    grid-template-rows: calc(4 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u));
+    align-content: start;
+    padding: var(--u);
+    background: #d8007c;
+    color: #fff;
+  }
+  .bg-win[hidden] { display: none; }
+  .bg-win-word { font: calc(72px * var(--sf)) / calc(4 * var(--u)) Superclarendon, Rockwell, Georgia, serif; letter-spacing: -0.02em; }
+  .bg-win-line { max-width: calc(26 * var(--u)); font-size: calc(16px * var(--sf)); }
+  .bg-again { grid-column: auto; grid-row: auto; align-self: start; background: #fff; color: #d8007c; }
+  .bg-again:hover { background: #ffe6f0; }
+  .bg-again:focus-visible { outline-color: #fff; }
+
+  /* Narrow: the hall, the caller, the card, then the board standing up. */
+  :root[data-narrow] .bingo { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .bingo > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .bg-name { font-size: calc(28px * var(--sf)); }
+  :root[data-narrow] .bg-hall { margin-top: var(--u); }
+  :root[data-narrow] .bg-game { text-align: left; margin: var(--u) 0; }
+  :root[data-narrow] .bg-caller { grid-template-columns: calc(5 * var(--u)) 1fr; grid-template-rows: auto; row-gap: 0; }
+  :root[data-narrow] .bg-hint { margin-bottom: var(--u); }
+  :root[data-narrow] .bg-ball { margin-bottom: var(--u); }
+  :root[data-narrow] .bg-ball { grid-row: 1; width: calc(5 * var(--u)); height: calc(5 * var(--u)); }
+  :root[data-narrow] .bg-ball-n { font-size: calc(36px * var(--sf)); }
+  :root[data-narrow] .bg-call { display: contents; }
+  :root[data-narrow] .bg-said { grid-column: 2; grid-row: 1; align-self: center; }
+  :root[data-narrow] .bg-count { grid-column: 1 / -1; grid-row: 2; }
+  :root[data-narrow] .bg-said { font-size: calc(20px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .bg-hint { grid-column: 1 / -1; grid-row: 3; }
+  :root[data-narrow] .bg-daub { inset: calc(var(--u) / 4); }
+  :root[data-narrow] .bg-go { grid-column: 1 / -1; grid-row: 4; }
+  :root[data-narrow] .bg-card { margin: var(--u) 0; justify-self: center; width: calc(var(--card-w) * var(--u)); }
+  :root[data-narrow] .bg-letters { font-size: calc(24px * var(--sf)); }
+  :root[data-narrow] .bg-board { margin-bottom: var(--u); justify-self: center; }
+  :root[data-narrow] .bg-board .bg-b-letter { font-size: 0.7px; }
+  :root[data-narrow] .bg-board text { font-size: 0.55px; }
+  :root[data-narrow] .bg-small { margin-bottom: var(--u); }
+  :root[data-narrow] .bg-night { margin-bottom: var(--u); }
+  :root[data-narrow] .bg-night ol { columns: 1; }
+  :root[data-narrow] .bg-win { position: fixed; inset: auto 0 var(--u) 0; grid-template-rows: calc(3 * var(--u)) auto calc(2 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .bg-win-word { font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); }
+</style>

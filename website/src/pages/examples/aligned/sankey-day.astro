@@ -1,0 +1,268 @@
+---
+// After the Sankey diagrams of an annual energy report, turned on one Tuesday: where a person's
+// energy came from and what it went on, in spoons. One spoon is one square, so every band is a
+// whole number of squares thick, every node starts on a line, and nothing is left over at night.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="sankey-day" theme="light">
+  <main class="stage sk" id="sk">
+    <header class="sk-head">
+      <p class="sk-date">Tuesday 10 November</p>
+      <h1>Where Tuesday went</h1>
+      <p class="sk-dek">One day's energy, from waking to sleep, measured in spoons. A spoon is one square. I got up with twenty and went to bed with none.</p>
+    </header>
+
+    <figure class="sk-fig" id="fig">
+      <svg id="chart" role="img" aria-labelledby="chart-title">
+        <title id="chart-title">Twenty spoons of energy flowing from sleep, coffee and food, through morning, afternoon and evening, into the day's tasks.</title>
+      </svg>
+    </figure>
+
+    <aside class="sk-notes">
+      <h2>Notes</h2>
+      <ol>
+        <li>The third coffee, at 15:10, was borrowed against Wednesday. It is drawn hatched and will be repaid as a nap.</li>
+        <li>Meetings took four spoons. None of them had an agenda; one of them was about agendas.</li>
+        <li>The memo was the only thing on the list. It got five, all before lunch, which is when memos are written.</li>
+        <li>The cat gave one spoon by sitting on the keyboard at 21:00, which counts as rest.</li>
+      </ol>
+      <p class="sk-hover">Point at a source or a task to follow its spoons.</p>
+    </aside>
+
+    <p class="sk-foot">Unspent at midnight: 0. Carried into Wednesday: minus 1.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Node = { id: string; name: string; short?: string; note?: string; colour?: string; loan?: boolean };
+  const SOURCES: Node[] = [
+    { id: 'sleep', name: 'Sleep', note: '7 h 20 min, one dream about a lift', colour: '#5d6f8c' },
+    { id: 'coffee', name: 'Coffee, two cups', short: 'Coffee', colour: '#7b5b47' },
+    { id: 'porridge', name: 'Porridge with pear', short: 'Porridge', colour: '#b09f74' },
+    { id: 'loan', name: 'Third coffee, on loan', short: 'Loan', colour: '#7b5b47', loan: true },
+    { id: 'lunch', name: 'Dal and rice', short: 'Lunch', colour: '#83935a' },
+    { id: 'walk', name: 'Walk home by the canal', short: 'Walk', colour: '#5d8a84' },
+    { id: 'cat', name: 'The cat', short: 'Cat', colour: '#a17a6c' },
+  ];
+  const TIMES: Node[] = [
+    { id: 'morning', name: 'Morning' },
+    { id: 'afternoon', name: 'Afternoon' },
+    { id: 'evening', name: 'Evening' },
+  ];
+  const TASKS: Node[] = [
+    { id: 'standup', name: 'Standup', short: 'Standup' },
+    { id: 'memo', name: 'The quarterly memo', short: 'Memo', note: 'three pages, one chart' },
+    { id: 'review', name: 'Reviewing a pull request', short: 'Review' },
+    { id: 'meetings', name: 'Meetings that could have been emails', short: 'Meetings' },
+    { id: 'slump', name: 'The three o’clock slump', short: 'Slump' },
+    { id: 'mum', name: 'Answering Mum', short: 'Mum' },
+    { id: 'cook', name: 'Cooking more dal', short: 'Cooking' },
+    { id: 'story', name: 'Bedtime story, twice', short: 'Story' },
+    { id: 'scroll', name: 'Scrolling in bed', short: 'Scrolling' },
+  ];
+  // [from, to, spoons]
+  const FLOWS: [string, string, number][] = [
+    ['sleep', 'morning', 5], ['sleep', 'afternoon', 2], ['sleep', 'evening', 1],
+    ['coffee', 'morning', 2], ['coffee', 'afternoon', 1],
+    ['porridge', 'morning', 1], ['porridge', 'afternoon', 1],
+    ['loan', 'afternoon', 1],
+    ['lunch', 'afternoon', 3],
+    ['walk', 'evening', 2],
+    ['cat', 'evening', 1],
+    ['morning', 'standup', 1], ['morning', 'memo', 5], ['morning', 'review', 2],
+    ['afternoon', 'review', 1], ['afternoon', 'meetings', 4], ['afternoon', 'slump', 2], ['afternoon', 'mum', 1],
+    ['evening', 'cook', 2], ['evening', 'story', 1], ['evening', 'scroll', 1],
+  ];
+
+  const total = (id: string, side: 0 | 1) => FLOWS.filter(f => f[side] === id).reduce((n, f) => n + f[2], 0);
+  const value = (id: string) => Math.max(total(id, 0), total(id, 1));
+
+  const stage = document.getElementById('sk')!;
+  const chart = document.getElementById('chart') as unknown as SVGSVGElement;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function draw(width: number, narrow: boolean) {
+    const head = 2;
+    const tall = TASKS.reduce((n, t) => n + value(t.id), 0) + TASKS.length - 1;
+    const height = head + tall;
+    // Where the three columns of bars stand, and the room for labels either side.
+    const left = narrow ? 0 : 10;
+    const right = narrow ? 0 : 14;
+    const xs = [left, Math.round((left + width - right - 1) / 2), width - right - 1];
+    chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    stage.style.setProperty('--chart-w', String(width));
+    stage.style.setProperty('--chart-h', String(height));
+    // Stand the chart in the middle of the window's height, never above the fourth row.
+    const down = Number(getComputedStyle(document.documentElement).getPropertyValue('--down')) || 40;
+    stage.style.setProperty('--chart-row', String(Math.max(4, Math.floor((down - height) / 2))));
+
+    // Stack each column: sources and tasks one square apart, the three times spread to the same height.
+    const place = new Map<string, { x: number; y: number; h: number; out: number; in: number }>();
+    const stack = (nodes: Node[], x: number, gap: number, top: number) => {
+      let y = top;
+      nodes.forEach(n => { const h = value(n.id); place.set(n.id, { x, y, h, out: y, in: y }); y += h + gap; });
+    };
+    const sourceTall = SOURCES.reduce((n, s) => n + value(s.id), 0) + SOURCES.length - 1;
+    stack(SOURCES, xs[0], 1, head + Math.floor((tall - sourceTall) / 2));
+    stack(TIMES, xs[1], (tall - 20) / (TIMES.length - 1), head);
+    stack(TASKS, xs[2], 1, head);
+
+    let defs = `<defs><pattern id="sk-hatch" width="0.5" height="0.5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="0.5" height="0.5" fill="#efe9e3"/><rect width="0.22" height="0.5" fill="#7b5b47"/></pattern></defs>`;
+    let bands = '';
+    let bars = '';
+    let words = '';
+    const colourOf = (id: string) => SOURCES.find(s => s.id === id)?.colour;
+
+    for (const [from, to, n] of FLOWS) {
+      const a = place.get(from)!;
+      const b = place.get(to)!;
+      const x1 = a.x + 1;
+      const x2 = b.x;
+      const y1 = a.out;
+      const y2 = b.in;
+      a.out += n;
+      b.in += n;
+      const mid = (x1 + x2) / 2;
+      const d = `M ${x1} ${y1} C ${mid} ${y1} ${mid} ${y2} ${x2} ${y2} L ${x2} ${y2 + n} C ${mid} ${y2 + n} ${mid} ${y1 + n} ${x1} ${y1 + n} Z`;
+      const loan = from === 'loan';
+      const fill = loan ? 'url(#sk-hatch)' : colourOf(from) ?? 'var(--sk-flow)';
+      bands += `<path class="sk-band${loan ? ' is-loan' : ''}" data-from="${from}" data-to="${to}" d="${d}" fill="${fill}"><title>${n} spoon${n > 1 ? 's' : ''}</title></path>`;
+    }
+
+    const label = (node: Node, side: 'left' | 'right' | 'mid') => {
+      const p = place.get(node.id)!;
+      const name = narrow ? node.short ?? node.name : node.name;
+      const v = value(node.id);
+      const cy = p.y + p.h / 2;
+      const fill = node.loan ? 'url(#sk-hatch)' : node.colour ?? 'var(--sk-ink)';
+      bars += `<g class="sk-node" data-node="${node.id}" tabindex="0" role="button" aria-label="${node.name}, ${v} spoon${v > 1 ? 's' : ''}">`;
+      bars += `<rect x="${p.x}" y="${p.y}" width="1" height="${p.h}" fill="${fill}"${node.loan ? ' class="is-loan"' : ''} />`;
+      if (side === 'mid') {
+        bars += `<text class="sk-time" transform="translate(${p.x + 0.5} ${cy}) rotate(-90)">${name}</text>`;
+      } else {
+        const tx = narrow ? (side === 'left' ? p.x + 1.3 : p.x - 0.3) : (side === 'left' ? p.x - 0.5 : p.x + 1.5);
+        const anchor = (side === 'left') !== narrow ? 'end' : 'start';
+        const noted = node.note && !narrow && p.h >= 3;
+        const ty = noted ? cy - 0.5 : cy;
+        bars += `<text class="sk-label${narrow ? ' is-over' : ''}" x="${tx}" y="${ty}" text-anchor="${anchor}"><tspan class="sk-name">${name}</tspan><tspan class="sk-v" dx="0.4">${v}</tspan></text>`;
+        if (noted) bars += `<text class="sk-note" x="${tx}" y="${ty + 1}" text-anchor="${anchor}">${node.note}</text>`;
+      }
+      bars += '</g>';
+    };
+    SOURCES.forEach(n => label(n, 'left'));
+    TIMES.forEach(n => label(n, 'mid'));
+    TASKS.forEach(n => label(n, 'right'));
+
+    // Column heads on the first row: what the spoons came from, when, and what they went on.
+    const heads = narrow ? ['In', 'When', 'Out'] : ['Came from', 'When', 'Went on'];
+    const hx = narrow ? [0, xs[1] + 0.5, width] : [xs[0] + 1, xs[1] + 0.5, xs[2]];
+    const ha = ['start', 'middle', 'end'];
+    if (!narrow) { ha[0] = 'end'; ha[2] = 'start'; }
+    heads.forEach((h, i) => { words += `<text class="sk-colhead" x="${hx[i]}" y="0.75" text-anchor="${ha[i]}">${h}</text>`; });
+
+    chart.innerHTML = defs + `<g class="sk-bands">${bands}</g>` + bars + words;
+    bind();
+  }
+
+  function bind() {
+    const nodes = chart.querySelectorAll<SVGGElement>('.sk-node');
+    const bands = chart.querySelectorAll<SVGPathElement>('.sk-band');
+    const light = (id: string | null) => {
+      chart.classList.toggle('is-tracing', !!id);
+      if (!id) { bands.forEach(b => b.classList.remove('is-on')); nodes.forEach(n => n.classList.remove('is-on')); return; }
+      // Follow the spoons both ways: a source to its times and on to their tasks, a task back to its sources.
+      const on = new Set<string>([id]);
+      const lit = new Set<SVGPathElement>();
+      const walk = (key: 'from' | 'to', next: 'to' | 'from', start: string, depth: number) => {
+        bands.forEach(b => { if (b.dataset[key] === start) { lit.add(b); on.add(b.dataset[next]!); if (depth) walk(key, next, b.dataset[next]!, depth - 1); } });
+      };
+      const time = TIMES.some(t => t.id === id);
+      walk('from', 'to', id, time ? 0 : 1);
+      walk('to', 'from', id, time ? 0 : 1);
+      bands.forEach(b => b.classList.toggle('is-on', lit.has(b)));
+      nodes.forEach(n => n.classList.toggle('is-on', on.has(n.dataset.node!)));
+    };
+    nodes.forEach(n => {
+      n.addEventListener('pointerenter', () => light(n.dataset.node!));
+      n.addEventListener('pointerleave', () => light(null));
+      n.addEventListener('focus', () => light(n.dataset.node!));
+      n.addEventListener('blur', () => light(null));
+    });
+  }
+
+  onSquares(({ across, narrow }) => {
+    // Wide: words on the left, the chart from column 21. Narrower: the chart takes the width under the heading.
+    const roomy = !narrow && across >= 60;
+    stage.toggleAttribute('data-roomy', roomy);
+    const from = roomy ? 21 : 3;
+    stage.style.setProperty('--chart-from', String(from));
+    draw(narrow ? across - 2 : across - 1 - from - 1, narrow);
+  });
+</script>
+
+<style is:global>
+  html { background: #e7eae6; }
+  .sk {
+    --sk-ground: #e7eae6;
+    --sk-ink: #24312c;
+    --sk-quiet: #5e6b65;
+    --sk-flow: #24312c;
+    color: var(--sk-ink);
+    background: var(--sk-ground);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .sk p, .sk h1, .sk h2, .sk ol { margin: 0; }
+
+  .sk-head { grid-column: 3 / span 16; grid-row: 3 / span 12; }
+  .sk-date { color: var(--sk-quiet); }
+  .sk h1 { margin-top: var(--u); font: calc(44px * var(--sf)) / calc(3 * var(--u)) 'Iowan Old Style', 'Palatino', Georgia, serif; letter-spacing: -0.01em; text-wrap: balance; }
+  .sk .sk-dek { margin-top: var(--u); font: calc(16px * var(--sf)) / var(--u) 'Iowan Old Style', 'Palatino', Georgia, serif; max-width: calc(16 * var(--u)); }
+
+  .sk-notes { grid-column: 3 / span 16; grid-row: 16 / -2; align-self: end; }
+  .sk-notes h2 { font: calc(14px * var(--sf)) / var(--u) var(--typeface-medium); }
+  .sk-notes ol { padding: 0; list-style: none; counter-reset: note; }
+  .sk-notes li { position: relative; padding-left: calc(2 * var(--u)); margin-top: var(--u); counter-increment: note; font-size: calc(13px * var(--sf)); color: var(--sk-quiet); }
+  .sk-notes li::before { content: counter(note); position: absolute; left: 0; font-family: var(--typeface-medium); color: var(--sk-ink); }
+  .sk .sk-hover { margin-top: var(--u); font-size: calc(13px * var(--sf)); }
+
+  .sk-fig { grid-column: var(--chart-from) / span var(--chart-w); grid-row: var(--chart-row, 4) / span var(--chart-h); margin: 0; }
+  .sk-fig svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .sk-foot { grid-column: var(--chart-from) / span 30; grid-row: -3; font-family: var(--typeface-medium); }
+
+  .sk-band { opacity: 0.62; transition: opacity 160ms; }
+  .sk-band[data-from='morning'], .sk-band[data-from='afternoon'], .sk-band[data-from='evening'] { opacity: 0.16; }
+  .sk.is-tracing .sk-band, .sk-fig svg.is-tracing .sk-band { opacity: 0.08; }
+  .sk-fig svg.is-tracing .sk-band.is-on { opacity: 0.85; }
+  .sk-fig svg.is-tracing .sk-band.is-on[data-from='morning'], .sk-fig svg.is-tracing .sk-band.is-on[data-from='afternoon'], .sk-fig svg.is-tracing .sk-band.is-on[data-from='evening'] { opacity: 0.4; }
+  .sk-band.is-loan { opacity: 0.9; }
+  .sk-node { cursor: default; outline: none; }
+  .sk-node:focus-visible rect { stroke: var(--sk-ink); stroke-width: 0.12; }
+  .sk-fig svg.is-tracing .sk-node:not(.is-on) text { opacity: 0.35; }
+  .sk-node rect.is-loan { stroke: #7b5b47; stroke-width: 0.06; stroke-dasharray: 0.25 0.15; }
+
+  .sk-label { font-size: 0.72px; dominant-baseline: central; fill: var(--sk-ink); }
+  .sk-v { font-family: var(--typeface-medium); fill: var(--sk-quiet); }
+  .sk-note { font-size: 0.6px; dominant-baseline: central; fill: var(--sk-quiet); }
+  .sk-time { font-size: 0.62px; dominant-baseline: central; text-anchor: middle; fill: var(--sk-ground); font-family: var(--typeface-medium); letter-spacing: 0.02em; }
+  .sk-colhead { font-size: 0.65px; fill: var(--sk-quiet); font-family: var(--typeface-medium); }
+  .sk-label.is-over { paint-order: stroke; stroke: var(--sk-ground); stroke-width: 0.2; stroke-linejoin: round; }
+
+  /* Not roomy: the heading across the top, the chart beneath, the notes hidden. */
+  .sk:not([data-roomy]) .sk-head { grid-column: 3 / -3; grid-row: 2 / span 2; display: flex; gap: var(--u); align-items: baseline; }
+  .sk:not([data-roomy]) .sk h1, .sk:not([data-roomy]) h1 { margin: 0; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .sk:not([data-roomy]) .sk-dek, .sk:not([data-roomy]) .sk-notes { display: none; }
+  .sk:not([data-roomy]) .sk-fig { grid-row: 5 / span var(--chart-h); }
+
+  :root[data-narrow] .sk { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .sk > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .sk-head { display: block; margin-top: var(--u); }
+  :root[data-narrow] .sk h1 { font-size: calc(32px * var(--sf)); line-height: calc(2 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .sk .sk-dek { display: block; max-width: none; margin-bottom: var(--u); }
+  :root[data-narrow] .sk-fig { height: calc(var(--chart-h) * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .sk .sk-notes { display: block; }
+  :root[data-narrow] .sk-foot { margin-block: var(--u); }
+</style>
