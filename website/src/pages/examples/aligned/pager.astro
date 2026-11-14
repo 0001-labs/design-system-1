@@ -1,0 +1,384 @@
+---
+// After a nineties alphanumeric pager in a see-through case, and its message log: the keeper of a
+// lighthouse on a skerry pages home through a long night. The LCD is drawn pixel by pixel, four of
+// its pixels to the square, so a letter is a square and a half wide and two squares tall, and the
+// window's grid runs straight through the screen. The newest page arrives as the window opens.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const MESSAGES = [
+  { time: '04:12', text: 'FOG SINCE 0300. HORN ON. ALL WELL', plain: 'Fog since 0300. Horn on. All well' },
+  { time: '06:40', text: 'SUPPLY BOAT LATE. COFFEE GONE. SEND HELP', plain: 'Supply boat late. Coffee gone. Send help' },
+  { time: '09:15', text: 'GULL IN LAMP ROOM AGAIN. HE STAYS', plain: 'Gull in lamp room again. He stays' },
+  { time: '11:02', text: 'SAW A WHALE 2NM W. WAVED. IT DID NOT', plain: 'Saw a whale 2nm W. Waved. It did not' },
+  { time: '13:30', text: 'LENS POLISHED. 1,240 TURNS SINCE DUSK', plain: 'Lens polished. 1,240 turns since dusk' },
+  { time: '16:55', text: 'WIND SW 8 RISING. CANDLES IN DRAWER 2', plain: 'Wind SW 8 rising. Candles in drawer 2' },
+  { time: '19:20', text: 'LAMP LIT. 1 FLASH EVERY 10 SEC', plain: 'Lamp lit. 1 flash every 10 sec' },
+  { time: '22:47', text: '143', note: 'I love you: one letter, four letters, three.' },
+  { time: '23:58', text: '07734', note: 'Turn the pager over: hello.' },
+];
+---
+<AlignedStudy slug="pager" theme="light">
+  <main class="stage pager" id="pager-stage">
+    <div class="pager-beam" aria-hidden="true"></div>
+
+    <div class="pager-device" id="device" tabindex="0" data-own-keys role="group" aria-label="Pager; left and right arrow keys move between messages" aria-describedby="lcd-text">
+      <svg class="pager-pcb" id="pcb" aria-hidden="true"></svg>
+      <div class="pager-shell" aria-hidden="true"></div>
+      <p class="pager-brand" aria-hidden="true">Wavetone <b>7</b><span>alpha</span></p>
+      <span class="pager-led" id="led" aria-hidden="true"></span>
+      <div class="pager-window">
+        <svg class="pager-lcd" id="lcd" aria-hidden="true"></svg>
+        <p class="pager-sr" id="lcd-text" aria-live="polite"></p>
+      </div>
+      <div class="pager-keys">
+        <button type="button" id="key-prev" aria-label="Previous message"><svg viewBox="0 0 2 2" aria-hidden="true"><path d="M1.3 0.5 L0.6 1 L1.3 1.5 Z" /></svg></button>
+        <button type="button" id="key-read" class="pager-read">Read</button>
+        <button type="button" id="key-next" aria-label="Next message"><svg viewBox="0 0 2 2" aria-hidden="true"><path d="M0.7 0.5 L1.4 1 L0.7 1.5 Z" /></svg></button>
+      </div>
+      <span class="pager-clip" aria-hidden="true"></span>
+    </div>
+    <p class="pager-how" id="how">Arrow keys page through the night, or press Read.</p>
+
+    <section class="pager-log" aria-labelledby="log-title">
+      <h1 id="log-title">Skerry Light, all night</h1>
+      <p class="pager-to">Pages to 0147 293 118, newest last</p>
+      <ol id="log">
+        {MESSAGES.map((message, index) => (
+          <li>
+            <button type="button" data-index={index}>
+              <time>{message.time}</time>
+              <span class="pager-line">{message.plain ?? message.text}</span>
+              {message.note && <span class="pager-note">{message.note}</span>}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script define:vars={{ MESSAGES }}>
+  window.__pagerMessages = MESSAGES;
+</script>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  type Message = { time: string; text: string; plain?: string; note?: string };
+  const MESSAGES = (window as unknown as { __pagerMessages: Message[] }).__pagerMessages;
+
+  // A 5×7 font, a column a byte, the lowest bit at the top.
+  const FONT: Record<string, number[]> = {
+    ' ': [0, 0, 0, 0, 0], A: [0x7e, 0x11, 0x11, 0x11, 0x7e], B: [0x7f, 0x49, 0x49, 0x49, 0x36], C: [0x3e, 0x41, 0x41, 0x41, 0x22], D: [0x7f, 0x41, 0x41, 0x22, 0x1c],
+    E: [0x7f, 0x49, 0x49, 0x49, 0x41], F: [0x7f, 0x09, 0x09, 0x09, 0x01], G: [0x3e, 0x41, 0x49, 0x49, 0x7a], H: [0x7f, 0x08, 0x08, 0x08, 0x7f], I: [0x00, 0x41, 0x7f, 0x41, 0x00],
+    J: [0x20, 0x40, 0x41, 0x3f, 0x01], K: [0x7f, 0x08, 0x14, 0x22, 0x41], L: [0x7f, 0x40, 0x40, 0x40, 0x40], M: [0x7f, 0x02, 0x0c, 0x02, 0x7f], N: [0x7f, 0x04, 0x08, 0x10, 0x7f],
+    O: [0x3e, 0x41, 0x41, 0x41, 0x3e], P: [0x7f, 0x09, 0x09, 0x09, 0x06], Q: [0x3e, 0x41, 0x51, 0x21, 0x5e], R: [0x7f, 0x09, 0x19, 0x29, 0x46], S: [0x46, 0x49, 0x49, 0x49, 0x31],
+    T: [0x01, 0x01, 0x7f, 0x01, 0x01], U: [0x3f, 0x40, 0x40, 0x40, 0x3f], V: [0x1f, 0x20, 0x40, 0x20, 0x1f], W: [0x3f, 0x40, 0x38, 0x40, 0x3f], X: [0x63, 0x14, 0x08, 0x14, 0x63],
+    Y: [0x07, 0x08, 0x70, 0x08, 0x07], Z: [0x61, 0x51, 0x49, 0x45, 0x43],
+    0: [0x3e, 0x51, 0x49, 0x45, 0x3e], 1: [0x00, 0x42, 0x7f, 0x40, 0x00], 2: [0x42, 0x61, 0x51, 0x49, 0x46], 3: [0x21, 0x41, 0x45, 0x4b, 0x31], 4: [0x18, 0x14, 0x12, 0x7f, 0x10],
+    5: [0x27, 0x45, 0x45, 0x45, 0x39], 6: [0x3c, 0x4a, 0x49, 0x49, 0x30], 7: [0x01, 0x71, 0x09, 0x05, 0x03], 8: [0x36, 0x49, 0x49, 0x49, 0x36], 9: [0x06, 0x49, 0x49, 0x29, 0x1e],
+    '.': [0x00, 0x60, 0x60, 0x00, 0x00], ',': [0x00, 0x50, 0x30, 0x00, 0x00], ':': [0x00, 0x36, 0x36, 0x00, 0x00], '-': [0x08, 0x08, 0x08, 0x08, 0x08], '/': [0x20, 0x10, 0x08, 0x04, 0x02],
+    '!': [0x00, 0x00, 0x5f, 0x00, 0x00], '?': [0x02, 0x01, 0x51, 0x09, 0x06], "'": [0x00, 0x05, 0x03, 0x00, 0x00], '>': [0x00, 0x41, 0x22, 0x14, 0x08], '<': [0x08, 0x14, 0x22, 0x41, 0x00],
+    // An envelope, a bell and a battery for the status line.
+    '\u0001': [0x7f, 0x43, 0x45, 0x43, 0x7f], '\u0002': [0x30, 0x3e, 0x7f, 0x3e, 0x30], '\u0003': [0x7e, 0x7e, 0x7e, 0x42, 0x7e],
+  };
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const lcd = $('lcd') as unknown as SVGSVGElement;
+  const pcb = $('pcb') as unknown as SVGSVGElement;
+  const device = $('device');
+  const led = $('led');
+  const said = $('lcd-text');
+  const log = $('log');
+  const how = $('how');
+
+  let size = { cols: 20, rows: 4, w: 32, h: 12, m: 4 };
+  let current = MESSAGES.length - 1;
+  let opened = false; // false while the newest page is still "arriving"
+
+  /** Words wrapped to the screen's width; a word longer than a line is broken. */
+  function wrap(text: string, cols: number) {
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      let rest = word;
+      while (rest.length > cols) { if (line) { lines.push(line); line = ''; } lines.push(rest.slice(0, cols)); rest = rest.slice(cols); }
+      if (!line) line = rest; else if (line.length + 1 + rest.length <= cols) line += ' ' + rest; else { lines.push(line); line = rest; }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  /** The screen as pixels: four to the square, letters in cells of 6 × 8, a row of ghost pixels everywhere. */
+  function paint(lines: string[], big?: { text: string; row: number }) {
+    const W = size.w * 4, H = size.h * 4;
+    lcd.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    let on = '';
+    lines.forEach((line, row) => {
+      [...line.toUpperCase()].forEach((char, col) => {
+        const glyph = FONT[char] ?? FONT['?'];
+        const x0 = size.m + col * 6, y0 = size.m + row * 8;
+        glyph.forEach((bits, cx) => { for (let cy = 0; cy < 7; cy++) if (bits & (1 << cy)) on += `M${x0 + cx + 0.08} ${y0 + cy + 0.08}h0.84v0.84h-0.84z`; });
+      });
+    });
+    if (big) {
+      [...big.text].forEach((char, col) => {
+        const glyph = FONT[char];
+        const x0 = size.m + col * 12, y0 = size.m + big.row * 8;
+        glyph.forEach((bits, cx) => { for (let cy = 0; cy < 7; cy++) if (bits & (1 << cy)) for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) on += `M${x0 + cx * 2 + dx + 0.08} ${y0 + cy * 2 + dy + 0.08}h0.84v0.84h-0.84z`; });
+      });
+    }
+    lcd.innerHTML = `<rect width="${W}" height="${H}" fill="url(#ghost)"/><path d="${on}" class="pager-on"/>`
+      + `<defs><pattern id="ghost" width="1" height="1" patternUnits="userSpaceOnUse"><rect x="0.08" y="0.08" width="0.84" height="0.84" fill="#000" opacity="0.045"/></pattern></defs>`
+      + `<rect x="${size.m}" y="${size.m + 7.5}" width="${size.cols * 6 - 1}" height="0.5" class="pager-on" opacity="0.6"/>`;
+  }
+
+  function show(index: number) {
+    current = (index + MESSAGES.length) % MESSAGES.length;
+    const message = MESSAGES[current];
+    const n = String(current + 1).padStart(2, '0');
+    // The status line keeps what fits: count and total, the time, the battery, in that order of need.
+    const total = String(MESSAGES.length).padStart(2, '0');
+    const options: [string, string][] = [[`\u0001${n}/${total}`, `${message.time} \u0003`], [`\u0001${n}/${total}`, message.time], [`\u0001${current + 1}`, message.time], ['', message.time]];
+    const [status, right] = options.find(([l, r]) => l.length + r.length + (l ? 1 : 0) <= size.cols) ?? options[3];
+    const head = status + ' '.repeat(Math.max(status ? 1 : 0, size.cols - status.length - right.length)) + right;
+    // A page of digits alone comes up double size, as numeric pages did.
+    if (/^[0-9]+$/.test(message.text) && message.text.length * 2 <= size.cols) {
+      paint([head.slice(0, size.cols)], { text: message.text, row: 2 });
+    } else {
+      const body = wrap(message.text, size.cols);
+      const room = size.rows;
+      const shown = body.length > room ? [...body.slice(0, room - 1), body[room - 1].slice(0, size.cols - 1) + '>'] : body;
+      paint([head.slice(0, size.cols), ...shown]);
+    }
+    said.textContent = `Message ${current + 1} of ${MESSAGES.length}, ${message.time}: ${message.text}`;
+    log.querySelectorAll('button').forEach((button, k) => button.setAttribute('aria-current', String(k === current)));
+  }
+
+  /** The circuit board behind the clear case: traces on the squares, a few chips, the crystal, the cell. */
+  function board(w: number, h: number) {
+    const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const random = seeded(w * 7 + h);
+    let traces = '';
+    for (let k = 0; k < w * 0.8; k++) {
+      let x = Math.floor(random() * w), y = Math.floor(random() * h);
+      traces += `M${x + 0.5} ${y + 0.5}`;
+      for (let s = 0; s < 4; s++) {
+        if (random() < 0.5) x = Math.max(0, Math.min(w - 1, x + Math.round((random() - 0.5) * 8))); else y = Math.max(0, Math.min(h - 1, y + Math.round((random() - 0.5) * 6)));
+        traces += ` L${x + 0.5} ${y + 0.5}`;
+      }
+    }
+    let parts = `<rect width="${w}" height="${h}" fill="#1f5a3c"/><path d="${traces}" fill="none" stroke="#c9a54a" stroke-width="0.12" opacity="0.7"/>`;
+    const chip = (x: number, y: number, cw: number, ch: number) => {
+      let legs = '';
+      for (let i = 0.5; i < cw; i += 0.5) legs += `M${x + i} ${y - 0.25} v0.25 M${x + i} ${y + ch} v0.25 `;
+      return `<path d="${legs}" stroke="#d8d8d0" stroke-width="0.12"/><rect x="${x}" y="${y}" width="${cw}" height="${ch}" fill="#16181a"/>`;
+    };
+    parts += chip(w - 9, h - 6, 4, 2) + chip(w - 14, h - 5, 3, 2) + chip(3, h - 5, 5, 2);
+    parts += `<rect x="${w - 4}" y="2" width="2" height="1" rx="0.5" fill="#c0c3c6"/>`;
+    parts += `<circle cx="${w - 4}" cy="${h - 3}" r="1.6" fill="#b8bcc0" stroke="#7d8287" stroke-width="0.12"/><text x="${w - 4}" y="${h - 2.75}" class="pager-cell">CR2032</text>`;
+    parts += `<rect x="2" y="2" width="1" height="2" fill="#2c2c2c"/><circle cx="2.5" cy="${h - 2}" r="0.7" fill="#1a1a1a"/>`;
+    return parts;
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    // The device: on a computer the left of the window less the log; its screen in whole letters.
+    // Pixels are a quarter square, so any half-square offset keeps them on the window's grid.
+    const deviceW = narrow ? across : Math.min(48, across - 30);
+    const m = narrow ? 2 : 4; // the screen's margin in pixels
+    const lcdW = narrow ? deviceW - 1 : deviceW - 8;
+    const cols = Math.floor((lcdW - m / 2) / 1.5);
+    const rows = narrow ? 7 : 6;
+    const lcdH = (2 * m + 8 * (rows + 1)) / 4; // margin, the status line, the lines, margin
+    size = { cols, rows, w: cols * 1.5 + m / 2, h: lcdH, m };
+    const deviceH = lcdH + 11;
+    const root = document.documentElement;
+    root.style.setProperty('--dev-w', String(deviceW));
+    root.style.setProperty('--dev-h', String(deviceH));
+    root.style.setProperty('--lcd-w', String(size.w));
+    root.style.setProperty('--lcd-h', String(lcdH));
+    if (!narrow) {
+      const top = Math.max(2, Math.floor((down - deviceH) / 2));
+      device.style.gridColumn = `3 / span ${deviceW}`;
+      device.style.gridRow = `${top} / span ${deviceH}`;
+      how.style.gridColumn = `3 / span ${deviceW}`;
+      how.style.gridRow = `${top + deviceH + 1} / span 1`;
+    } else {
+      device.style.gridColumn = device.style.gridRow = how.style.gridColumn = how.style.gridRow = '';
+    }
+    pcb.setAttribute('viewBox', `0 0 ${deviceW} ${deviceH}`);
+    pcb.innerHTML = board(deviceW, deviceH);
+    if (opened) show(current);
+  });
+
+  const step = (by: number) => { opened = true; show(current + by); };
+  $('key-prev').addEventListener('click', () => step(-1));
+  $('key-next').addEventListener('click', () => step(1));
+  $('key-read').addEventListener('click', () => { opened = true; show(current); device.classList.remove('pager-new'); });
+  device.addEventListener('keydown', event => {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); step(-1); }
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); step(1); }
+  });
+  log.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-index]');
+    if (button) { opened = true; device.classList.remove('pager-new'); show(Number(button.dataset.index)); }
+  });
+
+  // The one moment: the newest page arrives. The LED blinks, the screen says so, then shows it.
+  if (reducedMotion()) { opened = true; show(current); }
+  else {
+    device.classList.add('pager-new');
+    paint(['', ...wrap('  NEW PAGE', size.cols), '', '']);
+    window.setTimeout(() => { if (!opened) { opened = true; show(current); } }, 1800);
+    window.setTimeout(() => device.classList.remove('pager-new'), 2400);
+  }
+  void led;
+</script>
+
+<style is:global>
+  html { background: #c8d0d0; --dev-w: 40; --dev-h: 23; --lcd-w: 32; --lcd-h: 13; }
+  .pager {
+    --fog: #c8d0d0;
+    --slate: #233038;
+    --lcd: #a7b092;
+    --pixel: #1f2a1c;
+    --case: rgba(96, 46, 150, 0.56);
+    background: var(--fog);
+    color: var(--slate);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .pager h1, .pager p, .pager ol { margin: 0; }
+  .pager-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* The light's beam crossing the fog, from beyond the left edge; still, as the room is at 4 a.m. */
+  .pager-beam { grid-column: 1 / -1; grid-row: 1 / -1; background: conic-gradient(from 72deg at -10% 30%, transparent 0deg, rgba(255, 252, 235, 0.55) 6deg, rgba(255, 252, 235, 0.15) 18deg, transparent 22deg); pointer-events: none; }
+
+  /* The device: a clear purple shell over its board, every edge on a square. */
+  .pager-device {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--dev-w), var(--u));
+    grid-template-rows: repeat(var(--dev-h), var(--u));
+    border-radius: calc(2 * var(--u));
+    outline: none;
+    filter: drop-shadow(0 calc(var(--u) * 0.6) calc(var(--u) * 0.6) rgba(35, 48, 56, 0.35));
+  }
+  .pager-device:focus-visible { outline: calc(2px * var(--sf)) solid var(--slate); outline-offset: calc(var(--u) / 2); }
+  .pager-pcb { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; border-radius: inherit; }
+  .pager-cell { font: 0.45px var(--typeface-medium); fill: #555a5e; text-anchor: middle; }
+  .pager-shell {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    border-radius: inherit;
+    background:
+      linear-gradient(160deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 28%),
+      linear-gradient(0deg, rgba(40, 10, 70, 0.35), rgba(40, 10, 70, 0) 30%),
+      var(--case);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.15) rgba(255, 255, 255, 0.35), inset 0 calc(var(--u) * -0.4) 0 rgba(40, 10, 70, 0.3);
+  }
+  .pager-brand {
+    grid-column: 3 / span 16;
+    grid-row: 1 / span 2;
+    align-self: end;
+    z-index: 1;
+    color: rgba(255, 255, 255, 0.82);
+    font-family: Futura, 'Avenir Next', sans-serif;
+    font-style: italic;
+    font-size: calc(15px * var(--sf));
+    letter-spacing: 0.02em;
+  }
+  .pager-brand b { font-weight: 800; }
+  .pager-brand span { margin-left: calc(var(--u) / 2); font-size: calc(10px * var(--sf)); font-style: normal; opacity: 0.8; }
+  .pager-led { grid-column: -5 / span 1; grid-row: 2 / span 1; z-index: 1; align-self: center; justify-self: center; width: calc(var(--u) * 0.6); height: calc(var(--u) * 0.6); border-radius: 50%; background: #5c1d1d; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
+  .pager-new .pager-led { animation: pager-blink 0.4s steps(1) 5; }
+  @keyframes pager-blink { 0% { background: #ff3b30; box-shadow: 0 0 calc(var(--u) * 0.6) #ff3b30; } 50% { background: #5c1d1d; box-shadow: none; } }
+
+  /* The screen behind its bezel: green-grey liquid crystal, pixels a quarter of a square. */
+  .pager-window {
+    grid-column: 3 / -3;
+    grid-row: 3 / span calc(var(--lcd-h) + 2);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    background: #241a2e;
+    border-radius: var(--u);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.1) rgba(255, 255, 255, 0.15);
+  }
+  .pager-lcd {
+    width: calc(var(--lcd-w) * var(--u));
+    height: calc(var(--lcd-h) * var(--u));
+    background: linear-gradient(180deg, #b2bb9c, var(--lcd));
+    box-shadow: inset 0 calc(var(--u) * 0.25) calc(var(--u) * 0.4) rgba(0, 0, 0, 0.25);
+  }
+  .pager-on { fill: var(--pixel); }
+
+  .pager-keys {
+    grid-column: 3 / -3;
+    grid-row: -6 / span 3;
+    z-index: 1;
+    display: flex;
+    gap: var(--u);
+    justify-content: center;
+    align-items: center;
+  }
+  .pager-keys button {
+    all: unset;
+    box-sizing: border-box;
+    width: calc(4 * var(--u));
+    height: calc(2 * var(--u));
+    display: grid;
+    place-items: center;
+    border-radius: var(--u);
+    background: linear-gradient(180deg, #4b3a5e, #2e2140);
+    box-shadow: 0 calc(var(--u) * 0.15) 0 #170f22, inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    color: #e9e2f3;
+    font-family: Futura, 'Avenir Next', sans-serif;
+    font-size: calc(12px * var(--sf));
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .pager-keys button svg { width: var(--u); height: var(--u); fill: currentColor; }
+  .pager-keys button.pager-read { width: calc(6 * var(--u)); background: linear-gradient(180deg, #e9e2f3, #c7bcd8); color: #2e2140; box-shadow: 0 calc(var(--u) * 0.15) 0 #8a7da0, inset 0 1px 0 #fff; }
+  .pager-keys button:active { transform: translateY(calc(var(--u) * 0.1)); box-shadow: none; }
+  .pager-keys button:focus-visible { outline: calc(2px * var(--sf)) solid #fff; outline-offset: calc(2px * var(--sf)); }
+  .pager-clip { grid-column: -2 / span 2; grid-row: 4 / span 8; margin-left: calc(var(--u) / 2); border-radius: 0 var(--u) var(--u) 0; background: linear-gradient(90deg, #3a2a4f, #241a2e); z-index: -1; }
+
+  /* The log: what the paging company printed, one page to a line, newest last. */
+  .pager-how { color: #4d5e66; font-size: calc(12px * var(--sf)); }
+  :root[data-narrow] .pager-how { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); }
+  .pager-log { grid-column: -26 / -3; grid-row: 3 / -3; display: flex; flex-direction: column; }
+  .pager-log h1 { font-family: var(--typeface-canon); font-weight: normal; font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; }
+  .pager-to { margin-bottom: var(--u) !important; color: #4d5e66; }
+  .pager-log ol { list-style: none; padding: 0; border-top: 1px solid rgba(35, 48, 56, 0.35); }
+  .pager-log li { border-bottom: 1px solid rgba(35, 48, 56, 0.2); }
+  .pager-log button {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: calc(3 * var(--u)) 1fr;
+    width: 100%;
+    padding: calc(var(--u) / 2) 0 calc(var(--u) / 2 - 1px);
+    cursor: pointer;
+  }
+  .pager-log time { font-variant-numeric: tabular-nums; color: #4d5e66; }
+  .pager-line { font-family: var(--typeface-medium); }
+  .pager-note { grid-column: 2; color: #4d5e66; font-size: calc(12px * var(--sf)); }
+  .pager-log button[aria-current='true'] .pager-line { background: var(--lcd); box-shadow: 0 0 0 calc(var(--u) * 0.2) var(--lcd); }
+  .pager-log button:hover .pager-line { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .pager-log button:focus-visible { outline: calc(2px * var(--sf)) solid var(--slate); outline-offset: -2px; }
+
+  /* Narrow: the device across the phone, a taller screen, the log under it. */
+  :root[data-narrow] .pager { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pager-beam { display: none; }
+  :root[data-narrow] .pager-device { grid-column: 1 / -1; grid-row: auto; margin-top: calc(2 * var(--u)); border-radius: var(--u); }
+  :root[data-narrow] .pager-window { grid-column: 1 / -1; border-radius: calc(var(--u) / 2); }
+  :root[data-narrow] .pager-brand { grid-column: 2 / span 10; }
+  :root[data-narrow] .pager-keys { grid-column: 1 / -1; gap: var(--u); }
+  :root[data-narrow] .pager-keys button { width: calc(3 * var(--u)); }
+  :root[data-narrow] .pager-keys button.pager-read { width: calc(5 * var(--u)); }
+  :root[data-narrow] .pager-clip { display: none; }
+  :root[data-narrow] .pager-log { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .pager-log h1 { font-size: calc(28px * var(--sf)); }
+</style>

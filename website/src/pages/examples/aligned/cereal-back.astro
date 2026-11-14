@@ -1,0 +1,327 @@
+---
+// After the back of a cereal box, the panel you read at breakfast: a maze laid out on the squares
+// (a fresh one at every size, each corridor two squares wide, and it can be walked with the arrow
+// keys), a count-the-squares puzzle with its answer printed upside down, the mascot, and a mail-in
+// coupon to cut out along the dashes. Everything is loud; nothing is quiet except the small print.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="cereal-back" theme="light" fonts="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap">
+  <main class="stage cereal" id="cereal">
+    <header class="cereal-head">
+      <h1>Get Captain Corner back to his bowl!</h1>
+      <p>He went looking for the milk and took a wrong turn at the raisins. <span class="cereal-how">Click the maze and steer him with the arrow keys.</span></p>
+    </header>
+
+    <section class="cereal-maze-box" aria-labelledby="maze-help">
+      <div class="cereal-maze" id="maze" tabindex="0" role="application" data-own-keys aria-describedby="maze-help maze-status">
+        <svg id="maze-svg" aria-hidden="true"></svg>
+      </div>
+      <p class="cereal-maze-help" id="maze-help">Click the maze, then steer with the arrow keys.</p>
+      <p class="cereal-maze-status" id="maze-status" aria-live="polite"></p>
+      <div class="cereal-pad" aria-label="Steer Captain Corner" role="group">
+        <button type="button" data-dir="up" aria-label="Up">▲</button>
+        <button type="button" data-dir="left" aria-label="Left">◀</button>
+        <button type="button" data-dir="down" aria-label="Down">▼</button>
+        <button type="button" data-dir="right" aria-label="Right">▶</button>
+      </div>
+    </section>
+
+    <section class="cereal-mascot" aria-label="Captain Corner">
+      <p class="cereal-bubble">Every flake has four corners. I counted them all before breakfast!</p>
+      <svg class="cereal-captain" viewBox="0 0 10 12" role="img" aria-label="Captain Corner, a square cereal flake in a red cape and trainers">
+        <path class="cereal-cape" d="M2 3.2 L0.4 9.6 Q2.5 8.8 3.2 10 Q5 9 6.8 10 Q7.5 8.8 9.6 9.6 L8 3.2 Z" />
+        <path class="cereal-limb" d="M1.9 5.6 Q0.6 5 0.5 3.4 M8.1 5.6 Q9.4 6.4 9.3 7.8 M3.8 8.4 L3.6 10.6 M6.2 8.4 L6.4 10.6" />
+        <circle class="cereal-glove" cx="0.5" cy="3.1" r="0.55" /><circle class="cereal-glove" cx="9.3" cy="8.1" r="0.55" />
+        <path class="cereal-shoe" d="M2.4 10.4 h1.7 q0.5 0 0.5 0.6 v0.4 h-2.8 q-0.2 -1 0.6 -1 Z M5.9 10.4 h1.7 q0.8 0 0.6 1 h-2.8 v-0.4 q0 -0.6 0.5 -0.6 Z" />
+        <rect class="cereal-flake" x="1.8" y="1" width="6.4" height="7.6" rx="0.9" transform="rotate(-4 5 4.8)" />
+        <g class="cereal-toast"><circle cx="2.9" cy="2.2" r="0.18" /><circle cx="7" cy="2" r="0.14" /><circle cx="2.6" cy="6.8" r="0.16" /><circle cx="7.3" cy="7.4" r="0.2" /><circle cx="5.2" cy="1.6" r="0.12" /><circle cx="6.9" cy="5.2" r="0.12" /></g>
+        <ellipse class="cereal-eye" cx="3.9" cy="3.9" rx="0.85" ry="1.05" /><ellipse class="cereal-eye" cx="6.1" cy="3.8" rx="0.85" ry="1.05" />
+        <circle class="cereal-pupil" cx="4.15" cy="4.1" r="0.42" /><circle class="cereal-pupil" cx="6.35" cy="4" r="0.42" />
+        <path class="cereal-grin" d="M3.3 5.8 Q5 7.6 6.8 5.7 Z" />
+        <path class="cereal-mask" d="M2.7 3.2 Q5 2.4 7.3 3.1 L7.5 3.7 Q5 3 2.5 3.8 Z" />
+      </svg>
+    </section>
+
+    <section class="cereal-puzzle" aria-labelledby="puzzle-title">
+      <h2 id="puzzle-title">Square-eyed?</h2>
+      <svg class="cereal-grid" viewBox="0 0 8 8" aria-hidden="true">
+        <rect x="0.15" y="0.15" width="7.7" height="7.7" />
+        <path d="M2 0.15 V7.85 M4 0.15 V7.85 M6 0.15 V7.85 M0.15 2 H7.85 M0.15 4 H7.85 M0.15 6 H7.85" />
+      </svg>
+      <p class="cereal-ask">How many squares can you find in this grid? <b>Hint: it isn’t 16.</b></p>
+      <p class="cereal-answer">30 squares: 16 little ones, 9 of four, 4 of nine and the big one round them all.</p>
+    </section>
+
+    <aside class="cereal-coupon" aria-labelledby="coupon-title">
+      <span class="cereal-scissors" aria-hidden="true">✂</span>
+      <h2 id="coupon-title">Free! A glow-in-the-dark set square</h2>
+      <p class="cereal-offer">Draw perfect corners under the covers. Send 3 tokens from specially marked packs and 50p towards postage.</p>
+      <div class="cereal-lines" aria-hidden="true"><span>Name</span><span>Address</span><span>Age</span></div>
+      <p class="cereal-to">Cornerflakes Set Square Offer, Freepost 4C, Corner Mill, Wigan WN4 4CC</p>
+      <p class="cereal-small">Under 16s ask a grown-up first. Allow 28 days for delivery. While stocks last. Closes 31.3.27.</p>
+      <p class="cereal-token" aria-hidden="true"><b>1</b> token</p>
+      <div class="cereal-proof" aria-hidden="true"><svg viewBox="0 0 55 20" preserveAspectRatio="none"><path d="M0 0h1v20h-1ZM2 0h2v20h-2ZM5 0h3v20h-3ZM9 0h1v20h-1ZM12 0h2v20h-2ZM15 0h1v20h-1ZM19 0h1v20h-1ZM22 0h1v20h-1ZM24 0h2v20h-2ZM27 0h3v20h-3ZM31 0h1v20h-1ZM34 0h1v20h-1ZM36 0h2v20h-2ZM41 0h1v20h-1ZM43 0h2v20h-2ZM46 0h1v20h-1ZM49 0h1v20h-1ZM53 0h1v20h-1Z" /></svg><span>Proof of purchase. Cut along the dashes.</span></div>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const mazeBox = document.getElementById('maze')!;
+  const svg = document.getElementById('maze-svg') as unknown as SVGSVGElement;
+  const status = document.getElementById('maze-status')!;
+
+  type Maze = { cols: number; rows: number; right: boolean[][]; down: boolean[][] };
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+
+  /** A perfect maze by depth-first search: one way between any two cells, so always solvable. */
+  function build(cols: number, rows: number, seed: number): Maze {
+    const random = seeded(seed);
+    const right = Array.from({ length: rows }, () => Array(cols).fill(true));
+    const down = Array.from({ length: rows }, () => Array(cols).fill(true));
+    const seen = Array.from({ length: rows }, () => Array(cols).fill(false));
+    const stack: [number, number][] = [[0, 0]];
+    seen[0][0] = true;
+    while (stack.length) {
+      const [r, c] = stack[stack.length - 1];
+      const next = ([[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]] as [number, number][]).filter(([rr, cc]) => rr >= 0 && cc >= 0 && rr < rows && cc < cols && !seen[rr][cc]);
+      if (!next.length) { stack.pop(); continue; }
+      const [rr, cc] = next[Math.floor(random() * next.length)];
+      if (rr === r) right[r][Math.min(c, cc)] = false; else down[Math.min(r, rr)][c] = false;
+      seen[rr][cc] = true;
+      stack.push([rr, cc]);
+    }
+    return { cols, rows, right, down };
+  }
+
+  let maze: Maze = build(4, 4, 1);
+  let at = { r: 0, c: 0 };
+  let trail: { r: number; c: number }[] = [];
+  let won = false;
+
+  const HEAD = `<g class="cereal-token-head"><rect x="-0.7" y="-0.7" width="1.4" height="1.4" rx="0.25" fill="#f6a623" stroke="#1f3fbf" stroke-width="0.12"/><circle cx="-0.28" cy="-0.1" r="0.22" fill="#fff"/><circle cx="0.28" cy="-0.1" r="0.22" fill="#fff"/><circle cx="-0.22" cy="-0.06" r="0.1" fill="#1f3fbf"/><circle cx="0.34" cy="-0.06" r="0.1" fill="#1f3fbf"/><path d="M-0.3 0.25 Q0 0.5 0.3 0.25" stroke="#1f3fbf" stroke-width="0.08" fill="none"/><path d="M-0.72 -0.42 Q0 -0.68 0.72 -0.42" stroke="#ee2a24" stroke-width="0.18" fill="none"/></g>`;
+
+  function draw() {
+    const { cols, rows, right, down } = maze;
+    const W = cols * 2, H = rows * 2;
+    svg.setAttribute('viewBox', `-0.25 -0.25 ${W + 0.5} ${H + 0.5}`);
+    let walls = '';
+    // The outer wall, with a gap at the top left to come in by and at the bottom right to the bowl.
+    walls += `M2 0 H${W} V${H - 2} M${W - 2} ${H} H0 V0 `;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (right[r][c] && c < cols - 1) walls += `M${(c + 1) * 2} ${r * 2} V${(r + 1) * 2} `;
+      if (down[r][c] && r < rows - 1) walls += `M${c * 2} ${(r + 1) * 2} H${(c + 1) * 2} `;
+    }
+    const path = trail.map(p => `${p.c * 2 + 1} ${p.r * 2 + 1}`).join(' L ');
+    const bowl = `<g transform="translate(${W - 1} ${H - 1})"><path d="M-0.85 -0.2 H0.85 Q0.8 0.75 0 0.8 Q-0.8 0.75 -0.85 -0.2 Z" fill="#ee2a24"/><ellipse cx="0" cy="-0.2" rx="0.85" ry="0.22" fill="#fff"/><rect x="-0.5" y="-0.42" width="0.3" height="0.3" fill="#f6a623" transform="rotate(12 -0.35 -0.27)"/><rect x="0.1" y="-0.45" width="0.3" height="0.3" fill="#f6a623" transform="rotate(-18 0.25 -0.3)"/></g>`;
+    svg.innerHTML = `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`
+      + `<path d="M ${path}" class="cereal-trail"/>`
+      + bowl
+      + `<path d="${walls}" class="cereal-walls"/>`
+      + `<g class="cereal-me${won ? ' cereal-won' : ''}" transform="translate(${at.c * 2 + 1} ${at.r * 2 + 1})">${HEAD}</g>`;
+  }
+
+  function move(dir: string) {
+    if (won) return;
+    const { r, c } = at;
+    const open = dir === 'up' ? r > 0 && !maze.down[r - 1][c]
+      : dir === 'down' ? r < maze.rows - 1 && !maze.down[r][c]
+      : dir === 'left' ? c > 0 && !maze.right[r][c - 1]
+      : c < maze.cols - 1 && !maze.right[r][c];
+    if (!open) return;
+    at = { r: r + (dir === 'down' ? 1 : dir === 'up' ? -1 : 0), c: c + (dir === 'right' ? 1 : dir === 'left' ? -1 : 0) };
+    // Stepping back the way you came rubs out the trail behind you.
+    const previous = trail[trail.length - 2];
+    if (previous && previous.r === at.r && previous.c === at.c) trail.pop(); else trail.push({ ...at });
+    if (at.r === maze.rows - 1 && at.c === maze.cols - 1) {
+      won = true;
+      status.textContent = `Home in ${trail.length - 1} steps! Captain Corner is back in his bowl.`;
+      if (!reducedMotion()) mazeBox.classList.add('cereal-celebrate');
+    }
+    draw();
+  }
+
+  const KEYS: Record<string, string> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  mazeBox.addEventListener('keydown', event => {
+    const dir = KEYS[event.key];
+    if (!dir) return;
+    event.preventDefault();
+    move(dir);
+  });
+  document.querySelectorAll<HTMLButtonElement>('.cereal-pad button').forEach(button => button.addEventListener('click', () => move(button.dataset.dir!)));
+
+  onSquares(({ across, down, narrow }) => {
+    // Room for a proof-of-purchase barcode at the coupon's foot only on a tall window.
+    document.documentElement.toggleAttribute('data-tall', down >= 43);
+    // Corridors two squares wide: the maze takes as many cells as its box has pairs of squares.
+    const wide = narrow ? across - 2 : across - 30;
+    const high = narrow ? 16 : down - 9;
+    const cols = Math.max(4, Math.floor(wide / 2));
+    const rows = Math.max(4, Math.floor(high / 2));
+    document.documentElement.style.setProperty('--maze-w', String(cols * 2));
+    document.documentElement.style.setProperty('--maze-h', String(rows * 2));
+    if (cols !== maze.cols || rows !== maze.rows) {
+      maze = build(cols, rows, cols * 97 + rows * 13);
+      at = { r: 0, c: 0 };
+      trail = [{ r: 0, c: 0 }];
+      won = false;
+      status.textContent = '';
+      mazeBox.classList.remove('cereal-celebrate');
+    }
+    draw();
+  });
+</script>
+
+<style is:global>
+  html { background: #ffd31a; --maze-w: 40; --maze-h: 34; }
+  .cereal {
+    --yellow: #ffd31a;
+    --magenta: #e6007e;
+    --cobalt: #1f3fbf;
+    --red: #ee2a24;
+    --green: #00a651;
+    --orange: #f6a623;
+    background:
+      repeating-conic-gradient(from 0deg at 18% 52%, #ffdd47 0deg 6deg, var(--yellow) 6deg 12deg);
+    color: var(--cobalt);
+    font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+    font-weight: 600;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .cereal h1, .cereal h2, .cereal p { margin: 0; }
+  .cereal :is(h1, h2) { font-family: 'Lilita One', 'Phosphate', Impact, sans-serif; font-weight: normal; }
+
+  .cereal-head { grid-column: 2 / span var(--maze-w); grid-row: 2 / span 5; }
+  .cereal-head h1 {
+    font-size: calc(46px * var(--sf));
+    line-height: calc(3 * var(--u));
+    color: var(--magenta);
+    --o: calc(2px * var(--sf));
+    text-shadow: var(--o) 0 0 #fff, calc(var(--o) * -1) 0 0 #fff, 0 var(--o) 0 #fff, 0 calc(var(--o) * -1) 0 #fff, var(--o) var(--o) 0 #fff, calc(var(--o) * -1) var(--o) 0 #fff, var(--o) calc(var(--o) * -1) 0 #fff, calc(var(--o) * -1) calc(var(--o) * -1) 0 #fff, calc(var(--o) * 2.5) calc(var(--o) * 2.5) 0 var(--cobalt);
+    white-space: nowrap;
+    letter-spacing: 0.005em;
+  }
+  .cereal-head p { font-size: calc(15px * var(--sf)); line-height: var(--u); }
+  .cereal-how { display: block; }
+  :root[data-narrow] .cereal-how { display: none; }
+
+  /* The maze: corridors two squares wide, walls on the square lines. */
+  .cereal-maze-box { grid-column: 2 / span var(--maze-w); grid-row: 7 / span var(--maze-h); position: relative; display: grid; }
+  .cereal-maze { grid-area: 1 / 1; width: 100%; height: 100%; border-radius: calc(var(--u) * 0.3); outline: none; cursor: pointer; filter: drop-shadow(calc(var(--u) * 0.4) calc(var(--u) * 0.4) 0 var(--magenta)); }
+  .cereal-how { color: var(--magenta); }
+  .cereal-maze svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .cereal-maze:focus-visible { outline: calc(var(--u) * 0.15) dashed var(--cobalt); outline-offset: calc(var(--u) * 0.3); }
+  .cereal-walls { fill: none; stroke: var(--cobalt); stroke-width: 0.3; stroke-linecap: round; stroke-linejoin: round; }
+  .cereal-trail { fill: none; stroke: var(--magenta); stroke-width: 0.25; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.01 0.5; }
+  .cereal-celebrate .cereal-won { animation: cereal-hop 0.5s cubic-bezier(0.3, 0, 0.4, 1) 3; }
+  @keyframes cereal-hop { 50% { translate: 0 -0.8px; } }
+  .cereal-maze-help, .cereal-maze-status { position: absolute; left: 0; top: calc(100% + 0px); font-size: calc(12px * var(--sf)); }
+  .cereal-maze-help { display: none; }
+  .cereal-maze-status { top: calc(100% + var(--u)); line-height: var(--u); background: var(--green); color: #fff; padding: 0 calc(var(--u) / 2); border-radius: calc(var(--u) / 2); }
+  .cereal-maze-status:empty { display: none; }
+  .cereal-pad { display: none; }
+
+  /* The mascot and his bubble. */
+  .cereal-mascot { grid-column: -28 / -2; grid-row: 2 / span 11; display: grid; grid-template-columns: 1fr calc(10 * var(--u)); gap: var(--u); align-items: start; }
+  .cereal-captain { width: calc(10 * var(--u)); height: calc(11 * var(--u)); overflow: visible; }
+  .cereal-cape { fill: var(--red); stroke: var(--cobalt); stroke-width: 0.12; stroke-linejoin: round; }
+  .cereal-limb { fill: none; stroke: var(--cobalt); stroke-width: 0.35; stroke-linecap: round; }
+  .cereal-glove { fill: #fff; stroke: var(--cobalt); stroke-width: 0.12; }
+  .cereal-shoe { fill: var(--green); stroke: var(--cobalt); stroke-width: 0.12; }
+  .cereal-flake { fill: var(--orange); stroke: var(--cobalt); stroke-width: 0.16; }
+  .cereal-toast circle { fill: #c66f12; }
+  .cereal-eye { fill: #fff; stroke: var(--cobalt); stroke-width: 0.12; }
+  .cereal-pupil { fill: var(--cobalt); }
+  .cereal-grin { fill: var(--red); stroke: var(--cobalt); stroke-width: 0.12; stroke-linejoin: round; }
+  .cereal-mask { fill: var(--cobalt); }
+  .cereal-bubble {
+    position: relative;
+    margin-top: calc(2 * var(--u)) !important;
+    padding: var(--u);
+    background: #fff;
+    border: calc(2px * var(--sf)) solid var(--cobalt);
+    border-radius: var(--u);
+    font-size: calc(17px * var(--sf));
+    line-height: var(--u);
+    color: var(--cobalt);
+  }
+  .cereal-bubble::after { content: ''; position: absolute; right: calc(var(--u) * -1); top: calc(2 * var(--u)); width: var(--u); height: var(--u); background: #fff; border: inherit; border-width: calc(2px * var(--sf)) calc(2px * var(--sf)) 0 0; clip-path: polygon(0 0, 100% 0, 0 100%); transform: translateX(calc(-1px * var(--sf))); }
+
+  /* The puzzle: a grid of four by four, the answer upside down. */
+  .cereal-puzzle {
+    grid-column: -28 / -2;
+    grid-row: 13 / span 11;
+    display: grid;
+    grid-template-columns: calc(7 * var(--u)) var(--u) 1fr;
+    grid-template-rows: calc(2 * var(--u)) 1fr calc(3 * var(--u));
+    padding: var(--u);
+    box-sizing: border-box;
+    background: var(--cobalt);
+    color: #fff;
+    border-radius: calc(var(--u) * 0.6);
+    transform: rotate(-1.5deg);
+  }
+  .cereal-puzzle h2 { grid-column: 1 / -1; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--yellow); }
+  .cereal-grid { grid-column: 1; grid-row: 2 / -1; width: calc(7 * var(--u)); height: calc(7 * var(--u)); align-self: end; }
+  .cereal-grid rect, .cereal-grid path { fill: none; stroke: #fff; stroke-width: 0.25; }
+  .cereal-grid rect { fill: var(--magenta); }
+  .cereal-ask { grid-column: 3; grid-row: 2; font-size: calc(15px * var(--sf)); }
+  .cereal-ask b { display: block; color: var(--yellow); font-weight: 700; }
+  .cereal-answer { grid-column: 3; grid-row: 3; transform: rotate(180deg); font-size: calc(10px * var(--sf)); line-height: calc(var(--u) * 0.75); opacity: 0.8; align-self: end; }
+
+  /* The coupon: dashed, a pair of scissors at the corner, lines to write on. */
+  .cereal-coupon {
+    grid-column: -28 / -2;
+    grid-row: 25 / -2;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr calc(4 * var(--u));
+    grid-template-rows: calc(2 * var(--u)) auto auto auto auto;
+    align-content: start;
+    column-gap: var(--u);
+    padding: var(--u);
+    box-sizing: border-box;
+    background: #fff;
+    outline: calc(2px * var(--sf)) dashed var(--cobalt);
+    outline-offset: calc(var(--u) * -0.25);
+    color: var(--cobalt);
+    font-size: calc(12px * var(--sf));
+    overflow: hidden;
+  }
+  .cereal-scissors { position: absolute; top: calc(var(--u) * -0.35); left: calc(var(--u) * 1.5); font-size: calc(18px * var(--sf)); line-height: 1; background: var(--yellow); color: var(--cobalt); padding: 0 2px; }
+  .cereal-coupon h2 { grid-column: 1 / -1; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--red); white-space: nowrap; }
+  .cereal-offer { grid-column: 1; }
+  .cereal-lines { grid-column: 1; display: grid; grid-auto-rows: calc(var(--u) * 1.5); margin-top: calc(var(--u) / 2); }
+  .cereal-lines span { border-bottom: 1px solid var(--cobalt); font-size: calc(10px * var(--sf)); line-height: calc(var(--u) * 1.5); }
+  .cereal-to { grid-column: 1 / -1; margin-top: var(--u) !important; font-weight: 700; }
+  .cereal-small { grid-column: 1 / -1; font-size: calc(9px * var(--sf)); line-height: calc(var(--u) * 0.75); font-weight: 500; }
+  .cereal-token { grid-column: 2; grid-row: 2 / span 3; align-self: start; display: grid; place-items: center; width: calc(4 * var(--u)); height: calc(4 * var(--u)); border-radius: 50%; background: var(--magenta); color: #fff; font-size: calc(11px * var(--sf)); line-height: var(--u); text-align: center; transform: rotate(12deg); }
+  .cereal-proof { position: absolute; left: var(--u); bottom: var(--u); display: none; grid-template-columns: calc(6 * var(--u)) auto; column-gap: var(--u); align-items: end; font-size: calc(10px * var(--sf)); line-height: var(--u); }
+  .cereal-proof svg { width: calc(6 * var(--u)); height: calc(3 * var(--u)); fill: var(--cobalt); }
+  :root[data-tall] .cereal-proof { display: grid; }
+  :root[data-narrow] .cereal-proof { display: none; }
+  .cereal-token b { font-family: 'Lilita One', Impact, sans-serif; font-weight: normal; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); display: block; }
+
+  /* Narrow: headline, maze with a steering pad, mascot, puzzle, coupon. */
+  :root[data-narrow] .cereal { padding-bottom: calc(3 * var(--u)); background: var(--yellow); }
+  :root[data-narrow] .cereal > * { grid-column: 2 / -2 !important; grid-row: auto !important; }
+  :root[data-narrow] .cereal-head { margin-top: var(--u); }
+  :root[data-narrow] .cereal-head h1 { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); white-space: normal; }
+  :root[data-narrow] .cereal-maze-box { margin-top: var(--u); grid-template-rows: calc(var(--maze-h) * var(--u)) auto; }
+  :root[data-narrow] .cereal-maze-help { display: none; }
+  :root[data-narrow] .cereal-maze-status { position: static; margin-top: var(--u); justify-self: start; }
+  :root[data-narrow] .cereal-pad { display: grid; grid-template-columns: repeat(4, calc(2 * var(--u))); gap: var(--u); justify-content: center; margin-top: var(--u); }
+  :root[data-narrow] .cereal-pad button { width: calc(2 * var(--u)); height: calc(2 * var(--u)); border: 0; border-radius: 50%; background: var(--magenta); color: #fff; font-size: calc(12px * var(--sf)); }
+  :root[data-narrow] .cereal-pad button:focus-visible { outline: calc(2px * var(--sf)) solid var(--cobalt); outline-offset: 2px; }
+  :root[data-narrow] .cereal-mascot { margin-top: var(--u); grid-template-columns: 1fr; justify-items: center; }
+  :root[data-narrow] .cereal-bubble { margin-top: 0 !important; }
+  :root[data-narrow] .cereal-bubble::after { display: none; }
+  :root[data-narrow] .cereal-puzzle { margin-top: var(--u); grid-template-columns: calc(5 * var(--u)) var(--u) 1fr; transform: none; }
+  :root[data-narrow] .cereal-grid { width: calc(5 * var(--u)); height: calc(5 * var(--u)); align-self: start; }
+  :root[data-narrow] .cereal-answer { grid-column: 1 / -1; margin-top: var(--u) !important; }
+  :root[data-narrow] .cereal-coupon { margin-top: calc(2 * var(--u)); grid-template-rows: auto; }
+  :root[data-narrow] .cereal-coupon h2 { margin-bottom: var(--u); }
+  :root[data-narrow] .cereal-coupon h2 { white-space: normal; font-size: calc(19px * var(--sf)); }
+</style>
