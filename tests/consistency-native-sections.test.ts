@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vite-plus/test';
 import { SECTIONS, TONES, sectionDefinition } from '../shared/consistency-vocabulary';
 import { expandNativeSection, nativeBlockStyles, nativePageStyles, renderNativeBlock, renderNativePage, validateNativePage, type NativeBlock, type NativeHero, type NativePageDocument, type NativePageRefusal, type NativePageRenderOptions, type NativeSection } from '../shared/consistency-native-page';
@@ -285,7 +287,9 @@ const site = (path: string) => {
   });
 };
 describe('the sites built on the vocabulary stay valid, unchanged', () => {
-  const primitives = '/Users/joachim/0001/Clients/Soendergaarden/dist/native/pages.json', sections = '/Users/joachim/0001/Clients/CPH Raft/dist/native/pages.json';
+  // The client sites beside Design system 1's main checkout in the studio, also from a worktree (the folder holding the shared .git).
+  const studio = dirname(dirname(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: fileURLToPath(new URL('.', import.meta.url)), encoding: 'utf8' }).trim()));
+  const primitives = join(studio, 'Clients/Soendergaarden/dist/native/pages.json'), sections = join(studio, 'Clients/CPH Raft/dist/native/pages.json');
   test.skipIf(!existsSync(primitives))('Søndergården, on the primitives alone', () => {
     for (const { route, html } of site(primitives)) expect(html, route).not.toContain('data-section=');
   });

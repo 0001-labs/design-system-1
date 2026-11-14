@@ -3,7 +3,7 @@ import { readFile as readNativeClientFile } from 'node:fs/promises';
 import { resolve as resolveNativeClient } from 'node:path';
 /**
  * What products copy from Design system 1, with Sync 1 (`sync1`, in
- * /Users/joachim/0001/Sync 1). A product names the exports it takes in its
+ * 0001/system/parts/sync-1). A product names the exports it takes in its
  * sync.json; never edit the copies, change them here and sync.
  */
 import { createHash } from 'node:crypto';
