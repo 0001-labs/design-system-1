@@ -1,0 +1,323 @@
+---
+// After a corporate organisation chart, the kind pinned up in a personnel office: boxes and lines on
+// whole squares, the chief at the top, departments hung from one bus. The company is a beehive, so
+// the departments are ages: a worker moves from one to the next as she grows older, and the chart
+// shades from wax to dark honey as she goes. Point at a box to light its line of reports.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="org-chart" theme="light">
+  <main class="stage oc" id="oc">
+    <header class="oc-head">
+      <h1>Organisation chart</h1>
+      <p>Hive 14, south wall of the orchard, Lower Field. 51,400 staff.</p>
+    </header>
+    <aside class="oc-detail" id="oc-detail" aria-live="polite">
+      <p class="oc-detail-name">Point at a box</p>
+      <p class="oc-detail-line">to see who it reports to and who reports to it.</p>
+    </aside>
+    <svg class="oc-lines" id="oc-lines" aria-hidden="true"></svg>
+    <div class="oc-units" id="oc-units"></div>
+    <section class="oc-career" id="oc-career" aria-labelledby="oc-career-title">
+      <h2 id="oc-career-title">One worker’s career, a square a day</h2>
+      <div class="oc-days" id="oc-days" aria-hidden="true"></div>
+      <ol class="oc-legend" id="oc-legend"></ol>
+    </section>
+    <p class="oc-note" id="oc-note">Nobody on this chart gives orders. Work is picked by age, by smell and by what needs doing; the chart only writes it down afterwards.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Kind = 'queen' | 'staff' | 'dept' | 'team';
+  interface Unit { id: string; kind: Kind; name: string; line: string; note: string; count?: string; parent?: string; tone?: number }
+
+  const DEPTS: { unit: Omit<Unit, 'kind'>; days?: [number, number]; teams: [string, string, string][] }[] = [
+    {
+      unit: { id: 'house', name: 'Housekeeping', line: 'Days 1 to 3', count: '6,200', tone: 0, note: 'Every new hire starts here, cleaning out the cell she was born in.' },
+      days: [1, 3],
+      teams: [
+        ['Cell cleaning', 'Polish and inspect', 'A cell is cleaned some forty times before the queen will lay in it again.'],
+        ['Brood warming', 'Sits on the comb', 'Young bees press themselves against capped brood and shiver it warm.'],
+      ],
+    },
+    {
+      unit: { id: 'nursery', name: 'Nursery', line: 'Days 4 to 11', count: '12,800', tone: 1, note: 'Nurses look in on each larva about 1,300 times a day.' },
+      days: [4, 11],
+      teams: [
+        ['Larva feeding', '1,300 visits a day', 'Brood food for six days, then the cell is capped and the larva left to it.'],
+        ['Royal jelly', 'Made in the head', 'Brewed in glands behind the eyes; the queen eats nothing else, all her life.'],
+        ['Queen rearing', 'Only when asked', 'A new queen is raised when the old one fails or the hive is about to split.'],
+      ],
+    },
+    {
+      unit: { id: 'build', name: 'Construction', line: 'Days 12 to 17', count: '9,100', tone: 2, note: 'Wax comes from glands under the abdomen, eight flakes at a time.' },
+      days: [12, 17],
+      teams: [
+        ['Wax', 'Eight flakes at once', 'It takes about eight kilos of honey to make one kilo of wax.'],
+        ['Comb building', 'Hexagons only', 'Cells for workers 5.4 mm across, for drones 6.9 mm; nobody measures.'],
+        ['Honey processing', 'Fanned to 18 %', 'Nectar is passed mouth to mouth and fanned until it keeps for years.'],
+        ['Stores', 'Packs the pollen', 'Pollen is rammed into cells head-first and sealed with a little honey.'],
+      ],
+    },
+    {
+      unit: { id: 'guard', name: 'Climate and security', line: 'Days 18 to 21', count: '5,300', tone: 3, note: 'A short posting at the door before the field.' },
+      days: [18, 21],
+      teams: [
+        ['Fanning', '34.5 °C, by wingbeat', 'Rows of fanners at the entrance pull air through the hive in summer.'],
+        ['Water', 'Damp comb, fanned', 'On hot days water is spread over the comb and fanned off.'],
+        ['Gate guards', 'Smells every badge', 'Every bee coming in is smelled at the door; strangers are turned away.'],
+        ['Undertakers', 'Out the back door', 'The dead are carried out and dropped well away from the hive.'],
+      ],
+    },
+    {
+      unit: { id: 'field', name: 'Field operations', line: 'Day 22 onwards', count: '17,100', tone: 4, note: 'Foragers fly up to three miles out. Most retire after about 500 miles of it.' },
+      days: [22, 42],
+      teams: [
+        ['Scouts', 'Reports by dance', 'Direction is danced against the sun, distance by how long the waggle lasts.'],
+        ['Nectar', 'Up to three miles out', 'A full load is about 40 mg, nearly half her own weight.'],
+        ['Pollen', 'Two baskets a trip', 'Packed onto the hind legs, sorted by colour back home.'],
+        ['Propolis', 'Seals the cracks', 'Resin from poplar buds, used to varnish every surface inside.'],
+      ],
+    },
+    {
+      unit: { id: 'drones', name: 'Drones', line: 'Business development', count: '900', tone: 5, note: 'No housework, no shifts, no reports. The company lets them go in September.' },
+      teams: [['Mating flights', 'Afternoons, if fine', 'Out to a congregation area 15 metres up, back for dinner if unlucky.']],
+    },
+  ];
+
+  const UNITS: Unit[] = [
+    { id: 'queen', kind: 'queen', name: 'Queen Beatrix VII', line: 'Chief executive, egg laying', count: '1', note: 'Lays up to 1,500 eggs a day. Has not left the building since her mating flight in May.' },
+    { id: 'retinue', kind: 'staff', parent: 'queen', name: 'Royal retinue', line: 'Office of the queen', count: '10 at a time', note: 'Ten attendants feed and groom her and carry her scent round the hive, which is how the company memo goes out.' },
+  ];
+  DEPTS.forEach(({ unit, teams }) => {
+    UNITS.push({ ...unit, kind: 'dept', parent: 'queen' });
+    teams.forEach(([name, line, note], index) => UNITS.push({ id: `${unit.id}-${index}`, kind: 'team', parent: unit.id, tone: unit.tone, name, line, note }));
+  });
+
+  const byId = new Map(UNITS.map(unit => [unit.id, unit]));
+  const children = (id: string) => UNITS.filter(unit => unit.parent === id);
+  const stage = document.getElementById('oc')!;
+  const host = document.getElementById('oc-units')!;
+  const lines = document.getElementById('oc-lines') as unknown as SVGSVGElement;
+  const detail = document.getElementById('oc-detail')!;
+
+  // One button a unit, in reading order, so a narrow window can simply stack them.
+  const boxes = new Map<string, HTMLButtonElement>();
+  for (const unit of UNITS) {
+    const box = document.createElement('button');
+    box.type = 'button';
+    box.className = `oc-box oc-${unit.kind}`;
+    box.dataset.id = unit.id;
+    if (unit.tone !== undefined) box.dataset.tone = String(unit.tone);
+    const parent = unit.parent ? byId.get(unit.parent)!.name : null;
+    box.setAttribute('aria-label', `${unit.name}, ${unit.line}${parent ? `, reports to ${parent}` : ''}`);
+    box.innerHTML = `<b>${unit.name}</b><span>${unit.line}</span>${unit.kind === 'dept' ? `<span class="oc-count">${unit.count} bees</span>` : ''}${unit.kind === 'queen' ? '<span class="oc-crown" aria-hidden="true"></span>' : ''}`;
+    host.append(box);
+    boxes.set(unit.id, box);
+  }
+
+  // The career: forty-two squares, one a day, shaded by the department she works in that day.
+  const days = document.getElementById('oc-days')!;
+  const legend = document.getElementById('oc-legend')!;
+  for (let day = 1; day <= 42; day++) {
+    const dept = DEPTS.find(({ days: span }) => span && day >= span[0] && day <= span[1])!;
+    const cell = document.createElement('span');
+    cell.dataset.tone = String(dept.unit.tone);
+    if (day === 1 || day % 7 === 0) cell.dataset.tick = String(day);
+    days.append(cell);
+  }
+  DEPTS.filter(({ days: span }) => span).forEach(({ unit, days: span }) => {
+    const item = document.createElement('li');
+    item.dataset.tone = String(unit.tone);
+    item.innerHTML = `<i></i>${unit.name}<span>${span![1] - span![0] + 1} days</span>`;
+    legend.append(item);
+  });
+
+  /** The unit, everyone above it and everyone below it. */
+  function lineage(id: string) {
+    const lit = new Set<string>([id]);
+    for (let unit = byId.get(id); unit?.parent; unit = byId.get(unit.parent)) lit.add(unit.parent);
+    const down = (from: string) => children(from).forEach(child => { lit.add(child.id); down(child.id); });
+    down(id);
+    return lit;
+  }
+
+  function show(id: string | null) {
+    stage.toggleAttribute('data-focus', !!id);
+    const lit = id ? lineage(id) : new Set<string>();
+    boxes.forEach((box, key) => box.toggleAttribute('data-lit', lit.has(key)));
+    lines.querySelectorAll<SVGElement>('[data-child]').forEach(path => {
+      const child = byId.get(path.dataset.child!)!;
+      path.toggleAttribute('data-lit', lit.has(child.id) && lit.has(child.parent!));
+    });
+    // The career strip lights the days a worker spends in the department pointed at.
+    const tone = id ? byId.get(id)!.tone : undefined;
+    days.querySelectorAll<HTMLElement>('span').forEach(cell => cell.toggleAttribute('data-dim', tone !== undefined && cell.dataset.tone !== String(tone)));
+    if (!id) return;
+    const unit = byId.get(id)!;
+    const parent = unit.parent ? byId.get(unit.parent)!.name : 'nobody';
+    const reports = children(id).length;
+    detail.innerHTML = `<p class="oc-detail-name">${unit.name}</p><p class="oc-detail-line">${unit.line}. Reports to ${parent}${reports ? `; ${reports} ${reports === 1 ? 'unit reports' : 'units report'} here` : ''}${unit.count ? `. Headcount ${unit.count}` : ''}.</p><p class="oc-detail-note">${unit.note}</p>`;
+  }
+  boxes.forEach((box, id) => {
+    box.addEventListener('pointerenter', () => show(id));
+    box.addEventListener('focus', () => show(id));
+    box.addEventListener('pointerleave', () => { if (document.activeElement !== box) show(null); });
+    box.addEventListener('blur', () => show(null));
+  });
+
+  const place = (el: HTMLElement, x: number, y: number, w: number, h: number) => {
+    el.style.gridColumn = `${x + 1} / span ${w}`;
+    el.style.gridRow = `${y + 1} / span ${h}`;
+  };
+
+  onSquares(({ across, down, narrow }) => {
+    stage.style.setProperty('--day-cols', String(narrow ? across : 42));
+    if (narrow) {
+      document.getElementById('oc-note')!.style.cssText = '';
+      boxes.forEach(box => { box.style.gridColumn = ''; box.style.gridRow = ''; });
+      lines.innerHTML = '';
+      return;
+    }
+    // Columns for the six departments, a square between them, centred in the window.
+    const count = DEPTS.length;
+    const width = Math.max(6, Math.floor((across - 4 - (count - 1)) / count));
+    const used = count * width + count - 1;
+    const left = Math.floor((across - used) / 2);
+    const centre = Math.round(across / 2);
+    const o = Math.max(0, Math.min(3, Math.floor((down - 40) / 2)));
+    const queen = { x: centre - 7, y: 4 + o, w: 14, h: 4 };
+    place(boxes.get('queen')!, queen.x, queen.y, queen.w, queen.h);
+    const staffW = Math.min(10, Math.max(7, across - (queen.x + queen.w) - 4));
+    const staff = { x: queen.x + queen.w + 3, y: queen.y + 1, w: staffW, h: 2 };
+    place(boxes.get('retinue')!, staff.x, staff.y, staff.w, staff.h);
+
+    const bus = 10 + o, deptY = 11 + o, deptH = 3, teamY = 16 + o, teamH = 2, step = 3;
+    const paths: string[] = [];
+    const add = (child: string, d: string, dashed = false) => paths.push(`<path data-child="${child}" d="${d}"${dashed ? ' class="oc-dashed"' : ''} />`);
+    add('retinue', `M ${queen.x + queen.w} ${queen.y + 2} H ${staff.x}`, true);
+    const centres: number[] = [];
+    DEPTS.forEach(({ unit, teams }, index) => {
+      const x = left + index * (width + 1);
+      const mid = x + Math.floor(width / 2);
+      centres.push(mid);
+      place(boxes.get(unit.id)!, x, deptY, width, deptH);
+      add(unit.id, `M ${centre} ${queen.y + queen.h} V ${bus} H ${mid} V ${deptY}`);
+      // A spine down the department's left, a short arm into each team.
+      teams.forEach((_, row) => {
+        const y = teamY + row * step;
+        place(boxes.get(`${unit.id}-${row}`)!, x + 2, y, width - 2, teamH);
+        add(`${unit.id}-${row}`, `M ${x + 1} ${deptY + deptH} V ${y + 1} H ${x + 2}`);
+      });
+    });
+    // The footnote hangs in the drones' column, under their one team.
+    place(document.getElementById('oc-note')!, left + (count - 1) * (width + 1), teamY + step + 1, width, 7);
+    // The bus itself, drawn once underneath so it reads as one bar.
+    paths.unshift(`<path class="oc-bus" d="M ${centres[0]} ${bus} H ${centres[centres.length - 1]} M ${centre} ${queen.y + queen.h} V ${bus}" />`);
+    lines.setAttribute('viewBox', `0 0 ${across} ${down}`);
+    lines.innerHTML = paths.join('');
+    show(null);
+  });
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .oc {
+    --ink: #17140c;
+    --t0: #fdf3cf; --t1: #fbe089; --t2: #f3c03f; --t3: #e8a43a; --t4: #b8621a; --t5: #d9d6cc;
+    color: var(--ink);
+    background: #fff;
+    font-family: 'Avenir Next', 'Avenir', var(--typeface-regular);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .oc [data-tone='0'] { --tone: var(--t0); }
+  .oc [data-tone='1'] { --tone: var(--t1); }
+  .oc [data-tone='2'] { --tone: var(--t2); }
+  .oc [data-tone='3'] { --tone: var(--t3); }
+  .oc [data-tone='4'] { --tone: var(--t4); --on: #fff; }
+  .oc [data-tone='5'] { --tone: var(--t5); }
+
+  .oc-head { grid-column: 3 / span 24; grid-row: 2 / span 3; z-index: 1; }
+  .oc-head h1 { margin: 0; font: 600 calc(30px * var(--sf)) / calc(2 * var(--u)) 'Avenir Next Condensed', 'Avenir Next', sans-serif; letter-spacing: -0.01em; }
+  .oc-head p { margin: 0; max-width: calc(24 * var(--u)); }
+
+  .oc-detail { grid-column: 3 / span 18; grid-row: 6 / span 4; z-index: 1; }
+  .oc-detail p { margin: 0; }
+  .oc-detail-name { font-weight: 600; }
+  .oc-detail-line, .oc-detail-note { font-size: calc(12px * var(--sf)); }
+  .oc-detail-note { color: #6b6046; }
+
+  .oc-lines { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: none; stroke: var(--ink); stroke-width: 0.06; pointer-events: none; }
+  .oc-lines .oc-dashed { stroke-dasharray: 0.2 0.2; }
+  .oc-lines [data-lit] { stroke-width: 0.16; }
+  .oc[data-focus] .oc-lines .oc-bus { opacity: 0.2; }
+  .oc[data-focus] .oc-lines path:not([data-lit]):not(.oc-bus) { opacity: 0.2; }
+  .oc-units { display: contents; }
+
+  .oc-box {
+    all: unset;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    padding-inline: calc(var(--u) / 2);
+    background: #fff;
+    box-shadow: inset 0 0 0 calc(1.5px * var(--sf)) var(--ink);
+    cursor: default;
+    overflow: hidden;
+    transition: opacity 160ms ease;
+  }
+  .oc-box b, .oc-box span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .oc-box b { font-weight: 600; }
+  .oc-box span { font-size: calc(12px * var(--sf)); }
+  .oc-box:focus-visible { outline: calc(3px * var(--sf)) solid var(--ink); outline-offset: calc(2px * var(--sf)); }
+  .oc[data-focus] .oc-box:not([data-lit]) { opacity: 0.22; }
+
+  .oc-team { box-shadow: inset calc(var(--u) / 4) 0 0 var(--tone), inset 0 0 0 calc(1.5px * var(--sf)) var(--ink); padding-inline-start: calc(var(--u) * 0.75); }
+  .oc-team span { color: #6b6046; }
+  .oc-dept { background: var(--tone); color: var(--on, var(--ink)); padding-block: 0; }
+  .oc-dept b { font-size: calc(14px * var(--sf)); }
+  .oc-dept[data-tone='5'] { background: #fff; box-shadow: none; outline: calc(1.5px * var(--sf)) dashed var(--ink); outline-offset: calc(-1.5px * var(--sf)); }
+  .oc-dept[data-tone='5'] .oc-count::after { content: ', out of office'; }
+  .oc-staff { box-shadow: none; outline: calc(1.5px * var(--sf)) dashed var(--ink); outline-offset: calc(-1.5px * var(--sf)); }
+  .oc-staff:focus-visible { outline-style: solid; }
+
+  /* The queen: black, and a crown of hexagons on her shoulder. */
+  .oc-queen { background: var(--ink); color: #fff; padding: 0 var(--u); justify-content: center; }
+  .oc-queen b { font: 600 calc(22px * var(--sf)) / calc(2 * var(--u)) 'Avenir Next Condensed', 'Avenir Next', sans-serif; }
+  .oc-queen span { color: var(--t2); }
+  .oc-crown { position: absolute !important; right: calc(var(--u) / 2); top: calc(var(--u) / 2); width: calc(2 * var(--u)); height: calc(2 * var(--u)); background: radial-gradient(circle, var(--t2) 0 32%, transparent 33%) 0 0 / var(--u) var(--u); opacity: 0.9; }
+
+  .oc-career { grid-column: 3 / span 42; grid-row: -7 / span 5; z-index: 1; }
+  .oc-career h2 { margin: 0; font: 600 calc(13px * var(--sf)) / var(--u) 'Avenir Next', sans-serif; }
+  .oc-days { display: grid; grid-template-columns: repeat(var(--day-cols, 42), var(--u)); grid-auto-rows: var(--u); margin-bottom: var(--u); }
+  .oc-days span { position: relative; background: var(--tone); box-shadow: inset 0 0 0 calc(0.5px * var(--sf)) rgb(23 20 12 / 0.35); }
+  .oc-days span { transition: opacity 160ms ease; }
+  .oc-days span[data-dim] { opacity: 0.2; }
+  .oc-days span[data-tick]::after { content: attr(data-tick); position: absolute; left: 0; top: var(--u); font-size: calc(11px * var(--sf)); color: #6b6046; }
+  .oc-legend { display: flex; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; column-gap: var(--u); font-size: calc(12px * var(--sf)); }
+  .oc-legend li { display: flex; gap: calc(var(--u) / 2); align-items: center; }
+  .oc-legend i { width: calc(var(--u) / 2); height: calc(var(--u) / 2); background: var(--tone); box-shadow: inset 0 0 0 calc(0.5px * var(--sf)) var(--ink); }
+  .oc-legend span { color: #6b6046; }
+
+  .oc-note { margin: 0; z-index: 1; font-size: calc(12px * var(--sf)); color: #6b6046; }
+
+  /* Narrow: the chart becomes an indented list, and the career wraps two weeks a row. */
+  :root[data-narrow] .oc { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .oc-lines { display: none; }
+  :root[data-narrow] .oc > :is(.oc-head, .oc-detail, .oc-note) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .oc-head { margin-top: var(--u); }
+  :root[data-narrow] .oc-detail { min-height: calc(5 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .oc-box { grid-column: 2 / -2; min-height: calc(2 * var(--u)); margin-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .oc-queen { min-height: calc(4 * var(--u)); }
+  :root[data-narrow] .oc-staff { grid-column: 4 / -2; }
+  :root[data-narrow] .oc-dept { margin-top: calc(var(--u) / 2); min-height: calc(3 * var(--u)); }
+  :root[data-narrow] .oc-team { grid-column: 4 / -2; }
+  :root[data-narrow] .oc-career { grid-column: 1 / -1; grid-row: auto; margin-top: var(--u); }
+  :root[data-narrow] .oc-career h2, :root[data-narrow] .oc-legend { padding-inline: var(--u); }
+  :root[data-narrow] .oc-days span[data-tick]::after { content: none; }
+  :root[data-narrow] .oc-note { margin-top: var(--u); }
+</style>
