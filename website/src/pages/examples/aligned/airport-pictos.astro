@@ -1,0 +1,273 @@
+---
+// After an airport's wayfinding manual: black and yellow, a hanging sign across the top, and a sheet
+// of the standard pictograms for a terminal above the clouds. Every pictogram is drawn on four
+// squares, sixteen drawing units, so the chosen one is shown large over its own construction grid.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+// A plane pointing up, centred on (8, 8), turned for departures and arrivals.
+const PLANE = 'M8 1C8.9 1 9.2 2 9.2 3V6.6L15 10V11.6L9.2 9.8V13.2L11 14.4V15.6L8 14.8L5 15.6V14.4L6.8 13.2V9.8L1 11.6V10L6.8 6.6V3C6.8 2 7.1 1 8 1Z';
+const CLOUD = 'M4 12.5a2.6 2.6 0 0 1 .3-5.2 3.6 3.6 0 0 1 6.9-1.1 2.9 2.9 0 0 1 1.1 5.6c-.3.5-.8.7-1.4.7z';
+
+interface Picto { name: string; short?: string; ja: string; where: string; draw: string }
+// Pictograms on a 16 by 16 drawing, four units to a square; strokes are two units, half a square.
+const PICTOS: Record<string, Picto> = {
+  departures: { name: 'Departures', ja: '出発', where: 'Above every route to the gates, from the kerb onwards. The plane climbs to the right, whatever the arrow beside it says.', draw: `<g transform="rotate(50 8 8) translate(0 -0.6) scale(0.82) translate(1.75 1.75)"><path d="${PLANE}"/></g><rect x="1" y="14" width="14" height="1.5"/>` },
+  arrivals: { name: 'Arrivals', ja: '到着', where: 'Only on the way out of the piers. Never hung where a passenger could still be waiting to board.', draw: `<g transform="rotate(130 8 8) translate(0 0.6) scale(0.82) translate(1.75 1.75)"><path d="${PLANE}"/></g><rect x="1" y="14" width="14" height="1.5"/>` },
+  transfer: { name: 'Transfer', ja: '乗り継ぎ', where: 'At the foot of every airbridge. Connections between cloud levels go through security once, at the transfer desk on level 2.', draw: '<path d="M2 4.5H10.5V1.5L15 5.75L10.5 10V7H2Z"/><path d="M14 11.5H5.5V8.5L1 12.75L5.5 17V14H14Z" transform="translate(0 -1.5)"/>' },
+  baggage: { name: 'Baggage reclaim', short: 'Baggage', ja: '手荷物受取所', where: 'In the arrivals hall, one beside each belt. Belts 1 to 6 carry luggage that came through cumulus and may be damp.', draw: '<path d="M6 3.5V2.2a.7.7 0 0 1 .7-.7h2.6a.7.7 0 0 1 .7.7v1.3" fill="none" stroke-width="1.2"/><rect x="3" y="3.5" width="10" height="7.5" rx="1"/><rect x="1" y="12.5" width="14" height="2.5" rx="1.25"/>' },
+  taxi: { name: 'Taxi', ja: 'タクシー', where: 'Outside door 4, level 0. Cloud taxis leave from the upper kerb and are signed separately, with the lift.', draw: '<rect x="6" y="3" width="4" height="1.8"/><path d="M1.5 11.5V8.8L3.4 8.2L5.3 5.4H10.7L12.6 8.2L14.5 8.8V11.5Z"/><path d="M6.2 6.5H7.6V8.2H5.2ZM8.4 6.5H9.8L10.8 8.2H8.4Z" fill="var(--picto-ground)"/><circle cx="4.6" cy="11.8" r="1.6"/><circle cx="11.4" cy="11.8" r="1.6"/><circle cx="4.6" cy="11.8" r="0.6" fill="var(--picto-ground)"/><circle cx="11.4" cy="11.8" r="0.6" fill="var(--picto-ground)"/>' },
+  lounge: { name: 'Lounge', ja: 'ラウンジ', where: 'Pier C, above gate C9. The armchair faces right, towards the window and the weather.', draw: '<path d="M2.5 2.5H5.2L6.4 8.2H12.6A1.9 1.9 0 0 1 14.5 10.1V11.8H4.6A1.8 1.8 0 0 1 2.8 10.2Z"/><rect x="5.6" y="5.8" width="6.4" height="1.5" rx="0.75"/><rect x="10.8" y="5.8" width="1.5" height="3"/><rect x="4" y="11.8" width="1.5" height="2.7"/><rect x="12.2" y="11.8" width="1.5" height="2.7"/>' },
+  coffee: { name: 'Coffee', ja: 'コーヒー', where: 'Every pier has one. The steam is three strokes, never two: two reads as a hot bath.', draw: '<path d="M2.5 7H11.5V10.5A3.5 3.5 0 0 1 8 14H6A3.5 3.5 0 0 1 2.5 10.5Z"/><path d="M11.5 8.2H12.4A1.7 1.7 0 0 1 12.4 11.6H11.2" fill="none" stroke-width="1.2"/><path d="M4.8 5.5C4.2 4.6 5.6 3.8 5 2.6M7.2 5.5C6.6 4.6 8 3.8 7.4 2.6M9.6 5.5C9 4.6 10.4 3.8 9.8 2.6" fill="none" stroke-width="0.9" stroke-linecap="round"/>' },
+  info: { name: 'Information', ja: '案内所', where: 'Landside only. Staffed from the first departure to the last arrival, and through every hold for weather.', draw: '<circle cx="8" cy="3.5" r="1.8"/><path d="M5.5 6.5H9.4V12.5H11V14.5H5.5V12.5H7.1V8.5H5.5Z"/>' },
+  toilets: { name: 'Toilets', ja: 'お手洗い', where: 'Paired always: the figures share one tile and stand on the same line, the one on the left first.', draw: '<circle cx="4.5" cy="2.8" r="1.5"/><path d="M2.8 5H6.2V10.2H5.8V14.8H4.75V10.2H4.25V14.8H3.2V10.2H2.8Z"/><rect x="7.6" y="1" width="0.8" height="14" opacity="0.5"/><circle cx="11.5" cy="2.8" r="1.5"/><path d="M11.5 5L14.2 10.6H12.7V14.8H11.75V10.6H11.25V14.8H10.3V10.6H8.8Z"/>' },
+  lift: { name: 'Lift', ja: 'エレベーター', where: 'Beside every stair. The lifts to the upper kerb go no further than level 5; the stratus deck is by escalator.', draw: '<rect x="2.5" y="1.5" width="11" height="13" fill="none" stroke-width="1.5"/><path d="M8 3.6L10.6 6.8H5.4ZM8 12.4L10.6 9.2H5.4Z"/>' },
+  rain: { name: 'Rain gear', ja: '雨具', where: 'At the top of every airbridge to a stratus or nimbus gate. Umbrellas are lent free and left at the far end.', draw: '<path d="M1.5 8.5A6.5 6.5 0 0 1 14.5 8.5C13.4 7.6 12.3 7.6 11.2 8.5 10.1 7.6 9 7.6 8 8.5 7 7.6 5.9 7.6 4.8 8.5 3.7 7.6 2.6 7.6 1.5 8.5Z"/><path d="M8 1V2M8 8.5V13a1.5 1.5 0 0 1-3 0" fill="none" stroke-width="1.2" stroke-linecap="round"/>' },
+  storm: { name: 'Storm hold', ja: '雷待機', where: 'Lit, never printed: shown on the gate screens while a cumulonimbus is within ten kilometres of the field.', draw: `<path d="${CLOUD}" transform="translate(0 -2.5)"/><path d="M8.6 10.5L6.4 13.4H8.1L7 16L10 12.4H8.3L9.3 10.5Z" transform="translate(0 -1.2)"/>` },
+};
+
+const picto = (key: string, cls = 'picto') => `<svg viewBox="0 0 16 16" class="${cls}" aria-hidden="true"><g fill="currentColor" stroke="currentColor" stroke-width="0">${PICTOS[key].draw}</g></svg>`;
+const ARROW = '<path d="M2 6.5H9.5V2.5L15 8L9.5 13.5V9.5H2Z"/>';
+
+const SIGN = [
+  { turn: -90, picto: 'departures', words: 'Gates C1–24', ja: '搭乗口', small: 'Cirrus pier, 9 minutes' },
+  { turn: 180, picto: 'transfer', words: 'Transfer', ja: '乗り継ぎ', small: 'All cloud levels, level 2' },
+  { turn: 90, picto: 'baggage', words: 'Baggage reclaim', ja: '手荷物受取所', small: 'Belts 1–12 and taxis' },
+];
+
+const GATES = [
+  { turn: -45, range: 'C1–24', words: 'Cirrus pier', note: 'High, dry and far: allow 9 minutes' },
+  { turn: 0, range: 'S1–9', words: 'Stratus deck', note: 'Low ceiling, rain gear at the bridge' },
+  { turn: 135, range: 'K1–4', words: 'Cumulonimbus', note: 'Closed for weather until 16:40' },
+];
+---
+<AlignedStudy slug="airport-pictos" theme="light">
+  <main class="stage apt">
+    <ul class="apt-sign" id="sign" aria-label="Overhead sign">
+      {SIGN.map(item => (
+        <li class="apt-seg" data-picto={item.picto}>
+          <svg class="apt-arrow" viewBox="0 0 16 16" aria-hidden="true" style={`--turn: ${item.turn}deg`} set:html={ARROW} />
+          <span class="apt-sign-tile" set:html={picto(item.picto)} />
+          <span class="apt-seg-words"><b>{item.words}</b><span lang="ja">{item.ja}</span><small>{item.small}</small></span>
+        </li>
+      ))}
+    </ul>
+
+
+    <figure class="apt-big" id="big" data-where={JSON.stringify(Object.fromEntries(Object.entries(PICTOS).map(([k, p]) => [k, p.where])))}>
+      <svg class="apt-construction" viewBox="0 0 16 16" aria-hidden="true">
+        <g class="apt-fine">{Array.from({ length: 15 }, (_, i) => <path d={`M${i + 1} 0V16M0 ${i + 1}H16`} />)}</g>
+        <g class="apt-squares">{[4, 8, 12].map(i => <path d={`M${i} 0V16M0 ${i}H16`} />)}</g>
+        <circle cx="8" cy="8" r="7" class="apt-circle" />
+      </svg>
+      <span class="apt-big-picto" id="big-picto" set:html={picto('baggage', 'picto')} />
+    </figure>
+
+    <section class="apt-caption" id="caption">
+      <header class="apt-head">
+        <h1>Nimbus Field</h1>
+        <p>Wayfinding standard for the terminal above the clouds. Sheet 3, pictograms.</p>
+      </header>
+      <div class="apt-chosen" aria-live="polite">
+      <h2 id="big-name">Baggage reclaim</h2>
+      <p class="apt-ja" lang="ja" id="big-ja">手荷物受取所</p>
+      <p class="apt-where" id="big-where">{PICTOS.baggage.where}</p>
+      </div>
+      <p class="apt-measure">Four squares on a side. Sixteen units to the drawing, strokes of two, nothing finer than one.</p>
+    </section>
+
+    <ul class="apt-tiles" id="tiles" aria-label="Pictograms">
+      {Object.entries(PICTOS).map(([key, p]) => (
+        <li>
+          <button type="button" class="apt-tile" data-picto={key} aria-pressed={key === 'baggage' ? 'true' : 'false'}>
+            <span class="apt-tile-face" set:html={picto(key)} />
+            <span class="apt-tile-name" data-name={p.name}>{p.short ?? p.name}</span>
+            <span class="apt-tile-ja" lang="ja">{p.ja}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+
+    <p class="apt-rule">Black on yellow points the way; yellow on black names the place. An arrow always leads, on the side it points to, and nothing on a sign is smaller than a square.</p>
+
+    <div class="apt-dos" aria-label="Arrows on signs">
+      <figure class="apt-do">
+        <span class="apt-mini"><svg class="apt-arrow" viewBox="0 0 16 16" aria-hidden="true" style="--turn: 0deg" set:html={ARROW} /><span class="apt-mini-tile" set:html={picto('taxi')} /><b>Taxi</b></span>
+        <figcaption>The arrow leads, on the side it points to.</figcaption>
+      </figure>
+      <figure class="apt-do wrong">
+        <span class="apt-mini"><span class="apt-mini-tile" set:html={picto('taxi')} /><b>Taxi</b><svg class="apt-arrow" viewBox="0 0 16 16" aria-hidden="true" style="--turn: 0deg" set:html={ARROW} /></span>
+        <figcaption>Never trailing: it reads as a rank behind you.</figcaption>
+      </figure>
+    </div>
+
+    <ol class="apt-gates" aria-label="Gate ranges">
+      {GATES.map(gate => (
+        <li class:list={['apt-gate', { closed: gate.turn === 135 }]}>
+          <svg class="apt-arrow" viewBox="0 0 16 16" aria-hidden="true" style={`--turn: ${gate.turn}deg`} set:html={ARROW} />
+          <b>{gate.range}</b>
+          <span>{gate.words}</span>
+          <small>{gate.note}</small>
+        </li>
+      ))}
+    </ol>
+
+    <p class="apt-foot">Revision 14 November. Replaces sheet 3 of the spring edition, in which the storm hold was a printed sign.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const caption = $('caption'), big = $('big'), bigPicto = $('big-picto'), bigName = $('big-name'), bigJa = $('big-ja'), bigWhere = $('big-where');
+  const tiles = [...document.querySelectorAll<HTMLButtonElement>('.apt-tile')];
+  const segs = [...document.querySelectorAll<HTMLElement>('.apt-seg')];
+  const where: Record<string, string> = JSON.parse(big.dataset.where || '{}');
+
+  function choose(tile: HTMLButtonElement) {
+    const key = tile.dataset.picto!;
+    tiles.forEach(t => t.setAttribute('aria-pressed', String(t === tile)));
+    bigPicto.innerHTML = tile.querySelector('.apt-tile-face')!.innerHTML;
+    bigName.textContent = tile.querySelector<HTMLElement>('.apt-tile-name')!.dataset.name!;
+    bigJa.textContent = tile.querySelector('.apt-tile-ja')!.textContent;
+    bigWhere.textContent = where[key] ?? '';
+    segs.forEach(seg => seg.classList.toggle('lit', seg.dataset.picto === key));
+  }
+  tiles.forEach(tile => tile.addEventListener('click', () => choose(tile)));
+
+  onSquares(({ across, down, narrow }) => {
+    const stage = document.querySelector<HTMLElement>('.apt')!;
+    // The sign: three segments of whole squares across the window.
+    const seg = narrow ? across - 2 : Math.floor((across - 4) / 3);
+    stage.style.setProperty('--seg', String(seg));
+    segs.forEach(s => (s.style.gridColumn = `span ${seg}`));
+    if (narrow) { big.style.gridColumn = ''; big.style.gridRow = ''; caption.style.gridColumn = ''; return; }
+    // The large pictogram: a square of whole tiles (four squares each), as big as leaves the caption
+    // twelve squares beside it and the sheet of tiles its thirty.
+    const right = across - 32;
+    const size = Math.max(8, Math.min(right - 3 - 13, down - 14) & ~3);
+    big.style.gridColumn = `3 / span ${size}`;
+    big.style.gridRow = `10 / span ${size}`;
+    caption.style.gridColumn = `${3 + size + 1} / ${right + 1}`;
+  });
+</script>
+
+<style is:global>
+  html[data-study='airport-pictos'] { background: #ffc800; }
+  .apt {
+    --yellow: #ffc800;
+    --ink: #000;
+    color: var(--ink);
+    background: var(--yellow);
+    font-family: 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .apt :is(h1, h2, p, ul, ol, figure) { margin: 0; padding: 0; }
+  .apt ul, .apt ol { list-style: none; }
+  .apt .picto { display: block; width: 100%; height: 100%; }
+
+  /* The overhead sign: black, the full width, six squares deep. */
+  .apt-sign {
+    grid-column: 2 / -2;
+    grid-row: 2 / span 6;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--u);
+    grid-template-rows: repeat(6, var(--u));
+    background: var(--ink);
+    color: var(--yellow);
+  }
+  .apt-seg { grid-row: 1 / -1; display: grid; grid-template-columns: var(--u) calc(3 * var(--u)) var(--u) calc(4 * var(--u)) var(--u) 1fr; grid-template-rows: var(--u) calc(4 * var(--u)) var(--u); }
+  .apt-seg + .apt-seg { box-shadow: inset 1px 0 0 rgb(255 200 0 / 0.35); }
+  .apt-arrow { grid-column: 2; grid-row: 2; align-self: center; width: calc(3 * var(--u)); height: calc(3 * var(--u)); fill: currentColor; rotate: var(--turn); }
+  .apt-sign-tile { grid-column: 4; grid-row: 2; --picto-ground: var(--yellow); background: var(--yellow); color: var(--ink); padding: calc(var(--u) / 2); box-sizing: border-box; transition: outline-color 0.2s; outline: calc(var(--u) / 4) solid transparent; outline-offset: calc(var(--u) / 4); }
+  .apt-seg.lit .apt-sign-tile { outline-color: var(--yellow); }
+  .apt-seg-words { grid-column: 6; grid-row: 2; display: grid; grid-template-rows: calc(2 * var(--u)) var(--u) var(--u); min-width: 0; }
+  .apt-seg-words b { font-family: 'Avenir Next Condensed', 'Avenir Next', sans-serif; font-weight: 600; font-size: calc(31px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+  .apt-seg-words span { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; font-weight: 600; font-size: calc(16px * var(--sf)); }
+  .apt-seg-words small { font-size: calc(13px * var(--sf)); opacity: 0.75; white-space: nowrap; overflow: hidden; }
+
+  .apt-head { margin-bottom: calc(2 * var(--u)); }
+  .apt-head h1 { font-weight: 700; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.02em; }
+  .apt-head p { margin-top: var(--u); font-size: calc(15px * var(--sf)); }
+
+  /* The chosen pictogram, large, over its sixteen units and four squares. */
+  .apt-big { grid-column: 20 / span 20; grid-row: 10 / span 20; position: relative; background: var(--ink); color: var(--yellow); --picto-ground: var(--ink); }
+  .apt-construction { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; }
+  .apt-fine path { stroke: rgb(255 200 0 / 0.16); stroke-width: 0.03; }
+  .apt-squares path { stroke: rgb(255 200 0 / 0.45); stroke-width: 0.05; stroke-dasharray: 0.25 0.15; }
+  .apt-circle { stroke: rgb(255 200 0 / 0.3); stroke-width: 0.04; }
+  .apt-big-picto { position: absolute; inset: 0; }
+
+  .apt-caption { grid-column: 20 / span 12; grid-row: 10 / -3; display: flex; flex-direction: column; }
+  .apt-caption h2 { font-weight: 700; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .apt-ja { font-family: 'Hiragino Sans', sans-serif; font-weight: 600; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .apt-where { margin-top: var(--u) !important; }
+  .apt-measure { margin-top: auto !important; font-size: calc(13px * var(--sf)); }
+
+  /* The sheet: twelve tiles of four squares, six across, each with two lines of name beneath. */
+  .apt-tiles { grid-column: -32 / -2; grid-row: 10 / span 13; display: grid; grid-template-columns: repeat(6, calc(4 * var(--u))); grid-auto-rows: calc(6 * var(--u)); column-gap: var(--u); row-gap: var(--u); }
+  .apt-tile { all: unset; display: grid; grid-template-rows: calc(4 * var(--u)) var(--u) var(--u); cursor: pointer; }
+  .apt-tile-face { background: var(--ink); color: var(--yellow); --picto-ground: var(--ink); padding: calc(var(--u) / 2); box-sizing: border-box; }
+  .apt-tile-name { font-size: calc(12px * var(--sf)); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .apt-tile-ja { font-family: 'Hiragino Sans', sans-serif; font-size: calc(11px * var(--sf)); }
+  .apt-tile[aria-pressed='true'] .apt-tile-face { background: var(--yellow); color: var(--ink); --picto-ground: var(--yellow); box-shadow: inset 0 0 0 calc(var(--u) / 5) var(--ink); }
+  .apt-tile:hover .apt-tile-name { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .apt-tile:focus-visible .apt-tile-face { outline: calc(var(--u) / 5) solid var(--ink); outline-offset: calc(var(--u) / 5); }
+
+  .apt-rule { grid-column: -32 / span 24; grid-row: 24 / span 3; }
+
+  /* Right and wrong: two small signs, two squares deep. */
+  .apt-dos { grid-column: -32 / -2; grid-row: 28 / span 3; display: grid; grid-template-columns: calc(14 * var(--u)) calc(15 * var(--u)); column-gap: var(--u); }
+  .apt-do { display: grid; grid-template-rows: calc(2 * var(--u)) var(--u); }
+  .apt-mini { display: flex; align-items: center; gap: calc(var(--u) / 2); padding-inline: calc(var(--u) / 2); width: max-content; background: var(--ink); color: var(--yellow); }
+  .apt-mini .apt-arrow { width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u)); }
+  .apt-mini-tile { width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u)); background: var(--yellow); color: var(--ink); --picto-ground: var(--yellow); padding: 2px; box-sizing: border-box; }
+  .apt-mini b { font-family: 'Avenir Next Condensed', 'Avenir Next', sans-serif; font-weight: 600; font-size: calc(22px * var(--sf)); padding-inline-end: calc(var(--u) / 2); }
+  .apt-do figcaption { font-size: calc(12px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .apt-do.wrong .apt-mini { position: relative; }
+  .apt-do.wrong .apt-mini::after { content: ''; position: absolute; inset: calc(var(--u) / 2) -4px; background: linear-gradient(to top right, transparent calc(50% - 1.5px), #e0001b calc(50% - 1.5px), #e0001b calc(50% + 1.5px), transparent calc(50% + 1.5px)); }
+
+  /* Gate ranges, signed in yellow on black, two squares a line, standing on the foot. */
+  .apt-gates { grid-column: -32 / -2; grid-row: -10 / span 6; display: grid; grid-auto-rows: calc(2 * var(--u)); background: var(--ink); color: var(--yellow); }
+  .apt-gate { display: grid; grid-template-columns: var(--u) calc(2 * var(--u)) var(--u) calc(5 * var(--u)) calc(8 * var(--u)) 1fr; align-items: center; }
+  .apt-gate + .apt-gate { box-shadow: inset 0 1px 0 rgb(255 200 0 / 0.35); }
+  .apt-gate .apt-arrow { grid-column: 2; grid-row: 1; width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u)); justify-self: center; }
+  .apt-gate b { grid-column: 4; font-family: 'Avenir Next Condensed', 'Avenir Next', sans-serif; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 600; }
+  .apt-gate span { grid-column: 5; font-weight: 600; }
+  .apt-gate small { grid-column: 6; font-size: calc(12px * var(--sf)); opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: var(--u); }
+  .apt-gate.closed { color: #8a8a8a; }
+  .apt-gate.closed b { text-decoration: line-through; text-decoration-thickness: 2px; }
+
+  .apt-foot { grid-column: 3 / span 40; grid-row: -2 / span 1; font-size: calc(12px * var(--sf)); }
+
+  /* Narrow: the sign stacks its segments, then the sheet, then the gates. */
+  :root[data-narrow] .apt { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .apt > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .apt-sign { grid-auto-flow: row; grid-template-rows: none; grid-auto-rows: calc(10 * var(--u)); grid-template-columns: 1fr; }
+  :root[data-narrow] .apt-seg { grid-column: 1 !important; grid-row: auto; grid-template-columns: var(--u) calc(3 * var(--u)) var(--u) calc(3 * var(--u)) 1fr; grid-template-rows: var(--u) calc(3 * var(--u)) var(--u) calc(4 * var(--u)) var(--u); }
+  :root[data-narrow] .apt-seg + .apt-seg { box-shadow: inset 0 1px 0 rgb(255 200 0 / 0.35); }
+  :root[data-narrow] .apt-seg .apt-arrow { grid-column: 2; grid-row: 2; width: calc(3 * var(--u)); height: calc(3 * var(--u)); }
+  :root[data-narrow] .apt-sign-tile { grid-column: 4; grid-row: 2; padding: calc(var(--u) / 4); }
+  :root[data-narrow] .apt-seg-words { grid-column: 2 / -1; grid-row: 4; }
+  :root[data-narrow] .apt-head { margin-block: var(--u); }
+  :root[data-narrow] .apt-caption { order: -1; }
+  :root[data-narrow] .apt-sign { order: -2; }
+  :root[data-narrow] .apt-big { aspect-ratio: 1; margin-top: var(--u); }
+  :root[data-narrow] .apt-measure { margin-top: var(--u) !important; }
+  :root[data-narrow] .apt-tiles { grid-template-columns: repeat(2, calc(6 * var(--u))); grid-auto-rows: calc(3 * var(--u)); justify-content: space-between; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .apt-tile { grid-template-columns: calc(3 * var(--u)) minmax(0, calc(3 * var(--u))); grid-template-rows: var(--u) var(--u) var(--u); }
+  :root[data-narrow] .apt-tile-face { grid-row: 1 / -1; padding: calc(var(--u) / 4); }
+  :root[data-narrow] .apt-tile-name { grid-column: 2; grid-row: 2; padding-left: calc(var(--u) / 4); font-size: calc(11px * var(--sf)); text-overflow: clip; }
+  :root[data-narrow] .apt-tile-ja { grid-column: 2; grid-row: 3; padding-left: calc(var(--u) / 4); white-space: nowrap; overflow: hidden; font-size: calc(10px * var(--sf)); }
+  :root[data-narrow] .apt-dos { grid-template-columns: 1fr; row-gap: var(--u); margin-top: var(--u); }
+  :root[data-narrow] .apt-do figcaption { white-space: normal; }
+  :root[data-narrow] .apt-do { grid-template-rows: calc(2 * var(--u)) auto; }
+  :root[data-narrow] .apt-rule { margin-block: var(--u); }
+  :root[data-narrow] .apt-gate { grid-template-columns: var(--u) calc(2 * var(--u)) var(--u) calc(3 * var(--u)) minmax(0, 1fr); }
+  :root[data-narrow] .apt-gate b { font-size: calc(22px * var(--sf)); }
+  :root[data-narrow] .apt-gate span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root[data-narrow] .apt-gate small { display: none; }
+  :root[data-narrow] .apt-foot { margin-top: var(--u); }
+</style>

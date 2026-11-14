@@ -1,0 +1,284 @@
+---
+// After a red-cover pocket guide, open on a chapter: thin white pages inside a square of red cover,
+// running heads, a map with numbered sights, a box of practical information and the entries rated
+// with stars. The destinations are clouds. The pages set on the square: every line is one.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const ICONS: Record<string, string> = {
+  height: '<path d="M1 14L6 5L9 10L11 7L15 14Z"/>',
+  cold: '<path d="M7 2a1.5 1.5 0 0 1 3 0V9.5a3 3 0 1 1-3 0Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="8.5" cy="12" r="1.4"/>',
+  season: '<rect x="2" y="3.5" width="12" height="10.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2 6.5H14M5 2V5M11 2V5"/><path d="M5 2V5M11 2V5" stroke="currentColor" stroke-width="1.2"/>',
+  light: '<circle cx="8" cy="8" r="3"/><path d="M8 1V3.5M8 12.5V15M1 8H3.5M12.5 8H15M3 3L4.8 4.8M11.2 11.2L13 13M13 3L11.2 4.8M4.8 11.2L3 13" stroke="currentColor" stroke-width="1.2"/>',
+  way: '<path d="M8 1.5C5.2 1.5 3.5 3.5 3.5 6c0 3.4 4.5 8.5 4.5 8.5S12.5 9.4 12.5 6c0-2.5-1.7-4.5-4.5-4.5Z"/><circle cx="8" cy="6" r="1.6" fill="#fff"/>',
+  stay: '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.5V8L10.5 9.5" fill="none" stroke="currentColor" stroke-width="1.2"/>',
+};
+const icon = (key: string) => `<svg viewBox="0 0 16 16" class="tg-icon" aria-hidden="true"><g fill="currentColor">${ICONS[key]}</g></svg>`;
+
+interface Entry { n: number; name: string; latin: string; stars: number; verdict: string; body: string; info: [string, string][] }
+const ENTRIES: Entry[] = [
+  { n: 1, name: 'The lenses', latin: 'Altocumulus lenticularis', stars: 3, verdict: 'Worth a journey', body: 'Smooth, lens-shaped and perfectly still in a gale, stacked like plates in the lee of a ridge. They have been reported as visiting craft for seventy years; none has landed. Arrive early: by late afternoon they thin to nothing.', info: [['way', 'East of any ridge in a westerly'], ['stay', 'Hours, while the wind holds']] },
+  { n: 2, name: 'Mackerel sky', latin: 'Altocumulus stratiformis', stars: 2, verdict: 'Worth a detour', body: 'The storey’s main square: rows of rounded cloudlets, each about the width of a thumb held at arm’s length. Sailors read it as a change coming within the day, and they were usually right.', info: [['season', 'All year, best in spring'], ['light', 'Low sun turns it salmon']] },
+  { n: 3, name: 'The turrets', latin: 'Altocumulus castellanus', stars: 2, verdict: 'Worth a detour', body: 'Little towers rising from a flat base, charming over breakfast. By three in the afternoon they are the first sign of thunder; plan to be indoors by then.', info: [['season', 'Summer mornings only'], ['stay', 'Gone, or grown, by noon']] },
+  { n: 4, name: 'Ground glass', latin: 'Altostratus translucidus', stars: 1, verdict: 'Interesting', body: 'Grey, even and a little dull. The sun shows through as if through frosted glass: no shadows and no halo. Pass through on the way to somewhere better.', info: [['light', 'Watery sun, no shadows']] },
+  { n: 5, name: 'The long grey', latin: 'Nimbostratus', stars: 0, verdict: 'Not recommended', body: 'Dark, wet and featureless, with no base you can point to. It rains steadily from morning until evening. The locals stay indoors with the paper, and so should you.', info: [['cold', 'Damp, around freezing'], ['stay', 'All day, often two']] },
+  { n: 6, name: 'The anvil', latin: 'Cumulonimbus incus', stars: 3, verdict: 'Worth a journey, from 20 km', body: 'Rises from the low storey through ours and spreads flat against the ceiling of the weather. Nothing else in the sky is as large. Admire from a distance; tours that approach do not come back on schedule.', info: [['height', 'Base 1 km, top 12 km'], ['way', 'Any hot plain after noon']] },
+];
+const stars = (n: number) => n ? '★'.repeat(n) : '';
+---
+<AlignedStudy slug="travel-guide" theme="light">
+  <main class="stage tg">
+    <article class="tg-page tg-left" aria-label="Page 142">
+      <p class="tg-runhead"><span class="tg-folio">142</span><i>The middle storey</i></p>
+      <div class="tg-body tg-spread">
+        <section class="tg-intro">
+          <h1>The middle storey</h1>
+          <p class="tg-lede">Between two and seven kilometres up, where the air is cold enough for ice and warm enough not to insist on it.</p>
+          <p>Most visitors only pass through the middle storey on the way to the high cirrus, and most visitors are wrong. This is the sky’s old town: crowded, patterned, changing by the hour, and nearly always in view from the ground without a ticket.</p>
+          <p>Its clouds are named with the prefix <i>alto-</i>, which means high, although they are not; the naming was settled in 1803 and nobody has had the heart to change it.</p>
+          <h2>Getting around</h2>
+          <p>Stand with the wind at your back and look a third of the way up the sky. Mornings are calm and clear; the storey fills by noon and empties at dusk, often in a single spectacular quarter of an hour.</p>
+          <h2>Etiquette</h2>
+          <p>Pointing is acceptable. Naming a cloud after an animal is thought childish above four kilometres, but everybody does it. Photographs are welcome; the clouds will not wait for you to find the setting.</p>
+          <dl class="tg-legend" aria-label="Our ratings">
+            <div><dt>★★★</dt><dd>Worth a journey</dd></div>
+            <div><dt>★★</dt><dd>Worth a detour</dd></div>
+            <div><dt>★</dt><dd>Interesting</dd></div>
+          </dl>
+        </section>
+        <section class="tg-aside">
+          <figure class="tg-map">
+            <svg id="map" class="tg-map-art" role="img" aria-label="Map 4: the middle storey west of Hesketh Fell, with the six sights numbered"></svg>
+            <figcaption><b>Map 4</b> The middle storey, west of Hesketh Fell</figcaption>
+          </figure>
+          <div class="tg-practical">
+            <h2>Practical information</h2>
+            <ul>
+              <li><span set:html={icon('height')} />2,000–7,000 m above the sea</li>
+              <li><span set:html={icon('cold')} />−5 to −25 °C; water stays liquid well below freezing</li>
+              <li><span set:html={icon('season')} />Spring and autumn, and summer mornings</li>
+              <li><span set:html={icon('light')} />Best in the hour after sunrise</li>
+              <li><span set:html={icon('way')} />Viewing deck on Hesketh Fell, 30 min from the station</li>
+            </ul>
+          </div>
+          <div class="tg-when">
+            <h2>When to go</h2>
+            <ol class="tg-months" aria-label="Good viewing days by month">
+              {[['J', 1, 'January'], ['F', 2, 'February'], ['M', 3, 'March'], ['A', 4, 'April'], ['M', 4, 'May'], ['J', 3, 'June'], ['J', 2, 'July'], ['A', 2, 'August'], ['S', 4, 'September'], ['O', 4, 'October'], ['N', 2, 'November'], ['D', 1, 'December']].map(([m, v, name]) => (
+                <li style={`--v: ${v}`} aria-label={`${name}: ${['', 'poor', 'fair', 'good', 'best'][v as number]}`}><span class="tg-bar" /><span>{m}</span></li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      </div>
+    </article>
+
+    <article class="tg-page tg-right" aria-label="Page 143">
+      <p class="tg-runhead"><i>Sights</i><span class="tg-folio">143</span></p>
+      <div class="tg-body tg-entries" id="entries">
+        {ENTRIES.map(entry => (
+          <section class="tg-entry" data-n={entry.n} tabindex="0" aria-label={`${entry.n}. ${entry.name}`}>
+            <h3><span class="tg-n">{entry.n}</span>{entry.name}{entry.stars > 0 && <span class="tg-stars" aria-label={`${entry.stars} stars`}>{stars(entry.stars)}</span>}</h3>
+            <p class="tg-latin"><i>{entry.latin}</i>. {entry.verdict}.</p>
+            <p>{entry.body}</p>
+            <ul class="tg-info">{entry.info.map(([key, words]) => <li><span set:html={icon(key)} />{words}</li>)}</ul>
+          </section>
+        ))}
+      </div>
+      <p class="tg-tab" aria-hidden="true"><span>Mid</span></p>
+    </article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const map = document.getElementById('map') as unknown as SVGSVGElement;
+  const entries = [...document.querySelectorAll<HTMLElement>('.tg-entry')];
+  const stage = document.querySelector<HTMLElement>('.tg')!;
+
+  // Where each sight stands on the map, as fractions of its width and of its height above the ground.
+  const SIGHTS: [number, number, number][] = [[1, 0.8, 0.56], [2, 0.5, 0.72], [3, 0.36, 0.42], [4, 0.66, 0.88], [5, 0.84, 0.3], [6, 0.19, 0.12]];
+
+  function cloud(cx: number, cy: number, w: number, kind: number) {
+    if (kind === 1) return `<ellipse cx="${cx}" cy="${cy}" rx="${w}" ry="${w * 0.22}" /><ellipse cx="${cx}" cy="${cy - w * 0.28}" rx="${w * 0.8}" ry="${w * 0.16}" />`;
+    if (kind === 5) return `<path d="M ${cx - w * 1.4} ${cy + w * 0.4} Q ${cx} ${cy - w * 0.5} ${cx + w * 1.4} ${cy + w * 0.4} Z" class="dark" />`;
+    if (kind === 6) {
+      // The anvil stands on the low storey and spreads against the ceiling: cy is its foot, w its height.
+      const top = cy - w, s = w / 8;
+      return `<path d="M ${cx - 1.4 * s} ${cy} C ${cx - 2.2 * s} ${cy - 0.8 * s} ${cx - 1.6 * s} ${cy - 1.8 * s} ${cx - 1 * s} ${cy - 2 * s} C ${cx - 1.2 * s} ${cy - 4 * s} ${cx - 0.9 * s} ${top + 2.4 * s} ${cx - 0.6 * s} ${top + 1.2 * s} C ${cx - 1.6 * s} ${top + 0.9 * s} ${cx - 2.6 * s} ${top + 0.5 * s} ${cx - 3 * s} ${top} L ${cx + 4 * s} ${top} C ${cx + 3 * s} ${top + 0.6 * s} ${cx + 1.6 * s} ${top + 1 * s} ${cx + 0.8 * s} ${top + 1.3 * s} C ${cx + 1.1 * s} ${top + 2.6 * s} ${cx + 1.3 * s} ${cy - 4 * s} ${cx + 1.2 * s} ${cy - 2 * s} C ${cx + 1.9 * s} ${cy - 1.8 * s} ${cx + 2.3 * s} ${cy - 0.7 * s} ${cx + 1.5 * s} ${cy} Z" />`;
+    }
+    let out = '';
+    const count = kind === 2 ? 5 : kind === 3 ? 3 : 4;
+    for (let i = 0; i < count; i++) {
+      const x = cx - w + (i * 2 * w) / (count - 1);
+      const r = kind === 3 ? w * 0.28 : w * 0.22;
+      out += kind === 3 ? `<rect x="${x - r}" y="${cy - r * (2 + i % 2)}" width="${r * 2}" height="${r * (2 + i % 2)}" rx="${r}" />` : `<circle cx="${x}" cy="${cy}" r="${r}" />`;
+    }
+    return kind === 4 ? `<rect x="${cx - w * 1.3}" y="${cy - w * 0.12}" width="${w * 2.6}" height="${w * 0.24}" rx="${w * 0.12}" class="grey" />` : out;
+  }
+
+  function drawMap(width: number, height: number) {
+    map.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const ground = height - 1.5;
+    const sky = ground - 0.5;
+    let out = `<rect width="${width}" height="${ground}" class="sky" />`;
+    let labels = '';
+    // Altitude lines every 2 km, the storey's floor and ceiling bolder.
+    for (const km of [2, 4, 6, 8]) {
+      const y = ground - (km / 9) * sky;
+      out += `<path d="M 0 ${y} H ${width}" class="${km === 2 || km === 6 ? 'floor' : 'contour'}" />`;
+      labels += `<text x="${width - 0.25}" y="${y - 0.2}" class="alt" text-anchor="end">${km} km</text>`;
+    }
+    // The fell, the station and the dotted path to the viewing deck.
+    out += `<path d="M 0 ${ground} L ${width * 0.55} ${ground} L ${width * 0.72} ${ground - 1.6} L ${width * 0.8} ${ground - 1.2} L ${width} ${ground - 0.4} V ${height} H 0 Z" class="land" />`;
+    out += `<path d="M ${width * 0.3} ${ground} Q ${width * 0.55} ${ground - 0.1} ${width * 0.72} ${ground - 1.6}" class="path" />`;
+    out += `<rect x="${width * 0.3 - 0.25}" y="${ground - 0.5}" width="0.5" height="0.5" class="station" /><text x="${width * 0.3}" y="${ground + 1}" class="place" text-anchor="middle">Station</text>`;
+    out += `<text x="${width * 0.72}" y="${ground - 1.9}" class="place" text-anchor="middle">Hesketh Fell</text>`;
+    out += '<g class="clouds">';
+    const w = width / 11;
+    for (const [n, fx, fy] of SIGHTS) out += `<g class="cl" data-n="${n}">${cloud(fx * width, ground - fy * sky, n === 6 ? sky * 0.84 : w, n)}</g>`;
+    out += '</g>';
+    for (const [n, fx, fy] of SIGHTS) {
+      const x = n === 6 ? fx * width + w * 1.2 : fx * width + w * 1.55, y = n === 6 ? ground - sky * 0.88 : ground - fy * sky - w * 0.5;
+      out += `<g class="pin" data-n="${n}"><circle cx="${x}" cy="${y}" r="0.5" /><text x="${x}" y="${y + 0.2}" text-anchor="middle">${n}</text></g>`;
+    }
+    map.innerHTML = out + labels;
+  }
+
+  function light(n: string | null) {
+    entries.forEach(entry => entry.classList.toggle('lit', entry.dataset.n === n));
+    map.querySelectorAll<SVGGElement>('.pin, .cl').forEach(pin => pin.classList.toggle('lit', pin.dataset.n === n));
+  }
+  entries.forEach(entry => {
+    entry.addEventListener('pointerenter', () => light(entry.dataset.n!));
+    entry.addEventListener('focus', () => light(entry.dataset.n!));
+    entry.addEventListener('pointerleave', () => light(null));
+    entry.addEventListener('blur', () => light(null));
+  });
+  map.addEventListener('pointermove', event => {
+    const pin = (event.target as Element).closest?.('.pin, .cl') as SVGGElement | null;
+    light(pin?.dataset.n ?? null);
+  });
+  map.addEventListener('pointerleave', () => light(null));
+
+  onSquares(({ across, narrow }) => {
+    // Two pages of whole squares, the red cover a square around them.
+    const page = narrow ? across - 2 : Math.floor((across - 2) / 2);
+    // On each page: two outer squares, three at the gutter, and two columns with two between.
+    const col = narrow ? across - 4 : Math.floor((page - 5 - 2) / 2);
+    stage.style.setProperty('--tg-page', String(page));
+    stage.style.setProperty('--tg-col', String(col));
+    const left = document.querySelector<HTMLElement>('.tg-left')!, right = document.querySelector<HTMLElement>('.tg-right')!;
+    left.style.gridColumn = narrow ? '' : `2 / span ${page}`;
+    right.style.gridColumn = narrow ? '' : `${2 + page} / span ${page}`;
+    drawMap(col, narrow ? 10 : 11);
+  });
+</script>
+
+<style is:global>
+  html[data-study='travel-guide'] { background: #b8141d; }
+  .tg {
+    --cover: #b8141d;
+    --paper: #fdfcf9;
+    --ink: #1d1a1a;
+    --red: #c3161f;
+    --blue: #dfeaf2;
+    color: var(--ink);
+    background: var(--cover);
+    /* The cover's grain: a faint cloth weave. */
+    background-image: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 4px);
+    font-family: Charter, 'Iowan Old Style', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .tg :is(h1, h2, h3, p, ul, dl, dd, figure) { margin: 0; padding: 0; }
+  .tg ul { list-style: none; }
+
+  .tg-page {
+    grid-row: 2 / -2;
+    display: grid;
+    grid-template-rows: var(--u) var(--u) 1fr var(--u);
+    padding: var(--u) calc(3 * var(--u)) var(--u) calc(2 * var(--u));
+    background: var(--paper);
+    position: relative;
+    overflow: hidden;
+  }
+  /* The gutter: the paper curving into the spine. */
+  .tg-left { background: linear-gradient(to left, rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.03) calc(1.5 * var(--u)), transparent calc(3 * var(--u))), var(--paper); }
+  .tg-right { padding: var(--u) calc(2 * var(--u)) var(--u) calc(3 * var(--u)); background: linear-gradient(to right, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.03) calc(1.5 * var(--u)), transparent calc(3 * var(--u))), var(--paper); }
+
+  .tg-runhead { display: flex; gap: var(--u); font-size: calc(12px * var(--sf)); border-bottom: 1px solid var(--red); }
+  .tg-right .tg-runhead { justify-content: flex-end; }
+  .tg-folio { font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-weight: 600; color: var(--red); }
+  .tg-body { grid-row: 3; min-height: 0; overflow: hidden; }
+
+  .tg-spread { display: grid; grid-template-columns: calc(var(--tg-col) * var(--u)) calc(var(--tg-col) * var(--u)); column-gap: calc(2 * var(--u)); }
+  .tg-intro h1 { font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-weight: 600; font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--red); letter-spacing: -0.01em; margin-bottom: var(--u); }
+  .tg-lede { font-style: italic; font-size: calc(16px * var(--sf)); line-height: var(--u); margin-bottom: var(--u) !important; }
+  .tg-intro p + p { text-indent: 1.4em; }
+  .tg :is(.tg-intro, .tg-practical, .tg-when) h2 { font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-weight: 600; font-size: calc(15px * var(--sf)); color: var(--red); margin-top: var(--u); }
+  .tg-legend { margin-top: var(--u); }
+  .tg-legend div { display: grid; grid-template-columns: calc(3 * var(--u)) auto; }
+  .tg-legend dt { color: var(--red); letter-spacing: 0.08em; }
+
+  .tg-map { display: grid; grid-template-rows: auto var(--u); }
+  .tg-map-art { display: block; width: calc(var(--tg-col) * var(--u)); height: calc(11 * var(--u)); }
+  .tg-map figcaption { font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-size: calc(12px * var(--sf)); }
+  .tg-map figcaption b { color: var(--red); font-weight: 600; margin-right: 0.4em; }
+  .tg-map .sky { fill: var(--blue); }
+  .tg-map .contour { stroke: #9bb4c6; stroke-width: 0.03; stroke-dasharray: 0.15 0.15; }
+  .tg-map .floor { stroke: #6f8fa6; stroke-width: 0.05; }
+  .tg-map .alt { font: 0.42px 'Gill Sans', sans-serif; fill: #5b7a91; }
+  .tg-map .land { fill: #cfd8b8; stroke: #7d8a5e; stroke-width: 0.04; }
+  .tg-map .path { fill: none; stroke: var(--red); stroke-width: 0.08; stroke-dasharray: 0.2 0.14; }
+  .tg-map .station { fill: var(--ink); }
+  .tg-map .place { font: italic 0.45px Charter, Georgia, serif; fill: var(--ink); }
+  .tg-map .cl { fill: #fff; stroke: #8aa2b4; stroke-width: 0.05; transition: fill 0.15s; }
+  .tg-map .cl .dark { fill: #a9b4bd; }
+  .tg-map .cl .grey { fill: #e8ecef; }
+  .tg-map .cl.lit { fill: #ffe9e9; stroke: var(--red); }
+  .tg-map .pin { cursor: default; }
+  .tg-map .pin circle { fill: var(--red); }
+  .tg-map .pin text { font: 600 0.55px 'Gill Sans', sans-serif; fill: #fff; }
+  .tg-map .pin.lit circle { fill: var(--ink); }
+
+  .tg-practical { margin-top: var(--u); padding: var(--u); background: #f6e3df; }
+  .tg-practical h2 { margin-top: 0 !important; }
+  .tg-practical li, .tg-info li { display: grid; grid-template-columns: var(--u) 1fr; column-gap: calc(var(--u) / 2); }
+  .tg-practical li > span, .tg-info li > span { display: block; height: var(--u); }
+  .tg-icon { display: block; width: calc(13px * var(--sf)); height: calc(13px * var(--sf)); margin-top: calc(3px * var(--sf)); color: var(--red); }
+
+  /* When to go: a month a square wide, its bar up to four squares tall. */
+  .tg-when { margin-top: var(--u); }
+  .tg-months { display: grid; grid-template-columns: repeat(12, var(--u)); grid-template-rows: calc(4 * var(--u)) var(--u); margin: 0; padding: 0; list-style: none; }
+  .tg-months li { display: grid; grid-template-rows: subgrid; grid-row: 1 / span 2; }
+  .tg-bar { align-self: end; height: calc(var(--v) * var(--u)); margin-inline: 2px; background: repeating-linear-gradient(to top, var(--red) 0 calc(var(--u) - 2px), transparent calc(var(--u) - 2px) var(--u)); }
+  .tg-months li span:last-child { text-align: center; font-family: 'Gill Sans', sans-serif; font-size: calc(11px * var(--sf)); }
+
+  /* The sights: two columns that fill one after the other, each line a square. */
+  .tg-entries { columns: 2 calc(var(--tg-col) * var(--u)); column-gap: calc(2 * var(--u)); column-fill: auto; height: 100%; }
+  .tg-entry { break-inside: avoid; padding-bottom: var(--u); outline: none; }
+  .tg-entry h3 { font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-weight: 600; font-size: calc(17px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--red); display: flex; align-items: center; gap: calc(var(--u) / 2); }
+  .tg-n { display: inline-grid; place-items: center; flex: none; width: var(--u); height: var(--u); border-radius: 50%; background: var(--red); color: #fff; font-size: calc(12px * var(--sf)); line-height: 1; }
+  .tg-stars { margin-left: auto; letter-spacing: 0.08em; font-size: calc(13px * var(--sf)); }
+  .tg-latin { font-size: calc(12px * var(--sf)); color: #6a5f5c; }
+  .tg-info { margin-top: 0; font-size: calc(12px * var(--sf)); }
+  .tg-entry.lit .tg-n, .tg-entry:focus-visible .tg-n { background: var(--ink); }
+  .tg-entry:focus-visible h3 { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+
+  /* The thumb tab on the fore-edge. */
+  .tg-tab { position: absolute; right: 0; top: calc(8 * var(--u)); width: var(--u); height: calc(4 * var(--u)); background: var(--red); color: #fff; display: grid; place-items: center; }
+  .tg-tab span { writing-mode: vertical-rl; font-family: 'Gill Sans', sans-serif; font-weight: 600; font-size: calc(11px * var(--sf)); }
+
+  /* Narrow: one page after the other, the cover a square around them. */
+  :root[data-narrow] .tg { padding-bottom: var(--u); }
+  :root[data-narrow] .tg-page { grid-column: 2 / -2; grid-row: auto; padding: var(--u); grid-template-rows: var(--u) var(--u) auto var(--u); }
+  :root[data-narrow] .tg-right { margin-top: var(--u); }
+  :root[data-narrow] .tg-left, :root[data-narrow] .tg-right { background: var(--paper); }
+  :root[data-narrow] .tg-body { overflow: visible; }
+  :root[data-narrow] .tg-spread { grid-template-columns: 1fr; row-gap: var(--u); }
+  :root[data-narrow] .tg-entries { columns: auto; height: auto; }
+  :root[data-narrow] .tg-map-art { width: 100%; height: calc(10 * var(--u)); }
+  :root[data-narrow] .tg-tab { display: none; }
+  :root[data-narrow] .tg-months { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+</style>
