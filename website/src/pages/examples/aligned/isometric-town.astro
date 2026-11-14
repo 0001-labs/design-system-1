@@ -1,0 +1,323 @@
+---
+// After an illustrated walking map of a seaside town: the town as a diorama on a slab, drawn on a
+// lattice of squares turned on edge. A tile is four squares wide and two high, a storey is one
+// square, so every corner of every roof meets a line of the grid. The key lights its building.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const KEY = [
+  ['St Brannoc’s', 'bells at nine, eleven and when a boat comes home'],
+  ['Town hall', 'its clock kept four minutes fast for the ferry'],
+  ['Bandstand', 'Sunday brass from two, weather allowing'],
+  ['Fish market', 'mornings, until the ice runs out'],
+  ['Quay Row', 'four houses, four colours, one argument'],
+  ['The school', 'thirty-one pupils and a tortoise'],
+  ['Hendy’s', 'pasties from eight, sold out by noon'],
+  ['Harbourmaster', 'tide tables in the window'],
+  ['Island ferry', 'twice daily, three times in August'],
+  ['Gull Rock light', 'one white flash every ten seconds'],
+];
+---
+<AlignedStudy slug="isometric-town" theme="light">
+  <main class="stage iso">
+    <header class="it-title">
+      <h1>Port Ellery</h1>
+      <p>A walking map. From the church to the light in eleven minutes, if you don’t stop at Hendy’s.</p>
+    </header>
+
+    <svg class="it-map" id="it-map" role="img" aria-label="Isometric map of Port Ellery"></svg>
+
+    <section class="it-key" aria-labelledby="it-key-title">
+      <h2 id="it-key-title">Where things are</h2>
+      <ol id="it-key">
+        {KEY.map(([name, note], k) => (
+          <li><button type="button" data-k={k + 1}><b>{k + 1}</b><span class="it-name">{name}</span><span class="it-note">{note}</span></button></li>
+        ))}
+      </ol>
+    </section>
+
+    <p class="it-ferry">To the islands, forty minutes on the <i>Morwenna</i>.<br />Last boat back at 17.40, and it does not wait.</p>
+
+    <div class="it-foot">
+      <svg class="it-compass" viewBox="0 0 6 4" aria-hidden="true">
+        <path d="M3 2 L5 1 L4.2 1.9 Z" fill="#2f3a52" /><path d="M3 2 L1 3 L1.8 2.1 Z" fill="#fff" stroke="#2f3a52" stroke-width="0.08" />
+        <text x="5.2" y="1.05" font-size="0.9">N</text>
+      </svg>
+      <p class="it-scale"><span aria-hidden="true"></span>One tile, about forty yards</p>
+      <p class="it-credit">Issued by the Port Ellery Traders, free at the quay and at Hendy’s counter.</p>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The ground, a row a line of j, a letter a step of i: grass, tree, road, park, quay, water, rock.
+  const GROUND = [
+    'tt..=.....tt',
+    't...=......t',
+    '....=.....tt',
+    '....=....s~~',
+    '=========s~~',
+    'pppp=....s~~',
+    'pppp=....s~~',
+    'pppp=....s~~',
+    '=========s~~',
+    '....=....s~~',
+    '....=....s~~',
+    'tt..=....s~r',
+  ];
+  const N = 12;
+  const OX = 24, OY = 8;
+  const map = document.getElementById('it-map') as unknown as SVGSVGElement;
+  const H = N * 2 + OY + 1;
+  map.setAttribute('viewBox', `0 0 ${N * 4} ${H}`);
+
+  const P = (i: number, j: number, z = 0) => `${+(2 * (i - j) + OX).toFixed(3)},${+(i + j - z + OY).toFixed(3)}`;
+  const poly = (points: string[], fill: string, extra = '') => `<polygon points="${points.join(' ')}" fill="${fill}"${extra}/>`;
+
+  const GROUND_FILL: Record<string, string> = { '.': '#bfd98f', t: '#b3d283', '=': '#fbfaf6', p: '#a5cd78', s: '#d8cbb0', '~': '#71b9cf', r: '#9a9384' };
+  const SIDE: Record<string, [string, string]> = { '~': ['#4b97b0', '#3a8199'], r: ['#6d675b', '#5a554b'] };
+
+  type Wall = { left: string; right: string; window?: string };
+  const WALLS: Record<string, Wall> = {
+    stone: { left: '#ece6d8', right: '#cfc6b1', window: '#5b6a86' },
+    white: { left: '#ffffff', right: '#dfe2e6', window: '#5b6a86' },
+    yellow: { left: '#f6dd8e', right: '#dcbd62', window: '#6a5a2c' },
+    pink: { left: '#f5c9c2', right: '#dca69d', window: '#7a4b4b' },
+    blue: { left: '#bcd5ec', right: '#93b4d4', window: '#34507a' },
+    red: { left: '#e2453a', right: '#bc2f27' },
+    glass: { left: '#ffe58a', right: '#f2c94c' },
+    hull: { left: '#2f3a52', right: '#222b3f' },
+  };
+  const ROOF = { slate: ['#64708f', '#4e5975'], teal: ['#3d9a8e', '#2e7c72'], mustard: ['#e2ae2f', '#c08f1c'], rose: ['#de7f97', '#bf6179'], red: ['#d6453a', '#ad3128'], lead: ['#8a93a3', '#6c7585'] } as const;
+  type Roof = keyof typeof ROOF;
+
+  interface Block { i: [number, number]; j: [number, number]; z: [number, number]; wall: string; roof?: Roof; shape?: 'flat' | 'gable' | 'pyramid'; rise?: number; k?: number; windows?: boolean; d?: number }
+
+  function block(b: Block) {
+    const [i0, i1] = b.i, [j0, j1] = b.j, [z0, z1] = b.z;
+    const wall = WALLS[b.wall];
+    let out = '';
+    out += poly([P(i0, j1, z0), P(i1, j1, z0), P(i1, j1, z1), P(i0, j1, z1)], wall.left);
+    out += poly([P(i1, j0, z0), P(i1, j1, z0), P(i1, j1, z1), P(i1, j0, z1)], wall.right);
+    // A window a tile a storey, on both faces we can see.
+    if (b.windows && wall.window) {
+      for (let z = z0; z < z1 - 0.5; z++) {
+        for (let i = i0; i < i1; i++) out += poly([P(i + 0.3, j1, z + 0.3), P(i + 0.7, j1, z + 0.3), P(i + 0.7, j1, z + 0.75), P(i + 0.3, j1, z + 0.75)], wall.window);
+        for (let j = j0; j < j1; j++) out += poly([P(i1, j + 0.3, z + 0.3), P(i1, j + 0.7, z + 0.3), P(i1, j + 0.7, z + 0.75), P(i1, j + 0.3, z + 0.75)], wall.window, ' opacity="0.8"');
+      }
+    }
+    const [light, dark] = ROOF[b.roof ?? 'lead'];
+    const rise = b.rise ?? 1;
+    if (!b.shape || b.shape === 'flat') {
+      out += poly([P(i0, j0, z1), P(i1, j0, z1), P(i1, j1, z1), P(i0, j1, z1)], light);
+    } else if (b.shape === 'gable') {
+      const jm = (j0 + j1) / 2, top = z1 + rise;
+      out += poly([P(i0, j0, z1), P(i1, j0, z1), P(i1, jm, top), P(i0, jm, top)], dark);
+      out += poly([P(i0, jm, top), P(i1, jm, top), P(i1, j1, z1), P(i0, j1, z1)], light);
+      out += poly([P(i1, j0, z1), P(i1, j1, z1), P(i1, jm, top)], wall.right);
+    } else {
+      const im = (i0 + i1) / 2, jm = (j0 + j1) / 2, apex = P(im, jm, z1 + rise);
+      out += poly([P(i0, j0, z1), P(i1, j0, z1), apex], light) + poly([P(i0, j0, z1), P(i0, j1, z1), apex], light);
+      out += poly([P(i0, j1, z1), P(i1, j1, z1), apex], light) + poly([P(i1, j0, z1), P(i1, j1, z1), apex], dark);
+    }
+    return out;
+  }
+
+  // The buildings, each with its key number; parts of one building share it.
+  const BUILDINGS: Block[] = [
+    { k: 1, i: [1, 4], j: [2, 4], z: [0, 2], wall: 'stone', roof: 'slate', shape: 'gable', rise: 1.5, windows: true },
+    { k: 1, i: [1, 2], j: [0, 1], z: [0, 4], wall: 'stone', roof: 'slate', windows: true },
+    { k: 1, i: [1, 2], j: [0, 1], z: [4, 4], wall: 'stone', roof: 'slate', shape: 'pyramid', rise: 3 },
+    { k: 2, i: [5, 9], j: [1, 4], z: [0, 3], wall: 'yellow', roof: 'lead', windows: true },
+    { k: 2, i: [6, 7], j: [1, 2], z: [3, 6], wall: 'yellow', roof: 'teal', windows: true, d: 13.1 },
+    { k: 2, i: [6, 7], j: [1, 2], z: [6, 6], wall: 'yellow', roof: 'teal', shape: 'pyramid', rise: 2, d: 13.2 },
+    { k: 3, i: [1, 3], j: [5, 7], z: [0, 1], wall: 'white', roof: 'red', shape: 'pyramid', rise: 1.5 },
+    { k: 4, i: [5, 9], j: [5, 7], z: [0, 2], wall: 'white', roof: 'teal', shape: 'gable', rise: 1, windows: true },
+    { k: 5, i: [5, 6], j: [9, 11], z: [0, 2], wall: 'pink', roof: 'rose', shape: 'gable', windows: true },
+    { k: 5, i: [6, 7], j: [9, 11], z: [0, 3], wall: 'blue', roof: 'slate', shape: 'gable', windows: true },
+    { k: 5, i: [7, 8], j: [9, 11], z: [0, 2], wall: 'yellow', roof: 'mustard', shape: 'gable', windows: true },
+    { k: 5, i: [8, 9], j: [9, 11], z: [0, 3], wall: 'white', roof: 'red', shape: 'gable', windows: true },
+    { k: 6, i: [0, 2], j: [9, 11], z: [0, 2], wall: 'stone', roof: 'mustard', shape: 'gable', windows: true },
+    { k: 7, i: [2, 4], j: [9, 10], z: [0, 2], wall: 'pink', roof: 'rose', windows: true },
+    { k: 8, i: [9, 10], j: [5, 6], z: [0, 1], wall: 'blue', roof: 'slate', shape: 'pyramid', rise: 1 },
+    { k: 9, i: [10.2, 11.8], j: [6.3, 7.1], z: [0, 0.6], wall: 'hull', roof: 'lead' },
+    { k: 9, i: [10.6, 11.4], j: [6.4, 7], z: [0.6, 1.4], wall: 'white', roof: 'red' },
+    { k: 10, i: [11, 12], j: [11, 12], z: [0, 0.5], wall: 'stone', roof: 'lead', d: 30.00 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [0.5, 1.5], wall: 'white', roof: 'lead', d: 30.50 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [1.5, 2.5], wall: 'red', roof: 'lead', d: 31.50 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [2.5, 3.5], wall: 'white', roof: 'lead', d: 32.50 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [3.5, 4.5], wall: 'red', roof: 'lead', d: 33.50 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [4.5, 5.5], wall: 'white', roof: 'lead', d: 34.50 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [5.5, 6.5], wall: 'red', roof: 'lead', d: 35.50 },
+    { k: 10, i: [11.1, 11.9], j: [11.1, 11.9], z: [6.5, 6.6], wall: 'hull', roof: 'lead', d: 36.50 },
+    { k: 10, i: [11.25, 11.75], j: [11.25, 11.75], z: [6.6, 7.4], wall: 'glass', roof: 'lead', d: 36.60 },
+    { k: 10, i: [11.2, 11.8], j: [11.2, 11.8], z: [7.4, 7.4], wall: 'red', roof: 'red', shape: 'pyramid', rise: 1, d: 37.40 },
+  ];
+  // Small boats with no key, moored at the quay.
+  const BOATS: Block[] = [
+    { i: [10.2, 10.8], j: [3.4, 4.6], z: [0, 0.4], wall: 'red', roof: 'lead' },
+    { i: [10.2, 10.8], j: [9.2, 10.4], z: [0, 0.4], wall: 'hull', roof: 'mustard' },
+    { i: [11.1, 11.7], j: [4.2, 5.2], z: [0, 0.4], wall: 'white', roof: 'teal' },
+  ];
+  const TOP: Record<number, [number, number, number]> = { 1: [1.5, 0.5, 8], 2: [6.5, 1.5, 9], 3: [2, 6, 3.5], 4: [7, 6, 4], 5: [7, 10, 4.5], 6: [1, 10, 4], 7: [3, 9.5, 3], 8: [9.5, 5.5, 3], 9: [11, 6.7, 2.4], 10: [11.5, 11.5, 9.6] };
+
+  function tree(i: number, j: number) {
+    const [x, y] = P(i + 0.5, j + 0.5).split(',').map(Number);
+    return `<g class="it-tree"><rect x="${x - 0.12}" y="${y - 1}" width="0.24" height="1" fill="#7a5a3a"/><ellipse cx="${x}" cy="${y - 1.4}" rx="0.95" ry="1" fill="#5f9a4a"/><ellipse cx="${x - 0.25}" cy="${y - 1.65}" rx="0.45" ry="0.4" fill="#7fb862"/></g>`;
+  }
+  function ground() {
+    let out = '';
+    // The slab's two near faces, a tile at a time, so the harbour shows in its edge.
+    for (let i = 0; i < N; i++) {
+      const ch = GROUND[N - 1][i];
+      out += poly([P(i, N, 0), P(i + 1, N, 0), P(i + 1, N, -1), P(i, N, -1)], (SIDE[ch] ?? ['#9b7d58', '#7f6446'])[0]);
+    }
+    for (let j = 0; j < N; j++) {
+      const ch = GROUND[j][N - 1];
+      out += poly([P(N, j, 0), P(N, j + 1, 0), P(N, j + 1, -1), P(N, j, -1)], (SIDE[ch] ?? ['#9b7d58', '#7f6446'])[1]);
+    }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const ch = GROUND[j][i];
+      out += poly([P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)], GROUND_FILL[ch], ' stroke="rgb(0 0 0 / 0.06)" stroke-width="0.03"');
+      // Ripples on the water, dashes on the road's middle.
+      if (ch === '~') out += `<path d="M ${P(i + 0.25, j + 0.5)} L ${P(i + 0.55, j + 0.5)}" stroke="#a6d8e6" stroke-width="0.08" stroke-linecap="round"/>`;
+    }
+    out += `<path d="M ${P(0, 4.5)} L ${P(9, 4.5)} M ${P(0, 8.5)} L ${P(9, 8.5)} M ${P(4.5, 0)} L ${P(4.5, 12)}" stroke="#e4ddcb" stroke-width="0.1" stroke-dasharray="0.6 0.6"/>`;
+    return out;
+  }
+  // Street names painted on the ground: the lattice's own matrix, so the letters lie on the road.
+  function streets() {
+    const m = `matrix(2 1 -2 1 ${OX} ${OY})`;
+    const s = (text: string, x: number, y: number, along: 'i' | 'j') =>
+      along === 'i'
+        ? `<text transform="${m}" x="${x}" y="${y}" class="it-street">${text}</text>`
+        : `<text transform="${m} rotate(-90)" x="${x}" y="${y}" class="it-street">${text}</text>`;
+    return s('Fore Street', 5.4, 4.66, 'i') + s('Market Street', 5.2, 8.66, 'i') + s('Church Hill', -3.6, 4.66, 'j') + s('Brook Lane', -11.7, 4.66, 'j') + s('The Quay', -8.6, 9.66, 'j');
+  }
+
+  function draw() {
+    let things: { depth: number; svg: string }[] = [];
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (GROUND[j][i] === 't') things.push({ depth: i + j + 1, svg: tree(i, j) });
+    things.push({ depth: 6.2, svg: tree(0, 6) }, { depth: 9.2, svg: tree(3, 7) }, { depth: 6.5, svg: tree(3.2, 5) });
+    for (const b of [...BUILDINGS, ...BOATS]) things.push({ depth: b.d ?? b.i[1] + b.j[1] + b.z[0] * 0.01, svg: `<g class="it-b" data-k="${b.k ?? ''}">${block(b)}</g>` });
+    things.sort((a, b) => a.depth - b.depth);
+
+    const pins = Object.entries(TOP).map(([k, [i, j, z]]) => {
+      const [x, y] = P(i, j, z).split(',').map(Number);
+      return `<g class="it-pin" data-k="${k}"><path d="M ${x} ${y + 0.9} L ${x - 0.35} ${y + 0.3} L ${x + 0.35} ${y + 0.3} Z"/><circle cx="${x}" cy="${y}" r="0.62"/><text x="${x}" y="${y + 0.27}">${k}</text></g>`;
+    }).join('');
+
+    // The light's beam, swinging over the sea from the lantern.
+    const [lx, ly] = P(11.5, 11.5, 7).split(',').map(Number);
+    const beam = `<g class="it-beam" style="transform-origin: ${lx}px ${ly}px"><path d="M ${lx} ${ly} L ${lx + 14} ${ly - 3} L ${lx + 14} ${ly + 2} Z" fill="url(#it-beam)"/></g>`;
+
+    map.innerHTML = `<defs><linearGradient id="it-beam" x1="0" x2="1"><stop offset="0" stop-color="#fff6c4" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6c4" stop-opacity="0"/></linearGradient></defs>`
+      + ground() + streets() + things.map(t => t.svg).join('') + `<path class="it-route" d="M ${P(11.9, 6.7)} Q 44 30 ${N * 4} ${H - 1}"/>` + beam + pins;
+    if (reducedMotion()) map.querySelector('.it-beam')?.classList.add('it-still');
+  }
+  draw();
+
+  // The key and the map light each other.
+  const key = document.getElementById('it-key')!;
+  function light(k: string | null) {
+    map.classList.toggle('it-dim', !!k);
+    map.querySelectorAll<SVGGElement>('[data-k]').forEach(g => g.classList.toggle('it-on', !!k && g.dataset.k === k));
+    key.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.classList.toggle('it-on', b.dataset.k === k));
+  }
+  key.addEventListener('pointerover', e => light((e.target as HTMLElement).closest('button')?.dataset.k ?? null));
+  key.addEventListener('pointerleave', () => light(null));
+  key.addEventListener('focusin', e => light((e.target as HTMLElement).closest('button')?.dataset.k ?? null));
+  key.addEventListener('focusout', () => light(null));
+  map.addEventListener('pointerover', e => {
+    const g = (e.target as Element).closest<SVGGElement>('[data-k]');
+    light(g?.dataset.k || null);
+  });
+  map.addEventListener('pointerleave', () => light(null));
+
+  onSquares(({ across, down, narrow }) => {
+    const wide = N * 4;
+    if (narrow) { map.style.gridColumn = ''; map.style.gridRow = ''; return; }
+    const start = Math.max(2, Math.floor((across - wide - 12) / 2));
+    const top = Math.max(1, Math.floor((down - H) / 2) + 1);
+    map.style.gridColumn = `${start} / span ${wide}`;
+    map.style.gridRow = `${top} / span ${H}`;
+    document.documentElement.style.setProperty('--it-key-col', String(start + 38));
+  });
+</script>
+
+<style is:global>
+  html { background: #8fcadb; }
+  html { --it-key-col: 36; }
+  .iso {
+    --ink: #2f3a52;
+    --sea: #8fcadb;
+    color: var(--ink);
+    background:
+      repeating-linear-gradient(135deg, transparent 0 calc(3 * var(--u)), rgb(255 255 255 / 0.14) calc(3 * var(--u)) calc(3 * var(--u) + 2px)),
+      var(--sea);
+    font-family: 'Gill Sans', 'Gill Sans MT', Seravek, Calibri, sans-serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+
+  .it-title { grid-column: 3 / span 20; grid-row: 2 / span 8; z-index: 1; }
+  .it-title h1 { margin: 0; font-weight: 600; font-size: calc(64px * var(--sf)); line-height: calc(4 * var(--u)); letter-spacing: -0.01em; color: #fff; text-shadow: 0 calc(2px * var(--sf)) 0 var(--ink); }
+  .it-title p { margin: 0; max-width: calc(17 * var(--u)); font-size: calc(17px * var(--sf)); line-height: var(--u); }
+
+  .it-map { width: 100%; height: 100%; overflow: visible; }
+  .it-map .it-street { font: 600 0.34px 'Gill Sans', 'Gill Sans MT', sans-serif; fill: #847e6c; letter-spacing: 0.02px; }
+  .it-map .it-b, .it-map .it-tree { transition: filter 0.2s; }
+  .it-map.it-dim .it-b:not(.it-on), .it-map.it-dim .it-tree { filter: saturate(0.1) brightness(1.12) contrast(0.7); }
+  .it-map .it-pin { cursor: default; }
+  .it-map .it-pin circle { fill: #fff; stroke: var(--ink); stroke-width: 0.1; }
+  .it-map .it-pin path { fill: var(--ink); }
+  .it-map .it-pin text { font: 600 0.78px 'Gill Sans', 'Gill Sans MT', sans-serif; text-anchor: middle; fill: var(--ink); }
+  .it-map .it-pin.it-on circle { fill: #e2ae2f; }
+  .it-map.it-dim .it-pin:not(.it-on) { opacity: 0.4; }
+  .it-map .it-route { fill: none; stroke: var(--ink); stroke-width: 0.1; stroke-dasharray: 0.4 0.4; }
+  .it-ferry { grid-column: -24 / -2; grid-row: -5 / span 3; margin: 0; text-align: right; font-size: calc(14px * var(--sf)); z-index: 1; }
+  .it-beam { animation: it-sweep 10s ease-in-out infinite; pointer-events: none; }
+  .it-beam.it-still { animation: none; opacity: 0.6; }
+  @keyframes it-sweep {
+    0%, 100% { transform: rotate(-18deg); opacity: 0.2; }
+    50% { transform: rotate(14deg); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .it-beam { animation: none; } }
+
+  .it-key { grid-column: var(--it-key-col) / -2; grid-row: 2 / span 13; z-index: 1; }
+  .it-key h2 { margin: 0; font-size: calc(17px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 600; color: #fff; }
+  .it-key ol { margin: 0; padding: 0; list-style: none; }
+  .it-key button {
+    all: unset; box-sizing: border-box; display: grid; grid-template-columns: calc(1.5 * var(--u)) auto 1fr; column-gap: calc(var(--u) / 2);
+    width: 100%; height: var(--u); line-height: var(--u); cursor: default; white-space: nowrap;
+  }
+  .it-key b {
+    display: block; width: var(--u); height: var(--u); border-radius: 50%; background: #fff; text-align: center;
+    font-size: calc(12px * var(--sf)); box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .it-key .it-name { font-weight: 600; }
+  .it-key .it-note { overflow: hidden; text-overflow: ellipsis; color: #34506a; }
+  .it-key button.it-on b { background: #e2ae2f; }
+  .it-key button.it-on .it-name { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .it-key button:focus-visible { outline: 2px solid #fff; outline-offset: 0; }
+
+  .it-foot { grid-column: 3 / span 14; grid-row: -11 / span 9; display: grid; grid-template-rows: calc(4 * var(--u)) var(--u) calc(2 * var(--u)); row-gap: var(--u); align-content: end; z-index: 1; }
+  .it-compass { width: calc(6 * var(--u)); height: calc(4 * var(--u)); }
+  .it-compass text { font: 600 0.9px 'Gill Sans', sans-serif; fill: var(--ink); }
+  .it-scale { margin: 0; display: grid; grid-template-columns: calc(4 * var(--u)) auto; column-gap: calc(var(--u) / 2); font-size: calc(13px * var(--sf)); }
+  .it-scale span { align-self: center; height: calc(var(--u) / 4); background: linear-gradient(90deg, var(--ink) 50%, #fff 50%); box-shadow: 0 0 0 1px var(--ink); }
+  .it-credit { margin: 0; font-size: calc(13px * var(--sf)); color: #34506a; }
+
+  /* Narrow: the title, the whole town at the window's width, then the key. */
+  :root[data-narrow] .iso { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .iso > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .it-title { margin-top: var(--u); }
+  :root[data-narrow] .it-title h1 { font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .it-map { grid-column: 1 / -1; height: auto; margin-block: var(--u); aspect-ratio: 48 / 33; }
+  :root[data-narrow] .it-key button { grid-template-columns: calc(1.5 * var(--u)) 1fr; height: auto; white-space: normal; padding-bottom: var(--u); }
+  :root[data-narrow] .it-key .it-note { grid-column: 2; }
+  :root[data-narrow] .it-foot { margin-top: var(--u); grid-template-rows: calc(2 * var(--u)) var(--u) calc(2 * var(--u)); }
+  :root[data-narrow] .it-compass { width: calc(3 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .it-ferry { text-align: left; }
+</style>
