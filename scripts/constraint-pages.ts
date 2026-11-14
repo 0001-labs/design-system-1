@@ -25,6 +25,14 @@ export async function remoteConstraintPages(site: string, send: typeof fetch = f
  * rule and much of how busy the machine is, so it waits for the others and is tried once more alone, `last` set: then
  * the machine has room, and a page that still does not load is the page's fault.
  */
+/** Phone and desktop widths checked in separate browser contexts, one document load each. */
+export function viewportBatches(widths: readonly number[]): number[][] {
+  const phone: number[] = [];
+  const desktop: number[] = [];
+  for (const width of widths) (width < 768 ? phone : desktop).push(width);
+  return [phone, desktop].filter(batch => batch.length > 0);
+}
+
 export async function visitAll<T>(items: readonly T[], workers: number, visit: (item: T, last: boolean) => Promise<boolean>): Promise<T[]> {
   const queue = [...items], unopened: T[] = [];
   await Promise.all(Array.from({ length: workers }, async () => {

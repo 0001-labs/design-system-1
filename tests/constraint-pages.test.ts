@@ -1,5 +1,5 @@
 import { expect, test } from 'vite-plus/test';
-import { remoteConstraintPages } from '../scripts/constraint-pages';
+import { remoteConstraintPages, viewportBatches } from '../scripts/constraint-pages';
 import { DOC_EXAMPLES } from '../shared/doc-examples';
 
 test('live constraint discovery follows sitemap indexes without missing DS1 examples', async () => {
@@ -15,6 +15,12 @@ test('live constraint discovery follows sitemap indexes without missing DS1 exam
  expect(new Set(requests).size).toBe(requests.length);
  expect(requests.some(url => url.includes('elsewhere'))).toBe(false);
 });
+test('viewport batches keep phone and desktop widths in separate document loads', () => {
+  expect(viewportBatches([320, 375, 768, 1440])).toEqual([[320, 375], [768, 1440]]);
+  expect(viewportBatches([393])).toEqual([[393]]);
+  expect(viewportBatches([1024, 1440])).toEqual([[1024, 1440]]);
+});
+
 test('other products use their own sitemap and fall back safely without a catalogue', async () => {
  expect(await remoteConstraintPages('https://example.test', (async () => new Response('', { status: 404 })) as typeof fetch)).toEqual(['https://example.test/']);
 });

@@ -1,4 +1,5 @@
-import { remoteConstraintPages, visitAll } from './constraint-pages';
+import { remoteConstraintPages, viewportBatches, visitAll } from './constraint-pages';
+import { calculateScalingFactor, defaultScalingConfig } from '../DS1/0-face/scaling';
 // The constraints on a phone: opens every page of a site, as its sitemap lists them, in WebKit as an
 // iPhone at each phone width, scrolls it through so everything it loads late is drawn, and runs every
 // rule in DS1/0-face/constraints.ts on it, as five presses of C would. Prints what each page breaks,
@@ -22,7 +23,7 @@ import { mkdirSync, existsSync, readdirSync, readFileSync, statSync, writeFileSy
 import { createServer, type Server } from 'node:http';
 import { createHash } from 'node:crypto';
 import { extname, join, resolve } from 'node:path';
-import { devices, webkit, type Response } from 'playwright';
+import { devices, webkit, type Page, type Response } from 'playwright';
 
 /** Representative phone, tablet and desktop widths; --widths adds breakpoint boundaries. */
 const WIDTHS = [320, 375, 393, 430, 768, 1024, 1440];
@@ -163,9 +164,13 @@ const pages = await pagesOf(base);
 const requestedTheme = option('theme') ?? 'light';
 if (requestedTheme !== 'light' && requestedTheme !== 'dark') throw new Error('Use --theme light or --theme dark.');
 const theme: 'light' | 'dark' = requestedTheme;
+const started = performance.now();
+let peakRss = process.memoryUsage().rss;
+const noteMemory = () => { peakRss = Math.max(peakRss, process.memoryUsage().rss); };
+let documentLoads = 0;
 // Keep release checks invisible even when Playwright debugging is enabled in the shell.
 const browser = await webkit.launch({ headless: true });
-const queue = widths.flatMap(width => pages.map(url => ({ width, url })));
+const batches = viewportBatches(widths);
 const report: string[] = [];
 /** What the rules could not measure and a person must look at: listed, never a failure. */
 const reviews: string[] = [];
@@ -176,103 +181,139 @@ const measured: Record<string, number> = {};
 /** A page's address as the report names it: the production address for a page served here. */
 const shown = (url: string) => served ? new URL(new URL(url).pathname, origin).href : url;
 
-/** Whether the page loaded. One that did not, on its first turn, is left for `visitAll` to try again alone. */
-async function open({ width, url }: { width: number; url: string }, last: boolean): Promise<boolean> {
-  const context = await browser.newContext({ ...(width < 768 ? devices['iPhone 14'] : {}), viewport: { width, height: 844 }, screen: { width, height: 844 }, colorScheme: theme });
-  const page = await context.newPage();
-  try {
-    // A page that does not settle in time gets a second chance: one slow load among many is not a broken rule.
-    const attempts: { error?: string; status?: number; url?: string; ray?: string }[] = [];
-    let documentResponse: Response | undefined;
-    page.on('response', response => {
-      if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponse = response;
-    });
-    const navigate = async (timeout: number) => {
-      documentResponse = undefined;
-      try {
-        const response = await page.goto(url, { waitUntil: 'networkidle', timeout });
-        attempts.push(response ? { status: response.status(), url: response.url(), ray: response.headers()['cf-ray'] } : { error: 'Navigation returned no document response' });
-        return response;
-      } catch (error) {
-        const response = documentResponse as Response | undefined;
-        attempts.push({ error: (error as Error).message, status: response?.status(), url: response?.url(), ray: response?.headers()['cf-ray'] });
-        if (response && !response.ok()) return response;
-        throw error;
-      }
-    };
-    const loaded = await navigate(30_000).catch(() => navigate(60_000))
-      .then(response => ({ response }), (error: Error) => ({ error }));
-    const failure = 'error' in loaded ? loaded.error.message
-      : !loaded.response ? 'Navigation returned no document response'
-      : !loaded.response.ok() ? `Document returned HTTP ${loaded.response.status()}` : undefined;
-    if (failure) {
-      // Keep the failed document before a retry replaces it. HTTP error pages are availability
-      // failures, never layout specimens, and must not become a green run after a retry.
-      const folder = resolve(option('artifacts') ?? 'test-results/constraints');
-      mkdirSync(folder, { recursive: true });
-      const suffix = createHash('sha256').update(shown(url)).digest('hex').slice(0, 12);
-      const artifact = join(folder, `${width}-${suffix}-${last ? 'retry' : 'first'}-navigation`);
-      const title = await page.title().catch(() => '');
-      const html = await page.content().catch(() => '');
-      writeFileSync(`${artifact}.json`, JSON.stringify({ requested: shown(url), actual: page.url(), width, title, failure, attempts }, null, 2));
-      writeFileSync(`${artifact}.html`, html);
-      await page.screenshot({ path: `${artifact}.png` }).catch(() => undefined);
-      console.log(`Navigation failure: ${shown(url)} at ${width}px → ${artifact}.json`);
-      if ('error' in loaded && !last) return false;
-      notOpened += 1;
-      report.push(`${width}px ${shown(url)}`, `  navigation failed: ${failure.split('\n')[0]} (evidence: ${artifact}.json)`);
-      return true;
+async function scrollForMeasurement(page: Page) {
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight) {
+      scrollTo(0, y);
+      await new Promise(done => setTimeout(done, 30));
     }
-    if (option('theme')) await page.evaluate(appearance => {
-      document.documentElement.classList.remove('light-theme', 'dark-theme');
-      document.documentElement.classList.add(`${appearance}-theme`);
-      document.documentElement.style.colorScheme = appearance;
-    }, theme);
+    scrollTo(0, 0);
+  });
+  await page.waitForTimeout(80);
+}
 
-    await page.evaluate(async () => {
-      for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight / 2) {
-        scrollTo(0, y);
-        await new Promise(done => setTimeout(done, 40));
-      }
-      scrollTo(0, 0);
-    });
-    await page.waitForTimeout(300);
-    await page.addScriptTag({ content: checker });
-    const result = await page.evaluate(() => (window as unknown as { __inspectConstraints: () => { findings: Broken[]; measured: Record<string, number> } }).__inspectConstraints());
-    for (const [code, count] of Object.entries(result.measured)) measured[code] = (measured[code] ?? 0) + count;
-    const found = result.findings.filter(finding => !finding.review);
-    const toReview = result.findings.filter(finding => finding.review);
-    if (result.findings.some(finding => finding.code === 'page.fault-lines')) {
-      const folder = resolve(option('artifacts') ?? 'test-results/constraints');
-      mkdirSync(folder, {recursive:true});
-      const pathname = new URL(url).pathname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home';
-      const suffix = createHash('sha256').update(shown(url)).digest('hex').slice(0,8);
-      const screenshot = join(folder, `${width}-${pathname}-${suffix}.png`);
-      await page.evaluate(() => (window as unknown as {__paintFaultLines:()=>void}).__paintFaultLines());
-      await page.screenshot({path:screenshot});
-      console.log(`Fault lines: ${shown(url)} at ${width}px → ${screenshot}`);
-    }
+async function afterViewportChange(page: Page, width: number, mobile: boolean) {
+  if (mobile) {
+    const sf = calculateScalingFactor(width, { ...defaultScalingConfig, snap: 'layout' });
+    await page.evaluate(scale => {
+      document.documentElement.style.setProperty('--sf', String(scale));
+      document.documentElement.setAttribute('data-mobile', '');
+      void document.documentElement.scrollWidth;
+    }, sf);
+  }
+  await page.waitForTimeout(80);
+}
 
-    if (found.length) {
-      broken += found.length;
-      report.push(`${width}px ${shown(url)}`, ...found.map(({ code, message, element }) => `  ${code}  ${element}: ${message}`));
+async function recordAtWidth(page: Page, url: string, width: number) {
+  await scrollForMeasurement(page);
+  const result = await page.evaluate(() => (window as unknown as { __inspectConstraints: () => { findings: Broken[]; measured: Record<string, number> } }).__inspectConstraints());
+  for (const [code, count] of Object.entries(result.measured)) measured[code] = (measured[code] ?? 0) + count;
+  const found = result.findings.filter(finding => !finding.review);
+  const toReview = result.findings.filter(finding => finding.review);
+  if (result.findings.some(finding => finding.code === 'page.fault-lines')) {
+    const folder = resolve(option('artifacts') ?? 'test-results/constraints');
+    mkdirSync(folder, { recursive: true });
+    const pathname = new URL(url).pathname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home';
+    const suffix = createHash('sha256').update(shown(url)).digest('hex').slice(0, 8);
+    const screenshot = join(folder, `${width}-${pathname}-${suffix}.png`);
+    await page.evaluate(() => (window as unknown as { __paintFaultLines: () => void }).__paintFaultLines());
+    await page.screenshot({ path: screenshot });
+    console.log(`Fault lines: ${shown(url)} at ${width}px → ${screenshot}`);
+  }
+  if (found.length) {
+    broken += found.length;
+    report.push(`${width}px ${shown(url)}`, ...found.map(({ code, message, element }) => `  ${code}  ${element}: ${message}`));
+  }
+  if (toReview.length) reviews.push(`${width}px ${shown(url)}`, ...toReview.map(({ code, message, element }) => `  ${code}  ${element}: ${message}`));
+}
+
+/** Whether every width on the page loaded. A page that did not, on its first turn, is left for `visitAll` to try again alone. */
+async function openPage(url: string, last: boolean): Promise<boolean> {
+  for (const batch of batches) {
+    const mobile = batch[0]! < 768;
+    const first = batch[0]!;
+    const context = await browser.newContext({
+      ...(mobile ? devices['iPhone 14'] : {}),
+      viewport: { width: first, height: 844 },
+      screen: { width: first, height: 844 },
+      colorScheme: theme,
+    });
+    const page = await context.newPage();
+    try {
+      const attempts: { error?: string; status?: number; url?: string; ray?: string }[] = [];
+      let documentResponse: Response | undefined;
+      page.on('response', response => {
+        if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponse = response;
+      });
+      const navigate = async (timeout: number) => {
+        documentResponse = undefined;
+        try {
+          const response = await page.goto(url, { waitUntil: 'networkidle', timeout });
+          attempts.push(response ? { status: response.status(), url: response.url(), ray: response.headers()['cf-ray'] } : { error: 'Navigation returned no document response' });
+          return response;
+        } catch (error) {
+          const response = documentResponse as Response | undefined;
+          attempts.push({ error: (error as Error).message, status: response?.status(), url: response?.url(), ray: response?.headers()['cf-ray'] });
+          if (response && !response.ok()) return response;
+          throw error;
+        }
+      };
+      documentLoads += 1;
+      const loaded = await navigate(30_000).catch(() => navigate(60_000))
+        .then(response => ({ response }), (error: Error) => ({ error }));
+      const failure = 'error' in loaded ? loaded.error.message
+        : !loaded.response ? 'Navigation returned no document response'
+        : !loaded.response.ok() ? `Document returned HTTP ${loaded.response.status()}` : undefined;
+      if (failure) {
+        const folder = resolve(option('artifacts') ?? 'test-results/constraints');
+        mkdirSync(folder, { recursive: true });
+        const suffix = createHash('sha256').update(shown(url)).digest('hex').slice(0, 12);
+        const artifact = join(folder, `${first}-${suffix}-${last ? 'retry' : 'first'}-navigation`);
+        const title = await page.title().catch(() => '');
+        const html = await page.content().catch(() => '');
+        writeFileSync(`${artifact}.json`, JSON.stringify({ requested: shown(url), actual: page.url(), width: first, widths: batch, title, failure, attempts }, null, 2));
+        writeFileSync(`${artifact}.html`, html);
+        await page.screenshot({ path: `${artifact}.png` }).catch(() => undefined);
+        console.log(`Navigation failure: ${shown(url)} at ${first}px (${batch.join(', ')}px) → ${artifact}.json`);
+        if ('error' in loaded && !last) return false;
+        for (const width of batch) {
+          notOpened += 1;
+          report.push(`${width}px ${shown(url)}`, `  navigation failed: ${failure.split('\n')[0]} (evidence: ${artifact}.json)`);
+        }
+        continue;
+      }
+      if (option('theme')) await page.evaluate(appearance => {
+        document.documentElement.classList.remove('light-theme', 'dark-theme');
+        document.documentElement.classList.add(`${appearance}-theme`);
+        document.documentElement.style.colorScheme = appearance;
+      }, theme);
+      await page.addScriptTag({ content: checker });
+      for (const width of batch) {
+        if (width !== first) await page.setViewportSize({ width, height: 844 });
+        await afterViewportChange(page, width, mobile);
+        await recordAtWidth(page, url, width);
+      }
+    } catch (error) {
+      for (const width of batch) {
+        broken += 1;
+        report.push(`${width}px ${shown(url)}`, `  could not be opened: ${(error as Error).message.split('\n')[0]}`);
+      }
+    } finally {
+      await context.close();
+      noteMemory();
     }
-    if (toReview.length) reviews.push(`${width}px ${shown(url)}`, ...toReview.map(({ code, message, element }) => `  ${code}  ${element}: ${message}`));
-  } catch (error) {
-    broken += 1;
-    report.push(`${width}px ${shown(url)}`, `  could not be opened: ${(error as Error).message.split('\n')[0]}`);
-  } finally {
-    await context.close();
   }
   return true;
 }
 
-const retried = await visitAll(queue, workers, open);
+const retried = await visitAll(pages, workers, openPage);
 await browser.close();
 served?.server.close();
 
 console.log(report.join('\n'));
 if (reviews.length) console.log(`\nTo review by eye (not measured, so not counted as broken):\n${reviews.join('\n')}\n`);
 for (const [code, count] of Object.entries(measured)) console.log(`${code}: ${count} measured.`);
-console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers: ${broken ? `${broken} broken` : notOpened ? 'no layout rules checked on failed documents' : 'every rule kept'}${notOpened ? `, ${notOpened} documents failed` : ''}${retried.length ? ` (${retried.length} tried again alone after a slow load)` : ''}.`);
+const elapsed = ((performance.now() - started) / 1000).toFixed(1);
+const peakMiB = Math.round(peakRss / 1024 / 1024);
+console.log(`${pages.length} pages at ${widths.join(', ')}px${served ? ` from ${dist}` : ''} with ${workers} workers and ${documentLoads} document loads: ${broken ? `${broken} broken` : notOpened ? 'no layout rules checked on failed documents' : 'every rule kept'}${notOpened ? `, ${notOpened} documents failed` : ''}${retried.length ? ` (${retried.length} tried again alone after a slow load)` : ''}. Sweep ${elapsed}s, peak RSS ${peakMiB} MiB.`);
 process.exit(broken || notOpened ? 1 : 0);
