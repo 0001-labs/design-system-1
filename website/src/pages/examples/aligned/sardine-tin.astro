@@ -1,0 +1,293 @@
+---
+// After a tin of sardines from a Portuguese cannery: the lithographed lid, its ring, the key that
+// came with it and the paper wrapper's small print, on a gingham cloth whose checks are the squares.
+// Pull the ring and the lid rolls back onto the key, showing four fish packed head to tail in oil.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="sardine-tin" theme="light">
+  <main class="stage tin" id="tin-stage">
+    <h1 class="tin-sr">Três Irmãs sardines in extra virgin olive oil, vintage 2025</h1>
+
+    <button type="button" class="tin-can" id="can" aria-pressed="false" aria-label="Pull the ring to open the tin">
+      <svg id="can-svg" aria-hidden="true"></svg>
+    </button>
+
+    <div class="tin-key" id="key" aria-hidden="true">
+      <svg id="key-svg"></svg>
+    </div>
+    <p class="tin-hint" id="hint">Pull the ring. <span lang="pt">Puxe a argola.</span></p>
+
+    <article class="tin-paper" lang="en">
+      <p class="tin-maker">Conservas Maré Alta<br /><span>Matosinhos, Portugal, desde 1921</span></p>
+      <h2>Sardinhas em azeite<span>Sardines in extra virgin olive oil</span></h2>
+      <p><b>Ingredients</b> Sardines (<i>Sardina pilchardus</i>) 70%, extra virgin olive oil 28%, sea salt.</p>
+      <p>Caught by purse seine in the North-east Atlantic, FAO 27 IXa, between June and October, when they are fattest. Packed by hand the same day.</p>
+      <table class="tin-facts">
+        <caption>Per 100 g</caption>
+        <tbody>
+          <tr><th>Energy</th><td>922 kJ / 221 kcal</td></tr>
+          <tr><th>Fat</th><td>14 g</td></tr>
+          <tr><th class="tin-sub">of which saturates</th><td>3.1 g</td></tr>
+          <tr><th>Protein</th><td>24 g</td></tr>
+          <tr><th>Salt</th><td>0.9 g</td></tr>
+          <tr><th>Omega-3</th><td>2.1 g</td></tr>
+        </tbody>
+      </table>
+      <p class="tin-care"><b>Keep it like wine.</b> Turn the tin every six months so the oil reaches every fish. They soften and improve for ten years. <span lang="pt">Vire a lata de seis em seis meses.</span></p>
+      <p class="tin-sisters">The three fish on the lid are Amélia, Rosa and Conceição, who founded the cannery and did not agree on which of them was the middle one.</p>
+      <p class="tin-stamp" aria-hidden="true">Embalado<br />à mão</p>
+      <dl class="tin-lot">
+        <div><dt>Colheita</dt><dd>2025</dd></div>
+        <div><dt>Lote</dt><dd>0731-B</dd></div>
+        <div><dt>Best before</dt><dd>end 2035</dd></div>
+        <div><dt>Net</dt><dd>120 g</dd></div>
+      </dl>
+    </article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const can = $('can') as HTMLButtonElement, canSvg = $('can-svg') as unknown as SVGSVGElement;
+  const key = $('key'), keySvg = $('key-svg') as unknown as SVGSVGElement, hint = $('hint');
+  const f = (n: number) => +n.toFixed(3);
+
+  const round = (x: number, y: number, w: number, h: number, r: number) =>
+    `M ${f(x + r)} ${f(y)} H ${f(x + w - r)} A ${f(r)} ${f(r)} 0 0 1 ${f(x + w)} ${f(y + r)} V ${f(y + h - r)} A ${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)} H ${f(x + r)} A ${f(r)} ${f(r)} 0 0 1 ${f(x)} ${f(y + h - r)} V ${f(y + r)} A ${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)} Z`;
+
+  /** A sardine, head at the left, `length` squares long; `paint` is the body's gradient. */
+  function fish(x: number, y: number, length: number, angle: number, paint: string, flip = false, ratio = 0.21) {
+    const L = length, h = L * ratio, line = Math.min(L * 0.008, 0.12);
+    const body = `M 0 0 C ${f(L * 0.12)} ${f(-h * 0.62)} ${f(L * 0.58)} ${f(-h * 0.6)} ${f(L * 0.84)} ${f(-h * 0.14)} L ${f(L)} ${f(-h * 0.46)} L ${f(L * 0.94)} 0 L ${f(L)} ${f(h * 0.46)} L ${f(L * 0.84)} ${f(h * 0.14)} C ${f(L * 0.58)} ${f(h * 0.62)} ${f(L * 0.12)} ${f(h * 0.62)} 0 0 Z`;
+    let spots = '';
+    for (let index = 0; index < 5; index++) spots += `<circle cx="${f(L * (0.24 + index * 0.055))}" cy="${f(-h * 0.16 + index * 0.006)}" r="${f(Math.min(h * 0.06, L * 0.012))}" fill="#14324a"/>`;
+    const scale = flip ? `scale(-1 1) translate(${f(-L)} 0)` : '';
+    return `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(angle)}) ${scale}">
+      <path d="${body}" fill="${paint}" stroke="#102a40" stroke-width="${f(line)}"/>
+      <path d="M ${f(L * 0.2)} ${f(-h * 0.36)} Q ${f(L * 0.24)} 0 ${f(L * 0.2)} ${f(h * 0.36)}" fill="none" stroke="#102a40" stroke-width="${f(line)}"/>
+      <path d="M ${f(L * 0.08)} ${f(h * 0.02)} Q ${f(L * 0.45)} ${f(h * 0.12)} ${f(L * 0.83)} ${f(h * 0.02)}" fill="none" stroke="#fff" stroke-width="${f(line * 1.2)}" opacity="0.8"/>
+      <path d="M ${f(L * 0.46)} ${f(-h * 0.54)} l ${f(L * 0.05)} ${f(-Math.min(h * 0.3, L * 0.06))} l ${f(L * 0.05)} ${f(Math.min(h * 0.32, L * 0.065))} Z" fill="#1d4a6b"/>
+      ${spots}
+      <circle cx="${f(L * 0.075)}" cy="${f(-h * 0.08)}" r="${f(Math.min(h * 0.13, L * 0.027))}" fill="#fff" stroke="#102a40" stroke-width="${f(line * 0.8)}"/>
+      <circle cx="${f(L * 0.078)}" cy="${f(-h * 0.08)}" r="${f(Math.min(h * 0.07, L * 0.015))}" fill="#102a40"/>
+    </g>`;
+  }
+
+  let W = 40, H = 25, open = false, peel = 0, frame = 0;
+
+  function draw() {
+    const rim = Math.min(0.9, H * 0.045), r = H * 0.3, lx = rim, ly = rim, lw = W - 2 * rim, lh = H - 2 * rim, lr = r - rim;
+    const peelX = lx + lw * peel;
+    const t = Math.max(0.4, H / 22);
+    // The lithograph, in squares.
+    const band = 1.1 * t, field = { x: lx + band, y: ly + band, w: lw - 2 * band, h: lh - 2 * band, r: Math.max(0.5, lr - band) };
+    const cart = { w: Math.min(field.w * 0.56, 22), h: 2.4 * t };
+    const cx = W / 2;
+    const fishLength = Math.max(2, Math.min(field.w * 0.58, (field.h - 7 * t) * 2.4));
+    const fishTop = field.y + 1.2 * t + cart.h + 0.9 * t + fishLength * 0.13;
+    const school = [0, 1, 2].map(index => fish(cx - fishLength * 0.56 + index * fishLength * 0.06, fishTop + index * fishLength * 0.16, fishLength, -4 + index * 3, 'url(#litho-fish)')).join('');
+    const vintage = { x: field.x + 3 * t, y: field.y + field.h - 2.9 * t, r: 2 * t };
+
+    const lid = `
+      <path d="${round(lx, ly, lw, lh, lr)}" fill="#cf2f26"/>
+      <path d="${round(lx + 0.55 * t, ly + 0.55 * t, lw - 1.1 * t, lh - 1.1 * t, Math.max(0.3, lr - 0.55 * t))}" fill="none" stroke="#fff6d8" stroke-width="${f(0.2 * t)}" stroke-dasharray="0.001 ${f(0.42 * t)}" stroke-linecap="round"/>
+      <path d="${round(field.x, field.y, field.w, field.h, field.r)}" fill="#f4c22c"/>
+      <path d="${round(field.x + 0.35 * t, field.y + 0.35 * t, field.w - 0.7 * t, field.h - 0.7 * t, Math.max(0.3, field.r - 0.35 * t))}" fill="none" stroke="#17305e" stroke-width="${f(0.08 * t)}"/>
+      <g opacity="0.22">${Array.from({ length: Math.ceil(field.w / (0.5 * t)) }, (_, index) => `<path d="M ${f(field.x + index * 0.5 * t)} ${f(field.y + field.h)} l ${f(field.h * 0.5)} ${f(-field.h)}" stroke="#e08a18" stroke-width="${f(0.06 * t)}"/>`).join('')}</g>
+      <path d="M ${f(cx - cart.w / 2 - 1.2 * t)} ${f(field.y + 1.2 * t + cart.h / 2)} L ${f(cx - cart.w / 2)} ${f(field.y + 1.2 * t)} H ${f(cx + cart.w / 2)} L ${f(cx + cart.w / 2 + 1.2 * t)} ${f(field.y + 1.2 * t + cart.h / 2)} L ${f(cx + cart.w / 2)} ${f(field.y + 1.2 * t + cart.h)} H ${f(cx - cart.w / 2)} Z" fill="#17305e"/>
+      <text x="${f(cx)}" y="${f(field.y + 1.2 * t + cart.h * 0.7)}" text-anchor="middle" class="brand" font-size="${f(1.45 * t)}">TRÊS IRMÃS</text>
+      ${school}
+      <text x="${f(cx + field.w * 0.1)}" y="${f(field.y + field.h - 2.3 * t)}" text-anchor="middle" class="script" font-size="${f(3.2 * t)}">Sardinhas</text>
+      <text x="${f(cx + field.w * 0.1)}" y="${f(field.y + field.h - 1 * t)}" text-anchor="middle" class="small" font-size="${f(0.72 * t)}">EM AZEITE VIRGEM EXTRA</text>
+      <circle cx="${f(vintage.x)}" cy="${f(vintage.y)}" r="${f(vintage.r)}" fill="#cf2f26" stroke="#17305e" stroke-width="${f(0.1 * t)}"/>
+      <circle cx="${f(vintage.x)}" cy="${f(vintage.y)}" r="${f(vintage.r - 0.3 * t)}" fill="none" stroke="#fff6d8" stroke-width="${f(0.05 * t)}"/>
+      <text x="${f(vintage.x)}" y="${f(vintage.y - 0.25 * t)}" text-anchor="middle" class="roundel" font-size="${f(0.44 * t)}">COLHEITA</text>
+      <text x="${f(vintage.x)}" y="${f(vintage.y + 0.95 * t)}" text-anchor="middle" class="roundel-year" font-size="${f(1.1 * t)}">2025</text>
+      <path d="${round(lx, ly, lw, lh, lr)}" fill="url(#litho-shine)"/>
+      <path d="${round(lx + 0.15, ly + 0.15, lw - 0.3, lh - 0.3, Math.max(0.3, lr - 0.15))}" fill="none" stroke="rgb(255 255 255 / 0.5)" stroke-width="0.08"/>`;
+
+    // Inside: oil, four fish head to tail.
+    const inner = { x: rim * 1.3, y: rim * 1.3, w: W - 2.6 * rim, h: H - 2.6 * rim };
+    const lane = inner.h / 4;
+    let packed = '';
+    for (let index = 0; index < 4; index++) packed += fish(inner.x + inner.w * 0.03, inner.y + lane * (index + 0.5), inner.w * 0.94, 0, 'url(#oil-fish)', index % 2 === 1, (lane * 0.98) / (1.24 * inner.w * 0.94));
+
+    const ringX = Math.max(lx + 1.4 * Math.min(1, H / 22), peelX + 1.4 * Math.min(1, H / 22)), ringY = H / 2;
+    canSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    canSvg.innerHTML = `
+      <defs>
+        <linearGradient id="tin-rim" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#f4f5f6"/><stop offset="0.35" stop-color="#a9aeb3"/><stop offset="0.6" stop-color="#e3e6e8"/><stop offset="1" stop-color="#7d8389"/></linearGradient>
+        <linearGradient id="litho-fish" x1="0" y1="0" x2="0" y2="1"><stop offset="0.1" stop-color="#1d4a6b"/><stop offset="0.45" stop-color="#5f93b4"/><stop offset="0.55" stop-color="#c9dbe4"/><stop offset="0.9" stop-color="#fbfdfd"/></linearGradient>
+        <linearGradient id="oil-fish" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d5a63"/><stop offset="0.45" stop-color="#8fa5a4"/><stop offset="0.6" stop-color="#d8d3b8"/><stop offset="1" stop-color="#efe3b8"/></linearGradient>
+        <linearGradient id="oil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b07d16"/><stop offset="1" stop-color="#e6bd48"/></linearGradient>
+        <linearGradient id="litho-shine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.3" stop-color="#fff" stop-opacity="0"/><stop offset="0.75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.18"/></linearGradient>
+        <linearGradient id="curl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6d7277"/><stop offset="0.35" stop-color="#f1f3f4"/><stop offset="0.6" stop-color="#b3b8bc"/><stop offset="1" stop-color="#5e6368"/></linearGradient>
+        <clipPath id="tin-lid-shape"><path d="${round(lx, ly, lw, lh, lr)}"/></clipPath>
+        <clipPath id="tin-peel"><rect x="${f(peelX)}" y="0" width="${f(W)}" height="${H}"/></clipPath>
+      </defs>
+      <path d="${round(0, 0, W, H, r)}" fill="url(#tin-rim)"/>
+      <path d="${round(rim * 0.4, rim * 0.4, W - rim * 0.8, H - rim * 0.8, r - rim * 0.4)}" fill="none" stroke="#6d7277" stroke-width="${f(rim * 0.08)}"/>
+      <path d="${round(rim * 0.66, rim * 0.66, W - rim * 1.32, H - rim * 1.32, r - rim * 0.66)}" fill="none" stroke="#fff" stroke-width="${f(rim * 0.08)}" opacity="0.8"/>
+      <g clip-path="url(#tin-lid-shape)">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#oil)"/>
+        ${packed}
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#e6bd48" opacity="0.22"/>
+        <g clip-path="url(#tin-peel)">${lid}</g>
+      </g>
+      ${peel > 0 ? `<rect x="${f(peelX - 0.7)}" y="${f(ly - 0.25)}" width="1.6" height="${f(lh + 0.5)}" rx="0.8" fill="url(#curl)" stroke="#55595e" stroke-width="0.05"/>` : ''}
+      <g class="ring" transform="translate(${f(ringX)} ${f(ringY)}) scale(${f(Math.min(1, H / 22))})">
+        <rect x="-0.25" y="-0.7" width="1.4" height="1.4" rx="0.5" fill="#c9ccd0" stroke="#6d7277" stroke-width="0.06"/>
+        <ellipse cx="-0.2" cy="0" rx="1.25" ry="2.1" fill="none" stroke="url(#tin-rim)" stroke-width="0.42"/>
+        <ellipse cx="-0.2" cy="0" rx="1.25" ry="2.1" fill="none" stroke="#5e6368" stroke-width="0.05"/>
+        <circle cx="0.5" cy="0" r="0.22" fill="#7d8389"/>
+      </g>`;
+  }
+
+  function drawKey(width: number, height: number) {
+    keySvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const y = height / 2;
+    keySvg.innerHTML = `
+      <defs><linearGradient id="key-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef0f1"/><stop offset="0.5" stop-color="#9aa0a6"/><stop offset="1" stop-color="#d7dadd"/></linearGradient></defs>
+      <rect x="0.3" y="${f(y - 0.75)}" width="2.4" height="1.5" rx="0.75" fill="none" stroke="url(#key-metal)" stroke-width="0.34"/>
+      <rect x="0.3" y="${f(y - 0.75)}" width="2.4" height="1.5" rx="0.75" fill="none" stroke="#6d7277" stroke-width="0.04"/>
+      <rect x="2.6" y="${f(y - 0.18)}" width="${f(width - 3.4)}" height="0.36" rx="0.1" fill="url(#key-metal)" stroke="#6d7277" stroke-width="0.04"/>
+      <rect x="${f(width - 2.6)}" y="${f(y - 0.04)}" width="2" height="0.08" fill="#4b5055"/>`;
+  }
+
+  function animateTo(target: number) {
+    cancelAnimationFrame(frame);
+    if (reducedMotion()) { peel = target; draw(); return; }
+    const from = peel, start = performance.now(), duration = 1400;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      // Slow at first, as a lid is, then the seam gives.
+      const eased = t < 0.18 ? (t / 0.18) * 0.06 : 0.06 + 0.94 * (1 - Math.pow(Math.max(0, 1 - (t - 0.18) / 0.82), 2.4));
+      peel = from + (target - from) * eased;
+      draw();
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+  }
+
+  can.addEventListener('click', () => {
+    open = !open;
+    can.setAttribute('aria-pressed', String(open));
+    can.setAttribute('aria-label', open ? 'Close the tin' : 'Pull the ring to open the tin');
+    hint.innerHTML = open ? 'Four fish, head to tail. Press to close.' : 'Pull the ring. <span lang="pt">Puxe a argola.</span>';
+    animateTo(open ? 0.93 : 0);
+  });
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      W = across - 2; H = Math.round(W * 0.64);
+      can.style.cssText = `grid-column: 2 / span ${W}; grid-row: auto; height: calc(${H} * var(--u));`;
+      key.style.cssText = `grid-column: 3 / span ${W - 4}; grid-row: auto; height: calc(2 * var(--u));`;
+      hint.style.cssText = "";
+      drawKey(W - 4, 2);
+    } else {
+      const room = across - 32;
+      W = Math.max(20, Math.min(room, Math.floor((down - 11) / 0.64), 46));
+      H = Math.round(W * 0.64);
+      const top = Math.max(3, Math.floor((down - (H + 7)) / 2) + 1);
+      const left = 4 + Math.max(0, Math.floor((room - W) / 2));
+      can.style.cssText = `grid-column: ${left} / span ${W}; grid-row: ${top} / span ${H};`;
+      key.style.cssText = `grid-column: ${left + 2} / span 16; grid-row: ${top + H + 2} / span 2;`;
+      hint.style.cssText = `grid-column: ${left + 20} / span ${Math.max(8, W - 20)}; grid-row: ${top + H + 2} / span 2;`;
+      drawKey(16, 2);
+    }
+    draw();
+  });
+</script>
+
+<style is:global>
+  html[data-study='sardine-tin'] { background: #d8ece7; }
+  .tin {
+    --teal: #127464;
+    --navy: #17305e;
+    --red: #cf2f26;
+    /* Gingham: one square a check, the threads crossing darker where they overlap. */
+    background:
+      repeating-linear-gradient(to right, rgb(18 116 100 / 0.5) 0 var(--u), transparent var(--u) calc(2 * var(--u))),
+      repeating-linear-gradient(to bottom, rgb(18 116 100 / 0.5) 0 var(--u), transparent var(--u) calc(2 * var(--u))),
+      #eef6f3;
+    font-family: 'Gill Sans', 'Gill Sans MT', var(--typeface-regular), sans-serif;
+    color: var(--navy);
+  }
+  .tin-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .tin p, .tin h2, .tin dl, .tin dd { margin: 0; }
+
+  .tin-can { all: unset; display: block; cursor: pointer; filter: drop-shadow(calc(0.4 * var(--u)) calc(0.6 * var(--u)) calc(0.4 * var(--u)) rgb(10 50 44 / 0.45)); border-radius: calc(3 * var(--u)); }
+  .tin-can:focus-visible { outline: calc(0.15 * var(--u)) solid var(--navy); outline-offset: calc(0.5 * var(--u)); }
+  .tin-can svg { display: block; width: 100%; height: 100%; }
+  .tin-can .brand { font-family: Copperplate, 'Copperplate Gothic Light', var(--typeface-medium), serif; fill: #fff6d8; letter-spacing: 0.12em; }
+  .tin-can .script { font-family: 'Snell Roundhand', 'Apple Chancery', cursive; fill: var(--red); stroke: #fff6d8; stroke-width: 0.22; paint-order: stroke; font-weight: bold; }
+  .tin-can .small { font-family: Copperplate, var(--typeface-medium), serif; fill: var(--navy); letter-spacing: 0.18em; }
+  .tin-can .roundel { font-family: Copperplate, var(--typeface-medium), serif; fill: #fff6d8; letter-spacing: 0.1em; }
+  .tin-can .roundel-year { font-family: 'Bodoni 72', Didot, serif; fill: #fff6d8; font-weight: bold; }
+  .tin-key { filter: drop-shadow(calc(0.15 * var(--u)) calc(0.3 * var(--u)) calc(0.15 * var(--u)) rgb(10 50 44 / 0.45)); }
+  .tin-key svg { display: block; width: 100%; height: 100%; }
+  .tin-hint { align-self: center; font-size: calc(15px * var(--sf)); line-height: var(--u); background: #eef6f3; padding-inline: calc(0.5 * var(--u)); width: max-content; max-width: 100%; box-sizing: border-box; }
+  .tin-hint span { font-style: italic; }
+
+  /* The wrapper's small print on its paper. */
+  .tin-paper {
+    grid-column: -26 / -4;
+    grid-row: 3 / -3;
+    box-sizing: border-box;
+    padding: var(--u) calc(1.5 * var(--u));
+    display: flex;
+    flex-direction: column;
+    gap: var(--u);
+    background: #fffdf7;
+    box-shadow: inset 0 calc(0.5 * var(--u)) 0 var(--red), inset 0 calc(0.6 * var(--u)) 0 #fffdf7, inset 0 calc(0.75 * var(--u)) 0 var(--navy), calc(0.3 * var(--u)) calc(0.4 * var(--u)) calc(0.3 * var(--u)) rgb(10 50 44 / 0.3);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    overflow: hidden;
+  }
+  .tin-maker { padding-top: var(--u); font-family: Copperplate, var(--typeface-medium), serif; font-size: calc(15px * var(--sf)); letter-spacing: 0.08em; color: var(--red); }
+  .tin-maker span { font-family: 'Gill Sans', sans-serif; font-size: calc(12px * var(--sf)); letter-spacing: 0; color: var(--navy); font-style: italic; }
+  .tin-paper h2 { font-family: 'Snell Roundhand', 'Apple Chancery', cursive; font-weight: bold; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--navy); }
+  .tin-paper h2 span { display: block; font-family: 'Gill Sans', sans-serif; font-weight: normal; font-size: calc(13px * var(--sf)); line-height: var(--u); }
+  .tin-paper b { font-weight: 600; }
+  .tin-facts { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .tin-facts caption { text-align: left; font-weight: 600; height: var(--u); }
+  .tin-facts th, .tin-facts td { height: var(--u); padding: 0; line-height: calc(var(--u) - 1px); border-top: 1px solid rgb(23 48 94 / 0.3); font-weight: normal; text-align: left; }
+  .tin-facts td { text-align: right; }
+  .tin-facts .tin-sub { padding-left: var(--u); font-style: italic; }
+  .tin-care span { font-style: italic; color: var(--red); }
+  .tin-sisters { font-style: italic; }
+  .tin-stamp {
+    align-self: flex-end;
+    display: grid;
+    place-items: center;
+    width: calc(5 * var(--u));
+    height: calc(5 * var(--u));
+    margin-top: auto !important;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 calc(0.12 * var(--u)) var(--red), inset 0 0 0 calc(0.3 * var(--u)) transparent, inset 0 0 0 calc(0.36 * var(--u)) var(--red);
+    color: var(--red);
+    font-family: Copperplate, var(--typeface-medium), serif;
+    font-size: calc(11px * var(--sf));
+    line-height: var(--u);
+    text-align: center;
+    align-content: center;
+    transform: rotate(-12deg);
+    opacity: 0.85;
+  }
+  .tin-lot { display: grid; grid-template-columns: 1fr 1fr; font-size: calc(12px * var(--sf)); }
+  .tin-lot dt { color: var(--red); }
+  .tin-lot dd { font-family: 'Bodoni 72', Didot, serif; font-size: calc(15px * var(--sf)); }
+
+  @media (max-height: 820px) {
+    :root:not([data-narrow]) .tin-paper { grid-row: 2 / -2; }
+    :root:not([data-narrow]) .tin-paper > p:nth-of-type(3), :root:not([data-narrow]) .tin-sisters { display: none; }
+  }
+
+  /* Narrow: the tin, its key, then the paper. */
+  :root[data-narrow] .tin { padding-bottom: calc(3 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .tin > :not(.tin-can, .tin-key, .tin-sr) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .tin-can { margin-top: calc(2 * var(--u)); border-radius: var(--u); }
+  :root[data-narrow] .tin-paper { overflow: visible; }
+</style>

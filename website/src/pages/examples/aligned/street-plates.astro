@@ -1,0 +1,241 @@
+---
+// After the enamel name plates of a city's streets: ultramarine fields, a white fillet, a green
+// frame, screwed to a limestone wall whose courses are three squares high and whose blocks are whole
+// squares long. The streets are of an arrondissement that does not exist, the twenty-first, where a
+// marble plaque remembers the day nothing happened.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="street-plates" theme="light">
+  <main class="stage sp" lang="fr">
+    <h1 class="sp-sr">Plaques de rue du vingt-et-unième arrondissement</h1>
+
+    <div class="sp-plate sp-main">
+      <p class="sp-arrt">21<sup>e</sup> A<sup>rrt</sup></p>
+      <p class="sp-name"><span class="sp-kind">Rue</span> de l’Escalier qui Monte</p>
+    </div>
+
+    <div class="sp-plate sp-passage">
+      <p class="sp-arrt">21<sup>e</sup> A<sup>rrt</sup></p>
+      <p class="sp-name"><span class="sp-kind">Passage</span> des Parapluies Oubliés</p>
+      <p class="sp-note">Ancien chemin des drapiers · ouvert en 1781, couvert en 1782</p>
+    </div>
+
+    <div class="sp-plate sp-number" aria-label="Numéro 17"><span>17</span><small>bis</small></div>
+
+    <div class="sp-impasse">
+      <div class="sp-plate">
+        <p class="sp-arrt">21<sup>e</sup> A<sup>rrt</sup></p>
+        <p class="sp-name"><span class="sp-kind">Impasse</span> du Dernier Métro</p>
+      </div>
+      <p class="sp-dead">Voie sans issue</p>
+    </div>
+
+    <div class="sp-plate sp-quai">
+      <p class="sp-arrt">21<sup>e</sup> A<sup>rrt</sup></p>
+      <p class="sp-name"><span class="sp-kind">Quai</span> des Pigeons Assis</p>
+    </div>
+
+    <div class="sp-renamed">
+      <div class="sp-plate sp-new">
+        <p class="sp-arrt">21<sup>e</sup> A<sup>rrt</sup></p>
+        <p class="sp-name"><span class="sp-kind">Rue</span> du Mardi Matin</p>
+      </div>
+      <div class="sp-plate sp-old" aria-label="Ancienne plaque : Rue de la Lune Pleine">
+        <p class="sp-name"><span class="sp-kind">Rue</span> de la Lune Pleine</p>
+        <span class="sp-paint" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="sp-plate sp-square">
+      <p class="sp-name"><span class="sp-kind">Square</span> Sans Nom</p>
+    </div>
+
+    <figure class="sp-plaque">
+      <p class="sp-plaque-lead">Dans cette rue</p>
+      <p class="sp-plaque-date">le 3 avril 1911</p>
+      <p class="sp-plaque-text">il ne s’est<br />rien passé.</p>
+      <p class="sp-plaque-by">Les habitants reconnaissants</p>
+    </figure>
+
+    <span class="sp-pipe" aria-hidden="true"></span>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html[data-study='street-plates'] { background: #a39d8e; }
+  .sp {
+    --enamel: #173a8a;
+    --enamel-deep: #0f2a6b;
+    --frame: #1f6a45;
+    --fillet: #f4f6f2;
+    --mortar: #8d8676;
+    color: var(--fillet);
+    font-family: var(--typeface-compressed);
+    /* The wall: three courses of limestone blocks, whole squares long, repeating every 24 × 9 squares;
+       grit from a turbulence on top, and the soot that rain draws down from the cornice. */
+    background:
+      linear-gradient(to bottom, rgb(40 36 30 / 0.28), rgb(40 36 30 / 0) calc(6 * var(--u))),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.25 0 0 0 0 0.22 0 0 0 0 0.18 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 9' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='0.14'/%3E%3Cstop offset='0.7' stop-color='%23000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='0.16'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='9' fill='%238d8676'/%3E%3Cg%3E%3Crect x='0.06' y='0.06' width='6.88' height='2.88' rx='0.12' fill='%23bdb5a2'/%3E%3Crect x='7.06' y='0.06' width='8.88' height='2.88' rx='0.12' fill='%23c6bfad'/%3E%3Crect x='16.06' y='0.06' width='7.88' height='2.88' rx='0.12' fill='%23b4ac98'/%3E%3Crect x='0.06' y='3.06' width='3.88' height='2.88' rx='0.12' fill='%23c2baa6'/%3E%3Crect x='4.06' y='3.06' width='7.88' height='2.88' rx='0.12' fill='%23b8b09c'/%3E%3Crect x='12.06' y='3.06' width='5.88' height='2.88' rx='0.12' fill='%23c9c2b0'/%3E%3Crect x='18.06' y='3.06' width='5.88' height='2.88' rx='0.12' fill='%23afa794'/%3E%3Crect x='0.06' y='6.06' width='5.88' height='2.88' rx='0.12' fill='%23b6ae9a'/%3E%3Crect x='6.06' y='6.06' width='6.88' height='2.88' rx='0.12' fill='%23c4bca9'/%3E%3Crect x='13.06' y='6.06' width='10.88' height='2.88' rx='0.12' fill='%23bab29f'/%3E%3C/g%3E%3Cg fill='url(%23s)'%3E%3Crect x='0.06' y='0.06' width='6.88' height='2.88'/%3E%3Crect x='7.06' y='0.06' width='8.88' height='2.88'/%3E%3Crect x='16.06' y='0.06' width='7.88' height='2.88'/%3E%3Crect x='0.06' y='3.06' width='3.88' height='2.88'/%3E%3Crect x='4.06' y='3.06' width='7.88' height='2.88'/%3E%3Crect x='12.06' y='3.06' width='5.88' height='2.88'/%3E%3Crect x='18.06' y='3.06' width='5.88' height='2.88'/%3E%3Crect x='0.06' y='6.06' width='5.88' height='2.88'/%3E%3Crect x='6.06' y='6.06' width='6.88' height='2.88'/%3E%3Crect x='13.06' y='6.06' width='10.88' height='2.88'/%3E%3C/g%3E%3C/svg%3E") 0 0 / calc(24 * var(--u)) calc(9 * var(--u)),
+      var(--mortar);
+  }
+  .sp p { margin: 0; }
+  .sp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* A plate: ultramarine enamel, a white fillet a fifth of a square in, a green frame, four screws,
+     the gloss of fired glass and a shadow on the stone. */
+  .sp-plate {
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    padding: calc(0.6 * var(--u)) var(--u);
+    border-radius: calc(0.5 * var(--u));
+    background:
+      radial-gradient(circle at calc(0.5 * var(--u)) calc(0.5 * var(--u)), #d9dcd8 0 calc(0.12 * var(--u)), #5b5f5a calc(0.13 * var(--u)) calc(0.17 * var(--u)), transparent calc(0.18 * var(--u))),
+      radial-gradient(circle at calc(100% - 0.5 * var(--u)) calc(0.5 * var(--u)), #d9dcd8 0 calc(0.12 * var(--u)), #5b5f5a calc(0.13 * var(--u)) calc(0.17 * var(--u)), transparent calc(0.18 * var(--u))),
+      radial-gradient(circle at calc(0.5 * var(--u)) calc(100% - 0.5 * var(--u)), #d9dcd8 0 calc(0.12 * var(--u)), #5b5f5a calc(0.13 * var(--u)) calc(0.17 * var(--u)), transparent calc(0.18 * var(--u))),
+      radial-gradient(circle at calc(100% - 0.5 * var(--u)) calc(100% - 0.5 * var(--u)), #d9dcd8 0 calc(0.12 * var(--u)), #5b5f5a calc(0.13 * var(--u)) calc(0.17 * var(--u)), transparent calc(0.18 * var(--u))),
+      linear-gradient(168deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 38%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.18)),
+      var(--enamel);
+    box-shadow:
+      inset 0 0 0 calc(0.25 * var(--u)) var(--frame),
+      inset 0 0 0 calc(0.35 * var(--u)) var(--fillet),
+      inset 0 0 0 calc(0.42 * var(--u)) var(--enamel-deep),
+      calc(0.15 * var(--u)) calc(0.3 * var(--u)) calc(0.35 * var(--u)) rgb(30 26 20 / 0.45),
+      0 0 0 1px rgb(0 0 0 / 0.25);
+    text-align: center;
+  }
+  .sp-arrt { font-family: var(--typeface-medium); font-size: calc(15px * var(--sf)); line-height: var(--u); letter-spacing: 0.02em; }
+  .sp-arrt sup { font-size: 0.62em; vertical-align: 0.5em; line-height: 0; text-transform: lowercase; }
+  .sp-name {
+    font-size: calc(var(--fs, 2.6) * var(--u));
+    line-height: calc(var(--lh, 3) * var(--u));
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .sp-kind { font-size: 0.62em; letter-spacing: 0.04em; vertical-align: 0.08em; margin-inline-end: 0.12em; }
+  .sp-note { font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); line-height: var(--u); opacity: 0.92; border-top: 1px solid rgb(244 246 242 / 0.6); padding-top: calc(0.25 * var(--u)); margin-top: calc(0.2 * var(--u)) !important; }
+
+  /* A chip knocked off an edge, showing the black iron under the enamel. */
+  .sp-plate::after {
+    content: '';
+    position: absolute;
+    width: calc(0.9 * var(--u));
+    height: calc(0.55 * var(--u));
+    background: radial-gradient(circle at 40% 40%, #2b2a27, #141413 70%);
+    clip-path: polygon(8% 0, 100% 10%, 85% 60%, 55% 100%, 20% 78%, 0 30%);
+    opacity: var(--chip, 0);
+  }
+
+  /* Where they hang on a wide window: a left group from the left edge, a right group from the right,
+     the downpipe between them, so the wall widens without crowding. */
+  .sp-main { grid-column: 5 / span 30; grid-row: 4 / span 7; --fs: 3; --lh: 4; }
+  .sp-main::after { --chip: 1; right: calc(3 * var(--u)); bottom: calc(0.05 * var(--u)); }
+  .sp-passage { grid-column: 8 / span 27; grid-row: 14 / span 8; --fs: 2.2; --lh: 3; }
+  .sp-passage::after { --chip: 1; left: calc(0.1 * var(--u)); top: calc(3 * var(--u)); width: calc(0.45 * var(--u)); height: calc(0.8 * var(--u)); }
+  .sp-quai { grid-column: 4 / span 25; grid-row: -21 / span 5; --fs: 2.3; --lh: 3; }
+  .sp-renamed { grid-column: 9 / span 24; grid-row: -14 / span 10; display: grid; grid-template-rows: calc(5 * var(--u)) calc(4 * var(--u)); row-gap: var(--u); }
+
+  .sp-plaque { grid-column: -26 / -4; grid-row: 3 / span 15; }
+  .sp-number { grid-column: -26 / span 5; grid-row: 20 / span 4; padding: 0; border-radius: var(--u); }
+  .sp-number span { font-size: calc(2.4 * var(--u)); line-height: calc(2 * var(--u)); }
+  .sp-number small { font-family: var(--typeface-medium); font-size: calc(11px * var(--sf)); line-height: var(--u); margin-top: calc(-0.2 * var(--u)); }
+  .sp-square { grid-column: -19 / -4; grid-row: 20 / span 4; --fs: 2; --lh: 3; }
+  .sp-impasse { grid-column: -26 / -4; grid-row: -19 / span 8; display: grid; grid-template-rows: calc(5 * var(--u)) calc(2 * var(--u)); row-gap: var(--u); justify-items: center; }
+  .sp-impasse .sp-plate { width: 100%; --fs: 2.1; --lh: 3; }
+  .sp-dead {
+    box-sizing: border-box;
+    width: calc(9 * var(--u));
+    font-family: var(--typeface-medium);
+    font-size: calc(14px * var(--sf));
+    line-height: calc(2 * var(--u));
+    text-align: center;
+    color: #1b1b1b;
+    background: #f1f0ea;
+    border-radius: calc(0.25 * var(--u));
+    box-shadow: inset 0 0 0 calc(0.15 * var(--u)) #b3261e, calc(0.1 * var(--u)) calc(0.2 * var(--u)) calc(0.25 * var(--u)) rgb(30 26 20 / 0.4);
+  }
+  .sp-new { --fs: 2.2; --lh: 3; }
+  /* The old name, struck through with the red bar of a town you are leaving, hanging by its last screw. */
+  .sp-old {
+    --fs: 1.7; --lh: 2;
+    width: 82%;
+    justify-self: center;
+    transform-origin: calc(0.5 * var(--u)) calc(0.5 * var(--u));
+    transform: rotate(4deg);
+    filter: saturate(0.7) brightness(0.9);
+    overflow: hidden;
+  }
+  .sp-paint {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    top: calc(50% - 0.3 * var(--u));
+    height: calc(0.6 * var(--u));
+    background: #c8231b;
+    transform: rotate(-11deg);
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+  }
+
+  /* A marble plaque, cut letters filled with black. */
+  .sp-plaque {
+    margin: 0;
+    box-sizing: border-box;
+    padding: var(--u) calc(1.5 * var(--u));
+    display: grid;
+    align-content: center;
+    text-align: center;
+    color: #26231f;
+    font-family: Didot, 'Bodoni 72', 'Times New Roman', serif;
+    border-radius: calc(0.2 * var(--u));
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.018' numOctaves='5' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.45 0 0 0 0 0.5 -2.4 0 0 0 1.25'/%3E%3C/filter%3E%3Crect width='400' height='300' filter='url(%23m)'/%3E%3C/svg%3E") center / cover,
+      radial-gradient(ellipse at 30% 20%, #f8f7f3, #e6e4de 70%, #d8d5cd);
+    box-shadow: inset 0 0 0 calc(0.3 * var(--u)) rgb(255 255 255 / 0.5), inset 0 0 0 calc(0.35 * var(--u)) rgb(120 115 105 / 0.35), calc(0.2 * var(--u)) calc(0.35 * var(--u)) calc(0.4 * var(--u)) rgb(30 26 20 / 0.5);
+  }
+  .sp-plaque p { text-shadow: 0 1px 0 rgb(255 255 255 / 0.8); }
+  .sp-plaque-lead { font-size: calc(18px * var(--sf)); line-height: var(--u); letter-spacing: 0.14em; text-transform: uppercase; }
+  .sp-plaque-date { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-style: italic; }
+  .sp-plaque-text { font-size: calc(46px * var(--sf)); line-height: calc(3 * var(--u)); margin-block: var(--u) !important; }
+  .sp-plaque-by { font-size: calc(12px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.12em; text-transform: uppercase; padding-top: calc(0.4 * var(--u)); background: linear-gradient(#8a8478, #8a8478) center top / 60% 1px no-repeat; }
+
+  /* A cast-iron downpipe one square wide, the whole height, with its brackets every nine squares. */
+  .sp-pipe {
+    grid-column: -30 / span 1;
+    grid-row: 1 / -1;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 calc(8.6 * var(--u)), #2a2b2a calc(8.6 * var(--u)) calc(9 * var(--u))),
+      linear-gradient(to right, #3a3d3b, #6d716d 35%, #4a4d4a 60%, #2b2d2b);
+    box-shadow: calc(0.25 * var(--u)) 0 calc(0.3 * var(--u)) rgb(30 26 20 / 0.4);
+    margin-inline: calc(0.2 * var(--u));
+    border-radius: 1px;
+  }
+
+  /* A shorter window: everything closes up. */
+  @media (max-height: 820px) {
+    :root:not([data-narrow]) .sp-main { grid-row: 3 / span 7; }
+    :root:not([data-narrow]) .sp-passage { grid-row: 12 / span 8; }
+    :root:not([data-narrow]) .sp-plaque { grid-row: 2 / span 15; }
+    :root:not([data-narrow]) .sp-number, :root:not([data-narrow]) .sp-square { grid-row: 18 / span 4; }
+    :root:not([data-narrow]) .sp-impasse { grid-row: -17 / span 8; }
+  }
+
+  /* Narrow: the plates one under another down the wall. */
+  :root[data-narrow] .sp { padding-bottom: calc(3 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .sp > :not(.sp-sr) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .sp > .sp-main { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .sp-pipe { display: none; }
+  :root[data-narrow] .sp-plate { --fs: 1.5 !important; --lh: 2 !important; padding: calc(0.6 * var(--u)) calc(0.8 * var(--u)); }
+  :root[data-narrow] .sp > .sp-number { grid-column: 2 / span 5; height: calc(4 * var(--u)); }
+  :root[data-narrow] .sp > .sp-plaque { order: -1; }
+  :root[data-narrow] .sp > .sp-main { order: -2; }
+  :root[data-narrow] .sp-impasse { grid-template-rows: auto calc(2 * var(--u)); }
+  :root[data-narrow] .sp-renamed { grid-template-rows: auto auto; }
+  :root[data-narrow] .sp-plaque { padding-block: calc(2 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .sp-plaque-text { font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .sp-plaque-by { line-height: var(--u); padding-top: calc(0.5 * var(--u)); padding-bottom: calc(0.5 * var(--u)); letter-spacing: 0.08em; }
+  :root[data-narrow] .sp-plaque-lead { font-size: calc(15px * var(--sf)); letter-spacing: 0.08em; }
+</style>
