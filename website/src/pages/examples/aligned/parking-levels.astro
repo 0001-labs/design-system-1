@@ -1,0 +1,259 @@
+---
+// After the painted supergraphics of a multi-storey car park: a level number drawn in blocks of
+// whole squares, so tall it runs across the wall and over the pillars, one colour per level, bays
+// numbered on the floor and the lane's arrows painted towards the way out. The lift panel changes
+// the level, and with it the paint.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="parking-levels" theme="light">
+  <main class="stage park" id="park">
+    <svg class="park-scene" id="park-scene" aria-hidden="true"></svg>
+    <p class="park-beam"><span>Max headroom 2.10 m</span></p>
+    <section class="park-panel" aria-labelledby="park-panel-title">
+      <h1 id="park-panel-title">Ferry Street car park</h1>
+      <p class="park-panel-lead">Lifts and stairs. Choose a level.</p>
+      <div class="park-buttons" role="group" aria-label="Levels" id="park-buttons"></div>
+      <p class="park-here" aria-live="polite"><span class="park-here-label">You are on</span><b id="park-here">Level 3, Lime</b></p>
+      <p class="park-note" id="park-note"></p>
+      <p class="park-pay">Pay at the machine on G before you return to your car. Lost ticket £24. Open 06.00 to 00.30.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  interface Level { key: string; word: string; name: string; colour: string; ink: string; prefix: string; note: string }
+  const LEVELS: Level[] = [
+    { key: '4', word: 'four', name: 'Tangerine', colour: '#f2851f', ink: '#fff', prefix: '4', note: 'Roof. Open to the weather, and to the gulls. Ramp down at the far end.' },
+    { key: '3', word: 'three', name: 'Lime', colour: '#7fbf3a', ink: '#14240a', prefix: '3', note: 'Season tickets on the left-hand row. Charging bays 312 to 316.' },
+    { key: '2', word: 'two', name: 'Sky', colour: '#279ad6', ink: '#fff', prefix: '2', note: 'Second pay machine by the stairs. Bridge to the station on this level.' },
+    { key: '1', word: 'one', name: 'Cherry', colour: '#e1344f', ink: '#fff', prefix: '1', note: 'Parent and child bays beside the lifts. Wider bays, slower lane.' },
+    { key: 'G', word: 'G', name: 'Lemon', colour: '#f1cc16', ink: '#2a2300', prefix: 'G', note: 'Ground. Way out to Ferry Street, toilets and the cash machine.' },
+    { key: '-1', word: 'minus one', name: 'Plum', colour: '#8c4ea6', ink: '#fff', prefix: 'B', note: 'Below the river. Bicycles and motorcycles at the back wall.' },
+  ];
+
+  // Five by seven blocks for each glyph; each block is a whole number of squares.
+  const GLYPHS: Record<string, string[]> = {
+    '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+    '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    G: ['01110', '10001', '10000', '10111', '10001', '10001', '01111'],
+    '-': ['000', '000', '000', '111', '000', '000', '000'],
+  };
+
+  const spoken = (level: Level) => (level.key === 'G' ? 'Ground level' : 'Level ' + level.word);
+  const park = document.getElementById('park')!;
+  const scene = document.getElementById('park-scene') as unknown as SVGSVGElement;
+  const buttons = document.getElementById('park-buttons')!;
+  const here = document.getElementById('park-here')!;
+  const note = document.getElementById('park-note')!;
+  let current = LEVELS[1];
+  let squares = { across: 72, down: 45, narrow: false };
+
+  for (const level of LEVELS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'park-button';
+    button.textContent = level.key === '-1' ? '−1' : level.key;
+    button.style.setProperty('--level', level.colour);
+    button.setAttribute('aria-label', spoken(level) + ', ' + level.name);
+    button.addEventListener('click', () => { current = level; draw(); });
+    buttons.append(button);
+  }
+
+  const glyphWidth = (text: string) => [...text].reduce((sum, ch, i) => sum + GLYPHS[ch][0].length + (i ? 1 : 0), 0);
+
+  function draw() {
+    const { across: A, down: D, narrow } = squares;
+    const level = current;
+    park.style.setProperty('--level', level.colour);
+    park.style.setProperty('--level-ink', level.ink);
+    here.textContent = `Level ${level.key === '-1' ? '−1' : level.key}, ${level.name}`;
+    note.textContent = level.note;
+    buttons.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(LEVELS[i] === level)));
+
+    const text = level.key;
+    const blocks = glyphWidth(text);
+    // The wall between the beam and the floor; the numeral fills it, less a square above and the skirting.
+    const beam = 2;
+    const floor = narrow ? 5 : 6;
+    let block: number;
+    let wall: number;
+    if (narrow) {
+      block = Math.max(1, Math.min(3, Math.floor((A - 2) / blocks)));
+      wall = 7 * block + 8;
+    } else {
+      wall = D - beam - floor;
+      const panelLeft = A - 14;
+      block = Math.max(1, Math.min(Math.floor((wall - 4) / 7), Math.floor((panelLeft - 4) / blocks)));
+    }
+    const H = beam + wall + floor;
+    park.style.setProperty('--scene-rows', String(H));
+    scene.setAttribute('viewBox', `0 0 ${A} ${H}`);
+    const wallTop = beam;
+    const wallBottom = beam + wall;
+    const skirt = wallBottom - 2;
+    const numTop = narrow ? wallTop + 4 : wallTop + Math.max(1, Math.floor((wall - 2 - 7 * block) / 2));
+    const numLeft = narrow ? Math.floor((A - blocks * block) / 2) : 3;
+
+    const out: string[] = [];
+    // Hazard stripes along the beam, one square wide.
+    out.push(`<defs>
+      <pattern id="park-hazard" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="2" fill="#f6c51b"/><rect width="1" height="2" fill="#1c1c1a"/></pattern>
+      <filter id="park-wear" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="3.2" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -5 4.3"/><feComposite in="SourceGraphic" operator="in"/></filter>
+    </defs>`);
+    out.push(`<rect x="0" y="0" width="${A}" height="${beam}" fill="url(#park-hazard)"/>`);
+    // Pillars: three squares wide, every fourteen, stopping short of the lift panel.
+    const pillarStop = narrow ? A : A - 15;
+    const pillars: number[] = [];
+    for (let x = narrow ? 1 : 9; x + 3 <= pillarStop; x += narrow ? 9 : 14) pillars.push(x);
+    pillars.forEach((x, i) => {
+      out.push(`<rect class="pillar" x="${x}" y="${wallTop}" width="3" height="${wall}"/>`);
+      out.push(`<rect class="pillar-edge" x="${x + 2.6}" y="${wallTop}" width="0.4" height="${wall}"/>`);
+      out.push(`<rect class="pillar-shadow" x="${x + 3}" y="${wallTop}" width="1" height="${wall}"/>`);
+    });
+    // The paint: the numeral in blocks, the skirting band and its words, worn a little.
+    const paint: string[] = [];
+    let x = numLeft;
+    [...text].forEach((ch, i) => {
+      if (i) x += block;
+      const rows = GLYPHS[ch];
+      rows.forEach((row, ry) => [...row].forEach((bit, rx) => {
+        if (bit === '1') paint.push(`<rect x="${x + rx * block}" y="${numTop + ry * block}" width="${block}" height="${block}"/>`);
+      }));
+      x += rows[0].length * block;
+    });
+    // The level's name painted beside the numeral, standing on the same line, as large as the wall allows.
+    let word = '';
+    if (!narrow) {
+      const from = x + 2 * block;
+      const room = A - 17 - from;
+      if (room >= 8) word = `<text class="paint-word" x="${from}" y="${numTop + 7 * block}" data-tall="${(7 * block) / 0.72}" data-room="${room}">${level.name}</text>`;
+    }
+    paint.push(`<rect x="0" y="${skirt}" width="${A}" height="2"/>`);
+    out.push(`<g class="paint" filter="url(#park-wear)">${paint.join('')}${word}</g>`);
+    // Over the paint: the hazard socks and the pillar codes, stencilled after.
+    pillars.forEach((px, i) => {
+      out.push(`<rect x="${px}" y="${skirt - 2}" width="3" height="2" fill="url(#park-hazard)"/>`);
+      out.push(`<rect class="pillar-plate" x="${px}" y="${wallTop + 1}" width="3" height="2"/>`);
+      out.push(`<text class="pillar-code" x="${px + 1.5}" y="${wallTop + 2.48}">${level.prefix}${String.fromCharCode(65 + i)}</text>`);
+    });
+    const say = narrow ? `Level ${level.key === '-1' ? '−1' : level.key}, ${level.name}` : spoken(level) + ', ' + level.name + '. Say it out loud: you will forget otherwise.';
+    out.push(`<text class="skirt-words" x="1" y="${skirt + 1.36}">${say}</text>`);
+
+    // The floor: bays three squares wide with their numbers, then the lane and its arrows.
+    out.push(`<rect class="asphalt" x="0" y="${wallBottom}" width="${A}" height="${floor}"/>`);
+    const bayRows = narrow ? 3 : 3;
+    const lane = wallBottom + bayRows;
+    out.push(`<rect class="kerb" x="0" y="${wallBottom}" width="${A}" height="0.25"/>`);
+    let bay = 1;
+    for (let bx = 0; bx + 3 <= A; bx += 3) {
+      out.push(`<rect class="line" x="${bx}" y="${wallBottom}" width="0.15" height="${bayRows}"/>`);
+      const n = `${level.prefix}${String(bay).padStart(2, '0')}`;
+      out.push(`<text class="bay" x="${bx + 1.57}" y="${wallBottom + 2.4}">${n}</text>`);
+      bay++;
+    }
+    out.push(`<rect class="line" x="0" y="${lane - 0.15}" width="${A}" height="0.15"/>`);
+    // Chevrons along the lane, toward the way out; none under the study chip's corner.
+    const arrowStop = narrow ? A : A - 12;
+    const laneMid = lane + (floor - bayRows) / 2;
+    for (let ax = narrow ? 2 : 9; ax + 3 <= arrowStop; ax += 6) {
+      out.push(`<path class="arrow" d="M ${ax} ${laneMid - 0.9} L ${ax + 1} ${laneMid - 0.9} L ${ax + 2} ${laneMid} L ${ax + 1} ${laneMid + 0.9} L ${ax} ${laneMid + 0.9} L ${ax + 1} ${laneMid} Z"/>`);
+    }
+    if (!narrow) out.push(`<text class="way-out" x="2" y="${laneMid + 0.42}">Way out</text>`);
+    scene.innerHTML = out.join('');
+    fitWord();
+  }
+
+  // A long name is set smaller to fit its room, never larger than the numeral, never squeezed.
+  function fitWord() {
+    const word = scene.querySelector<SVGTextElement>('.paint-word');
+    if (!word) return;
+    const tall = Number(word.dataset.tall);
+    word.setAttribute('font-size', String(tall));
+    const room = Number(word.dataset.room);
+    const width = word.getComputedTextLength();
+    if (width > room) word.setAttribute('font-size', String(Math.floor((tall * room) / width * 4) / 4));
+  }
+  document.fonts?.load('500 10px "GT-America-Compressed-Regular"').then(fitWord, () => {});
+  document.fonts?.ready.then(fitWord);
+
+  onSquares(({ across, down, narrow }) => { squares = { across, down, narrow }; draw(); });
+</script>
+
+<style is:global>
+  html[data-study='parking-levels'] { background: #a6a7a2; }
+  .park {
+    --level: #7fbf3a;
+    --level-ink: #14240a;
+    --concrete: #a6a7a2;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.3  0 0 0 0 0.28  0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+      var(--concrete);
+    color: #1c1c1a;
+    font-family: Futura, 'Avenir Next', 'Trebuchet MS', sans-serif;
+  }
+  .park-scene { grid-column: 1 / -1; grid-row: 1 / span var(--scene-rows, 45); width: 100%; height: 100%; }
+  .park-scene .pillar { fill: #bdbdb7; }
+  .park-scene .pillar-edge { fill: #cfcfc9; }
+  .park-scene .pillar-shadow { fill: #000; opacity: 0.12; }
+  .park-scene .paint { fill: var(--level); opacity: 0.94; }
+  .park-scene .paint-word { font-family: var(--typeface-compressed); font-weight: 500; letter-spacing: -0.01em; }
+  .park-scene .pillar-plate { fill: #1c1c1a; }
+  .park-scene .pillar-code { font: 500 1.3px Futura, 'Avenir Next', sans-serif; text-anchor: middle; fill: #f3f2ec; }
+  .park-scene .skirt-words { font: 500 1.05px Futura, 'Avenir Next', sans-serif; fill: var(--level-ink); letter-spacing: 0.02px; }
+  .park-scene .asphalt { fill: #3a3b3b; }
+  .park-scene .kerb { fill: #f6c51b; }
+  .park-scene .line, .park-scene .arrow { fill: #ecebe4; }
+  .park-scene .bay { font: 500 0.9px Futura, 'Avenir Next', sans-serif; text-anchor: middle; fill: #ecebe4; opacity: 0.9; }
+  .park-scene .way-out { font: 500 1.1px Futura, 'Avenir Next', sans-serif; fill: #ecebe4; }
+
+  .park-beam { grid-column: 1 / -1; grid-row: 1 / span 2; display: grid; place-items: center; margin: 0; z-index: 1; }
+  .park-beam span { display: block; padding-inline: var(--u); height: calc(2 * var(--u)); background: #fff; border: calc(2px * var(--sf)) solid #1c1c1a; box-sizing: border-box; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u) - 4px * var(--sf)); font-weight: 500; }
+
+  /* The lift panel: brushed steel screwed to the wall, buttons ringed in each level's colour. */
+  .park-panel {
+    grid-column: -14 / -2;
+    grid-row: 4 / span 25;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(12, var(--u));
+    grid-auto-rows: var(--u);
+    align-content: start;
+    background: repeating-linear-gradient(90deg, #d4d6d6 0 1px, #c4c7c8 1px 3px, #cfd1d1 3px 4px), #ccc;
+    box-shadow: inset 0 0 0 1px #8d9091, 0 calc(4px * var(--sf)) 0 rgba(0, 0, 0, 0.18);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .park-panel > * { grid-column: 2 / -2; margin: 0; }
+  .park-panel h1 { grid-row: 2; font: 500 calc(17px * var(--sf)) / var(--u) Futura, 'Avenir Next', sans-serif; }
+  .park-panel-lead { grid-row: 3; color: #3f4243; }
+  .park-buttons { grid-row: 5 / span 6; display: grid; grid-template-columns: repeat(3, calc(3 * var(--u))); grid-auto-rows: calc(3 * var(--u)); justify-content: space-between; }
+  .park-button {
+    all: unset;
+    box-sizing: border-box;
+    width: calc(2 * var(--u));
+    height: calc(2 * var(--u));
+    margin: calc(var(--u) / 2) auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font: 500 calc(17px * var(--sf)) / 1 Futura, 'Avenir Next', sans-serif;
+    background: radial-gradient(circle at 50% 40%, #f4f5f5, #b9bcbd);
+    box-shadow: 0 0 0 calc(3px * var(--sf)) var(--level), 0 0 0 calc(4px * var(--sf)) #7b7e80;
+    cursor: pointer;
+    color: #1c1c1a;
+  }
+  .park-button[aria-pressed='true'] { background: radial-gradient(circle at 50% 40%, #fff, var(--level)); box-shadow: 0 0 0 calc(3px * var(--sf)) var(--level), 0 0 calc(10px * var(--sf)) var(--level), 0 0 0 calc(4px * var(--sf)) #7b7e80; }
+  .park-button:focus-visible { outline: calc(2px * var(--sf)) solid #1c1c1a; outline-offset: calc(5px * var(--sf)); }
+  .park-here { grid-row: 12 / span 3; display: grid; grid-template-rows: var(--u) calc(2 * var(--u)); background: var(--level); color: var(--level-ink); margin-inline: calc(var(--u) / -2); padding-inline: calc(var(--u) / 2); }
+  .park-here-label { font-size: calc(12px * var(--sf)); }
+  .park-here b { font: 500 calc(24px * var(--sf)) / calc(2 * var(--u)) Futura, 'Avenir Next', sans-serif; }
+  .park-note { grid-row: 16 / span 3; color: #2c2f30; }
+  .park-pay { grid-row: 20 / span 3; font-size: calc(11px * var(--sf)); color: #4b4f50; line-height: var(--u); }
+
+  :root[data-narrow] .park { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .park-panel { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); grid-template-rows: repeat(24, var(--u)); }
+</style>
