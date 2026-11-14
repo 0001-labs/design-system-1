@@ -1,0 +1,270 @@
+---
+// After a folded school report card, opened flat on a desk blotter: printed card stock filled in on
+// a typewriter, grades and remarks in the teacher's pen, a gold star pressed on and the pupil's
+// signature in mud. Every line of print, type and handwriting sits on the card's squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const subjects = [
+  ['Napping', 'A*', '1', 'Has slept through two fire drills.'],
+  ['Mathematics', 'B', '2', 'Counts treats well; disputes totals.'],
+  ['English', 'C', '3', 'One word, used with great range.'],
+  ['Physical education', 'A', '1', 'Unbeaten in the 3 a.m. corridor sprint.'],
+  ['Science', 'B+', '2', 'Tests gravity on the mantelpiece daily.'],
+  ['Music', 'D', '2', 'Sings loudly, mostly at closed doors.'],
+  ['Art', 'B', '1', 'Prolific work on the sofa, in claw.'],
+  ['Geography', 'A', '1', 'Knows where every sunbeam falls.'],
+  ['Citizenship', 'E', '4', 'Has not yet accepted the dog.'],
+  ['Keyboard skills', 'U', '5', 'Sits on it.'],
+];
+---
+<AlignedStudy slug="report-card" theme="light">
+  <main class="stage report">
+    <div class="rc-card" id="rc-card">
+    <div class="rc-sheet">
+      <section class="rc-page rc-left" aria-label="Pupil and attendance">
+        <header class="rc-school">
+          <svg class="rc-crest" viewBox="0 0 4 4" aria-hidden="true">
+            <path d="M0.4 0.3 H3.6 V2 C3.6 3 2.8 3.5 2 3.8 C1.2 3.5 0.4 3 0.4 2 Z" fill="#22336b" />
+            <path d="M1.05 1.75 L1.25 0.95 L1.6 1.4 H2.4 L2.75 0.95 L2.95 1.75 C2.95 2.5 2.5 2.9 2 2.9 C1.5 2.9 1.05 2.5 1.05 1.75 Z" fill="#dde7ec" />
+            <circle cx="1.68" cy="1.9" r="0.1" fill="#22336b" /><circle cx="2.32" cy="1.9" r="0.1" fill="#22336b" />
+            <path d="M1.9 2.25 H2.1 L2 2.38 Z" fill="#22336b" />
+          </svg>
+          <div>
+            <h1>Sunbeam Lane Primary School</h1>
+            <p class="rc-motto"><i>Somnus vincit omnia</i></p>
+          </div>
+        </header>
+        <p class="rc-kind">Pupil's report, autumn term 2026</p>
+
+        <dl class="rc-fields">
+          <div><dt>Name</dt><dd class="rc-typed">Marmalade</dd></div>
+          <div><dt>Form</dt><dd class="rc-typed">3K (the Kittens)</dd></div>
+          <div><dt>Age</dt><dd class="rc-typed">4 years, 2 months</dd></div>
+          <div><dt>House</dt><dd class="rc-typed">Tabby</dd></div>
+          <div><dt>Form teacher</dt><dd class="rc-typed">Mrs P. Hollis</dd></div>
+        </dl>
+
+        <h2>Attendance</h2>
+        <dl class="rc-attend">
+          <div><dt>Sessions possible</dt><dd class="rc-typed">190</dd></div>
+          <div><dt>Sessions attended</dt><dd class="rc-typed">186</dd></div>
+          <div><dt>Absent, authorised</dt><dd class="rc-typed">2 <span>(the vet)</span></dd></div>
+          <div><dt>Absent, unauthorised</dt><dd class="rc-typed">2 <span>(airing cupboard)</span></dd></div>
+          <div><dt>Times late</dt><dd class="rc-typed">41</dd></div>
+        </dl>
+
+        <h2>Conduct</h2>
+        <div class="rc-scale" role="table" aria-label="Conduct">
+          <div role="row"><span role="columnheader"></span><span role="columnheader">Excellent</span><span role="columnheader">Good</span><span role="columnheader">Fair</span><span role="columnheader">Poor</span></div>
+          <div role="row"><span role="rowheader">Effort</span><span role="cell"></span><span role="cell"><b aria-label="ticked">✓</b></span><span role="cell"></span><span role="cell"></span></div>
+          <div role="row"><span role="rowheader">Behaviour</span><span role="cell"></span><span role="cell"></span><span role="cell"><b aria-label="ticked">✓</b></span><span role="cell"></span></div>
+          <div role="row"><span role="rowheader">Punctuality</span><span role="cell"></span><span role="cell"></span><span role="cell"></span><span role="cell"><b aria-label="ticked">✓</b></span></div>
+        </div>
+
+        <h2>Clubs and societies</h2>
+        <ul class="rc-clubs">
+          <li><span>Box club</span><span class="rc-typed">Founder member. Fits in all sizes.</span></li>
+          <li><span>Choir</span><span class="rc-typed">Asked to leave after the descant.</span></li>
+          <li><span>Birdwatching</span><span class="rc-typed">14 sightings, no catches (claims 3).</span></li>
+        </ul>
+
+        <div class="rc-signed">
+          <p>Signed by the pupil</p>
+          <svg class="rc-paw" viewBox="0 0 3 3" role="img" aria-label="A muddy paw print">
+            <g fill="#6b4a2e">
+              <path d="M1.5 1.35 C2.1 1.35 2.45 1.95 2.3 2.35 C2.15 2.75 1.8 2.6 1.5 2.6 C1.2 2.6 0.85 2.75 0.7 2.35 C0.55 1.95 0.9 1.35 1.5 1.35 Z" />
+              <ellipse cx="0.55" cy="1.1" rx="0.25" ry="0.32" transform="rotate(-25 0.55 1.1)" />
+              <ellipse cx="1.12" cy="0.62" rx="0.25" ry="0.33" transform="rotate(-8 1.12 0.62)" />
+              <ellipse cx="1.88" cy="0.62" rx="0.25" ry="0.33" transform="rotate(8 1.88 0.62)" />
+              <ellipse cx="2.45" cy="1.1" rx="0.25" ry="0.32" transform="rotate(25 2.45 1.1)" />
+              <circle cx="2.6" cy="2.75" r="0.06" /><circle cx="0.3" cy="0.3" r="0.04" /><circle cx="2.8" cy="0.5" r="0.05" />
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section class="rc-page rc-right" aria-label="Subjects and remarks">
+        <h2>Subjects</h2>
+        <div class="rc-subjects" role="table" aria-label="Grades by subject">
+          <div role="row" class="rc-head"><span role="columnheader">Subject</span><span role="columnheader">Grade</span><span role="columnheader">Effort</span><span role="columnheader">Comment</span></div>
+          {subjects.map(([name, grade, effort, comment]) => (
+            <div role="row"><span role="rowheader">{name}</span><span role="cell" class="rc-pen rc-grade">{grade}</span><span role="cell" class="rc-pen">{effort}</span><span role="cell" class="rc-comment">{comment}</span></div>
+          ))}
+        </div>
+        <p class="rc-key">Grades A* to E, U ungraded. Effort 1, outstanding, to 5, asleep.</p>
+
+        <h2>Form teacher's remarks</h2>
+        <div class="rc-remarks">
+          <p class="rc-ink">Marmalade has had a settled term and found the warmest radiator in the building by the second morning. She is a confident, independent learner who sees no reason to come when called. Next term she must work on sharing the windowsill, and on not bringing presents into assembly.</p>
+          <p class="rc-ink rc-sig">P. Hollis</p>
+          <div class="rc-star" aria-label="A gold star" role="img">
+            <svg viewBox="0 0 4 4" aria-hidden="true">
+              <defs>
+                <linearGradient id="rc-gold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#fff3a8" /><stop offset="0.35" stop-color="#e7b923" /><stop offset="0.6" stop-color="#b9850d" /><stop offset="0.8" stop-color="#f4d25a" /><stop offset="1" stop-color="#9c6d06" />
+                </linearGradient>
+              </defs>
+              <path d="M2 0.2 L2.53 1.27 L3.71 1.44 L2.86 2.27 L3.06 3.45 L2 2.89 L0.94 3.45 L1.14 2.27 L0.29 1.44 L1.47 1.27 Z" fill="url(#rc-gold)" stroke="#8a5f05" stroke-width="0.05" stroke-linejoin="round" />
+            </svg>
+          </div>
+        </div>
+        <div class="rc-head-teacher">
+          <p><span class="rc-print">Headteacher</span> <span class="rc-ink">A good term. Please stop sitting on the register.</span></p>
+          <p class="rc-print rc-next">Next term begins on Tuesday 5 January 2027. Pupils should arrive dry.</p>
+        </div>
+        <div class="rc-slip">
+          <p class="rc-print">Parent's comments. Please detach and return to the form teacher.</p>
+          <p class="rc-parent">We are very proud of her. Apologies for the corner, which she ate on the way home.</p>
+        </div>
+      </section>
+    </div>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The card as two pages of whole squares, centred: each page as wide as the window allows, up to thirty.
+  const card = document.getElementById('rc-card')!;
+  onSquares(({ across, narrow }) => {
+    if (narrow) { card.style.gridColumn = ''; card.style.removeProperty('--rc-page'); return; }
+    const page = Math.min(30, Math.floor((across - 6) / 2));
+    const start = Math.floor((across - page * 2) / 2) + 1;
+    card.style.gridColumn = `${start} / span ${page * 2}`;
+    card.style.setProperty('--rc-page', String(page));
+  });
+</script>
+
+<style is:global>
+  html[data-study='report-card'] { background: #24463a; }
+  .report {
+    --blotter: #24463a;
+    --card: #dde7ec;
+    --print: #22336b;
+    --type: #2b2b2e;
+    --red: #c8102e;
+    --ink: #2639c4;
+    --serif: Baskerville, 'Baskerville Old Face', 'Hoefler Text', Georgia, serif;
+    --typewriter: 'American Typewriter', 'Courier New', monospace;
+    --hand: 'Bradley Hand', 'Segoe Print', 'Noteworthy', cursive;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgb(255 255 255 / 0.05), transparent 60%),
+      repeating-linear-gradient(115deg, rgb(0 0 0 / 0.04) 0 2px, transparent 2px 7px),
+      var(--blotter);
+    font-family: var(--serif);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    color: var(--print);
+  }
+  .report h1, .report h2, .report p, .report dl, .report dd { margin: 0; }
+
+  /* The card: two pages, a fold between them, laid on the blotter three squares from top and foot. */
+  .rc-card {
+    grid-column: 6 / -6;
+    grid-row: 3 / -3;
+    display: grid;
+    filter: drop-shadow(0 calc(var(--u) / 4) calc(var(--u) / 4) rgb(0 0 0 / 0.35)) drop-shadow(0 calc(var(--u) * 0.8) calc(var(--u) * 0.8) rgb(0 0 0 / 0.2));
+  }
+  /* The sheet, with the bottom right corner eaten on the way home: three bites, intersected. */
+  .rc-sheet {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--card);
+    position: relative;
+    min-height: 0;
+    mask:
+      radial-gradient(circle at calc(100% - 0.5 * var(--u)) calc(100% - 1.9 * var(--u)), transparent calc(0.85 * var(--u)), #000 calc(0.85 * var(--u) + 0.5px)),
+      radial-gradient(circle at calc(100% - 1.7 * var(--u)) calc(100% - 0.6 * var(--u)), transparent calc(0.95 * var(--u)), #000 calc(0.95 * var(--u) + 0.5px)),
+      radial-gradient(circle at 100% 100%, transparent calc(1.3 * var(--u)), #000 calc(1.3 * var(--u) + 0.5px)),
+      radial-gradient(circle at calc(100% - 3 * var(--u)) calc(100% + 0.1 * var(--u)), transparent calc(0.5 * var(--u)), #000 calc(0.5 * var(--u) + 0.5px));
+    mask-composite: intersect;
+  }
+  .rc-sheet::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: calc(50% - var(--u));
+    width: calc(2 * var(--u));
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, rgb(34 51 107 / 0.06) 40%, rgb(0 0 0 / 0.16) 50%, rgb(255 255 255 / 0.35) 52%, transparent);
+  }
+  .rc-page { padding: var(--u) calc(2 * var(--u)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* A printed rule a square in from the edge, as the stationer ruled it. */
+  .rc-page { background: linear-gradient(var(--print), var(--print)) top var(--u) left calc(var(--u)) / calc(100% - 2 * var(--u)) 1px no-repeat; }
+
+  .rc-school { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; column-gap: var(--u); height: calc(4 * var(--u)); margin-top: var(--u); align-items: center; }
+  .rc-crest { width: calc(4 * var(--u)); height: calc(4 * var(--u)); }
+  .rc-school h1 { font: calc(20px * var(--sf)) / calc(2 * var(--u)) var(--serif); letter-spacing: 0.01em; }
+  .rc-motto { font-size: calc(13px * var(--sf)); }
+  .rc-kind { font-size: calc(15px * var(--sf)); margin-block: var(--u); font-style: italic; }
+  .report h2 { font: 600 calc(13px * var(--sf)) / var(--u) var(--serif); font-variant: small-caps; letter-spacing: 0.04em; margin-top: var(--u); border-bottom: 1px solid var(--print); height: var(--u); box-sizing: border-box; }
+
+  /* Fields typed on a dotted line. */
+  .rc-fields div, .rc-attend div { display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; height: var(--u); }
+  .rc-attend div { grid-template-columns: calc(9 * var(--u)) 1fr; }
+  .rc-fields dd, .rc-attend dd { background: radial-gradient(circle, var(--print) 0.6px, transparent 0.8px) bottom left / 4px 3px repeat-x; padding-left: calc(var(--u) / 4); white-space: nowrap; overflow: hidden; }
+  .rc-typed { font-family: var(--typewriter); font-size: calc(13px * var(--sf)); color: var(--type); }
+  .rc-typed span { color: #6a6a70; }
+
+  .rc-scale { display: grid; grid-template-columns: calc(6 * var(--u)) repeat(4, calc(4 * var(--u))); font-size: calc(12px * var(--sf)); }
+  .rc-scale [role='row'] { display: contents; }
+  .rc-scale span { height: var(--u); border-bottom: 1px solid rgb(34 51 107 / 0.25); text-align: center; }
+  .rc-scale [role='rowheader'] { text-align: left; }
+  .rc-scale b { font: calc(18px * var(--sf)) / var(--u) var(--hand); color: var(--red); }
+
+  .rc-signed { margin-top: auto; display: grid; grid-template-columns: calc(7 * var(--u)) calc(3 * var(--u)); align-items: end; height: calc(3 * var(--u)); }
+  .rc-signed p { border-bottom: 1px solid var(--print); font-size: calc(12px * var(--sf)); }
+  .rc-paw { width: calc(3 * var(--u)); height: calc(3 * var(--u)); mix-blend-mode: multiply; opacity: 0.8; transform: rotate(-14deg); }
+
+  .rc-subjects { display: grid; grid-template-columns: calc(7 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u)) 1fr; font-size: calc(13px * var(--sf)); }
+  .rc-subjects [role='row'] { display: contents; }
+  .rc-subjects span { height: var(--u); border-bottom: 1px solid rgb(34 51 107 / 0.22); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rc-head span { font-size: calc(11px * var(--sf)); font-style: italic; }
+  .rc-pen { font: calc(17px * var(--sf)) / var(--u) var(--hand); color: var(--red); text-align: center; }
+  .rc-comment { font-family: var(--typewriter); font-size: calc(11px * var(--sf)); color: var(--type); }
+  .rc-key { font-size: calc(11px * var(--sf)); font-style: italic; }
+
+  /* The remarks in fountain pen on ruled lines, the star pressed on beside the signature. */
+  .rc-remarks > p:first-child { padding-right: calc(3 * var(--u)); }
+  .rc-remarks { position: relative; background: repeating-linear-gradient(to bottom, transparent 0 calc(var(--u) - 1px), rgb(34 51 107 / 0.25) calc(var(--u) - 1px) var(--u)); }
+  .rc-ink { font: calc(17px * var(--sf)) / var(--u) var(--hand); color: var(--ink); }
+  .rc-sig { text-align: right; padding-right: calc(5 * var(--u)); font-size: calc(20px * var(--sf)); }
+  .rc-star { position: absolute; right: 0; bottom: calc(-1 * var(--u)); width: calc(4 * var(--u)); height: calc(4 * var(--u)); filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3)); transform: rotate(-8deg); animation: rc-press 700ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 600ms both; }
+  .rc-star svg { width: 100%; height: 100%; display: block; }
+  @keyframes rc-press { from { transform: translate(calc(var(--u) * 0.6), calc(var(--u) * -1.2)) rotate(-30deg) scale(1.7); opacity: 0; filter: drop-shadow(0 calc(var(--u) * 0.8) calc(var(--u) * 0.6) rgb(0 0 0 / 0.3)); } 70% { opacity: 1; } to { transform: rotate(-8deg); } }
+  @media (prefers-reduced-motion: reduce) { .rc-star { animation: none; } }
+
+  .rc-head-teacher { margin-top: auto; padding-top: var(--u); }
+  .rc-print { font-size: calc(12px * var(--sf)); font-style: italic; color: var(--print); }
+  .rc-head-teacher .rc-ink { font-size: calc(16px * var(--sf)); }
+  .rc-next { border-top: 1px solid var(--print); }
+  .rc-clubs { list-style: none; margin: 0; padding: 0; }
+  .rc-clubs li { display: grid; grid-template-columns: calc(6 * var(--u)) 1fr; height: var(--u); white-space: nowrap; overflow: hidden; }
+  .rc-slip { margin-top: var(--u); padding-top: var(--u); border-top: 1px dashed var(--print); position: relative; }
+  .rc-slip::before { content: '✂'; position: absolute; top: calc(var(--u) / -2 - 1px); left: calc(var(--u) * -1.5); line-height: var(--u); font-size: calc(14px * var(--sf)); background: var(--card); padding-inline: 2px; }
+  .rc-parent { padding-right: calc(2 * var(--u)); font: calc(15px * var(--sf)) / var(--u) 'Snell Roundhand', 'Apple Chancery', var(--hand); color: #1d1d1f; }
+
+  :root[data-narrow] .report { padding-block: var(--u) calc(2 * var(--u)); }
+  :root[data-narrow] .rc-card { grid-column: 1 / -1; grid-row: auto; }
+  :root[data-narrow] .rc-sheet { grid-template-columns: 1fr; }
+  :root[data-narrow] .rc-sheet::after { display: none; }
+  :root[data-narrow] .rc-clubs li { grid-template-columns: 1fr; height: auto; white-space: normal; margin-bottom: var(--u); }
+  :root[data-narrow] .rc-slip::before { left: calc(var(--u) * -0.75); }
+  :root[data-narrow] .rc-page { padding-inline: var(--u); }
+  :root[data-narrow] .rc-right { border-top: 1px dashed rgb(34 51 107 / 0.4); padding-top: calc(2 * var(--u)); }
+  :root[data-narrow] .rc-school { grid-template-columns: calc(3 * var(--u)) 1fr; height: auto; }
+  :root[data-narrow] .rc-crest { width: calc(3 * var(--u)); height: calc(3 * var(--u)); }
+  :root[data-narrow] .rc-school h1 { font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .rc-fields div { grid-template-columns: calc(5 * var(--u)) 1fr; }
+  :root[data-narrow] .rc-attend div { grid-template-columns: calc(7 * var(--u)) 1fr; }
+  :root[data-narrow] .rc-attend span { display: none; }
+  :root[data-narrow] .rc-scale { grid-template-columns: calc(4 * var(--u)) repeat(4, 1fr); font-size: calc(10px * var(--sf)); }
+  :root[data-narrow] .rc-subjects { grid-template-columns: 1fr calc(2 * var(--u)) calc(2 * var(--u)); }
+  :root[data-narrow] .rc-comment { grid-column: 1 / -1; padding-left: var(--u); }
+  :root[data-narrow] .rc-head span:last-child { display: none; }
+  :root[data-narrow] .rc-signed { margin-top: var(--u); }
+  :root[data-narrow] .rc-sig { padding-right: calc(5 * var(--u)); }
+  :root[data-narrow] .rc-remarks { margin-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .rc-star { bottom: calc(-3 * var(--u)); }
+</style>

@@ -1,0 +1,243 @@
+---
+// After an arcade cabinet's high score table in attract mode. Every letter is drawn in pixels a
+// quarter of a square wide, eight to a square's height of two, so each character cell is a square
+// and a half by two and every column of the table starts on a line. The rows cycle through the
+// cabinet's eight colours; a coin dropped in (C, or the button) wakes it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="arcade-scores" theme="dark">
+  <main class="stage arcade">
+    <h1 class="ar-sr">Lamplight Raid: hall of fame</h1>
+    <div class="ar-sr">
+      <ol id="ar-list"></ol>
+    </div>
+    <svg class="ar-screen" id="ar-screen" aria-hidden="true" shape-rendering="crispEdges"></svg>
+    <button type="button" class="ar-coin" id="ar-coin">Insert coin</button>
+    <p class="ar-sr" id="ar-status" aria-live="polite"></p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // A 5 by 7 cabinet font, each glyph seven rows of five.
+  const FONT: Record<string, string> = {
+    A: '.###.#...##...#######...##...##...#', B: '####.#...##...#####.#...##...#####.', C: '.###.#...##....#....#....#...#.###.',
+    D: '####.#...##...##...##...##...#####.', E: '######....#....####.#....#....#####', F: '######....#....####.#....#....#....',
+    G: '.###.#...##....#.####...##...#.####', H: '#...##...##...#######...##...##...#', I: '.###...#....#....#....#....#...###.',
+    J: '..###...#....#....#....##..#..##...', K: '#...##..#.#.#..##...#.#..#..#.#...#', L: '#....#....#....#....#....#....#####',
+    M: '#...###.###.#.##.#.##...##...##...#', N: '#...##...###..##.#.##..###...##...#', O: '.###.#...##...##...##...##...#.###.',
+    P: '####.#...##...#####.#....#....#....', Q: '.###.#...##...##...##.#.##..#..##.#', R: '####.#...##...#####.#.#..#..#.#...#',
+    S: '.#####....#.....###.....#....#####.', T: '#####..#....#....#....#....#....#..', U: '#...##...##...##...##...##...#.###.',
+    V: '#...##...##...##...##...#.#.#...#..', W: '#...##...##...##.#.##.#.##.#.#.#.#.', X: '#...##...#.#.#...#...#.#.#...##...#',
+    Y: '#...##...#.#.#...#....#....#....#..', Z: '#####....#...#...#...#...#....#####',
+    '0': '.###.#...##..###.#.###..##...#.###.', '1': '..#...##....#....#....#....#...###.', '2': '.###.#...#....#...#...#...#...#####',
+    '3': '#####...#...#.....#.....##...#.###.', '4': '...#...##..#.#.#..#.#####...#....#.', '5': '######....####.....#....##...#.###.',
+    '6': '..##..#...#....####.#...##...#.###.', '7': '#####....#...#...#...#....#....#...', '8': '.###.#...##...#.###.#...##...#.###.',
+    '9': '.###.#...##...#.####....#...#..##..',
+    '.': '..........................##...##..', '-': '...............#####...............', '!': '..#....#....#....#....#.........#..',
+    '?': '.###.#...#....#...#...#.........#..', ':': '......##...##.........##...##......', "'": '..#....#...#.......................',
+    '(': '...#...#...#....#....#.....#.....#.', ')': '.#.....#.....#....#....#...#...#...', '*': '.....#.#.#.###.#####.###.#.#.#.....',
+    ' ': '...................................',
+  };
+
+  const RANKS = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH', '9TH', '10TH'];
+  const SCORES: [string, string, string][] = [
+    ['998450', 'MUM', '34'], ['871200', 'OWL', '29'], ['640090', 'BOB', '22'], ['512730', 'JAM', '19'], ['433000', 'ZZZ', '17'],
+    ['298650', 'DAD', '12'], ['187420', 'EEL', '09'], ['104100', 'WOW', '06'], ['064300', 'KIT', '04'], ['009990', 'AAA', '01'],
+  ];
+  // The cabinet's eight colours, in the order its palette cycles.
+  const PALETTE = ['#ff2a2a', '#ff8c00', '#ffe600', '#3cff3c', '#00e5ff', '#3f6bff', '#d43cff', '#ffffff'];
+
+  // Sprites: one character a pixel, '.' empty, the rest a colour.
+  const INK: Record<string, string> = { r: '#ff2a2a', w: '#ffffff', y: '#ffe600', o: '#ff8c00', g: '#3cff3c', c: '#00e5ff', b: '#3f6bff', m: '#d43cff', k: '#5a5a5a' };
+  const MOTH = ['m..m..m.', '.m.mm.m.', 'mmmmmmmm', 'mwmmmmwm', 'mmm..mmm', 'm..mm..m', '...mm...', '..m..m..'];
+  const LUNA = ['g......g', 'gg.gg.gg', 'gggggggg', '.gwggwg.', '..gggg..', '.g.gg.g.', 'g..gg..g', '........'];
+  const HAWK = ['oo....oo', 'ooo..ooo', '.oooooo.', '..owwo..', '..oooo..', '.o.oo.o.', 'o..oo..o', 'o......o'];
+  const LAMP = ['...yy...', '..yyyy..', '.yy..yy.', '.y.yy.y.', '.yy..yy.', '..yyyy..', '...yy...', '..y..y..'];
+  const LIGHTHOUSE = [
+    '....rr....', '...rrrr...', '..kkkkkk..', '..kyyyyk..', '..kyyyyk..', '.kkkkkkkk.', '..wwwwww..', '..wwwwww..',
+    '..rrrrrr..', '..rrrrrr..', '.wwwwwwww.', '.wwwwwwww.', '.rrrrrrrr.', '.rrrrrrrr.', '.wwwwwwww.', '.wwwwwwww.',
+    'rrrrrrrrrr', 'rrrrrrrrrr', 'kkkkkkkkkk', 'kkkkkkkkkk',
+  ];
+
+  const screen = document.getElementById('ar-screen') as unknown as SVGSVGElement;
+  const coinButton = document.getElementById('ar-coin') as HTMLButtonElement;
+  const status = document.getElementById('ar-status')!;
+  document.getElementById('ar-list')!.innerHTML = SCORES.map(([score, name, round], i) => `<li>${RANKS[i]}: ${name}, ${Number(score).toLocaleString('en-GB')} points, round ${Number(round)}</li>`).join('');
+
+  const f = (n: number) => +n.toFixed(4);
+  /** Pixels of a text, as path data; x, y in squares, p the pixel in squares, a cell six pixels by eight. */
+  function text(value: string, x: number, y: number, p: number) {
+    let d = '';
+    [...value].forEach((char, index) => {
+      const glyph = FONT[char] ?? FONT[' '];
+      for (let row = 0; row < 7; row++) {
+        let col = 0;
+        while (col < 5) {
+          if (glyph[row * 5 + col] !== '#') { col++; continue; }
+          const start = col;
+          while (col < 5 && glyph[row * 5 + col] === '#') col++;
+          d += `M${f(x + (index * 6 + start) * p)} ${f(y + row * p)}h${f((col - start) * p)}v${f(p)}h${f(-(col - start) * p)}z`;
+        }
+      }
+    });
+    return d;
+  }
+  const width = (value: string, p: number) => value.length * 6 * p;
+  function sprite(rows: string[], x: number, y: number, p: number) {
+    const byInk: Record<string, string> = {};
+    rows.forEach((line, row) => [...line].forEach((key, col) => {
+      if (key === '.') return;
+      byInk[key] = (byInk[key] ?? '') + `M${f(x + col * p)} ${f(y + row * p)}h${f(p)}v${f(p)}h${f(-p)}z`;
+    }));
+    return Object.entries(byInk).map(([key, d]) => `<path d="${d}" fill="${INK[key]}"/>`).join('');
+  }
+  const ink = (d: string, fill: string, extra = '') => `<path d="${d}" fill="${fill}" ${extra}/>`;
+
+  let credit = 0;
+  let coinAt = { col: 0, row: 0, span: 0 };
+
+  function draw({ across, down, narrow }: { across: number; down: number; narrow: boolean }) {
+    let out = '';
+    const t = narrow ? 0.125 : 0.25; // the table's pixel
+    const big = narrow ? 0.25 : 0.5; // the title's pixel
+    const cell = 6 * t;
+    const line = 8 * t; // one line of the table: a square, or two
+    const table = narrow ? 12 : 36;
+    const x0 = Math.floor((across - table) / 2);
+    const centre = (value: string, p: number) => Math.round((across - width(value, p) + p) / 2);
+    let y: number;
+
+    if (narrow) {
+      y = 1;
+      out += ink(text('HI 998450', centre('HI 998450', t), y, t), '#ffffff');
+      y += 2;
+      out += ink(text('HALL OF', centre('HALL OF', big), y, big), 'url(#ar-title)');
+      out += ink(text('FAME', centre('FAME', big), y + 2, big), 'url(#ar-title)');
+      y += 5;
+    } else {
+      y = 1;
+      out += ink(text('1UP', 2, y, t), '#ff2a2a') + ink(text('004120', 2 + 6, y, t), '#ffffff');
+      out += ink(text('HI', centre('HI 998450', t), y, t), '#ff2a2a') + ink(text('998450', centre('HI 998450', t) + 4.5, y, t), '#ffffff');
+      const two = across - 2 - width('2UP 000000', t) + t;
+      out += ink(text('2UP', Math.round(two), y, t), '#ff2a2a') + ink(text('000000', Math.round(two) + 6, y, t), '#5a5a5a');
+      y = down >= 44 ? 6 : 5;
+      out += ink(text('HALL OF FAME', centre('HALL OF FAME', big), y, big), 'url(#ar-title)');
+      y += down >= 44 ? 6 : 5;
+    }
+
+    // The table: rank, score, name and round, each column starting on a line.
+    const cols = narrow ? [0, 4, 12] : [0, 6, 14, 20];
+    const head = narrow ? ['NO', 'SCORE', 'NAME'] : ['RANK', 'SCORE', 'NAME', 'RND'];
+    out += ink(head.map((label, i) => text(label, x0 + cols[i] * cell, y, t)).join(''), '#00e5ff');
+    y += line + (narrow ? 1 : 1);
+    const room = narrow ? Infinity : down - 8 - y;
+    const step = narrow ? 2 : room >= 30 ? 3 : 2;
+    SCORES.forEach(([score, name, round], i) => {
+      const values = narrow ? [String(i + 1), score, name] : [RANKS[i], score, name, round];
+      const d = values.map((value, k) => text(value, x0 + cols[k] * cell, y + i * step, t)).join('');
+      out += ink(d, `var(--ar-c${i % 8})`, i === 0 ? 'class="ar-first"' : '');
+    });
+    const tableEnd = y + 9 * step + line;
+
+    // Attract mode in the gutters: the score advance table on the left, the lighthouse on the right.
+    if (!narrow && x0 >= 14) {
+      const gx = 2;
+      let gy = y - line - 1;
+      out += ink(text('SCORE', gx, gy, t), '#ffffff');
+      gy += 2;
+      out += ink(text('ADVANCE', gx, gy, t), '#ffffff');
+      gy += 3;
+      const advance: [string[], string][] = [[MOTH, '50'], [LUNA, '100'], [HAWK, '300'], [LAMP, '???']];
+      const gap = Math.max(5, Math.min(6, Math.floor((tableEnd - gy) / 4)));
+      advance.forEach(([rows, points], i) => {
+        out += sprite(rows, gx, gy + i * gap, 0.5);
+        out += ink(text(points, gx + 6, gy + i * gap + 1, t), points === '???' ? '#ffe600' : '#ffffff');
+      });
+      // The lighthouse stands on the table's last line, its beam reaching for the moths.
+      const lx = across - 2 - 5;
+      const ly = tableEnd - 10;
+      out += sprite(LIGHTHOUSE, lx, ly, 0.5);
+      const beam: string[] = [];
+      for (let k = 0; k < 6; k++) beam.push(`M${f(lx - 1 - k)} ${f(ly + 1.5 - k * 0.5)}h1v${f(1 + k)}h-1z`);
+      out += `<path d="${beam.join('')}" fill="#ffe600" class="ar-beam"/>`;
+      out += sprite(MOTH, lx - 6, ly - 5, 0.5);
+    }
+
+    // The foot: insert coin, the maker, the credit.
+    const foot = narrow ? tableEnd + 2 : down - 6;
+    const coinText = credit ? 'PUSH START' : 'INSERT COIN';
+    const cx = centre(coinText, t);
+    out += ink(text(coinText, cx, foot, t), credit ? '#3cff3c' : '#ffffff', 'class="ar-blink"');
+    coinAt = { col: Math.floor(cx) + 1, row: foot + 1, span: Math.ceil(width(coinText, t)) };
+    if (narrow) {
+      out += ink(text('(C)1983 TIDEWAY', centre('(C)1983 TIDEWAY', t), foot + 3, t), '#3f6bff');
+      out += ink(text(`CREDIT ${credit}`, centre(`CREDIT ${credit}`, t), foot + 5, t), '#ffffff');
+    } else {
+      // The maker's full name when it clears the credit, its short one when it does not.
+      const maker = centre('(C)1983 TIDEWAY AMUSEMENTS', t) >= 2 + width('CREDIT 0', t) + 2 ? '(C)1983 TIDEWAY AMUSEMENTS' : '(C)1983 TIDEWAY';
+      out += ink(text(maker, centre(maker, t), down - 3, t), '#3f6bff');
+      out += ink(text(`CREDIT ${credit}`, 2, down - 3, t), '#ffffff');
+    }
+
+    const high = narrow ? foot + 7 : down;
+    screen.setAttribute('viewBox', `0 0 ${across} ${high}`);
+    screen.style.gridRow = `1 / span ${high}`;
+    screen.innerHTML = `<defs><linearGradient id="ar-title" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#ffe600"/><stop offset="0.5" stop-color="#ff8c00"/></linearGradient></defs>${out}`;
+    coinButton.style.gridColumn = `${coinAt.col} / span ${coinAt.span}`;
+    coinButton.style.gridRow = `${coinAt.row} / span 2`;
+  }
+
+  let squares: Parameters<typeof draw>[0] = { across: 72, down: 45, narrow: false };
+  onSquares(next => { squares = next; draw(next); });
+
+  // The colours cycle down the rows, a step every ninth of a second, as the cabinet's palette does.
+  let tick = 0;
+  const paint = () => PALETTE.forEach((_, i) => screen.style.setProperty(`--ar-c${i}`, PALETTE[(i + tick) % PALETTE.length]));
+  paint();
+  if (!reducedMotion()) setInterval(() => { tick = (tick + PALETTE.length - 1) % PALETTE.length; paint(); }, 110);
+
+  function insert() {
+    credit = Math.min(9, credit + 1);
+    coinButton.textContent = 'Insert another coin';
+    status.textContent = `Credit ${credit}. Push start.`;
+    draw(squares);
+  }
+  coinButton.addEventListener('click', insert);
+  window.addEventListener('keydown', event => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'c' || event.key === 'C' || event.key === '5') insert();
+  });
+</script>
+
+<style is:global>
+  html[data-study='arcade-scores'] { background: #000; }
+  .arcade { background: #000; }
+  .ar-screen { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; display: block; }
+  /* The tube: a dark line along every row of pixels, and the glass darkening towards its corners. */
+  .arcade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 calc(var(--u) / 8), rgb(0 0 0 / 0.32) calc(var(--u) / 8) calc(var(--u) / 4)),
+      radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+  }
+  .ar-blink { animation: ar-blink 1.2s steps(1) infinite; }
+  @keyframes ar-blink { 50% { opacity: 0; } }
+  .ar-beam { animation: ar-beam 2.4s steps(1) infinite; }
+  @keyframes ar-beam { 50% { opacity: 0.25; } }
+  @media (prefers-reduced-motion: reduce) { .ar-blink, .ar-beam { animation: none; } }
+
+  .ar-coin {
+    all: unset;
+    z-index: 1;
+    cursor: pointer;
+    color: transparent;
+    font-size: 1px;
+  }
+  .ar-coin:focus-visible { outline: calc(var(--u) / 8) solid #00e5ff; outline-offset: calc(var(--u) / 4); }
+  .ar-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+</style>

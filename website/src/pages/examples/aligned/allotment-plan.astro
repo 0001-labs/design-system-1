@@ -1,0 +1,293 @@
+---
+// After a plot holder's planting plan, drawn in biro and felt tip on graph paper: the plot is nine
+// metres by seven and a half, one square to every twenty-five centimetres, so each bed, path and
+// shed is a whole number of squares. Choose a bed to read what the plot holder wrote about it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="allotment-plan" theme="light">
+  <main class="stage allot">
+    <header class="al-head">
+      <h1>Plot 14B</h1>
+      <p>Mill Lane Allotments. The plan for 2027, drawn on a wet Sunday in January by R. Okafor.</p>
+    </header>
+
+    <figure class="al-plan" id="al-plan">
+      <svg id="al-svg" role="group" aria-label="The plot from above"></svg>
+      <figcaption class="al-scale">One square is 25 cm. Gate at the bottom of the main path.</figcaption>
+    </figure>
+
+    <aside class="al-side">
+      <section class="al-note" aria-live="polite">
+        <h2 id="al-note-title"></h2>
+        <p class="al-was" id="al-note-was"></p>
+        <p id="al-note-text"></p>
+      </section>
+
+      <section class="al-key" aria-labelledby="al-key-title">
+        <h2 id="al-key-title">What the marks mean</h2>
+        <ul id="al-key"></ul>
+      </section>
+
+      <section class="al-rotation" aria-labelledby="al-rot-title">
+        <h2 id="al-rot-title">Rotation, four years round</h2>
+        <div class="al-rot" id="al-rot" role="table" aria-label="Which family goes in which bed each year"></div>
+        <p>Each year every family moves down a bed, and the potatoes go back to the top. Nothing sees the same soil twice in four years, least of all the club root.</p>
+      </section>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Symbol = 'bean' | 'wigwam' | 'pea' | 'rosette' | 'kale' | 'cabbage' | 'carrot' | 'parsnip' | 'beet' | 'onion' | 'potato' | 'straw' | 'rasp' | 'rhubarb';
+  interface Crop { name: string; variety: string; mark: Symbol; ink: string; x: number; y: number; w: number; h: number; pitch: number }
+  interface Place { id: string; title: string; was: string; text: string; x: number; y: number; w: number; h: number; fill?: string; label: string }
+
+  const INK = { legume: '#2f8a3e', brassica: '#6b3fa0', root: '#e0701a', potato: '#8b5a2b', fruit: '#cc2442', biro: '#1d3c8f' };
+
+  // The beds, top to bottom on the right of the main path, and the plot's other places.
+  const PLACES: Place[] = [
+    { id: 'a', label: 'A', title: 'Bed A, beans and peas', was: 'Potatoes here last year.', x: 14, y: 0, w: 21, h: 6, fill: INK.legume,
+      text: 'Broad beans went in on 2 November and have come through the frost. Pinch the tops out when the blackfly arrive. Two wigwams of runners, eight canes each. Peas climb hazel sticks cut from the hedge by the gate.' },
+    { id: 'b', label: 'B', title: 'Bed B, cabbages and kin', was: 'Beans and peas here last year.', x: 14, y: 7, w: 21, h: 6, fill: INK.brassica,
+      text: 'Lime it in February and tread it hard: brassicas like a firm bed. Net it before planting, not after the pigeons have found it. A felt collar round every cabbage against root fly.' },
+    { id: 'c', label: 'C', title: 'Bed C, roots and onions', was: 'Cabbages here last year.', x: 14, y: 14, w: 21, h: 6, fill: INK.root,
+      text: 'No manure this year, or the carrots fork into legs. Sow them thin, under fleece: carrot fly keep low, and a barrier two feet high defeats them. The birds will pull up the first ten onion sets out of spite.' },
+    { id: 'd', label: 'D', title: 'Bed D, potatoes', was: 'Roots and onions here last year.', x: 14, y: 21, w: 21, h: 6, fill: INK.potato,
+      text: 'Chit the earlies on the kitchen windowsill from February. Earth them up as soon as the shoots show. Pink Fir Apple tastes best and looks worst. Everything lifted by the end of August, before the blight.' },
+    { id: 'shed', label: 'Shed', title: 'The shed', was: 'Built by the last holder, 1994, they think.', x: 0, y: 0, w: 7, h: 5,
+      text: 'The felt roof leaks over the left corner, so the seed tin lives on the right. Kettle, two mugs, one chair, and a radio that only gets the cricket.' },
+    { id: 'butt', label: '', title: 'The water butt', was: '200 litres off the shed gutter.', x: 8, y: 1, w: 2, h: 2,
+      text: 'Full by March, empty by July. Lid on, for the frogs. Hosepipes are against the society\'s rules, and so is mentioning the one on plot 9.' },
+    { id: 'fruit', label: '', title: 'Soft fruit', was: 'Rhubarb crowns split in 2025.', x: 0, y: 7, w: 11, h: 14,
+      text: 'Rhubarb forced under the old chimney pot in February. Strawberries netted from May, runners pegged into pots for plot 15. Raspberries along the wire: cut the fruited canes to the ground in autumn.' },
+    { id: 'compost', label: '', title: 'Compost bays', was: 'Three bays of pallets.', x: 0, y: 23, w: 11, h: 6,
+      text: 'Fresh on the left, rotting in the middle, ready on the right. Turn left into middle in spring. Courgettes grow on the ready bay and take over the path by August.' },
+  ];
+
+  const CROPS: Crop[] = [
+    { name: 'Broad beans', variety: 'Aquadulce Claudia', mark: 'bean', ink: INK.legume, x: 14, y: 0, w: 7, h: 6, pitch: 1 },
+    { name: 'Runner beans', variety: 'Painted Lady', mark: 'wigwam', ink: INK.legume, x: 21, y: 0, w: 7, h: 6, pitch: 3 },
+    { name: 'Peas', variety: 'Kelvedon Wonder', mark: 'pea', ink: INK.legume, x: 28, y: 0, w: 7, h: 6, pitch: 1 },
+    { name: 'Sprouting broccoli', variety: 'Early Purple', mark: 'rosette', ink: INK.brassica, x: 14, y: 7, w: 8, h: 6, pitch: 2 },
+    { name: 'Kale', variety: 'Cavolo Nero', mark: 'kale', ink: INK.brassica, x: 22, y: 7, w: 6, h: 6, pitch: 2 },
+    { name: 'Cabbage', variety: 'January King', mark: 'cabbage', ink: INK.brassica, x: 28, y: 7, w: 7, h: 6, pitch: 2 },
+    { name: 'Carrots', variety: 'Autumn King', mark: 'carrot', ink: INK.root, x: 14, y: 14, w: 6, h: 6, pitch: 1 },
+    { name: 'Parsnips', variety: 'Tender and True', mark: 'parsnip', ink: INK.root, x: 20, y: 14, w: 5, h: 6, pitch: 1 },
+    { name: 'Beetroot', variety: 'Boltardy', mark: 'beet', ink: INK.root, x: 25, y: 14, w: 5, h: 6, pitch: 1 },
+    { name: 'Onions', variety: 'Sturon sets', mark: 'onion', ink: INK.root, x: 30, y: 14, w: 5, h: 6, pitch: 1 },
+    { name: 'First earlies', variety: 'Charlotte', mark: 'potato', ink: INK.potato, x: 14, y: 21, w: 10, h: 6, pitch: 2 },
+    { name: 'Maincrop', variety: 'Pink Fir Apple', mark: 'potato', ink: INK.potato, x: 24, y: 21, w: 11, h: 6, pitch: 2 },
+    { name: 'Rhubarb', variety: 'Timperley Early', mark: 'rhubarb', ink: INK.fruit, x: 0, y: 7, w: 6, h: 4, pitch: 3 },
+    { name: 'Strawberries', variety: 'Cambridge Favourite', mark: 'straw', ink: INK.fruit, x: 0, y: 12, w: 11, h: 5, pitch: 2 },
+    { name: 'Raspberries', variety: 'Glen Ample', mark: 'rasp', ink: INK.fruit, x: 0, y: 18, w: 11, h: 3, pitch: 2 },
+  ];
+
+  const f = (n: number) => +n.toFixed(3);
+  /** One mark, centred on (x, y), r its reach in plan squares. */
+  function mark(kind: Symbol, x: number, y: number, ink: string, r = 0.36) {
+    const s = `stroke="${ink}" stroke-width="0.09" fill="none" stroke-linecap="round"`;
+    switch (kind) {
+      case 'bean': return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(r * 0.8)}" ry="${f(r * 0.45)}" transform="rotate(-30 ${f(x)} ${f(y)})" fill="${ink}"/>`;
+      case 'wigwam': {
+        let d = `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" ${s}/>`;
+        for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; d += `<line x1="${f(x)}" y1="${f(y)}" x2="${f(x + Math.cos(a) * r)}" y2="${f(y + Math.sin(a) * r)}" ${s}/>`; }
+        return d;
+      }
+      case 'pea': return `<line x1="${f(x - 0.45)}" y1="${f(y)}" x2="${f(x + 0.45)}" y2="${f(y)}" ${s}/><circle cx="${f(x - 0.2)}" cy="${f(y)}" r="0.11" fill="${ink}"/><circle cx="${f(x + 0.2)}" cy="${f(y)}" r="0.11" fill="${ink}"/>`;
+      case 'rosette': {
+        let d = '';
+        for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; d += `<circle cx="${f(x + Math.cos(a) * r * 0.55)}" cy="${f(y + Math.sin(a) * r * 0.55)}" r="${f(r * 0.38)}" ${s}/>`; }
+        return d + `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.22)}" fill="${ink}"/>`;
+      }
+      case 'kale': {
+        let d = '';
+        for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + (k - 2) * 0.55; d += `<path d="M${f(x)} ${f(y + r * 0.6)} Q${f(x + Math.cos(a) * r * 0.4)} ${f(y)} ${f(x + Math.cos(a) * r)} ${f(y + Math.sin(a) * r)}" ${s}/>`; }
+        return d;
+      }
+      case 'cabbage': return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" ${s}/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.6)}" ${s}/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.22)}" fill="${ink}"/>`;
+      case 'carrot': return `<path d="M${f(x - 0.18)} ${f(y - 0.28)} L${f(x + 0.18)} ${f(y - 0.28)} L${f(x)} ${f(y + 0.3)} Z" fill="${ink}"/>`;
+      case 'parsnip': return `<path d="M${f(x - 0.12)} ${f(y - 0.34)} L${f(x + 0.12)} ${f(y - 0.34)} L${f(x)} ${f(y + 0.36)} Z" ${s}/>`;
+      case 'beet': return `<circle cx="${f(x)}" cy="${f(y)}" r="0.22" fill="${ink}"/>`;
+      case 'onion': return `<circle cx="${f(x)}" cy="${f(y + 0.05)}" r="0.2" ${s}/><line x1="${f(x)}" y1="${f(y - 0.15)}" x2="${f(x)}" y2="${f(y - 0.38)}" ${s}/>`;
+      case 'potato': return `<path d="M${f(x - r)} ${f(y - r)} L${f(x + r)} ${f(y + r)} M${f(x + r)} ${f(y - r)} L${f(x - r)} ${f(y + r)}" ${s} stroke-width="0.14"/>`;
+      case 'straw': return `<path d="M${f(x)} ${f(y + r)} C${f(x - r * 1.2)} ${f(y)} ${f(x - r * 0.7)} ${f(y - r)} ${f(x)} ${f(y - r * 0.5)} C${f(x + r * 0.7)} ${f(y - r)} ${f(x + r * 1.2)} ${f(y)} ${f(x)} ${f(y + r)} Z" fill="${ink}"/>`;
+      case 'rasp': return [[-0.14, 0.08], [0.14, 0.08], [0, -0.16]].map(([dx, dy]) => `<circle cx="${f(x + dx)}" cy="${f(y + dy)}" r="0.13" fill="${ink}"/>`).join('');
+      case 'rhubarb': return `<path d="M${f(x)} ${f(y + r)} L${f(x)} ${f(y)} M${f(x)} ${f(y)} C${f(x - r)} ${f(y - r * 0.2)} ${f(x - r * 0.8)} ${f(y - r)} ${f(x)} ${f(y - r * 0.8)} C${f(x + r * 0.8)} ${f(y - r)} ${f(x + r)} ${f(y - r * 0.2)} ${f(x)} ${f(y)}" ${s}/>`;
+    }
+  }
+
+  const W = 36, H = 30;
+  const svg = document.getElementById('al-svg') as unknown as SVGSVGElement;
+
+  function plan() {
+    let grid = '';
+    for (let x = 0; x <= W; x++) grid += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" class="${x % 4 ? 'al-g' : 'al-g4'}"/>`;
+    for (let y = 0; y <= H; y++) grid += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" class="${y % 4 ? 'al-g' : 'al-g4'}"/>`;
+
+    let tint = '';
+    let marks = '';
+    let lines = '';
+    // Beds tinted in felt tip, a fat stroke short of their edges, as a hand colours in.
+    PLACES.filter(p => p.fill).forEach(p => { tint += `<rect x="${p.x + 0.15}" y="${p.y + 0.15}" width="${p.w - 0.3}" height="${p.h - 0.3}" fill="${p.fill}" opacity="0.13"/>`; });
+    CROPS.forEach(c => {
+      const pitch = c.pitch;
+      for (let y = c.y + pitch / 2; y < c.y + c.h; y += pitch) {
+        for (let x = c.x + pitch / 2; x < c.x + c.w; x += pitch) marks += mark(c.mark, x, y, c.ink, c.mark === 'wigwam' ? 1.1 : c.mark === 'rhubarb' ? 1.1 : pitch === 2 ? 0.6 : 0.36);
+      }
+      if (c.x > 14 && c.y < 28) lines += `<line x1="${c.x}" y1="${c.y + 0.3}" x2="${c.x}" y2="${c.y + c.h - 0.3}" class="al-dash"/>`;
+    });
+
+    // The pigeons' net over bed B, the main path, the shed's roof and the compost walls.
+    lines += `<rect x="13.6" y="6.6" width="21.8" height="6.8" class="al-net"/>`;
+    lines += `<rect x="0" y="0" width="${W}" height="${H}" class="al-edge"/>`;
+    PLACES.filter(p => p.fill).forEach(p => { lines += `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" class="al-bed"/>`; });
+    lines += `<rect x="0" y="0" width="7" height="5" class="al-bed" fill="url(#al-hatch)"/><line x1="0" y1="0" x2="7" y2="5" class="al-thin"/><line x1="7" y1="0" x2="0" y2="5" class="al-thin"/>`;
+    lines += `<rect x="2.5" y="4.6" width="2" height="0.4" fill="#1d3c8f"/>`;
+    lines += `<circle cx="9" cy="2" r="1" class="al-bed"/><circle cx="9" cy="2" r="0.55" class="al-thin"/>`;
+    lines += `<line x1="11" y1="0" x2="11" y2="${H}" class="al-thin"/><line x1="13" y1="0" x2="13" y2="${H}" class="al-thin"/>`;
+    for (let k = 0; k < 3; k++) lines += `<path d="M${f(k * 3.6 + 0.3)} 23 V29 H${f(k * 3.6 + 3.3)} V23" class="al-bed"/>`;
+    // Compost, coarser in the fresh bay than the ready one; a courgette sprawling from the last.
+    let stipple = '';
+    for (let k = 0; k < 3; k++) for (let i = 0; i < 46 - k * 10; i++) {
+      const sx = k * 3.6 + 0.6 + ((i * 37) % 25) / 10, sy = 23.4 + ((i * 53) % 53) / 10;
+      stipple += `<circle cx="${f(sx)}" cy="${f(sy)}" r="${0.07 + (2 - k) * 0.03}" fill="#8b5a2b"/>`;
+    }
+    lines += stipple + mark('rhubarb', 9.1, 27, '#2f8a3e', 1.2);
+    lines += `<rect x="7" y="7" width="4" height="1" class="al-thin"/><rect x="7" y="9" width="4" height="2" class="al-thin"/><line x1="7" y1="9" x2="11" y2="11" class="al-thin"/>`;
+    lines += `<line x1="0.4" y1="19" x2="10.6" y2="19" class="al-thin"/>`;
+    lines += `<path d="M11 ${H} V${H - 0.4} M13 ${H} V${H - 0.4}" class="al-bed"/>`;
+    // Woodchip on the main path.
+    let chips = '';
+    for (let y = 0.5; y < H; y += 1) for (let x = 11.5; x < 13; x += 1) chips += `<path d="M${f(x - 0.18 + ((y * 7) % 3) * 0.05)} ${f(y - 0.05)} l0.3 0.12" class="al-chip"/>`;
+
+    // Words in the plot holder's hand.
+    const words = [
+      ['A', 14.6, 1.1], ['B', 14.6, 8.1], ['C', 14.6, 15.1], ['D', 14.6, 22.1],
+    ].map(([t, , y]) => `<circle cx="35.5" cy="${+y - 0.6}" r="0.42" fill="#fff" class="al-thin"/><text x="35.5" y="${+y - 0.36}" class="al-letter">${t}</text>`).join('');
+    const notes = [
+      ['shed', 3.5, 2.4, 'Shed'], ['bench', 9, 7.75, 'Bench'], ['frame', 9, 10.4, 'Cold frame'],
+      ['bays', 6, 30, ''], ['path', 12, 15, ''],
+    ].filter(n => n[3]).map(([, x, y, t]) => `<text x="${x}" y="${y}" class="al-word">${t}</text>`).join('');
+    const asides = `<text x="12" y="${H + 1.05}" class="al-word">gate</text><text x="17.3" y="6.75" class="al-aside">net it before the pigeons find it</text><text x="2" y="22.2" class="al-aside">fresh, rotting, ready</text>`;
+
+    const hits = PLACES.map(p => `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" class="al-hit" data-place="${p.id}" tabindex="0" role="button" aria-label="${p.title}"/>`).join('');
+
+    svg.innerHTML = `<defs>
+        <pattern id="al-hatch" width="0.5" height="0.5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="0.5" stroke="#1d3c8f" stroke-width="0.05"/></pattern>
+        <filter id="al-hand" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="0.12"/></filter>
+      </defs>
+      <g>${grid}</g><g>${tint}</g><g filter="url(#al-hand)">${chips}${lines}${marks}</g><g>${words}${notes}${asides}</g><g>${hits}</g>`;
+  }
+
+  function choose(id: string) {
+    const place = PLACES.find(p => p.id === id)!;
+    document.getElementById('al-note-title')!.textContent = place.title;
+    document.getElementById('al-note-was')!.textContent = place.was;
+    document.getElementById('al-note-text')!.textContent = place.text;
+    svg.querySelectorAll('.al-hit').forEach(el => el.classList.toggle('is-on', el.getAttribute('data-place') === id));
+  }
+
+  let current = 'a';
+  svg.addEventListener('click', event => { const id = (event.target as Element).getAttribute?.('data-place'); if (id) choose((current = id)); });
+  svg.addEventListener('focusin', event => { const id = (event.target as Element).getAttribute?.('data-place'); if (id) choose((current = id)); });
+  svg.addEventListener('keydown', event => {
+    const id = (event.target as Element).getAttribute?.('data-place');
+    if (id && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose((current = id)); }
+  });
+
+  // The key, one mark a line.
+  document.getElementById('al-key')!.innerHTML = CROPS.map(c => `<li><svg viewBox="0 0 1 1" aria-hidden="true">${mark(c.mark, 0.5, 0.5, c.ink, c.mark === 'wigwam' || c.mark === 'rhubarb' ? 0.42 : 0.36)}</svg><span>${c.name}</span><i>${c.variety}</i></li>`).join('');
+
+  // The rotation as a table of beds and years.
+  const FAMILY = [['Beans', INK.legume], ['Cabbages', INK.brassica], ['Roots', INK.root], ['Potatoes', INK.potato]];
+  const YEARS = [2027, 2028, 2029, 2030];
+  let rot = `<div role="row"><span role="columnheader"></span>${YEARS.map(y => `<span role="columnheader">${y}</span>`).join('')}</div>`;
+  ['A', 'B', 'C', 'D'].forEach((bed, b) => {
+    rot += `<div role="row"><span role="rowheader">Bed ${bed}</span>${YEARS.map((_, k) => { const [name, ink] = FAMILY[(b - k + 4) % 4]; return `<span role="cell" style="--ink:${ink}">${name}</span>`; }).join('')}</div>`;
+  });
+  document.getElementById('al-rot')!.innerHTML = rot;
+
+  plan();
+  choose(current);
+  onSquares(({ narrow }) => {
+    svg.setAttribute('viewBox', narrow ? `0 0 ${W} ${H + 1.5}` : `0 0 ${W} ${H + 2}`);
+  });
+</script>
+
+<style is:global>
+  html[data-study='allotment-plan'] { background: #f3f7f4; }
+  .allot {
+    --paper: #f3f7f4;
+    --line: #c4e0e3;
+    --line4: #94c6cd;
+    --biro: #1d3c8f;
+    --hand: Noteworthy, 'Bradley Hand', 'Marker Felt', 'Comic Sans MS', cursive;
+    color: var(--biro);
+    font-family: var(--hand);
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, var(--line4) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line4) 1px, transparent 1px),
+      linear-gradient(to right, var(--line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: calc(4 * var(--u)) calc(4 * var(--u)), calc(4 * var(--u)) calc(4 * var(--u)), var(--u) var(--u), var(--u) var(--u);
+  }
+  .allot h1, .allot h2, .allot p, .allot ul, .allot figure { margin: 0; }
+
+  .al-head { grid-column: 3 / span 34; grid-row: 1 / span 4; display: grid; grid-template-rows: calc(3 * var(--u)) var(--u); align-self: end; }
+  .al-head h1 { font: calc(44px * var(--sf)) / calc(3 * var(--u)) var(--hand); color: var(--biro); align-self: end; letter-spacing: -0.01em; }
+  .al-head p { font-family: 'Gill Sans', 'Gill Sans MT', var(--typeface-regular); font-size: calc(14px * var(--sf)); color: #3c5476; }
+
+  /* The plan: thirty-six squares by thirty, and two for the gate's word under it. */
+  .al-plan { grid-column: 3 / span 36; grid-row: 6 / span 33; display: grid; grid-template-rows: calc(32 * var(--u)) var(--u); }
+  .al-plan svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .al-scale { font-family: 'Gill Sans', 'Gill Sans MT', var(--typeface-regular); font-size: calc(13px * var(--sf)); color: #3c5476; }
+  .al-g { stroke: transparent; stroke-width: 0.03; }
+  .al-g4 { stroke: transparent; stroke-width: 0.05; }
+  .al-edge { fill: none; stroke: var(--biro); stroke-width: 0.16; }
+  .al-bed { fill: none; stroke: var(--biro); stroke-width: 0.1; stroke-linejoin: round; }
+  .al-thin { fill: none; stroke: var(--biro); stroke-width: 0.06; }
+  .al-dash { stroke: var(--biro); stroke-width: 0.05; stroke-dasharray: 0.25 0.2; }
+  .al-net { fill: none; stroke: #6b3fa0; stroke-width: 0.06; stroke-dasharray: 0.12 0.18; }
+  .al-chip { stroke: #8b5a2b; stroke-width: 0.08; stroke-linecap: round; }
+  .al-letter { font: 0.68px var(--hand); fill: var(--biro); text-anchor: middle; }
+  .al-word { font: 0.8px var(--hand); fill: var(--biro); text-anchor: middle; }
+  .al-aside { font: 0.62px var(--hand); fill: #6b3fa0; }
+  .al-hit { fill: transparent; cursor: pointer; outline: none; }
+  .al-hit:hover { fill: rgb(29 60 143 / 0.06); }
+  .al-hit.is-on { stroke: #e0701a; stroke-width: 0.14; stroke-dasharray: 0.4 0.25; fill: rgb(224 112 26 / 0.05); }
+  .al-hit:focus-visible { stroke: var(--biro); stroke-width: 0.2; stroke-dasharray: none; }
+
+  /* The margin: the chosen bed's note, the key, the rotation. */
+  .al-side { grid-column: 41 / -3; grid-row: 2 / -2; display: grid; grid-template-rows: auto auto 1fr; align-content: start; row-gap: var(--u); }
+  .al-side h2 { font: calc(22px * var(--sf)) / calc(2 * var(--u)) var(--hand); color: var(--biro); }
+  .al-note { min-height: calc(8 * var(--u)); padding-inline-start: var(--u); border-inline-start: calc(var(--u) / 5) solid #e0701a; }
+  .al-note p { max-width: 34em; }
+  .al-was { color: #e0701a; }
+  .al-key ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(9 * var(--u)), 1fr)); }
+  .al-key li { display: grid; grid-template-columns: var(--u) auto; column-gap: calc(var(--u) / 2); height: var(--u); white-space: nowrap; overflow: hidden; }
+  .al-key li svg { width: var(--u); height: var(--u); }
+  .al-key li i { display: none; }
+  .al-rot { display: grid; grid-template-columns: calc(3 * var(--u)) repeat(4, 1fr); margin-block: calc(var(--u) / 2) var(--u); max-width: calc(23 * var(--u)); font-size: calc(13px * var(--sf)); }
+  .al-rot [role='row'] { display: contents; }
+  .al-rot span { height: var(--u); }
+  .al-rot [role='columnheader'] { font-family: 'Gill Sans', 'Gill Sans MT', var(--typeface-regular); color: #3c5476; }
+  .al-rot [role='cell'] { color: var(--ink); background: color-mix(in srgb, var(--ink) 14%, transparent); border-inline-end: 2px solid var(--paper); padding-inline-start: calc(var(--u) / 4); }
+  .al-rotation p { max-width: 30em; }
+
+  @media (min-width: 1400px) { .al-key li i { display: inline; font-style: normal; color: #6f86a6; } .al-key ul { grid-template-columns: 1fr 1fr; } }
+
+  :root[data-narrow] .allot { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .allot > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .al-head { grid-template-rows: auto auto; margin-top: var(--u); }
+  :root[data-narrow] .al-head p { line-height: var(--u); }
+  /* The plan at a third: twelve squares for its thirty-six. */
+  :root[data-narrow] .al-plan { grid-template-rows: calc(10.5 * var(--u)) auto; margin-block: var(--u); }
+  :root[data-narrow] .al-side { grid-template-rows: none; }
+  :root[data-narrow] .al-note { min-height: 0; }
+  :root[data-narrow] .al-rot { grid-template-columns: calc(3 * var(--u)) repeat(4, 1fr); font-size: calc(11px * var(--sf)); }
+</style>
