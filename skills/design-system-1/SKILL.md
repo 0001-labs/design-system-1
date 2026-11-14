@@ -5,7 +5,7 @@ description: "The exact rules of Design system 1, the 0001 design framework: the
 
 # Design system 1
 
-Design system 1 (`/Users/joachim/0001/Design system 1`, source in `DS1/`) is the framework every 0001 product is drawn on. Products carry a copy or a fork of it (see the 0001 brief), so these rules hold even where the package is not imported. Client sites keep the client's own design unless 0001 is designing for them.
+Design system 1 (`/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Design system 1`, source in `DS1/`) is the framework every 0001 product is drawn on. Products carry a copy or a fork of it (see the 0001 brief), so these rules hold even where the package is not imported. Client sites keep the client's own design unless 0001 is designing for them.
 
 ## Foundation and designs
 
@@ -304,7 +304,7 @@ Muted text, secondary words, captions, periods and prices beside the main figure
 
 ### tau99's colours (candidates for the library)
 
-The ds1 Figma file (XAnoaRoq9LxVAHUZgtdO0r) holds them as the TAU99 group of its Colors collection. Four are used in tau99's code (`/Users/joachim/0001/tau99`):
+The ds1 Figma file (XAnoaRoq9LxVAHUZgtdO0r) holds them as the TAU99 group of its Colors collection. Four are used in tau99's code (`/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/tau99`):
 
 | Figma name | Hex | Where it is used |
 |---|---|---|
