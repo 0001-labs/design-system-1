@@ -1,0 +1,255 @@
+---
+// After a local news site's front page, at its densest: a section rail, a live ticker, a lead with
+// its picture, a column of seconds, the weather, most read and bin day, for one small town where a
+// bench is the main story. Every block is whole squares and every column ends on a whole line, so
+// whatever the window cuts at the foot it cuts between lines.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const SECTIONS = ['News', 'Council', 'Schools', 'Sport', 'Fete 2026', 'Planning', 'Letters', 'Lost and found', 'Births and deaths', 'Weather', 'Puzzles', 'Archive since 1871'];
+const TICKER = [
+  'Autumn fete: the tombola is being drawn now, ticket 0412 has won a ham',
+  'Marrow judging delayed by rain; marrows reported unbothered',
+  'Lost on the green: one red wellington, left foot, child’s size 11',
+  'Bake-off: Mrs Achterberg’s lemon drizzle disqualified for being “too good”, appeal pending',
+  'B1172 now clear after this morning’s swan',
+];
+const MOST = [
+  'Bench on Mill Green to be repainted green after four-hour meeting',
+  'Swan holds up traffic for forty minutes on the B1172',
+  'The church clock has been four minutes fast since 1996. We asked why',
+  'Missing tortoise Gerald found 300 metres from home after eight months',
+  'Fenwick Rovers lose 0–7; manager praises “outstanding second half”',
+];
+const HOURS = [['12', '9°', 'rain'], ['13', '9°', 'rain'], ['14', '10°', 'cloud'], ['15', '10°', 'cloud'], ['16', '8°', 'sun']];
+const PLANNING = [
+  ['14 Tanners Lane', 'Replace shed with slightly larger shed', '2 objections'],
+  ['The Old Forge', 'Change of use: forge to café to forge', 'Pending'],
+  ['3 Coopers Row', 'Second chimney, decorative', 'Approved'],
+  ['Hollow Farm', 'Polytunnel for the vicar’s dahlias', '1 objection'],
+  ['5 Mill Green', 'Window boxes, quantity: six', 'Approved'],
+];
+---
+<AlignedStudy slug="news-front" theme="light">
+  <main class="stage nf">
+    <div class="nf-util">
+      <span>Saturday 14 November 2026</span>
+      <span>Edition no. 41,207</span>
+      <span class="nf-util-end"><a href="#subscribe">Subscribe for £1 a week</a><a href="#sign-in">Sign in</a></span>
+    </div>
+
+    <header class="nf-mast">
+      <h1>The Fenwick Clarion</h1>
+      <p>Lower Fenwick’s newspaper since 1871. Population 2,340; readership, most of it.</p>
+    </header>
+
+    <div class="nf-ticker" aria-label="Live updates">
+      <b class="nf-live">Live</b>
+      <div class="nf-track"><p id="ticker">{[...TICKER, ...TICKER].map((t, i) => <span aria-hidden={i >= TICKER.length ? 'true' : undefined}>{t}</span>)}</p></div>
+    </div>
+
+    <nav class="nf-rail" aria-label="Sections">
+      <ul>{SECTIONS.map((s, i) => <li><a href={`#${s.toLowerCase().replace(/\W+/g, '-')}`} aria-current={i === 0 ? 'page' : undefined}>{s}</a></li>)}</ul>
+      <p class="nf-tip">Got a story? Ring Hattie on Fenwick 4417 or leave a note at the post office.</p>
+    </nav>
+
+    <section class="nf-main" aria-label="Top stories">
+      <figure class="nf-lead-pic">
+        <img src="/examples/images/birdie-mallard.jpg" alt="A mallard drake on the pond" />
+        <figcaption>A Mill Green mallard, who did not attend. The bench, out of shot, is currently brown.</figcaption>
+      </figure>
+      <article class="nf-lead">
+        <p class="nf-kicker">Council</p>
+        <h2><a href="#bench">Bench on Mill Green to be repainted green, council decides after four-hour meeting</a></h2>
+        <p class="nf-stand">The vote passed four to three. Councillor Pratt, who wanted “a heritage blue”, says the matter is not over and has asked for the minutes.</p>
+        <p class="nf-by">Hattie Ng, local democracy reporter. Updated 2 hours ago. <a href="#comments">212 comments</a></p>
+      </article>
+
+      <div class="nf-seconds">
+        <article class="nf-second">
+          <img src="/examples/images/birdie-swan.jpg" alt="A mute swan on still water" />
+          <p class="nf-kicker">Roads</p>
+          <h3><a href="#swan">Swan holds up B1172 for forty minutes; drivers “not in a position to argue”</a></h3>
+          <p class="nf-meta">5 hours ago</p>
+        </article>
+        <article class="nf-second nf-plain">
+          <p class="nf-kicker">Pets</p>
+          <h3><a href="#gerald">Gerald the tortoise found 300 metres from home after eight months</a></h3>
+          <p class="nf-meta">Yesterday</p>
+        </article>
+        <article class="nf-second nf-plain">
+          <p class="nf-kicker nf-opinion">Opinion</p>
+          <h3><a href="#roundabout">The new roundabout is fine, actually</a></h3>
+          <p class="nf-meta">Derek Lowe, retired driving instructor</p>
+        </article>
+      </div>
+
+      <div class="nf-more">
+        <article><p class="nf-kicker">Sport</p><h4>Fenwick Rovers lose 0–7 at home</h4><p>Manager Sal Brennan praised an “outstanding second half”, in which Rovers conceded only four. Next week: away at Upper Fenwick, who have a pitch.</p><h4>Bowls ladder: Dennis still top</h4><p>Eleventh week running. A challenger has not been found.</p></article>
+        <article><p class="nf-kicker">Schools</p><h4>Year 4’s egg-box longship to go on show</h4><p>The Viking ship, built from 1,140 egg boxes, will sail at the library from Monday. Visitors are asked not to board it.</p><h4>Robin census: fourteen</h4><p>Up from eleven last year. Fenwick Primary counted from the playground at break.</p></article>
+        <article><p class="nf-kicker">Letters</p><p class="nf-letter">Sir, the church clock has been four minutes fast since 1996. I have written about this every year. Is anyone going to do anything, or are we all simply to arrive early for ever?</p><p class="nf-meta">R. Lisle, Coopers Row</p><p class="nf-kicker">Births</p><p>A calf at Hollow Farm, named Clarion by readers’ vote, beating Daisy by nine.</p></article>
+      </div>
+    </section>
+
+    <aside class="nf-side" aria-label="Weather, most read and notices">
+      <section class="nf-weather" aria-label="Weather">
+        <p class="nf-temp">9°</p>
+        <p class="nf-sky"><b>Lower Fenwick, now</b>Drizzle until three, then thinking about it.</p>
+        <ol class="nf-hours">
+          {HOURS.map(([h, t, sky]) => <li><span>{h}:00</span><i class={`nf-${sky}`} aria-label={sky}></i><b>{t}</b></li>)}
+        </ol>
+      </section>
+      <section class="nf-most" aria-labelledby="nf-most-h">
+        <h2 id="nf-most-h">Most read</h2>
+        <ol>{MOST.map(m => <li><a href="#most">{m}</a></li>)}</ol>
+      </section>
+      <section class="nf-bins" aria-label="Bin day">
+        <p><b>Bin day is Thursday.</b> Green bin and glass. Not the brown one; that is next week.</p>
+      </section>
+      <section class="nf-plan" aria-labelledby="nf-plan-h">
+        <h2 id="nf-plan-h">Planning this week</h2>
+        <dl>{PLANNING.map(([where, what, state]) => <div><dt>{where}</dt><dd>{what}</dd><dd class="nf-state">{state}</dd></div>)}</dl>
+      </section>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const root = document.documentElement;
+  // The middle: what is left between the rail (ten squares) and the side (seventeen).
+  onSquares(({ across, down }) => {
+    const middle = across - 28;
+    const seconds = middle >= 42 ? 16 : 13;
+    root.style.setProperty('--nfm', String(Math.max(12, middle)));
+    root.style.setProperty('--nfs', String(seconds));
+    root.style.setProperty('--nfl', String(Math.max(12, middle - seconds - 1)));
+    root.style.setProperty('--nfr', String(Math.max(10, down - 9)));
+    root.toggleAttribute('data-nf-tight', middle - seconds - 1 < 27 || down < 42);
+  });
+  if (reducedMotion()) document.getElementById('ticker')!.classList.add('nf-still');
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .nf {
+    --ink: #17191e;
+    --blue: #1f3fbf;
+    --yellow: #ffd23f;
+    --rule: #d9dbe0;
+    --soft: #5d626b;
+    color: var(--ink);
+    background: #fff;
+    font-family: var(--typeface-regular);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .nf p, .nf h2, .nf h3, .nf h4, .nf ul, .nf ol, .nf dl, .nf dd, .nf figure { margin: 0; padding: 0; }
+  .nf a { color: inherit; text-decoration: none; }
+  .nf a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: calc(3px * var(--sf)); }
+  .nf a:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  .nf-util { grid-column: 2 / -2; grid-row: 1; display: flex; gap: calc(2 * var(--u)); color: var(--soft); font-size: calc(12px * var(--sf)); border-bottom: 1px solid var(--rule); box-sizing: border-box; }
+  .nf-util-end { margin-left: auto; display: flex; gap: var(--u); }
+  .nf-util-end a:first-child { color: var(--blue); font-family: var(--typeface-medium); }
+
+  .nf-mast { grid-column: 2 / -2; grid-row: 2 / span 3; display: flex; align-items: end; gap: calc(2 * var(--u)); }
+  .nf-mast h1 { font: 700 calc(46px * var(--sf)) / calc(3 * var(--u)) Superclarendon, Rockwell, Georgia, serif; letter-spacing: -0.02em; color: var(--blue); white-space: nowrap; margin: 0; }
+  .nf-mast p { font-family: Charter, Georgia, serif; font-style: italic; color: var(--soft); max-width: calc(18 * var(--u)); padding-bottom: 0; }
+
+  /* The ticker: a cobalt row, the live label in yellow, the news moving left. */
+  .nf-ticker { grid-column: 2 / -2; grid-row: 5 / span 2; display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; background: var(--blue); color: #fff; overflow: hidden; }
+  .nf-live { background: var(--yellow); color: var(--ink); text-align: center; font: calc(14px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); }
+  .nf-live::before { content: ''; display: inline-block; width: calc(var(--u) / 3); height: calc(var(--u) / 3); margin-right: calc(var(--u) / 4); border-radius: 50%; background: #e3261c; vertical-align: calc(1px * var(--sf)); animation: nf-blink 1.2s steps(2) infinite; }
+  .nf-track { overflow: hidden; }
+  .nf-track p { display: flex; width: max-content; line-height: calc(2 * var(--u)); font-size: calc(14px * var(--sf)); animation: nf-run 80s linear infinite; }
+  .nf-track span { padding-right: calc(2 * var(--u)); }
+  .nf-track span::before { content: ''; display: inline-block; width: calc(var(--u) / 4); height: calc(var(--u) / 4); background: var(--yellow); margin-right: var(--u); vertical-align: calc(2px * var(--sf)); }
+  .nf-track p:hover { animation-play-state: paused; }
+  .nf-track p.nf-still { animation: none; flex-wrap: nowrap; }
+  @keyframes nf-run { to { transform: translateX(-50%); } }
+  @keyframes nf-blink { 50% { opacity: 0.2; } }
+  @media (prefers-reduced-motion: reduce) { .nf-track p, .nf-live::before { animation: none; } }
+
+  /* The rail. */
+  .nf-rail { grid-column: 2 / span 8; grid-row: 8 / -2; border-right: 1px solid var(--rule); }
+  .nf-rail ul { list-style: none; }
+  .nf-rail li { height: var(--u); font-size: calc(14px * var(--sf)); }
+  .nf-rail a[aria-current] { color: var(--blue); font-family: var(--typeface-medium); box-shadow: inset 3px 0 0 var(--blue); padding-left: calc(var(--u) / 2); }
+  .nf-tip { margin-top: var(--u) !important; padding-right: var(--u); color: var(--soft); font-size: calc(12px * var(--sf)); }
+
+  /* The middle, its own grid of squares: lead picture and words, a column of seconds, then more. */
+  .nf-main { grid-column: 11 / span var(--nfm, 44); grid-row: 8 / -2; display: grid; grid-template-columns: repeat(var(--nfm, 44), var(--u)); grid-template-rows: repeat(var(--nfr, 36), var(--u)); overflow: hidden; }
+  .nf-lead-pic { grid-column: 1 / span var(--nfl, 27); grid-row: 1 / span 13; display: grid; grid-template-rows: calc(12 * var(--u)) var(--u); }
+  .nf-lead-pic img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.85) contrast(1.05); }
+  .nf-lead-pic figcaption { font-size: calc(11px * var(--sf)); color: var(--soft); }
+  .nf-lead { grid-column: 1 / span var(--nfl, 27); grid-row: 14 / span 12; }
+  :root[data-nf-tight] .nf-lead-pic { grid-row: 1 / span 11; grid-template-rows: calc(10 * var(--u)) var(--u); }
+  :root[data-nf-tight] .nf-lead { grid-row: 12 / span 14; }
+  :root[data-nf-tight] .nf-lead h2 { font-size: calc(26px * var(--sf)); }
+  .nf-kicker { color: var(--blue); font-family: var(--typeface-medium); font-size: calc(12px * var(--sf)); }
+  .nf-opinion { color: #b3261e; }
+  .nf-lead h2 { font: 700 calc(32px * var(--sf)) / calc(2 * var(--u)) Charter, Georgia, serif; letter-spacing: -0.015em; }
+  .nf-stand { margin-top: var(--u) !important; font-family: Charter, Georgia, serif; font-size: calc(15px * var(--sf)); color: #30343b; }
+  .nf-by { margin-top: var(--u) !important; color: var(--soft); font-size: calc(12px * var(--sf)); }
+  .nf-by a { color: var(--blue); }
+
+  .nf-seconds { grid-column: span var(--nfs, 16) / -1; grid-row: 1 / span 25; padding-left: var(--u); border-left: 1px solid var(--rule); overflow: hidden; }
+  .nf-second { padding-bottom: var(--u); }
+  .nf-second + .nf-second { border-top: 1px solid var(--rule); }
+  .nf-second img { display: block; width: 100%; height: calc(7 * var(--u)); object-fit: cover; margin-bottom: var(--u); }
+  .nf-second h3 { font: 700 calc(17px * var(--sf)) / var(--u) Charter, Georgia, serif; }
+  .nf-meta { color: var(--soft); font-size: calc(12px * var(--sf)); }
+
+  .nf-more { grid-column: 1 / -1; grid-row: 27 / -1; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--u); border-top: 2px solid var(--ink); padding-top: calc(var(--u) - 2px); overflow: hidden; }
+  .nf-more h4 { font: 700 calc(14px * var(--sf)) / var(--u) Charter, Georgia, serif; }
+  .nf-more p:not(.nf-kicker) + h4 { margin-top: var(--u); }
+  .nf-letter { font-family: Charter, Georgia, serif; font-style: italic; }
+  .nf-more .nf-meta + .nf-kicker { margin-top: var(--u); }
+
+  /* The side: weather, most read, bins, planning. */
+  .nf-side { grid-column: -18 / -2; grid-row: 8 / -2; overflow: hidden; }
+  .nf-weather { display: grid; grid-template-columns: calc(5 * var(--u)) 1fr; grid-template-rows: calc(3 * var(--u)) calc(3 * var(--u)); column-gap: var(--u); background: #eef2ff; padding: var(--u); }
+  .nf-temp { font: 300 calc(56px * var(--sf)) / calc(3 * var(--u)) var(--typeface-regular); letter-spacing: -0.04em; color: var(--blue); }
+  .nf-sky { font-size: calc(12px * var(--sf)); }
+  .nf-sky b { display: block; font-family: var(--typeface-medium); font-weight: 400; font-size: calc(13px * var(--sf)); }
+  .nf-hours { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); list-style: none; text-align: center; font-size: calc(12px * var(--sf)); }
+  .nf-hours li { display: grid; grid-template-rows: var(--u) var(--u) var(--u); justify-items: center; }
+  .nf-hours span { color: var(--soft); }
+  .nf-hours i { width: calc(var(--u) * 0.8); height: calc(var(--u) * 0.8); align-self: center; }
+  .nf-rain { background: radial-gradient(circle at 50% 35%, #9aa6c4 45%, transparent 47%), linear-gradient(transparent 65%, transparent 65%); border-bottom: 2px dotted #1f3fbf; box-sizing: border-box; }
+  .nf-cloud { background: radial-gradient(circle at 40% 55%, #9aa6c4 40%, transparent 42%), radial-gradient(circle at 66% 45%, #b6bfd6 34%, transparent 36%); }
+  .nf-sun { border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--yellow); transform: scale(0.75); }
+
+  .nf-side h2 { font: calc(18px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); border-bottom: 2px solid var(--ink); box-sizing: border-box; }
+  .nf-most { margin-top: var(--u); }
+  .nf-most ol { list-style: none; counter-reset: most; }
+  .nf-most li { counter-increment: most; display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; padding-block: calc(var(--u) / 2); border-bottom: 1px solid var(--rule); font-family: Charter, Georgia, serif; font-size: calc(14px * var(--sf)); }
+  .nf-most li { padding-block: 0; min-height: calc(3 * var(--u)); align-content: center; box-sizing: border-box; }
+  .nf-most li::before { content: counter(most); font: calc(24px * var(--sf)) / var(--u) var(--typeface-compressed); color: var(--blue); }
+  .nf-bins { margin-top: var(--u); padding: var(--u); background: #e9f6ea; box-shadow: inset 4px 0 0 #2f8a3b; }
+  .nf-bins b { font-family: var(--typeface-medium); font-weight: 400; }
+  .nf-plan { margin-top: var(--u); }
+  .nf-plan dl div { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--rule); padding-bottom: 0; }
+  .nf-plan dt { font-family: var(--typeface-medium); grid-column: 1; }
+  .nf-plan dd { grid-column: 1 / -1; color: var(--soft); font-size: calc(12px * var(--sf)); }
+  .nf-plan .nf-state { grid-column: 2; grid-row: 1; color: var(--ink); }
+
+  /* Narrow: one column, top to bottom. */
+  :root[data-narrow] .nf > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .nf-util { flex-wrap: wrap; column-gap: var(--u); height: auto; }
+  :root[data-narrow] .nf-util span:nth-child(2) { display: none; }
+  :root[data-narrow] .nf-mast { flex-direction: column; align-items: start; gap: 0; padding-block: var(--u); }
+  :root[data-narrow] .nf-mast h1 { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); white-space: normal; }
+  :root[data-narrow] .nf-ticker { grid-column: 1 / -1; }
+  :root[data-narrow] .nf-rail { order: 9; border: 0; padding-block: var(--u) calc(3 * var(--u)); }
+  :root[data-narrow] .nf-rail ul { columns: 2; }
+  :root[data-narrow] .nf-main, :root[data-narrow] .nf-side { display: block; overflow: visible; margin-top: var(--u); }
+  :root[data-narrow] .nf-lead-pic img { height: calc(9 * var(--u)); }
+  :root[data-narrow] .nf-lead-pic { grid-template-rows: calc(9 * var(--u)) var(--u); }
+  :root[data-narrow] .nf-lead { margin-top: var(--u); }
+  :root[data-narrow] .nf-lead h2 { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .nf-seconds { border: 0; padding: var(--u) 0 0; margin-top: var(--u); border-top: 1px solid var(--rule); }
+  :root[data-narrow] .nf-weather { grid-template-rows: auto auto; row-gap: var(--u); }
+  :root[data-narrow] .nf-more { grid-template-columns: 1fr; row-gap: var(--u); margin-top: var(--u); }
+</style>

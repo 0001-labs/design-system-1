@@ -1,0 +1,319 @@
+---
+// After the inside cover of a library book: marbled endpaper, a manila pocket glued to it, and the
+// book card standing out of the pocket with sixty years of due dates stamped in purple, one ruled
+// line a square. Facing it, the "Date due" slip. Borrowing the book stamps today's due date on both.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const HANDS = ["'Bradley Hand', cursive", "'Noteworthy', cursive", "'Marker Felt', cursive", "'Chalkboard SE', cursive", "'Snell Roundhand', cursive;font-size:calc(19px * var(--sf))", "'American Typewriter', serif;font-size:calc(15px * var(--sf))", "'Apple Chancery', cursive;font-size:calc(18px * var(--sf))", "'SignPainter', cursive"];
+// Due date, borrower, the hand they wrote in, how the stamp landed.
+const ENTRIES: { due: string; who: string; hand: number; tilt: number; ink?: number; red?: boolean; note?: string }[] = [
+  { due: 'MAR 14 1962', who: 'H. Calloway', hand: 5, tilt: -1.5 },
+  { due: 'APR 02 1962', who: 'Mrs. D. Ferrante', hand: 4, tilt: 1, ink: 0.7 },
+  { due: 'JUN 19 1965', who: 'Peter Ostrowski', hand: 0, tilt: -0.5 },
+  { due: 'AUG 30 1971', who: 'R. Achebe-Lund', hand: 1, tilt: 2, ink: 0.55 },
+  { due: 'JAN 07 1979', who: 'Dot Lindqvist', hand: 6, tilt: -2 },
+  { due: 'JAN 28 1979', who: 'Dot Lindqvist', hand: 6, tilt: 0.5, note: 'renewed' },
+  { due: 'SEP 12 1988', who: 'Ezra Moss, age 9', hand: 3, tilt: -1, ink: 0.8 },
+  { due: 'MAY 03 1994', who: 'T. Nakashima', hand: 5, tilt: 1.5 },
+  { due: 'OCT 21 2003', who: 'Wren Halloran', hand: 2, tilt: -0.5, ink: 0.65 },
+  { due: 'FEB 10 2011', who: 'M. Okafor', hand: 0, tilt: 1 },
+  { due: 'MAR 03 2011', who: 'M. Okafor', hand: 0, tilt: -1.5, note: 'pressed fern, p. 112' },
+  { due: 'JUL 22 2019', who: 'LOST', hand: 5, tilt: -3, red: true },
+  { due: 'NOV 08 2024', who: 'FOUND', hand: 0, tilt: 2, red: true, note: 'in the bandstand' },
+];
+// The slip on the facing page keeps only the stamps, scattered as desk staff stamp them.
+const SLIP = ENTRIES.filter(e => !e.red).slice(-9);
+---
+<AlignedStudy slug="library-card" theme="light">
+  <main class="stage lc">
+    <svg class="lc-marble" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <pattern id="lc-stripes" width="160" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+          <rect width="160" height="34" fill="#22305f" />
+          <rect y="3" width="160" height="4" fill="#6e2532" />
+          <rect y="7" width="160" height="0.8" fill="#e9dcbc" />
+          <rect y="12" width="160" height="2" fill="#b98f3a" />
+          <rect y="14" width="160" height="0.6" fill="#e9dcbc" />
+          <rect y="21" width="160" height="3" fill="#2b5d5c" />
+          <rect y="28" width="160" height="1" fill="#1a2449" />
+        </pattern>
+        <filter id="lc-comb" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.009 0.026" numOctaves="4" seed="11" />
+          <feDisplacementMap in="SourceGraphic" scale="110" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+      <rect x="-100" y="-100" width="140%" height="140%" fill="url(#lc-stripes)" filter="url(#lc-comb)" />
+    </svg>
+
+    <div class="lc-spine" aria-hidden="true">
+      <p class="lc-spine-title">A Field Guide to Puddles</p>
+      <p class="lc-spine-author">Penhallow</p>
+      <p class="lc-label">551.49<br />PEN</p>
+    </div>
+    <div class="lc-gutter" aria-hidden="true"></div>
+    <div class="lc-page" aria-hidden="true"></div>
+
+    <h1 class="sr-only">A field guide to puddles, by Orla Penhallow: the book card and the date due slip</h1>
+
+    <section class="lc-card" aria-label="Book card">
+      <p class="lc-call">551.49<br />PEN</p>
+      <p class="lc-author">Penhallow, Orla</p>
+      <p class="lc-title">A field guide to puddles</p>
+      <p class="lc-head"><span>Date due</span><span>Borrower’s name</span></p>
+      <ol class="lc-rows" id="rows">
+        {ENTRIES.map(e => (
+          <li class={e.red ? 'lc-red' : ''}>
+            <span class="lc-stamp" style={`--tilt:${e.tilt}deg;--ink:${e.ink ?? 0.9}`}>{e.due}</span>
+            {e.red ? <span class="lc-redline"><span class="lc-stamp lc-word" style={`--tilt:${-e.tilt}deg`}>{e.who}</span>{e.note && <span class="lc-who" style={`font-family:${HANDS[e.hand]}`}>{e.note}</span>}</span> : <span class="lc-who" style={`font-family:${HANDS[e.hand]}`}>{e.who}{e.note && <small> ({e.note})</small>}</span>}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <div class="lc-pocket">
+      <p class="lc-pocket-name">Westmere Free Library</p>
+      <p class="lc-pocket-rule">Please do not remove the card from this pocket.</p>
+      <p class="lc-pocket-small">Borrowers are answerable for every book drawn on their card. A book kept past its date is fined two cents a day, Sundays and holidays excepted. Books damaged by water are to be reported at the desk, this one included.</p>
+    </div>
+
+    <section class="lc-slip" aria-label="Date due slip">
+      <h2>Date due</h2>
+      <p class="lc-slip-note">This book is due on the last date stamped below.</p>
+      <div class="lc-boxes" id="boxes">
+        {SLIP.map((e, i) => <span class="lc-stamp" style={`--tilt:${e.tilt * 2}deg;--ink:${e.ink ?? 0.85};--dx:${(i * 7) % 3}`}>{e.due}</span>)}
+      </div>
+    </section>
+
+    <div class="lc-pencil" aria-hidden="true">
+      <p style="--r:-4deg">Ezra was here. 1988</p>
+      <p style="--r:2deg">The puddle on Fen Lane in chapter 3 is gone; they paved it. W.H. 2003</p>
+      <p style="--r:-1deg">Still there after rain. M.O.</p>
+    </div>
+
+    <div class="lc-plate" aria-hidden="true">
+      <svg viewBox="0 0 140 140">
+        <defs><path id="lc-ring" d="M 70 70 m -50 0 a 50 50 0 1 1 100 0 a 50 50 0 1 1 -100 0" /></defs>
+        <circle cx="70" cy="70" r="64" /><circle cx="70" cy="70" r="38" />
+        <text><textPath href="#lc-ring">Westmere Free Library ✶ founded 1911 ✶</textPath></text>
+        <text x="70" y="66" class="lc-plate-big">No.</text>
+        <text x="70" y="86" class="lc-plate-big">40 117</text>
+      </svg>
+    </div>
+
+    <form class="lc-borrow" id="borrow">
+      <h2>Borrow this book</h2>
+      <label for="lc-name">Your name, as you sign it</label>
+      <div class="lc-line">
+        <input id="lc-name" name="name" autocomplete="off" maxlength="24" placeholder="Agnes Pell" />
+        <button type="submit">Stamp the card</button>
+      </div>
+      <p class="lc-status" id="status" role="status">Loans are three weeks. Puddles are in season.</p>
+    </form>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { reducedMotion } from '../../../lib/aligned-study';
+
+  const form = document.getElementById('borrow') as HTMLFormElement;
+  const input = document.getElementById('lc-name') as HTMLInputElement;
+  const rows = document.getElementById('rows')!;
+  const boxes = document.getElementById('boxes')!;
+  const status = document.getElementById('status')!;
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const ROOM = 2; // blank lines left above the pocket
+  let used = 0;
+
+  const due = new Date();
+  due.setDate(due.getDate() + 21);
+  const stampText = `${MONTHS[due.getMonth()]} ${String(due.getDate()).padStart(2, '0')} ${due.getFullYear()}`;
+
+  function stamp(text: string, tilt: number) {
+    const el = document.createElement('span');
+    el.className = 'lc-stamp' + (reducedMotion() ? '' : ' lc-thunk');
+    el.style.setProperty('--tilt', `${tilt}deg`);
+    el.style.setProperty('--ink', '0.95');
+    el.textContent = text;
+    return el;
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const name = input.value.trim();
+    if (!name) { status.textContent = 'Sign your name first; the desk cannot stamp a blank line.'; input.focus(); return; }
+    if (used >= ROOM) { status.textContent = 'The card is full. Ask at the desk for a fresh card; they keep this one.'; return; }
+    used++;
+    const li = document.createElement('li');
+    const who = document.createElement('span');
+    who.className = 'lc-who lc-fresh';
+    who.style.fontFamily = "'Bradley Hand', 'Noteworthy', cursive";
+    who.textContent = name;
+    li.append(stamp(stampText, used === 1 ? -1 : 1.5), who);
+    rows.append(li);
+    boxes.append(stamp(stampText, -3));
+    status.textContent = `Stamped. Due back ${stampText.toLowerCase().replace(/^\w/, c => c.toUpperCase())}, ${name}.`;
+    input.value = '';
+  });
+</script>
+
+<style is:global>
+  html { background: #22305f; }
+  .lc {
+    --manila: #d9bd84;
+    --card: #fbfaf5;
+    --rule: #9cc0dc;
+    --red: #cf4b4b;
+    --purple: #573a92;
+    --page: #f1efe7;
+    --ink: #2a2622;
+    color: var(--ink);
+    font-family: 'Iowan Old Style', Charter, Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .lc .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .lc-marble { grid-column: 6 / span 28; grid-row: 1 / -1; width: 100%; height: 100%; overflow: hidden; }
+
+  /* The spine at the left edge, buckram with the title in gilt reading up. */
+  .lc-spine {
+    grid-column: 1 / span 5;
+    grid-row: 1 / -1;
+    position: relative;
+    background:
+      repeating-linear-gradient(0deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgb(0 0 0 / 0.06) 0 1px, transparent 1px 3px),
+      linear-gradient(90deg, #1f3a2c, #2f5240 45%, #23402f);
+    box-shadow: inset calc(-6px * var(--sf)) 0 calc(8px * var(--sf)) rgb(0 0 0 / 0.35);
+    color: #d6b866;
+    font-family: Baskerville, 'Big Caslon', Georgia, serif;
+  }
+  .lc-spine-title, .lc-spine-author { position: absolute; left: 50%; margin: 0; white-space: nowrap; writing-mode: vertical-rl; transform: translateX(-50%) rotate(180deg); }
+  .lc-spine-title { top: calc(3 * var(--u)); font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.06em; }
+  .lc-spine-author { bottom: calc(9 * var(--u)); font-size: calc(14px * var(--sf)); font-style: italic; }
+  .lc-label { position: absolute; left: var(--u); right: var(--u); bottom: calc(3 * var(--u)); height: calc(4 * var(--u)); margin: 0; padding-top: var(--u); box-sizing: border-box; background: #f4f1e6; border-radius: calc(var(--u) / 4); color: #222; text-align: center; font: calc(13px * var(--sf)) / var(--u) 'American Typewriter', 'Courier New', monospace; }
+
+  .lc-gutter { grid-column: 34 / span 2; grid-row: 1 / -1; background: linear-gradient(90deg, #5b5145, #b9b2a2 40%, var(--page)); }
+  .lc-page { grid-column: 36 / -1; grid-row: 1 / -1; background: radial-gradient(ellipse at 0% 50%, #ddd8c9, var(--page) 30%); }
+
+  /* The card: ruled a square a line, a red rule under the heading. */
+  .lc-card {
+    grid-column: 9 / span 22;
+    grid-row: 3 / span 22;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: calc(7 * var(--u)) minmax(0, 1fr);
+    grid-template-rows: repeat(3, var(--u)) var(--u) 1fr;
+    padding-inline: var(--u);
+    box-sizing: border-box;
+    background:
+      linear-gradient(transparent calc(4 * var(--u) - 2px), var(--red) calc(4 * var(--u) - 2px) calc(4 * var(--u)), transparent calc(4 * var(--u))) no-repeat,
+      linear-gradient(90deg, transparent calc(8 * var(--u) - 1px), rgb(207 75 75 / 0.5) calc(8 * var(--u) - 1px) calc(8 * var(--u)), transparent calc(8 * var(--u))) no-repeat 0 calc(4 * var(--u)) / 100% 100%,
+      repeating-linear-gradient(transparent 0 calc(var(--u) - 1px), var(--rule) calc(var(--u) - 1px) var(--u)) 0 0 / 100% 100%,
+      var(--card);
+    box-shadow: 0 calc(3px * var(--sf)) calc(10px * var(--sf)) rgb(10 15 40 / 0.45);
+    font-family: 'American Typewriter', 'Courier New', monospace;
+  }
+  .lc-card p { margin: 0; }
+  .lc-call { grid-column: 1; grid-row: 1 / span 2; font-size: calc(13px * var(--sf)); }
+  .lc-author { grid-column: 2; grid-row: 1; font-size: calc(14px * var(--sf)); }
+  .lc-title { grid-column: 2; grid-row: 2 / span 2; font-size: calc(14px * var(--sf)); }
+  .lc-head { grid-column: 1 / -1; grid-row: 4; display: grid; grid-template-columns: calc(7 * var(--u)) minmax(0, 1fr); font-family: 'Iowan Old Style', Georgia, serif; font-size: calc(11px * var(--sf)); color: #8a3c3c; }
+  .lc-rows { grid-column: 1 / -1; grid-row: 5; margin: 0; padding: 0; list-style: none; }
+  .lc-rows li { display: grid; grid-template-columns: calc(7 * var(--u)) minmax(0, 1fr); height: var(--u); align-items: center; white-space: nowrap; }
+  .lc-who { font-size: calc(17px * var(--sf)); line-height: var(--u); color: #1d2a55; overflow: hidden; text-overflow: ellipsis; padding-left: calc(var(--u) / 2); }
+  .lc-who small { font-size: calc(11px * var(--sf)); }
+
+  /* A rubber stamp: purple, uneven, never quite level. */
+  .lc-stamp {
+    display: inline-block;
+    justify-self: start;
+    font: 700 calc(13px * var(--sf)) / var(--u) 'Courier New', Courier, monospace;
+    letter-spacing: 0.06em;
+    color: var(--purple);
+    opacity: var(--ink, 0.9);
+    transform: rotate(var(--tilt, 0deg));
+    text-shadow: 0.4px 0 0 currentColor;
+    mask-image: radial-gradient(circle at 30% 60%, #000 55%, rgb(0 0 0 / 0.6) 80%);
+  }
+  .lc-red .lc-stamp { color: #c23b33; }
+  .lc-redline { display: flex; align-items: center; min-width: 0; overflow: hidden; }
+  .lc-word { padding: 0 calc(var(--u) / 4); outline: 2px solid currentColor; outline-offset: -2px; line-height: calc(var(--u) - 4px); margin-left: calc(var(--u) / 2); }
+  .lc-thunk { animation: lc-thunk 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+  @keyframes lc-thunk { 0% { transform: rotate(var(--tilt)) scale(1.9); opacity: 0; } 60% { opacity: 1; } 100% { transform: rotate(var(--tilt)) scale(1); } }
+  .lc-fresh { animation: lc-ink 0.6s 0.25s both; }
+  @keyframes lc-ink { from { opacity: 0; } }
+
+  /* The pocket, glued over the card's foot. */
+  .lc-pocket {
+    grid-column: 8 / span 24;
+    grid-row: 22 / span 14;
+    z-index: 2;
+    padding: var(--u) calc(2 * var(--u));
+    box-sizing: border-box;
+    background:
+      radial-gradient(ellipse 60% 18% at 50% 0%, rgb(120 80 30 / 0.25), transparent),
+      linear-gradient(170deg, #e4ca93, var(--manila) 60%, #cfae6d);
+    clip-path: polygon(0 calc(var(--u) * 2), 6% 0, 94% 0, 100% calc(var(--u) * 2), 100% 100%, 0 100%);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+    text-align: center;
+    color: #4a3517;
+  }
+  .lc-pocket p { margin: 0; }
+  .lc-pocket-name { margin-top: var(--u) !important; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); font-variant: small-caps; letter-spacing: 0.04em; }
+  .lc-pocket-rule { font-style: italic; margin-bottom: var(--u) !important; }
+  .lc-pocket-small { font-size: calc(12px * var(--sf)); text-align: justify; hyphens: auto; }
+
+  /* The facing page: the slip, the library's stamp, the desk. */
+  .lc-slip {
+    grid-column: 38 / span 16;
+    grid-row: 3 / span 18;
+    padding: var(--u);
+    box-sizing: border-box;
+    background: #fdfcf8 repeating-linear-gradient(transparent 0 calc(2 * var(--u) - 1px), #d9d4c6 calc(2 * var(--u) - 1px) calc(2 * var(--u))) 0 calc(4 * var(--u)) / 100% 100% no-repeat;
+    box-shadow: 0 1px calc(3px * var(--sf)) rgb(0 0 0 / 0.18);
+    transform: rotate(0.6deg);
+  }
+  .lc-slip h2 { margin: 0; font: calc(22px * var(--sf)) / calc(2 * var(--u)) 'Iowan Old Style', Georgia, serif; text-align: center; }
+  .lc-slip-note { margin: 0 0 var(--u); font-size: calc(11px * var(--sf)); text-align: center; font-style: italic; }
+  .lc-boxes { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: calc(2 * var(--u)); align-items: center; justify-items: center; }
+  .lc-boxes .lc-stamp { transform: rotate(var(--tilt)) translateX(calc(var(--dx, 0) * 3px * var(--sf))); }
+
+  .lc-plate { grid-column: -10 / span 7; grid-row: 3 / span 7; transform: rotate(-12deg); opacity: 0.75; }
+  .lc-plate svg { width: 100%; height: 100%; fill: none; stroke: var(--purple); stroke-width: 2.5; }
+  .lc-plate text { fill: var(--purple); stroke: none; font: 700 12px 'Courier New', monospace; letter-spacing: 0.08em; }
+  .lc-plate .lc-plate-big { font-size: 15px; text-anchor: middle; }
+
+  .lc-pencil { grid-column: 56 / -3; grid-row: 13 / span 10; font: calc(15px * var(--sf)) / var(--u) 'Noteworthy', 'Bradley Hand', cursive; color: #77736b; }
+  .lc-pencil p { margin: 0 0 var(--u); transform: rotate(var(--r)); }
+  .lc-borrow { grid-column: 38 / span 24; grid-row: -11 / span 8; margin: 0; }
+  .lc-borrow h2 { margin: 0; font: italic calc(24px * var(--sf)) / calc(2 * var(--u)) 'Iowan Old Style', Georgia, serif; }
+  .lc-borrow label { display: block; font-size: calc(12px * var(--sf)); color: #6a6255; }
+  .lc-line { display: flex; gap: var(--u); height: calc(2 * var(--u)); margin-top: var(--u); }
+  .lc-borrow input { flex: 1; min-width: 0; height: calc(2 * var(--u)); border: 0; border-bottom: 1px solid var(--ink); background: transparent; padding: 0 calc(var(--u) / 4); font: calc(20px * var(--sf)) / calc(2 * var(--u)) 'Bradley Hand', 'Noteworthy', cursive; color: #1d2a55; outline: none; }
+  .lc-borrow input:focus-visible { border-bottom-color: var(--purple); box-shadow: 0 2px 0 var(--purple); }
+  .lc-borrow button { all: unset; cursor: pointer; height: calc(2 * var(--u)); padding: 0 var(--u); background: var(--purple); color: #fff; border-radius: calc(var(--u) / 4); font: calc(14px * var(--sf)) / calc(2 * var(--u)) 'Iowan Old Style', Georgia, serif; }
+  .lc-borrow button:hover { background: #46297d; }
+  .lc-borrow button:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .lc-status { margin: var(--u) 0 0; font-style: italic; }
+
+  /* Medium windows: the slip alone beside the board, no bookplate. */
+  @media (max-width: 1180px) { .lc-plate { display: none; } }
+
+  /* Narrow: the board above, the facing page below. */
+  :root[data-narrow] .lc-spine, :root[data-narrow] .lc-gutter, :root[data-narrow] .lc-plate, :root[data-narrow] .lc-pencil { display: none; }
+  :root[data-narrow] .lc-marble { grid-column: 1 / -1; grid-row: 1 / span 30; }
+  :root[data-narrow] .lc-page { grid-column: 1 / -1; grid-row: 31 / span 34; }
+  :root[data-narrow] .lc-card { grid-column: 2 / -2; grid-row: 2 / span 22; grid-template-columns: calc(5 * var(--u)) minmax(0, 1fr); padding-inline: calc(var(--u) / 2); }
+  :root[data-narrow] .lc-rows li, :root[data-narrow] .lc-head { grid-template-columns: calc(5 * var(--u)) minmax(0, 1fr); }
+  :root[data-narrow] .lc-stamp { font-size: calc(10px * var(--sf)); letter-spacing: 0; }
+  :root[data-narrow] .lc-who { font-size: calc(14px * var(--sf)); }
+  :root[data-narrow] .lc-card { background:
+      linear-gradient(transparent calc(4 * var(--u) - 2px), var(--red) calc(4 * var(--u) - 2px) calc(4 * var(--u)), transparent calc(4 * var(--u))) no-repeat,
+      repeating-linear-gradient(transparent 0 calc(var(--u) - 1px), var(--rule) calc(var(--u) - 1px) var(--u)) 0 0 / 100% 100%,
+      var(--card); }
+  :root[data-narrow] .lc-pocket { grid-column: 1 / -1; grid-row: 20 / span 11; padding-inline: var(--u); }
+  :root[data-narrow] .lc-slip { grid-column: 2 / -2; grid-row: 33 / span 18; }
+  :root[data-narrow] .lc-borrow { grid-column: 2 / -2; grid-row: 53 / span 10; }
+  :root[data-narrow] .lc-line { flex-direction: column; height: auto; }
+  :root[data-narrow] .lc-borrow button { text-align: center; }
+</style>

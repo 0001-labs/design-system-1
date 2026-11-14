@@ -1,0 +1,319 @@
+---
+// After a game of patience on a card table: green felt with its rules printed in gold, cards as
+// rounded rectangles five squares by seven (a poker card's own proportion), and the court cards
+// drawn on squares. One king is laid out three times larger, so every block of his robe shows as a
+// whole square of the window. The stock deals onto the waste when it is pressed.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type Suit = 's' | 'h' | 'd' | 'c';
+type Card = { rank: string; suit: Suit };
+const SUIT_NAME: Record<Suit, string> = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
+const RANK_NAME: Record<string, string> = { A: 'Ace', J: 'Jack', Q: 'Queen', K: 'King' };
+const parse = (text: string): Card => ({ rank: text.slice(0, -1), suit: text.slice(-1) as Suit });
+const name = (card: Card) => `${RANK_NAME[card.rank] ?? card.rank} of ${SUIT_NAME[card.suit]}`;
+
+// Pips on the card's inner three by five squares: [column, row], counted from one.
+const PIPS: Record<string, [number, number][]> = {
+  '2': [[2, 1], [2, 5]],
+  '3': [[2, 1], [2, 3], [2, 5]],
+  '4': [[1, 1], [3, 1], [1, 5], [3, 5]],
+  '5': [[1, 1], [3, 1], [2, 3], [1, 5], [3, 5]],
+  '6': [[1, 1], [3, 1], [1, 3], [3, 3], [1, 5], [3, 5]],
+  '7': [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3], [1, 5], [3, 5]],
+  '8': [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3], [2, 4], [1, 5], [3, 5]],
+  '9': [[1, 1], [3, 1], [1, 2], [3, 2], [2, 3], [1, 4], [3, 4], [1, 5], [3, 5]],
+  '10': [[1, 1], [3, 1], [2, 2], [1, 2], [3, 2], [1, 4], [3, 4], [2, 4], [1, 5], [3, 5]],
+};
+
+/** The upper half of a court figure on nine by seven squares; the lower half is the same turned. */
+function court(rank: string) {
+  const crown = rank === 'K'
+    ? '<polygon class="y" points="2,2 2,0 3,1 4.5,0 6,1 7,0 7,2"/>'
+    : rank === 'Q'
+      ? '<polygon class="y" points="3,2 3,1 4,1.5 4.5,0.5 5,1.5 6,1 6,2"/>'
+      : '<rect class="i" x="2" y="1" width="5" height="1"/><polygon class="y" points="6,1 9,0 7,2"/>';
+  const hair = rank === 'Q'
+    ? '<rect class="k" x="2" y="2" width="1" height="3"/><rect class="k" x="6" y="2" width="1" height="3"/>'
+    : '<rect class="k" x="2" y="2" width="1" height="2"/><rect class="k" x="6" y="2" width="1" height="2"/>';
+  const beard = rank === 'K' ? '<polygon class="k" points="3,4 6,4 4.5,5"/>' : '';
+  const robe = rank === 'K'
+    ? '<rect class="i" x="0" y="5" width="4" height="2"/><rect class="b" x="5" y="5" width="4" height="2"/><rect class="y" x="4" y="5" width="1" height="2"/>'
+    : rank === 'Q'
+      ? '<rect class="b" x="0" y="5" width="9" height="2"/><rect class="i" x="0" y="5" width="1" height="1"/><rect class="i" x="2" y="5" width="1" height="1"/><rect class="i" x="1" y="6" width="1" height="1"/><rect class="i" x="3" y="6" width="1" height="1"/><rect class="y" x="4" y="5" width="1" height="2"/><rect class="i" x="6" y="5" width="1" height="1"/><rect class="i" x="8" y="5" width="1" height="1"/><rect class="i" x="5" y="6" width="1" height="1"/><rect class="i" x="7" y="6" width="1" height="1"/>'
+      : '<rect class="y" x="0" y="5" width="9" height="2"/><rect class="i" x="1" y="5" width="1" height="2"/><rect class="b" x="3" y="5" width="1" height="2"/><rect class="i" x="5" y="5" width="1" height="2"/><rect class="b" x="7" y="5" width="1" height="2"/>';
+  const held = rank === 'K'
+    ? '<rect class="k" x="8" y="1" width="0.25" height="4"/><polygon class="y" points="8.125,0 8.6,0.6 8.125,1.2 7.65,0.6"/>'
+    : rank === 'Q'
+      ? '<rect class="k" x="0.9" y="2" width="0.2" height="3"/><circle class="i" cx="1" cy="1.6" r="0.6"/>'
+      : '<rect class="k" x="0.9" y="0.6" width="0.2" height="4.4"/><polygon class="b" points="1,0 2,1 1,1.6"/>';
+  const half = `<polygon class="b" points="0,5 2,4 7,4 9,5"/><rect class="b" x="2" y="4" width="5" height="1"/>${robe}${crown}${hair}<rect class="f" x="3" y="2" width="3" height="2"/><rect class="k" x="3.5" y="2.6" width="0.5" height="0.4"/><rect class="k" x="5" y="2.6" width="0.5" height="0.4"/>${beard}${held}`;
+  return `<svg class="pc-court" viewBox="0 0 9 15" aria-hidden="true"><g>${half}</g><g transform="rotate(180 4.5 7.5)">${half}</g><rect class="band" x="0" y="7" width="9" height="1"/><use href="#pc-${'x'}" /></svg>`;
+}
+
+function face(card: Card, extra = '') {
+  const { rank, suit } = card;
+  const pip = (column: number, row: number, flip = false) => `<svg class="pc-pip${flip ? ' flip' : ''}" style="grid-column:${column + 1};grid-row:${row + 1}" viewBox="0 0 20 20" aria-hidden="true"><use href="#pc-${suit}"/></svg>`;
+  let middle = '';
+  if (rank === 'A') middle = `<svg class="pc-ace" viewBox="0 0 20 20" aria-hidden="true"><use href="#pc-${suit}"/></svg>`;
+  else if (PIPS[rank]) middle = PIPS[rank].map(([column, row]) => pip(column, row, row > 3)).join('');
+  else middle = court(rank).replace('<use href="#pc-x" />', `<svg x="4" y="7" width="1" height="1" viewBox="0 0 20 20"><use class="w" href="#pc-${suit}"/></svg>`);
+  const index = (flip: boolean) => `<span class="pc-rank${flip ? ' flip' : ''}">${rank}</span><svg class="pc-small${flip ? ' flip' : ''}" viewBox="0 0 20 20" aria-hidden="true"><use href="#pc-${suit}"/></svg>`;
+  return `<div class="pc-card pc-${suit}${extra}" role="img" aria-label="${name(card)}">${index(false)}${middle}${index(true)}</div>`;
+}
+const back = (top: number) => `<div class="pc-card pc-back" style="top:calc(${top} * var(--u))" role="img" aria-label="Face down"></div>`;
+
+// The game as it stands: what is up on each pile, how many are face down under it.
+const PILES: { down: number; up: string[] }[] = [
+  { down: 0, up: ['Ks', 'Qh', 'Jc', '10d', '9s'] },
+  { down: 1, up: ['6h'] },
+  { down: 2, up: ['Jd', '10c', '9h', '8c'] },
+  { down: 3, up: ['Qc'] },
+  { down: 4, up: ['8d', '7s'] },
+  { down: 5, up: ['Kh', 'Qs', 'Jh'] },
+  { down: 6, up: ['5c', '4d'] },
+];
+const FOUNDATIONS: { suit: Suit; top: string | null }[] = [
+  { suit: 's', top: '3s' }, { suit: 'h', top: 'Ah' }, { suit: 'd', top: null }, { suit: 'c', top: '2c' },
+];
+const STOCK = ['Ad', '7h', '3d', 'Kc', '6s', '2d', '5h'].map(parse);
+
+const piles = PILES.map(({ down, up }) => {
+  let html = '';
+  for (let i = 0; i < down; i++) html += back(i);
+  up.forEach((text, i) => { html += face(parse(text)).replace('class="pc-card', `style="top:calc(${down + i * 2} * var(--u))" class="pc-card`); });
+  return { html, rows: down + (up.length - 1) * 2 + 7, label: `${down} face down, ${up.map(t => name(parse(t))).join(', ')}` };
+});
+const waste = STOCK.map((card, i) => face(card, ' pc-dealt').replace('class="pc-card', `data-i="${i}" class="pc-card`)).join('');
+const king = face(parse('Kd'), ' pc-big');
+---
+<AlignedStudy slug="playing-cards" theme="dark">
+  <main class="stage pc">
+    <svg width="0" height="0" class="pc-defs" aria-hidden="true">
+      <defs>
+        <g id="pc-d"><polygon points="10,1 18,10 10,19 2,10" /></g>
+        <g id="pc-h"><circle cx="6" cy="7.4" r="4.3" /><circle cx="14" cy="7.4" r="4.3" /><polygon points="1.9,9 10,18.6 18.1,9 10,7" /></g>
+        <g id="pc-s"><circle cx="6" cy="11.6" r="4" /><circle cx="14" cy="11.6" r="4" /><polygon points="2.2,10.2 10,1.4 17.8,10.2 10,12" /><polygon points="10,11 13.4,19 6.6,19" /></g>
+        <g id="pc-c"><circle cx="10" cy="5.6" r="4.2" /><circle cx="5.2" cy="12.2" r="4.2" /><circle cx="14.8" cy="12.2" r="4.2" /><polygon points="10,9 13.4,19 6.6,19" /></g>
+      </defs>
+    </svg>
+
+    <h1 class="pc-title">Patience, <span>for one player and a long evening</span></h1>
+
+    <div class="pc-table" id="table">
+      <figure class="pc-show">
+        <Fragment set:html={king} />
+        <figcaption>The king of diamonds, three times life size: crown, face, beard and robe, every block of him a whole square.</figcaption>
+      </figure>
+
+      <div class="pc-game">
+        <button type="button" class="pc-stock" id="stock" aria-label="Deal a card from the stock">
+          <span class="pc-card pc-back" aria-hidden="true"></span>
+          <span class="pc-left" id="left"></span>
+        </button>
+        <div class="pc-waste" id="waste" aria-live="polite" aria-label="Waste"><Fragment set:html={waste} /></div>
+        {FOUNDATIONS.map(({ suit, top }, i) => (
+          <div class={`pc-found pc-${suit}`} style={`--col:${i + 4}`} aria-label={`Foundation, ${SUIT_NAME[suit]}`}>
+            <svg class="pc-slot" viewBox="0 0 20 20" aria-hidden="true"><use href={`#pc-${suit}`} /></svg>
+            {top && <Fragment set:html={face(parse(top))} />}
+          </div>
+        ))}
+        {piles.map(({ html, rows, label }) => <div class="pc-pile" style={`--rows:${rows}`} aria-label={label} set:html={html} />)}
+      </div>
+
+
+    </div>
+
+    <svg class="pc-print" viewBox="0 0 41 9" aria-hidden="true">
+        <path id="pc-arc-1" d="M 1 1 Q 20.5 9 40 1" fill="none" />
+        <path id="pc-arc-2" d="M 4 3.4 Q 20.5 11 37 3.4" fill="none" />
+        <path class="pc-rule" d="M 1 0.2 Q 20.5 8.2 40 0.2" />
+        <text class="pc-arc-a"><textPath href="#pc-arc-1" startOffset="50%" text-anchor="middle">Kings only on empty columns ♦ Aces build up by suit ♦ Turn one at a time</textPath></text>
+        <text class="pc-arc-b"><textPath href="#pc-arc-2" startOffset="50%" text-anchor="middle">Patience pays nothing but the evening</textPath></text>
+      </svg>
+
+    <p class="pc-house">Table 7, the back room of the Hare &amp; Lantern. Cards shuffled by Aunt Wilhelmina, who does not lose.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const root = document.documentElement;
+  // The table: the large king (15), a gap (3) and seven piles of five with gaps of one (41).
+  onSquares(({ across, narrow }) => {
+    const wide = across >= 63;
+    root.toggleAttribute('data-pc-compact', !wide && !narrow);
+    const width = wide ? 59 : 41;
+    const x = Math.max(2, Math.floor((across - width) / 2) + 1);
+    root.style.setProperty('--pcx', String(x));
+    root.style.setProperty('--pcg', String(x + width - 41));
+  });
+
+  const stock = document.getElementById('stock') as HTMLButtonElement;
+  const left = document.getElementById('left')!;
+  const dealt = [...document.querySelectorAll<HTMLElement>('#waste .pc-card')];
+  let next = 3; // three are already turned
+
+  function show() {
+    dealt.forEach((card, i) => {
+      // The last three dealt fan to the right, two squares apart; the rest lie under them.
+      const at = next - 1 - i;
+      card.classList.toggle('pc-gone', i >= next);
+      card.style.left = `calc(${Math.max(0, 2 - Math.max(0, at)) * 2} * var(--u))`;
+      card.style.zIndex = String(i);
+      card.classList.toggle('pc-under', at > 2);
+    });
+    const remaining = dealt.length - next;
+    stock.classList.toggle('pc-empty', remaining === 0);
+    left.textContent = remaining ? String(remaining) : 'Turn';
+    stock.setAttribute('aria-label', remaining ? `Deal a card from the stock, ${remaining} left` : 'Turn the waste over into the stock');
+  }
+  stock.addEventListener('click', () => { next = next >= dealt.length ? 0 : next + 1; show(); });
+  show();
+</script>
+
+<style is:global>
+  html { background: #13452c; }
+  .pc {
+    --felt: #1b5e3b;
+    --gold: #d8b85e;
+    --paper: #fbf8f1;
+    --red: #c8312d;
+    --ink: #1c1d24;
+    --blue: #26458f;
+    --yellow: #e9b631;
+    color: var(--gold);
+    font-family: 'Big Caslon', 'Hoefler Text', Georgia, serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 42%, rgb(255 255 255 / 0.07), transparent 70%),
+      radial-gradient(ellipse 120% 90% at 50% 50%, var(--felt) 40%, #10402a 100%);
+  }
+  .pc-defs { position: absolute; }
+
+  .pc-title { grid-column: var(--pcx, 3) / span 40; grid-row: 1 / span 2; align-self: end; margin: 0; font: italic calc(20px * var(--sf)) / calc(2 * var(--u)) 'Snell Roundhand', 'Apple Chancery', serif; font-weight: 700; }
+  .pc-title span { font: calc(14px * var(--sf)) / var(--u) 'Big Caslon', Georgia, serif; font-style: normal; opacity: 0.8; margin-left: calc(var(--u) / 2); }
+  .pc-house { grid-column: var(--pcx, 3) / span 40; grid-row: -2 / span 1; margin: 0; font-size: calc(13px * var(--sf)); opacity: 0.75; }
+
+  /* The table: its own grid of squares, centred in whole squares by the script. */
+  .pc-table {
+    grid-column: var(--pcx, 3) / span 59;
+    grid-row: 4 / -3;
+    display: grid;
+    grid-template-columns: repeat(59, var(--u));
+    grid-auto-rows: var(--u);
+    align-content: start;
+  }
+  :root[data-pc-compact] .pc-table { grid-column-end: span 41; grid-template-columns: repeat(41, var(--u)); }
+  :root[data-pc-compact] .pc-show { display: none; }
+
+  .pc-show { grid-column: 1 / span 15; grid-row: 1 / span 25; margin: 0; position: relative; }
+  .pc-show figcaption { position: absolute; top: calc(22 * var(--u)); left: 0; width: calc(15 * var(--u)); font-size: calc(13px * var(--sf)); }
+
+  .pc-game { grid-column: -42 / -1; grid-row: 1 / span 24; display: grid; grid-template-columns: repeat(7, calc(5 * var(--u))); column-gap: var(--u); grid-template-rows: calc(7 * var(--u)) var(--u) calc(16 * var(--u)); }
+  .pc-pile, .pc-found, .pc-waste, .pc-stock { position: relative; grid-row: 1; }
+  .pc-pile { grid-row: 3; }
+  .pc-stock { grid-column: 1; }
+  .pc-found { grid-column: var(--col); }
+  .pc-waste { grid-column: 2 / span 2; }
+
+  /* The empty places: a gold outline with the suit that belongs there. */
+  .pc-found::before, .pc-stock::before { content: ''; position: absolute; inset: 0; border: 1px solid var(--gold); border-radius: calc(0.5 * var(--u)); opacity: 0.6; height: calc(7 * var(--u)); width: calc(5 * var(--u)); box-sizing: border-box; }
+  .pc-slot { position: absolute; left: calc(1.5 * var(--u)); top: calc(2.5 * var(--u)); width: calc(2 * var(--u)); height: calc(2 * var(--u)); fill: var(--gold); opacity: 0.5; }
+
+  /* A card: five by seven squares, its own grid of five by seven. */
+  .pc-card {
+    --k: 1;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    grid-template-columns: repeat(5, calc(var(--k) * var(--u)));
+    grid-template-rows: repeat(7, calc(var(--k) * var(--u)));
+    width: calc(5 * var(--k) * var(--u));
+    height: calc(7 * var(--k) * var(--u));
+    box-sizing: border-box;
+    border-radius: calc(0.5 * var(--k) * var(--u));
+    background: var(--paper);
+    color: var(--ink);
+    fill: var(--ink);
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.25), 0 calc(2px * var(--sf)) calc(5px * var(--sf)) rgb(0 20 10 / 0.35);
+    font-family: 'Bodoni 72', Didot, 'Big Caslon', Georgia, serif;
+  }
+  .pc-card.pc-h, .pc-card.pc-d { color: var(--red); fill: var(--red); }
+  .pc-rank { grid-column: 1; grid-row: 1; text-align: center; font-weight: 700; font-size: calc(15px * var(--k) * var(--sf)); line-height: calc(var(--k) * var(--u)); letter-spacing: -0.1em; text-indent: -0.1em; }
+  .pc-small { grid-column: 1; grid-row: 2; width: 70%; height: 70%; justify-self: center; align-self: start; }
+  .pc-rank.flip { grid-column: 5; grid-row: 7; transform: rotate(180deg); }
+  .pc-small.flip { grid-column: 5; grid-row: 6; align-self: end; transform: rotate(180deg); }
+  .pc-pip { width: 84%; height: 84%; place-self: center; }
+  .pc-pip.flip { transform: rotate(180deg); }
+  .pc-ace { grid-column: 2 / span 3; grid-row: 3 / span 3; width: 100%; height: 100%; }
+  .pc-card.pc-s .pc-ace { transform: scale(1.1); }
+
+  /* The court: nine by fifteen of its own squares on the card's middle three by five. */
+  .pc-court { grid-column: 2 / span 3; grid-row: 2 / span 5; width: 100%; height: 100%; outline: 1px solid currentColor; outline-offset: -0.5px; background: var(--paper); }
+  .pc-court .y { fill: var(--yellow); }
+  .pc-court .b { fill: var(--blue); }
+  .pc-court .i { fill: currentColor; }
+  .pc-court .k { fill: var(--ink); }
+  .pc-court .f { fill: #f3d6b4; }
+  .pc-court .band { fill: currentColor; }
+  .pc-court .w { fill: var(--paper); }
+  .pc-card.pc-s .pc-court .i, .pc-card.pc-c .pc-court .i { fill: var(--blue); }
+  .pc-card.pc-s .pc-court .b, .pc-card.pc-c .pc-court .b { fill: var(--red); }
+
+  /* The big king: every square of his figure a square of the window, the lattice drawn over him. */
+  .pc-big { --k: 3; position: relative; }
+  .pc-big .pc-court { outline-width: 2px; }
+  .pc-big::after {
+    content: '';
+    grid-column: 2 / span 3;
+    grid-row: 2 / span 5;
+    background-image: linear-gradient(to right, rgb(28 29 36 / 0.22) 1px, transparent 1px), linear-gradient(to bottom, rgb(28 29 36 / 0.22) 1px, transparent 1px);
+    background-size: var(--u) var(--u);
+    pointer-events: none;
+  }
+
+  /* The back: a red lattice of diamonds inside a white margin. */
+  .pc-back {
+    background:
+      linear-gradient(45deg, transparent 46%, rgb(255 255 255 / 0.55) 46% 54%, transparent 54%) 0 0 / calc(var(--u) / 2) calc(var(--u) / 2),
+      linear-gradient(-45deg, transparent 46%, rgb(255 255 255 / 0.55) 46% 54%, transparent 54%) 0 0 / calc(var(--u) / 2) calc(var(--u) / 2),
+      #a32631;
+    border: calc(var(--u) / 4) solid var(--paper);
+    background-origin: padding-box;
+  }
+
+  .pc-stock { all: unset; position: relative; grid-row: 1; grid-column: 1; cursor: pointer; width: calc(5 * var(--u)); height: calc(7 * var(--u)); border-radius: calc(0.5 * var(--u)); }
+  .pc-stock .pc-card { inset: 0; }
+  .pc-stock.pc-empty .pc-card { display: none; }
+  .pc-left { position: absolute; left: 0; right: 0; bottom: calc(-1 * var(--u)); height: var(--u); text-align: center; font-size: calc(13px * var(--sf)); color: var(--gold); }
+  .pc-stock:focus-visible { outline: 2px solid var(--gold); outline-offset: calc(var(--u) / 4); }
+  .pc-stock:hover .pc-card { transform: translateY(calc(-2px * var(--sf))); }
+  .pc-under { visibility: hidden; }
+  .pc-card.pc-gone { display: none; }
+
+  /* Gold printed into the felt, along two arcs. */
+  .pc-print { grid-column: var(--pcg, 21) / span 41; grid-row: -12 / span 9; width: 100%; height: 100%; overflow: visible; }
+  .pc-rule { fill: none; stroke: var(--gold); stroke-width: 0.06; opacity: 0.6; }
+  .pc-arc-a { font-family: Copperplate, 'Copperplate Gothic Light', 'Big Caslon', serif; font-size: 0.62px; letter-spacing: 0.04em; fill: var(--gold); }
+  .pc-arc-b { font-family: 'Snell Roundhand', 'Apple Chancery', serif; font-size: 1.15px; font-weight: 700; fill: var(--gold); }
+
+  /* Narrow: the king at two-thirds, then the piles two to a row. */
+  :root[data-narrow] .pc-title, :root[data-narrow] .pc-house { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .pc-title span { display: block; margin: 0; }
+  :root[data-narrow] .pc-title { line-height: calc(2 * var(--u)); padding-top: var(--u); }
+  :root[data-narrow] .pc-house { padding-block: var(--u) calc(2 * var(--u)); }
+  :root[data-narrow] .pc-table { grid-column: 2 / -2; grid-row: auto; display: block; }
+  :root[data-narrow] .pc-show { display: grid; justify-items: start; margin-top: var(--u); }
+  :root[data-narrow] .pc-big { --k: 2; }
+  :root[data-narrow] .pc-show figcaption { position: static; width: auto; margin-top: var(--u); }
+  :root[data-narrow] .pc-game { margin-top: calc(2 * var(--u)); grid-template-columns: repeat(2, calc(5 * var(--u))); grid-template-rows: none; grid-auto-rows: auto; column-gap: calc(2 * var(--u)); row-gap: calc(2 * var(--u)); }
+  :root[data-narrow] .pc-game > * { grid-column: auto; grid-row: auto; }
+  :root[data-narrow] .pc-stock, :root[data-narrow] .pc-found, :root[data-narrow] .pc-waste { height: calc(7 * var(--u)); }
+  :root[data-narrow] .pc-waste { width: calc(5 * var(--u)); }
+  :root[data-narrow] .pc-waste .pc-card { left: 0 !important; }
+  :root[data-narrow] .pc-pile { height: calc(var(--rows) * var(--u)); }
+  :root[data-narrow] .pc-print { display: none; }
+</style>
