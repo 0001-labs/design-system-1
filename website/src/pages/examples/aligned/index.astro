@@ -43,9 +43,11 @@ const sections = SECTIONS.map(section => ({ ...section, studies: numbered.filter
   import { onSquares } from '../../../lib/aligned-study';
   // A frame sixteen squares wide (twelve on a phone), its page drawn down to fit exactly.
   onSquares(({ unit, across }) => {
-    const wide = across >= 20 ? 16 : 12;
-    const high = across >= 20 ? 10 : 8;
     const root = document.documentElement;
+    // A phone's first measure can come before its viewport settles, so a phone always takes the small frames.
+    const small = across < 20 || root.hasAttribute('data-mobile');
+    const wide = small ? 12 : 16;
+    const high = small ? 8 : 10;
     root.style.setProperty('--thumb-w', String(wide));
     root.style.setProperty('--thumb-h', String(high));
     root.style.setProperty('--thumb-scale', String((wide * unit) / 1440));
@@ -74,7 +76,8 @@ const sections = SECTIONS.map(section => ({ ...section, studies: numbered.filter
 
 <style is:global>
   html { background: #000; color: #f2f2ee; }
-  .sheet { --thumb-w: 16; --thumb-h: 10; padding: calc(2 * var(--u)) calc(2 * var(--u)) calc(3 * var(--u)); font-family: var(--typeface-regular); font-size: calc(14px * var(--sf)); line-height: var(--u); }
+  html { --thumb-w: 16; --thumb-h: 10; }
+  .sheet { padding: calc(2 * var(--u)) calc(2 * var(--u)) calc(3 * var(--u)); font-family: var(--typeface-regular); font-size: calc(14px * var(--sf)); line-height: var(--u); }
 
   .masthead { display: grid; grid-template-columns: repeat(auto-fill, calc(16 * var(--u) + var(--u))); margin-bottom: var(--u); }
   .masthead h1 { grid-column: 1 / -1; margin: 0 0 var(--u); font: calc(96px * var(--sf)) / calc(5 * var(--u)) var(--typeface-compressed); letter-spacing: -0.01em; }
