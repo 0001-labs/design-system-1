@@ -1,0 +1,325 @@
+---
+// After a collector's exchange sheet of matchbox labels: dozens of small lithographed labels in two
+// or three flat inks each, mounted on a kraft album page with a square of kraft between them. Every
+// label is a whole number of squares, packed by script into whatever the window leaves, and the
+// collector's index card names whichever one you point at.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="matchbox-labels" theme="light">
+  <main class="stage mb" id="mb">
+    <header class="mb-head">
+      <h1>Birds, lightning and stars</h1>
+      <p>Sheet 14 of the exchange album, Harwich Phillumenists’ Circle. A pencilled cross means I have a spare to swap.</p>
+    </header>
+    <aside class="mb-card" id="mb-card" aria-live="polite">
+      <p class="mb-card-no" id="mb-no">Index</p>
+      <p class="mb-card-brand" id="mb-brand">Point at a label</p>
+      <p id="mb-where">or tab to one, to read its entry.</p>
+      <p id="mb-state">Labels are fronts only, soaked off the box.</p>
+      <p id="mb-swap"></p>
+    </aside>
+    <div class="mb-field" id="mb-field" role="list" aria-label="Matchbox labels"></div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Emblem = 'swallow' | 'owl' | 'heron' | 'bolt' | 'star' | 'stars' | 'moon' | 'comet' | 'burst' | 'storm';
+  interface Label { brand: string; sub: string; emblem: Emblem; from: string; year: number; note: string; swap?: boolean; face?: string }
+
+  const LABELS: Label[] = [
+    { brand: 'SWALLOW', sub: 'Safety matches', emblem: 'swallow', from: 'Sweden', year: 1956, note: 'Unstruck, fine.', swap: true },
+    { brand: 'NIGHT OWL', sub: 'Strike only on the box', emblem: 'owl', from: 'Belgium', year: 1961, note: 'Slight foxing at the corners.' },
+    { brand: 'BLIXT', sub: 'Tändstickor', emblem: 'bolt', from: 'Sweden', year: 1949, note: 'Trimmed close at the left.', face: 'Impact, Haettenschweiler, sans-serif' },
+    { brand: 'POLE STAR', sub: 'Extra long', emblem: 'star', from: 'England', year: 1958, note: 'From a box found under floorboards in Dovercourt.' },
+    { brand: 'HERON', sub: 'Kitchen matches', emblem: 'heron', from: 'Netherlands', year: 1963, note: 'Fine. Ink slightly off register.', swap: true },
+    { brand: 'ÉCLAIR', sub: 'Allumettes de sûreté', emblem: 'bolt', from: 'France', year: 1952, note: 'Fine; the yellow has held.', face: 'Didot, serif' },
+    { brand: 'TWO STARS', sub: 'Fifty matches', emblem: 'stars', from: 'India', year: 1966, note: 'Thin paper, as they all are.' },
+    { brand: 'CRESCENT', sub: 'Wax vestas', emblem: 'moon', from: 'Turkey', year: 1960, note: 'Glue stain at the back.' },
+    { brand: 'COMET', sub: 'Windproof', emblem: 'comet', from: 'England', year: 1957, note: 'Fine.', swap: true },
+    { brand: 'STORMBIRD', sub: 'Lights in a gale', emblem: 'storm', from: 'Finland', year: 1950, note: 'Scarce. Not for swapping.' },
+    { brand: 'KESTREL', sub: 'Hovering quality', emblem: 'swallow', from: 'Scotland', year: 1959, note: 'Small tear, mended.' },
+    { brand: 'ÉTOILE', sub: 'du Nord', emblem: 'burst', from: 'Belgium', year: 1948, note: 'The oldest on this sheet.', face: 'Didot, serif' },
+    { brand: 'THUNDERCLAP', sub: 'Strikes first time', emblem: 'bolt', from: 'Australia', year: 1964, note: 'Sent by a pen friend in Ballarat.', swap: true },
+    { brand: 'LUCKY STAR', sub: 'Average contents 45', emblem: 'star', from: 'Japan', year: 1962, note: 'Fine, bright.' },
+    { brand: 'HIRONDELLE', sub: 'Allumettes', emblem: 'swallow', from: 'France', year: 1955, note: 'Fine.' },
+    { brand: 'OWLET', sub: 'Pocket size', emblem: 'owl', from: 'England', year: 1966, note: 'Two of these; one spare.', swap: true },
+    { brand: 'STJÄRNAN', sub: 'Säkerhets', emblem: 'star', from: 'Sweden', year: 1951, note: 'Unstruck.' },
+    { brand: 'FIVE STARS', sub: 'Zápalky', emblem: 'stars', from: 'Czechoslovakia', year: 1960, note: 'From a series of twelve; have four.' },
+    { brand: 'VOLT', sub: 'Instant light', emblem: 'bolt', from: 'Italy', year: 1967, note: 'Fine.', face: "'Futura', 'Avenir Next', sans-serif" },
+    { brand: 'MOONBIRD', sub: 'Safety matches', emblem: 'owl', from: 'Japan', year: 1963, note: 'Faded on one side.' },
+    { brand: 'NORTHERN LIGHTS', sub: 'Long burning', emblem: 'burst', from: 'Norway', year: 1958, note: 'Fine.' },
+    { brand: 'SHOOTING STAR', sub: 'Strike anywhere', emblem: 'comet', from: 'United States', year: 1959, note: 'Book match cover, flattened.', swap: true },
+    { brand: 'RAVEN', sub: 'Storm matches', emblem: 'swallow', from: 'Denmark', year: 1957, note: 'Slightly rubbed.' },
+    { brand: 'FLASH', sub: 'Zapałki', emblem: 'bolt', from: 'Poland', year: 1964, note: 'Fine.' },
+    { brand: 'EVENING STAR', sub: 'Fósforos', emblem: 'star', from: 'Portugal', year: 1956, note: 'Fine.' },
+    { brand: 'TSURU', sub: '鶴印 マッチ', emblem: 'heron', from: 'Japan', year: 1960, note: 'Export issue, a crane on one leg.', face: "'Hiragino Sans', sans-serif" },
+    { brand: 'TEMPEST', sub: 'Lucifers', emblem: 'storm', from: 'Holland', year: 1961, note: 'Fine.', swap: true },
+    { brand: 'ORION', sub: 'Cerillas', emblem: 'stars', from: 'Spain', year: 1958, note: 'Fine.' },
+    { brand: 'STORCH', sub: 'Sicherheitszünder', emblem: 'heron', from: 'Germany', year: 1953, note: 'Tiny pinhole, top right.' },
+    { brand: 'SKYLARK', sub: 'Safety matches', emblem: 'swallow', from: 'England', year: 1954, note: 'Fine.' },
+    { brand: 'HALF MOON', sub: 'Vestas', emblem: 'moon', from: 'Egypt', year: 1962, note: 'Swapped for two Belgian skillets.' },
+    { brand: 'BOLT', sub: 'Never fails', emblem: 'bolt', from: 'Canada', year: 1965, note: 'Fine.' },
+  ];
+
+  /** Flat inks: ground, ink, second colour, paper. Two or three in each label, as the printer had. */
+  const INKS = [
+    ['#d6322b', '#151311', '#f2c231', '#f5eedb'],
+    ['#24409b', '#151311', '#f2c231', '#f5eedb'],
+    ['#f2c231', '#151311', '#d6322b', '#f5eedb'],
+    ['#1e7a50', '#151311', '#f5eedb', '#f5eedb'],
+    ['#151311', '#151311', '#e8b42b', '#f5eedb'],
+    ['#f2ead6', '#24409b', '#d6322b', '#f2ead6'],
+    ['#5ea7c9', '#13294a', '#f5eedb', '#f5eedb'],
+    ['#e66d26', '#151311', '#f5eedb', '#f5eedb'],
+    ['#e98ea3', '#24409b', '#f5eedb', '#f5eedb'],
+  ];
+  const FACES = ["'Futura', sans-serif", "'Rockwell', serif", "'Copperplate', serif", "'Gill Sans', sans-serif", "'Superclarendon', serif", "'American Typewriter', serif", "'Phosphate', 'Impact', sans-serif"];
+  /** Label sizes in squares, wide and high, the way the boxes came. */
+  const SIZES: [number, number][] = [[5, 3], [4, 3], [3, 4], [6, 4], [4, 4], [3, 2], [5, 4], [3, 5], [7, 4], [4, 3], [6, 3], [4, 5]];
+
+  const PATHS: Record<string, string> = {
+    swallow: 'M1 9 C5 9 9 10 11.5 12.5 C13 8.5 16.5 5 22.5 3.5 C19.5 6.5 17.5 9.5 16 12.5 C18.5 12.5 21 13.5 23 15 C20 15 17 15.2 15 15.6 L14 17.5 L17.5 22.5 L12.2 18.6 L7.5 21.5 L10.3 16.5 C6.5 14.5 3.5 12 1 9 Z',
+    bolt: 'M14 1 L4 13.5 H11 L8.5 23 L20 9.5 H13 L16.5 1 Z',
+    moon: 'M14 2 A10 10 0 1 0 22 17 A8 8 0 1 1 14 2 Z',
+    heron: 'M15.5 2 C17 2 18 3 18 4 L23 4.6 L18 5.4 C17.2 7.4 14 8 14 10.5 C14 12.5 18 13 18 16 C18 18.5 15.5 19.5 12.5 19 L6 17.5 L12 17 C11 15 9.5 13 10 10.5 C10.6 7.6 14 6.5 14 4.5 C14 3 14.6 2 15.5 2 Z',
+  };
+
+  function star(cx: number, cy: number, r: number, points = 5, inner = 0.42) {
+    const p: string[] = [];
+    for (let i = 0; i < points * 2; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / points;
+      const rr = i % 2 ? r * inner : r;
+      p.push(`${(cx + Math.cos(a) * rr).toFixed(2)},${(cy + Math.sin(a) * rr).toFixed(2)}`);
+    }
+    return `<polygon points="${p.join(' ')}" />`;
+  }
+
+  /** The emblem in a box of 24, filled with `fill`; `cut` is the ground showing through. */
+  function emblem(kind: Emblem, fill: string, cut: string) {
+    switch (kind) {
+      case 'star': return `<g fill="${fill}">${star(12, 12.8, 11.5)}</g>`;
+      case 'stars': return `<g fill="${fill}">${star(6, 14, 5.5)}${star(18, 14, 5.5)}${star(12, 6.5, 4.2)}</g>`;
+      case 'burst': return `<g fill="${fill}">${star(12, 12, 12, 8, 0.32)}</g><circle cx="12" cy="12" r="2.4" fill="${cut}" />`;
+      case 'comet': return `<g fill="${fill}">${star(17, 7, 6)}<path d="M13 9 L1 21 L3 21.6 L14.5 11 Z M15 11.5 L5 23 L7 23 L16.2 12.6 Z M11.5 8 L0.5 16 L1.2 17.6 L12.4 9.4 Z" /></g>`;
+      case 'owl': return `<g fill="${fill}"><path d="M5 4 L8.5 7 H15.5 L19 4 L19.5 12 C20 18 16.5 22.5 12 22.5 C7.5 22.5 4 18 4.5 12 Z" /></g><g fill="${cut}"><circle cx="9" cy="11" r="2.8" /><circle cx="15" cy="11" r="2.8" /></g><g fill="${fill}"><circle cx="9" cy="11" r="1.2" /><circle cx="15" cy="11" r="1.2" /><path d="M11 13.5 H13 L12 15.5 Z" /></g>`;
+      case 'storm': return `<g fill="${fill}"><circle cx="8" cy="8" r="4.5" /><circle cx="14" cy="6.5" r="5.5" /><circle cx="19" cy="9.5" r="3.6" /><rect x="5" y="8" width="16" height="5" rx="2.5" /><path d="M12 13 L8 19 H11 L9.5 23.5 L15.5 16.5 H12.5 L14.5 13 Z" /></g>`;
+      case 'heron': return `<g fill="${fill}"><path d="${PATHS.heron}" /><rect x="12" y="18.5" width="0.9" height="5" /><rect x="14.3" y="18.5" width="0.9" height="5" /></g>`;
+      default: return `<path fill="${fill}" d="${PATHS[kind]}" />`;
+    }
+  }
+
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  /** A word set in `face` at `size`, squeezed to `room` if it would not fit. */
+  function word(text: string, x: number, y: number, size: number, room: number, fill: string, face: string, extra = '') {
+    const guess = text.length * size * (face.includes('Impact') ? 0.55 : face.includes('Copperplate') || face.includes('Superclarendon') || face.includes('Rockwell') ? 0.86 : 0.74);
+    const fit = guess > room ? ` textLength="${room.toFixed(1)}" lengthAdjust="spacingAndGlyphs"` : '';
+    return `<text x="${x}" y="${y}" font-size="${size.toFixed(1)}" fill="${fill}" font-family="${face.replace(/"/g, "'")}" text-anchor="middle" font-weight="700"${fit}${extra}>${esc(text)}</text>`;
+  }
+
+  function art(label: Label, index: number, w: number, h: number) {
+    const W = w * 20, H = h * 20;
+    const [ground, ink, second, paper] = INKS[(index * 5) % INKS.length];
+    const face = label.face ?? FACES[index % FACES.length];
+    const small = h <= 2 || w <= 2;
+    const tall = h > w;
+    const style = small ? 'frame' : tall ? 'tall' : ['frame', 'band', 'roundel', 'rays', 'word'][index % 5];
+    const onGround = ground === ink ? second : paper === ground ? ink : paper;
+    const place = (size: number, cx: number, cy: number, fill: string, cut: string) =>
+      `<g transform="translate(${(cx - size / 2).toFixed(1)} ${(cy - size / 2).toFixed(1)}) scale(${(size / 24).toFixed(3)})">${emblem(label.emblem, fill, cut)}</g>`;
+    let body = '';
+    if (style === 'frame') {
+      const nameSize = Math.min(H * 0.2, 13);
+      body = `<rect width="${W}" height="${H}" fill="${ground}" />
+        <rect x="3" y="3" width="${W - 6}" height="${H - 6}" fill="none" stroke="${onGround}" stroke-width="1.2" />
+        ${place(Math.min(W - 18, H - nameSize - 16), W / 2, (H - nameSize - 4) / 2 + 2, second === ground ? onGround : second, ground)}
+        ${word(label.brand, W / 2, H - 8, nameSize, W - 14, onGround, face)}`;
+    } else if (style === 'band') {
+      const band = Math.round(H * 0.3);
+      body = `<rect width="${W}" height="${H}" fill="${ground}" />
+        <rect width="${W}" height="${band}" fill="${second}" />
+        ${word(label.brand, W / 2, band * 0.7, band * 0.55, W - 10, ink === second ? paper : ink, face)}
+        ${place(Math.min(W * 0.5, H - band - 16), W / 2, band + (H - band - 10) / 2, onGround, ground)}
+        ${word(label.sub, W / 2, H - 4, 5.5, W - 10, onGround, "'Gill Sans', sans-serif", ' font-weight="400"')}`;
+    } else if (style === 'roundel') {
+      const r = Math.min(W, H) / 2 - 3;
+      const id = `mb-arc-${index}-${w}${h}`;
+      const arc = Math.PI * (r - 7) * 0.92;
+      const arcSize = Math.min(8, r * 0.3);
+      body = `<rect width="${W}" height="${H}" fill="${ground}" />
+        <circle cx="${W / 2}" cy="${H / 2}" r="${r}" fill="${second}" />
+        <circle cx="${W / 2}" cy="${H / 2}" r="${r - 2.5}" fill="none" stroke="${ink === second ? paper : ink}" stroke-width="0.8" />
+        <path id="${id}" d="M ${W / 2 - r + 7} ${H / 2} A ${r - 7} ${r - 7} 0 0 1 ${W / 2 + r - 7} ${H / 2}" fill="none" />
+        <text font-size="${arcSize.toFixed(1)}" font-weight="700" font-family="${face.replace(/"/g, "'")}" fill="${ink === second ? paper : ink}"><textPath href="#${id}" startOffset="50%" text-anchor="middle"${label.brand.length * arcSize * 0.86 > arc ? ` textLength="${arc.toFixed(1)}" lengthAdjust="spacingAndGlyphs"` : ''}>${esc(label.brand)}</textPath></text>
+        ${place(r * 0.9, W / 2, H / 2 + r * 0.22, ink === second ? paper : ink, second)}
+        ${star(r * 0.5 + 4, H / 2, 2.6).replace('<polygon', `<polygon fill="${onGround}"`)}${star(W - r * 0.5 - 4, H / 2, 2.6).replace('<polygon', `<polygon fill="${onGround}"`)}`;
+    } else if (style === 'rays') {
+      const cx = W / 2, cy = H * 0.42;
+      const rays = Array.from({ length: 16 }, (_, i) => {
+        const a1 = (i / 16) * Math.PI * 2, a2 = ((i + 0.5) / 16) * Math.PI * 2, R = W + H;
+        return `M ${cx} ${cy} L ${(cx + Math.cos(a1) * R).toFixed(1)} ${(cy + Math.sin(a1) * R).toFixed(1)} L ${(cx + Math.cos(a2) * R).toFixed(1)} ${(cy + Math.sin(a2) * R).toFixed(1)} Z`;
+      }).join(' ');
+      body = `<rect width="${W}" height="${H}" fill="${paper}" />
+        <path d="${rays}" fill="${second === paper ? ground : second}" opacity="0.9" />
+        <circle cx="${cx}" cy="${cy}" r="${Math.min(W, H) * 0.3}" fill="${ground}" />
+        ${place(Math.min(W, H) * 0.42, cx, cy, onGround === ground ? ink : onGround, ground)}
+        <rect y="${H - 16}" width="${W}" height="16" fill="${ground}" />
+        ${word(label.brand, W / 2, H - 4.5, 10, W - 10, onGround, face)}`;
+    } else if (style === 'word') {
+      body = `<rect width="${W}" height="${H}" fill="${second}" />
+        ${place(Math.min(H * 0.42, 26), W - Math.min(H * 0.42, 26) / 2 - 5, Math.min(H * 0.42, 26) / 2 + 5, ink === second ? paper : ground === second ? ink : ground, second)}
+        ${word(label.brand, W / 2, H - 10, H * 0.42, W - 8, ink === second ? paper : ink, face)}
+        <rect x="4" y="${H - 7}" width="${W - 8}" height="1" fill="${ink === second ? paper : ink}" />
+        ${word(label.sub, W / 2, H - 1.8, 4.5, W - 10, ink === second ? paper : ink, "'Gill Sans', sans-serif", ' font-weight="400"')}`;
+    } else {
+      // Tall: the name runs up the left edge, the emblem stands to its right.
+      const strip = Math.round(W * 0.34);
+      body = `<rect width="${W}" height="${H}" fill="${ground}" />
+        <rect width="${strip}" height="${H}" fill="${second}" />
+        <g transform="translate(${strip * 0.72} ${H / 2}) rotate(-90)">${word(label.brand, 0, 0, strip * 0.62, H - 10, ink === second ? paper : ink, face)}</g>
+        ${place(Math.min(W - strip - 8, H * 0.5), strip + (W - strip) / 2, H * 0.4, onGround, ground)}
+        ${word(String(label.year).slice(0, 2) + '·' + String(label.year).slice(2), strip + (W - strip) / 2, H - 6, 5, W - strip - 6, onGround, "'Gill Sans', sans-serif", ' font-weight="400"')}`;
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${body}</svg>`;
+  }
+
+  const stage = document.getElementById('mb')!;
+  const field = document.getElementById('mb-field')!;
+  const card = { no: document.getElementById('mb-no')!, brand: document.getElementById('mb-brand')!, where: document.getElementById('mb-where')!, state: document.getElementById('mb-state')!, swap: document.getElementById('mb-swap')! };
+
+  function show(label: Label, number: number, w: number, h: number) {
+    card.no.textContent = `No. 14/${String(number).padStart(2, '0')}`;
+    card.brand.textContent = label.brand.charAt(0) + label.brand.slice(1).toLowerCase();
+    card.where.textContent = `${label.from}, about ${label.year}. ${w} by ${h} squares.`;
+    card.state.textContent = label.note;
+    card.swap.textContent = label.swap ? 'Spare to swap.' : 'Keeping.';
+  }
+
+  /** Packs labels into a field `wide` squares across, with a square of kraft right and below each. */
+  function pack(wide: number, high: number, blocked: (x: number, y: number) => boolean) {
+    const taken = Array.from({ length: high + 1 }, (_, y) => Array.from({ length: wide + 1 }, (_, x) => blocked(x, y)));
+    const fits = (x: number, y: number, w: number, h: number) => {
+      if (x + w + 1 > wide + 1 || y + h + 1 > high + 1) return false;
+      for (let j = y; j < y + h + 1; j++) for (let i = x; i < x + w + 1; i++) if (taken[j][i]) return false;
+      return true;
+    };
+    const placed: { label: Label; index: number; x: number; y: number; w: number; h: number }[] = [];
+    const tryPlace = (label: Label, index: number, w: number, h: number) => {
+      for (let y = 0; y + h <= high; y++) for (let x = 0; x + w <= wide; x++) {
+        if (!fits(x, y, w, h)) continue;
+        for (let j = y; j < y + h + 1; j++) for (let i = x; i < x + w + 1; i++) taken[j][i] = true;
+        placed.push({ label, index, x, y, w, h });
+        return true;
+      }
+      return false;
+    };
+    // Two rounds through the album: the second the reprints, in the other inks.
+    for (let round = 0; round < 3; round++) {
+      LABELS.forEach((label, i) => {
+        const index = i + round * LABELS.length;
+        const [w, h] = SIZES[(i * 7 + round * 3) % SIZES.length];
+        if (!tryPlace(label, index, w, h) && round > 0) tryPlace(label, index, 3, 2);
+      });
+    }
+    return placed;
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    field.replaceChildren();
+    let wide: number, high: number, top: number, left: number;
+    let blocked = (_x: number, _y: number) => false;
+    if (narrow) {
+      // The heading and the card take the first two rows, grown to fit; a square of kraft, then labels.
+      left = 2; wide = across - 2; high = 70; top = 4;
+    } else {
+      left = 3; top = 6; wide = across - 4; high = down - 6;
+      const cardLeft = across - 16 - left; // the card's first column, in field squares
+      blocked = (x, y) => y <= 3 && x >= cardLeft - 1;
+    }
+    const placed = pack(wide, high, blocked);
+    const fragment = document.createDocumentFragment();
+    placed.forEach(({ label, index, x, y, w, h }, n) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'mb-l';
+      item.setAttribute('role', 'listitem');
+      item.setAttribute('aria-label', `${label.brand}, ${label.from}, about ${label.year}`);
+      item.style.gridColumn = `${left + x} / span ${w}`;
+      item.style.gridRow = `${top + y} / span ${h}`;
+      item.toggleAttribute('data-swap', !!label.swap && index < LABELS.length);
+      item.innerHTML = art(label, index, w, h);
+      const read = () => show(label, n + 1, w, h);
+      item.addEventListener('pointerenter', read);
+      item.addEventListener('focus', read);
+      fragment.append(item);
+    });
+    field.append(fragment);
+  });
+</script>
+
+<style is:global>
+  html { background: #b8946a; }
+  .mb {
+    --kraft: #b8946a;
+    --pencil: #3a2a1b;
+    color: var(--pencil);
+    background-color: var(--kraft);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.25 0 0 0 0 0.16 0 0 0 0 0.08 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23f)'/%3E%3C/svg%3E");
+    font-family: 'Bradley Hand', 'Noteworthy', 'Marker Felt', cursive;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .mb :is(h1, p) { margin: 0; }
+  .mb-head { grid-column: 3 / -19; grid-row: 2 / span 4; }
+  .mb-head h1 { font: 700 calc(30px * var(--sf)) / calc(2 * var(--u)) 'Bradley Hand', 'Noteworthy', cursive; }
+  .mb-head p { max-width: calc(36 * var(--u)); }
+
+  /* The collector's index card: ruled a square apart, the top rule red. */
+  .mb-card {
+    grid-column: -17 / -3;
+    grid-row: 2 / span 8;
+    z-index: 1;
+    padding: var(--u) var(--u) 0;
+    box-sizing: border-box;
+    background:
+      linear-gradient(#c43a37, #c43a37) 0 calc(var(--u) * 2 - 1px) / 100% 1px no-repeat,
+      repeating-linear-gradient(to bottom, transparent 0 calc(var(--u) - 1px), #9db6cf calc(var(--u) - 1px) var(--u)),
+      #f4f0e4;
+    color: #22303f;
+    font-size: calc(14px * var(--sf));
+    overflow: hidden;
+  }
+  .mb-card p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mb-card-no { font-size: calc(12px * var(--sf)); color: #8a4a3a; }
+  .mb-card-brand { font-weight: 700; font-size: calc(18px * var(--sf)); }
+  .mb-card p:nth-child(n + 3) { white-space: normal; }
+
+  .mb-field { display: contents; }
+  .mb-l {
+    all: unset;
+    position: relative;
+    display: block;
+    cursor: pointer;
+  }
+  .mb-l svg { display: block; width: 100%; height: 100%; }
+  .mb-l:hover { outline: 2px solid var(--pencil); outline-offset: 2px; }
+  .mb-l:focus-visible { outline: 2px solid #22303f; outline-offset: 3px; }
+  /* A spare to swap: a pencilled cross in the kraft under the corner. */
+  .mb-l[data-swap]::after {
+    content: '×';
+    position: absolute;
+    right: calc(var(--u) * -1);
+    bottom: calc(var(--u) * -1);
+    width: var(--u);
+    height: var(--u);
+    font: 700 calc(18px * var(--sf)) / var(--u) 'Bradley Hand', cursive;
+    text-align: center;
+    color: var(--pencil);
+  }
+
+  :root[data-narrow] .mb { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .mb-head { grid-column: 2 / -2; grid-row: 1; padding: var(--u) 0; }
+  :root[data-narrow] .mb-card { grid-column: 2 / -2; grid-row: 2; height: calc(8 * var(--u)); }
+</style>

@@ -1,0 +1,469 @@
+---
+// After broadcast teletext: a page of forty cells by twenty-five rows in eight colours, each cell
+// one square, its block graphics two by three sixels to the square. Pages about the tides and the
+// allotments; the remote beside it takes three digits, and the coloured keys at the foot switch
+// pages, with the header's counter rolling while the set searches.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="teletext" theme="dark">
+  <main class="stage tt" id="tt">
+    <h1 class="tt-sr">Lantern teletext</h1>
+    <div class="tt-set" id="tt-set" aria-hidden="true"></div>
+    <svg class="tt-page" id="tt-page" viewBox="0 0 40 25" role="img" aria-labelledby="tt-text" data-own-keys></svg>
+    <div class="tt-sr" id="tt-text" aria-live="polite"></div>
+    <div class="tt-remote" id="tt-remote" aria-label="Remote control">
+      <p class="tt-brand">Halcyon</p>
+      <output class="tt-led" id="tt-led">100</output>
+      <div class="tt-digits">
+        <button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button>
+        <button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button>
+        <button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button>
+        <span></span><button type="button" data-digit="0">0</button><span></span>
+      </div>
+      <div class="tt-fast" id="tt-fast">
+        <button type="button" data-fast="0" class="red" aria-label="Red key"></button><button type="button" data-fast="1" class="green" aria-label="Green key"></button><button type="button" data-fast="2" class="yellow" aria-label="Yellow key"></button><button type="button" data-fast="3" class="cyan" aria-label="Cyan key"></button>
+      </div>
+      <div class="tt-keys">
+        <button type="button" id="tt-reveal" aria-pressed="false">Reveal</button><button type="button" data-go="100">Index</button>
+      </div>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const K = '#000', R = '#f00', G = '#0f0', Y = '#ff0', B = '#00f', M = '#f0f', C = '#0ff', W = '#fff';
+
+  /** Mosaic capitals, five sixels by seven, set three cells apart. */
+  const FONT: Record<string, string[]> = {
+    A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    C: ['.####', '#....', '#....', '#....', '#....', '#....', '.####'],
+    D: ['####.', '#...#', '#...#', '#...#', '#...#', '#...#', '####.'],
+    E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'],
+    I: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '#####'],
+    L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'],
+    N: ['#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#', '#...#'],
+    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+    R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+    S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'],
+    T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+  };
+
+  interface Run { r: number; c: number; s: string; fg: string; big?: boolean; flash?: boolean; conceal?: boolean }
+  interface Sixel { x: number; y: number; w: number; fg: string }
+  interface Page { n: number; bg: (string | null)[][]; runs: Run[]; sixels: Sixel[]; picture?: string; fast: [string, number][] }
+
+  function page(n: number, fast: [string, number][]): Page & {
+    fill(r: number, c0: number, c1: number, col: string): void;
+    t(r: number, c: number, s: string, fg: string, extra?: Partial<Run>): void;
+    box(r: number, c: number, s: string, fg: string, bg: string): void;
+    paint(r: number, c: number, w: number, h: number, colour: (x: number, y: number) => string | null): void;
+    word(r: number, c: number, text: string, fg: string): void;
+  } {
+    const p = {
+      n, fast, runs: [] as Run[], sixels: [] as Sixel[], bg: Array.from({ length: 25 }, () => Array(40).fill(null)),
+      fill(r: number, c0: number, c1: number, col: string) { for (let c = c0; c <= c1; c++) p.bg[r][c] = col; },
+      t(r: number, c: number, s: string, fg: string, extra: Partial<Run> = {}) { p.runs.push({ r, c, s, fg, ...extra }); },
+      /** Words on their own background, a cell of it either side, as subtitles are boxed. */
+      box(r: number, c: number, s: string, fg: string, bg: string) { p.fill(r, c - 1, c + s.length, bg); p.t(r, c, s, fg); },
+      /** Paints sixels: a box `w` by `h` sixels from cell (c, r), coloured by `colour`. */
+      paint(r: number, c: number, w: number, h: number, colour: (x: number, y: number) => string | null) {
+        for (let y = 0; y < h; y++) {
+          let x = 0;
+          while (x < w) {
+            const col = colour(x, y);
+            if (!col) { x++; continue; }
+            let end = x + 1;
+            while (end < w && colour(end, y) === col) end++;
+            p.sixels.push({ x: c * 2 + x, y: r * 3 + y, w: end - x, fg: col });
+            x = end;
+          }
+        }
+      },
+      /** A word in mosaic capitals, three rows high. */
+      word(r: number, c: number, text: string, fg: string) {
+        [...text].forEach((ch, i) => {
+          const glyph = FONT[ch];
+          if (!glyph) return;
+          p.paint(r, c + i * 3, 5, 9, (x, y) => (y >= 1 && y <= 7 && glyph[y - 1][x] === '#' ? fg : null));
+        });
+      },
+    };
+    return p;
+  }
+
+  const FAST: [string, number][] = [['Tides', 301], ['Plots', 472], ['Notices', 473], ['Subtitles', 888]];
+  const PAGES = new Map<number, Page>();
+
+  // 100: the index, with the lighthouse the service is named after.
+  {
+    const p = page(100, FAST);
+    for (let r = 1; r <= 4; r++) p.fill(r, 0, 39, B);
+    p.word(1, 2, 'LANTERN', Y);
+    p.t(2, 25, 'teletext', C);
+    p.t(3, 25, 'every evening', W);
+    p.t(6, 1, 'Tides and the coast', W); p.t(6, 25, '301', Y);
+    p.t(7, 1, 'Shipping and sea areas', W); p.t(7, 25, '302', Y);
+    p.t(9, 1, 'Allotments: this week', G); p.t(9, 25, '472', Y);
+    p.t(10, 1, 'Society notices', G); p.t(10, 25, '473', Y);
+    p.t(11, 1, 'Weather for growers', G); p.t(11, 25, '401', Y);
+    p.t(13, 1, 'Subtitles', C); p.t(13, 25, '888', Y);
+    p.t(15, 1, 'Type three figures on the', W);
+    p.t(16, 1, 'remote, or press a coloured', W);
+    p.t(17, 1, 'key to change the page.', W);
+    for (let r = 20; r <= 21; r++) p.fill(r, 0, 39, M);
+    p.t(20, 1, 'Tonight: spring tides and', W);
+    p.t(21, 1, 'the great marrow weigh-in', Y);
+    // The lighthouse: a red and white tower, a yellow lamp, two beams.
+    p.paint(5, 30, 18, 42, (x, y) => {
+      const cx = 9;
+      const beam = (y >= 2 && y <= 10) && (Math.abs(y - (6 - (cx - x) * 0.35)) < 0.6 || Math.abs(y - (6 - (x - cx) * 0.35)) < 0.6) && Math.abs(x - cx) > 2;
+      if (beam) return Y;
+      if (y >= 1 && y <= 3 && Math.abs(x - cx + 0.5) <= y - 0.5) return R;
+      if (y >= 4 && y <= 8 && Math.abs(x - cx + 0.5) <= 1.5) return Y;
+      if (y >= 4 && y <= 8 && Math.abs(x - cx + 0.5) <= 2.5) return W;
+      if (y === 9 && Math.abs(x - cx + 0.5) <= 4) return W;
+      if (y >= 10 && y <= 37) {
+        const half = 2.2 + (y - 10) * 0.075;
+        if (Math.abs(x - cx + 0.5) <= half) return Math.floor((y - 10) / 6) % 2 ? W : R;
+      }
+      if (y >= 38 && y <= 39 && Math.abs(x - cx + 0.5) <= 7) return G;
+      if (y >= 40 && Math.abs(x - cx + 0.5) <= 9) return B;
+      return null;
+    });
+    PAGES.set(100, p);
+  }
+
+  // 301: the tides, a table and the curve of the water through the day.
+  {
+    const p = page(301, [['Index', 100], ['Plots', 472], ['Notices', 473], ['Subtitles', 888]]);
+    for (let r = 1; r <= 3; r++) p.fill(r, 0, 39, B);
+    p.word(1, 1, 'TIDES', W);
+    p.t(1, 24, 'Saturday', Y);
+    p.t(2, 24, '14 November', Y);
+    p.t(3, 24, 'times in GMT', C);
+    p.t(5, 1, 'Port', Y); p.t(5, 15, 'High water', Y); p.t(5, 28, 'Low water', Y);
+    const ports: [string, string, string, string, string][] = [
+      ['Saltby', '0412', '5.1m', '1031', '0.9m'],
+      ['Gullhaven', '0438', '4.8m', '1102', '1.1m'],
+      ['Wrenmouth', '0501', '5.6m', '1119', '0.6m'],
+      ['Oyster Ness', '0527', '4.2m', '1150', '1.4m'],
+      ['Holm Staithe', '0549', '3.9m', '1213', '1.2m'],
+      ['Carrick Quay', '0611', '6.2m', '1236', '0.4m'],
+    ];
+    ports.forEach(([port, hw, hh, lw, lh], i) => {
+      const fg = i % 2 ? C : W;
+      p.t(6 + i, 1, port, fg); p.t(6 + i, 15, hw, fg); p.t(6 + i, 21, hh, fg); p.t(6 + i, 28, lw, fg); p.t(6 + i, 34, lh, fg);
+    });
+    p.t(13, 1, 'Carrick Quay today', G);
+    // The water through the day: 76 sixels across, 18 high, two highs and two lows.
+    const level = (x: number) => 9 - 7 * Math.cos(((x - 10) / 76) * Math.PI * 3.6);
+    const now = 46;
+    p.paint(14, 1, 76, 18, (x, y) => {
+      const top = Math.round(level(x));
+      if (x === now && y < top) return Y;
+      if (y === top) return C;
+      if (y > top) return B;
+      return null;
+    });
+    p.t(20, 22, 'now 1440', Y);
+    p.t(21, 1, 'Holm causeway closed 0420-0930', W);
+    p.t(22, 1, 'and 1640-2150. The sea will not wait.', W);
+    PAGES.set(301, p);
+  }
+
+  // 472: allotments, the jobs for the week and a frost warning that flashes.
+  {
+    const p = page(472, [['Index', 100], ['Tides', 301], ['Notices', 473], ['Subtitles', 888]]);
+    for (let r = 1; r <= 3; r++) p.fill(r, 0, 39, G);
+    p.word(1, 1, 'ALLOTMENTS', K);
+    p.t(5, 1, 'Jobs this week', Y, { big: true });
+    p.t(5, 26, 'page 1 of 2', W);
+    const jobs = [
+      ['Lift dahlias once the first frost', 'has blackened the leaves.'],
+      ['Sow broad beans under cloches.', 'The mice will find them anyway.'],
+      ['Net the brassicas. Pigeons on plot 9', 'have been seen reading this page.'],
+      ['Spread manure on empty beds. Plot 22', 'is empty and the manure is free.'],
+    ];
+    jobs.forEach(([a, b], i) => {
+      const r = 8 + i * 3;
+      p.paint(r, 1, 2, 3, (x, y) => (y === 1 ? G : null));
+      p.t(r, 3, a, W); p.t(r + 1, 3, b, C);
+    });
+    p.fill(20, 0, 39, R);
+    p.t(20, 1, 'FROST TONIGHT -2C: COVER TENDER PLANTS', Y, { flash: true });
+    p.t(22, 1, 'Society notices and the weigh-in', W); p.t(22, 35, '473', Y);
+    PAGES.set(472, p);
+  }
+
+  // 473: society notices, the marrow (pictured), and a riddle under Reveal.
+  {
+    const p = page(473, [['Index', 100], ['Tides', 301], ['Plots', 472], ['Subtitles', 888]]);
+    for (let r = 1; r <= 3; r++) p.fill(r, 0, 39, M);
+    p.word(1, 1, 'NOTICES', W);
+    p.t(2, 24, 'page 2 of 2', W);
+    p.t(5, 1, 'Marrow weigh-in', Y, { big: true });
+    p.t(7, 1, 'Sunday 10am, behind plot 14.', W);
+    p.t(8, 1, 'Record 31lb 4oz, Mr D Pell, 1997.', W);
+    p.t(9, 1, 'Marrows must be grown, not bought.', C);
+    p.paint(11, 1, 36, 15, (x, y) => {
+      const dx = (x - 18) / 17, dy = (y - 7 - (x - 18) * 0.08) / 6.2;
+      if (x <= 1 && y >= 5 && y <= 7) return G;
+      if (dx * dx + dy * dy > 1) return null;
+      return (x + Math.round(y * 0.6)) % 6 < 2 ? Y : G;
+    });
+    p.t(11, 22, 'Winner 2025', Y);
+    p.t(12, 22, 'Mrs J Akers', W);
+    p.t(13, 22, '27lb 9oz', W);
+    p.t(14, 22, '(pictured)', C);
+    p.t(17, 1, 'Waiting list for plots: 4 years.', G);
+    p.t(18, 1, 'Plot 22 vacant, bindweed included.', W);
+    p.t(19, 1, 'Shed key behind the bar at the', W);
+    p.t(20, 1, 'Lantern Arms. Ask for Brian.', W);
+    p.t(22, 1, 'Why did the marrow blush?', C);
+    p.t(23, 1, 'It saw the salad dressing.', Y, { conceal: true });
+    p.t(23, 30, 'REVEAL', M);
+    PAGES.set(473, p);
+  }
+
+  // 888: subtitles over the programme itself.
+  {
+    const p = page(888, [['Index', 100], ['Tides', 301], ['Plots', 472], ['Notices', 473]]);
+    p.picture = '/examples/images/birdie-oystercatcher.jpg';
+    p.box(17, 2, '[OYSTERCATCHERS PIPING]', Y, K);
+    p.box(19, 2, 'They feed on the falling tide,', W, K);
+    p.box(20, 2, 'two hours either side of low water,', W, K);
+    p.box(21, 2, 'and the mussel beds at Holm are', W, K);
+    p.box(22, 2, 'theirs until the causeway opens.', W, K);
+    PAGES.set(888, p);
+  }
+
+  const svg = document.getElementById('tt-page') as unknown as SVGSVGElement;
+  const said = document.getElementById('tt-text')!;
+  const led = document.getElementById('tt-led')!;
+  const reveal = document.getElementById('tt-reveal') as HTMLButtonElement;
+  let current = PAGES.get(100)!;
+  let shownNumber = 100;
+  let typed = '';
+  let revealed = false;
+  let notice = '';
+  let search = 0;
+  let noticeTimer = 0;
+
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  /** A run of characters, each centred on its own cell; spaces are simply not drawn. */
+  function glyphs(run: Run) {
+    const xs: string[] = [], chars: string[] = [];
+    [...run.s].forEach((ch, i) => { if (ch !== ' ') { xs.push(((run.c + i + 0.5) / 1.36).toFixed(3)); chars.push(esc(ch)); } });
+    if (!chars.length) return '';
+    const y = run.big ? ((run.r + 1.66) / 2).toFixed(3) : (run.r + 0.83).toFixed(3);
+    const cls = run.flash ? ' class="tt-flash"' : run.conceal ? ' class="tt-conceal"' : '';
+    const glyphRun = `<text x="${xs.join(' ')}" y="${y}" fill="${run.fg}"${cls}>${chars.join('')}</text>`;
+    return run.big ? `<g transform="scale(1.36 2)">${glyphRun}</g>` : `<g transform="scale(1.36 1)">${glyphRun}</g>`;
+  }
+
+  function header() {
+    const now = new Date();
+    const day = now.toLocaleDateString('en-GB', { weekday: 'short' });
+    const date = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}/${String(now.getSeconds()).padStart(2, '0')}`;
+    const entry = typed ? typed.padEnd(3, '-') : String(search ? search : current.n);
+    return [
+      glyphs({ r: 0, c: 1, s: `P${entry}`, fg: W }),
+      glyphs({ r: 0, c: 7, s: 'LANTERN', fg: C }),
+      glyphs({ r: 0, c: 15, s: String(shownNumber), fg: search ? Y : W }),
+      glyphs({ r: 0, c: 20, s: `${day} ${date}`, fg: W }),
+      glyphs({ r: 0, c: 31, s: time, fg: Y }),
+    ].join('');
+  }
+
+  function draw() {
+    const p = current;
+    const parts: string[] = [];
+    if (p.picture) parts.push(`<image href="${p.picture}" x="0" y="1" width="40" height="23" preserveAspectRatio="xMidYMid slice" />`);
+    p.bg.forEach((row, r) => {
+      let c = 0;
+      while (c < 40) {
+        const col = row[c];
+        if (!col) { c++; continue; }
+        let end = c + 1;
+        while (end < 40 && row[end] === col) end++;
+        parts.push(`<rect x="${c}" y="${r}" width="${end - c + 0.02}" height="1.02" fill="${col}" />`);
+        c = end;
+      }
+    });
+    p.sixels.forEach(s => parts.push(`<rect x="${s.x / 2}" y="${(s.y / 3).toFixed(3)}" width="${s.w / 2 + 0.01}" height="0.343" fill="${s.fg}" />`));
+    parts.push(`<g class="tt-type">${p.runs.map(glyphs).join('')}</g>`);
+    parts.push(`<g class="tt-type" id="tt-header">${header()}</g>`);
+    // Row 24: the four coloured keys, or a notice from the set.
+    if (notice) {
+      parts.push(`<rect x="0" y="24" width="40" height="1" fill="${R}" /><g class="tt-type">${glyphs({ r: 24, c: 1, s: notice, fg: W })}</g>`);
+    } else {
+      const colours = [R, G, Y, C];
+      p.fast.forEach(([label, n], i) => {
+        parts.push(`<g class="tt-key" role="button" tabindex="0" data-go="${n}" aria-label="${label}, page ${n}"><rect x="${i * 10}" y="24" width="10" height="1" fill="transparent" /><rect class="tt-ring" x="${i * 10 + 0.1}" y="24.06" width="9.8" height="0.88" fill="none" /><g class="tt-type">${glyphs({ r: 24, c: i * 10 + 1, s: label, fg: colours[i] })}</g></g>`);
+      });
+    }
+    svg.innerHTML = parts.join('');
+    svg.toggleAttribute('data-revealed', revealed);
+    said.textContent = `Page ${p.n}. ` + [...new Set(p.runs.map(run => run.r))].map(r => p.runs.filter(run => run.r === r && !(run.conceal && !revealed)).map(run => run.s).join(' ')).join('. ');
+    led.textContent = typed ? typed.padEnd(3, '-') : String(p.n);
+  }
+
+  function redrawHeader() {
+    const h = svg.querySelector('#tt-header');
+    if (h) h.innerHTML = header();
+    led.textContent = typed ? typed.padEnd(3, '-') : String(search || current.n);
+  }
+
+  let rolling = 0;
+  /** Asks the set for page `n`: the header counter rolls while it searches. */
+  function go(n: number) {
+    window.clearInterval(rolling);
+    window.clearTimeout(noticeTimer);
+    notice = '';
+    typed = '';
+    search = n;
+    const found = PAGES.get(n);
+    const steps = found ? (reducedMotion() ? 0 : 9) : (reducedMotion() ? 1 : 40);
+    let step = 0;
+    const land = () => {
+      window.clearInterval(rolling);
+      search = 0;
+      if (found) { current = found; revealed = false; reveal.setAttribute('aria-pressed', 'false'); }
+      else {
+        notice = `Page ${n} is not in service tonight`;
+        noticeTimer = window.setTimeout(() => { notice = ''; draw(); }, 3200);
+      }
+      shownNumber = current.n;
+      draw();
+    };
+    if (!steps) { land(); return; }
+    rolling = window.setInterval(() => {
+      step++;
+      shownNumber = 100 + ((shownNumber - 100 + 7 + (step % 3)) % 800);
+      redrawHeader();
+      if (step >= steps) land();
+    }, 70);
+    redrawHeader();
+  }
+
+  function digit(d: string) {
+    typed += d;
+    if (typed.length === 3) {
+      const n = Number(typed);
+      if (n >= 100 && n <= 899) go(n);
+      else { typed = ''; redrawHeader(); }
+      return;
+    }
+    redrawHeader();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-digit]').forEach(b => b.addEventListener('click', () => digit(b.dataset.digit!)));
+  document.querySelectorAll<HTMLButtonElement>('[data-fast]').forEach(b => b.addEventListener('click', () => go(current.fast[Number(b.dataset.fast)][1])));
+  document.querySelectorAll<HTMLButtonElement>('.tt-keys [data-go]').forEach(b => b.addEventListener('click', () => go(Number(b.dataset.go))));
+  reveal.addEventListener('click', () => {
+    revealed = !revealed;
+    reveal.setAttribute('aria-pressed', String(revealed));
+    draw();
+  });
+  svg.addEventListener('click', event => {
+    const key = (event.target as Element).closest('[data-go]') as SVGElement | null;
+    if (key) go(Number(key.dataset.go));
+  });
+  svg.addEventListener('keydown', event => {
+    const key = (event.target as Element).closest('[data-go]') as SVGElement | null;
+    if (key && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); go(Number(key.dataset.go)); }
+  });
+  window.addEventListener('keydown', event => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (/^[0-9]$/.test(event.key)) digit(event.key);
+  });
+  window.setInterval(redrawHeader, 1000);
+  draw();
+
+  const remote = document.getElementById('tt-remote')!;
+  const set = document.getElementById('tt-set')!;
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      svg.style.gridColumn = '2 / -2';
+      svg.style.gridRow = '2 / span 8';
+      remote.style.gridColumn = `${Math.floor((across - 10) / 2) + 1} / span 10`;
+      remote.style.gridRow = '11 / span 23';
+      return;
+    }
+    const cell = Math.max(1, Math.floor(Math.min((across - 16) / 40, (down - 4) / 25)));
+    const wide = 40 * cell, high = 25 * cell;
+    const left = Math.floor((across - wide - 13) / 2) + 1;
+    const top = Math.floor((down - high) / 2) + 1;
+    svg.style.gridColumn = `${left} / span ${wide}`;
+    svg.style.gridRow = `${top} / span ${high}`;
+    set.style.gridColumn = `${left - 2} / span ${wide + 4}`;
+    set.style.gridRow = `${top - 2} / span ${high + 4}`;
+    remote.style.gridColumn = `${left + wide + 3} / span 10`;
+    remote.style.gridRow = `${top + high - 23} / span 23`;
+  });
+</script>
+
+<style is:global>
+  html { background: #000; }
+  .tt { background: #000; color: #fff; font-family: var(--typeface-regular); }
+  .tt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  .tt-page { display: block; width: 100%; height: 100%; z-index: 1; }
+  /* The set around the screen: a bezel two squares deep, the glass's edge catching the room. */
+  .tt-set { background: #17181b; border-radius: var(--u); box-shadow: inset 0 0 0 1px #2a2b30; }
+  :root[data-narrow] .tt-set { display: none; }
+  .tt-page .tt-type { font-family: Monaco, Menlo, 'Andale Mono', monospace; font-size: 1px; font-weight: 700; text-anchor: middle; }
+  .tt-page .tt-conceal { visibility: hidden; }
+  .tt-page[data-revealed] .tt-conceal { visibility: visible; }
+  .tt-page .tt-key { cursor: pointer; outline: none; }
+  .tt-page .tt-key:hover .tt-ring, .tt-page .tt-key:focus-visible .tt-ring { stroke: #fff; stroke-width: 0.08; }
+  /* Teletext flash: on and off, a second each way, eight times, then left on. */
+  .tt-page .tt-flash { animation: tt-flash 1s steps(1, end) 8; }
+  @keyframes tt-flash { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .tt-page .tt-flash { animation: none; } }
+
+  /* The remote: grey plastic, square keys, a red LED for the page being typed. */
+  .tt-remote {
+    display: grid;
+    grid-template-columns: var(--u) repeat(8, var(--u)) var(--u);
+    grid-template-rows: var(--u) var(--u) calc(2 * var(--u)) var(--u) calc(11 * var(--u)) var(--u) calc(2 * var(--u)) var(--u) calc(2 * var(--u)) var(--u);
+    background: #2a2b2f;
+    border-radius: calc(var(--u) * 1.5) calc(var(--u) * 1.5) calc(var(--u) * 0.5) calc(var(--u) * 0.5);
+    color: #c9cbd1;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+  }
+  .tt-remote > * { grid-column: 2 / span 8; }
+  .tt-brand { grid-row: 2; margin: 0; text-align: center; font-family: Futura, 'Avenir Next', sans-serif; font-style: italic; letter-spacing: 0.08em; color: #8d9098; }
+  .tt-led { grid-row: 3; display: block; background: #120606; color: #ff3826; font: calc(26px * var(--sf)) / calc(2 * var(--u)) 'Andale Mono', Menlo, monospace; text-align: center; letter-spacing: 0.3em; text-shadow: 0 0 6px rgba(255, 56, 38, 0.6); }
+  .tt-digits { grid-row: 5; display: grid; grid-template-columns: repeat(3, calc(2 * var(--u))); grid-auto-rows: calc(2 * var(--u)); gap: var(--u); }
+  .tt-remote button {
+    all: unset;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    background: #44464d padding-box;
+    border: 2px solid transparent;
+    border-radius: calc(var(--u) / 2);
+    color: #f1f2f4;
+    font-size: calc(15px * var(--sf));
+    line-height: calc(2 * var(--u) - 4px);
+  }
+  .tt-remote button:hover { background-color: #565961; }
+  .tt-remote button:active { background-color: #34363b; }
+  .tt-remote button:focus-visible { outline: 2px solid #ff0; outline-offset: 1px; }
+  .tt-fast { grid-row: 7; display: grid; grid-template-columns: repeat(4, calc(2 * var(--u))); }
+  .tt-fast button { height: calc(2 * var(--u)); border-width: 3px; }
+  .tt-fast .red { background-color: #e0281e; } .tt-fast .green { background-color: #20b23a; } .tt-fast .yellow { background-color: #f2d21b; } .tt-fast .cyan { background-color: #20b9d8; }
+  .tt-keys { grid-row: 9; display: grid; grid-template-columns: repeat(2, calc(4 * var(--u))); }
+  .tt-keys button { font-size: calc(12px * var(--sf)); }
+  .tt-keys button[aria-pressed='true'] { background-color: #6b4fa0; }
+
+  :root[data-narrow] .tt { padding-bottom: calc(3 * var(--u)); }
+</style>

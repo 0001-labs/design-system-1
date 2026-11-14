@@ -1,0 +1,160 @@
+---
+// After a broadsheet obituary page: grey newsprint, a folio line, the section head in a high-contrast
+// didone, and the life of a retired typeface told in dense justified columns. Its portrait is its
+// own specimen, screened like a halftone. Every column is twelve squares and every line one square,
+// so the page ends on a whole line at any height and the rest is continued on B13.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="obituary" theme="light">
+  <main class="stage obit">
+    <p class="obit-folio"><span>B12</span><span>The Northern Compositor</span><span>Saturday 14 November 2026</span></p>
+    <h1 class="obit-section">Obituaries</h1>
+    <p class="obit-desk">Notices to the obituaries desk by six in the evening. Founders’ widows set without charge.</p>
+    <div class="obit-rule" aria-hidden="true"></div>
+
+    <h2 class="obit-head">Hollis Old Style, the face of a thousand parish newsletters, retires at 98</h2>
+    <p class="obit-deck">Cut in brass for a seed merchant, it outlived its punchcutter, its foundry and the machine sent to replace it</p>
+
+    <div class="obit-left">
+    <figure class="obit-portrait">
+      <div class="obit-plate" aria-hidden="true">
+        <span class="obit-ag">Ag</span>
+        <span class="obit-abc">abcdefghijklmnopqrstuvwxyz&amp;</span>
+      </div>
+      <figcaption>Hollis Old Style at 120 point, photographed at the Bellwether Press in 1952. <span>Bellwether Press archive</span></figcaption>
+    </figure>
+
+    <aside class="obit-funeral">
+      <h3>Funeral</h3>
+      <p>A service will be held at the Chapel of the Composing Room, Bellwether Press, Tanner’s Yard, on Tuesday at eleven. Set solid, ten on ten. In lieu of flowers, the family asks that you kern something by hand.</p>
+    </aside>
+    </div>
+
+    <article class="obit-body">
+      <p class="obit-lede"><span class="obit-drop">H</span><span class="obit-sc">ollis Old Style</span>, the typeface that set the hymn numbers, jam labels and lost-cat notices of three generations, retired on Thursday after the autumn type review. It was 98.</p>
+      <p>Its retirement was confirmed by the Bellwether Press, which had kept it in continuous use, in one size or another, since the spring of 1928. “It simply did not have a bad weight,” said Margery Thrale, the press’s last compositor. “You could set a funeral or a fête in it and nobody felt short-changed.”</p>
+      <p>Hollis was cut in brass, at eleven point, by Edwin Hollis Pargeter, a punchcutter who had been let go by two foundries for working too slowly. He had been asked for a face for a seed merchant’s catalogue that would “look honest at a glance and dignified at a fortnight”. He took fourteen months. The lower-case g alone, its ear tilted like a robin listening, took six weeks, and Pargeter kept the rejected ones in a biscuit tin for the rest of his life.</p>
+      <p>The face was an immediate success among people who did not notice typefaces. Parish councils adopted it for their minutes; it appeared on the tickets of the Upwell and Outwell Light Railway until the line closed; and for nineteen years it set the classified pages of this newspaper, where it announced engagements, sold perambulators and, on occasion, wrote the obituaries of its own customers.</p>
+      <p>Its middle years were difficult. Phototypesetting arrived in 1974 with a new version, drawn from a worn proof, that was slightly too dark and noticeably too wide. “It looked like Hollis after a heavy lunch,” a former colleague recalled. Its swash capitals did not survive the conversion. Neither, in 1989, did its bold condensed, which had been used chiefly for auction notices and was not widely mourned.</p>
+      <p>A digital revival in 1996 restored some of its composure, though the figures were lined up like soldiers and its ampersand, long admired for leaning slightly backwards, was straightened by a committee. Hollis spent the following decades in steady, unremarkable work: allotment newsletters, wine lists in market towns and the backs of seed packets, which it regarded as a homecoming.</p>
+      <p>Those who worked alongside it remember a face of unusual patience. It tolerated being set too small. It forgave tracking. During a power cut in 1977 it was set entirely by candlelight for an emergency edition of the <i>Fenland Courier</i>, and is said to have looked better for it.</p>
+      <p>In recent years its x-height, always modest, came to seem old-fashioned on screens, and its descenders, which reached a full third of the body, were thought to waste space. It was passed over for the town hall’s new signs in favour of a younger sans with no descenders to speak of. It did not complain.</p>
+      <p>Its retirement was announced, appropriately, in its own nine-point italic at the foot of the autumn specimen sheet, between a price list and a note about the car park.</p>
+      <p class="obit-dates"><b>Hollis Old Style</b>, typeface, was born in Leicester in March 1928. It retired on November 12, 2026, aged 98.</p>
+      <p class="obit-survivors">It is survived by its <i>italic, with whom it never quite saw eye to eye</i>; by its <span class="obit-sc">small capitals, who cared for it in its final years</span>; by two bolds; by a set of old-style figures, <span class="obit-onum">1234567890</span>; and by a fleuron and a hyphen. It was predeceased by its swash capitals (1974) and its bold condensed (1989).</p>
+    </article>
+    <p class="obit-continued">Continued on page B13</p>
+
+    <aside class="obit-elsewhere">
+      <h3>Deaths elsewhere</h3>
+      <p><span class="obit-sc">Pica</span>, the twelve-point unit, after a long illness brought on by the metric system. Aged about four hundred. Private.</p>
+      <p><span class="obit-sc">The double space</span> after a full stop, in a typing pool at Croydon, aged 141. Survived by a great many secretaries who still do it.</p>
+      <p><span class="obit-sc">Rub-down lettering sheet No. 4192.</span> Its lower-case e gave out in 1983; it lingered for four decades with a single Q.</p>
+      <p><span class="obit-sc">A pilcrow</span>, found in the margin of a parish magazine on Thursday. Cause unknown; no one had seen it for years.</p>
+      <p><span class="obit-sc">The key for one half</span> on a 1987 typewriter, peacefully, on a shelf in Leek.</p>
+      <h3>In memoriam</h3>
+      <p class="obit-memoriam">The <i>long s</i>, retired 1803. Still mistaken for an f by those who loved it least.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #d9d8d2; }
+  .obit {
+    --paper: #d9d8d2;
+    --ink: #232220;
+    --soft: #55534e;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: var(--typeface-canon);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .obit :is(h1, h2, h3, p, figure) { margin: 0; }
+
+  .obit-folio { grid-column: 3 / -3; grid-row: 2; display: flex; justify-content: space-between; font-size: calc(11px * var(--sf)); border-bottom: 1px solid var(--ink); font-variant-numeric: oldstyle-nums; }
+  .obit-section { grid-column: 3 / span 30; grid-row: 3 / span 3; font: calc(64px * var(--sf)) / calc(3 * var(--u)) 'Bodoni 72', Didot, 'Bodoni MT', serif; letter-spacing: -0.01em; }
+  .obit-desk { grid-column: -16 / -3; grid-row: 4 / span 2; font-style: italic; font-size: calc(12px * var(--sf)); color: var(--soft); align-self: end; }
+  .obit-rule { grid-column: 3 / -3; grid-row: 6; border-top: 3px solid var(--ink); }
+  .obit-rule::after { content: ''; display: block; margin-top: 2px; border-top: 1px solid var(--ink); }
+
+  .obit-head { grid-column: 3 / -17; grid-row: 7 / span 4; font: calc(46px * var(--sf)) / calc(2 * var(--u)) 'Bodoni 72', Didot, serif; letter-spacing: -0.01em; text-wrap: balance; }
+  .obit-deck { grid-column: 3 / -17; grid-row: 12 / span 2; font-style: italic; font-size: calc(15px * var(--sf)); color: var(--soft); text-wrap: pretty; }
+
+  /* The portrait: its own specimen, screened in dots like a news photograph. */
+  .obit-left { grid-column: 3 / span 15; grid-row: 14 / -3; overflow: hidden; --plate: calc((var(--down) - 28) * var(--u)); }
+  .obit-portrait { display: grid; grid-template-rows: var(--plate) auto; }
+  .obit-plate {
+    position: relative;
+    overflow: hidden;
+    background-color: #c4c3bc;
+    background-image: radial-gradient(circle at center, rgba(35, 34, 32, 0.38) 0 1.1px, transparent 1.4px);
+    background-size: 4px 4px;
+    border: 1px solid var(--ink);
+    box-sizing: border-box;
+  }
+  .obit-plate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 40% 35%, rgba(217, 216, 210, 0.85), transparent 65%);
+  }
+  .obit-ag {
+    position: absolute;
+    left: calc(var(--u) * 0.6);
+    top: calc(var(--u) * 1);
+    font: calc(var(--plate) * 0.62) / 1 'Hoefler Text', 'Big Caslon', Georgia, serif;
+    letter-spacing: -0.03em;
+    color: #1a1918;
+    filter: contrast(1.2);
+  }
+  .obit-abc { position: absolute; left: 0; right: 0; bottom: var(--u); padding-inline: calc(var(--u) / 2); font: italic calc(15px * var(--sf)) / var(--u) 'Hoefler Text', Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: clip; color: #1a1918; }
+  .obit-portrait figcaption { padding-top: var(--u); font-size: calc(12px * var(--sf)); font-style: italic; }
+  .obit-portrait figcaption span { display: block; font-style: normal; font-size: calc(10px * var(--sf)); color: var(--soft); }
+
+  .obit-funeral { margin-top: var(--u); border-top: 1px solid var(--ink); padding-top: calc(var(--u) - 1px); }
+  .obit h3 { font: calc(17px * var(--sf)) / var(--u) 'Bodoni 72', Didot, serif; font-weight: 700; }
+  .obit-funeral p { font-size: calc(12px * var(--sf)); text-align: justify; hyphens: auto; }
+
+  /* The life: twelve-square columns, justified, one square a line, as many as the page is wide. */
+  .obit-body {
+    grid-column: 19 / -17;
+    grid-row: 14 / -3;
+    columns: calc(12 * var(--u)) auto;
+    column-gap: var(--u);
+    column-rule: 1px solid rgba(35, 34, 32, 0.45);
+    column-fill: auto;
+    overflow: hidden;
+    text-align: justify;
+    hyphens: auto;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .obit-body p + p { text-indent: var(--u); }
+  .obit-drop { float: left; font: calc(50px * var(--sf)) / calc(2 * var(--u)) 'Bodoni 72', Didot, serif; height: calc(2 * var(--u)); margin: 2px calc(var(--u) / 4) 0 0; }
+  .obit-sc { font-variant: small-caps; letter-spacing: 0.03em; }
+  .obit-lede .obit-sc { font-weight: 700; }
+  .obit-body .obit-dates, .obit-body .obit-survivors { text-indent: 0; margin-top: var(--u); }
+  .obit-dates b { font-weight: 700; }
+  .obit-onum { font-variant-numeric: oldstyle-nums; font-family: 'Hoefler Text', Georgia, serif; }
+  .obit-continued { grid-column: 19 / -17; grid-row: -3; text-align: right; font-style: italic; font-size: calc(12px * var(--sf)); border-top: 1px solid var(--ink); }
+
+  .obit-elsewhere { grid-column: -16 / -3; grid-row: 7 / -3; border-left: 1px solid var(--ink); padding-left: calc(var(--u) - 1px); overflow: hidden; }
+  .obit-elsewhere p { font-size: calc(12px * var(--sf)); text-align: justify; hyphens: auto; margin-bottom: var(--u); }
+  .obit-elsewhere h3 + p { margin-top: var(--u); }
+  .obit-elsewhere h3:not(:first-child) { border-top: 1px solid var(--ink); padding-top: calc(var(--u) - 1px); }
+  .obit-memoriam { font-style: italic; }
+  .obit-memoriam i { font-style: normal; }
+
+  /* A phone: one column of newsprint. */
+  :root[data-narrow] .obit { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .obit > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .obit-folio { flex-direction: column; border-bottom: 0; }
+  :root[data-narrow] .obit-section { font-size: calc(48px * var(--sf)); }
+  :root[data-narrow] .obit-desk { margin-bottom: var(--u); }
+  :root[data-narrow] .obit-head { font-size: calc(28px * var(--sf)); margin-top: var(--u); }
+  :root[data-narrow] .obit-deck { line-height: var(--u); font-size: calc(15px * var(--sf)); margin-bottom: var(--u); }
+  :root[data-narrow] .obit-left { --plate: calc(12 * var(--u)); overflow: visible; }
+    :root[data-narrow] .obit-body { columns: auto; overflow: visible; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .obit-continued { display: none; }
+    :root[data-narrow] .obit-elsewhere { border-left: 0; padding-left: 0; border-top: 1px solid var(--ink); padding-top: calc(var(--u) - 1px); margin-top: var(--u); }
+</style>
