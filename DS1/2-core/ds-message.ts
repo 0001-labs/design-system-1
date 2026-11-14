@@ -1,3 +1,4 @@
+import { hasSlottedContent } from "../0-face/light-dom";
 // ds-message.ts
 // An inline notice in the flow of the page: a tone, a title and/or text,
 // actions and an optional dismiss; with `banner`, a strip across the top of
@@ -234,11 +235,7 @@ export class Message extends LitElement {
    * to the default slot and hides its fallback, so `text` is drawn beside the
    * slot rather than inside it.
    */
-  private slotted(name: string): boolean {
-    return [...this.childNodes].some(node => name
-      ? node instanceof Element && node.getAttribute("slot") === name
-      : node instanceof Element ? !node.hasAttribute("slot") : node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
-  }
+
 
   /** Ask to close: hides the notice unless a listener cancels `ds-message-dismiss`. */
   dismiss(): boolean {
@@ -267,7 +264,7 @@ export class Message extends LitElement {
         <slot name="icon" @slotchange=${changed}>${this.src ? html`<img src=${this.src} alt="">` : nothing}</slot>
       </span>
       <div class="ds-notice__title" part="title"><slot name="heading" @slotchange=${changed}>${heading}</slot></div>
-      <div class="ds-notice__text" part="text"><slot @slotchange=${changed}></slot>${this.slotted("") ? nothing : text}</div>
+      <div class="ds-notice__text" part="text"><slot @slotchange=${changed}></slot>${hasSlottedContent(this, "") ? nothing : text}</div>
       <a class="ds-button ds-button--primary ds-notice__open" part="open" href=${appStoreUrl(this.app) || this.open || nothing} @click=${(event: MouseEvent) => this.openApp(event)}>${getText("Open") || "Open"}</a>
       <button class="ds-button ds-button--icon ds-notice__dismiss" part="dismiss" type="button" aria-label=${getText("Close") || "Close"} @click=${() => this.dismiss()}>
         <ds-icon type="close" aria-hidden="true"></ds-icon>
@@ -281,10 +278,10 @@ export class Message extends LitElement {
     const tone = this.resolvedTone;
     const heading = this.words(this.heading);
     const text = this.words(this.text);
-    const hasHeading = Boolean(heading) || this.slotted("heading");
-    const slottedText = this.slotted("");
+    const hasHeading = Boolean(heading) || hasSlottedContent(this, "heading");
+    const slottedText = hasSlottedContent(this, "");
     const hasText = Boolean(text) || slottedText;
-    const hasActions = this.slotted("actions");
+    const hasActions = hasSlottedContent(this, "actions");
     const changed = () => this.requestUpdate();
     return html`<div class="ds-notice${tone === "neutral" ? "" : ` ds-notice--${tone}`}${(this.banner || this.form === "banner") ? " ds-notice--banner" : ""}" part="message notice">
       <span class="ds-notice__mark" part="mark" aria-hidden="true">

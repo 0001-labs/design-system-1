@@ -1,3 +1,4 @@
+import { isHTMLElement } from "../0-face/light-dom";
 import { LitElement, html, unsafeCSS } from "lit";
 import { define } from "../0-face/define";
 import styles from "./styles/ds-avatar-group.css?inline";
@@ -54,7 +55,7 @@ export class AvatarGroup extends LitElement {
   private arrange = () => {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>("slot:not([name])");
     const members = (slot?.assignedElements() ?? []).filter(
-      (element): element is HTMLElement => element instanceof HTMLElement && !element.hidden,
+      (element): element is HTMLElement => isHTMLElement(element) && !element.hidden,
     );
     this.hasMembers = members.length > 0;
     for (const element of this.owned.keys()) if (!members.includes(element)) this.release(element);
@@ -82,7 +83,7 @@ export class AvatarGroup extends LitElement {
       this.shadowRoot
         ?.querySelector<HTMLSlotElement>('slot[name="lead"]')
         ?.assignedElements()
-        .some((element) => !(element instanceof HTMLElement) || !element.hidden),
+        .some((element) => !(isHTMLElement(element)) || !element.hidden),
     );
   };
   render() {

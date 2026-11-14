@@ -1,3 +1,4 @@
+import { isHTMLElement } from "../0-face/light-dom";
 // ds-carousel.ts
 // Slides side by side that snap sideways, one to a stop, tied to a row of
 // page dots and optional previous and next buttons; or, with slides of their
@@ -147,7 +148,7 @@ export class Carousel extends LitElement {
 
   /** The slides: the elements given to the carousel, without a loop's copies. */
   get slides(): HTMLElement[] {
-    return [...this.children].filter((child): child is HTMLElement => child instanceof HTMLElement && !child.hasAttribute("slot") && !child.hasAttribute(COPY));
+    return [...this.children].filter((child): child is HTMLElement => isHTMLElement(child) && !child.hasAttribute("slot") && !child.hasAttribute(COPY));
   }
 
   /** Milliseconds between autoplay steps; 0 for none. */

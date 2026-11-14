@@ -1,3 +1,4 @@
+import { isHTMLElement, isTag } from "../0-face/light-dom";
 import { html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from "lit";
 import { define } from "../0-face/define";
 import { shortcutLabel } from "../0-face/keys";
@@ -60,7 +61,7 @@ export class Select extends Menu {
   /** The native select a field wraps; none for an action menu. */
   private control() {
     const select = this.querySelector(":scope > select");
-    return select instanceof HTMLSelectElement ? select : null;
+    return select && isTag(select, "select") ? select : null;
   }
   /** A field: a select drawn by DS1. */
   get field() { return Boolean(this.control()); }
@@ -138,7 +139,7 @@ export class Select extends Menu {
   /** A press anywhere on the field opens its list; the select itself takes no pointer, so no platform picker opens. */
   private onFieldClick = (event: MouseEvent) => {
     if (!this.listed || this.fieldDisabled || event.defaultPrevented) return;
-    if (event.composedPath().some(node => node instanceof HTMLElement && node.classList.contains("list"))) return;
+    if (event.composedPath().some(node => isHTMLElement(node) && node.classList.contains("list"))) return;
     event.preventDefault();
     this.control()?.focus({ preventScroll: true });
     this.setList(!this.listOpen);
@@ -182,10 +183,10 @@ export class Select extends Menu {
     if (!select) return nothing;
     let index = 0;
     return [...select.children].map((child, group) => {
-      if (child instanceof HTMLOptionElement) return this.renderOption(child, index++);
-      if (!(child instanceof HTMLOptGroupElement) || child.hidden) return nothing;
+      if (isTag(child, "option")) return this.renderOption(child, index++);
+      if (!(isTag(child, "optgroup")) || child.hidden) return nothing;
       const id = `${this.listId}-group-${group}`;
-      return html`<div role="group" class="group" aria-labelledby=${id}><div class="group-label" id=${id}>${child.label}</div>${[...child.children].map(option => option instanceof HTMLOptionElement ? this.renderOption(option, index++) : nothing)}</div>`;
+      return html`<div role="group" class="group" aria-labelledby=${id}><div class="group-label" id=${id}>${child.label}</div>${[...child.children].map(option => isTag(option, "option") ? this.renderOption(option, index++) : nothing)}</div>`;
     });
   }
 

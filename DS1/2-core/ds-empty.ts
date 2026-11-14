@@ -1,3 +1,4 @@
+import { hasSlottedContent } from "../0-face/light-dom";
 // ds-empty.ts
 // An empty state: a place with nothing in it yet, and what to do about it.
 // Drawn by 1-root/empty.css, the same classes a page without scripts writes.
@@ -87,21 +88,17 @@ export class Empty extends LitElement {
    * to the default slot and hides its fallback, so `text` is drawn beside the
    * slot rather than inside it.
    */
-  private slotted(name: string): boolean {
-    return [...this.childNodes].some(node => name
-      ? node instanceof Element && node.getAttribute("slot") === name
-      : node instanceof Element ? !node.hasAttribute("slot") : node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
-  }
+
 
   render() {
     const heading = this.heading ? this.words(this.heading) : getText(EMPTY_HEADING) || EMPTY_HEADING;
     const text = this.words(this.text);
     const done = this.tone === "done";
     const icon = this.icon || (done ? "check" : "");
-    const hasIcon = Boolean(icon) || this.slotted("icon");
-    const slottedText = this.slotted("");
+    const hasIcon = Boolean(icon) || hasSlottedContent(this, "icon");
+    const slottedText = hasSlottedContent(this, "");
     const hasText = Boolean(text) || slottedText;
-    const hasActions = this.slotted("actions");
+    const hasActions = hasSlottedContent(this, "actions");
     const level = this.level && this.level >= 1 && this.level <= 6 ? Math.round(this.level) : undefined;
     const changed = () => this.requestUpdate();
     return html`<div class="ds-empty${this.centered ? " ds-empty--centered" : " ds-empty--start"}${done ? " ds-empty--done" : ""}" part="empty">

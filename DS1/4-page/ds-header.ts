@@ -1,3 +1,4 @@
+import { hasSlottedContent } from "../0-face/light-dom";
 // ds-header.ts
 // A site header: the brand, the navigation with the page you are on, and the
 // actions, folding into a drawer on a narrow screen. Drawn by 1-root/header.css,
@@ -16,7 +17,7 @@ import styles from "./styles/ds-header.css?inline";
 /** The shared word that names the menu button and its drawer. */
 export const MENU_LABEL = "Menu";
 
-const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
+
 
 /**
  * @element ds-header
@@ -131,11 +132,7 @@ export class Header extends LitElement {
    * Children are told apart by node type and tag, never `instanceof`: a page
    * drawn inside a frame by its parent holds elements of both windows.
    */
-  private slotted(name: string): boolean {
-    return [...this.childNodes].some(node => name
-      ? isElement(node) && node.getAttribute("slot") === name
-      : isElement(node) ? !node.hasAttribute("slot") : node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
-  }
+
 
   private links(): HTMLAnchorElement[] {
     return [...this.children].filter((child): child is HTMLAnchorElement => child.localName === "a" && !child.hasAttribute("slot"));
@@ -149,9 +146,9 @@ export class Header extends LitElement {
   render() {
     const menu = getText(MENU_LABEL) || MENU_LABEL;
     const close = getText("Close") || "Close";
-    const hasNav = this.slotted("");
-    const hasActions = this.slotted("actions");
-    const brand = this.slotted("brand")
+    const hasNav = hasSlottedContent(this, "");
+    const hasActions = hasSlottedContent(this, "actions");
+    const brand = hasSlottedContent(this, "brand")
       ? html`<span class="ds-header__brand" part="brand"><slot name="brand" @slotchange=${this.relabel}></slot></span>`
       : this.brand
         ? html`<a class="ds-header__brand" part="brand" href=${this.href || "/"}>${this.words(this.brand)}</a>`

@@ -1,3 +1,4 @@
+import { isHTMLElement } from "./light-dom";
 /**
  * Bentos without Lit: places the tiles of a `.ds-bento[data-squares]` (drawn
  * by `1-root/bento.css`) on their squares and lets each surface reach a
@@ -62,7 +63,7 @@ export function tilePlace(tile: HTMLElement, layout = ""): BentoPlace | undefine
 /** Places one squares bento's tiles: their squares and their reach, as custom properties. The bento's `data-layout` (or `layout`) picks each tile's place for that layout. */
 export function placeBento(bento: HTMLElement): void {
   const layout = bento.dataset.layout ?? bento.getAttribute("layout") ?? "";
-  const tiles = [...bento.children].filter((child): child is HTMLElement => child instanceof HTMLElement && !child.hidden);
+  const tiles = [...bento.children].filter((child): child is HTMLElement => isHTMLElement(child) && !child.hidden);
   const placed = tiles.map(tile => ({ tile, place: tilePlace(tile, layout) })).filter((entry): entry is { tile: HTMLElement; place: BentoPlace } => !!entry.place);
   const reach = bentoReach(placed.map(entry => entry.place));
   placed.forEach(({ tile, place: [x, y, w, h] }, index) => {
@@ -80,7 +81,7 @@ export function placeBentos(root: ParentNode = document): () => void {
   const bentos = [...root.querySelectorAll<HTMLElement>(".ds-bento[data-squares]")];
   const observer = new MutationObserver(records => {
     for (const record of records) {
-      const bento = record.target instanceof HTMLElement && record.target.matches(".ds-bento[data-squares]") ? record.target : (record.target as HTMLElement).parentElement;
+      const bento = isHTMLElement(record.target) && record.target.matches(".ds-bento[data-squares]") ? record.target : (record.target as HTMLElement).parentElement;
       if (bento?.matches(".ds-bento[data-squares]")) placeBento(bento);
     }
   });
