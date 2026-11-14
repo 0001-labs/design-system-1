@@ -1,13 +1,13 @@
 ---
 title: Scaling
-description: The page's scale, --sf, for phones and tablets, put on before the first paint
+description: The page's scale, --sf, for phones and tablets, Desktop aligned for a computer, put on before the first paint
 ---
 
 Every measure in Design system 1 is a number of squares multiplied by `--sf`. The scaling module (`DS1/0-face/scaling.ts`) works the scale out and puts it on the page.
 
 ## The rule
 
-- **A computer stays at 1**, however narrow its window. A narrow window rearranges the layout with media queries; it does not scale.
+- **A computer stays at 1**, however narrow its window. A narrow window rearranges the layout with media queries; it does not scale. A page that asks for [Desktop aligned](#desktop-aligned) moves the scale slightly, so the window is whole squares wide.
 - **A phone or a tablet** is drawn as if the screen were 280 units wide: the scale is the page's width (without its scroll bar) over 280, never under 0.75 or over 2. A 375px phone gets 1.339, so everything is a third larger.
 - A phone or tablet is a mobile browser, or a screen that takes touch and whose shorter side is at most 820px.
 
@@ -63,6 +63,7 @@ It sets `--sf` on the root element, and `data-mobile` on a phone or tablet, and 
 | `snap` | none | `"layout"` rounds the scale so a square is a whole number of the 1/64px steps browsers lay pages out in; long runs of rows stay on lines drawn exactly. `"pixel"` rounds it down so a square is a whole number of device pixels, which keeps every grid line and hairline sharp. |
 | `baseWidth`, `minScale`, `maxScale` | 280, 0.75, 2 | The rule above. |
 | `mode` | `"auto"` | `"fixed"` keeps the scale at 1. |
+| `desktop` | none | `"aligned"` puts a computer's window on whole squares; see [Desktop aligned](#desktop-aligned). |
 | `root` | the document's root | The element that receives `--sf` and `data-mobile`. With an element `surface`, the element that receives that surface's `--sf`. |
 | `surface` | none | Scale a surface to its own width instead; see below. |
 
@@ -89,6 +90,53 @@ The surface is measured by its `clientWidth` and scaled by the same rule (its wi
 The surface's width must not depend on its own `--sf`: give it a width of the page around it (a percentage, a fixed frame, the viewport), and draw everything inside it in squares.
 
 `toLayoutStep(factor)`, `toDevicePixel(factor, pixelRatio)` and `calculateScalingFactor(width, config)` are the calculations alone.
+
+## Desktop aligned
+
+A phone is always fourteen squares wide, so its page ends on a square at both sides. A computer's window is any width: at 1447px it holds 72.35 squares, and the right edge cuts through one. Desktop aligned gives a computer the same exactness. It is opt-in:
+
+```ts
+startScaling({ desktop: 'aligned' });
+```
+
+**Across, the scale moves to the nearest whole number of squares.** Fewer squares would draw the page slightly larger and one more would draw it slightly smaller; the count whose scale is closer to 1 is taken, and `--sf` is the window's width over that many squares. The change is small, under one percent from 1000px across, and it is worked out again with every resize.
+
+**Down, what is left over goes to the top.** The height cannot be made whole the same way, since the scale is already set by the width. The rows are the whole squares that fit, and the rest, always under one square, is added to the first row. That row is a little taller, and every row under it, down to the window's bottom edge, is a whole square.
+
+| Window | Squares across | `--sf` | A square | Rows at 900px high | Left over on top |
+| --- | --- | --- | --- | --- | --- |
+| 1440px | 72 | 1 | 20px | 45 | 0 |
+| 1447px | 72 | 1.00486, up | 20.097px | 44 | 15.72px |
+| 1453px | 73 | 0.99521, down | 19.904px | 45 | 4.32px |
+
+On a computer the root gets `data-desktop-aligned` and four values:
+
+| Property | What it holds |
+| --- | --- |
+| `--sf` | The scale, kept exact so the last square ends on the window's edge. |
+| `--ds-grid-columns` | Whole squares across. |
+| `--ds-grid-rows` | Whole squares down, under the leftover. |
+| `--ds-grid-top` | The leftover, in pixels. |
+
+`grid.css` puts the leftover on as the body's top padding, so a page in the normal flow needs nothing more: everything starts under it. Two layouts take it themselves:
+
+```css
+/* A bar fixed to the top is its squares and the leftover. */
+.bar {
+  height: calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px));
+}
+/* A layout as high as the window is the whole rows under the leftover. */
+.app {
+  height: calc(var(--ds-grid-rows) * var(--ds-grid-unit));
+}
+```
+
+- **The grid overlay follows.** Its rows start under the leftover, and the rule at the leftover's edge is not drawn, so the first row shows as one taller square.
+- **A square is rarely a whole pixel.** At 1447px it is 20.097px. The squares still add up to exactly the window, and borders stay sharp, but the overlay's lines can soften a little. `snap` rounds the scale as on a phone, for sharp lines and a fit that is no longer exact.
+- **The scroll bar's room is kept.** `grid.css` sets `scrollbar-gutter: stable` on the root, so a scroll bar that comes and goes never changes the width the scale is worked out from.
+- **Phones and tablets keep their own rule.** There the option does nothing: fourteen squares across, and none of the values above.
+
+`alignedGrid(width, height, snap, pixelRatio)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare.
 
 ## In the styles
 

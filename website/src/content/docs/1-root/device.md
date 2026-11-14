@@ -117,7 +117,7 @@ Back and Forward in the browser's own controls animate nothing themselves, so th
 
 ## Integration with Scaling
 
-Device detection and scaling are unified: this module puts the scale on the page with the scaling module's rule, setting `--sf` and `data-mobile` on the root and emitting `scaling-changed`. A computer always uses `--sf: 1`, however narrow its window, while phones and tablets calculate a scaling factor based on the page's width. A page that needs only the scale calls `startScaling()` from the scaling module instead. See [Scaling](/1-root/scaling/) for details.
+Device detection and scaling are unified: this module puts the scale on the page with the scaling module's rule, setting `--sf` and `data-mobile` on the root and emitting `scaling-changed`. A computer uses `--sf: 1`, however narrow its window, unless the page asks for Desktop aligned, while phones and tablets calculate a scaling factor based on the page's width. A page that needs only the scale calls `startScaling()` from the scaling module instead. See [Scaling](/1-root/scaling/) for details.
 
 ## Best Practices
 

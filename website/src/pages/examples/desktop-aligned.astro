@@ -1,0 +1,165 @@
+---
+// Desktop aligned, shown on a whole window: the scale puts whole squares across, and the
+// height's leftover goes to the first row. Two rulers count the squares to the far edges, so
+// a square that is cut shows at once; the switch turns the mode off to compare.
+import '../../../../DS1/1-root/one.css';
+import '../../../../DS1/1-root/figures.css';
+---
+<!doctype html>
+<html lang="en" class="light-theme">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>Desktop aligned — example</title>
+    <meta name="description" content="A computer's window drawn on whole squares: the scale moves slightly so the width is whole, and the height's leftover goes to the first row." />
+  </head>
+  <body>
+    <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
+    <main id="page">
+      <p class="first" id="first" aria-hidden="true"></p>
+      <div class="words">
+        <h1>Desktop aligned</h1>
+        <p class="lead">The window is a whole number of squares wide: the scale moves slightly up or down, whichever is less. What the height has left over goes to the first row, so the bottom edge lands on a square too. Resize the window and watch the last squares.</p>
+        <p class="phone">This mode acts on a computer. A phone or tablet keeps its fourteen squares across.</p>
+        <div class="switches">
+          <label>Desktop aligned <ds-switch><button type="button" role="switch" id="aligned" aria-checked="true" aria-label="Desktop aligned"></button></ds-switch></label>
+          <label>Show the grid <ds-switch><button type="button" role="switch" id="grid" aria-checked="false" aria-label="Show the grid"></button></ds-switch></label>
+        </div>
+        <div class="ds-stats" id="stats">
+          <ds-stat id="window" label="Window" literal></ds-stat>
+          <ds-stat id="across" label="Squares across" literal></ds-stat>
+          <ds-stat id="square" label="A square" literal></ds-stat>
+          <ds-stat id="scale" label="Scale" literal></ds-stat>
+          <ds-stat id="rows" label="Rows" literal></ds-stat>
+          <ds-stat id="top" label="Left over on top" literal></ds-stat>
+        </div>
+      </div>
+      <div class="ruler across" id="ruler-across" aria-hidden="true"></div>
+      <div class="ruler down" id="ruler-down" aria-hidden="true"></div>
+      <div class="corner" aria-hidden="true"></div>
+      <div class="over over-x" aria-hidden="true"></div>
+      <div class="over over-y" aria-hidden="true"></div>
+    </main>
+    <script>
+      import '../../../../DS1/2-core/ds-switch';
+      import '../../../../DS1/2-core/ds-stat';
+      import '../../../../DS1/0-face/grid';
+      import { startScaling } from '../../../../DS1/0-face/scaling';
+      import type { Stat } from '../../../../DS1/2-core/ds-stat';
+
+      const SQUARE = 20;
+      const root = document.documentElement;
+      const page = document.getElementById('page')!;
+      const stat = (id: string) => document.getElementById(id) as Stat;
+      const switchOf = (id: string) => document.getElementById(id) as HTMLButtonElement;
+      const px = (value: number) => `${Number(value.toFixed(2))}px`;
+      const count = (value: number) => String(Number(value.toFixed(2)));
+
+      let aligned = true;
+      let stop = startScaling({ desktop: 'aligned' });
+
+      /** The numbers along a ruler: every fourth square says which it is. */
+      function number(ruler: HTMLElement, squares: number, first: number) {
+        const marks: HTMLElement[] = [];
+        for (let square = 4; square <= squares; square += 4) {
+          if (square < first) continue;
+          const mark = document.createElement('span');
+          mark.textContent = String(square);
+          mark.style.setProperty('--at', String(square - first));
+          marks.push(mark);
+        }
+        ruler.replaceChildren(...marks);
+      }
+
+      function read() {
+        const style = getComputedStyle(root);
+        const width = root.clientWidth;
+        const height = root.clientHeight;
+        const factor = Number(style.getPropertyValue('--sf')) || 1;
+        const unit = SQUARE * factor;
+        const on = root.hasAttribute('data-desktop-aligned');
+        const phone = root.hasAttribute('data-mobile');
+        // Without the mode the squares are counted as far as they fit, and what is over shows as cut.
+        const columns = on ? Number(style.getPropertyValue('--ds-grid-columns')) : Math.floor(width / unit);
+        const rows = on ? Number(style.getPropertyValue('--ds-grid-rows')) : Math.floor(height / unit);
+        const top = on ? parseFloat(style.getPropertyValue('--ds-grid-top')) : 0;
+        const overX = on ? 0 : width - columns * unit;
+        const overY = on ? 0 : height - rows * unit;
+        page.style.setProperty('--columns', String(columns));
+        page.style.setProperty('--rows', String(rows));
+        page.style.setProperty('--over-x', `${overX}px`);
+        page.style.setProperty('--over-y', `${overY}px`);
+        number(document.getElementById('ruler-across')!, columns, 1);
+        number(document.getElementById('ruler-down')!, rows - 1, 2);
+        document.getElementById('first')!.textContent = on && top > 0 ? `The first row: one square and the ${px(top)} left over` : on ? 'The first row: one square, nothing left over' : '';
+
+        const change = (factor - 1) * 100;
+        Object.assign(stat('window'), { figure: `${width} × ${height}`, caption: phone ? 'A phone or tablet' : 'Without a scroll bar' });
+        Object.assign(stat('across'), { figure: count(width / unit), caption: on ? 'Whole, to the right edge' : overX ? `The last is cut at ${px(overX)}` : 'Whole by chance' });
+        Object.assign(stat('square'), { figure: px(unit), caption: on ? 'Width over squares' : 'At a scale of 1' });
+        Object.assign(stat('scale'), {
+          figure: `${change > 0 ? '+' : change < 0 ? '−' : ''}${Number(Math.abs(change).toFixed(2))}%`,
+          caption: !on ? (phone ? 'The width over 280' : 'A computer stays at 1') : change > 0 ? 'Scaled up' : change < 0 ? 'Scaled down' : 'Already whole',
+        });
+        Object.assign(stat('rows'), { figure: on ? String(rows) : count(height / unit), caption: on ? 'Whole, to the bottom' : overY ? `The last is cut at ${px(overY)}` : 'Whole by chance' });
+        Object.assign(stat('top'), { figure: px(top), caption: on ? 'Added to the first row' : 'Nothing moved up' });
+      }
+      // After the scale has landed, whichever listener the resize reached first.
+      const later = () => requestAnimationFrame(read);
+      window.addEventListener('resize', later);
+
+      switchOf('aligned').addEventListener('click', () => {
+        aligned = !aligned;
+        switchOf('aligned').setAttribute('aria-checked', String(aligned));
+        stop();
+        stop = startScaling(aligned ? { desktop: 'aligned' } : {});
+        read();
+      });
+
+      switchOf('grid').addEventListener('click', () => window.dispatchEvent(new CustomEvent('design-system-toggle-grid')));
+      window.addEventListener('design-system-grid-changed', event => {
+        switchOf('grid').setAttribute('aria-checked', String((event as CustomEvent<{ visible: boolean }>).detail.visible));
+      });
+      // The grid is what this page is about, so it is shown on arrival.
+      if (root.hasAttribute('data-ds-grid-visible')) switchOf('grid').setAttribute('aria-checked', 'true');
+      else window.dispatchEvent(new CustomEvent('design-system-toggle-grid'));
+
+      read();
+    </script>
+  </body>
+</html>
+<style is:global>
+  :root { color-scheme: light; --sf: 1; --ds-sf: var(--sf); }
+  html, body { margin: 0; background: var(--background); color: var(--text-color); font-family: var(--typeface-regular); font-size: var(--ds-type-size-default); line-height: var(--ds-unit); }
+
+  /* The window under the leftover: whole rows high with the mode on, the window's own height without it. */
+  #page { --u: var(--ds-grid-unit); --tint: color-mix(in srgb, var(--zenith-blue) 60%, transparent); position: relative; box-sizing: border-box; height: calc(100vh - var(--ds-grid-top, 0px)); overflow: hidden; padding: calc(2 * var(--u)) calc(2 * var(--u)) 0 var(--u); }
+  #page :is(h1, p) { margin: 0; }
+
+  /* The first row, one square and the leftover above it, with its words on the square's sixteen. */
+  .first { position: absolute; inset: calc(-1 * var(--ds-grid-top, 0px)) 0 auto 0; box-sizing: border-box; height: calc(var(--u) + var(--ds-grid-top, 0px)); padding: calc(var(--ds-grid-top, 0px) + 4px * var(--sf)) var(--u) 0; background: var(--tint); color: var(--text-color); line-height: calc(16px * var(--sf)); white-space: nowrap; overflow: hidden; }
+  :root:not([data-desktop-aligned]) .first { display: none; }
+
+  .words { position: relative; display: flex; flex-direction: column; gap: var(--u); max-width: calc(53 * var(--u)); }
+  h1 { font-family: var(--typeface-medium, inherit); font-size: var(--ds-type-size-display); font-weight: inherit; line-height: calc(2 * var(--u)); }
+  .lead, .phone { max-width: calc(32 * var(--u)); }
+  .phone { display: none; }
+  .switches { display: flex; flex-direction: column; }
+  .switches label { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--u); width: calc(12 * var(--u)); min-height: var(--u); line-height: calc(16px * var(--sf)); cursor: pointer; }
+
+  /* Rulers along the last whole row and the last whole column: every other square filled. */
+  .ruler { position: absolute; font-size: var(--ds-type-size-small); line-height: 1; color: var(--text-color); }
+  .ruler span { position: absolute; display: grid; place-items: center; width: var(--u); height: var(--u); }
+  .across { left: 0; top: calc((var(--rows) - 1) * var(--u)); width: calc(var(--columns) * var(--u)); height: var(--u); background: repeating-linear-gradient(to right, var(--tint) 0 var(--u), transparent var(--u) calc(2 * var(--u))); }
+  .across span { left: calc((var(--at)) * var(--u)); top: 0; }
+  .down { left: calc((var(--columns) - 1) * var(--u)); top: var(--u); width: var(--u); height: calc((var(--rows) - 2) * var(--u)); background: repeating-linear-gradient(to bottom, var(--tint) 0 var(--u), transparent var(--u) calc(2 * var(--u))); }
+  .down span { left: 0; top: calc((var(--at)) * var(--u)); }
+  /* The last square of both, in the window's corner when everything is whole. */
+  .corner { position: absolute; left: calc((var(--columns) - 1) * var(--u)); top: calc((var(--rows) - 1) * var(--u)); width: var(--u); height: var(--u); background: var(--accent-color); }
+  /* What does not fit a whole square, without the mode. */
+  .over { position: absolute; background: var(--one-signal-red-pastel, var(--one-red-for-blood-pastel)); }
+  .over-x { top: 0; right: 0; bottom: 0; width: var(--over-x, 0px); }
+  .over-y { left: 0; right: 0; bottom: 0; height: var(--over-y, 0px); }
+
+  /* A phone keeps its own scale: the words alone, at the page's own height. */
+  :root[data-mobile] #page { height: auto; padding: var(--u); }
+  :root[data-mobile] :is(.ruler, .corner, .over, .switches label:first-child, #stats) { display: none; }
+  :root[data-mobile] .phone { display: block; }
+</style>

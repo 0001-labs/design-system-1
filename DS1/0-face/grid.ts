@@ -47,13 +47,26 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       inset: 0;
       --cell: var(--ds-grid-unit, calc(var(--unit, 20px) * var(--sf, 1)));
       --line: var(--ds-grid-color, light-dark(#61528440, #e0caff50));
-      background-image:
-        linear-gradient(to right, var(--line) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+      background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
       background-size: var(--cell) var(--cell);
-      background-position:
-        calc(var(--ds-grid-origin-x, 0px) - var(--ds-grid-scroll-x, 0px) - var(--ds-grid-line-offset, 0px))
-        calc(var(--ds-grid-origin-y, 0px) - var(--ds-grid-scroll-y, 0px) - var(--ds-grid-line-offset, 0px));
+      background-position: calc(var(--ds-grid-origin-x, 0px) - var(--ds-grid-scroll-x, 0px) - var(--ds-grid-line-offset, 0px)) 0;
+    }
+    /* The rules across are drawn apart from the lines down, so the page's first one can be left out. */
+    .grid::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+      background-size: var(--cell) var(--cell);
+      background-position: 0 calc(var(--ds-grid-origin-y, 0px) - var(--ds-grid-scroll-y, 0px) - var(--ds-grid-line-offset, 0px));
+    }
+    /* Desktop aligned (scaling.ts) adds the height's leftover, --ds-grid-top, to the first row:
+       the rule at the leftover's edge is not drawn while it is in view, so that row shows as one
+       taller square. Without a leftover the stop is far above the page and nothing is left out. */
+    .grid:not([data-ds-grid-region])::after {
+      --first-rule: calc(var(--ds-grid-top, -100000px) - var(--ds-grid-scroll-y, 0px) - var(--ds-grid-line-offset, 0px) + 1px);
+      -webkit-mask-image: linear-gradient(to bottom, transparent var(--first-rule), #000 var(--first-rule));
+      mask-image: linear-gradient(to bottom, transparent var(--first-rule), #000 var(--first-rule));
     }
     @media print { :host { display: none !important; } }
   </style><div class="grid"></div>`;

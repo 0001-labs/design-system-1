@@ -29,3 +29,19 @@
 
   --ds-grid-unit: calc(var(--unit) * var(--sf));
 }
+
+/* Desktop aligned (0-face/scaling.ts, `desktop: "aligned"`): a computer's page
+   is a whole number of squares wide, and the height's leftover, --ds-grid-top,
+   goes to the top, so the first row is that much taller and the bottom edge
+   lands on a square. A bar fixed to the top takes the leftover itself:
+   calc(n * var(--ds-grid-unit) + var(--ds-grid-top)). A layout as high as the
+   window is calc(var(--ds-grid-rows) * var(--ds-grid-unit)) under it. */
+:root[data-desktop-aligned] {
+  /* The grid overlay's rows start under the leftover. */
+  --ds-grid-origin-y: var(--ds-grid-top, 0px);
+  /* A scroll bar that comes and goes would change the width, and the scale with it. */
+  scrollbar-gutter: stable;
+}
+:root[data-desktop-aligned] body {
+  padding-block-start: var(--ds-grid-top, 0px);
+}

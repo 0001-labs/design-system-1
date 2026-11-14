@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, test, vi } from "vite-plus/test";
-import { applyScaling, calculateScalingFactor, defaultScalingConfig, detectMobileDevice, screenWidth, startScaling, toDevicePixel, toLayoutStep } from "../DS1/0-face/scaling";
+import { alignedGrid, applyScaling, calculateScalingFactor, defaultScalingConfig, detectMobileDevice, screenWidth, startScaling, toDevicePixel, toLayoutStep } from "../DS1/0-face/scaling";
 
 const PHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const COMPUTER = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
@@ -17,8 +17,10 @@ afterEach(() => {
   delete (root as { clientWidth?: number }).clientWidth;
   delete (window as { devicePixelRatio?: number }).devicePixelRatio;
   for (const key of ["width", "height", "orientation"]) delete (window.screen as unknown as Record<string, unknown>)[key];
-  root.style.removeProperty("--sf");
+  delete (root as { clientHeight?: number }).clientHeight;
+  for (const property of ["--sf", "--ds-grid-columns", "--ds-grid-rows", "--ds-grid-top"]) root.style.removeProperty(property);
   root.removeAttribute("data-mobile");
+  root.removeAttribute("data-desktop-aligned");
 });
 
 test("a phone scales by its width over 280, between 0.75 and 2", () => {
@@ -174,4 +176,110 @@ test("the device module applies the same rule and reports it", async () => {
   expect(root.style.getPropertyValue("--sf")).toBe("1.5");
   expect(root.hasAttribute("data-mobile")).toBe(true);
   expect(changed.mock.calls.at(-1)?.[0].detail.scalingFactor).toBe(1.5);
+});
+
+function tall(height: number) {
+  Object.defineProperty(root, "clientHeight", { configurable: true, get: () => height });
+}
+
+test("Desktop aligned makes the width whole squares by the smaller change of scale", () => {
+  // Already whole: nothing changes.
+  expect(alignedGrid(1440, 900)).toEqual({ factor: 1, columns: 72, rows: 45, top: 0 });
+  // 72.35 squares: 72 is nearer, so the page grows a little.
+  const up = alignedGrid(1447, 900);
+  expect(up.columns).toBe(72);
+  expect(up.factor).toBe(1447 / 1440);
+  expect(up.columns * 20 * up.factor).toBeCloseTo(1447, 9);
+  // 72.65 squares: 73 is nearer, so it shrinks a little.
+  const down = alignedGrid(1453, 900);
+  expect(down.columns).toBe(73);
+  expect(down.factor).toBe(1453 / 1460);
+  // Either side of the tie, the count whose scale is nearer 1 wins (the tie is just under half a square).
+  expect(alignedGrid(1449, 900).columns).toBe(72);
+  expect(alignedGrid(1450, 900).columns).toBe(73);
+  // A window narrower than one square still has one, and no size is no grid.
+  expect(alignedGrid(12, 900).columns).toBe(1);
+  expect(alignedGrid(0, 900)).toEqual({ factor: 1, columns: 0, rows: 0, top: 0 });
+});
+
+test("Desktop aligned gives the height's leftover to the top, always under one square", () => {
+  const up = alignedGrid(1447, 900);
+  const unit = 20 * up.factor;
+  expect(up.rows).toBe(44);
+  expect(up.top).toBeCloseTo(900 - 44 * unit, 4);
+  expect(up.top).toBeCloseTo(15.7222, 4);
+  const down = alignedGrid(1453, 900);
+  expect(down.rows).toBe(45);
+  expect(down.top).toBeCloseTo(4.3151, 4);
+  for (const [width, height] of [[1280, 800], [1366, 768], [1512, 982], [1920, 1013], [2560, 1297]]) {
+    const grid = alignedGrid(width, height);
+    const square = 20 * grid.factor;
+    expect(Math.abs(grid.factor - 1)).toBeLessThan(0.01);
+    expect(grid.columns * square).toBeCloseTo(width, 9);
+    expect(grid.top).toBeGreaterThanOrEqual(0);
+    expect(grid.top).toBeLessThan(square);
+    expect(grid.rows * square + grid.top).toBeCloseTo(height, 3);
+  }
+  // A height of whole squares keeps them all, whatever a float's last digit says.
+  const exact = alignedGrid(1447, 44 * unit);
+  expect(exact.rows).toBe(44);
+  expect(exact.top).toBe(0);
+});
+
+test("Desktop aligned can snap for sharp lines, giving up the exact fit", () => {
+  const layout = alignedGrid(1447, 900, "layout");
+  expect(layout.factor).toBe(toLayoutStep(1447 / 1440));
+  const pixel = alignedGrid(1447, 900, "pixel", 2);
+  expect(pixel.factor).toBe(toDevicePixel(1447 / 1440, 2));
+  expect(pixel.factor).toBe(1);
+});
+
+test("a computer asked for Desktop aligned gets the grid on the root, and loses it when the option goes", () => {
+  screen(COMPUTER, 1447);
+  tall(900);
+  expect(applyScaling({ desktop: "aligned" })).toBe(1447 / 1440);
+  expect(root.style.getPropertyValue("--sf")).toBe(String(1447 / 1440));
+  expect(root.hasAttribute("data-desktop-aligned")).toBe(true);
+  expect(root.hasAttribute("data-mobile")).toBe(false);
+  expect(root.style.getPropertyValue("--ds-grid-columns")).toBe("72");
+  expect(root.style.getPropertyValue("--ds-grid-rows")).toBe("44");
+  expect(root.style.getPropertyValue("--ds-grid-top")).toBe("15.7222px");
+  // Without the option a computer is back at 1 with nothing left behind.
+  expect(applyScaling()).toBe(1);
+  expect(root.style.getPropertyValue("--sf")).toBe("1");
+  expect(root.hasAttribute("data-desktop-aligned")).toBe(false);
+  for (const property of ["--ds-grid-columns", "--ds-grid-rows", "--ds-grid-top"]) expect(root.style.getPropertyValue(property)).toBe("");
+  // A fixed scale stays 1 too.
+  expect(applyScaling({ desktop: "aligned", mode: "fixed" })).toBe(1);
+  expect(root.hasAttribute("data-desktop-aligned")).toBe(false);
+});
+
+test("a phone keeps its own scale under Desktop aligned", () => {
+  screen(COMPUTER, 1447);
+  tall(900);
+  applyScaling({ desktop: "aligned" });
+  // The same page on a phone: its fourteen squares, and nothing of the computer's grid.
+  screen(PHONE, 375, 3);
+  expect(applyScaling({ desktop: "aligned" })).toBe(1.339);
+  expect(root.hasAttribute("data-mobile")).toBe(true);
+  expect(root.hasAttribute("data-desktop-aligned")).toBe(false);
+  for (const property of ["--ds-grid-columns", "--ds-grid-rows", "--ds-grid-top"]) expect(root.style.getPropertyValue(property)).toBe("");
+});
+
+test("startScaling keeps a computer aligned through resizes", () => {
+  let width = 1440;
+  let height = 900;
+  vi.spyOn(navigator, "userAgent", "get").mockReturnValue(COMPUTER);
+  Object.defineProperty(root, "clientWidth", { configurable: true, get: () => width });
+  Object.defineProperty(root, "clientHeight", { configurable: true, get: () => height });
+  const stop = startScaling({ desktop: "aligned" });
+  expect(root.style.getPropertyValue("--sf")).toBe("1");
+  expect(root.style.getPropertyValue("--ds-grid-top")).toBe("0px");
+  width = 1453; height = 910; window.dispatchEvent(new Event("resize"));
+  expect(root.style.getPropertyValue("--sf")).toBe(String(1453 / 1460));
+  expect(root.style.getPropertyValue("--ds-grid-columns")).toBe("73");
+  expect(root.style.getPropertyValue("--ds-grid-rows")).toBe("45");
+  stop();
+  width = 1280; window.dispatchEvent(new Event("resize"));
+  expect(root.style.getPropertyValue("--ds-grid-columns")).toBe("73");
 });

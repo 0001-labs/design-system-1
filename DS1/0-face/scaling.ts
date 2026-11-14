@@ -1,7 +1,8 @@
 /**
  * Design system 1's scale, `--sf`: every measure is multiplied by it.
  *
- * A computer stays at 1, however narrow its window. A phone or a tablet (a
+ * A computer stays at 1, however narrow its window, unless the page asks for
+ * Desktop aligned (below). A phone or a tablet (a
  * mobile browser, or a touch screen whose shorter side is at most 820px) is
  * drawn as if the screen were 280 units wide: the scale is the page's width
  * over 280, never under 0.75 or over 2, so a 375px phone draws everything a
@@ -19,6 +20,16 @@
  * instead: `startScaling({ surface: element })`, or `surface: true` for every
  * `[data-ds-surface]` element. The same rule and snapping apply, on any
  * device, and `--sf` and `--ds-sf` go on the surface alone.
+ *
+ * Desktop aligned, `startScaling({ desktop: "aligned" })`, gives a computer
+ * the exactness a phone has. The scale moves slightly up or down, whichever
+ * is the smaller change, so the page is a whole number of squares wide. The
+ * height cannot be made whole the same way, so what is left over goes to the
+ * top: the first row is that much taller, and every row under it, down to the
+ * bottom edge, is a whole square. The root gets `data-desktop-aligned`,
+ * `--ds-grid-columns` and `--ds-grid-rows` (whole squares across and down) and
+ * `--ds-grid-top` (the leftover); `grid.css` puts the leftover on as the
+ * body's top padding. Phones and tablets keep their own rule.
  */
 export type ScalingMode = "auto" | "fixed" | "fluid";
 
@@ -37,6 +48,24 @@ export interface ScalingConfig {
   minScale: number;
   maxScale: number;
   snap?: ScalingSnap;
+  /**
+   * What a computer does. Without it a computer stays at 1. `"aligned"` is
+   * Desktop aligned: the page is a whole number of squares wide, and the
+   * height's leftover goes to the top (see `alignedGrid`).
+   */
+  desktop?: "aligned";
+}
+
+/** A computer's page under Desktop aligned. */
+export interface AlignedGrid {
+  /** The scale, `--sf`. */
+  factor: number;
+  /** Whole squares across. */
+  columns: number;
+  /** Whole squares down, under the leftover. */
+  rows: number;
+  /** The height left over, in pixels: under one square, and added to the first row. */
+  top: number;
 }
 
 export interface ScalingOptions extends Partial<ScalingConfig> {
@@ -93,6 +122,29 @@ export function calculateScalingFactor(viewportWidth: number, config: ScalingCon
   return Number(factor.toFixed(3));
 }
 
+/**
+ * Desktop aligned for a page `width` by `height` pixels. Fewer squares would
+ * scale the page up and one more would scale it down; the count whose scale is
+ * closer to 1 is taken, and the scale is the width over that many squares,
+ * kept exact so the last square ends on the page's edge. With `snap` the scale
+ * is rounded as elsewhere, for sharper lines and a fit that is no longer exact.
+ * The rows are the whole squares that fit the height, and `top` is the rest.
+ */
+export function alignedGrid(width: number, height: number, snap: ScalingSnap = false, pixelRatio = 1): AlignedGrid {
+  if (!(width > 0)) return { factor: 1, columns: 0, rows: 0, top: 0 };
+  const across = width / SQUARE;
+  const fewer = Math.max(1, Math.floor(across));
+  const more = Math.ceil(across);
+  const columns = across / fewer - 1 <= 1 - across / more ? fewer : more;
+  const exact = width / (columns * SQUARE);
+  const factor = snap === "layout" ? toLayoutStep(exact) : snap === "pixel" ? toDevicePixel(exact, pixelRatio) : exact;
+  const unit = SQUARE * factor;
+  // A height that is whole squares must not lose one to a float's last digit.
+  const rows = height > 0 ? Math.floor(height / unit + 1e-9) : 0;
+  const top = height > 0 ? Math.max(0, Number((height - rows * unit).toFixed(4))) : 0;
+  return { factor, columns, rows, top };
+}
+
 // ============================================================================
 // Device
 // ============================================================================
@@ -133,7 +185,7 @@ function applySurface(surface: HTMLElement, target: HTMLElement, config: Partial
 
 /**
  * Puts the scale on the page once: `--sf`, and `data-mobile` on a phone or
- * tablet. With `surface`, puts each surface's own scale on it instead. Returns
+ * tablet; with `desktop: "aligned"`, a computer's aligned grid. With `surface`, puts each surface's own scale on it instead. Returns
  * the factor (the first surface's, or 1 when there is none).
  */
 export function applyScaling(options: ScalingOptions = {}): number {
@@ -167,9 +219,21 @@ function applyPage(root: HTMLElement, config: Partial<ScalingConfig>): number {
   const page = document.documentElement.clientWidth || window.innerWidth || 0;
   const held = mobile ? screenWidth() : 0;
   const width = held ? Math.min(page, held) : page;
-  const factor = mobile ? calculateScalingFactor(width, { ...defaultScalingConfig, ...config }, window.devicePixelRatio || 1) : 1;
+  const settings = { ...defaultScalingConfig, ...config };
+  const pixelRatio = window.devicePixelRatio || 1;
+  const aligned = !mobile && settings.desktop === "aligned" && settings.mode !== "fixed"
+    ? alignedGrid(width, document.documentElement.clientHeight || window.innerHeight || 0, settings.snap, pixelRatio)
+    : null;
+  const factor = mobile ? calculateScalingFactor(width, settings, pixelRatio) : aligned?.factor ?? 1;
   root.style.setProperty("--sf", String(factor));
   root.toggleAttribute("data-mobile", mobile);
+  // Taken off again when the page is no longer a computer's aligned one, so nothing stale is left.
+  root.toggleAttribute("data-desktop-aligned", Boolean(aligned));
+  const grid = { "--ds-grid-columns": aligned?.columns, "--ds-grid-rows": aligned?.rows, "--ds-grid-top": aligned && `${aligned.top}px` };
+  for (const [property, value] of Object.entries(grid)) {
+    if (value === null || value === undefined) root.style.removeProperty(property);
+    else root.style.setProperty(property, String(value));
+  }
   return factor;
 }
 
