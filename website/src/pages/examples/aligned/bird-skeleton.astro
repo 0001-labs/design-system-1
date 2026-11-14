@@ -1,0 +1,305 @@
+---
+// After an anatomical plate from a nineteenth-century monograph: the skeleton of a grey heron
+// engraved in sepia line and hatching, its numbers on the squares beside it with fine leaders to
+// the bones, the explanation of the plate in a column on the right, and the plate mark pressed
+// into the pale stock around it all. Hover or focus a name in the key to find its bone.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="bird-skeleton" theme="light">
+  <main class="stage plate">
+    <div class="pl-mark" aria-hidden="true"></div>
+    <p class="pl-series">Osteology of Birds</p>
+    <p class="pl-number">Plate XIV.</p>
+    <svg class="pl-drawing" id="drawing" role="img" aria-labelledby="caption"></svg>
+    <section class="pl-key" aria-labelledby="key-title">
+      <h2 id="key-title">Explanation of the plate</h2>
+      <ol id="key"></ol>
+      <p class="pl-note">Drawn from a male taken on the marshes in March and mounted standing. The neck is shown in its resting curve; in flight it folds back upon the shoulders and the head is carried between them.</p>
+    </section>
+    <h1 class="pl-caption" id="caption"><i>Ardea cinerea</i>, Linn. The Grey Heron. Skeleton from the left side, one-fifth of natural size.</h1>
+    <p class="pl-del">E. Harrow del. et sc.</p>
+    <p class="pl-imp">Fennick &amp; Sons imp.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Pt = { x: number; y: number };
+  const P = (x: number, y: number): Pt => ({ x, y });
+  const f = (n: number) => n.toFixed(3);
+  const lerp = (a: Pt, b: Pt, t: number) => P(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+  const cubic = (a: Pt, b: Pt, c: Pt, d: Pt, t: number) => {
+    const u = 1 - t;
+    return P(u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x, u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y);
+  };
+  const circle = (c: Pt, r: number) => `M${f(c.x - r)} ${f(c.y)}a${f(r)} ${f(r)} 0 1 0 ${f(2 * r)} 0a${f(r)} ${f(r)} 0 1 0 ${f(-2 * r)} 0Z`;
+
+  /** A long bone: a waisted shaft between two rounded heads. */
+  function capsule(a: Pt, b: Pt, w1: number, w2: number, k1: number, k2: number) {
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = P(-(b.y - a.y) / len, (b.x - a.x) / len);
+    const mid = lerp(a, b, 0.5), wm = Math.min(w1, w2) * 0.38;
+    const side = (p: Pt, w: number, s: number) => P(p.x + n.x * w * s, p.y + n.y * w * s);
+    const p1 = side(a, w1 / 2, 1), q = side(mid, wm, 1), p2 = side(b, w2 / 2, 1), p3 = side(b, w2 / 2, -1), r = side(mid, wm, -1), p4 = side(a, w1 / 2, -1);
+    return `M${f(p1.x)} ${f(p1.y)}Q${f(q.x)} ${f(q.y)} ${f(p2.x)} ${f(p2.y)}L${f(p3.x)} ${f(p3.y)}Q${f(r.x)} ${f(r.y)} ${f(p4.x)} ${f(p4.y)}Z${circle(a, k1)}${circle(b, k2)}`;
+  }
+  /** A shade line along one side of a shaft, as the engraver cut it. */
+  function shade(a: Pt, b: Pt, w: number) {
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = P(-(b.y - a.y) / len, (b.x - a.x) / len);
+    const s = lerp(a, b, 0.18), e = lerp(a, b, 0.82), m = lerp(a, b, 0.5);
+    return `M${f(s.x + n.x * w * 0.18)} ${f(s.y + n.y * w * 0.18)}Q${f(m.x + n.x * w * 0.08)} ${f(m.y + n.y * w * 0.08)} ${f(e.x + n.x * w * 0.18)} ${f(e.y + n.y * w * 0.18)}`;
+  }
+  /** A thin curved bone along a line of points, from width w1 to w2. */
+  function strip(points: Pt[], w1: number, w2: number) {
+    const left: Pt[] = [], right: Pt[] = [];
+    points.forEach((p, i) => {
+      const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)];
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const n = P(-(b.y - a.y) / len, (b.x - a.x) / len);
+      const w = (w1 + (w2 - w1) * (i / (points.length - 1))) / 2;
+      left.push(P(p.x + n.x * w, p.y + n.y * w));
+      right.push(P(p.x - n.x * w, p.y - n.y * w));
+    });
+    const all = [...left, ...right.reverse()];
+    return `M${all.map(p => `${f(p.x)} ${f(p.y)}`).join('L')}Z`;
+  }
+  const curve = (a: Pt, b: Pt, c: Pt, d: Pt, steps = 14) => Array.from({ length: steps + 1 }, (_, i) => cubic(a, b, c, d, i / steps));
+
+  interface Part { id: string; d: string; shade?: string; hole?: string }
+  const parts: Part[] = [];
+  const add = (id: string, d: string, shadeD?: string, hole?: string) => parts.push({ id, d, shade: shadeD, hole });
+  const long = (id: string, a: Pt, b: Pt, w1: number, w2: number, k1: number, k2: number) => add(id, capsule(a, b, w1, w2, k1, k2), shade(a, b, Math.max(w1, w2)));
+
+  // The skull: beak, lower jaw, braincase with the orbit cut through it.
+  add('premaxilla', 'M0.4 3.15L6.5 1.9Q7.1 2.4 6.5 2.95Z', 'M1.4 2.98L6 2.15');
+  add('mandible', 'M0.8 3.3L6.4 3.05L6.95 3.55Q6.5 3.85 5.8 3.7Z');
+  add('cranium', `M6.3 2.3Q6.6 0.9 8.2 1.05Q9.6 1.2 9.5 2.6Q9.3 3.6 8.2 3.7Q6.8 3.75 6.3 2.3Z`, 'M7.9 1.4Q9.1 1.5 9.1 2.6', circle(P(7.45, 2.25), 0.62));
+  add('orbit', circle(P(7.45, 2.25), 0.62).replace('Z', 'Z'), undefined);
+
+  // The neck: seventeen vertebrae on an S, smaller towards the head.
+  const neck = curve(P(9.1, 3.1), P(13.6, 4.2), P(8.8, 9.2), P(14.9, 10.5), 17);
+  for (let i = 0; i < neck.length - 1; i++) {
+    const a = lerp(neck[i], neck[i + 1], 0.1), b = lerp(neck[i], neck[i + 1], 0.9);
+    const w = 0.42 + (i / neck.length) * 0.45;
+    long('cervical', a, b, w, w, w * 0.62, w * 0.62);
+  }
+  // Back: thoracic vertebrae with their spines.
+  for (let i = 0; i < 6; i++) {
+    const a = P(15.2 + i * 1.05, 10.55 + i * 0.12), b = P(16.1 + i * 1.05, 10.67 + i * 0.12);
+    add('thoracic', capsule(a, b, 0.75, 0.75, 0.42, 0.42) + strip([lerp(a, b, 0.5), P(15.7 + i * 1.05, 9.75 + i * 0.12)], 0.32, 0.18));
+  }
+  // Shoulder girdle and breastbone.
+  add('scapula', strip(curve(P(16.2, 10.35), P(18.5, 10.3), P(21, 10.7), P(23.6, 11.5), 10), 0.5, 0.18));
+  add('furcula', strip(curve(P(15.6, 10.5), P(15.2, 12.2), P(14.2, 13.8), P(14.6, 14.9), 10), 0.26, 0.34));
+  long('coracoid', P(16, 10.9), P(15.3, 15), 0.48, 0.55, 0.36, 0.4);
+  add('sternum', 'M14.9 14.75L22.6 16.4L22.9 18.5Q18.4 19.2 15.4 16.9Z', 'M15.6 15.4L22.2 17');
+  add('carina', 'M15 15.3Q14.3 18.4 16.7 20.6Q19.6 20.4 22.5 18.7Q18.2 19.3 15.4 16.9Z', 'M15.4 16.2Q15.2 18.6 16.9 20');
+  // Ribs, each with its uncinate process.
+  for (let i = 0; i < 6; i++) {
+    const x = 16.9 + i * 1.05;
+    add('ribs', strip([P(x, 11.2), P(x + 0.5, 12.6), P(x + 0.55, 14), P(x + 0.3, 15.5 + i * 0.22), P(x - 0.1, 16.5 + i * 0.28)], 0.26, 0.2)
+      + (i < 5 ? strip([P(x + 0.5, 13), P(x + 1.25, 12.75)], 0.16, 0.08) : ''));
+  }
+  // The wing, opened and raised.
+  long('humerus', P(16.3, 10.1), P(21.5, 5.8), 0.5, 0.48, 0.58, 0.5);
+  long('ulna', P(21.5, 5.75), P(29.5, 4.2), 0.36, 0.3, 0.46, 0.36);
+  long('radius', P(21.8, 6.3), P(29.2, 4.75), 0.2, 0.18, 0.22, 0.2);
+  add('carpometacarpus', capsule(P(29.5, 4.4), P(33.3, 4.9), 0.42, 0.32, 0.36, 0.3) + capsule(P(29.9, 4.85), P(33, 5.25), 0.16, 0.14, 0.12, 0.12));
+  add('phalanges', capsule(P(33.4, 4.95), P(35.5, 5.5), 0.3, 0.2, 0.25, 0.18) + capsule(P(35.6, 5.55), P(36.9, 5.95), 0.18, 0.1, 0.16, 0.08));
+  // Pelvis and tail.
+  add('ilium', 'M21 10.55Q26 9.15 30.6 11.2L31.05 12.6Q27 14.7 22 12.45Z' + strip([P(25.4, 13.15), P(27.8, 13.9), P(30.2, 14.25)], 0.26, 0.12), 'M22.6 11Q26.4 10.1 30 11.6', circle(P(25, 12.55), 0.55));
+  for (let i = 0; i < 5; i++) {
+    const a = P(30.9 + i * 0.58, 11.9 + i * 0.22), b = P(31.35 + i * 0.58, 12.07 + i * 0.22);
+    add('caudal', capsule(a, b, 0.5 - i * 0.04, 0.5 - i * 0.04, 0.28, 0.28) + strip([lerp(a, b, 0.5), P(31.2 + i * 0.58, 11.35 + i * 0.22)], 0.16, 0.1));
+  }
+  add('pygostyle', 'M33.7 12.6L35.5 12.15L35.05 13.95Q34.2 13.95 33.65 13.3Z', 'M34 13L35.1 12.5');
+  // The leg standing nearest; its toes on the stand.
+  long('femur', P(25, 12.6), P(23.2, 16.6), 0.55, 0.52, 0.62, 0.56);
+  long('tibiotarsus', P(23.2, 16.6), P(25.6, 26.2), 0.46, 0.4, 0.56, 0.5);
+  add('tibiotarsus', strip([P(23.7, 17), P(24.1, 19), P(24.5, 21.2)], 0.14, 0.04));
+  long('tarsometatarsus', P(25.6, 26.2), P(23.6, 34.6), 0.38, 0.4, 0.46, 0.45);
+  const toe = (id: string, from: Pt, to: Pt, joints: number) => {
+    let d = '';
+    for (let j = 0; j < joints; j++) {
+      const a = lerp(from, to, j / joints), b = lerp(from, to, (j + 0.92) / joints);
+      d += capsule(a, b, 0.2, 0.17, 0.17, 0.14);
+    }
+    const dir = Math.sign(to.x - from.x);
+    d += `M${f(to.x)} ${f(to.y - 0.1)}q${f(dir * 0.55)} 0.05 ${f(dir * 0.7)} 0.38q${f(-dir * 0.4)} -0.12 ${f(-dir * 0.7)} -0.15Z`;
+    add(id, d);
+  };
+  toe('toes', P(23.4, 34.85), P(16.9, 35.3), 4);
+  toe('toes', P(23.4, 34.95), P(18.9, 35.45), 3);
+  toe('hallux', P(23.9, 34.9), P(27.2, 35.25), 2);
+
+  // The far leg, drawn faintly behind.
+  const ghost = [capsule(P(25.3, 12.9), P(24.4, 16.9), 0.5, 0.48, 0.55, 0.5), capsule(P(24.4, 16.9), P(27.1, 26), 0.42, 0.36, 0.5, 0.45), capsule(P(27.1, 26), P(26.6, 34.6), 0.34, 0.36, 0.42, 0.42),
+    capsule(P(26.6, 34.75), P(21.5, 35.2), 0.18, 0.15, 0.15, 0.12), capsule(P(26.6, 34.8), P(29.6, 35.15), 0.18, 0.15, 0.15, 0.12)].join('');
+
+  interface Label { n: number; id: string; name: string; at: Pt; to: Pt }
+  const LABELS: Label[] = [
+    { n: 1, id: 'premaxilla', name: 'Premaxilla', at: P(3, 2.65), to: P(2, 0) },
+    { n: 2, id: 'mandible', name: 'Mandible', at: P(3.6, 3.45), to: P(2.5, 6) },
+    { n: 3, id: 'orbit', name: 'Orbit', at: P(7.3, 2.1), to: P(6.6, -1) },
+    { n: 4, id: 'cranium', name: 'Cranium', at: P(9, 1.6), to: P(10.8, -0.6) },
+    { n: 5, id: 'cervical', name: 'Cervical vertebrae, seventeen', at: P(10.5, 6.6), to: P(6, 8.5) },
+    { n: 6, id: 'thoracic', name: 'Dorsal vertebrae', at: P(19.9, 10), to: P(22, 8.4) },
+    { n: 7, id: 'scapula', name: 'Scapula', at: P(22.6, 11.2), to: P(24.4, 8.4) },
+    { n: 8, id: 'furcula', name: 'Furcula, or merrythought', at: P(14.4, 13.8), to: P(10.5, 15) },
+    { n: 9, id: 'coracoid', name: 'Coracoid', at: P(15.6, 13), to: P(11.5, 12) },
+    { n: 10, id: 'sternum', name: 'Sternum', at: P(20.2, 17.3), to: P(20.4, 23.4) },
+    { n: 11, id: 'carina', name: 'Carina, or keel', at: P(16.4, 19.6), to: P(13.2, 22.2) },
+    { n: 12, id: 'ribs', name: 'Ribs, with uncinate processes', at: P(21.9, 14.5), to: P(22.3, 21.6) },
+    { n: 13, id: 'humerus', name: 'Humerus', at: P(18.9, 7.9), to: P(16.4, 5.4) },
+    { n: 14, id: 'radius', name: 'Radius', at: P(25.6, 5.55), to: P(26.4, 8.2) },
+    { n: 15, id: 'ulna', name: 'Ulna', at: P(25.4, 4.95), to: P(25, 2) },
+    { n: 16, id: 'carpometacarpus', name: 'Carpometacarpus', at: P(31.4, 4.65), to: P(31, 2) },
+    { n: 17, id: 'phalanges', name: 'Phalanges of the wing', at: P(35.9, 5.65), to: P(38, 3.6) },
+    { n: 18, id: 'ilium', name: 'Ilium and synsacrum', at: P(27.6, 10.7), to: P(28, 7.8) },
+    { n: 19, id: 'caudal', name: 'Caudal vertebrae', at: P(32.3, 12.4), to: P(33.6, 9.6) },
+    { n: 20, id: 'pygostyle', name: 'Pygostyle', at: P(34.9, 13.2), to: P(38, 12.4) },
+    { n: 21, id: 'femur', name: 'Femur', at: P(24.3, 14.4), to: P(28.8, 16.2) },
+    { n: 22, id: 'tibiotarsus', name: 'Tibiotarsus, with fibula', at: P(24.6, 21.6), to: P(29, 21.6) },
+    { n: 23, id: 'tarsometatarsus', name: 'Tarsometatarsus', at: P(24.6, 30.4), to: P(29, 30) },
+    { n: 24, id: 'toes', name: 'Anterior toes', at: P(19.6, 35.2), to: P(17, 32.4) },
+    { n: 25, id: 'hallux', name: 'Hallux', at: P(26.4, 35.15), to: P(29.6, 33.2) },
+  ];
+
+  const drawing = document.getElementById('drawing') as unknown as SVGSVGElement;
+  const key = document.getElementById('key')!;
+  key.innerHTML = LABELS.map(label => `<li><button type="button" data-id="${label.id}"><span class="pl-n">${label.n}.</span>${label.name}</button></li>`).join('');
+
+  // The drawing in its own units: x from −1 to 39.5, y from −1.6 to 37.6.
+  const BOX = { x: -1, y: -1.6, w: 40.5, h: 39.2 };
+
+  onSquares(({ narrow }) => {
+    const area = drawing.getBoundingClientRect();
+    const unit = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ds-grid-unit')) || 20;
+    const W = Math.max(8, Math.round(area.width / unit)), H = Math.max(8, Math.round(area.height / unit));
+    const s = Math.min(W / BOX.w, H / BOX.h);
+    const ox = (W - BOX.w * s) / 2 - BOX.x * s, oy = (H - BOX.h * s) / 2 - BOX.y * s;
+    const X = (p: Pt) => ox + p.x * s, Y = (p: Pt) => oy + p.y * s;
+    const t = 1 / s;
+    drawing.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const groups = new Map<string, Part[]>();
+    parts.forEach(part => groups.set(part.id, [...(groups.get(part.id) ?? []), part]));
+    let bones = '';
+    for (const [id, list] of groups) {
+      const d = list.map(part => part.d).join('');
+      const holes = list.map(part => part.hole ?? '').join('');
+      bones += `<g class="pl-bone" data-id="${id}">
+        <path class="pl-o" d="${d}" stroke-width="${f(0.13)}"/>
+        <path class="pl-p" d="${d}"/>
+        <path class="pl-h" d="${d}"/>
+        ${list.map(part => (part.shade ? `<path class="pl-s" d="${part.shade}" stroke-width="${f(0.03)}"/>` : '')).join('')}
+        ${holes ? `<path class="pl-hole" d="${holes}" stroke-width="${f(0.07)}"/>` : ''}
+      </g>`;
+    }
+    // Numbers on whole squares; a leader from each to its bone.
+    const size = narrow ? 0.62 : 0.72;
+    let leaders = '', numbers = '';
+    const taken = new Set<string>();
+    for (const label of LABELS) {
+      let gx = Math.round(X(label.to)), gy = Math.round(Y(label.to));
+      // Two numbers never share a square: the later one steps aside.
+      for (let step = 0; taken.has(`${gx},${gy}`) && step < 6; step++) gx += gx < X(label.at) ? -1 : 1;
+      taken.add(`${gx},${gy}`);
+      const cx = gx + 0.5, cy = gy + 0.5;
+      const ax = X(label.at), ay = Y(label.at);
+      const len = Math.hypot(ax - cx, ay - cy) || 1;
+      const sx = cx + ((ax - cx) / len) * 0.5, sy = cy + ((ay - cy) / len) * 0.5;
+      leaders += `<line data-id="${label.id}" x1="${f(sx)}" y1="${f(sy)}" x2="${f(ax)}" y2="${f(ay)}"/>`;
+      numbers += `<text data-id="${label.id}" x="${f(cx)}" y="${f(cy + size * 0.34)}" font-size="${size}">${label.n}</text>`;
+    }
+    drawing.innerHTML = `
+      <defs>
+        <pattern id="pl-hatch" width="0.15" height="0.15" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="0.15" stroke="#5a3b22" stroke-width="0.032"/></pattern>
+        <pattern id="pl-cross" width="0.15" height="0.15" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><path d="M0 0V0.15M0 0H0.15" stroke="#5a3b22" stroke-width="0.03"/></pattern>
+        <pattern id="pl-level" width="0.2" height="0.2" patternUnits="userSpaceOnUse"><line x1="0" y1="0.1" x2="0.2" y2="0.1" stroke="#5a3b22" stroke-width="0.04"/></pattern>
+      </defs>
+      <g transform="translate(${f(ox)} ${f(oy)}) scale(${f(s)})">
+        <path class="pl-stand" d="M14.5 35.65H31.5L32.2 36.6H13.8Z" stroke-width="${f(0.05)}"/>
+        <path class="pl-stand" d="M13.4 36.6H32.6V37.5H13.4Z" stroke-width="${f(0.05)}"/>
+        <path class="pl-ghost" d="${ghost}" stroke-width="${f(0.05)}"/>
+        ${bones}
+      </g>
+      <g class="pl-leaders" stroke-width="${f(Math.max(0.03, 0.03 * t * s))}">${leaders}</g>
+      <g class="pl-numbers">${numbers}</g>`;
+  });
+
+  // The key finds its bone.
+  const light = (id: string | null) => {
+    drawing.querySelectorAll<SVGElement>('[data-id]').forEach(element => element.classList.toggle('pl-on', element.dataset.id === id));
+  };
+  key.addEventListener('pointerover', event => light((event.target as HTMLElement).closest('button')?.dataset.id ?? null));
+  key.addEventListener('pointerleave', () => light(null));
+  key.addEventListener('focusin', event => light((event.target as HTMLElement).closest('button')?.dataset.id ?? null));
+  key.addEventListener('focusout', () => light(null));
+</script>
+
+<style is:global>
+  html { background: #dedcca; }
+  .plate {
+    --stock: #e5e4d6;
+    --ink: #5a3b22;
+    --wash: #a2541f;
+    color: var(--ink);
+    background: radial-gradient(90% 80% at 45% 45%, #ebeadd, var(--stock) 60%, #d9d7c5);
+    font-family: Baskerville, 'Big Caslon', 'Times New Roman', serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* The plate mark: where the copper plate was pressed into the paper. */
+  .pl-mark { grid-area: 2 / 3 / -3 / -3; border: 1px solid rgba(90, 59, 34, 0.18); box-shadow: inset calc(var(--u) / 8) calc(var(--u) / 8) calc(var(--u) / 4) rgba(255, 255, 255, 0.7), inset calc(var(--u) / -10) calc(var(--u) / -10) calc(var(--u) / 4) rgba(90, 59, 34, 0.14); background: rgba(255, 255, 255, 0.12); }
+  .pl-series { grid-area: 3 / 5 / span 1 / span 20; margin: 0; font-variant: small-caps; letter-spacing: 0.06em; font-size: calc(15px * var(--sf)); }
+  .pl-number { grid-area: 3 / span 10 / span 1 / -5; margin: 0; text-align: right; font-style: italic; }
+
+  .pl-drawing { grid-area: 5 / 5 / -6 / -26; width: 100%; height: 100%; overflow: visible; }
+  .pl-o { fill: var(--ink); stroke: var(--ink); stroke-linejoin: round; }
+  .pl-p { fill: var(--stock); }
+  .pl-h { fill: url(#pl-hatch); }
+  .pl-s { fill: none; stroke: var(--ink); stroke-linecap: round; }
+  .pl-hole { fill: var(--stock); stroke: var(--ink); }
+  .pl-ghost { fill: none; stroke: var(--ink); opacity: 0.22; }
+  .pl-stand { fill: url(#pl-level); stroke: var(--ink); }
+  .pl-leaders line { stroke: var(--ink); }
+  .pl-numbers text { fill: var(--ink); font-family: Baskerville, 'Big Caslon', serif; font-style: italic; text-anchor: middle; }
+  .pl-bone.pl-on .pl-p { fill: #e9c9a6; }
+  .pl-bone.pl-on .pl-o { fill: var(--wash); stroke: var(--wash); }
+  .pl-leaders line.pl-on { stroke: var(--wash); stroke-width: 0.06; }
+  .pl-numbers text.pl-on { fill: var(--wash); font-weight: 700; }
+
+  .pl-key { grid-area: 5 / -24 / -6 / -5; overflow: hidden; }
+  .pl-key h2 { margin: 0 0 var(--u); font-weight: 400; font-style: italic; font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  .pl-key ol { margin: 0; padding: 0; list-style: none; }
+  .pl-note { margin: var(--u) 0 0; font-style: italic; font-size: calc(13px * var(--sf)); max-width: calc(18 * var(--u)); color: #6e5136; }
+  .pl-key button {
+    all: unset;
+    display: grid;
+    grid-template-columns: calc(2 * var(--u)) 1fr;
+    width: 100%;
+    height: var(--u);
+    line-height: var(--u);
+    cursor: default;
+    white-space: nowrap;
+  }
+  .pl-n { font-style: italic; text-align: right; padding-right: calc(var(--u) / 2); font-variant-numeric: oldstyle-nums; }
+  .pl-key button:hover, .pl-key button:focus-visible { color: var(--wash); }
+  .pl-key button:focus-visible { outline: 1px dotted var(--wash); outline-offset: -1px; }
+
+  .pl-caption { grid-area: -5 / 5 / span 1 / -5; margin: 0; font-weight: 400; font-size: calc(15px * var(--sf)); text-align: center; }
+  .pl-del, .pl-imp { grid-row: -2; margin: 0; font-size: calc(11px * var(--sf)); font-style: italic; }
+  .pl-del { grid-column: 3 / span 12; }
+  .pl-imp { grid-column: span 12 / -15; text-align: right; }
+
+  :root[data-narrow] .pl-mark, :root[data-narrow] .pl-del, :root[data-narrow] .pl-imp { display: none; }
+  :root[data-narrow] .plate > :is(.pl-series, .pl-number, .pl-drawing, .pl-key, .pl-caption) { grid-column: 2 / -2; }
+  :root[data-narrow] .pl-series { grid-row: 2; }
+  :root[data-narrow] .pl-number { grid-row: 2; }
+  :root[data-narrow] .pl-drawing { grid-row: 3 / span 13; }
+  :root[data-narrow] .pl-caption { grid-row: 17; font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .pl-key { grid-row: 19; overflow: visible; padding-bottom: calc(3 * var(--u)); }
+</style>

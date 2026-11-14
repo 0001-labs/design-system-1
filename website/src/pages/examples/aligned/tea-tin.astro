@@ -1,0 +1,260 @@
+---
+// After a lithographed tea tin and the steeping card that came with it: deep green, gold and lacquer
+// red, a Greek key running round the window one square wide (a key is a path along square lines,
+// so it is the grid made ornament), the tin drawn as a cylinder, and a steeping table whose rows
+// put their tea on the tin's label.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="tea-tin" theme="dark">
+  <main class="stage tea-tin">
+    <div class="tt-band tt-top" aria-hidden="true"></div>
+    <div class="tt-band tt-bottom" aria-hidden="true"></div>
+    <div class="tt-band tt-left" aria-hidden="true"></div>
+    <div class="tt-band tt-right" aria-hidden="true"></div>
+    <div class="tt-corner" style="grid-area: 2 / 2" aria-hidden="true"></div>
+    <div class="tt-corner" style="grid-area: 2 / -3" aria-hidden="true"></div>
+    <div class="tt-corner" style="grid-area: -4 / 2" aria-hidden="true"></div>
+    <div class="tt-corner" style="grid-area: -4 / -3" aria-hidden="true"></div>
+
+    <svg class="tt-tin" id="tin" role="img" aria-labelledby="tin-label"></svg>
+    <p class="tt-sr" id="tin-label" aria-live="polite"></p>
+
+    <header class="tt-head">
+      <h1>Hollis &amp; Vane</h1>
+      <p class="tt-trade">Tea blenders, Mincing Lane, since 1879</p>
+    </header>
+
+
+    <div class="tt-medals" aria-label="Gold medals, Calcutta 1883 and Antwerp 1894" role="img">
+      <svg viewBox="0 0 4 4" aria-hidden="true"><use href="#tt-medal" /><text x="2" y="1.95" text-anchor="middle" font-size="0.42" fill="#5c4212" font-family="'Bodoni 72', serif" font-style="italic">Calcutta</text><text x="2" y="2.55" text-anchor="middle" font-size="0.5" fill="#5c4212" font-family="'Bodoni 72', serif">1883</text></svg>
+      <svg viewBox="0 0 4 4" aria-hidden="true"><use href="#tt-medal" /><text x="2" y="1.95" text-anchor="middle" font-size="0.42" fill="#5c4212" font-family="'Bodoni 72', serif" font-style="italic">Antwerp</text><text x="2" y="2.55" text-anchor="middle" font-size="0.5" fill="#5c4212" font-family="'Bodoni 72', serif">1894</text></svg>
+      <svg class="tt-medal-defs" aria-hidden="true"><defs>
+        <radialGradient id="tt-medal-face" cx="0.38" cy="0.32" r="0.8"><stop offset="0" stop-color="#fbe9ae" /><stop offset="0.55" stop-color="#d4a748" /><stop offset="1" stop-color="#7d5a1b" /></radialGradient>
+        <g id="tt-medal">
+          <circle cx="2" cy="2" r="1.9" fill="#8a6620" />
+          <circle cx="2" cy="2" r="1.78" fill="none" stroke="#f3d68a" stroke-width="0.16" stroke-dasharray="0.05 0.07" />
+          <circle cx="2" cy="2" r="1.6" fill="url(#tt-medal-face)" />
+          <circle cx="2" cy="2" r="1.32" fill="none" stroke="#7d5a1b" stroke-width="0.04" />
+          <path d="M1.05 2.9C1.4 3.25 2.6 3.25 2.95 2.9M1.2 1.25L1.35 1.05M2.8 1.25L2.65 1.05" fill="none" stroke="#7d5a1b" stroke-width="0.05" />
+        </g>
+      </defs></svg>
+    </div>
+
+    <section class="tt-guide" aria-labelledby="guide-title">
+      <h2 id="guide-title">To steep a cup</h2>
+      <table class="tt-table">
+        <thead>
+          <tr><th scope="col">Tea</th><th scope="col">Leaf</th><th scope="col">Water</th><th scope="col">Steep</th><th scope="col">Again</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+
+    <p class="tt-rule">Warm the pot first. Leaf in, water on, lid down, and count; never squeeze the leaf. Choose a tea to put it in the tin.</p>
+    <p class="tt-net">Net 125 g, keep the lid on and away from spices</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  interface Tea { no: number; name: string; second: string; origin: string; leaf: string; water: string; steep: string; again: string }
+  const TEAS: Tea[] = [
+    { no: 1, name: 'Assam', second: 'Breakfast', origin: 'Malty, from the Brahmaputra valley', leaf: '3 g', water: '98°', steep: '4 min', again: '—' },
+    { no: 3, name: 'Darjeeling', second: 'Second flush', origin: 'Muscatel, picked in June above 2000 m', leaf: '2½ g', water: '90°', steep: '3 min', again: 'once' },
+    { no: 7, name: 'Keemun', second: 'Mao Feng', origin: 'Cocoa and orchid, Qimen county', leaf: '3 g', water: '95°', steep: '3½ min', again: 'once' },
+    { no: 9, name: 'Lapsang', second: 'Souchong', origin: 'Dried over pine fires, Wuyi', leaf: '3 g', water: '95°', steep: '3 min', again: 'once' },
+    { no: 12, name: 'Gunpowder', second: 'Temple of Heaven', origin: 'Rolled into pellets, Zhejiang', leaf: '2 g', water: '80°', steep: '2 min', again: 'three times' },
+    { no: 15, name: 'Sencha', second: 'Uji', origin: 'Steamed, grassy, the first picking', leaf: '3 g', water: '70°', steep: '1 min', again: 'twice' },
+    { no: 18, name: 'Jasmine', second: 'Pearls', origin: 'Scented over six nights of blossom', leaf: '2½ g', water: '80°', steep: '3 min', again: 'twice' },
+    { no: 21, name: 'White', second: 'Peony', origin: 'Buds and two leaves, Fujian', leaf: '3 g', water: '85°', steep: '4 min', again: 'twice' },
+    { no: 24, name: 'Tie Guan', second: 'Yin', origin: 'Iron goddess oolong, Anxi', leaf: '5 g', water: '95°', steep: '1 min', again: 'five times' },
+  ];
+
+  const tin = document.getElementById('tin') as unknown as SVGSVGElement;
+  const rows = document.getElementById('rows')!;
+  const label = document.getElementById('tin-label')!;
+  let chosen = 2;
+  let size = { w: 18, h: 32 };
+
+  rows.innerHTML = TEAS.map((tea, index) => `
+    <tr data-index="${index}">
+      <th scope="row"><button type="button" aria-pressed="false"><span class="tt-name">No. ${tea.no} ${tea.name} ${tea.second}</span><span class="tt-origin">${tea.origin}</span></button></th>
+      <td>${tea.leaf}</td><td>${tea.water}</td><td>${tea.steep}</td><td>${tea.again}</td>
+    </tr>`).join('');
+
+  const f = (n: number) => n.toFixed(2);
+
+  /** The tin: a gold lid, a green body, a key band and a red cartouche with the chosen tea. */
+  function draw() {
+    const { w, h } = size;
+    const tea = TEAS[chosen];
+    const cx = w / 2, rx = w / 2 - 0.5, ry = Math.max(0.9, w * 0.1);
+    const lidTop = ry + 0.5, lidBottom = lidTop + 3, bodyBottom = h - ry - 0.5;
+    const label1 = lidBottom + 2.5, label2 = bodyBottom - 2.5;
+    const mid = (label1 + label2) / 2;
+    const cw = Math.min(w - 4, 12), ch = Math.min(label2 - label1 - 2, 17);
+    const top = mid - ch / 2;
+    tin.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    tin.innerHTML = `
+      <defs>
+        <linearGradient id="tt-round" x1="0" x2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.55"/><stop offset="0.18" stop-color="#000" stop-opacity="0.1"/>
+          <stop offset="0.32" stop-color="#fff" stop-opacity="0.18"/><stop offset="0.4" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0.8" stop-color="#000" stop-opacity="0.15"/><stop offset="1" stop-color="#000" stop-opacity="0.6"/>
+        </linearGradient>
+        <linearGradient id="tt-gold" x1="0" x2="1">
+          <stop offset="0" stop-color="#7a5a1c"/><stop offset="0.3" stop-color="#f3d68a"/><stop offset="0.55" stop-color="#c99b3e"/><stop offset="1" stop-color="#6b4c16"/>
+        </linearGradient>
+        <pattern id="tt-key" width="1" height="1" patternUnits="userSpaceOnUse">
+          <path d="M0 0.88H1M0.12 0.88V0.12H0.88V0.64H0.36V0.36H0.62" fill="none" stroke="#d9b45e" stroke-width="0.1"/>
+        </pattern>
+        <clipPath id="tt-body"><path d="M${f(cx - rx)} ${f(lidBottom)}V${f(bodyBottom)}A${f(rx)} ${f(ry)} 0 0 0 ${f(cx + rx)} ${f(bodyBottom)}V${f(lidBottom)}Z"/></clipPath>
+      </defs>
+      <ellipse cx="${cx}" cy="${f(bodyBottom + 0.35)}" rx="${f(rx + 0.6)}" ry="${f(ry + 0.25)}" fill="#000" opacity="0.35"/>
+      <g clip-path="url(#tt-body)">
+        <rect x="0" y="${f(lidBottom)}" width="${w}" height="${f(h)}" fill="#11402f"/>
+        <rect x="0" y="${f(lidBottom + 1.4)}" width="${w}" height="1" fill="url(#tt-key)"/>
+        <rect x="0" y="${f(bodyBottom - 1.8)}" width="${w}" height="1" fill="url(#tt-key)"/>
+        <rect x="0" y="${f(lidBottom + 1.2)}" width="${w}" height="0.08" fill="#d9b45e"/>
+        <rect x="0" y="${f(lidBottom + 2.52)}" width="${w}" height="0.08" fill="#d9b45e"/>
+        <rect x="0" y="${f(bodyBottom - 2)}" width="${w}" height="0.08" fill="#d9b45e"/>
+        <rect x="0" y="${f(bodyBottom - 0.72)}" width="${w}" height="0.08" fill="#d9b45e"/>
+        <g transform="translate(${f(cx)} ${f(top)})">
+          <path d="M${-cw / 2 + 1} 0H${cw / 2 - 1}A1 1 0 0 0 ${cw / 2} 1V${ch - 1}A1 1 0 0 0 ${cw / 2 - 1} ${ch}H${-cw / 2 + 1}A1 1 0 0 0 ${-cw / 2} ${ch - 1}V1A1 1 0 0 0 ${-cw / 2 + 1} 0Z" fill="#a3261e" stroke="#d9b45e" stroke-width="0.14"/>
+          <path d="M${-cw / 2 + 1.4} 0.5H${cw / 2 - 1.4}A0.9 0.9 0 0 0 ${cw / 2 - 0.5} 1.4V${ch - 1.4}A0.9 0.9 0 0 0 ${cw / 2 - 1.4} ${ch - 0.5}H${-cw / 2 + 1.4}A0.9 0.9 0 0 0 ${-cw / 2 + 0.5} ${ch - 1.4}V1.4A0.9 0.9 0 0 0 ${-cw / 2 + 1.4} 0.5Z" fill="none" stroke="#d9b45e" stroke-width="0.05"/>
+          <text y="2.4" text-anchor="middle" font-size="0.62" fill="#ecd08a" font-family="Copperplate, 'Copperplate Gothic Light', serif" letter-spacing="0.08">HOLLIS &amp; VANE</text>
+          <text y="4.6" text-anchor="middle" font-size="1.5" fill="#f3dc9a" font-family="'Bodoni 72', Didot, serif" font-style="italic">No. ${tea.no}</text>
+          <g transform="translate(0 ${f(ch / 2 - 0.4)})" fill="none" stroke="#f3dc9a" stroke-width="0.08">
+            <path d="M0 2.2V-1.6"/>
+            <path d="M0 0.4C-1.6 0 -2.4 -0.9 -2.2 -2C-1 -1.8 -0.2 -1 0 0.4Z" fill="#14503a"/>
+            <path d="M0 1.2C1.7 0.9 2.5 0 2.4 -1.1C1.1 -1 0.2 -0.2 0 1.2Z" fill="#14503a"/>
+            <path d="M0 -1.4C-0.5 -2 -0.4 -2.8 0 -3.2C0.4 -2.8 0.5 -2 0 -1.4Z" fill="#14503a"/>
+            <path d="M-2.2 -2L0 0.4M2.4 -1.1L0 1.2" stroke-width="0.04"/>
+          </g>
+          <text y="${f(ch - 4.2)}" text-anchor="middle" font-size="1.7" fill="#f6e2a6" font-family="'Bodoni 72', Didot, serif">${tea.name}</text>
+          <text y="${f(ch - 2.6)}" text-anchor="middle" font-size="0.95" fill="#ecd08a" font-family="'Bodoni 72', Didot, serif" font-style="italic">${tea.second}</text>
+          <text y="${f(ch - 1.2)}" text-anchor="middle" font-size="0.5" fill="#ecd08a" font-family="Copperplate, serif" letter-spacing="0.06">${tea.water} FOR ${tea.steep.toUpperCase()}</text>
+        </g>
+        <rect x="0" y="0" width="${w}" height="${h}" fill="url(#tt-round)"/>
+      </g>
+      <path d="M${f(cx - rx - 0.15)} ${f(lidTop)}V${f(lidBottom)}A${f(rx + 0.15)} ${f(ry)} 0 0 0 ${f(cx + rx + 0.15)} ${f(lidBottom)}V${f(lidTop)}Z" fill="url(#tt-gold)"/>
+      <path d="M${f(cx - rx - 0.15)} ${f(lidBottom - 0.6)}A${f(rx + 0.15)} ${f(ry)} 0 0 0 ${f(cx + rx + 0.15)} ${f(lidBottom - 0.6)}" fill="none" stroke="#5c4212" stroke-width="0.07"/>
+      <path d="M${f(cx - rx - 0.15)} ${f(lidTop + 0.5)}A${f(rx + 0.15)} ${f(ry)} 0 0 0 ${f(cx + rx + 0.15)} ${f(lidTop + 0.5)}" fill="none" stroke="#fff3c4" stroke-width="0.05" opacity="0.6"/>
+      <ellipse cx="${cx}" cy="${f(lidTop)}" rx="${f(rx + 0.15)}" ry="${f(ry)}" fill="#e7c674" stroke="#8a6620" stroke-width="0.06"/>
+      <ellipse cx="${cx}" cy="${f(lidTop)}" rx="${f(rx - 0.8)}" ry="${f(ry - 0.35)}" fill="none" stroke="#a37c2b" stroke-width="0.08"/>
+      <ellipse cx="${f(cx - rx * 0.25)}" cy="${f(lidTop - ry * 0.25)}" rx="${f(rx * 0.35)}" ry="${f(ry * 0.25)}" fill="#fff8d8" opacity="0.12"/>
+      <path d="M${f(cx - rx)} ${f(bodyBottom)}A${f(rx)} ${f(ry)} 0 0 0 ${f(cx + rx)} ${f(bodyBottom)}" fill="none" stroke="#d9b45e" stroke-width="0.12"/>`;
+    label.textContent = `The tin: Hollis & Vane No. ${tea.no}, ${tea.name} ${tea.second}.`;
+    rows.querySelectorAll('tr').forEach((row, index) => {
+      row.classList.toggle('tt-on', index === chosen);
+      row.querySelector('button')!.setAttribute('aria-pressed', String(index === chosen));
+    });
+  }
+
+  rows.addEventListener('click', event => {
+    const row = (event.target as HTMLElement).closest('tr');
+    if (!row) return;
+    chosen = Number(row.dataset.index);
+    draw();
+  });
+
+  onSquares(({ across, down, narrow }) => {
+    const w = narrow ? across - 2 : Math.max(12, Math.min(20, Math.floor((across - 14) * 0.36)));
+    const h = narrow ? Math.round(w * 2.6) : down - 9;
+    size = { w, h };
+    tin.style.gridArea = narrow ? `3 / 2 / span ${h} / span ${w}` : `5 / 6 / span ${h} / span ${w}`;
+    document.documentElement.style.setProperty('--tt-right', String(6 + w + 4));
+    for (let i = 0; i < 4; i++) document.documentElement.style.setProperty(`--tt-after-${i}`, String((narrow ? 3 : 4) + h + 1 + i));
+    draw();
+  });
+</script>
+
+<style is:global>
+  html { background: #0f3a2b; --tt-right: 30; --tt-after-0: 30; --tt-after-1: 31; --tt-after-2: 32; --tt-after-3: 33; }
+  .tea-tin {
+    --green: #0f3a2b;
+    --gold: #d9b45e;
+    --pale: #ecd9a2;
+    --red: #a3261e;
+    color: var(--pale);
+    background: radial-gradient(70% 90% at 30% 50%, #165039, var(--green) 70%);
+    font-family: 'Bodoni 72', Didot, 'Times New Roman', serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .tt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* The key, one square wide round the window; a rosette at each corner. */
+  .tt-band { background-size: var(--u) var(--u); background-color: #0b2c20; }
+  .tt-top, .tt-bottom {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3Cpath d='M0 0.88H1M0.12 0.88V0.12H0.88V0.64H0.36V0.36H0.62' fill='none' stroke='%23d9b45e' stroke-width='0.1'/%3E%3C/svg%3E");
+  }
+  .tt-left, .tt-right {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3Cpath d='M0.12 0V1M0.12 0.88H0.88V0.12H0.36V0.64H0.64V0.38' fill='none' stroke='%23d9b45e' stroke-width='0.1'/%3E%3C/svg%3E");
+  }
+  .tt-top { grid-area: 2 / 3 / span 1 / -3; }
+  .tt-bottom { grid-area: -4 / 3 / span 1 / -3; transform: scaleY(-1); }
+  .tt-left { grid-area: 3 / 2 / -4 / span 1; }
+  .tt-right { grid-area: 3 / -3 / -4 / span 1; transform: scaleX(-1); }
+  .tt-corner { background: radial-gradient(circle, var(--red) 0 28%, var(--gold) 29% 40%, #0b2c20 41%); }
+
+  .tt-medals { grid-column: span 9 / -5; grid-row: 4 / span 4; display: grid; grid-template-columns: repeat(2, calc(4 * var(--u))); column-gap: var(--u); justify-content: end; }
+  .tt-medals svg { width: calc(4 * var(--u)); height: calc(4 * var(--u)); filter: drop-shadow(0 calc(var(--u) / 8) calc(var(--u) / 6) rgba(0, 0, 0, 0.45)); }
+  .tt-medals .tt-medal-defs { position: absolute; width: 0; height: 0; }
+  .tt-tin { width: 100%; height: 100%; overflow: visible; }
+
+  .tt-head { grid-column: var(--tt-right) / -5; grid-row: 4 / span 5; }
+  .tt-head h1 {
+    margin: 0;
+    font-size: calc(64px * var(--sf));
+    line-height: calc(4 * var(--u));
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.01em;
+    background: linear-gradient(180deg, #f8e3a2 10%, #c79936 55%, #f0d283 80%, #a47b2a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tt-trade { margin: 0; font-family: Copperplate, 'Copperplate Gothic Light', serif; font-size: calc(13px * var(--sf)); letter-spacing: 0.08em; color: var(--gold); }
+
+  .tt-guide { grid-column: var(--tt-right) / -5; grid-row: 10 / -7; overflow: hidden; }
+  .tt-guide h2 { margin: 0 0 var(--u); font-weight: 400; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); color: #f3dc9a; border-bottom: 1px solid var(--gold); box-sizing: border-box; height: calc(2 * var(--u)); }
+  .tt-table { width: 100%; border-collapse: collapse; font-variant-numeric: lining-nums; }
+  .tt-table th, .tt-table td { padding: 0; text-align: left; font-weight: 400; vertical-align: top; }
+  .tt-table thead th { height: var(--u); font-family: Copperplate, serif; font-size: calc(11px * var(--sf)); letter-spacing: 0.08em; color: var(--gold); }
+  .tt-table thead th:first-child { width: 50%; }
+  .tt-table tbody tr { height: calc(2 * var(--u)); }
+  .tt-table tbody td { line-height: var(--u); white-space: nowrap; color: var(--pale); }
+  .tt-table button {
+    all: unset;
+    display: grid;
+    cursor: pointer;
+    width: 100%;
+  }
+  .tt-name { font-size: calc(17px * var(--sf)); line-height: var(--u); color: #f6e2a6; }
+  .tt-origin { font-size: calc(12px * var(--sf)); line-height: var(--u); font-style: italic; color: #b9a774; }
+  .tt-table tbody tr:hover .tt-name { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: calc(3px * var(--sf)); }
+  .tt-table button:focus-visible { outline: 1px solid var(--gold); outline-offset: calc(var(--u) / 8); }
+  .tt-table tr.tt-on { background: linear-gradient(90deg, var(--red), rgba(163, 38, 30, 0.55)); }
+  .tt-table tr.tt-on td, .tt-table tr.tt-on .tt-origin { color: #f6e2a6; }
+  .tt-table tr > :first-child { padding-left: calc(var(--u) / 2); }
+
+  .tt-rule { grid-column: var(--tt-right) / -5; grid-row: -7 / span 2; margin: 0; font-style: italic; font-size: calc(14px * var(--sf)); color: #cdb983; }
+  .tt-net { grid-column: var(--tt-right) / -5; grid-row: -5; margin: 0; font-family: Copperplate, serif; font-size: calc(10px * var(--sf)); letter-spacing: 0.1em; color: #a58f55; }
+
+  :root[data-narrow] .tt-band, :root[data-narrow] .tt-corner, :root[data-narrow] .tt-medals { display: none; }
+  :root[data-narrow] .tea-tin > :is(.tt-head, .tt-guide, .tt-rule, .tt-net) { grid-column: 2 / -2; }
+  :root[data-narrow] .tt-head { grid-row: var(--tt-after-0) / span 1; margin-top: var(--u); }
+  :root[data-narrow] .tt-guide { grid-row: var(--tt-after-1) / span 1; }
+  :root[data-narrow] .tt-rule { grid-row: var(--tt-after-2) / span 1; margin-top: var(--u); }
+  :root[data-narrow] .tt-net { grid-row: var(--tt-after-3) / span 1; }
+  :root[data-narrow] .tt-head h1 { font-size: calc(44px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .tt-guide { margin-top: var(--u); }
+  :root[data-narrow] .tt-table thead { display: none; }
+  :root[data-narrow] .tt-table tbody tr { display: grid; grid-template-columns: repeat(4, auto); height: auto; padding-bottom: var(--u); }
+  :root[data-narrow] .tt-table tbody th { grid-column: 1 / -1; }
+  :root[data-narrow] .tt-table tbody td { font-size: calc(12px * var(--sf)); padding-left: calc(var(--u) / 2); }
+  :root[data-narrow] .tt-net { margin-bottom: calc(3 * var(--u)); }
+</style>
