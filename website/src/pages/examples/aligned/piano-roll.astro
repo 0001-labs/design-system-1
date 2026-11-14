@@ -1,0 +1,353 @@
+---
+// After a player piano with its roll in the spool box: the paper runs down over the tracker bar,
+// one track of holes to a square, one square to an eighth note, with the words printed in the
+// margin. On load the roll advances once, slowly, from its leader to the first chorus; Play pumps
+// the pedals and sounds it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="piano-roll" theme="dark">
+  <main class="stage pr" id="pr">
+    <h1 class="pr-sr">The Gridiron Rag, a word roll for player piano</h1>
+    <div class="pr-box" id="box" aria-hidden="true">
+      <svg class="pr-paper" id="paper"></svg>
+      <div class="pr-spool pr-spool-top"></div>
+    </div>
+    <div class="pr-tracker" id="tracker" aria-hidden="true"></div>
+    <div class="pr-keys" id="keys" aria-hidden="true"></div>
+    <div class="pr-takeup" aria-hidden="true"></div>
+
+    <aside class="pr-fall">
+      <p class="pr-maker">Aurelia</p>
+      <p class="pr-model">Player piano, eighty-eight note</p>
+      <div class="pr-now">
+        <p class="pr-label">On the spool</p>
+        <p class="pr-title">The Gridiron Rag</p>
+        <p>Fox-trot. Played by Rosa Lindqvist</p>
+        <p>Roll 4471, Nordisk Notevalse Co.</p>
+      </div>
+      <div class="pr-tempo" aria-label="Tempo 70">
+        <p class="pr-label">Tempo</p>
+        <div class="pr-scale" id="scale"></div>
+      </div>
+      <div class="pr-controls">
+        <button type="button" id="play" aria-pressed="false">Play</button>
+        <button type="button" id="rewind">Rewind</button>
+      </div>
+      <p class="pr-hint">Play sounds the roll. It can be loud, as pianos are.</p>
+      <div class="pr-singing"><p class="pr-label">Sing along</p><p class="pr-sing" id="sing" aria-live="off"></p></div>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The roll's range: G2 to C6, forty-two tracks, one square each.
+  const LOW = 43, HIGH = 84, TRACKS = HIGH - LOW + 1;
+  const LEADER = 30;
+  const NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  const midi = (name: string) => {
+    const m = name.match(/^([A-G])(#?)(\d)$/)!;
+    return 12 * (Number(m[3]) + 1) + [0, 2, 4, 5, 7, 9, 11]['CDEFGAB'.indexOf(m[1])] + (m[2] ? 1 : 0);
+  };
+  const black = (p: number) => [1, 3, 6, 8, 10].includes(p % 12);
+
+  interface Note { pitch: number; at: number; len: number }
+  // Eight bars of melody, eighth notes, syncopated as a rag is; played twice, the second time doubled.
+  const TUNE: [number, string, number][][] = [
+    [[0, 'E5', 1], [1, 'G5', 2], [3, 'E5', 1], [4, 'G5', 2], [6, 'A5', 1], [7, 'G5', 1]],
+    [[0, 'E5', 2], [2, 'C5', 1], [3, 'D5', 2], [5, 'E5', 1], [6, 'C5', 2]],
+    [[0, 'F5', 1], [1, 'A5', 2], [3, 'F5', 1], [4, 'A5', 2], [6, 'C6', 1], [7, 'A5', 1]],
+    [[0, 'G5', 2], [2, 'F5', 1], [3, 'E5', 2], [5, 'F5', 1], [6, 'A4', 2]],
+    [[0, 'G5', 1], [1, 'C6', 2], [3, 'G5', 1], [4, 'E5', 2], [6, 'G5', 1], [7, 'E5', 1]],
+    [[0, 'D5', 2], [2, 'F5', 1], [3, 'B4', 2], [5, 'D5', 1], [6, 'G5', 2]],
+    [[0, 'E5', 1], [1, 'D5', 1], [2, 'C5', 1], [3, 'E5', 2], [5, 'G5', 1], [6, 'C6', 2]],
+    [[0, 'C6', 3], [3, 'G5', 1], [4, 'E5', 1], [5, 'C5', 3]],
+  ];
+  const CHORDS: { bass: [string, string]; chord: string[] }[] = [
+    { bass: ['C3', 'G2'], chord: ['E3', 'G3', 'C4'] }, { bass: ['C3', 'G2'], chord: ['E3', 'G3', 'C4'] },
+    { bass: ['F2', 'C3'], chord: ['F3', 'A3', 'C4'] }, { bass: ['F2', 'C3'], chord: ['F3', 'A3', 'C4'] },
+    { bass: ['C3', 'G2'], chord: ['E3', 'G3', 'C4'] }, { bass: ['G2', 'D3'], chord: ['F3', 'G3', 'B3'] },
+    { bass: ['C3', 'G2'], chord: ['E3', 'G3', 'C4'] }, { bass: ['C3', 'G2'], chord: ['E3', 'G3', 'C4'] },
+  ].map(c => ({ ...c, bass: [c.bass[0], c.bass[1]] as [string, string] }));
+  const WORDS = [
+    'Down on the squares where the',
+    'lines all agree,',
+    'every last step is a',
+    'whole one for me;',
+    'twenty to the left and',
+    'twenty to the right,',
+    'we rag on the grid till the',
+    'dawn comes in white.',
+  ];
+
+  const NOTES: Note[] = [];
+  for (let pass = 0; pass < 2; pass++) {
+    TUNE.forEach((bar, b) => {
+      const start = (pass * 8 + b) * 8;
+      for (const [at, name, len] of bar) {
+        NOTES.push({ pitch: midi(name), at: start + at, len });
+        if (pass === 1 && midi(name) - 12 >= LOW + 20) NOTES.push({ pitch: midi(name) - 12, at: start + at, len });
+      }
+      const c = CHORDS[b];
+      NOTES.push({ pitch: midi(c.bass[0]), at: start, len: 1 }, { pitch: midi(c.bass[1]), at: start + 4, len: 1 });
+      for (const n of c.chord) NOTES.push({ pitch: midi(n), at: start + 2, len: 1 }, { pitch: midi(n), at: start + 6, len: 1 });
+    });
+  }
+  const LENGTH = 16 * 8;
+
+  const paper = document.getElementById('paper') as unknown as SVGSVGElement;
+  const keysEl = document.getElementById('keys')!;
+  const tracker = document.getElementById('tracker')!;
+  const playButton = document.getElementById('play') as HTMLButtonElement;
+  const rewind = document.getElementById('rewind') as HTMLButtonElement;
+  const sing = document.getElementById('sing')!;
+
+  let geometry = { margin: 7, right: 2, track: 1, rows: 30, width: 51 };
+  let roll: SVGGElement | null = null;
+  let advance = 3;
+  const keyEls: HTMLElement[] = [];
+
+  /** The roll as drawn in its own coordinates: squares across, the leader's tip at 0, music above it. */
+  function drawRoll() {
+    const { margin, right, track, rows, width } = geometry;
+    const W = width;
+    const x = (p: number) => margin + (p - LOW) * track;
+    const top = -(LEADER + LENGTH + 30);
+    let out = '';
+    // Paper, tapering at the leader to a tab.
+    out += `<path class="pr-sheet" d="M 0 ${top} H ${W} V -6 L ${W / 2 + 2} -1 V 0 H ${W / 2 - 2} V -1 L 0 -6 Z"/>`;
+    out += `<circle cx="${W / 2}" cy="-0.5" r="0.3" class="pr-hole"/>`;
+    // The label on the leader.
+    // Drawn at its own width of twenty-eight, centred, and made smaller on a narrow roll.
+    const k = Math.min(1, (W - 2) / 28);
+    out += `<g class="pr-label-print" transform="translate(${W / 2} -18) scale(${k.toFixed(3)}) translate(0 18)"><rect x="-14" y="-27" width="28" height="18" class="pr-frame"/><rect x="-13.6" y="-26.6" width="27.2" height="17.2" class="pr-frame pr-thin"/>
+      <text x="0" y="-23.6" class="pr-p-small">Nordisk Notevalse Co., word roll no. 4471</text>
+      <text x="0" y="-19.2" class="pr-p-title">The Gridiron</text>
+      <text x="0" y="-16.2" class="pr-p-title">Rag</text>
+      <text x="0" y="-13.4" class="pr-p-mid">Fox-trot, with words</text>
+      <text x="0" y="-11.2" class="pr-p-small">Played by Rosa Lindqvist. Tempo 70</text></g>`;
+    out += `<text x="${W / 2}" y="-4" class="pr-p-small">Rewind after playing</text>`;
+    // The bar lines and tempo marks, printed faint.
+    for (let bar = 0; bar <= 16; bar++) {
+      const y = -(LEADER + bar * 8);
+      out += `<line x1="${margin - 0.5}" x2="${W - right + 0.5}" y1="${y}" y2="${y}" class="pr-bar"/>`;
+      if (bar % 8 === 0 && bar < 16) out += `<text x="${W - right + 0.6}" y="${y - 0.3}" class="pr-p-side">${bar ? 'Chorus' : 'Tempo 70'}</text>`;
+    }
+    // The red expression line, wandering between soft and loud.
+    let d = '';
+    for (let t = 0; t <= LENGTH; t += 1) {
+      const level = 0.5 + 0.35 * Math.sin(t / 9) + 0.15 * Math.sin(t / 3.1) + (t > 64 ? 0.2 : 0);
+      d += `${t ? 'L' : 'M'} ${(margin + level * TRACKS * track * 0.9).toFixed(2)} ${-(LEADER + t)} `;
+    }
+    out += `<path d="${d}" class="pr-expr"/>`;
+    // The words in the margin, one line to a bar, each starting where its bar does.
+    if (margin >= 6) for (let bar = 0; bar < 16; bar++) {
+      const line = WORDS[bar % 8];
+      out += `<text x="0.6" y="${-(LEADER + bar * 8) - 0.35}" class="pr-p-words">${line}</text>`;
+    }
+    // The holes, punched through.
+    for (const n of NOTES) {
+      if (n.pitch < LOW || n.pitch > HIGH) continue;
+      const w = Math.max(0.2, track * 0.5);
+      out += `<rect x="${(x(n.pitch) + (track - w) / 2).toFixed(3)}" y="${-(LEADER + n.at + n.len) + 0.08}" width="${w.toFixed(3)}" height="${n.len - 0.16}" rx="${(w / 2).toFixed(3)}" class="pr-hole"/>`;
+    }
+    paper.setAttribute('viewBox', `0 0 ${W} ${rows}`);
+    paper.innerHTML = `<g id="roll">${out}</g>`;
+    roll = paper.querySelector('#roll');
+    // The tracker bar's openings and the keys under them.
+    tracker.innerHTML = '';
+    keysEl.innerHTML = '';
+    keyEls.length = 0;
+    for (let p = LOW; p <= HIGH; p++) {
+      const k = document.createElement('span');
+      k.className = black(p) ? 'is-black' : 'is-white';
+      if (p % 12 === 0 && track >= 1) k.textContent = `C${p / 12 - 1}`;
+      keysEl.appendChild(k);
+      keyEls.push(k);
+      tracker.appendChild(document.createElement('i'));
+    }
+    position();
+  }
+
+  function position() {
+    roll?.setAttribute('transform', `translate(0 ${(geometry.rows + advance).toFixed(3)})`);
+    const now = advance - LEADER;
+    const on = new Set(NOTES.filter(n => n.at <= now && now < n.at + n.len).map(n => n.pitch));
+    keyEls.forEach((k, i) => k.classList.toggle('is-on', on.has(LOW + i)));
+    const bar = Math.floor(now / 8);
+    const words = bar < 0 ? 'The words come in with the first bar.' : bar < 16 ? WORDS[bar % 8] : 'Rewind the roll.';
+    if (sing.textContent !== words) { sing.textContent = words; sing.classList.toggle('is-waiting', bar < 0 || bar >= 16); }
+  }
+
+  // Sound: a plucked triangle for every hole as it opens over the bar.
+  let audio: AudioContext | null = null;
+  function sound(pitch: number, len: number, speed: number) {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const osc = audio.createOscillator(), gain = audio.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = 440 * 2 ** ((pitch - 69) / 12);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(pitch < 55 ? 0.12 : 0.08, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.25, (len / speed) * 1.6));
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + 2);
+  }
+
+  let frame = 0;
+  function run(to: number, speed: number, audible: boolean) {
+    cancelAnimationFrame(frame);
+    let last = performance.now();
+    const step = () => {
+      const now = performance.now();
+      const before = advance;
+      advance = Math.min(to, advance + ((now - last) / 1000) * speed);
+      last = now;
+      if (audible) for (const n of NOTES) { const at = n.at + LEADER; if (at > before && at <= advance) sound(n.pitch, n.len, speed); }
+      position();
+      if (advance < to) frame = requestAnimationFrame(step);
+      else stop();
+    };
+    frame = requestAnimationFrame(step);
+  }
+  function stop() {
+    cancelAnimationFrame(frame);
+    playButton.setAttribute('aria-pressed', 'false');
+    playButton.textContent = 'Play';
+  }
+
+  playButton.addEventListener('click', () => {
+    if (playButton.getAttribute('aria-pressed') === 'true') { stop(); return; }
+    audio ??= new AudioContext();
+    audio.resume();
+    if (advance >= LEADER + LENGTH) advance = LEADER - 4;
+    playButton.setAttribute('aria-pressed', 'true');
+    playButton.textContent = 'Stop';
+    // Seventy on the dial: about three and a half eighths a second.
+    run(LEADER + LENGTH + 2, 3.6, true);
+  });
+  rewind.addEventListener('click', () => { stop(); advance = 3; position(); });
+
+  // The tempo dial, ten squares of marks.
+  document.getElementById('scale')!.innerHTML = [0, 20, 40, 60, 80, 100].map(n => `<span${n === 60 ? ' class="is-near"' : ''}>${n}</span>`).join('') + '<i class="pr-pointer"></i>';
+
+  onSquares(({ across, down, narrow }) => {
+    const stage = document.getElementById('pr')!;
+    let margin: number, right: number, track: number, rows: number, left: number;
+    if (narrow) {
+      track = (across - 2) / TRACKS; margin = 0; right = 0; rows = 22; left = 0;
+    } else {
+      track = 1; right = 2;
+      margin = across >= 66 ? 7 : 3;
+      rows = down - 6;
+      left = 2;
+    }
+    const width = margin + TRACKS * track + right;
+    geometry = { margin, right, track, rows, width };
+    stage.style.setProperty('--paper-left', String(left + 1));
+    stage.style.setProperty('--paper-w', String(Math.round(width)));
+    stage.style.setProperty('--rows', String(rows));
+    stage.style.setProperty('--margin', String(margin));
+    stage.style.setProperty('--track', narrow ? `calc(var(--u) * ${track.toFixed(4)})` : 'var(--u)');
+    stage.style.setProperty('--fall-left', String(left + 1 + Math.round(width) + 2));
+    drawRoll();
+  });
+
+  // Once, on arrival: the leader goes over the bar and the first bars come down to meet it.
+  if (!reducedMotion()) setTimeout(() => run(LEADER + 6, 1.6, false), 600);
+  else { advance = 3; position(); }
+</script>
+
+<style is:global>
+  html { background: #2a1912; }
+  .pr {
+    --wood: #2a1912;
+    --wood-hi: #3d2519;
+    --paper: #e3e5d6;
+    --gold: #c8a96a;
+    --ink: #3b3a33;
+    --red: #b8433a;
+    --paper-left: 3;
+    --paper-w: 51;
+    --rows: 38;
+    --margin: 7;
+    --track: var(--u);
+    --fall-left: 56;
+    background:
+      repeating-linear-gradient(90deg, rgb(0 0 0 / 0.08) 0 1px, transparent 1px calc(var(--u) * 0.37), rgb(255 255 255 / 0.02) calc(var(--u) * 0.37) calc(var(--u) * 0.4), transparent calc(var(--u) * 0.4) calc(var(--u) * 1.3)),
+      linear-gradient(90deg, var(--wood), var(--wood-hi) 40%, var(--wood));
+    color: var(--gold);
+    font-family: 'Bodoni 72', Didot, var(--typeface-canon), serif;
+  }
+  .pr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+
+  /* The spool box: a dark recess in the case, the paper running down it. */
+  .pr-box { position: relative; grid-column: var(--paper-left) / span var(--paper-w); grid-row: 1 / span var(--rows); background: #120a07; box-shadow: inset 0 0 calc(2 * var(--u)) rgb(0 0 0 / 0.8); overflow: hidden; }
+  .pr-paper { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pr-spool-top { position: absolute; left: calc(-0.5 * var(--u)); right: calc(-0.5 * var(--u)); top: 0; height: var(--u); background: linear-gradient(#000, #5a4535 45%, #1b120d); box-shadow: 0 calc(4px * var(--sf)) calc(8px * var(--sf)) rgb(0 0 0 / 0.5); }
+  .pr-paper .pr-sheet { fill: var(--paper); }
+  .pr-paper .pr-hole { fill: #120a07; }
+  .pr-paper .pr-bar { stroke: #9aa08a; stroke-width: 0.03; }
+  .pr-paper .pr-expr { fill: none; stroke: var(--red); stroke-width: 0.08; opacity: 0.85; }
+  .pr-paper text { fill: var(--ink); font-family: 'Bodoni 72', Didot, serif; }
+  .pr-paper .pr-p-title { font-size: 2.6px; font-style: italic; text-anchor: middle; }
+  .pr-paper .pr-p-mid { font-size: 1px; text-anchor: middle; font-style: italic; }
+  .pr-paper .pr-p-small { font-size: 0.6px; text-anchor: middle; letter-spacing: 0.04em; }
+  .pr-paper .pr-p-side { font-size: 0.55px; font-style: italic; fill: var(--red); }
+  .pr-paper .pr-p-words { font-size: 0.62px; font-family: 'Hoefler Text', Baskerville, serif; font-style: italic; }
+  .pr-paper .pr-frame { fill: none; stroke: var(--ink); stroke-width: 0.08; }
+  .pr-paper .pr-thin { stroke-width: 0.03; }
+
+  /* The brass tracker bar: one opening to a track. */
+  .pr-tracker {
+    grid-column: var(--paper-left) / span var(--paper-w); grid-row: span 1 / -6;
+    display: grid; grid-template-columns: repeat(42, var(--track)); padding-left: calc(var(--margin) * var(--u)); box-sizing: border-box; align-items: center;
+    background: linear-gradient(#e2c27a, #9c7a35 50%, #6b5121); box-shadow: 0 calc(3px * var(--sf)) calc(6px * var(--sf)) rgb(0 0 0 / 0.5);
+  }
+  .pr-tracker i { justify-self: center; width: calc(var(--track) * 0.45); height: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 0.12); background: #1b1209; box-shadow: inset 0 1px 2px #000; }
+
+  /* The key ruler: a semitone to a square, as the tracks are; a key lights while its hole is open. */
+  .pr-keys {
+    grid-column: var(--paper-left) / span var(--paper-w); grid-row: span 3 / -3;
+    display: grid; grid-template-columns: repeat(42, var(--track)); padding-left: calc(var(--margin) * var(--u)); box-sizing: border-box;
+    background: #160d09;
+  }
+  .pr-keys span { position: relative; display: grid; align-items: end; justify-items: center; font-family: var(--typeface-regular); font-size: calc(9px * var(--sf)); line-height: var(--u); color: #6c6a60; box-shadow: inset -1px 0 #160d09; }
+  .pr-keys .is-white { background: linear-gradient(#f4f1e6, #d9d4c3); }
+  .pr-keys .is-black { background: linear-gradient(#2c2622, #0d0a08); height: 66%; color: transparent; }
+  .pr-keys .is-on { background: linear-gradient(#f0d48c, var(--gold)); color: #3a2a12; }
+  .pr-takeup { grid-column: var(--paper-left) / span var(--paper-w); grid-row: span 1 / -2; background: linear-gradient(#1b120d, #5a4535 50%, #000); border-radius: calc(var(--u) / 2); }
+
+  /* The fallboard beside: the maker in gold, what is on the spool, the tempo, the levers. */
+  .pr-fall { grid-column: var(--fall-left) / -2; grid-row: 2 / -2; display: grid; align-content: start; gap: calc(2 * var(--u)); min-width: 0; font-size: calc(14px * var(--sf)); line-height: var(--u); }
+  .pr-fall p { margin: 0; }
+  .pr-maker { font-size: calc(44px * var(--sf)); line-height: calc(3 * var(--u)); font-style: italic; letter-spacing: 0.01em; text-shadow: 0 1px 0 rgb(0 0 0 / 0.6); }
+  .pr-model { margin-top: calc(-2 * var(--u)) !important; font-style: italic; color: #a88d58; }
+  .pr-label { font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); color: #a88d58; }
+  .pr-title { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-style: italic; color: #f0dfb4; }
+  .pr-now p:not(.pr-title, .pr-label) { color: #d9c49a; }
+  .pr-scale { position: relative; display: grid; grid-template-columns: repeat(6, calc(2 * var(--u))); height: calc(2 * var(--u)); border-top: 1px solid var(--gold); font-family: var(--typeface-regular); font-size: calc(10px * var(--sf)); width: max-content; background: repeating-linear-gradient(90deg, var(--gold) 0 1px, transparent 1px var(--u)) top / 100% calc(var(--u) / 3) no-repeat; }
+  .pr-scale span { padding-top: calc(var(--u) / 2); line-height: var(--u); }
+  .pr-pointer { position: absolute; left: calc(7 * var(--u)); top: calc(-1 * var(--u) / 2); width: 0; height: 0; border-inline: calc(5px * var(--sf)) solid transparent; border-top: calc(8px * var(--sf)) solid #f0dfb4; transform: translateX(-50%); }
+  .pr-controls { display: flex; gap: var(--u); }
+  .pr-controls button {
+    font: inherit; font-style: italic; color: #f0dfb4; cursor: pointer;
+    height: calc(2 * var(--u)); padding: 0 var(--u); border: 1px solid var(--gold); border-radius: var(--u);
+    background: linear-gradient(#4a2e20, #2a1912);
+  }
+  .pr-controls button[aria-pressed='true'] { background: var(--gold); color: #2a1912; }
+  .pr-controls button:focus-visible { outline: 2px solid #f0dfb4; outline-offset: 2px; }
+  .pr-sing { font-family: 'Hoefler Text', Baskerville, serif; font-style: italic; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); color: #f0dfb4; min-height: calc(4 * var(--u)); text-wrap: balance; }
+  .pr-sing.is-waiting { color: #8d7550; font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  .pr-hint { font-size: calc(12px * var(--sf)); color: #8d7550; font-style: italic; }
+
+  :root[data-narrow] .pr { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pr-box, :root[data-narrow] .pr-tracker, :root[data-narrow] .pr-keys, :root[data-narrow] .pr-takeup { grid-column: 2 / -2; }
+  :root[data-narrow] .pr-box { grid-row: 1 / span 22; height: calc(22 * var(--u)); }
+  :root[data-narrow] .pr-tracker { grid-row: 23; height: var(--u); }
+  :root[data-narrow] .pr-keys { grid-row: 24 / span 2; height: calc(2 * var(--u)); }
+  :root[data-narrow] .pr-takeup { grid-row: 26; height: var(--u); }
+  :root[data-narrow] .pr-fall { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); }
+</style>

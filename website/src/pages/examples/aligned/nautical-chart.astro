@@ -1,0 +1,356 @@
+---
+// After a coastal chart: buff land, the shallows in blues, soundings in sloping figures, a compass
+// rose and the lights with their characteristics. The sea is measured on the squares: every
+// sounding sits in one, the border's minute bars are one long, the rose's rings are whole squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="nautical-chart" theme="light">
+  <main class="stage chart" id="chart">
+    <h1 class="chart-sr">Chart 1137: Nordskær to Hvalbugten, approaches</h1>
+    <canvas class="chart-sea" id="sea" aria-hidden="true"></canvas>
+    <svg class="chart-marks" id="marks" aria-hidden="true"></svg>
+    <p class="chart-readout" id="readout" aria-live="off"></p>
+    <section class="chart-notes" id="notes">
+      <h2>Chart 1137</h2>
+      <p class="chart-name">Nordskær to Hvalbugten</p>
+      <p>Soundings in metres, reduced to the lowest tide the harbourmaster can remember. Heights above high water. Scale 1:25 000 at 57°40′.</p>
+      <p>The ferry to the Holms keeps west of the yellow buoy, which is not yellow.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const smin = (a: number, b: number, k: number) => -k * Math.log(Math.exp(-a / k) + Math.exp(-b / k));
+  const f = (n: number) => +n.toFixed(3);
+
+  const canvas = document.getElementById('sea') as HTMLCanvasElement;
+  const marks = document.getElementById('marks') as unknown as SVGSVGElement;
+  const readout = document.getElementById('readout')!;
+  const MAGENTA = '#a8247c';
+
+  // The sea's depth at a point measured in squares: negative is land, in metres above the water.
+  function makeField(W: number, H: number) {
+    const holm = Math.min(W * 0.56, W - 31);
+    const cape = Math.min(9, W * 0.16), bay = Math.min(6, W * 0.1);
+    const islands = [
+      { x: holm, y: H * 0.27, r: 2.4 },
+      { x: holm + 2.5, y: H * 0.34, r: 1.1 },
+      { x: holm - 1.5, y: H * 0.36, r: 0.6 },
+      { x: W < 40 ? -99 : W * 0.47, y: H * 0.78, r: 1.7 },
+    ];
+    const shoals = [ { x: W * 0.72, y: H * 0.56, r: 2.6, top: 1.8 }, { x: W * 0.4, y: H * 0.55, r: 2, top: 0.9 } ];
+    const k = Math.min(1, W / 40);
+    const coast = (y: number) =>
+      W * (W < 40 ? 0.2 : 0.3) + k * (3.2 * Math.sin(y / 4.7 + 0.6) + 1.6 * Math.sin(y / 2.1 + 2) + 4 * Math.sin(y / 13 + 1) + 0.7 * Math.sin(y / 1.1))
+      + cape * Math.exp(-(((y - H * 0.6) / 3.2) ** 2)) - bay * Math.exp(-(((y - H * 0.18) / 3.5) ** 2));
+    return (x: number, y: number) => {
+      let v = x - coast(y);
+      for (const i of islands) v = smin(v, Math.hypot(x - i.x, y - i.y) - i.r, 1.2);
+      for (const s of shoals) v = smin(v, Math.hypot(x - s.x, y - s.y) * 1.3 + s.top, 1.5);
+      v += 0.5 * Math.sin(x / 1.7 + y / 3) * Math.sin(y / 2.3);
+      return v < 0 ? v * 6 : 1.3 * v + 0.06 * v * v;
+    };
+  }
+
+  // Bands from deep to dry land, as the chart prints them.
+  const BANDS: [number, [number, number, number]][] = [
+    [-0.8, [243, 226, 168]], // land, buff
+    [0, [190, 205, 158]], // drying, green
+    [2, [128, 182, 222]],
+    [5, [170, 208, 236]],
+    [10, [212, 232, 246]],
+    [Infinity, [252, 253, 253]],
+  ];
+  const band = (d: number) => BANDS.find(([limit]) => d < limit)![1];
+
+  function drawSea(field: (x: number, y: number) => number, W: number, H: number, unit: number) {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const px = Math.round(W * unit * dpr), py = Math.round(H * unit * dpr);
+    canvas.width = px; canvas.height = py;
+    const ctx = canvas.getContext('2d')!;
+    // The field on a lattice of four to a square, then each pixel between them.
+    const R = 4, gw = W * R + 1, gh = H * R + 1;
+    const grid = new Float32Array(gw * gh);
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) grid[j * gw + i] = field(i / R, j / R);
+    const image = ctx.createImageData(px, py);
+    const scale = (R / (unit * dpr));
+    for (let y = 0; y < py; y++) {
+      const gy = y * scale, j = Math.min(gh - 2, Math.floor(gy)), ty = gy - j;
+      for (let x = 0; x < px; x++) {
+        const gx = x * scale, i = Math.min(gw - 2, Math.floor(gx)), tx = gx - i;
+        const a = grid[j * gw + i], b = grid[j * gw + i + 1], c = grid[(j + 1) * gw + i], d = grid[(j + 1) * gw + i + 1];
+        const v = (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+        const [r, g, bl] = band(v);
+        const o = (y * px + x) * 4;
+        image.data[o] = r; image.data[o + 1] = g; image.data[o + 2] = bl; image.data[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+
+    // Contours by marching squares on the lattice: the coast heavy, the depths fine.
+    const s = unit * dpr / R;
+    const contour = (level: number, width: number, colour: string, dash: number[] = []) => {
+      ctx.beginPath();
+      for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++) {
+        const v = [grid[j * gw + i], grid[j * gw + i + 1], grid[(j + 1) * gw + i + 1], grid[(j + 1) * gw + i]];
+        const corners = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+        const cuts: [number, number][] = [];
+        for (let e = 0; e < 4; e++) {
+          const a = v[e], b = v[(e + 1) % 4];
+          if ((a < level) !== (b < level)) {
+            const t = (level - a) / (b - a);
+            const [x1, y1] = corners[e], [x2, y2] = corners[(e + 1) % 4];
+            cuts.push([(x1 + (x2 - x1) * t) * s, (y1 + (y2 - y1) * t) * s]);
+          }
+        }
+        for (let k = 0; k + 1 < cuts.length; k += 2) { ctx.moveTo(...cuts[k]); ctx.lineTo(...cuts[k + 1]); }
+      }
+      ctx.setLineDash(dash.map(n => n * dpr));
+      ctx.lineWidth = width * dpr; ctx.strokeStyle = colour; ctx.stroke();
+    };
+    contour(5, 0.6, '#5f8fb4');
+    contour(10, 0.6, '#5f8fb4', [4, 2]);
+    contour(20, 0.6, '#7aa2c2', [1, 2]);
+    contour(30, 0.5, '#7aa2c2', [6, 2, 1, 2]);
+    contour(0, 0.7, '#55705a');
+    contour(-0.8, 1.3, '#2a2a22');
+  }
+
+  // Latitude and longitude of a square, for the border and the readout.
+  const lat = (y: number) => 57 * 60 + 45 - y * 0.2;
+  const lon = (x: number) => 10 * 60 + 30 + x * 0.4;
+  const dm = (minutes: number, hemi: string, precise = false) => {
+    const deg = Math.floor(minutes / 60), min = minutes - deg * 60;
+    return `${deg}°${precise ? min.toFixed(1).padStart(4, '0') : String(Math.round(min)).padStart(2, '0')}′${hemi}`;
+  };
+
+  function drawMarks(field: (x: number, y: number) => number, W: number, H: number, narrow: boolean) {
+    marks.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const used = new Uint8Array(W * H);
+    const take = (x: number, y: number, w: number, h: number) => {
+      for (let j = Math.max(0, y); j < Math.min(H, y + h); j++) for (let i = Math.max(0, x); i < Math.min(W, x + w); i++) used[j * W + i] = 1;
+    };
+    const free = (x: number, y: number) => x > 0 && y > 0 && x < W - 1 && y < H - 1 && !used[y * W + x];
+    let out = '';
+
+    // The border: a minute bar one square long, black and white by turn, and a line either side.
+    take(0, 0, W, 2); take(0, H - 2, W, 2); take(0, 0, 2, H); take(W - 2, 0, 2, H);
+    take(W - 12, H - 1, 12, 1);
+    out += `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" class="cm-frame"/><rect x="0.85" y="0.85" width="${W - 1.7}" height="${H - 1.7}" class="cm-frame"/>`;
+    for (let x = 1; x < W - 1; x++) if (x % 2) out += `<rect x="${x}" y="0.5" width="1" height="0.35"/><rect x="${x}" y="${H - 0.85}" width="1" height="0.35"/>`;
+    for (let y = 1; y < H - 1; y++) if (y % 2) out += `<rect x="0.5" y="${y}" width="0.35" height="1"/><rect x="${W - 0.85}" y="${y}" width="0.35" height="1"/>`;
+    // A graticule every five squares, faint, and its figures inside the frame.
+    for (let x = 5; x < W - 2; x += 5) {
+      out += `<line x1="${x}" y1="1" x2="${x}" y2="${H - 1}" class="cm-grat"/>`;
+      if (x % 10 === 0 && x < W - 14) out += `<text x="${x + 0.15}" y="1.65" class="cm-border">${dm(lon(x), 'E')}</text>`;
+    }
+    for (let y = 5; y < H - 2; y += 5) {
+      out += `<line x1="1" y1="${y}" x2="${W - 1}" y2="${y}" class="cm-grat"/>`;
+      out += `<text x="1.15" y="${y - 0.2}" class="cm-border">${dm(lat(y), 'N')}</text>`;
+    }
+
+    // The compass rose: true outside, magnetic inside, turned by the variation.
+    const roseR = narrow ? 4 : Math.min(8, Math.floor(H / 5));
+    const rc = narrow ? { x: W - roseR - 2, y: H - roseR - 3 } : { x: W - roseR - 4, y: H - roseR - 4 };
+    take(rc.x - roseR, rc.y - roseR, roseR * 2, roseR * 2);
+    let rose = `<g class="cm-rose" transform="translate(${rc.x} ${rc.y})">`;
+    rose += `<circle r="${roseR}"/><circle r="${roseR - 1}"/><circle r="${roseR - 2}"/><circle r="${roseR - 3}"/>`;
+    for (let deg = 0; deg < 360; deg += narrow ? 5 : 2) {
+      const a = (deg - 90) * Math.PI / 180, long = deg % 10 === 0 ? 0.5 : 0.22;
+      rose += `<line x1="${f(Math.cos(a) * roseR)}" y1="${f(Math.sin(a) * roseR)}" x2="${f(Math.cos(a) * (roseR - long))}" y2="${f(Math.sin(a) * (roseR - long))}"/>`;
+      if (deg % 30 === 0) rose += `<text transform="rotate(${deg}) translate(0 ${-(roseR - 0.85)})" class="cm-deg">${String(deg).padStart(3, '0')}</text>`;
+    }
+    const VAR = 4.2;
+    rose += `<g transform="rotate(${VAR})">`;
+    for (let deg = 0; deg < 360; deg += 10) {
+      const a = (deg - 90) * Math.PI / 180;
+      rose += `<line x1="${f(Math.cos(a) * (roseR - 2))}" y1="${f(Math.sin(a) * (roseR - 2))}" x2="${f(Math.cos(a) * (roseR - 2.4))}" y2="${f(Math.sin(a) * (roseR - 2.4))}"/>`;
+      if (deg % 90 === 0 && !narrow) rose += `<text transform="rotate(${deg}) translate(0 ${-(roseR - 2.95)})" class="cm-deg">${String(deg).padStart(3, '0')}</text>`;
+    }
+    rose += `<path d="M 0 ${-(roseR - 3)} V ${roseR - 3} M ${-(roseR - 3)} 0 H ${roseR - 3}" /><path d="M 0 ${-(roseR - 2.4)} l 0.3 0.7 h -0.6 Z" class="cm-needle"/></g>`;
+    rose += `<path d="M 0 ${-roseR - 0.9} l 0.4 0.9 h -0.8 Z" class="cm-star"/>`;
+    if (!narrow) rose += `<text y="0.85" class="cm-var">var 4°10′E (2026)</text><text y="1.65" class="cm-var">9′E yearly</text>`;
+    out += rose + '</g>';
+
+    // Coast points where a light can stand: walk in from the east on a row until the land.
+    // The title block's squares are taken first, so nothing is printed under it.
+    if (!narrow) take(W - 27, 2, 26, 13);
+    /** The nearest free run of squares to (x, y), w by h, inside the frame; null when none is near. */
+    const spot = (x: number, y: number, w: number, h: number): [number, number] | null => {
+      x = Math.round(x); y = Math.round(y);
+      for (let r = 0; r < 7; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const px = x + dx, py = y + dy;
+        if (px < 2 || py < 2 || px + w > W - 2 || py + h > H - 2) continue;
+        let ok = true;
+        for (let j = py; j < py + h && ok; j++) for (let i = px; i < px + w; i++) if (used[j * W + i]) { ok = false; break; }
+        if (ok) return [px, py];
+      }
+      return null;
+    };
+    const textWidth = (text: string, size = 0.5) => Math.ceil(text.length * size) + 1;
+
+    const shore = (y: number, from = W - 2) => { for (let x = from; x > 1; x -= 0.1) if (field(x, y) < -0.4) return x; return 2; };
+    const light = (x: number, y: number, name: string, character: string) => {
+      const ix = Math.round(x), iy = Math.round(y);
+      const w = textWidth(character, 0.52);
+      const side = field(x + 1.5, y) > 0 ? 1 : -1;
+      let s = `<g class="cm-light" transform="translate(${f(x)} ${f(y)})"><path d="M 0 0 C ${0.5 * side} -0.9 ${1.5 * side} -1.4 ${1.9 * side} -0.9 C ${1.6 * side} -0.4 ${0.7 * side} -0.2 0 0 Z" class="cm-flare"/><circle r="0.16" class="cm-dot"/></g>`;
+      take(ix - 1, iy - 2, 3, 3);
+      const at = spot(side > 0 && ix + 2 + w < W - 2 ? ix + 2 : ix - 1 - w, iy - 1, w, 2);
+      if (at) {
+        s += `<text x="${at[0]}" y="${at[1] + 0.72}" class="cm-char">${character}</text><text x="${at[0]}" y="${at[1] + 1.72}" class="cm-landname">${name}</text>`;
+        take(at[0] - 1, at[1], w + 1, 2);
+      }
+      return s;
+    };
+    const holm = Math.min(W * 0.56, W - 31);
+    const west = (y: number, from: number) => { for (let x = from; x < W - 2; x += 0.1) if (field(x, y) < -0.4) return x; return from; };
+    out += light(west(H * 0.27, holm - 5) - 0.1, H * 0.27, 'Nordskær', 'Fl(3)W 15s 32m 18M');
+    out += light(shore(H * 0.6) + 0.2, H * 0.6, 'Kalvhoved', 'Oc WRG 6s 14m 9M');
+    if (!narrow) out += light(shore(H * 0.8, W * 0.47 + 2.5), H * 0.78, 'Lille Holm', 'Q(6)+LFl 15s 6M');
+
+    // The shoal, its name and its two buoys, then a wreck and a rock, each on its square.
+    const sx = Math.round(W * 0.72), sy = Math.round(H * 0.56);
+    out += `<text x="${sx + 0.5}" y="${sy + 0.72}" class="cm-sounding" text-anchor="middle">1<tspan class="cm-dec" dy="0.12">8</tspan></text>`;
+    take(sx - 1, sy, 3, 1);
+    const named = (x: number, y: number, name: string, cls: string) => {
+      const big = cls.includes('big'), w = textWidth(name, big ? 0.8 : 0.5), h = big ? 2 : 1;
+      const at = spot(x, y, w, h);
+      if (!at) return '';
+      take(at[0] - 1, at[1] - 1, w + 2, h + 2);
+      return `<text x="${at[0]}" y="${at[1] + (big ? 1.4 : 0.75)}" class="${cls}">${name}</text>`;
+    };
+    out += named(sx - 1, sy + 1, 'Svinet', 'cm-water');
+    const buoy = (x: number, y: number, colour: string, label: string) => {
+      const at = spot(x, y, textWidth(label) + 1, 1);
+      if (!at) return '';
+      take(at[0] - 1, at[1] - 1, textWidth(label) + 3, 3);
+      return `<g transform="translate(${at[0] + 0.5} ${at[1] + 0.5})"><path d="M -0.25 0.3 L 0 -0.4 L 0.25 0.3 Z" fill="${colour}" stroke="#222" stroke-width="0.04"/><circle cy="-0.55" r="0.14" class="cm-flare"/></g><text x="${at[0] + 1}" y="${at[1] + 0.75}" class="cm-small">${label}</text>`;
+    };
+    out += buoy(sx - 4, sy - 3, '#c8352f', 'Fl R 4s');
+    out += buoy(sx + 2, sy + 3, '#2f8a4c', 'Fl G 4s');
+    const wreck = spot(W * 0.66, H * 0.15, 6, 1);
+    if (wreck && field(wreck[0] + 0.5, wreck[1] + 0.5) > 1) {
+      const [wx, wy] = wreck;
+      out += `<g class="cm-wreck" transform="translate(${wx + 0.5} ${wy + 0.5})"><path d="M -0.6 0 H 0.6 M -0.3 -0.3 V 0.3 M 0 -0.4 V 0.4 M 0.3 -0.3 V 0.3"/></g><text x="${wx + 1.3}" y="${wy + 0.75}" class="cm-small">Wk (1911)</text>`;
+      take(wx - 1, wy - 1, 8, 3);
+    }
+    const rx = Math.round(W * 0.4), ry = Math.round(H * 0.55);
+    if (field(rx, ry) > 0) {
+      out += `<g class="cm-wreck" transform="translate(${rx + 0.5} ${ry + 0.5})"><path d="M -0.35 0 H 0.35 M 0 -0.35 V 0.35"/><circle cx="-0.2" cy="-0.2" r="0.05"/><circle cx="0.2" cy="-0.2" r="0.05"/><circle cx="-0.2" cy="0.2" r="0.05"/><circle cx="0.2" cy="0.2" r="0.05"/></g>`;
+      take(rx - 1, ry - 1, 3, 3);
+    }
+
+    // Names: the water's sloping, the land's upright; and the heights of the land's hills.
+    const names: [number, number, string, string][] = narrow
+      ? [[W * 0.55, H * 0.45, 'Skarvsund', 'cm-water'], [2, H * 0.4, 'Hvalø', 'cm-land']]
+      : [[W * 0.6, H * 0.43, 'Skarvsund', 'cm-water'], [W * 0.8, H * 0.32, 'Hvalbugten', 'cm-water cm-big'], [W * 0.08, H * 0.42, 'Hvalø', 'cm-land cm-big'], [W * 0.1, H * 0.85, 'Kalvhoved Skov', 'cm-land'], [W * 0.13, H * 0.13, 'Strandby', 'cm-land']];
+    for (const [x, y, name, cls] of names) out += named(x, y, name, cls);
+    const hills: [number, number][] = narrow ? [[3, H * 0.55]] : [[W * 0.15, H * 0.62], [W * 0.06, H * 0.25], [holm - 0.5, H * 0.27]];
+    for (const [hx, hy] of hills) {
+      const at = spot(hx, hy, 3, 1);
+      if (!at || field(at[0] + 0.5, at[1] + 0.5) > -3) continue;
+      const height = Math.round(-field(at[0] + 0.5, at[1] + 0.5) * 1.6);
+      out += `<path d="M ${at[0] + 0.5} ${at[1] + 0.3} l 0.22 0.4 h -0.44 Z" class="cm-hill"/><text x="${at[0] + 0.9}" y="${at[1] + 0.72}" class="cm-height">${height}</text>`;
+      take(at[0], at[1], 3, 1);
+    }
+
+    // Soundings: one to a square, never two side by side, where the water is.
+    const random = seeded(W * 31 + H);
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+      if (!free(x, y) || (x + y * 2) % 3 || random() < 0.35) continue;
+      const d = field(x + 0.5, y + 0.5);
+      if (d < 0.3) continue;
+      take(x - 1, y, 3, 1);
+      const whole = Math.floor(d), dec = Math.floor((d - whole) * 10);
+      out += `<text x="${x + 0.5}" y="${y + 0.72}" class="cm-sounding" text-anchor="middle">${whole}${whole < 21 && dec ? `<tspan class="cm-dec" dy="0.12">${dec}</tspan>` : ''}</text>`;
+    }
+    marks.innerHTML = out;
+  }
+
+  let current = { W: 72, H: 45 };
+  let field = makeField(72, 45);
+  onSquares(({ unit, across, down, narrow }) => {
+    const W = across, H = narrow ? 34 : down;
+    current = { W, H };
+    document.getElementById('chart')!.style.setProperty('--chart-h', String(H));
+    field = makeField(W, H);
+    drawSea(field, W, H, unit);
+    drawMarks(field, W, H, narrow);
+  });
+
+  // The position under the pointer, to the tenth of a minute, and the depth there.
+  marks.addEventListener('pointermove', event => {
+    const box = marks.getBoundingClientRect();
+    const x = ((event.clientX - box.left) / box.width) * current.W, y = ((event.clientY - box.top) / box.height) * current.H;
+    const d = field(x, y);
+    readout.textContent = `${dm(lat(y), 'N', true)}  ${dm(lon(x), 'E', true)}  ${d < -0.8 ? 'land' : d < 0 ? 'dries' : `${d.toFixed(1)} m`}`;
+    readout.classList.add('is-on');
+  });
+  marks.addEventListener('pointerleave', () => readout.classList.remove('is-on'));
+</script>
+
+<style is:global>
+  html { background: #fcfcfa; }
+  .chart {
+    --chart-h: 45;
+    background: #fcfcfa;
+    color: #1d1d1a;
+    font-family: 'Times New Roman', Times, serif;
+  }
+  .chart-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+  .chart-sea, .chart-marks { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; display: block; }
+  .chart-marks { position: relative; z-index: 1; fill: #1d1d1a; cursor: crosshair; }
+
+  .chart-marks .cm-frame { fill: none; stroke: #1d1d1a; stroke-width: 0.05; }
+  .chart-marks .cm-grat { stroke: #1d1d1a; stroke-width: 0.02; opacity: 0.35; }
+  .chart-marks text { font-family: 'Times New Roman', Times, serif; paint-order: stroke; stroke: rgb(252 253 253 / 0.7); stroke-width: 0.12; }
+  .chart-marks .cm-border { font-size: 0.5px; }
+  .chart-marks .cm-sounding { font-size: 0.62px; font-style: italic; }
+  .chart-marks .cm-dec { font-size: 0.42px; }
+  .chart-marks .cm-small { font-size: 0.5px; font-style: italic; }
+  .chart-marks .cm-water { font-size: 0.7px; font-style: italic; letter-spacing: 0.08em; fill: #24486a; }
+  .chart-marks .cm-land { font-size: 0.66px; letter-spacing: 0.04em; stroke: rgb(243 226 168 / 0.8); }
+  .chart-marks .cm-big { font-size: 1.1px; letter-spacing: 0.12em; }
+  .chart-marks .cm-landname { font-size: 0.55px; }
+  .chart-marks .cm-char { font-size: 0.55px; font-style: italic; fill: #a8247c; }
+  .chart-marks .cm-rose { fill: none; stroke: #a8247c; stroke-width: 0.035; }
+  .chart-marks .cm-rose text { fill: #a8247c; stroke: none; text-anchor: middle; }
+  .chart-marks .cm-deg { font-size: 0.42px; }
+  .chart-marks .cm-var { font-size: 0.42px; font-style: italic; }
+  .chart-marks .cm-needle { fill: #a8247c; }
+  .chart-marks .cm-star { fill: #a8247c; stroke: none; }
+  .chart-marks .cm-flare { fill: #a8247c; opacity: 0.85; }
+  .chart-marks .cm-dot { fill: #1d1d1a; }
+  .chart-marks .cm-hill { fill: #1d1d1a; }
+  .chart-marks .cm-height { font-size: 0.5px; stroke: rgb(243 226 168 / 0.8); }
+  .chart-marks .cm-wreck { fill: #1d1d1a; stroke: #1d1d1a; stroke-width: 0.06; }
+
+  /* The title block, in the open sea at the top right, as a chart keeps it. */
+  .chart-notes {
+    grid-column: -26 / -3; grid-row: 3 / span 11; z-index: 2;
+    margin: 0; padding: var(--u); box-sizing: border-box;
+    background: #fcfcfa; border: 1px solid #1d1d1a; outline: 1px solid #1d1d1a; outline-offset: calc(3px * var(--sf));
+    font-size: calc(13px * var(--sf)); line-height: var(--u); text-align: center;
+  }
+  .chart-notes h2 { margin: 0; font-weight: normal; font-size: calc(13px * var(--sf)); line-height: var(--u); font-style: italic; }
+  .chart-notes .chart-name { margin: 0 0 var(--u); font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.02em; }
+  .chart-notes p { margin: 0; }
+  .chart-notes p + p:not(.chart-name) { margin-top: 0; }
+
+  .chart-readout {
+    position: fixed; left: calc(2 * var(--u)); bottom: 0; z-index: 3; margin: 0;
+    height: var(--u); line-height: var(--u); padding-inline: calc(var(--u) / 2);
+    background: #1d1d1a; color: #fcfcfa; font-size: calc(12px * var(--sf)); font-variant-numeric: tabular-nums; white-space: pre;
+    opacity: 0; transition: opacity 120ms;
+  }
+  .chart-readout.is-on { opacity: 1; }
+
+  :root[data-narrow] .chart-sea, :root[data-narrow] .chart-marks { grid-row: 1 / span 34; height: calc(34 * var(--u)); }
+  :root[data-narrow] .chart-notes { grid-column: 2 / -2; grid-row: auto; margin-block: var(--u) calc(3 * var(--u)); }
+  :root[data-narrow] .chart-readout { display: none; }
+</style>
