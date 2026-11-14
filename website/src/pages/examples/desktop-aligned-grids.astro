@@ -1,0 +1,245 @@
+---
+// Picture layouts on a field grid, after the Swiss grid systems: the page is divided into fields of
+// whole squares, one square between them, and every picture and text takes whole fields. Under
+// Desktop aligned the window is whole squares, so a picture that bleeds to the edge ends on one.
+import '../../../../DS1/1-root/one.css';
+---
+<!doctype html>
+<html lang="en" class="light-theme">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>Field grids — example</title>
+    <meta name="description" content="Picture layouts on field grids of whole squares, drawn under Desktop aligned so the grid ends on the window's edges." />
+  </head>
+  <body>
+    <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
+    <header class="bar" id="bar">
+      <ds-tabs text wrap aria-label="Grid" id="plates"></ds-tabs>
+      <div class="end">
+        <span class="size" id="size"></span>
+        <label>Fields <ds-switch><button type="button" role="switch" id="fields" aria-checked="false" aria-label="Fields"></button></ds-switch></label>
+        <label>Grid <ds-switch><button type="button" role="switch" id="grid" aria-checked="false" aria-label="Grid"></button></ds-switch></label>
+      </div>
+    </header>
+    <main id="page" aria-live="polite"></main>
+    <script>
+      import '../../../../DS1/2-core/ds-button';
+      import '../../../../DS1/2-core/ds-switch';
+      import '../../../../DS1/3-unit/ds-tabs';
+      import '../../../../DS1/0-face/grid';
+      import { startScaling } from '../../../../DS1/0-face/scaling';
+
+      startScaling({ desktop: 'aligned' });
+
+      /** A picture or words on the fields from `column`, `row` (counted from 1), `columns` × `rows` fields large. */
+      interface Piece {
+        at: [column: number, row: number, columns?: number, rows?: number];
+        picture?: string;
+        alt?: string;
+        /** Words under the picture, on the square below its fields. */
+        caption?: string;
+        /** The picture runs on to the window's right edge, its foot, or both. */
+        bleed?: 'right' | 'bottom' | 'both';
+        title?: string;
+        words?: string;
+        small?: string;
+        accent?: boolean;
+      }
+      interface Plate { name: string; columns: number; rows: number; pieces: Piece[] }
+
+      const bird = (name: string, file: string, at: Piece['at'], caption = true): Piece =>
+        ({ at, picture: `/examples/images/birdie-${file}.jpg`, alt: name, caption: caption ? name : undefined });
+      const INDEX = ['Robin', 'Wren', 'Blue tit', 'Great tit', 'Goldfinch', 'Long-tailed tit', 'Blackbird', 'Starling', 'Swallow', 'Jay',
+        'Woodpecker', 'Kingfisher', 'Kestrel', 'Barn owl', 'Heron', 'Crane', 'Swan', 'Mallard', 'Oystercatcher', 'Puffin'];
+      const file = (name: string) => name.toLowerCase().replaceAll(' ', '-');
+
+      const PLATES: Plate[] = [
+        {
+          name: 'Eight fields', columns: 4, rows: 2,
+          pieces: [
+            { at: [1, 1, 3, 2], picture: '/examples/images/birdie-marsh.jpg', alt: 'A grey heron by the water', caption: 'Grey heron' },
+            { at: [4, 1], title: 'Grey heron', words: 'Four columns and two rows. The picture takes six of the eight fields; the words keep to one.', small: 'Pictures fill whole fields; a caption stands on the square below' },
+            bird('Kingfisher', 'kingfisher', [4, 2]),
+          ],
+        },
+        {
+          name: 'Twenty fields', columns: 5, rows: 4,
+          pieces: [
+            { at: [1, 1, 3, 2], picture: '/examples/images/birdie-crane-wide.jpg', alt: 'Cranes over a field', caption: 'Cranes' },
+            bird('Heron', 'heron', [4, 1]),
+            { at: [5, 1], title: 'Wading birds', words: 'A wide picture over three columns, a square one beside it, and the words in the last.' },
+            { at: [4, 2, 2, 1], small: 'Five columns, four rows', words: 'Each field is the same number of squares wide, so a row of small pictures below falls under the large one exactly.' },
+            bird('Robin', 'robin', [1, 3]), bird('Wren', 'wren', [2, 3]), bird('Blue tit', 'blue-tit', [3, 3]), bird('Goldfinch', 'goldfinch', [4, 3]), bird('Great tit', 'great-tit', [5, 3]),
+            { at: [1, 4, 2, 1], words: 'Garden birds, each on one field, their names in the square between the rows.' },
+            bird('Swallow', 'swallow', [4, 4, 2, 1]),
+          ],
+        },
+        {
+          name: 'Thirty-six fields', columns: 6, rows: 6,
+          pieces: [
+            { at: [1, 1, 1, 3], title: 'By the water', words: 'Six columns, six rows. The pictures step up from left to right, each a whole number of fields high.', small: 'The lake runs on to the window’s edge' },
+            bird('Swan', 'swan', [2, 4, 1, 3]),
+            bird('Crane', 'crane', [3, 3, 2, 4]),
+            { at: [5, 1, 2, 6], picture: '/examples/images/lake.jpg', alt: 'A still lake between hills', caption: 'The lake', bleed: 'right' },
+          ],
+        },
+        {
+          name: 'Twenty-four fields', columns: 8, rows: 3,
+          pieces: [
+            { at: [1, 1], accent: true, title: '20', small: 'birds on twenty-four fields' },
+            ...INDEX.map((name, index) => bird(name, file(name), [((index + 1) % 8) + 1, Math.floor((index + 1) / 8) + 1])),
+            { at: [8, 3], small: 'An index: one picture a field, read across and then down. Two fields stay empty.' },
+          ],
+        },
+        {
+          name: 'Bleed', columns: 6, rows: 4,
+          pieces: [
+            { at: [1, 1, 2, 1], title: 'The forest edge', words: 'Under Desktop aligned the window is whole squares wide, so a picture can run to its edge and still end on a square.' },
+            { at: [3, 1, 4, 4], picture: '/examples/images/forest.webp', alt: 'Light through a forest', caption: 'The forest edge', bleed: 'right' },
+            bird('Oystercatcher', 'oystercatcher', [1, 3, 1, 2]),
+            { at: [2, 4], small: 'Six columns, four rows; the picture takes sixteen fields and the margin beyond them.' },
+          ],
+        },
+      ];
+
+      /** The narrowest and lowest a field may be before the plate gives up its grid and runs as a column. */
+      const SQUARE = 20, MARGIN = 2, TOP = 2, MIN_WIDTH = 5, MIN_HEIGHT = 4;
+      const root = document.documentElement;
+      const page = document.getElementById('page')!;
+      const tabs = document.getElementById('plates')!;
+      let current = 0;
+      try { current = Math.min(PLATES.length - 1, Math.max(0, Number(sessionStorage.getItem('ds1:field-plate')) || 0)); } catch {}
+
+      tabs.innerHTML = PLATES.map((plate, index) => `<ds-button control="host" role="tab" aria-selected="${index === current}" ${index === current ? 'active' : ''}>${plate.name}</ds-button>`).join('');
+      tabs.addEventListener('click', event => {
+        const button = (event.target as HTMLElement).closest('ds-button');
+        const index = [...tabs.children].indexOf(button as Element);
+        if (index >= 0) show(index);
+      });
+      window.addEventListener('keydown', event => {
+        // The tabs move between themselves with the arrows; elsewhere on the page the arrows turn the plates.
+        if (event.metaKey || event.ctrlKey || event.altKey || (event.target as HTMLElement).closest?.('input, textarea, ds-tabs')) return;
+        if (event.key === 'ArrowRight') show((current + 1) % PLATES.length);
+        if (event.key === 'ArrowLeft') show((current + PLATES.length - 1) % PLATES.length);
+      });
+
+      function show(index: number) {
+        current = index;
+        try { sessionStorage.setItem('ds1:field-plate', String(index)); } catch {}
+        [...tabs.children].forEach((button, at) => { button.toggleAttribute('active', at === index); button.setAttribute('aria-selected', String(at === index)); });
+        build();
+      }
+
+      /** The window in squares: whole under Desktop aligned; on a phone, its fourteen. */
+      function squares() {
+        const style = getComputedStyle(root);
+        const unit = SQUARE * (Number(style.getPropertyValue('--sf')) || 1);
+        const across = Number(style.getPropertyValue('--ds-grid-columns')) || Math.floor(root.clientWidth / unit);
+        const down = Number(style.getPropertyValue('--ds-grid-rows')) || Math.floor(root.clientHeight / unit);
+        return { across, down };
+      }
+
+      const escape = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+      function piece(item: Piece) {
+        const [column, row, columns = 1, rows = 1] = item.at;
+        const place = `grid-area: ${row} / ${column} / span ${rows} / span ${columns}`;
+        const bleed = item.bleed ? ` data-bleed="${item.bleed}"` : '';
+        if (item.picture) {
+          const caption = item.caption ? `<figcaption>${escape(item.caption)}</figcaption>` : '';
+          return `<figure class="piece picture${item.caption ? ' captioned' : ''}" style="${place}"${bleed}><img src="${item.picture}" alt="${escape(item.alt ?? '')}" decoding="async">${caption}</figure>`;
+        }
+        const title = item.title ? `<h2>${escape(item.title)}</h2>` : '';
+        const words = item.words ? `<p>${escape(item.words)}</p>` : '';
+        const small = item.small ? `<p class="small">${escape(item.small)}</p>` : '';
+        return `<div class="piece words${item.accent ? ' accent' : ''}" style="${place}">${title}${words}${small}</div>`;
+      }
+
+      /** Puts the plate's pieces on the page, once a plate: a resize only measures the fields again. */
+      function build() {
+        const plate = PLATES[current];
+        page.dataset.plate = String(current);
+        const fields = Array.from({ length: plate.columns * plate.rows }, () => '<i></i>').join('');
+        page.innerHTML = `<div class="fields" aria-hidden="true">${fields}</div><div class="plate">${plate.pieces.map(piece).join('')}</div>`;
+        draw();
+      }
+
+      function draw() {
+        const plate = PLATES[current];
+        const { across, down } = squares();
+        // Fields of whole squares, one square between them; what is over goes to the right and bottom margins.
+        const width = Math.max(1, Math.floor((across - 2 * MARGIN - (plate.columns - 1)) / plate.columns));
+        const height = Math.max(1, Math.floor((down - TOP - MARGIN - (plate.rows - 1)) / plate.rows));
+        // A phone, or a window too small for this plate's fields, runs the pieces as one column.
+        const phone = root.hasAttribute('data-mobile') || width < MIN_WIDTH || height < MIN_HEIGHT;
+        document.body.toggleAttribute('data-flow', phone);
+        const right = across - MARGIN - plate.columns * width - (plate.columns - 1);
+        const bottom = down - TOP - plate.rows * height - (plate.rows - 1);
+        Object.entries({ '--columns': plate.columns, '--rows': plate.rows, '--field-w': width, '--field-h': height, '--right': right, '--bottom': bottom })
+          .forEach(([name, value]) => page.style.setProperty(name, String(value)));
+        // The bar's switches end where the fields do.
+        document.body.style.setProperty('--right-margin', String(phone ? 1 : right));
+        page.toggleAttribute('data-phone', phone);
+        document.getElementById('size')!.textContent = phone ? 'Too small for this grid: one column' : `${plate.columns} × ${plate.rows} fields of ${width} × ${height} squares`;
+      }
+
+      const toggle = (id: string, act: (on: boolean) => void) => {
+        const button = document.getElementById(id) as HTMLButtonElement;
+        button.addEventListener('click', () => { const on = button.getAttribute('aria-checked') !== 'true'; button.setAttribute('aria-checked', String(on)); act(on); });
+      };
+      toggle('fields', on => root.toggleAttribute('data-show-fields', on));
+      toggle('grid', () => window.dispatchEvent(new CustomEvent('design-system-toggle-grid')));
+      window.addEventListener('design-system-grid-changed', event => {
+        document.getElementById('grid')!.setAttribute('aria-checked', String((event as CustomEvent<{ visible: boolean }>).detail.visible));
+      });
+      window.addEventListener('resize', () => requestAnimationFrame(draw));
+      build();
+    </script>
+  </body>
+</html>
+<style is:global>
+  :root { color-scheme: light; --sf: 1; --ds-sf: var(--sf); }
+  html, body { margin: 0; background: var(--background); color: var(--text-color); font-family: var(--typeface-regular); font-size: var(--ds-type-size-default); line-height: var(--ds-unit); }
+  body { --u: var(--ds-grid-unit); --accent: var(--one-signal-red, #ff4438); --tint: color-mix(in srgb, var(--zenith-blue) 45%, transparent); }
+
+  /* The first row, one square and the leftover above it: the plates and the switches on its sixteen. */
+  .bar { position: absolute; inset: 0 0 auto 0; z-index: 2; box-sizing: border-box; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--u); height: calc(var(--u) + var(--ds-grid-top, 0px)); padding: 0 calc(var(--right-margin, 2) * var(--u)) 0 calc(2 * var(--u)); line-height: calc(16px * var(--sf)); }
+  .bar ds-tabs { flex: none; margin-inline-start: calc(-4px * var(--sf)); }
+  .end { display: flex; align-items: flex-end; gap: var(--u); white-space: nowrap; }
+  .end label { display: flex; align-items: flex-end; gap: calc(var(--u) / 2); cursor: pointer; }
+  .size { color: var(--ds-title-color); }
+
+  /* The plate: whole rows under the leftover, its fields from the second square in. */
+  #page { --fw: calc(var(--field-w) * var(--u)); --fh: calc(var(--field-h) * var(--u)); position: relative; height: calc(var(--ds-grid-rows, 40) * var(--u)); overflow: hidden; }
+  .fields, .plate { position: absolute; left: calc(2 * var(--u)); top: calc(2 * var(--u)); display: grid; grid-template-columns: repeat(var(--columns), var(--fw)); grid-template-rows: repeat(var(--rows), var(--fh)); gap: var(--u); }
+  .fields i { background: var(--tint); visibility: hidden; }
+  :root[data-show-fields] .fields i { visibility: visible; }
+  :root[data-show-fields] .picture img { opacity: 0.85; }
+
+  .piece { margin: 0; min-width: 0; min-height: 0; }
+  /* A picture fills its fields to their edges, so pictures side by side end on one line. */
+  .picture { position: relative; }
+  .picture img { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--ds-fill-hover, #eee); }
+  /* Its caption stands on the square below the fields, in the gap between rows or the margin, on its sixteen. */
+  .picture figcaption { position: absolute; inset: 100% 0 auto 0; height: var(--u); box-sizing: border-box; padding-top: calc(4px * var(--sf)); line-height: calc(16px * var(--sf)); font-size: var(--ds-type-size-small); color: var(--ds-title-color); white-space: nowrap; overflow: hidden; }
+  /* Bleeding to the window's right edge and its foot, past the margins beyond the fields. */
+  .picture[data-bleed='right'], .picture[data-bleed='both'] { margin-inline-end: calc(-1 * var(--right) * var(--u)); }
+  .picture[data-bleed='bottom'], .picture[data-bleed='both'] { margin-block-end: calc(-1 * var(--bottom) * var(--u)); }
+
+  .words { display: flex; flex-direction: column; gap: var(--u); overflow: hidden; }
+  .words h2 { margin: 0; font-family: var(--typeface-medium, inherit); font-weight: inherit; font-size: var(--ds-type-size-display); line-height: calc(2 * var(--u)); }
+  .words p { margin: 0; max-width: calc(16 * var(--u)); }
+  .words .small { font-size: var(--ds-type-size-small); color: var(--ds-title-color); }
+  .words.accent { background: var(--accent); color: var(--black, #000); padding: var(--u); }
+  .words.accent h2 { font-size: var(--ds-type-size-display); }
+  .words.accent .small { color: inherit; }
+
+  /* A phone keeps its fourteen squares: the pieces one under another, pictures twelve squares wide. */
+  #page[data-phone] { height: auto; overflow: visible; padding: calc(2 * var(--u)) var(--u) var(--u); }
+  #page[data-phone] .fields { display: none; }
+  #page[data-phone] .plate { position: static; display: flex; flex-direction: column; gap: var(--u); }
+  #page[data-phone] .piece { grid-area: auto !important; margin: 0 !important; }
+  #page[data-phone] .picture { height: calc(9 * var(--u)); margin-block-end: var(--u) !important; }
+  body[data-flow] .bar { position: static; height: auto; padding: var(--ds-grid-top, 0px) var(--u) 0; flex-wrap: wrap; justify-content: flex-start; }
+  body[data-flow] .bar ds-tabs { flex: 1 1 100%; min-width: 0; }
+  body[data-flow] .end { flex-wrap: wrap; }
+  :root[data-mobile] .size { display: none; }
+</style>
