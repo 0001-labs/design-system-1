@@ -1141,7 +1141,8 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
  * on a `<span>` inside draws a button face among the words.
  *
  * The same native input directly inside a `label.ds-button` is the file
- * picker's button: the button's face, one square high.
+ * picker's button: the button's face, one control high like every button,
+ * standing at the foot of its square beside them.
  */
 
 .ds-drop {
@@ -1181,7 +1182,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
 }
 
 label.ds-button:has(> input[type="file"]) {
-  --ds-button-height: var(--ds-row-height);
   position: relative;
   overflow: hidden;
 }
@@ -1225,4 +1225,13 @@ label.ds-button:has(> input[type="file"]:disabled) {
 
 :is(.ds-drop, label.ds-button) > input[type="file"]:disabled {
   cursor: default;
+}
+
+/*
+ * Every native piece above that sets a display hides with the `hidden`
+ * attribute, as every element does: an author's display would otherwise win
+ * over the browser's own `[hidden]` rule and leave the piece on the page.
+ */
+:is(.ds-button, .ds-input, .ds-checkbox, .ds-radio, .ds-switch, .ds-range, .ds-tabs, .ds-menu, .ds-menu__item, .ds-menu__indicator, .ds-field, .ds-field__label, .ds-field__hint, .ds-field__error, .ds-avatar, .ds-badge, .ds-badge__label, .ds-icon, .ds-flag, .ds-drop)[hidden] {
+  display: none;
 }

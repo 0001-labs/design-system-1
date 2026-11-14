@@ -398,3 +398,14 @@ beforeEach(async context => {
   const reason = await browserTimingReason(browser);
   if (reason) context.skip(reason);
 });
+
+test("a hidden native field leaves the page, and a native file picker's face stands one control high beside a button", async () => {
+  const page = pages.light;
+  await stage(page, '<div><label class="ds-field" hidden><span class="ds-field__label">Pitch</span><input class="ds-input"></label><div style="display: flex; align-items: flex-end; gap: 20px"><button class="ds-button ds-button--secondary">Play</button><label class="ds-button ds-button--secondary">Choose<input type="file"></label></div></div>');
+  const measured = await page.evaluate(() => {
+    const [button, picker] = [...document.querySelectorAll<HTMLElement>("#stage .ds-button")].map(element => element.getBoundingClientRect());
+    return { field: getComputedStyle(document.querySelector(".ds-field")!).display, button: [button!.top, button!.height], picker: [picker!.top, picker!.height] };
+  });
+  expect(measured.field).toBe("none");
+  expect(measured.picker).toEqual(measured.button);
+});

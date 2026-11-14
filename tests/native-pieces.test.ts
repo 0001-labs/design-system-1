@@ -84,7 +84,24 @@ test('a drop zone is the file picker’s area: eight squares, four compact, the 
   expect(input).toContain('inset: 0');
   expect(input).toContain('opacity: 0');
   expect(native('.ds-drop:has(> input:focus-visible),\n.ds-drop[data-dragging]:not(:has(> input:disabled)),\nlabel.ds-button:has(> input[type="file"]:focus-visible)')).toContain('outline: 2px solid var(--ds-focus-ring)');
-  expect(native('label.ds-button:has(> input[type="file"])')).toContain('--ds-button-height: var(--ds-row-height)');
+  // The file picker's face is one control high, as every button's: a row-high face stood 4px above its neighbours.
+  expect(native('label.ds-button:has(> input[type="file"])')).not.toContain('--ds-button-height');
+});
+
+test('every native piece that sets a display hides with the hidden attribute', () => {
+  const css = controls.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@import[^;]+;/g, '');
+  const shown = new Set<string>();
+  for (const [, list, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/(^|[;\s])display\s*:\s*(?!none)/.test(body!)) continue;
+    for (const selector of list!.split(',')) {
+      const piece = selector.trim().match(/^(?:[a-z]*|:where\()(\.ds-[\w-]+)\)?$/)?.[1];
+      if (piece) shown.add(piece);
+    }
+  }
+  const hidden = controls.match(/:is\(([^)]*)\)\[hidden\] \{\n {2}display: none;/)?.[1]?.split(',').map(piece => piece.trim());
+  expect(hidden).toBeDefined();
+  expect([...shown].filter(piece => !hidden!.includes(piece))).toEqual([]);
+  expect(shown).toContain('.ds-field');
 });
 
 test('the pieces scale with the surface: every length is a token, a square count or scaled', () => {
