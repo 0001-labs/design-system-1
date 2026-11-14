@@ -1,0 +1,245 @@
+---
+// After a children's picture book: a spread open on the table, the picture on the left and the words
+// on the right. The birds are circles centred on the squares' corners, every radius a whole number
+// of squares, so the drawing is built from the grid. The corner turns the page.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const C = { red: '#ff5a4e', yellow: '#ffc93c', blue: '#3a66f2', pink: '#ff8fc6', mint: '#2fc79a', ink: '#24203a', paper: '#fffaf0' };
+
+// A round bird at (x, y) of radius r, all in squares: body, belly, wing, eye and beak.
+type Bird = { x: number; y: number; r: number; color: string; belly?: string; face?: 1 | -1; sing?: boolean; sleep?: boolean; flap?: boolean };
+function bird({ x, y, r, color, belly = C.paper, face = 1, sing = false, sleep = false, flap = false }: Bird) {
+  const f = face;
+  const eyeX = x + f * r * 0.38;
+  const eyeY = y - r * 0.3;
+  const beakX = x + f * r * 0.92;
+  const beak = sing
+    ? `<path d="M ${beakX} ${eyeY + r * 0.12} l ${f * r * 0.55} ${-r * 0.22} l ${-f * r * 0.1} ${r * 0.26} Z M ${beakX} ${eyeY + r * 0.22} l ${f * r * 0.5} ${r * 0.2} l ${-f * r * 0.5} ${r * 0.06} Z" fill="${C.yellow === color ? C.red : C.yellow}" />`
+    : `<path d="M ${beakX} ${eyeY + r * 0.05} l ${f * r * 0.5} ${r * 0.15} l ${-f * r * 0.5} ${r * 0.18} Z" fill="${C.yellow === color ? C.red : C.yellow}" />`;
+  const eye = sleep
+    ? `<path d="M ${eyeX - r * 0.14} ${eyeY} q ${r * 0.14} ${r * 0.14} ${r * 0.28} 0" stroke="${C.ink}" stroke-width="${r * 0.07}" fill="none" stroke-linecap="round" />`
+    : `<circle cx="${eyeX}" cy="${eyeY}" r="${r * 0.2}" fill="#fff" /><circle cx="${eyeX + f * r * 0.06}" cy="${eyeY}" r="${r * 0.11}" fill="${C.ink}" />`;
+  const wing = flap
+    ? `<path d="M ${x - f * r * 0.1} ${y - r * 0.1} q ${-f * r * 0.9} ${-r * 1.3} ${-f * r * 1.4} ${-r * 0.5} q ${f * r * 0.5} ${r * 0.6} ${f * r * 1.4} ${r * 0.7} Z" fill="${color}" style="filter: brightness(0.85)" />`
+    : `<path d="M ${x - f * r * 0.55} ${y - r * 0.05} a ${r * 0.55} ${r * 0.55} 0 0 0 ${f * r * 0.9} ${r * 0.45} Z" fill="${color}" style="filter: brightness(0.82)" />`;
+  return `<g>
+    <path d="M ${x - f * r * 0.85} ${y - r * 0.1} l ${-f * r * 0.6} ${-r * 0.5} l ${f * r * 0.1} ${r * 0.8} Z" fill="${color}" style="filter: brightness(0.8)" />
+    <circle cx="${x}" cy="${y}" r="${r}" fill="${color}" />
+    <circle cx="${x + f * r * 0.2}" cy="${y + r * 0.35}" r="${r * 0.55}" fill="${belly}" />
+    ${wing}${eye}${beak}
+    <circle cx="${eyeX + f * r * 0.1}" cy="${eyeY + r * 0.4}" r="${r * 0.12}" fill="${C.pink}" opacity="0.7" />
+  </g>`;
+}
+const legs = (x: number, y: number, r: number) => `<path d="M ${x - r * 0.25} ${y + r * 0.9} v ${r * 0.35} M ${x + r * 0.25} ${y + r * 0.9} v ${r * 0.35}" stroke="${C.ink}" stroke-width="0.12" stroke-linecap="round" />`;
+const notes = (x: number, y: number) => `<g fill="${C.ink}"><circle cx="${x}" cy="${y}" r="0.4" /><path d="M ${x + 0.35} ${y} v -2 l 1 0.4" stroke="${C.ink}" stroke-width="0.14" fill="none" /><circle cx="${x + 2}" cy="${y - 1.4}" r="0.4" /><path d="M ${x + 2.35} ${y - 1.4} v -2" stroke="${C.ink}" stroke-width="0.14" /></g>`;
+const sock = (x: number, y: number, color: string, turn = 0) => `<path transform="rotate(${turn} ${x} ${y})" d="M ${x} ${y} h 2 v 3 q 0 1 1 1 h 1 a 1 1 0 0 1 0 2 h -2 q -2 0 -2 -2 Z" fill="${color}" /><rect transform="rotate(${turn} ${x} ${y})" x="${x}" y="${y}" width="2" height="0.6" fill="#fff" opacity="0.6" />`;
+
+const star = (x: number, y: number) => `<circle cx="${x}" cy="${y}" r="0.25" fill="#fff6c9" />`;
+const STARS = [[4, -30], [9, -25], [15, -31], [28, -20], [6, -18], [18, -22]].map(([x, y]) => star(x, y)).join('');
+
+// Each picture is drawn on a page 30 squares wide, its foot on the page's foot (y = 0, up is negative).
+const LINE = -18;
+const spreads = [
+  {
+    sky: '#9ad8ff',
+    picture: `
+      <circle cx="24" cy="-29" r="3" fill="${C.yellow}" />
+      <rect x="-20" y="-6" width="70" height="20" fill="#7bd389" />
+      <circle cx="4" cy="-4" r="6" fill="#67c47a" /><circle cx="27" cy="-3" r="5" fill="#67c47a" />
+      <path d="M -1 ${LINE} q 16 2 32 0" stroke="${C.ink}" stroke-width="0.12" fill="none" />
+      <rect x="-2" y="${LINE - 1}" width="1" height="${-LINE - 4}" fill="#b07a4f" /><rect x="31" y="${LINE - 1}" width="1" height="${-LINE - 4}" fill="#b07a4f" />
+      ${[{ x: 4, r: 2, color: C.red }, { x: 10, r: 2, color: C.blue }, { x: 16, r: 2, color: C.mint }, { x: 22, r: 2, color: C.pink }].map(b => bird({ ...b, y: LINE - 2 }) + legs(b.x, LINE - 2, 2)).join('')}
+      ${bird({ x: 27, y: LINE - 1, r: 1, color: C.yellow, sing: true })}
+      ${notes(26, LINE - 4)}
+    `,
+    words: ['Five round birds sat on Granny Moss’s washing line.', 'Pip was the smallest. Pip had the biggest song.'],
+  },
+  {
+    sky: '#c9b8ff',
+    picture: `
+      <rect x="-20" y="-6" width="70" height="20" fill="#7bd389" />
+      <path d="M -2 -24 q 8 -3 14 0 q 6 3 14 0 M -2 -20 q 6 -2 12 0" stroke="#fff" stroke-width="0.5" fill="none" stroke-linecap="round" />
+      ${sock(6, -27, C.red, -25)}${sock(17, -30, C.blue, 30)}${sock(23, -15, C.pink, -60)}
+      ${bird({ x: 8, y: -15, r: 2, color: C.mint, flap: true })}
+      ${bird({ x: 14, y: -10, r: 2, color: C.red, flap: true, face: -1 })}
+      ${bird({ x: 21, y: -22, r: 2, color: C.blue, flap: true })}
+      ${bird({ x: 4, y: -9, r: 2, color: C.pink, flap: true })}
+      ${bird({ x: 26, y: -8, r: 1, color: C.yellow, sing: true, face: -1 })}
+    `,
+    words: ['Then the wind came huffing over the hill.', 'Whoosh! Off flew the socks, and off flew the birds.'],
+  },
+  {
+    sky: '#283a8f',
+    picture: `
+      <circle cx="23" cy="-28" r="3" fill="#fff6c9" /><circle cx="24" cy="-29" r="3" fill="#283a8f" />
+      ${STARS}
+      <rect x="-20" y="-6" width="70" height="20" fill="#3f6b55" />
+      <path d="M 4 -6 a 11 11 0 0 1 22 0 Z" fill="#ff9a3c" /><path d="M 7 -14 a 9 9 0 0 1 16 0" stroke="#ffb866" stroke-width="0.5" fill="none" stroke-dasharray="0.6 0.6" />
+      <path d="M 4 -6 h 22 v 2 h -22 Z" fill="${C.yellow}" />
+      <circle cx="15" cy="-17" r="1" fill="${C.yellow}" />
+      ${[{ x: 8, color: C.mint }, { x: 12, color: C.blue }, { x: 18, color: C.pink }, { x: 22, color: C.red }].map(b => bird({ x: b.x, y: -9, r: 2, color: b.color, sleep: true })).join('')}
+      ${bird({ x: 15, y: -12, r: 1, color: C.yellow, sleep: true })}
+    `,
+    words: ['That night, five round birds slept in a row,', 'warm as toast, in Granny Moss’s woolly hat.'],
+  },
+];
+---
+<AlignedStudy slug="picture-book" theme="light" fonts="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap">
+  <main class="stage book-table">
+    <article class="book" id="book" data-spread="0" aria-roledescription="picture book" aria-label="Pip and the Washing Line">
+      {spreads.map((s, i) => (
+        <section class="spread" data-index={i} hidden={i !== 0} aria-label={`Pages ${i * 2 + 4} and ${i * 2 + 5}`}>
+          <div class="page left">
+            <svg class="art" viewBox="0 -36 30 36" preserveAspectRatio="xMidYMax meet" role="img" aria-label={s.words.join(' ')} style={`background: ${s.sky}`}>
+              <rect x="-40" y="-80" width="110" height="160" fill={s.sky} />
+              <Fragment set:html={s.picture} />
+            </svg>
+            <span class="folio">{i * 2 + 4}</span>
+          </div>
+          <div class="page right">
+            <p class="words">{s.words.map(line => <span>{line}</span>)}</p>
+            <span class="folio">{i * 2 + 5}</span>
+          </div>
+        </section>
+      ))}
+      <button type="button" class="corner" id="turn" aria-label="Turn the page"><span>Turn</span></button>
+    </article>
+    <p class="cover-note"><b>Pip and the Washing Line</b> by Hettie Amberley, pictures by Sol Ferrante</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const book = document.getElementById('book') as HTMLElement;
+  const spreads = [...book.querySelectorAll<HTMLElement>('.spread')];
+  const turn = document.getElementById('turn') as HTMLButtonElement;
+  let at = 0;
+  let busy = false;
+
+  // One square per unit: the picture's viewBox is the page in squares, its foot on the page's foot.
+  onSquares(({ unit, narrow }) => {
+    const box = book.querySelector('.spread:not([hidden]) .left')!.getBoundingClientRect();
+    const w = Math.round(box.width / unit) || 30;
+    const h = Math.round(box.height / unit) || 36;
+    book.querySelectorAll<SVGSVGElement>('.art').forEach(svg => {
+      svg.setAttribute('viewBox', narrow ? '0 -36 30 36' : `${-Math.floor((w - 30) / 2)} ${-h} ${w} ${h}`);
+    });
+  });
+
+  // The right page lifts at the gutter and falls on the left, showing the next picture on its back.
+  turn.addEventListener('click', () => {
+    if (busy) return;
+    const next = (at + 1) % spreads.length;
+    const show = () => {
+      spreads[at].hidden = true;
+      spreads[next].hidden = false;
+      at = next;
+      book.dataset.spread = String(at);
+    };
+    if (reducedMotion() || document.documentElement.hasAttribute('data-narrow')) { show(); return; }
+    busy = true;
+    const leaf = document.createElement('div');
+    leaf.className = 'leaf';
+    const front = spreads[at].querySelector('.right')!.cloneNode(true) as HTMLElement;
+    const back = spreads[next].querySelector('.left')!.cloneNode(true) as HTMLElement;
+    front.classList.add('face', 'front');
+    back.classList.add('face', 'back');
+    leaf.append(front, back);
+    book.append(leaf);
+    // Under the lifting leaf, the next spread's right page is already there.
+    spreads[next].hidden = false;
+    spreads[next].classList.add('under');
+    const animation = leaf.animate(
+      [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }],
+      { duration: 900, easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)' },
+    );
+    animation.onfinish = () => {
+      spreads[next].classList.remove('under');
+      spreads[next].hidden = true;
+      show();
+      leaf.remove();
+      busy = false;
+    };
+  });
+</script>
+
+<style is:global>
+  html { background: #3d5afe; }
+  .book-table {
+    --table: #3d5afe;
+    --paper: #fffaf0;
+    --ink: #24203a;
+    background: var(--table) radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 0 calc(var(--u) * 0.15), transparent calc(var(--u) * 0.15 + 0.5px)) 0 0 / calc(2 * var(--u)) calc(2 * var(--u));
+    color: var(--ink);
+    font-family: Fredoka, 'Arial Rounded MT Bold', 'Avenir Next', sans-serif;
+  }
+
+  /* The open book: two pages of whole squares meeting at the gutter. */
+  .book { position: relative; grid-column: 3 / -3; grid-row: 3 / -4; perspective: calc(200 * var(--u)); }
+  .book::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--u) * 0.25) calc(var(--u) * -0.25) calc(var(--u) * -0.5);
+    background: repeating-linear-gradient(0deg, #e9e2cf 0 1px, var(--paper) 1px 3px);
+    border-radius: calc(var(--u) * 0.3);
+    box-shadow: 0 calc(var(--u) * 0.5) calc(var(--u)) rgba(10, 20, 90, 0.35);
+  }
+  .spread { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+  .spread[hidden] { display: none; }
+  .spread.under { z-index: 0; }
+  .spread.under .left { visibility: hidden; }
+  .page { position: relative; background: var(--paper); overflow: hidden; }
+  .page.left { border-radius: calc(var(--u) * 0.3) 0 0 calc(var(--u) * 0.3); }
+  .page.right { border-radius: 0 calc(var(--u) * 0.3) calc(var(--u) * 0.3) 0; display: grid; align-content: center; padding: calc(2 * var(--u)) calc(3 * var(--u)); box-sizing: border-box; }
+  .page.left::after, .page.right::before { content: ''; position: absolute; top: 0; bottom: 0; width: calc(2 * var(--u)); pointer-events: none; }
+  .page.left::after { right: 0; background: linear-gradient(90deg, transparent, rgba(36, 32, 58, 0.18)); }
+  .page.right::before { left: 0; background: linear-gradient(270deg, transparent, rgba(36, 32, 58, 0.14)); }
+  .art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .words { margin: 0; font-weight: 600; font-size: calc(40px * var(--sf)); line-height: calc(3 * var(--u)); text-wrap: pretty; }
+  .words span { display: block; }
+  .words span + span { margin-top: calc(2 * var(--u)); color: #e2453a; }
+  .folio { position: absolute; bottom: var(--u); font-size: calc(14px * var(--sf)); line-height: var(--u); color: rgba(36, 32, 58, 0.55); }
+  .left .folio { left: var(--u); color: rgba(255, 255, 255, 0.85); }
+  .right .folio { right: var(--u); }
+  .book[data-spread='2'] .left .folio { color: #fff6c9; }
+
+  /* The corner: a folded square at the foot of the right page. */
+  .corner {
+    all: unset;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: calc(4 * var(--u));
+    height: calc(4 * var(--u));
+    z-index: 3;
+    cursor: pointer;
+    background: linear-gradient(135deg, transparent 50%, #efe6cc 50%, #fff 72%, #e4d9b8);
+    border-radius: 0 0 calc(var(--u) * 0.3) 0;
+    filter: drop-shadow(calc(var(--u) * -0.15) calc(var(--u) * -0.15) calc(var(--u) * 0.2) rgba(36, 32, 58, 0.25));
+    transition: width 200ms ease, height 200ms ease;
+  }
+  .corner span { position: absolute; right: calc(var(--u) * 0.4); bottom: calc(var(--u) * 0.3); font-size: calc(13px * var(--sf)); color: #e2453a; font-weight: 600; }
+  .corner:hover { width: calc(5 * var(--u)); height: calc(5 * var(--u)); }
+  .corner:focus-visible { outline: calc(3px * var(--sf)) solid #ffc93c; outline-offset: calc(2px * var(--sf)); }
+
+  .leaf { position: absolute; top: 0; bottom: 0; left: 50%; width: 50%; z-index: 2; transform-origin: left center; transform-style: preserve-3d; }
+  .leaf .face { position: absolute; inset: 0; backface-visibility: hidden; }
+  .leaf .back { transform: rotateY(180deg); }
+
+  .cover-note { grid-column: 3 / -14; grid-row: -3 / span 1; margin: 0; color: #fff; font-size: calc(14px * var(--sf)); line-height: var(--u); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cover-note b { font-weight: 600; }
+
+  /* A narrow window: the picture above the words, the book one page wide. */
+  :root[data-narrow] .book-table { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .book { grid-column: 2 / -2; grid-row: 2 / span 28; perspective: none; }
+  :root[data-narrow] .spread { grid-template-columns: 1fr; grid-template-rows: calc(14 * var(--u)) 1fr; }
+  :root[data-narrow] .page.left { border-radius: calc(var(--u) * 0.3) calc(var(--u) * 0.3) 0 0; }
+  :root[data-narrow] .page.right { border-radius: 0 0 calc(var(--u) * 0.3) calc(var(--u) * 0.3); padding: var(--u); align-content: start; }
+  :root[data-narrow] .page.left::after, :root[data-narrow] .page.right::before { display: none; }
+  :root[data-narrow] .words { font-size: calc(21px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .words span + span { margin-top: var(--u); }
+  :root[data-narrow] .corner { width: calc(3 * var(--u)); height: calc(3 * var(--u)); }
+  :root[data-narrow] .cover-note { grid-column: 2 / -2; grid-row: 31 / span 2; white-space: normal; }
+</style>

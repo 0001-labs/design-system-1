@@ -1,0 +1,281 @@
+---
+// After an architect's blueprint: white lines on Prussian blue, a ground floor where every room is
+// a whole number of squares and a square is half a metre, walls, door swings, windows, dimension
+// strings, a north point and the title block. Pointing at a room gives its area.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const M = 0.5; // metres to a square
+type Room = { id: string; name: string; x: number; y: number; w: number; h: number; lx?: number };
+const ROOMS: Room[] = [
+  { id: 'living', name: 'Living room', x: 0, y: 0, w: 16, h: 14 },
+  { id: 'kitchen', name: 'Kitchen', x: 16, y: 0, w: 10, h: 10 },
+  { id: 'utility', name: 'Utility', x: 16, y: 10, w: 10, h: 4 },
+  { id: 'bed1', name: 'Bedroom 1', x: 26, y: 0, w: 10, h: 12 },
+  { id: 'bath', name: 'Bath', x: 26, y: 12, w: 10, h: 5 },
+  { id: 'hall', name: 'Hall', x: 0, y: 14, w: 26, h: 3 },
+  { id: 'study', name: 'Study', x: 0, y: 17, w: 10, h: 7 },
+  { id: 'bed2', name: 'Bedroom 2', x: 10, y: 17, w: 12, h: 7, lx: 19 },
+  { id: 'bed3', name: 'Bedroom 3', x: 22, y: 17, w: 14, h: 7, lx: 25.5 },
+];
+const area = (r: Room) => r.w * M * r.h * M;
+const fmt = (n: number) => n.toFixed(1);
+const W = 36;
+const H = 24;
+
+// Doors: a gap in the wall, a leaf and its swing. (x, y) is the hinge; dir is where the leaf lies.
+type Door = { x: number; y: number; along: 'h' | 'v'; sx: 1 | -1; sy: 1 | -1; size?: number };
+const DOORS: Door[] = [
+  { x: 0, y: 14, along: 'v', sx: 1, sy: 1, size: 3 },    // front door into the hall
+  { x: 12, y: 14, along: 'h', sx: 1, sy: -1 },           // hall to living room
+  { x: 19, y: 14, along: 'h', sx: 1, sy: -1 },           // hall to utility
+  { x: 26, y: 15, along: 'v', sx: 1, sy: 1 },            // hall to bath
+  { x: 4, y: 17, along: 'h', sx: 1, sy: 1 },             // hall to study
+  { x: 13, y: 17, along: 'h', sx: 1, sy: 1 },            // hall to bedroom 2
+  { x: 23, y: 17, along: 'h', sx: 1, sy: 1 },            // hall to bedroom 3
+];
+function door(d: Door) {
+  const s = d.size ?? 2;
+  if (d.along === 'h') {
+    const x2 = d.x + d.sx * s;
+    return '<rect x="' + Math.min(d.x, x2) + '" y="' + (d.y - 0.2) + '" width="' + s + '" height="0.4" class="cut" />'
+      + '<line x1="' + d.x + '" y1="' + d.y + '" x2="' + d.x + '" y2="' + (d.y + d.sy * s) + '" class="leaf" />'
+      + '<path d="M ' + d.x + ' ' + (d.y + d.sy * s) + ' A ' + s + ' ' + s + ' 0 0 ' + (d.sx * d.sy > 0 ? 0 : 1) + ' ' + x2 + ' ' + d.y + '" class="swing" />';
+  }
+  const y2 = d.y + d.sy * s;
+  return '<rect x="' + (d.x - 0.35) + '" y="' + Math.min(d.y, y2) + '" width="0.7" height="' + s + '" class="cut" />'
+    + '<line x1="' + d.x + '" y1="' + d.y + '" x2="' + (d.x + d.sx * s) + '" y2="' + d.y + '" class="leaf" />'
+    + '<path d="M ' + (d.x + d.sx * s) + ' ' + d.y + ' A ' + s + ' ' + s + ' 0 0 ' + (d.sx * d.sy > 0 ? 1 : 0) + ' ' + d.x + ' ' + y2 + '" class="swing" />';
+}
+
+// Windows in the outer wall: a gap with three thin lines.
+type Win = { x: number; y: number; len: number; along: 'h' | 'v' };
+const WINDOWS: Win[] = [
+  { x: 3, y: 0, len: 4, along: 'h' }, { x: 9, y: 0, len: 4, along: 'h' }, { x: 19, y: 0, len: 4, along: 'h' }, { x: 29, y: 0, len: 4, along: 'h' },
+  { x: 36, y: 3, len: 4, along: 'v' }, { x: 36, y: 13, len: 2, along: 'v' }, { x: 36, y: 19, len: 3, along: 'v' },
+  { x: 3, y: 24, len: 3, along: 'h' }, { x: 14, y: 24, len: 4, along: 'h' }, { x: 27, y: 24, len: 4, along: 'h' },
+  { x: 0, y: 4, len: 6, along: 'v' }, { x: 0, y: 19, len: 3, along: 'v' },
+];
+function win(w: Win) {
+  const t = 0.6;
+  if (w.along === 'h') {
+    const y = w.y === 0 ? -t : w.y;
+    return '<rect x="' + w.x + '" y="' + y + '" width="' + w.len + '" height="' + t + '" class="cut" />'
+      + [0.15, 0.3, 0.45].map(k => '<line x1="' + w.x + '" x2="' + (w.x + w.len) + '" y1="' + (y + k) + '" y2="' + (y + k) + '" class="glass" />').join('');
+  }
+  const x = w.x === 0 ? -t : w.x;
+  return '<rect x="' + x + '" y="' + w.y + '" width="' + t + '" height="' + w.len + '" class="cut" />'
+    + [0.15, 0.3, 0.45].map(k => '<line y1="' + w.y + '" y2="' + (w.y + w.len) + '" x1="' + (x + k) + '" x2="' + (x + k) + '" class="glass" />').join('');
+}
+
+// A dimension string: ticks at each mark, the length between in metres.
+function dims(marks: number[], at: number, along: 'h' | 'v') {
+  let out = '';
+  const line = (a: number, b: number) => along === 'h'
+    ? '<line x1="' + a + '" x2="' + b + '" y1="' + at + '" y2="' + at + '" class="dim" />'
+    : '<line y1="' + a + '" y2="' + b + '" x1="' + at + '" x2="' + at + '" class="dim" />';
+  out += line(marks[0], marks[marks.length - 1]);
+  marks.forEach(m => {
+    out += along === 'h'
+      ? '<line x1="' + (m - 0.3) + '" x2="' + (m + 0.3) + '" y1="' + (at + 0.3) + '" y2="' + (at - 0.3) + '" class="tick" /><line x1="' + m + '" x2="' + m + '" y1="' + (at - 0.6) + '" y2="' + (at + 0.6) + '" class="dim" />'
+      : '<line y1="' + (m + 0.3) + '" y2="' + (m - 0.3) + '" x1="' + (at - 0.3) + '" x2="' + (at + 0.3) + '" class="tick" /><line y1="' + m + '" y2="' + m + '" x1="' + (at - 0.6) + '" x2="' + (at + 0.6) + '" class="dim" />';
+  });
+  for (let i = 0; i < marks.length - 1; i++) {
+    const mid = (marks[i] + marks[i + 1]) / 2;
+    const text = ((marks[i + 1] - marks[i]) * M).toFixed(2);
+    out += along === 'h'
+      ? '<text x="' + mid + '" y="' + (at - 0.35) + '" class="dimtext">' + text + '</text>'
+      : '<text x="' + (at - 0.35) + '" y="' + mid + '" class="dimtext" transform="rotate(-90 ' + (at - 0.35) + ' ' + mid + ')">' + text + '</text>';
+  }
+  return out;
+}
+
+// Furniture, lightly: beds, a sofa, the table, the counter, the bath.
+const FURNITURE = [
+  '<rect x="2" y="2" width="8" height="3" rx="0.6" class="furn" /><rect x="2" y="2" width="1.2" height="3" class="furn" /><rect x="8.8" y="2" width="1.2" height="3" class="furn" />',
+  '<rect x="4" y="10" width="7" height="2.4" class="furn" />' + [5, 7.5, 10].map(x => '<circle cx="' + x + '" cy="9.3" r="0.55" class="furn" /><circle cx="' + x + '" cy="13.1" r="0.55" class="furn" />').join(''),
+  '<rect x="16.6" y="0.6" width="8.8" height="1.4" class="furn" /><rect x="24" y="0.6" width="1.4" height="7" class="furn" /><circle cx="18.5" cy="1.3" r="0.4" class="furn" /><circle cx="20" cy="1.3" r="0.4" class="furn" /><rect x="18.5" y="7" width="3" height="1.6" rx="0.3" class="furn" />',
+  '<rect x="28" y="2" width="6" height="8" rx="0.3" class="furn" /><rect x="28.4" y="2.4" width="2.4" height="1.4" rx="0.3" class="furn" /><rect x="31.2" y="2.4" width="2.4" height="1.4" rx="0.3" class="furn" />',
+  '<rect x="31" y="12.6" width="4.4" height="2" rx="0.8" class="furn" /><ellipse cx="28.2" cy="16" rx="0.6" ry="0.5" class="furn" /><rect x="29.6" y="15.6" width="1.4" height="0.8" class="furn" />',
+  '<rect x="11" y="18.6" width="5" height="4.4" rx="0.3" class="furn" /><rect x="11.4" y="19" width="1.4" height="1.6" rx="0.3" class="furn" /><rect x="11.4" y="21" width="1.4" height="1.6" rx="0.3" class="furn" />',
+  '<rect x="29" y="18.6" width="6" height="4.4" rx="0.3" class="furn" /><rect x="33.2" y="19" width="1.4" height="1.6" rx="0.3" class="furn" /><rect x="33.2" y="21" width="1.4" height="1.6" rx="0.3" class="furn" />',
+  '<rect x="0.6" y="18" width="2" height="5" class="furn" /><circle cx="3.1" cy="20.5" r="0.6" class="furn" />',
+].join('');
+
+const total = ROOMS.reduce((s, r) => s + area(r), 0);
+const PLAN = [
+  '<rect x="-4" y="-9" width="44" height="37" class="sheet-hit" />',
+  // The terrace outside the living room, dashed.
+  '<rect x="0" y="-6" width="16" height="5.4" class="terrace" />',
+  '<text x="8" y="-3" class="label small">Terrace, larch boards</text>',
+  ROOMS.map(r => '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h + '" class="room" data-room="' + r.id + '" />').join(''),
+  '<rect x="-0.3" y="-0.3" width="' + (W + 0.6) + '" height="' + (H + 0.6) + '" class="outer" />',
+  FURNITURE,
+  WINDOWS.map(win).join(''),
+  DOORS.map(door).join(''),
+  ROOMS.map(r => '<text x="' + (r.lx ?? r.x + r.w / 2) + '" y="' + (r.y + r.h / 2 + (r.h > 4 ? 0 : 0.25)) + '" class="label" data-room="' + r.id + '">' + r.name + '</text>'
+    + (r.h > 4 ? '<text x="' + (r.lx ?? r.x + r.w / 2) + '" y="' + (r.y + r.h / 2 + 1) + '" class="label small area" data-room="' + r.id + '">' + fmt(area(r)) + ' m²</text>' : '')).join(''),
+  dims([0, 16, 26, 36], -7.5, 'h'),
+  dims([0, 36], 26.5, 'h'),
+  dims([0, 14, 17, 24], -2.5, 'v'),
+  dims([0, 12, 17, 24], 38.5, 'v'),
+  '<path d="M -1.6 15.5 h 1.2 M -1.2 15 l 0.4 0.5 l -0.4 0.5" class="dim" />',
+].join('');
+---
+<AlignedStudy slug="blueprint" theme="dark" fonts="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap">
+  <main class="stage blueprint">
+    <svg class="plan" id="plan" viewBox="-4 -9 44 37" role="img" aria-label="Ground floor plan: nine rooms, 216 square metres">
+      <Fragment set:html={PLAN} />
+    </svg>
+
+    <section class="schedule" aria-labelledby="schedule-title">
+      <h2 id="schedule-title">Room schedule</h2>
+      <table>
+        <tbody>
+          {ROOMS.map(r => (
+            <tr data-room={r.id} tabindex="0">
+              <td>{r.name}</td>
+              <td class="size">{r.w * M} × {r.h * M}</td>
+              <td class="m2">{fmt(area(r))}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot><tr><td>Gross internal</td><td></td><td class="m2">{fmt(total)}</td></tr></tfoot>
+      </table>
+      <p class="readout" id="readout" aria-live="polite">Point at a room for its area.</p>
+    </section>
+
+    <svg class="north" viewBox="-3 -3 6 6" aria-label="North point">
+      <circle r="2.4" class="ring" />
+      <path d="M 0 -2.8 L 0.9 1.2 L 0 0.5 L -0.9 1.2 Z" class="arrow" />
+      <text y="-1.2" x="0" class="n">N</text>
+    </svg>
+
+    <section class="titleblock" aria-label="Title block">
+      <div class="project"><span>Project</span><b>House on Pine Row, Lindby</b></div>
+      <div class="drawing"><span>Drawing</span><b>Ground floor plan</b></div>
+      <div><span>Scale</span><b>1:100 at A3</b></div>
+      <div><span>Drawing no.</span><b>A-101 C</b></div>
+      <div><span>Date</span><b>14.11.2026</b></div>
+      <div><span>Drawn, checked</span><b>OB, LK</b></div>
+      <div class="scalebar" aria-label="Scale bar, five metres in half-metre squares">
+        {Array.from({ length: 10 }, (_, i) => <i class:list={{ on: i % 2 === 0 }}></i>)}
+        <span class="s0">0</span><span class="s5">5 m</span>
+      </div>
+      <div class="office"><b>Ottilie Brandt Architects</b><span>Quayside 9, Lindby</span></div>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  const plan = document.getElementById('plan') as unknown as SVGSVGElement;
+  const readout = document.getElementById('readout') as HTMLElement;
+  const rows = [...document.querySelectorAll<HTMLTableRowElement>('.schedule tbody tr')];
+  const rooms = new Map(rows.map(r => [r.dataset.room!, r]));
+
+  function light(id: string | null) {
+    plan.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('lit', el.getAttribute('data-room') === id));
+    rows.forEach(r => r.classList.toggle('lit', r.dataset.room === id));
+    const row = id ? rooms.get(id) : null;
+    readout.textContent = row
+      ? `${row.cells[0].textContent}: ${row.cells[2].textContent} m², ${row.cells[1].textContent} m`
+      : 'Point at a room for its area.';
+  }
+  plan.addEventListener('pointerover', event => {
+    const id = (event.target as Element).getAttribute?.('data-room');
+    light(id ?? null);
+  });
+  plan.addEventListener('pointerleave', () => light(null));
+  rows.forEach(r => {
+    r.addEventListener('pointerenter', () => light(r.dataset.room!));
+    r.addEventListener('focus', () => light(r.dataset.room!));
+    r.addEventListener('pointerleave', () => light(null));
+    r.addEventListener('blur', () => light(null));
+  });
+</script>
+
+<style is:global>
+  html { background: #173a7a; }
+  .blueprint {
+    --blue: #173a7a;
+    --line: #f2f6ff;
+    --faint: rgba(230, 240, 255, 0.1);
+    --mid: rgba(230, 240, 255, 0.2);
+    color: var(--line);
+    background-color: var(--blue);
+    /* The blueprint's own grid: a square a half metre, a stronger line every five. */
+    background-image:
+      linear-gradient(var(--mid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--mid) 1px, transparent 1px),
+      linear-gradient(var(--faint) 1px, transparent 1px),
+      linear-gradient(90deg, var(--faint) 1px, transparent 1px);
+    background-size: calc(5 * var(--u)) calc(5 * var(--u)), calc(5 * var(--u)) calc(5 * var(--u)), var(--u) var(--u), var(--u) var(--u);
+    background-position: calc(2 * var(--u) - 0.5px) calc(2 * var(--u) - 0.5px);
+    font-family: 'Architects Daughter', 'Bradley Hand', 'Marker Felt', cursive;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* The plan: forty-four squares by thirty-seven, one viewBox unit a square. */
+  .plan { grid-column: 2 / span 44; grid-row: 2 / span 37; width: 100%; height: 100%; overflow: visible; }
+  .plan .sheet-hit { fill: transparent; }
+  .plan .room { fill: transparent; stroke: var(--line); stroke-width: 0.3; transition: fill 160ms ease; cursor: crosshair; }
+  .plan .room.lit { fill: rgba(255, 255, 255, 0.16); }
+  .plan .outer { fill: none; stroke: var(--line); stroke-width: 0.6; }
+  .plan .terrace { fill: none; stroke: var(--line); stroke-width: 0.08; stroke-dasharray: 0.4 0.3; }
+  .plan .cut { fill: var(--blue); }
+  .plan .glass { stroke: var(--line); stroke-width: 0.06; }
+  .plan .leaf { stroke: var(--line); stroke-width: 0.12; }
+  .plan .swing { fill: none; stroke: var(--line); stroke-width: 0.05; stroke-dasharray: 0.25 0.15; }
+  .plan .furn { fill: none; stroke: rgba(242, 246, 255, 0.6); stroke-width: 0.06; pointer-events: none; }
+  .plan .dim { stroke: var(--line); stroke-width: 0.05; fill: none; }
+  .plan .tick { stroke: var(--line); stroke-width: 0.12; }
+  .plan .dimtext { fill: var(--line); font-size: 0.75px; text-anchor: middle; font-family: 'Architects Daughter', 'Bradley Hand', cursive; }
+  .plan .label { fill: var(--line); font-size: 0.85px; text-anchor: middle; font-family: 'Architects Daughter', 'Bradley Hand', cursive; pointer-events: none; }
+  .plan .label.small { font-size: 0.65px; }
+  .plan .label.area { opacity: 0.7; }
+  .plan .label.lit { font-weight: bold; }
+  .plan .label.area.lit { opacity: 1; font-size: 0.9px; }
+
+  .schedule { grid-column: -18 / -2; grid-row: 3 / span 16; }
+  .schedule h2 { margin: 0; font: calc(20px * var(--sf)) / calc(2 * var(--u)) 'Architects Daughter', cursive; border-bottom: 1px solid var(--line); }
+  .schedule table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .schedule td { height: var(--u); padding: 0; white-space: nowrap; }
+  .schedule .size { opacity: 0.65; font-size: calc(12px * var(--sf)); }
+  .schedule .m2 { text-align: right; }
+  .schedule tbody tr { cursor: crosshair; }
+  .schedule tbody tr.lit { background: rgba(255, 255, 255, 0.16); }
+  .schedule tbody tr:focus-visible { outline: 1px dashed var(--line); outline-offset: -1px; }
+  .schedule tfoot td { border-top: 1px solid var(--line); }
+  .readout { margin: var(--u) 0 0; min-height: calc(2 * var(--u)); opacity: 0.9; }
+
+  .north { grid-column: -7 / span 4; grid-row: 20 / span 4; width: 100%; height: 100%; }
+  .north .ring { fill: none; stroke: var(--line); stroke-width: 0.08; }
+  .north .arrow { fill: var(--line); }
+  .north .n { fill: var(--blue); font-size: 0.9px; text-anchor: middle; font-family: 'Architects Daughter', cursive; dominant-baseline: middle; }
+
+  /* The title block: a ruled box of whole squares above the last row. */
+  .titleblock { grid-column: -18 / -2; grid-row: -14 / -2; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: calc(2 * var(--u)); border: 2px solid var(--line); box-sizing: border-box; }
+  .titleblock > div { display: grid; grid-template-rows: calc(var(--u) * 0.7) calc(var(--u) * 1.3); padding: 0 calc(var(--u) / 4); box-shadow: inset -1px -1px 0 var(--line); overflow: hidden; }
+  .titleblock span { font-size: calc(10px * var(--sf)); line-height: calc(var(--u) * 0.8); opacity: 0.75; }
+  .titleblock b { font-weight: normal; line-height: calc(var(--u) * 1.2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titleblock .project, .titleblock .drawing, .titleblock .office, .titleblock .scalebar { grid-column: 1 / -1; }
+  .titleblock .project b { font-size: calc(17px * var(--sf)); }
+  .titleblock .scalebar { position: relative; display: grid; grid-template-columns: repeat(10, var(--u)); grid-template-rows: var(--u); align-content: center; }
+  .scalebar i { height: calc(var(--u) / 2); border: 1px solid var(--line); box-sizing: border-box; align-self: center; }
+  .scalebar i.on { background: var(--line); }
+  .scalebar .s0, .scalebar .s5 { position: absolute; bottom: 0; font-size: calc(10px * var(--sf)); line-height: calc(var(--u) * 0.6); opacity: 1; }
+  .scalebar .s0 { left: calc(var(--u) / 4); }
+  .scalebar .s5 { left: calc(10.25 * var(--u)); }
+  .titleblock .office { grid-template-rows: var(--u) var(--u); align-content: center; }
+  .titleblock .office b { font-size: calc(15px * var(--sf)); line-height: var(--u); }
+  .titleblock .office span { line-height: var(--u); }
+
+  /* A narrow window: the plan scales to the width, the schedule and title block follow. */
+  :root[data-narrow] .blueprint { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .blueprint > * { grid-column: 1 / -1; grid-row: auto; }
+  :root[data-narrow] .plan { grid-row: 2 / span 12; height: auto; aspect-ratio: 44 / 37; }
+  :root[data-narrow] .schedule, :root[data-narrow] .titleblock { grid-column: 2 / -2; margin-top: var(--u); }
+  :root[data-narrow] .schedule { grid-row-start: 15; }
+  :root[data-narrow] .north { grid-column: 2 / span 3; grid-row-start: 16; margin-top: var(--u); height: calc(3 * var(--u)); }
+  :root[data-narrow] .titleblock { grid-row-start: 17; }
+</style>

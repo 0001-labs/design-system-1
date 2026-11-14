@@ -1,0 +1,327 @@
+---
+// After a farmer's almanack: the month as a dense table, a day to a square, with the moon's face
+// drawn in its own square every day; the tides at the bar as stacks of squares, two feet each;
+// sowing and fishing days and the old weather sayings, under a woodcut sun and moon.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const YEAR = 2026;
+const MONTH = 10; // November
+const DAYS = 30;
+const SYNODIC = 29.530588853;
+const LAT = 52.6; // Hollowmere, on the Wash
+const LON = 0.2;
+const rad = Math.PI / 180;
+const WEEK = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
+
+const NOTES: Record<number, string> = {
+  1: 'All Saints',
+  2: 'All Souls',
+  5: 'Gunpowder Plot, bonfires on the green',
+  8: 'Remembrance Sunday',
+  11: 'Martinmas, rents and hiring fairs due',
+  13: 'Leaves mostly down from the oaks',
+  17: 'Leonids, look north-east after midnight',
+  18: 'Pleiades due south at midnight',
+  22: 'Stir-up Sunday. Sun enters Sagittarius',
+  23: 'St Clement; days 1h 10m shorter',
+  25: 'St Catherine, Cattern cakes',
+  29: 'Advent Sunday',
+  30: 'St Andrew. Lay the hedges now',
+};
+
+const two = (n: number) => String(n).padStart(2, '0');
+const clock = (hours: number) => {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m === 60 ? `${h + 1} 00` : `${h} ${two(m)}`;
+};
+
+// The moon's age at noon, from a new moon of 6 January 2000, 18.14 GMT.
+const ageOf = (date: Date) => {
+  const days = (date.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5;
+  return ((days % SYNODIC) + SYNODIC) % SYNODIC;
+};
+
+// Sunrise and sunset by the plain almanac reckoning: declination, the equation of time, refraction.
+const sun = (dayOfYear: number) => {
+  const decl = -23.44 * Math.cos(rad * (360 / 365) * (dayOfYear + 10));
+  const b = rad * (360 / 365) * (dayOfYear - 81);
+  const eot = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+  const cosH = (Math.sin(-0.833 * rad) - Math.sin(LAT * rad) * Math.sin(decl * rad)) / (Math.cos(LAT * rad) * Math.cos(decl * rad));
+  const half = Math.acos(cosH) / rad / 15;
+  const noon = 12 - LON / 15 - eot / 60;
+  return { rise: noon - half, set: noon + half };
+};
+
+// The terminator of a moon in a square of one: dark disc, lit part drawn over it.
+const moonPath = (age: number) => {
+  const phase = age / SYNODIC; // 0 new, 0.5 full
+  const r = 0.4;
+  const cx = 0.5;
+  const cy = 0.5;
+  const k = Math.cos(2 * Math.PI * phase); // 1 new, -1 full
+  const rx = Math.abs(k) * r;
+  const waxing = phase < 0.5;
+  const outer = waxing ? 1 : 0; // the lit limb: right while waxing
+  const sweep = k > 0 ? 1 - outer : outer; // a crescent's terminator bows toward the lit limb
+  return `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${outer} ${cx} ${cy + r} A ${rx.toFixed(3)} ${r} 0 0 ${sweep} ${cx} ${cy - r} Z`;
+};
+
+const days = Array.from({ length: DAYS }, (_, i) => {
+  const d = i + 1;
+  const date = new Date(Date.UTC(YEAR, MONTH, d, 12));
+  const doy = Math.round((date.getTime() - Date.UTC(YEAR, 0, 0)) / 864e5);
+  const age = ageOf(date);
+  const { rise, set } = sun(doy);
+  // High water at the bar: fifty minutes later each day, springs a day and a half after new and full.
+  const morn = (2.1 + 0.8417 * i) % 12.42;
+  const evening = morn + 12.42;
+  const height = 12 + 3.1 * Math.cos((4 * Math.PI * (age - 1.5)) / SYNODIC);
+  return { d, week: WEEK[date.getUTCDay()], sunday: date.getUTCDay() === 0, age, rise: clock(rise), set: clock(set - 12), morn: clock(morn), eve: clock(evening > 24 ? evening - 24 : evening - 12), height, squares: Math.round(height / 2), note: NOTES[d] ?? '' };
+});
+
+// The four quarters: the day whose age is nearest each quarter.
+const QUARTERS = [
+  { name: 'New Moon', at: 0 },
+  { name: 'First Quarter', at: SYNODIC / 4 },
+  { name: 'Full Moon', at: SYNODIC / 2 },
+  { name: 'Last Quarter', at: (3 * SYNODIC) / 4 },
+].map(q => {
+  let best = days[0];
+  let dist = Infinity;
+  for (const day of days) {
+    const diff = Math.min(Math.abs(day.age - q.at), SYNODIC - Math.abs(day.age - q.at));
+    if (diff < dist) { dist = diff; best = day; }
+  }
+  return { ...q, day: best };
+}).sort((a, b) => a.day.d - b.day.d);
+
+const newMoon = QUARTERS.find(q => q.name === 'New Moon')!.day.d;
+const fullMoon = QUARTERS.find(q => q.name === 'Full Moon')!.day.d;
+const near = (d: number, m: number) => Math.abs(d - m) <= 1;
+const fishing = days.filter(day => near(day.d, newMoon) || near(day.d, fullMoon)).map(day => day.d);
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+const maxSquares = Math.max(...days.map(d => d.squares));
+
+// A woodcut sun: sixteen rays, straight and flaming by turns, round a hatched face.
+const rays = Array.from({ length: 16 }, (_, i) => {
+  const a = (i / 16) * Math.PI * 2;
+  const p = (r: number, da = 0) => `${(50 + r * Math.cos(a + da)).toFixed(2)} ${(50 + r * Math.sin(a + da)).toFixed(2)}`;
+  return i % 2
+    ? `M ${p(30, -0.09)} Q ${p(38, 0.1)} ${p(42, -0.03)} Q ${p(45, -0.1)} ${p(48)} Q ${p(40, 0.12)} ${p(30, 0.09)} Z`
+    : `M ${p(30, -0.1)} L ${p(49)} L ${p(30, 0.1)} Z`;
+}).join(' ');
+---
+<AlignedStudy slug="almanac" theme="light">
+  <main class="stage almanac">
+    <svg class="woodcut sun" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <pattern id="hatch" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <line x1="0" y1="0" x2="0" y2="2.4" stroke="currentColor" stroke-width="0.9" />
+        </pattern>
+        <pattern id="hatch-fine" width="1.8" height="1.8" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+          <line x1="0" y1="0" x2="0" y2="1.8" stroke="currentColor" stroke-width="0.6" />
+        </pattern>
+      </defs>
+      <path d={rays} fill="currentColor" />
+      <circle cx="50" cy="50" r="27" fill="var(--paper)" stroke="currentColor" stroke-width="2" />
+      <circle cx="50" cy="50" r="23" fill="url(#hatch-fine)" />
+      <circle cx="50" cy="50" r="17" fill="var(--paper)" />
+      <path d="M 40 45 q 3 -3 6 0 M 54 45 q 3 -3 6 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" />
+      <path d="M 50 47 q -2 6 0 8" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" />
+      <path d="M 43 59 q 7 6 14 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" />
+    </svg>
+
+    <header class="masthead">
+      <h1>The Hollowmere Almanack</h1>
+      <p>For the Year of our Lord 2026, being the second after Leap Year, calculated for the Meridian of Hollowmere Bar, Lat. 52° 36′ North. Price Fourpence.</p>
+    </header>
+
+    <svg class="woodcut moon" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="54" cy="50" r="40" fill="url(#hatch)" />
+      <path d="M 54 10 A 40 40 0 1 1 54 90 A 30 40 0 1 0 54 10 Z" fill="currentColor" />
+      <path d="M 40 22 A 30 40 0 0 0 40 78" stroke="var(--paper)" stroke-width="1" fill="none" />
+      <circle cx="36" cy="40" r="2" fill="currentColor" />
+      <path d="M 26 60 q 6 4 12 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" />
+      <path d="M 12 16 l 1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5 Z M 20 84 l 1 3 3 1 -3 1 -1 3 -1 -3 -3 -1 3 -1 Z M 6 50 l 1 2.5 2.5 1 -2.5 1 -1 2.5 -1 -2.5 -2.5 -1 2.5 -1 Z" fill="currentColor" />
+    </svg>
+
+    <section class="month" aria-labelledby="month-title">
+      <h2 id="month-title"><span class="big">November</span> <span>the Eleventh Month, hath XXX Days</span></h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="n">Day</th><th class="w">Wk</th><th class="note">Calendar and remarkable days</th>
+            <th class="t">Sun rises</th><th class="t">Sun sets</th><th class="glyph">Moon</th><th class="age">Age</th>
+            <th class="t">H. w. morn</th><th class="t">H. w. even</th>
+          </tr>
+        </thead>
+        <tbody>
+          {days.map(day => (
+            <tr class:list={{ sunday: day.sunday }}>
+              <td class="n">{day.d}</td>
+              <td class="w">{day.week}</td>
+              <td class="note">{day.note}</td>
+              <td class="t">{day.rise}</td>
+              <td class="t">{day.set}</td>
+              <td class="glyph"><svg viewBox="0 0 1 1" aria-label={`Moon ${Math.round(day.age)} days old`}><circle cx="0.5" cy="0.5" r="0.4" fill="var(--ink)" /><path d={moonPath(day.age)} fill="var(--paper)" /><circle cx="0.5" cy="0.5" r="0.4" fill="none" stroke="var(--ink)" stroke-width="0.05" /></svg></td>
+              <td class="age">{Math.round(day.age)}</td>
+              <td class="t">{day.morn}</td>
+              <td class="t">{day.eve}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="quarters" aria-labelledby="quarters-title">
+      <h2 id="quarters-title">The Moon’s Changes</h2>
+      <ol>
+        {QUARTERS.map(q => (
+          <li>
+            <svg viewBox="0 0 1 1" aria-hidden="true"><circle cx="0.5" cy="0.5" r="0.4" fill="var(--ink)" /><path d={moonPath(q.day.age)} fill="var(--paper)" /><circle cx="0.5" cy="0.5" r="0.4" fill="none" stroke="var(--ink)" stroke-width="0.03" /></svg>
+            <b>{q.name}</b>
+            <span>the {ordinal(q.day.d)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="tides" aria-labelledby="tides-title">
+      <h2 id="tides-title">Heights of the Morning Tide at the Bar</h2>
+      <p class="key">Each square two feet of water. Springs follow the new and full moon by a day or two.</p>
+      <div class="bars" style={`--rows: ${maxSquares}`} role="img" aria-label="Morning tide heights for each day of November, from about eight to sixteen feet">
+        {days.map(day => (
+          <div class="bar" title={`${day.d} November, ${day.height.toFixed(1)} feet`}>
+            {Array.from({ length: day.squares }, () => <i></i>)}
+          </div>
+        ))}
+      </div>
+      <div class="axis" aria-hidden="true">
+        {days.map(day => <span>{day.d % 5 === 0 || day.d === 1 ? day.d : ''}</span>)}
+      </div>
+    </section>
+
+    <section class="days" aria-labelledby="days-title">
+      <h2 id="days-title">Days Most Propitious</h2>
+      <dl>
+        <dt>Sow under glass</dt><dd>Broad beans and sweet peas while the Moon waxeth, the {ordinal(newMoon + 2)} to the {ordinal(fullMoon - 1)}.</dd>
+        <dt>Plant out</dt><dd>Garlic and shallots before the {ordinal(newMoon)}, if the ground be open.</dd>
+        <dt>Fish the estuary</dt><dd>The {fishing.map(ordinal).join(', ')}; on the young flood, an hour before high water.</dd>
+      </dl>
+    </section>
+
+    <section class="lore" aria-labelledby="lore-title">
+      <h2 id="lore-title">Weather Wisdom</h2>
+      <blockquote>If there’s ice in November that will bear a duck, there’ll be nothing after but sludge and muck.</blockquote>
+      <blockquote>Onion skins very thin, mild winter coming in; onion skins thick and tough, coming winter cold and rough.</blockquote>
+      <blockquote>When the wind is in the east, ’tis neither good for man nor beast.</blockquote>
+      <p class="farmer">Lift parsnips after the first sharp frost, for it sweetens them. Rake the oak leaves into a wire pen; in two years they make the best mould for seed.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #dcd8ca; }
+  .almanac {
+    --paper: #dcd8ca;
+    --ink: #1e1b16;
+    --blue: #23417a;
+    --rule: color-mix(in srgb, var(--ink) 55%, transparent);
+    color: var(--ink);
+    background: var(--paper);
+    font-family: 'Big Caslon', Baskerville, 'Hoefler Text', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .almanac h2 { margin: 0; font-size: calc(15px * var(--sf)); font-weight: normal; line-height: var(--u); font-variant: small-caps; letter-spacing: 0.04em; border-bottom: 1px solid var(--ink); height: var(--u); box-sizing: border-box; }
+
+  /* The head: a sun and a moon cut in wood either side of the title. */
+  .woodcut { color: var(--ink); width: 100%; height: 100%; }
+  .sun { grid-column: 2 / span 5; grid-row: 2 / span 5; }
+  .moon { grid-column: -7 / span 5; grid-row: 2 / span 5; }
+  .masthead { grid-column: 8 / -8; grid-row: 2 / span 5; text-align: center; border-block: calc(3px * var(--sf)) double var(--ink); display: grid; align-content: center; box-sizing: border-box; }
+  .masthead h1 { margin: 0; font: calc(46px * var(--sf)) / calc(3 * var(--u)) 'Big Caslon', Baskerville, serif; letter-spacing: 0.01em; }
+  .masthead p { margin: 0; font-style: italic; font-size: calc(13px * var(--sf)); padding-inline: var(--u); }
+
+  /* The month: thirty days, a square each. Columns in whole squares. */
+  .month { grid-column: 2 / span 30; grid-row: 7 / span 33; }
+  .month h2 { height: calc(2 * var(--u)); line-height: calc(2 * var(--u)); border-bottom: 0; display: flex; gap: var(--u); align-items: baseline; }
+  .month h2 .big { font-size: calc(30px * var(--sf)); font-variant: normal; letter-spacing: 0; color: var(--blue); }
+  .month h2 span:last-child { font-style: italic; font-variant: normal; letter-spacing: 0; }
+  .month table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .month th { height: var(--u); padding: 0; font-weight: normal; font-variant: small-caps; font-size: calc(10px * var(--sf)); line-height: var(--u); text-align: left; white-space: nowrap; overflow: hidden; border-block: 1px solid var(--ink); }
+  .month td { height: var(--u); padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink) 14%, transparent); }
+  .month .n { width: calc(2 * var(--u)); text-align: right; padding-right: calc(var(--u) / 2); box-sizing: border-box; }
+  .month .w { width: calc(2 * var(--u)); font-variant: small-caps; }
+  .month .note { font-style: italic; }
+  .month .t { width: calc(3 * var(--u)); text-align: right; padding-right: calc(var(--u) / 4); box-sizing: border-box; }
+  .month th.t { text-align: center; padding: 0; font-size: calc(9px * var(--sf)); }
+  .month th.glyph { overflow: visible; }
+  .month th.age { text-align: center; }
+  .month .glyph { width: var(--u); }
+  .month .glyph svg { display: block; width: var(--u); height: var(--u); }
+  .month .age { width: calc(2 * var(--u)); text-align: center; font-size: calc(11px * var(--sf)); }
+  .month tr.sunday td.n, .month tr.sunday td.w, .month tr.sunday td.note { color: var(--blue); font-weight: bold; }
+  .month thead th.note { font-style: normal; }
+  .month col { width: auto; }
+
+  /* Right of the month: changes of the moon, the tides, the days and the lore. */
+  .quarters { grid-column: 34 / -2; grid-row: 8 / span 6; }
+  .quarters ol { margin: var(--u) 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .quarters li { display: grid; grid-template-rows: calc(3 * var(--u)) var(--u) var(--u); justify-items: center; text-align: center; }
+  .quarters svg { width: calc(3 * var(--u)); height: calc(3 * var(--u)); }
+  .quarters b { font-weight: normal; font-variant: small-caps; letter-spacing: 0.03em; }
+  .quarters span { font-style: italic; }
+
+  .tides { grid-column: 34 / span 30; grid-row: 15 / span 13; display: grid; grid-template-rows: var(--u) var(--u) 1fr var(--u); align-self: end; }
+  .tides .key { margin: 0; font-style: italic; font-size: calc(12px * var(--sf)); }
+  .bars { display: grid; grid-template-columns: repeat(30, var(--u)); align-items: end; height: calc(var(--rows) * var(--u)); align-self: end; }
+  .bar { display: flex; flex-direction: column-reverse; }
+  .bar i { display: block; height: var(--u); box-sizing: border-box; border: calc(2px * var(--sf)) solid var(--paper); background: var(--blue); }
+  .bar:hover i { background: var(--ink); }
+  .axis { display: grid; grid-template-columns: repeat(30, var(--u)); border-top: 1px solid var(--ink); font-size: calc(10px * var(--sf)); text-align: center; }
+
+  .days { grid-column: 34 / span 14; grid-row: -12 / -2; }
+  .days dl { margin: 0; }
+  .days dt { font-variant: small-caps; letter-spacing: 0.03em; color: var(--blue); margin-top: calc(var(--u) / 2); line-height: calc(var(--u) / 1.25); }
+  .days dd { margin: 0; line-height: calc(var(--u) * 0.8); font-size: calc(12px * var(--sf)); }
+  .lore { grid-column: 49 / -2; grid-row: -12 / -2; max-width: calc(22 * var(--u)); padding-bottom: var(--u); }
+  .lore blockquote { margin: calc(var(--u) / 2) 0 0; font-style: italic; line-height: calc(var(--u) * 0.8); font-size: calc(12px * var(--sf)); text-indent: calc(-0.5 * var(--u)); padding-left: calc(0.5 * var(--u)); }
+  .lore blockquote::before { content: '“'; }
+  .lore blockquote::after { content: '”'; }
+  .lore .farmer { margin: calc(var(--u) / 2) 0 0; line-height: calc(var(--u) * 0.8); font-size: calc(12px * var(--sf)); }
+  .lore .farmer { font-variant: small-caps; letter-spacing: 0.02em; }
+
+  /* A narrow window: the head stacked, the month without its remarks column. */
+  :root[data-narrow] .almanac { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .almanac > * { grid-column: 2 / -2; grid-row: auto; max-width: none; }
+  :root[data-narrow] .sun { grid-column: 2 / span 4; grid-row: 2 / span 4; }
+  :root[data-narrow] .moon { grid-column: -6 / span 4; grid-row: 2 / span 4; }
+  :root[data-narrow] .masthead { grid-row: 6 / span 6; }
+  :root[data-narrow] .masthead h1 { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .month, :root[data-narrow] .quarters, :root[data-narrow] .tides, :root[data-narrow] .days, :root[data-narrow] .lore { margin-top: var(--u); }
+  :root[data-narrow] .month h2 span:last-child { display: none; }
+  :root[data-narrow] .month .note, :root[data-narrow] .month th:nth-child(9), :root[data-narrow] .month td:nth-child(9) { display: none; }
+  :root[data-narrow] .month .age { display: none; }
+  :root[data-narrow] .month .n, :root[data-narrow] .month .w { width: calc(1.5 * var(--u)); }
+  :root[data-narrow] .month .t { width: calc(2.5 * var(--u)); }
+  :root[data-narrow] .month th.t { white-space: normal; line-height: calc(var(--u) / 2); }
+  :root[data-narrow] .month thead th { height: var(--u); vertical-align: middle; }
+  :root[data-narrow] .month th.glyph { overflow: hidden; font-size: 0; }
+  :root[data-narrow] .quarters li { grid-template-rows: calc(2 * var(--u)) auto auto; }
+  :root[data-narrow] .quarters svg { width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .quarters b { font-size: calc(11px * var(--sf)); line-height: calc(var(--u) * 0.8); }
+  :root[data-narrow] .tides { grid-template-rows: auto auto auto var(--u); }
+  :root[data-narrow] .month { grid-row-start: 12; }
+  :root[data-narrow] .quarters { grid-row-start: 13; }
+  :root[data-narrow] .tides { grid-row-start: 14; }
+  :root[data-narrow] .days { grid-row-start: 15; }
+  :root[data-narrow] .lore { grid-row-start: 16; }
+  :root[data-narrow] .tides h2 { height: auto; }
+  :root[data-narrow] .bars, :root[data-narrow] .axis { grid-template-columns: repeat(30, calc(var(--u) * 0.4)); }
+  :root[data-narrow] .bar i { height: calc(var(--u) * 0.4); border-width: 1px; }
+  :root[data-narrow] .bars { height: auto; }
+  :root[data-narrow] .axis span { font-size: calc(8px * var(--sf)); overflow: visible; }
+</style>

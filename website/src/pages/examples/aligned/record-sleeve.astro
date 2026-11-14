@@ -1,0 +1,195 @@
+---
+// After a 1960s jazz sleeve printed in two colours: a photograph tinted from ultramarine to
+// saffron, condensed type set huge in a field of blocks, the record sliding out of the sleeve, and
+// the back cover with its liner notes and timings. The cover is a square of whole squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const SIDES = [
+  { side: 'Side one', tracks: [['Tenor Weather', '7:42'], ['Low Pressure over Aarhus', '5:18'], ['Mrs. Okonjo’s Umbrella', '6:05']] },
+  { side: 'Side two', tracks: [['Squall Line', '8:11'], ['A Ballad for the Foghorn', '6:37'], ['Isobar Blues', '4:56']] },
+];
+const PLAYERS = [
+  ['Kwame Osei Dalgaard', 'tenor saxophone'],
+  ['Lis Haugaard', 'trumpet'],
+  ['Benny Roche', 'piano'],
+  ['Sam Okafor', 'bass'],
+  ['Teddy Vinter', 'drums'],
+];
+---
+<AlignedStudy slug="record-sleeve" theme="light">
+  <main class="stage sleeve">
+    <svg class="filters" aria-hidden="true" width="0" height="0">
+      <filter id="duotone" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0.30 0.59 0.11 0 0  0.30 0.59 0.11 0 0  0.30 0.59 0.11 0 0  0 0 0 1 0" />
+        <feComponentTransfer>
+          <feFuncR type="table" tableValues="0.09 0.12 0.95" />
+          <feFuncG type="table" tableValues="0.13 0.17 0.71" />
+          <feFuncB type="table" tableValues="0.50 0.55 0.04" />
+        </feComponentTransfer>
+      </filter>
+    </svg>
+
+    <div class="record" id="record" aria-hidden="true"><i></i></div>
+
+    <section class="cover" id="cover" aria-label="Front cover">
+      <figure class="photo"><img src="/examples/images/atelier-anders.jpg" alt="Kwame Osei Dalgaard, photographed in the studio" /></figure>
+      <div class="strip">
+        <p class="label">Meridian</p>
+        <p class="stereo">Stereo</p>
+        <p class="cat">MLP 4417</p>
+      </div>
+      <div class="dot" aria-hidden="true"></div>
+      <h1 class="title"><span class="t1">Tenor</span><span class="t2">Weather</span></h1>
+      <p class="artist">The Osei Dalgaard Quintet</p>
+    </section>
+
+    <section class="back" aria-label="Back cover">
+      <header>
+        <p class="label">Meridian <span>MLP 4417, stereo</span></p>
+        <h2>Tenor Weather</h2>
+        <p class="artist">The Osei Dalgaard Quintet</p>
+      </header>
+
+      <div class="tracks">
+        {SIDES.map(s => (
+          <div>
+            <h3>{s.side}</h3>
+            <ol>{s.tracks.map(([name, time]) => <li><span>{name}</span><time>{time}</time></li>)}</ol>
+          </div>
+        ))}
+      </div>
+
+      <div class="notes">
+        <p>When Kwame Osei Dalgaard first walked into Kastrup Sound he was carrying his horn in a laundry bag and complaining about the wind off the Øresund. Two winters later the wind has become the record. Every title here is a forecast, and every solo sounds like somebody reading one aloud while the window rattles.</p>
+        <p>Listen to the title piece for the way Roche leaves the piano open under the tenor, a whole bar of grey sky before Okafor walks in. On “Squall Line” Haugaard’s trumpet arrives late and soaked, and Vinter plays the brushes as if they were rain on a tin roof. The ballad was taken in one pass at four in the morning; nobody wanted to try it again.</p>
+        <p class="sign">Erik Holm, Jazz Bladet</p>
+      </div>
+
+      <dl class="players">
+        {PLAYERS.map(([name, instrument]) => <div><dt>{name}</dt><dd>{instrument}</dd></div>)}
+      </dl>
+
+      <p class="credits">Recorded 11 and 12 March 1963 at Kastrup Sound, Copenhagen. Engineer Poul Brink. Cover photograph Ib Steen. This is a stereophonic record; it may be played on monophonic equipment with a modern lightweight pickup.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const root = document.documentElement;
+  const record = document.getElementById('record') as HTMLElement;
+
+  // The cover is the largest square of whole squares that leaves room for the back.
+  onSquares(({ across, down, narrow }) => {
+    const side = narrow ? across - 2 : Math.min(down - 4, across - 34);
+    root.style.setProperty('--s', String(side));
+    root.style.setProperty('--top', String(narrow ? 2 : Math.max(2, Math.floor((down - side) / 2) + 1)));
+  });
+
+  // The record slides out of the sleeve once, a little past half way.
+  if (!reducedMotion()) {
+    record.animate(
+      [{ transform: 'translateX(0) rotate(-40deg)' }, { transform: 'translateX(var(--out)) rotate(0deg)' }],
+      { duration: 1400, delay: 300, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'both' },
+    );
+  } else {
+    record.style.transform = 'translateX(var(--out))';
+  }
+</script>
+
+<style is:global>
+  html { background: #e7e1d3; }
+  .sleeve {
+    --blue: #1f2a8c;
+    --yellow: #f3b609;
+    --paper: #efe9db;
+    color: var(--blue);
+    background: #e7e1d3;
+    font-family: var(--typeface-regular);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .filters { position: absolute; }
+
+  /* The front: a square of --s squares, its own grid of squares. */
+  .cover {
+    position: relative;
+    z-index: 3;
+    grid-column: 3 / span var(--s);
+    grid-row: var(--top, 3) / span var(--s);
+    display: grid;
+    grid-template-columns: repeat(var(--s), var(--u));
+    grid-template-rows: repeat(var(--s), var(--u));
+    background: var(--blue);
+    box-shadow: calc(var(--u) * 0.2) calc(var(--u) * 0.3) calc(var(--u) * 0.6) rgba(30, 30, 60, 0.35);
+    overflow: hidden;
+  }
+  .cover > * { min-width: 0; min-height: 0; }
+  .photo { grid-column: 1 / -10; grid-row: 1 / -13; margin: 0; overflow: hidden; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; filter: url(#duotone) contrast(1.15); transform: scale(1.12); transform-origin: 50% 20%; }
+  .strip { grid-column: -10 / -1; grid-row: 1 / -13; background: var(--yellow); display: grid; grid-template-rows: calc(3 * var(--u)) 1fr calc(2 * var(--u)); padding: var(--u); }
+  .strip .label { margin: 0; font: calc(22px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); color: var(--blue); }
+  .strip .stereo { margin: 0; align-self: end; writing-mode: vertical-rl; transform: rotate(180deg); font: calc(64px * var(--sf)) / calc(3 * var(--u)) var(--typeface-compressed); letter-spacing: 0.02em; color: var(--blue); }
+  .strip .cat { margin: 0; align-self: end; font: calc(14px * var(--sf)) / var(--u) var(--typeface-compressed); }
+  /* A yellow disc where the blocks meet, the size of the strip's width. */
+  .dot { grid-column: -10 / span 7; grid-row: -10 / span 7; border-radius: 50%; background: var(--yellow); }
+  .dot::after { content: ''; display: block; margin: 30%; aspect-ratio: 1; border-radius: 50%; background: var(--blue); }
+  .title { grid-column: 2 / -2; grid-row: -12 / -3; margin: 0; display: grid; grid-template-rows: 5fr 4fr; font-family: var(--typeface-compressed); font-weight: normal; letter-spacing: -0.02em; text-transform: uppercase; }
+  .title .t1 { color: var(--paper); font-size: calc(var(--s) * var(--u) * 0.15); line-height: calc(var(--s) * var(--u) * 0.135); align-self: end; }
+  .title .t2 { color: var(--yellow); font-size: calc(var(--s) * var(--u) * 0.15); line-height: calc(var(--s) * var(--u) * 0.12); }
+  .cover .artist { grid-column: 2 / -2; grid-row: -2 / span 1; margin: 0; color: var(--paper); font: calc(17px * var(--sf)) / var(--u) var(--typeface-medium); }
+
+  /* The record: black, its label in the two inks, sliding right out of the sleeve. */
+  .record {
+    --out: calc(var(--s) * var(--u) * 0.36);
+    grid-column: 4 / span calc(var(--s) - 2);
+    grid-row: calc(var(--top, 3) + 1) / span calc(var(--s) - 2);
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #191919 0 2px, #242424 2px 3px);
+    display: grid;
+    place-items: center;
+  }
+  .record i { width: 34%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #191919 0 4%, var(--yellow) 4% 55%, var(--blue) 55%); }
+
+  /* The back: paper, blue type, yellow rules. */
+  .back { grid-column: calc(var(--s) + 9) / -2; grid-row: var(--top, 3) / span var(--s); position: relative; z-index: 2; background: var(--paper); padding: var(--u); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto auto; row-gap: var(--u); overflow: hidden; box-shadow: calc(var(--u) * 0.2) calc(var(--u) * 0.3) calc(var(--u) * 0.6) rgba(30, 30, 60, 0.2); }
+  .back header { border-bottom: calc(var(--u) / 2) solid var(--yellow); padding-bottom: calc(var(--u) / 2); }
+  .back .label { margin: 0; font: calc(15px * var(--sf)) / var(--u) var(--typeface-compressed); }
+  .back .label span { font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); margin-left: calc(var(--u) / 2); }
+  .back h2 { margin: 0; font: calc(46px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); text-transform: uppercase; letter-spacing: -0.01em; }
+  .back header .artist { margin: 0; font-family: var(--typeface-medium); }
+  .tracks { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--u); }
+  .tracks h3 { margin: 0; font: calc(13px * var(--sf)) / var(--u) var(--typeface-medium); background: var(--blue); color: var(--paper); padding-inline: calc(var(--u) / 4); width: max-content; }
+  .tracks ol { margin: 0; padding: 0; list-style: none; counter-reset: t; }
+  .tracks li { display: flex; gap: calc(var(--u) / 4); counter-increment: t; font-size: calc(12px * var(--sf)); }
+  .tracks li::before { content: counter(t) '.'; width: var(--u); flex: none; }
+  .tracks li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tracks time { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .notes { columns: 2; column-gap: var(--u); font: calc(12px * var(--sf)) / calc(var(--u) * 0.8) 'Times New Roman', Times, serif; color: #262a4a; overflow: hidden; text-align: justify; hyphens: auto; }
+  .notes p { margin: 0 0 calc(var(--u) * 0.8); }
+  .notes .sign { font-style: italic; text-align: right; }
+  .players { margin: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--u); font-size: calc(12px * var(--sf)); border-top: calc(var(--u) / 4) solid var(--yellow); padding-top: calc(var(--u) * 0.75); }
+  .players div { display: flex; gap: calc(var(--u) / 4); white-space: nowrap; overflow: hidden; }
+  .players dt { font-family: var(--typeface-medium); }
+  .players dd { margin: 0; opacity: 0.8; }
+  .credits { margin: 0; font-size: calc(10px * var(--sf)); line-height: calc(var(--u) * 0.7); opacity: 0.85; }
+
+  /* A narrow window: the cover across the width, the record peeking below, the back after. */
+  :root[data-narrow] .sleeve { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .cover { grid-column: 2 / span var(--s); grid-row: 2 / span var(--s); }
+  :root[data-narrow] .record { --out: 0px; grid-column: 3 / span calc(var(--s) - 2); grid-row: 4 / span calc(var(--s) - 2); transform: translateY(calc(var(--u) * 2)) !important; }
+  :root[data-narrow] .photo { grid-column: 1 / -4; grid-row: 1 / -6; }
+  :root[data-narrow] .strip { grid-column: -4 / -1; grid-row: 1 / -6; padding: calc(var(--u) / 4); grid-template-rows: calc(2 * var(--u)) 1fr; }
+  :root[data-narrow] .strip .label { font-size: calc(12px * var(--sf)); line-height: var(--u); writing-mode: vertical-rl; }
+  :root[data-narrow] .strip .stereo { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .strip .cat { display: none; }
+  :root[data-narrow] .dot { grid-column: -4 / span 3; grid-row: -4 / span 3; }
+  :root[data-narrow] .title { grid-row: -6 / -2; grid-column: 1 / -1; padding-left: calc(var(--u) / 2); }
+  :root[data-narrow] .cover .artist { font-size: calc(12px * var(--sf)); grid-column: 1 / -1; padding-left: calc(var(--u) / 2); }
+  :root[data-narrow] .back { grid-column: 2 / -2; grid-row: calc(var(--s) + 5) / span 1; height: auto; }
+  :root[data-narrow] .tracks { grid-template-columns: 1fr; row-gap: var(--u); }
+  :root[data-narrow] .notes { columns: 1; text-align: left; }
+  :root[data-narrow] .players div { flex-wrap: wrap; white-space: normal; }
+  :root[data-narrow] .players { grid-template-columns: 1fr; }
+</style>

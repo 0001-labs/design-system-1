@@ -1,0 +1,314 @@
+---
+// After a starship's bridge console: a radar whose rings are whole squares apart, bearings round its
+// rim and a sweep that wakes each contact as it passes; beside it a spine of rounded segments, the
+// contacts, shields and power drawn as rows of lit squares. An invented ship and an invented look.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const CONTACTS = [
+  { id: 'K-04', kind: 'friend', name: 'Tender Halvard', bearing: 32, range: 0.42, closing: '−0.4' },
+  { id: 'K-11', kind: 'unknown', name: 'Ice body, tumbling', bearing: 78, range: 0.81, closing: '+1.2' },
+  { id: 'K-17', kind: 'hostile', name: 'Corvette, no beacon', bearing: 141, range: 0.67, closing: '+3.8' },
+  { id: 'K-19', kind: 'friend', name: 'Relay buoy Ossian 3', bearing: 203, range: 0.29, closing: '0.0' },
+  { id: 'K-22', kind: 'unknown', name: 'Drive wake, faint', bearing: 256, range: 0.92, closing: '+0.7' },
+  { id: 'K-25', kind: 'friend', name: 'Survey skiff Wren', bearing: 309, range: 0.55, closing: '−1.1' },
+  { id: 'K-30', kind: 'unknown', name: 'Debris field', bearing: 344, range: 0.74, closing: '+0.2' },
+];
+const SHIELDS = [
+  { name: 'Fore', level: 13 },
+  { name: 'Starboard', level: 9 },
+  { name: 'Aft', level: 15 },
+  { name: 'Port', level: 6 },
+];
+const POWER = [
+  { name: 'Reactor', level: 14, of: 16 },
+  { name: 'Drive', level: 7, of: 16 },
+  { name: 'Shields', level: 11, of: 16 },
+  { name: 'Sensors', level: 9, of: 16 },
+  { name: 'Life support', level: 4, of: 16 },
+];
+const kindWord = { friend: 'Friendly', unknown: 'Unknown', hostile: 'Hostile' } as const;
+---
+<AlignedStudy slug="bridge-display" theme="dark">
+  <main class="stage bridge">
+    <header class="bar">
+      <span class="cap amber">ISV Calloway</span>
+      <span class="cap lilac">Bridge, second watch</span>
+      <span class="fill"></span>
+      <span class="clock" id="clock">Day 214, 06.42 ship time</span>
+    </header>
+
+    <section class="scope" aria-label="Long-range scope">
+      <svg id="radar" aria-hidden="true"></svg>
+      <div class="sweep" id="sweep" aria-hidden="true"></div>
+    </section>
+
+    <div class="readout heading"><span>Heading</span><b>047.3</b></div>
+    <div class="readout speed"><span>Velocity</span><b>0.12<small>c</small></b></div>
+    <div class="readout alert"><span>Condition</span><b>Amber</b></div>
+
+    <nav class="spine" aria-hidden="true">
+      <i class="s1"><span>Scan</span></i>
+      <i class="s2"><span>Contacts</span></i>
+      <i class="s3"><span>Shields</span></i>
+      <i class="s4"><span>Power</span></i>
+      <i class="s5"></i>
+    </nav>
+
+    <section class="contacts" aria-labelledby="contacts-title">
+      <h2 id="contacts-title">Contacts <span>7 tracked, ring 3 ls</span></h2>
+      <table>
+        <thead><tr><th>Track</th><th>Identity</th><th class="r">Brg</th><th class="r">Range</th><th class="r">Closing</th></tr></thead>
+        <tbody>
+          {CONTACTS.map(c => (
+            <tr class={c.kind} data-track={c.id}>
+              <td><i class="mark" title={kindWord[c.kind]}></i>{c.id}</td>
+              <td>{c.name}</td>
+              <td class="r">{String(c.bearing).padStart(3, '0')}</td>
+              <td class="r">{(c.range * 3).toFixed(2)}</td>
+              <td class="r">{c.closing}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="shields" aria-labelledby="shields-title">
+      <h2 id="shields-title">Shields <span>sixteen cells a face</span></h2>
+      {SHIELDS.map(s => (
+        <div class="meter" role="meter" aria-label={s.name} aria-valuemin="0" aria-valuemax="16" aria-valuenow={s.level}>
+          <span>{s.name}</span>
+          <div class="cells">{Array.from({ length: 16 }, (_, i) => <i class:list={{ on: i < s.level, low: s.level < 8 }}></i>)}</div>
+          <b>{Math.round((s.level / 16) * 100)}%</b>
+        </div>
+      ))}
+    </section>
+
+    <section class="power" aria-labelledby="power-title">
+      <h2 id="power-title">Power <span>to systems</span></h2>
+      {POWER.map(p => (
+        <div class="meter" role="meter" aria-label={p.name} aria-valuemin="0" aria-valuemax={p.of} aria-valuenow={p.level}>
+          <span>{p.name}</span>
+          <div class="cells">{Array.from({ length: p.of }, (_, i) => <i class:list={{ on: i < p.level }}></i>)}</div>
+          <b>{p.level * 25} MW</b>
+        </div>
+      ))}
+    </section>
+
+    <section class="log" aria-labelledby="log-title">
+      <h2 id="log-title">Comms log</h2>
+      <ol>
+        <li><time>06.31</time>Halvard: cargo locked, ready to undock on your word.</li>
+        <li><time>06.36</time>Ossian 3 relay: next window opens 07.20, holds nine minutes.</li>
+        <li><time>06.40</time>K-17 hailed twice on the open band. No answer.</li>
+        <li><time>06.42</time>Wren: ice body is hollow. Sending the sounding now.</li>
+      </ol>
+    </section>
+
+    <footer class="helm">
+      <span class="cap cyan">Helm</span>
+      <span class="note">Holding course for the Ossian relay. Next burn in 41 minutes.</span>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script define:vars={{ CONTACTS }}>
+  // define:vars makes this an inline script, so the squares are read from the root like the frame does.
+  const svg = document.getElementById('radar');
+  const sweep = document.getElementById('sweep');
+  const scope = svg.parentElement;
+  const root = document.documentElement;
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let marks = [];
+
+  function draw() {
+    const across = Number(root.style.getPropertyValue('--across')) || 72;
+    const down = Number(root.style.getPropertyValue('--down')) || 40;
+    const narrow = across < 40;
+    // The radius is a whole number of squares and a multiple of three, a ring every three.
+    const fit = narrow ? Math.floor((across - 2) / 2) : Math.min(Math.floor((down - 8) / 2), Math.floor((across - 38) / 2), 18);
+    const R = narrow ? fit : Math.max(6, fit - (fit % 3));
+    root.style.setProperty('--r', String(R));
+    svg.setAttribute('viewBox', `${-R - 1} ${-R - 1} ${2 * R + 2} ${2 * R + 2}`);
+    const parts = [];
+    const step = narrow ? 2 : 3;
+    for (let r = step; r <= R; r += step) parts.push(`<circle r="${r}" class="ring${r === R ? ' rim' : ''}" />`);
+    parts.push(`<line x1="${-R}" x2="${R}" class="axis" /><line y1="${-R}" y2="${R}" class="axis" />`);
+    for (let a = 0; a < 360; a += 5) {
+      const t = (a - 90) * Math.PI / 180;
+      const long = a % 30 === 0;
+      const inner = R - (long ? 0.6 : 0.3);
+      parts.push(`<line x1="${(Math.cos(t) * inner).toFixed(3)}" y1="${(Math.sin(t) * inner).toFixed(3)}" x2="${(Math.cos(t) * R).toFixed(3)}" y2="${(Math.sin(t) * R).toFixed(3)}" class="tick" />`);
+      if (long && !narrow) parts.push(`<text x="${(Math.cos(t) * (R + 0.55)).toFixed(3)}" y="${(Math.sin(t) * (R + 0.55)).toFixed(3)}" class="bearing">${String(a).padStart(3, '0')}</text>`);
+    }
+    for (let r = step; r < R; r += step) parts.push(`<text x="0.2" y="${(-r + 0.45).toFixed(2)}" class="range">${(r / R * 3).toFixed(1)}</text>`);
+    CONTACTS.forEach(c => {
+      const t = (c.bearing - 90) * Math.PI / 180;
+      const x = Math.cos(t) * c.range * R;
+      const y = Math.sin(t) * c.range * R;
+      const shape = c.kind === 'friend'
+        ? '<circle r="0.35" />'
+        : c.kind === 'hostile' ? '<path d="M 0 -0.45 L 0.42 0.3 L -0.42 0.3 Z" />' : '<path d="M 0 -0.42 L 0.42 0 L 0 0.42 L -0.42 0 Z" />';
+      parts.push(`<g class="contact ${c.kind}" data-bearing="${c.bearing}" transform="translate(${x.toFixed(3)} ${y.toFixed(3)})">${shape}<text x="0.7" y="0.15">${c.id}</text></g>`);
+    });
+    parts.push('<circle r="0.25" class="own" />');
+    svg.innerHTML = parts.join('');
+    marks = [...svg.querySelectorAll('.contact')];
+    if (still) marks.forEach(m => m.style.opacity = '1');
+  }
+  draw();
+  new MutationObserver(draw).observe(root, { attributes: true, attributeFilter: ['style'] });
+
+  // One sweep, eight seconds a turn; a contact flares as the beam crosses it and fades over the turn.
+  if (!still) {
+    const turn = 8000;
+    const start = performance.now();
+    const frame = now => {
+      const angle = ((now - start) / turn * 360) % 360;
+      sweep.style.transform = `rotate(${angle}deg)`;
+      for (const m of marks) {
+        const since = (angle - Number(m.dataset.bearing) + 360) % 360;
+        m.style.opacity = String(Math.max(0.18, 1 - since / 300));
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  } else {
+    sweep.style.transform = 'rotate(60deg)';
+  }
+  void scope;
+</script>
+
+<style is:global>
+  html { background: #121b3d; }
+  .bridge {
+    --ground: #121b3d;
+    --panel: #1b2756;
+    --cyan: #8fe0ff;
+    --amber: #ffb34d;
+    --lilac: #b8a6ff;
+    --coral: #ff6b5e;
+    --dim: #4c5d99;
+    color: var(--cyan);
+    background: var(--ground);
+    font-family: Futura, 'Avenir Next', var(--typeface-regular), sans-serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .bridge h2 { margin: 0; height: var(--u); font-weight: 500; font-size: calc(15px * var(--sf)); color: var(--amber); display: flex; gap: var(--u); align-items: baseline; }
+  .bridge h2 span { color: var(--dim); font-size: calc(12px * var(--sf)); font-weight: normal; }
+
+  /* Capsules: one square high, ends rounded by half a square. */
+  .cap { display: inline-block; height: var(--u); padding-inline: var(--u); border-radius: calc(var(--u) / 2); color: var(--ground); font-weight: 500; white-space: nowrap; }
+  .cap.amber { background: var(--amber); }
+  .cap.lilac { background: var(--lilac); }
+  .cap.cyan { background: var(--cyan); }
+
+  .bar { grid-column: 2 / -2; grid-row: 2 / span 1; display: flex; gap: calc(var(--u) / 2); align-items: center; }
+  .bar .fill { flex: 1; height: calc(var(--u) / 2); border-radius: calc(var(--u) / 4); background: linear-gradient(90deg, var(--panel), var(--dim)); }
+  .clock { color: var(--lilac); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* The scope: a square of 2R + 2 squares, its rings whole squares. */
+  .scope { position: relative; grid-column: 2 / span calc(2 * var(--r, 15) + 2); grid-row: 4 / span calc(2 * var(--r, 15) + 2); }
+  #radar { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #radar .ring { fill: none; stroke: var(--dim); stroke-width: 0.04; }
+  #radar .rim { stroke: var(--cyan); stroke-width: 0.08; fill: color-mix(in srgb, var(--panel) 60%, transparent); }
+  #radar .axis { stroke: var(--dim); stroke-width: 0.03; stroke-dasharray: 0.2 0.3; }
+  #radar .tick { stroke: var(--cyan); stroke-width: 0.06; }
+  #radar .bearing { fill: var(--lilac); font-size: 0.55px; text-anchor: middle; dominant-baseline: middle; font-family: Futura, sans-serif; }
+  #radar .range { fill: var(--dim); font-size: 0.45px; font-family: Futura, sans-serif; }
+  #radar .contact { opacity: 0.2; }
+  #radar .contact text { font-size: 0.5px; font-family: Futura, sans-serif; fill: currentColor; }
+  #radar .friend { color: var(--cyan); fill: var(--cyan); }
+  #radar .unknown { color: var(--amber); fill: var(--amber); }
+  #radar .hostile { color: var(--coral); fill: var(--coral); }
+  #radar .own { fill: var(--ground); stroke: var(--cyan); stroke-width: 0.08; }
+  .sweep {
+    position: absolute;
+    inset: var(--u);
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0deg, transparent 300deg, color-mix(in srgb, var(--cyan) 6%, transparent) 330deg, color-mix(in srgb, var(--cyan) 38%, transparent) 359.5deg, var(--cyan) 360deg);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Big readouts under the bar, to the right of the scope. */
+  .readout { display: grid; grid-template-rows: var(--u) calc(2 * var(--u)); }
+  .readout span { color: var(--dim); }
+  .readout b { font: calc(40px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .readout small { font-size: calc(20px * var(--sf)); margin-left: calc(2px * var(--sf)); color: var(--lilac); }
+  .alert b { color: var(--amber); }
+  .heading { grid-column: -30 / span 7; grid-row: 4 / span 3; }
+  .speed { grid-column: -22 / span 7; grid-row: 4 / span 3; }
+  .alert { grid-column: -14 / span 7; grid-row: 4 / span 3; }
+
+  /* The spine: rounded segments down the window, one square wide, each a section's colour. */
+  .spine { grid-column: -33 / span 1; grid-row: 4 / -3; display: grid; grid-template-rows: 3fr 9fr 6fr 7fr 2fr; gap: calc(var(--u) / 2); }
+  .spine i { position: relative; border-radius: calc(var(--u) / 2); }
+  .spine span { position: absolute; left: 50%; top: calc(var(--u) / 2); writing-mode: vertical-rl; transform: translateX(-50%); color: var(--ground); font-style: normal; font-weight: 500; font-size: calc(11px * var(--sf)); }
+  .spine .s1 { background: var(--lilac); }
+  .spine .s2 { background: var(--amber); }
+  .spine .s3 { background: var(--cyan); }
+  .spine .s4 { background: var(--lilac); }
+  .spine .s5 { background: var(--dim); }
+
+  .contacts { grid-column: -31 / -2; grid-row: 8 / span 10; }
+  .contacts table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: var(--u); font-variant-numeric: tabular-nums; }
+  .contacts th { height: var(--u); padding: 0; text-align: left; font-weight: normal; color: var(--dim); font-size: calc(12px * var(--sf)); }
+  .contacts td { height: var(--u); padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .contacts th:first-child { width: calc(4 * var(--u)); }
+  .contacts .r { text-align: right; }
+  .contacts th.r { width: calc(3 * var(--u)); }
+  .contacts tr.unknown { color: var(--amber); }
+  .contacts tr.hostile { color: var(--coral); }
+  .contacts .mark { display: inline-block; width: calc(8px * var(--sf)); height: calc(8px * var(--sf)); margin-right: calc(6px * var(--sf)); background: currentColor; border-radius: 50%; }
+  .contacts .unknown .mark { border-radius: 0; transform: rotate(45deg) scale(0.85); }
+  .contacts .hostile .mark { border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+  /* Meters: a label of six squares, sixteen cells of one square, a figure. */
+  .meter { display: grid; grid-template-columns: calc(6 * var(--u)) calc(16 * var(--u)) 1fr; height: var(--u); align-items: center; }
+  .meter span { color: var(--lilac); white-space: nowrap; }
+  .meter .cells { display: grid; grid-template-columns: repeat(16, var(--u)); height: var(--u); }
+  .meter .cells i { margin: calc(3px * var(--sf)) calc(2px * var(--sf)); border-radius: calc(3px * var(--sf)); background: color-mix(in srgb, var(--dim) 45%, transparent); }
+  .meter .cells i.on { background: var(--cyan); }
+  .meter .cells i.on.low { background: var(--coral); }
+  .meter b { text-align: right; font-weight: normal; font-variant-numeric: tabular-nums; }
+  .shields { grid-column: -31 / -2; grid-row: 19 / span 5; }
+  .power { grid-column: -31 / -2; grid-row: 25 / span 6; }
+  .power .cells i.on { background: var(--amber); }
+  .shields h2, .power h2 { margin-bottom: 0; }
+
+  .log { grid-column: -31 / -2; grid-row: 32 / span 5; }
+  .log ol { margin: 0; padding: 0; list-style: none; }
+  .log li { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr; height: var(--u); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--lilac); }
+  .log time { color: var(--dim); font-variant-numeric: tabular-nums; }
+  .helm { grid-column: -31 / -2; grid-row: -3 / span 1; display: flex; gap: var(--u); align-items: center; }
+  .helm .note { color: var(--lilac); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* A narrow window: the scope across the width, the rest in a column. */
+  :root[data-narrow] .bridge { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .bridge > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .bar { grid-row: 2; flex-wrap: wrap; height: auto; }
+  :root[data-narrow] .bar .fill { display: none; }
+  :root[data-narrow] .scope { overflow: hidden; grid-column: 1 / -1; grid-row: 4 / span calc(2 * var(--r, 6) + 2); aspect-ratio: 1; }
+  :root[data-narrow] .readout { grid-column: auto / span 4; grid-row-start: 20; }
+  :root[data-narrow] .heading { grid-column: 2 / span 4; }
+  :root[data-narrow] .speed { grid-column: 6 / span 4; }
+  :root[data-narrow] .alert { grid-column: 10 / span 4; }
+  :root[data-narrow] .readout b { font-size: calc(30px * var(--sf)); }
+  :root[data-narrow] .spine { display: none; }
+  :root[data-narrow] .contacts { grid-row-start: 21; margin-top: var(--u); }
+  :root[data-narrow] .contacts td:nth-child(2), :root[data-narrow] .contacts th:nth-child(2) { display: none; }
+  :root[data-narrow] .contacts th.r { width: calc(2.5 * var(--u)); }
+  :root[data-narrow] .contacts th:first-child { width: calc(3.5 * var(--u)); }
+  :root[data-narrow] .shields { grid-row-start: 22; margin-top: var(--u); }
+  :root[data-narrow] .power { grid-row-start: 23; margin-top: var(--u); }
+  :root[data-narrow] .meter { grid-template-columns: calc(4 * var(--u)) 1fr calc(3 * var(--u)); }
+  :root[data-narrow] .meter span { font-size: calc(11px * var(--sf)); overflow: hidden; }
+  :root[data-narrow] .meter .cells { grid-template-columns: repeat(16, 1fr); }
+  :root[data-narrow] .meter .cells i { margin: calc(4px * var(--sf)) 1px; }
+  :root[data-narrow] .log { grid-row-start: 24; margin-top: var(--u); }
+  :root[data-narrow] .log li { height: auto; white-space: normal; }
+  :root[data-narrow] .helm { grid-row-start: 25; margin-top: var(--u); flex-wrap: wrap; height: auto; }
+  :root[data-narrow] .helm .note { white-space: normal; }
+</style>
