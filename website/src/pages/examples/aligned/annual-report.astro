@@ -1,0 +1,170 @@
+---
+// After a listed company's annual report: one headline figure, the chair's letter in a serif column
+// and the year's figures as waffle charts, every cell one square. The company keeps lighthouses by
+// hand, which no one else has done since 1998.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const REVENUE = [
+  { key: 'keeping', label: 'Keeping contracts', n: 54, colour: '#ffffff' },
+  { key: 'fog', label: 'Fog signals, sounded on request', n: 17, colour: '#9cc9c7' },
+  { key: 'cottages', label: 'Keepers’ cottages let to visitors', n: 14, colour: '#f3b21b' },
+  { key: 'lenses', label: 'Lens polishing and restoration', n: 9, colour: '#4f8a8f' },
+  { key: 'shop', label: 'Shop, mostly postcards', n: 6, colour: '#e0412d' },
+];
+const STAFF = [
+  { key: 'keepers', label: 'Keepers', n: 141, colour: '#ffffff' },
+  { key: 'engineers', label: 'Engineers', n: 38, colour: '#f3b21b' },
+  { key: 'cottage', label: 'Cottage staff', n: 19, colour: '#9cc9c7' },
+  { key: 'office', label: 'Head office', n: 14, colour: '#4f8a8f' },
+];
+// The company's mark, drawn in the waffles' own squares: a light, its beam, the rock.
+const LIGHTHOUSE = [
+  'bb.....#...',
+  'BBBBBBBL...',
+  'bb....===..',
+  '......RRR..',
+  '......WWW..',
+  '......RRR..',
+  '.....WWWWW.',
+  '~~~~~~~~~~~',
+];
+const PAINT: Record<string, string> = { b: '#3a7774', B: '#f7dd8a', L: '#f3b21b', '#': '#e0412d', '=': '#dfe8e7', R: '#e0412d', W: '#ffffff', '~': '#2f6a70' };
+const cells = (groups: { key: string; n: number; colour: string }[]) => groups.flatMap(group => Array.from({ length: group.n }, () => group));
+---
+<AlignedStudy slug="annual-report" theme="light">
+  <main class="stage report">
+    <header class="masthead">
+      <p class="company">Northern Light Keepers plc</p>
+      <p class="year">Annual report and accounts, year to 31 March 2026</p>
+    </header>
+
+    <section class="headline">
+      <p class="figure">359,160</p>
+      <h1>hours of light across our 41 stations. Not one of them went dark.</h1>
+    </section>
+
+    <article class="letter">
+      <h2>From the chair</h2>
+      <p>Our competitors automated in 1998. We did not, and for a long time that looked like the mistake the analysts said it was.</p>
+      <p>This year it looked different. Three coastal authorities renewed for ten years, citing the same thing: a person on the gallery at three in the morning notices what a sensor does not. Revenue rose 11 per cent to £48.2 million.</p>
+      <p>We sold one decommissioned foghorn, to a jazz musician, and let the keepers’ cottages for 4,100 nights. The board recommends a dividend of 6.2p.</p>
+      <p class="sign">Agnete Holm, Chair</p>
+    </article>
+
+    <section class="chart revenue" data-chart>
+      <h2>Revenue, £48.2m</h2>
+      <div class="waffle" style="--cols: 10">{cells(REVENUE).map(c => <i data-key={c.key} style={`--c: ${c.colour}`}></i>)}</div>
+      <ul class="key">{REVENUE.map(r => <li data-key={r.key} tabindex="0" style={`--c: ${r.colour}`}><b>{r.n}%</b>{r.label}</li>)}</ul>
+    </section>
+
+    <section class="chart emissions" data-chart>
+      <h2>Emissions, tonnes CO₂e</h2>
+      <div class="waffle" style="--cols: 9">
+        {Array.from({ length: 81 }, (_, i) => <i class:list={{ hollow: i >= 62 }} data-key={i < 62 ? 'now' : 'saved'} style="--c: #ffffff"></i>)}
+      </div>
+      <ul class="key">
+        <li data-key="now" tabindex="0" style="--c: #ffffff"><b>1,240</b>this year, a square for 20 t</li>
+        <li data-key="saved" tabindex="0" class="hollow-key"><b>370</b>fewer than last year, after the lamps went to LED and the tender boat to electric</li>
+      </ul>
+    </section>
+
+    <div class="mark" aria-hidden="true">{LIGHTHOUSE.flatMap(row => [...row]).map(ch => <i style={ch === '.' ? '' : `--c: ${PAINT[ch]}`}></i>)}</div>
+    <p class="note">Figures audited by Brede &amp; Lund. The lights are checked by hand, every night, by the people counted here.</p>
+
+    <section class="chart staff" data-chart>
+      <h2>People, 212 of us, one square each</h2>
+      <div class="waffle" style="--cols: 20">{cells(STAFF).map(c => <i data-key={c.key} style={`--c: ${c.colour}`}></i>)}</div>
+      <ul class="key">{STAFF.map(r => <li data-key={r.key} tabindex="0" style={`--c: ${r.colour}`}><b>{r.n}</b>{r.label}</li>)}</ul>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  // Pointing at, or focusing, a line of a key picks out its squares.
+  document.querySelectorAll<HTMLElement>('[data-chart]').forEach(chart => {
+    const waffle = chart.querySelector<HTMLElement>('.waffle')!;
+    chart.querySelectorAll<HTMLElement>('.key li').forEach(item => {
+      const on = () => { waffle.dataset.pick = item.dataset.key; waffle.querySelectorAll<HTMLElement>('i').forEach(cell => cell.classList.toggle('picked', cell.dataset.key === item.dataset.key)); };
+      const off = () => { delete waffle.dataset.pick; waffle.querySelectorAll('.picked').forEach(cell => cell.classList.remove('picked')); };
+      item.addEventListener('pointerenter', on);
+      item.addEventListener('focus', on);
+      item.addEventListener('pointerleave', off);
+      item.addEventListener('blur', off);
+    });
+  });
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .report {
+    --ink: #1c2426;
+    --sea: #0d4a52;
+    --rule: #d5dcdc;
+    --panel: #0d4a52;
+    --on-panel: #eaf1f0;
+    background: linear-gradient(to left, var(--panel) calc(42 * var(--u)), #fff 0);
+    color: var(--ink);
+    font-family: 'Avenir Next', Avenir, var(--typeface-regular), sans-serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+
+  .masthead { grid-column: 3 / -3; grid-row: 2 / span 2; display: flex; justify-content: space-between; align-items: start; border-top: calc(4px * var(--sf)) solid var(--sea); padding-top: calc(var(--u) / 2); box-sizing: border-box; }
+  .masthead p { margin: 0; }
+  .company { font-family: Optima, 'Avenir Next', sans-serif; font-size: calc(18px * var(--sf)); font-weight: 600; color: var(--sea); }
+  .year { color: #a9c4c4; }
+
+  /* The figure the year will be remembered by, five squares tall. */
+  .headline { grid-column: 3 / span 19; grid-row: 6 / span 10; }
+  .figure { margin: 0; font-family: 'Avenir Next Condensed', 'Avenir Next', sans-serif; font-weight: 700; font-size: calc(124px * var(--sf)); line-height: calc(5 * var(--u)); letter-spacing: -0.03em; color: var(--sea); white-space: nowrap; }
+  .headline h1 { margin: var(--u) 0 0; font-family: Optima, 'Avenir Next', sans-serif; font-weight: normal; font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); max-width: calc(20 * var(--u)); }
+
+  .letter { grid-column: 3 / span 18; grid-row: 18 / -3; font-family: Charter, 'Iowan Old Style', Georgia, serif; font-size: calc(14px * var(--sf)); border-top: calc(1px * var(--sf)) solid var(--rule); padding-top: calc(var(--u) - 1px * var(--sf)); overflow: hidden; }
+  .letter h2 { margin: 0 0 var(--u); font-family: Optima, sans-serif; font-weight: 600; font-size: calc(13px * var(--sf)); color: var(--sea); }
+  .letter p { margin: 0 0 var(--u); }
+  .letter .sign { font-style: italic; }
+
+  /* Waffles: a cell a square, a hair of white between, so the squares count. */
+  .chart { color: var(--on-panel); }
+  .chart h2 { margin: 0 0 var(--u); font-family: Optima, sans-serif; font-weight: 600; font-size: calc(15px * var(--sf)); color: #fff; line-height: var(--u); }
+  .waffle { display: grid; grid-template-columns: repeat(var(--cols), var(--u)); grid-auto-rows: var(--u); }
+  .waffle i { display: block; background: var(--c); box-shadow: inset 0 0 0 calc(1.5px * var(--sf)) var(--panel); transition: opacity 120ms; }
+  .waffle i.hollow { background: none; box-shadow: inset 0 0 0 calc(1.5px * var(--sf)) var(--panel), inset 0 0 0 calc(2.5px * var(--sf)) var(--c); }
+  .waffle[data-pick] i:not(.picked) { opacity: 0.18; }
+  .key { margin: var(--u) 0 0; padding: 0; list-style: none; }
+  .key li { display: grid; grid-template-columns: var(--u) calc(3 * var(--u)) 1fr; cursor: default; outline: none; }
+  .key li::before { content: ''; height: calc(var(--u) - 10px * var(--sf)); margin: calc(5px * var(--sf)); background: var(--c); }
+  .key li.hollow-key::before { background: none; box-shadow: inset 0 0 0 calc(1px * var(--sf)) #fff; }
+  .key li:focus-visible, .key li:hover { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .key b { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .mark { grid-column: -14 / span 11; grid-row: -10 / span 8; display: grid; grid-template-columns: repeat(11, var(--u)); grid-auto-rows: var(--u); }
+  .mark i { background: var(--c, transparent); }
+  .note { grid-column: 3 / span 18; grid-row: -5 / span 3; margin: 0; align-self: end; color: #6b7679; font-size: calc(12px * var(--sf)); }
+
+  .revenue { grid-column: -40 / span 16; grid-row: 6 / span 18; }
+  .emissions { grid-column: -20 / span 17; grid-row: 6 / span 18; }
+  .emissions .key li { grid-template-columns: var(--u) calc(3 * var(--u)) 1fr; }
+  .staff { grid-column: -40 / span 37; grid-row: 25 / span 14; display: grid; grid-template-columns: calc(20 * var(--u)) var(--u) 1fr; grid-template-rows: calc(2 * var(--u)) auto; }
+  .staff h2 { grid-column: 1 / -1; }
+  .staff .key { margin: 0; grid-column: 3; }
+
+  @media (max-width: 1360px) {
+    .report .figure { font-size: calc(108px * var(--sf)); }
+    .report .letter p:nth-of-type(3) { display: none; }
+  }
+
+  /* Narrow: one column; the people waffle twelve across. */
+  :root[data-narrow] .report { padding-bottom: calc(3 * var(--u)); background: #fff; }
+  :root[data-narrow] .chart, :root[data-narrow] .mark { background: var(--panel); margin-inline: calc(var(--u) * -1); padding: var(--u); }
+  :root[data-narrow] .chart { margin-top: 0 !important; }
+  :root[data-narrow] .mark { padding-bottom: 0; }
+  :root[data-narrow] .report > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .masthead { flex-direction: column; margin-top: var(--u); height: auto; }
+  :root[data-narrow] .figure { font-size: calc(64px * var(--sf)); line-height: calc(3 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .chart { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .staff { display: block; }
+  :root[data-narrow] .staff .waffle { --cols: 12 !important; grid-template-columns: repeat(12, var(--u)); }
+  :root[data-narrow] .staff .key { margin-top: var(--u); }
+  :root[data-narrow] .letter { margin-top: calc(2 * var(--u)); overflow: visible; }
+</style>

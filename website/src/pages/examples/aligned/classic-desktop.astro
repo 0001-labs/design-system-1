@@ -1,0 +1,670 @@
+---
+// After a one-bit desktop of 1984: a menu bar, a dithered desk, striped title bars, bitmaps whose
+// pixels are an eighth of a square and icons two squares wide. Windows drag as a dotted outline that
+// steps from square to square, and drop where the outline is, so every window stays on the grid.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+// 16 × 16 bitmaps: # black, o white, . clear. Drawn at two squares, so a pixel is an eighth of one.
+const BITMAPS: Record<string, string[]> = {
+  disk: [
+    '################',
+    '#oo#oooooooo#oo#',
+    '#oo#oo##oooo#oo#',
+    '#oo#oo##oooo#oo#',
+    '#oo#oooooooo#oo#',
+    '#oo##########oo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oo##########oo#',
+    '#oo#oooooooo#oo#',
+    '#oo#o######o#oo#',
+    '#oo#oooooooo#oo#',
+    '#oo#o####ooo#oo#',
+    '#oo#oooooooo#oo#',
+    '##o#oooooooo#oo#',
+    '################',
+  ],
+  folder: [
+    '................',
+    '................',
+    '.#####..........',
+    '#ooooo#.........',
+    '#oooooo########.',
+    '#oooooooooooooo#',
+    '################',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '#oooooooooooooo#',
+    '################',
+    '................',
+  ],
+  trash: [
+    '.....######.....',
+    '....#oooooo#....',
+    '################',
+    '#oooooooooooooo#',
+    '################',
+    '.#oooooooooooo#.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oo#oo#oo#oo##.',
+    '.#oooooooooooo#.',
+    '..############..',
+    '................',
+  ],
+  page: [
+    '..#########.....',
+    '..#ooooooo##....',
+    '..#ooooooo#o#...',
+    '..#ooooooo####..',
+    '..#oooooooooo#..',
+    '..#o####o###o#..',
+    '..#oooooooooo#..',
+    '..#o###o####o#..',
+    '..#oooooooooo#..',
+    '..#o#####o##o#..',
+    '..#oooooooooo#..',
+    '..#o###o###oo#..',
+    '..#oooooooooo#..',
+    '..#oooooooooo#..',
+    '..############..',
+    '................',
+  ],
+  sheet: [
+    '................',
+    '.##############.',
+    '.#oooooooooooo#.',
+    '.#o##o##o##o#o#.',
+    '.#oooooooooooo#.',
+    '.#o#o#o#o#o#oo#.',
+    '.#oooooooooooo#.',
+    '.#o##o##o##o#o#.',
+    '.#oooooooooooo#.',
+    '.#o#o#o#o#o#oo#.',
+    '.#oooooooooooo#.',
+    '.#o##o##o##o#o#.',
+    '.#oooooooooooo#.',
+    '.##############.',
+    '................',
+    '................',
+  ],
+  // The maker's mark in the menu bar: a seed, eight pixels a side, one square.
+  seed: [
+    '...##...',
+    '..#oo#..',
+    '.#oooo#.',
+    '#oo##oo#',
+    '#oo##oo#',
+    '.#oooo#.',
+    '..#oo#..',
+    '...##...',
+  ],
+};
+
+function bitmap(name: string): string {
+  const rows = BITMAPS[name];
+  const size = rows.length;
+  const black: string[] = [];
+  const white: string[] = [];
+  rows.forEach((row, y) => [...row].forEach((pixel, x) => {
+    if (pixel === '#') black.push(`M${x} ${y}h1v1h-1z`);
+    if (pixel === 'o') white.push(`M${x} ${y}h1v1h-1z`);
+  }));
+  return `<svg viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" aria-hidden="true"><path fill="#fff" d="${white.join('')}"/><path fill="#000" d="${black.join('')}"/></svg>`;
+}
+
+const MENUS = [
+  { name: 'File', items: ['Open', 'Duplicate', 'Get Info', '-', 'Put Away', '-', 'Close'] },
+  { name: 'Edit', items: ['Undo', '-', 'Cut', 'Copy', 'Paste', 'Clear', 'Select All'] },
+  { name: 'View', items: ['by Icon', 'by Name', 'by Date', 'by Size'] },
+  { name: 'Special', items: ['Clean Up', 'Shuffle Puzzle', '-', 'Empty Waste', 'Erase Disk'] },
+];
+const WORKS = new Set(['Clean Up', 'Shuffle Puzzle']);
+---
+<AlignedStudy slug="classic-desktop" theme="light">
+  <main class="stage bitdesk">
+    <header class="menubar">
+      <span class="seed" set:html={bitmap('seed')} aria-label="Seedworks"></span>
+      {MENUS.map(menu => (
+        <div class="menu">
+          <button type="button" class="menu-title" aria-expanded="false">{menu.name}</button>
+          <ul class="menu-items" role="menu" hidden>
+            {menu.items.map(item => item === '-'
+              ? <li class="rule" role="separator"></li>
+              : <li role="none"><button type="button" role="menuitem" data-command={item} disabled={!WORKS.has(item)}>{item}</button></li>)}
+          </ul>
+        </div>
+      ))}
+      <time class="menu-clock" id="menu-clock">10:42 AM</time>
+    </header>
+
+    <section class="desk" id="desk" aria-label="Desk">
+      <button type="button" class="icon" data-icon-x="-5" data-icon-y="1"><span set:html={bitmap('disk')}></span><b>Ingrid’s Disk</b></button>
+      <button type="button" class="icon" data-icon-x="-5" data-icon-y="5"><span set:html={bitmap('page')}></span><b>Ribbon order</b></button>
+      <button type="button" class="icon" data-icon-x="-5" data-icon-y="-4"><span set:html={bitmap('trash')}></span><b>Waste</b></button>
+
+      <article class="win" data-name="letters" style="--w: 28; --h: 14;">
+        <header class="bar" data-own-keys tabindex="0" aria-label="Letters window; arrow keys move it a square">
+          <button type="button" class="close" aria-label="Close Letters"></button>
+          <h2>Letters</h2>
+        </header>
+        <div class="folder">
+          <p class="folder-head"><span>5 items</span><span>212K in disk</span><span>188K available</span></p>
+          <div class="folder-icons">
+            <button type="button" class="icon small"><span set:html={bitmap('page')}></span><b>To Aunt Vera</b></button>
+            <button type="button" class="icon small"><span set:html={bitmap('page')}></span><b>Garden plan</b></button>
+            <button type="button" class="icon small"><span set:html={bitmap('sheet')}></span><b>Seed budget</b></button>
+            <button type="button" class="icon small"><span set:html={bitmap('folder')}></span><b>Recipes</b></button>
+            <button type="button" class="icon small"><span set:html={bitmap('page')}></span><b>Complaint</b></button>
+          </div>
+          <div class="scroll v" aria-hidden="true"><i class="up"></i><i class="track"></i><i class="down"></i></div>
+          <div class="scroll h" aria-hidden="true"><i class="left"></i><i class="track"></i><i class="right"></i></div>
+          <i class="grow" aria-hidden="true"></i>
+        </div>
+      </article>
+
+      <article class="win" data-name="note" style="--w: 24; --h: 19;">
+        <header class="bar" data-own-keys tabindex="0" aria-label="Note Pad window; arrow keys move it a square">
+          <button type="button" class="close" aria-label="Close Note Pad"></button>
+          <h2>Note Pad</h2>
+        </header>
+        <div class="note">
+          <textarea aria-label="Note Pad, page 1" spellcheck="false">Tuesday.
+
+Ribbon for the printer: the shop on Karlsgade has two left. Buy both.
+
+Ask Vera if the 400K disks from her school still work. Mine say "This disk is unreadable" in a very calm voice.
+
+Plant the leeks before the frost. The plan is in Letters.
+
+Write the complaint. Keep it short. They never read past the first line anyway.</textarea>
+          <span class="dog-ear" aria-hidden="true">1</span>
+        </div>
+      </article>
+
+      <article class="win" data-name="scrap" style="--w: 14; --h: 14;">
+        <header class="bar" data-own-keys tabindex="0" aria-label="Scrapbook window; arrow keys move it a square">
+          <button type="button" class="close" aria-label="Close Scrapbook"></button>
+          <h2>Scrapbook</h2>
+        </header>
+        <figure class="scrap">
+          <img src="/examples/images/birdie-heron.jpg" alt="A heron standing in shallow water, in one-bit dither" />
+          <figcaption><span>3</span><span>Picture</span></figcaption>
+        </figure>
+      </article>
+
+      <article class="win" data-name="puzzle" style="--w: 8; --h: 9;">
+        <header class="bar" data-own-keys tabindex="0" aria-label="Puzzle window; arrow keys move it a square">
+          <button type="button" class="close" aria-label="Close Puzzle"></button>
+          <h2>Puzzle</h2>
+        </header>
+        <div class="puzzle" id="puzzle" aria-label="Fifteen puzzle: press a tile beside the gap to slide it"></div>
+      </article>
+
+      <article class="win" data-name="clock" style="--w: 10; --h: 3;">
+        <header class="bar" data-own-keys tabindex="0" aria-label="Alarm Clock window; arrow keys move it a square">
+          <button type="button" class="close" aria-label="Close Alarm Clock"></button>
+          <h2>Alarm Clock</h2>
+        </header>
+        <p class="clock" id="clock">10:42:07 AM</p>
+      </article>
+
+      <i class="outline" id="outline" hidden></i>
+      <svg class="filters" aria-hidden="true" width="0" height="0">
+        <filter id="one-bit" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0 0 0 1 0" result="grey" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="4" result="noise" />
+          <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="flat" />
+          <feComposite in="grey" in2="flat" operator="arithmetic" k1="0" k2="1.1" k3="0.7" k4="-0.42" />
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0 1" />
+            <feFuncG type="discrete" tableValues="0 1" />
+            <feFuncB type="discrete" tableValues="0 1" />
+          </feComponentTransfer>
+        </filter>
+      </svg>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const desk = document.getElementById('desk')!;
+  const outline = document.getElementById('outline')!;
+  const windows = [...desk.querySelectorAll<HTMLElement>('.win')];
+  let squares = { unit: 20, across: 72, down: 45, narrow: false };
+  let top = 10;
+
+  // Where each window sits on a fresh desk, in squares from the desk's top left.
+  function home(name: string, across: number, high: number) {
+    const spots: Record<string, [number, number]> = {
+      letters: [3, 3],
+      note: [Math.min(22, across - 26), Math.min(14, high - 20)],
+      puzzle: [across - 17, 3],
+      clock: [across - 19, 16],
+      scrap: [across - 24, Math.max(21, high - 16)],
+    };
+    return spots[name];
+  }
+
+  const size = (win: HTMLElement) => [Number(win.style.getPropertyValue('--w')), Number(win.style.getPropertyValue('--h'))];
+  const deskHigh = () => squares.down - 1;
+
+  function place(win: HTMLElement, x: number, y: number) {
+    const [w, h] = size(win);
+    const cx = Math.max(0, Math.min(squares.across - w, Math.round(x)));
+    const cy = Math.max(0, Math.min(deskHigh() - h, Math.round(y)));
+    win.style.setProperty('--x', String(cx));
+    win.style.setProperty('--y', String(cy));
+  }
+
+  function raise(win: HTMLElement) {
+    windows.forEach(other => other.classList.toggle('active', other === win));
+    win.style.zIndex = String(++top);
+  }
+
+  function cleanUp() {
+    windows.forEach(win => {
+      win.hidden = false;
+      const [x, y] = home(win.dataset.name!, squares.across, deskHigh());
+      place(win, x, y);
+    });
+    raise(windows[1]);
+  }
+
+  // Icons sit on squares counted from the desk's right and bottom edges when negative.
+  function placeIcons() {
+    desk.querySelectorAll<HTMLElement>(':scope > .icon').forEach(icon => {
+      const x = Number(icon.dataset.iconX);
+      const y = Number(icon.dataset.iconY);
+      icon.style.setProperty('--x', String(x < 0 ? squares.across + x : x));
+      icon.style.setProperty('--y', String(y < 0 ? deskHigh() + y : y));
+    });
+  }
+
+  let laidOut = false;
+  onSquares(next => {
+    squares = next;
+    placeIcons();
+    if (!laidOut) { cleanUp(); laidOut = true; }
+    else windows.forEach(win => place(win, Number(win.style.getPropertyValue('--x')), Number(win.style.getPropertyValue('--y'))));
+  });
+
+  // Dragging: the dotted outline steps square by square under the pointer; the window waits, then
+  // drops where the outline is.
+  windows.forEach(win => {
+    const bar = win.querySelector<HTMLElement>('.bar')!;
+    win.addEventListener('pointerdown', () => raise(win));
+    bar.addEventListener('pointerdown', event => {
+      if (squares.narrow || (event.target as HTMLElement).closest('.close') || event.button !== 0) return;
+      event.preventDefault();
+      bar.focus({ preventScroll: true });
+      const [w, h] = size(win);
+      const startX = Number(win.style.getPropertyValue('--x'));
+      const startY = Number(win.style.getPropertyValue('--y'));
+      const fromX = event.clientX;
+      const fromY = event.clientY;
+      let x = startX;
+      let y = startY;
+      outline.hidden = false;
+      outline.style.setProperty('--w', String(w));
+      outline.style.setProperty('--h', String(h));
+      const show = () => { outline.style.setProperty('--x', String(x)); outline.style.setProperty('--y', String(y)); };
+      show();
+      bar.setPointerCapture(event.pointerId);
+      const move = (e: PointerEvent) => {
+        x = Math.max(0, Math.min(squares.across - w, startX + Math.round((e.clientX - fromX) / squares.unit)));
+        y = Math.max(0, Math.min(deskHigh() - h, startY + Math.round((e.clientY - fromY) / squares.unit)));
+        show();
+      };
+      const up = () => {
+        outline.hidden = true;
+        place(win, x, y);
+        bar.removeEventListener('pointermove', move);
+        bar.removeEventListener('pointerup', up);
+        bar.removeEventListener('pointercancel', up);
+      };
+      bar.addEventListener('pointermove', move);
+      bar.addEventListener('pointerup', up);
+      bar.addEventListener('pointercancel', up);
+    });
+    bar.addEventListener('keydown', event => {
+      const steps: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      const step = steps[event.key];
+      if (!step || squares.narrow) return;
+      event.preventDefault();
+      raise(win);
+      place(win, Number(win.style.getPropertyValue('--x')) + step[0], Number(win.style.getPropertyValue('--y')) + step[1]);
+    });
+    bar.addEventListener('focus', () => raise(win));
+    win.querySelector('.close')!.addEventListener('click', () => { win.hidden = true; });
+  });
+
+  // Icons select on a press, as on the old desk.
+  desk.querySelectorAll<HTMLElement>('.icon').forEach(icon => icon.addEventListener('click', () => {
+    desk.querySelectorAll('.icon.selected').forEach(other => other.classList.remove('selected'));
+    icon.classList.add('selected');
+  }));
+
+  // Menus pull down on a press; Clean Up and Shuffle Puzzle do something.
+  const menus = [...document.querySelectorAll<HTMLElement>('.menu')];
+  const closeMenus = () => menus.forEach(menu => {
+    menu.querySelector('.menu-title')!.setAttribute('aria-expanded', 'false');
+    (menu.querySelector('.menu-items') as HTMLElement).hidden = true;
+  });
+  menus.forEach(menu => {
+    const title = menu.querySelector<HTMLButtonElement>('.menu-title')!;
+    const list = menu.querySelector<HTMLElement>('.menu-items')!;
+    title.addEventListener('click', event => {
+      event.stopPropagation();
+      const open = list.hidden;
+      closeMenus();
+      list.hidden = !open;
+      title.setAttribute('aria-expanded', String(open));
+    });
+    list.addEventListener('click', event => {
+      const command = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-command]')?.dataset.command;
+      if (command === 'Clean Up') cleanUp();
+      if (command === 'Shuffle Puzzle') shuffle();
+      closeMenus();
+    });
+  });
+  document.addEventListener('click', closeMenus);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenus(); });
+
+  // The fifteen puzzle: tiles two squares a side, shuffled by legal moves so it can be solved.
+  const puzzle = document.getElementById('puzzle')!;
+  let cells = [...Array.from({ length: 15 }, (_, i) => i + 1), 0];
+  const neighbours = (i: number) => [i - 4, i + 4, i % 4 ? i - 1 : -1, i % 4 < 3 ? i + 1 : -1].filter(n => n >= 0 && n < 16);
+  function drawPuzzle() {
+    puzzle.innerHTML = cells.map((n, i) => n
+      ? `<button type="button" class="tile" data-at="${i}" aria-label="Tile ${n}">${n}</button>`
+      : `<i class="gap" aria-hidden="true"></i>`).join('');
+  }
+  function shuffle() {
+    let gap = cells.indexOf(0);
+    let last = -1;
+    for (let i = 0; i < 160; i++) {
+      const options = neighbours(gap).filter(n => n !== last);
+      const pick = options[Math.floor(Math.random() * options.length)];
+      [cells[gap], cells[pick]] = [cells[pick], cells[gap]];
+      last = gap;
+      gap = pick;
+    }
+    drawPuzzle();
+  }
+  puzzle.addEventListener('click', event => {
+    const tile = (event.target as HTMLElement).closest<HTMLElement>('.tile');
+    if (!tile) return;
+    const at = Number(tile.dataset.at);
+    const gap = cells.indexOf(0);
+    if (!neighbours(gap).includes(at)) return;
+    [cells[gap], cells[at]] = [cells[at], cells[gap]];
+    drawPuzzle();
+    puzzle.querySelector<HTMLElement>(`[data-at="${gap}"]`)?.focus();
+    if (cells.every((n, i) => n === (i === 15 ? 0 : i + 1))) puzzle.classList.add('solved');
+    else puzzle.classList.remove('solved');
+  });
+  shuffle();
+
+  // Both clocks keep the visitor's time.
+  const clock = document.getElementById('clock')!;
+  const menuClock = document.getElementById('menu-clock')!;
+  const tick = () => {
+    const now = new Date();
+    const h = now.getHours() % 12 || 12;
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const half = now.getHours() < 12 ? 'AM' : 'PM';
+    clock.textContent = `${h}:${m}:${s} ${half}`;
+    menuClock.textContent = `${h}:${m} ${half}`;
+  };
+  tick();
+  setInterval(tick, 1000);
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .bitdesk {
+    --px: calc(var(--u) / 8);
+    --line: max(1px, calc(var(--u) / 16));
+    /* One dot of the old screen: a pixel at the true scale. */
+    --dot: calc(var(--u) / 20);
+    color: #000;
+    font-family: Geneva, 'Lucida Grande', Verdana, sans-serif;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    background: #fff;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+  }
+  :where(.bitdesk button) { all: unset; box-sizing: border-box; cursor: default; }
+  .bitdesk :focus-visible { outline: var(--line) dotted #000; outline-offset: calc(var(--px) * -1); }
+
+  /* The menu bar: one square, black rule under it. */
+  .menubar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    z-index: 100000;
+    display: flex;
+    align-items: stretch;
+    padding-inline: var(--u);
+    background: #fff;
+    box-shadow: inset 0 calc(var(--line) * -1) #000;
+    font-family: Silom, Chicago, Geneva, sans-serif;
+    font-size: calc(13px * var(--sf));
+  }
+  .seed { display: block; width: var(--u); height: var(--u); margin-inline-end: var(--u); }
+  .seed svg { display: block; width: 100%; height: 100%; }
+  .menu { position: relative; }
+  .menu-title { display: block; height: var(--u); padding-inline: calc(var(--u) / 2); }
+  .menu-title[aria-expanded='true'] { background: #000; color: #fff; }
+  .menu-items {
+    position: absolute;
+    top: var(--u);
+    left: 0;
+    min-width: calc(8 * var(--u));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    border: var(--line) solid #000;
+    box-shadow: calc(var(--px)) calc(var(--px)) 0 #000;
+  }
+  .menu-items button { display: block; width: 100%; height: var(--u); padding-inline: var(--u); white-space: nowrap; }
+  /* Disabled items in dithered ink, as one bit greys them. */
+  .menu-items button:disabled { color: transparent; background: repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 2px 2px; -webkit-background-clip: text; background-clip: text; }
+  .menu-items button:not(:disabled):hover, .menu-items button:not(:disabled):focus-visible { background: #000; color: #fff; outline: none; }
+  .menu-items .rule { height: var(--u); background: repeating-linear-gradient(90deg, #000 0 1px, transparent 0 2px) 0 50% / 100% var(--line) no-repeat; }
+  .menu-clock { margin-inline-start: auto; padding-inline: calc(var(--u) / 2); font-variant-numeric: tabular-nums; }
+
+  /* The desk: the old 50% grey, one check an eighth of a square. */
+  .desk {
+    grid-column: 1 / -1;
+    grid-row: 2 / -1;
+    position: relative;
+    background: repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / calc(var(--px) * 2) calc(var(--px) * 2);
+    image-rendering: pixelated;
+  }
+
+  /* Icons: a bitmap two squares a side, its name on a white label below. */
+  .icon {
+    position: absolute;
+    left: calc(var(--x, 0) * var(--u) - var(--u));
+    top: calc(var(--y, 0) * var(--u));
+    display: grid;
+    justify-items: center;
+    grid-template-rows: calc(2 * var(--u)) var(--u);
+    width: calc(4 * var(--u));
+    text-align: center;
+  }
+  .icon span, .icon svg { display: block; width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  .icon b { font-weight: normal; padding-inline: calc(var(--px) * 2); background: #fff; white-space: nowrap; line-height: calc(var(--u) * 0.8); height: calc(var(--u) * 0.8); align-self: end; }
+  .icon.selected svg { filter: invert(1); }
+  .icon.selected b { background: #000; color: #fff; }
+
+  /* Windows: whole squares, a striped title bar a square high, a close box in its first square. */
+  .win {
+    position: absolute;
+    left: calc(var(--x, 0) * var(--u));
+    top: calc(var(--y, 0) * var(--u));
+    width: calc(var(--w) * var(--u));
+    height: calc(var(--h) * var(--u));
+    display: grid;
+    grid-template-rows: var(--u) 1fr;
+    box-sizing: border-box;
+    background: #fff;
+    border: var(--line) solid #000;
+    box-shadow: var(--px) var(--px) 0 #000;
+  }
+  .bar {
+    display: grid;
+    grid-template-columns: var(--u) 1fr var(--u);
+    align-items: center;
+    box-sizing: border-box;
+    border-bottom: var(--line) solid #000;
+    font-family: Silom, Chicago, Geneva, sans-serif;
+    font-size: calc(13px * var(--sf));
+    touch-action: none;
+    background: #fff;
+  }
+  .bar:focus-visible { outline: none; }
+  .win.active .bar {
+    background:
+      repeating-linear-gradient(#000 0 var(--dot), #fff 0 calc(var(--dot) * 2)) calc(var(--dot) * 2) calc(var(--dot) * 4) / calc(100% - var(--dot) * 4) calc(var(--dot) * 11) no-repeat,
+      #fff;
+  }
+  .win.active .bar:focus-visible h2 { text-decoration: underline dotted; text-underline-offset: calc(var(--px) * 1.5); }
+  .bar h2 {
+    grid-column: 2;
+    justify-self: center;
+    margin: 0;
+    padding-inline: calc(var(--u) / 2);
+    font: inherit;
+    line-height: calc(var(--u) - var(--line));
+    background: #fff;
+    white-space: nowrap;
+  }
+  .close { grid-column: 1; width: var(--u); height: calc(var(--u) - var(--line)); display: grid; place-items: center; background: #fff; visibility: hidden; }
+  .close::before { content: ''; width: calc(var(--px) * 5); height: calc(var(--px) * 5); box-sizing: border-box; border: var(--line) solid #000; background: #fff; }
+  .close:active::before { background: #000; }
+  .win.active .close { visibility: visible; margin-inline-start: calc(var(--px)); }
+  .win.active .close { background: transparent; }
+  .win.active .close::before { box-shadow: 0 0 0 var(--line) #fff; }
+
+  /* The dotted outline that a drag moves, a square at a time. */
+  .outline {
+    position: absolute;
+    z-index: 99999;
+    left: calc(var(--x, 0) * var(--u));
+    top: calc(var(--y, 0) * var(--u));
+    width: calc(var(--w) * var(--u));
+    height: calc(var(--h) * var(--u));
+    box-sizing: border-box;
+    border: var(--line) dashed #000;
+    outline: var(--line) dashed #fff;
+    outline-offset: calc(var(--line) * -2);
+    pointer-events: none;
+  }
+
+  /* Letters: a folder window with its header, icons and scroll bars. */
+  .folder { display: grid; grid-template-columns: 1fr var(--u); grid-template-rows: var(--u) 1fr var(--u); min-height: 0; }
+  .folder-head { grid-column: 1 / -1; display: flex; justify-content: space-between; margin: 0; padding-inline: var(--u); border-bottom: calc(var(--line) * 3) double #000; font-size: calc(11px * var(--sf)); line-height: calc(var(--u) - var(--line) * 3); }
+  .folder-icons { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: repeat(auto-fill, calc(5 * var(--u))); grid-auto-rows: calc(4 * var(--u)); padding: var(--u) var(--u) 0; overflow: hidden; }
+  .folder-icons .icon { position: static; width: calc(5 * var(--u)); }
+  .scroll { display: grid; background: repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / calc(var(--px) * 2) calc(var(--px) * 2); }
+  .scroll.v { grid-column: 2; grid-row: 2; grid-template-rows: var(--u) 1fr var(--u); border-left: var(--line) solid #000; }
+  .scroll.h { grid-row: 3; grid-column: 1; grid-template-columns: var(--u) 1fr var(--u); border-top: var(--line) solid #000; }
+  .scroll i { display: block; background: #fff; position: relative; }
+  .scroll .track { background: none; }
+  .scroll .up { border-bottom: var(--line) solid #000; }
+  .scroll .down { border-top: var(--line) solid #000; }
+  .scroll .left { border-right: var(--line) solid #000; }
+  .scroll .right { border-left: var(--line) solid #000; }
+  .scroll i:not(.track)::before { content: ''; position: absolute; inset: calc(var(--px) * 2); background: #000; clip-path: polygon(50% 10%, 95% 60%, 70% 60%, 70% 92%, 30% 92%, 30% 60%, 5% 60%); }
+  .scroll .down::before { transform: rotate(180deg); }
+  .scroll .left::before { transform: rotate(-90deg); }
+  .scroll .right::before { transform: rotate(90deg); }
+  .grow { display: block; grid-row: 3; grid-column: 2; border-top: var(--line) solid #000; border-left: var(--line) solid #000; position: relative; background: #fff; }
+  .grow::before, .grow::after { content: ''; position: absolute; box-sizing: border-box; border: var(--line) solid #000; background: #fff; }
+  .grow::before { left: calc(var(--px) * 2); top: calc(var(--px) * 2); width: calc(var(--px) * 3.5); height: calc(var(--px) * 3.5); }
+  .grow::after { left: calc(var(--px) * 3); top: calc(var(--px) * 3); width: calc(var(--px) * 3.5); height: calc(var(--px) * 3.5); }
+
+  /* Note Pad: Monaco on twenty-unit lines, the page number in a turned-up corner. */
+  .note { position: relative; min-height: 0; }
+  .note textarea {
+    all: unset;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: var(--u) var(--u) calc(2 * var(--u));
+    font-family: Monaco, Menlo, monospace;
+    font-size: calc(11px * var(--sf));
+    line-height: var(--u);
+    white-space: pre-wrap;
+    overflow: hidden;
+    cursor: text;
+  }
+  .dog-ear {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: calc(2 * var(--u));
+    height: calc(2 * var(--u));
+    display: grid;
+    place-items: center;
+    font-size: calc(10px * var(--sf));
+    background: linear-gradient(45deg, #fff 0 calc(50% - var(--line)), #000 0 50%, transparent 0);
+    border-top: var(--line) solid #000;
+    border-right: var(--line) solid #000;
+    box-sizing: border-box;
+    padding: 0 calc(var(--px) * 3) calc(var(--px) * 3) 0;
+    justify-items: start;
+    align-items: end;
+    padding-left: calc(var(--px) * 3);
+  }
+
+  /* Puzzle: fifteen tiles two squares a side. */
+  .puzzle { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); font-family: Silom, Chicago, Geneva, sans-serif; font-size: calc(15px * var(--sf)); }
+  .tile { display: grid; place-items: center; border-right: var(--line) solid #000; border-bottom: var(--line) solid #000; background: #fff; cursor: pointer; }
+  .tile:active { background: #000; color: #fff; }
+  .tile:focus-visible { outline-offset: calc(var(--px) * -2); }
+  .gap { background: repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / calc(var(--px) * 2) calc(var(--px) * 2); border-right: var(--line) solid #000; border-bottom: var(--line) solid #000; }
+  .puzzle.solved .tile { background: #000; color: #fff; }
+
+  /* Scrapbook: a heron in one bit, dithered by a filter. */
+  .scrap { display: grid; grid-template-rows: 1fr var(--u); margin: 0; min-height: 0; }
+  .scrap img { display: block; width: 100%; height: 100%; object-fit: cover; filter: url(#one-bit); border-bottom: var(--line) solid #000; box-sizing: border-box; min-height: 0; }
+  .scrap figcaption { display: flex; justify-content: space-between; padding-inline: calc(var(--u) / 2); font-size: calc(11px * var(--sf)); }
+  .filters { position: absolute; }
+
+  .clock { margin: 0; display: grid; place-items: center; font-family: Silom, Chicago, Geneva, sans-serif; font-size: calc(16px * var(--sf)); line-height: calc(2 * var(--u)); font-variant-numeric: tabular-nums; }
+
+  /* Narrow: the windows stand one under another in the scrolling desk, and do not drag. */
+  :root[data-narrow] .menubar { padding-inline: calc(var(--u) / 2); font-size: calc(12px * var(--sf)); }
+  :root[data-narrow] .seed { margin-inline-end: 0; }
+  :root[data-narrow] .menu-title { padding-inline: calc(var(--u) / 3); }
+  :root[data-narrow] .menu-clock { display: none; }
+  :root[data-narrow] .menu:nth-of-type(4) .menu-items { left: auto; right: 0; }
+  :root[data-narrow] .desk { grid-row: 2 / span 1; display: grid; grid-template-columns: repeat(12, var(--u)); grid-auto-rows: var(--u); row-gap: 0; padding: var(--u); padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .desk > .icon { position: static; grid-column: span 4; grid-row: span 4; width: calc(4 * var(--u)); padding-top: var(--u); }
+  :root[data-narrow] .desk > .icon:nth-of-type(1) { grid-column: 1 / span 4; }
+  :root[data-narrow] .win { position: relative; left: 0; top: 0; grid-column: 1 / -1; width: auto; margin-bottom: var(--u); }
+  :root[data-narrow] .win[data-name='letters'] { grid-row: span 14; height: calc(13 * var(--u)); }
+  :root[data-narrow] .win[data-name='note'] { grid-row: span 25; height: calc(24 * var(--u)); }
+  :root[data-narrow] .win[data-name='puzzle'] { grid-column: 1 / span 8; grid-row: span 10; height: calc(9 * var(--u)); }
+  :root[data-narrow] .win[data-name='scrap'] { grid-row: span 15; height: calc(14 * var(--u)); }
+  :root[data-narrow] .win[data-name='clock'] { grid-column: 1 / -1; grid-row: span 4; height: calc(3 * var(--u)); }
+  :root[data-narrow] .folder-icons { grid-template-columns: repeat(auto-fill, calc(5 * var(--u))); padding-inline: calc(var(--u) / 2) 0; }
+  :root[data-narrow] .folder-head span:nth-child(3) { display: none; }
+</style>

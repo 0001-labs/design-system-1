@@ -1,0 +1,196 @@
+---
+// After a phone maker's launch page, every superlative intact, for a wooden chair. Black stage,
+// a headline filled with the chair's own limewash colours, the hero picture lit on whole fields and
+// revealed once, a comparison of three generations and the finishes as swatches.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const CLAIMS = [
+  { big: '7', line: 'back slats. The most we have ever fitted to a chair.' },
+  { big: '0', line: 'batteries. Sits all day. There was never a charger in the box.' },
+  { big: '2', line: 'hand-turned rings on each front leg. Twice the rings.' },
+];
+const ROWS = [
+  ['Legs', '4', '4', '4'],
+  ['Back slats', '3', '5', '7'],
+  ['Seat', 'Flat', 'Dished', 'Dished, deeper'],
+  ['Turned rings', 'None', '1 a leg', '2 a leg'],
+  ['Weight', '6.1 kg', '5.6 kg', '5.2 kg'],
+  ['People seated', '1', '1', '1'],
+  ['From', '€390', '€450', '€590'],
+];
+const FINISHES = [
+  { name: 'Bare teak', colour: '#b98d5f' },
+  { name: 'Rose limewash', colour: '#e7a39a' },
+  { name: 'Harbour limewash', colour: '#8fa6b8' },
+  { name: 'Smoke', colour: '#5d5751' },
+];
+---
+<AlignedStudy slug="chair-keynote" theme="dark">
+  <main class="stage keynote">
+    <nav class="product-nav" aria-label="Chair 4 Pro">
+      <b>Chair 4 Pro</b>
+      <span class="links"><a href="#compare">Compare</a><a href="#finishes">Finishes</a><button type="button" class="buy">Buy</button></span>
+    </nav>
+
+    <header class="hero-copy">
+      <p class="new">New</p>
+      <h1>Chair 4 Pro</h1>
+      <p class="sub">The most chair we’ve ever made.</p>
+      <p class="price">From €590, or €49.17 a month for 12 months.</p>
+    </header>
+
+    <figure class="hero" id="hero">
+      <img src="/examples/images/chair.jpg" alt="Chair 4 Pro in bare teak with rose and harbour limewash on the back rail and slats" />
+    </figure>
+
+    <ul class="claims">
+      {CLAIMS.map(claim => <li><b>{claim.big}</b><span>{claim.line}</span></li>)}
+    </ul>
+
+    <table class="compare" id="compare">
+      <caption>Which chair is right for you?</caption>
+      <thead><tr><th scope="col"><span class="sr">Feature</span></th><th scope="col">Chair 3</th><th scope="col">Chair 4</th><th scope="col">Chair 4 Pro</th></tr></thead>
+      <tbody>{ROWS.map(([label, ...cells]) => <tr><th scope="row">{label}</th>{cells.map(cell => <td>{cell}</td>)}</tr>)}</tbody>
+    </table>
+
+    <section class="finishes" id="finishes" aria-label="Finishes">
+      <h2>Four finishes. All of them wood.</h2>
+      <ul>
+        {FINISHES.map((finish, i) => (
+          <li><button type="button" class:list={['swatch', { picked: i === 0 }]} style={`--c: ${finish.colour}`} aria-pressed={i === 0 ? 'true' : 'false'}><i></i><span>{finish.name}</span></button></li>
+        ))}
+      </ul>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // One reveal: the lit field opens from the floor up, once, after the page has its squares.
+  const hero = document.getElementById('hero')!;
+  let revealed = false;
+  onSquares(() => {
+    if (revealed) return;
+    revealed = true;
+    if (reducedMotion()) { hero.classList.add('shown'); return; }
+    requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add('shown', 'moving')));
+  });
+
+  // The swatches tint the chair's wood: a picked finish, a matching wash over the picture.
+  const swatches = [...document.querySelectorAll<HTMLButtonElement>('.swatch')];
+  swatches.forEach(swatch => swatch.addEventListener('click', () => {
+    swatches.forEach(other => { other.classList.toggle('picked', other === swatch); other.setAttribute('aria-pressed', String(other === swatch)); });
+    hero.style.setProperty('--wash', swatch.style.getPropertyValue('--c'));
+    hero.classList.toggle('washed', swatch !== swatches[0]);
+  }));
+</script>
+
+<style is:global>
+  html { background: #000; }
+  .keynote {
+    --grey: #8e8e93;
+    --line: #2c2c2e;
+    --wood: linear-gradient(100deg, #f7dcc0 0%, #e7a39a 45%, #9fb3c6 100%);
+    background: #000;
+    color: #f5f5f7;
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .keynote .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .product-nav { grid-column: 3 / -36; z-index: 1; grid-row: 1 / span 2; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+  .product-nav b { font-family: var(--typeface-medium); font-weight: normal; font-size: calc(18px * var(--sf)); }
+  .product-nav .links { display: flex; align-items: center; gap: var(--u); font-size: calc(12px * var(--sf)); }
+  .product-nav a { color: #d2d2d7; text-decoration: none; }
+  .product-nav a:hover, .product-nav a:focus-visible { color: #fff; text-decoration: underline; }
+  .buy { all: unset; height: var(--u); padding-inline: calc(var(--u) * 0.75); border-radius: var(--u); background: #f5f5f7; color: #000; line-height: var(--u); cursor: pointer; }
+  .buy:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  /* The headline: six squares tall, filled with the limewash on the chair's back rail. */
+  .hero-copy { grid-column: 3 / span 31; grid-row: 4 / span 11; }
+  .hero-copy p { margin: 0; }
+  .new { color: #e7a39a; font-family: var(--typeface-medium); font-size: calc(16px * var(--sf)); }
+  .hero-copy h1 {
+    margin: 0;
+    font-family: var(--typeface-medium);
+    font-weight: normal;
+    font-size: calc(128px * var(--sf));
+    line-height: calc(6 * var(--u));
+    letter-spacing: -0.045em;
+    white-space: nowrap;
+    background: var(--wood);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub { font-family: var(--typeface-medium); font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); color: #f5f5f7; }
+  .price { margin-top: var(--u) !important; color: var(--grey); }
+
+  /* The hero: a lit field of whole squares, opened once from the floor up. */
+  .hero { grid-column: -34 / -1; grid-row: 1 / -1; margin: 0; position: relative; overflow: hidden; background: #fff; clip-path: inset(100% 0 0 0); }
+  .hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 60% 55%; transform: scale(1.08); filter: brightness(0.6); }
+  .hero::after { content: ''; position: absolute; inset: 0; background: var(--wash, transparent); mix-blend-mode: color; opacity: 0; transition: opacity 400ms ease; pointer-events: none; }
+  .hero.washed::after { opacity: 0.55; }
+  .hero.shown { clip-path: inset(0); }
+  .hero.shown img { transform: none; filter: none; }
+  .hero.moving { transition: clip-path 1400ms cubic-bezier(0.22, 0.8, 0.12, 1); }
+  .hero.moving img { transition: transform 1800ms cubic-bezier(0.22, 0.8, 0.12, 1), filter 1600ms ease-out; }
+
+  /* Three claims in fields of ten squares. */
+  .claims { grid-column: 3 / span 31; grid-row: 16 / span 5; display: grid; grid-template-columns: repeat(3, calc(10 * var(--u))); column-gap: calc(var(--u) / 2); margin: 0; padding: 0; list-style: none; }
+  .claims li { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr; column-gap: calc(var(--u) / 2); align-items: start; }
+  .claims b { font-family: var(--typeface-medium); font-weight: normal; font-size: calc(72px * var(--sf)); line-height: calc(4 * var(--u)); letter-spacing: -0.04em; background: var(--wood); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .claims span { color: #d2d2d7; font-size: calc(13px * var(--sf)); padding-top: calc(var(--u) / 2); }
+
+  .compare { grid-column: 3 / span 31; grid-row: 22 / span 17; align-self: start; border-collapse: collapse; width: calc(31 * var(--u)); table-layout: fixed; }
+  .compare caption { text-align: left; font-family: var(--typeface-medium); font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .compare th, .compare td { height: var(--u); padding: 0; text-align: left; font-weight: normal; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compare thead th { color: var(--grey); font-size: calc(12px * var(--sf)); }
+  .compare thead th:last-child { color: #e7a39a; }
+  .compare tbody th { color: var(--grey); width: calc(9 * var(--u)); }
+  .compare td:last-child { color: #fff; font-family: var(--typeface-medium); }
+  .compare tbody td { color: #d2d2d7; }
+
+  .finishes { grid-column: 3 / span 31; grid-row: -9 / span 7; }
+  .finishes h2 { margin: 0 0 var(--u); font-family: var(--typeface-medium); font-weight: normal; font-size: calc(16px * var(--sf)); }
+  .finishes ul { display: grid; grid-template-columns: repeat(4, calc(7 * var(--u)) ); column-gap: var(--u); margin: 0; padding: 0; list-style: none; }
+  .swatch { all: unset; display: grid; grid-template-rows: calc(3 * var(--u)) var(--u); row-gap: calc(var(--u) / 2); cursor: pointer; }
+  .swatch i { width: calc(3 * var(--u)); height: calc(3 * var(--u)); border-radius: 50%; background: var(--c); box-shadow: inset 0 calc(-6px * var(--sf)) calc(10px * var(--sf)) rgb(0 0 0 / 0.35); }
+  .swatch span { font-size: calc(12px * var(--sf)); color: var(--grey); white-space: nowrap; }
+  .swatch.picked i { outline: calc(2px * var(--sf)) solid #f5f5f7; outline-offset: calc(3px * var(--sf)); }
+  .swatch.picked span { color: #fff; }
+  .swatch:focus-visible i { outline: calc(2px * var(--sf)) dashed #fff; outline-offset: calc(3px * var(--sf)); }
+
+  @media (max-width: 1360px) {
+    .keynote .hero { grid-column: -29 / -1; }
+    .keynote .product-nav { grid-column: 3 / -31; }
+    .keynote .finishes ul { grid-template-columns: repeat(4, calc(6 * var(--u))); column-gap: calc(var(--u) / 2); }
+    .keynote .hero-copy h1 { font-size: calc(104px * var(--sf)); }
+    .keynote .claims, .keynote .compare, .keynote .hero-copy, .keynote .finishes { grid-column: 3 / span 30; }
+    .keynote .compare { width: calc(30 * var(--u)); }
+    .keynote .claims { grid-template-columns: repeat(3, calc(9.5 * var(--u))); column-gap: calc(var(--u) / 2); }
+    .keynote .claims li { grid-template-columns: calc(2 * var(--u)) 1fr; }
+    .keynote .claims b { font-size: calc(56px * var(--sf)); }
+  }
+
+  /* Narrow: the headline, the lit field the width of the window less a square each side, the rest. */
+  :root[data-narrow] .keynote { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .keynote > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .product-nav .links a { display: none; }
+  :root[data-narrow] .hero-copy { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .hero-copy h1 { font-size: calc(44px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .sub { font-size: calc(18px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .hero { height: calc(12 * var(--u)); margin-block: calc(2 * var(--u)); grid-column: 1 / -1; }
+  :root[data-narrow] .product-nav { grid-column: 2 / -2; }
+  :root[data-narrow] .claims { grid-template-columns: 1fr; row-gap: var(--u); }
+  :root[data-narrow] .compare { width: 100%; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .compare tbody th { width: calc(4 * var(--u)); }
+  :root[data-narrow] .compare th, :root[data-narrow] .compare td { font-size: calc(11px * var(--sf)); white-space: normal; height: auto; min-height: var(--u); }
+  :root[data-narrow] .compare caption { font-size: calc(18px * var(--sf)); line-height: var(--u); padding-bottom: var(--u); }
+  :root[data-narrow] .claims b { font-size: calc(48px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .claims span { padding-top: 0; }
+  :root[data-narrow] .finishes { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .finishes ul { grid-template-columns: repeat(2, calc(6 * var(--u))); row-gap: var(--u); }
+</style>

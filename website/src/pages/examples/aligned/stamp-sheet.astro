@@ -1,0 +1,254 @@
+---
+// After a post office's sheet of commemoratives: eight stamps eight squares by ten, perforated on the
+// square lines (two holes a square), the selvage with its plate numbers, colour dots and sheet value,
+// one stamp cancelled. A stamp under the pointer or the keyboard is shown half as big again.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const BIRDS = [
+  { img: 'puffin', local: 'Lunde', en: 'Atlantic puffin', latin: 'Fratercula arctica', value: '4,50', ink: '#c2462a', note: 'Nests in burrows on the north cliffs from April; gone to sea by August.' },
+  { img: 'oystercatcher', local: 'Strandskade', en: 'Oystercatcher', latin: 'Haematopus ostralegus', value: '4,50', ink: '#1f2a33', note: 'The loudest bird on the island. Opens mussels with a blade of a bill.' },
+  { img: 'heron', local: 'Fiskehejre', en: 'Grey heron', latin: 'Ardea cinerea', value: '6,00', ink: '#56677a', note: 'Stands at the harbour steps at low tide, waiting for the fishermen.' },
+  { img: 'swan', local: 'Knopsvane', en: 'Mute swan', latin: 'Cygnus olor', value: '6,00', ink: '#b58a1f', note: 'Winters in the sheltered bay in flocks of up to three hundred.' },
+  { img: 'mallard', local: 'Gråand', en: 'Mallard', latin: 'Anas platyrhynchos', value: '8,50', ink: '#2c7a5e', note: 'On every pond, ditch and fjord; the island’s commonest duck.' },
+  { img: 'crane', local: 'Trane', en: 'Common crane', latin: 'Grus grus', value: '9,50', ink: '#6a4f8c', note: 'Passes over in September, calling, on the way south.' },
+  { img: 'kingfisher', local: 'Isfugl', en: 'Kingfisher', latin: 'Alcedo atthis', value: '12,00', ink: '#0d7f9a', note: 'A rare guest at the mill stream. Seen in eleven winters out of twenty.' },
+];
+const DOTS = ['#00a0e0', '#e5007e', '#ffe100', '#1a1a1a'];
+---
+<AlignedStudy slug="stamp-sheet" theme="light">
+  <main class="stage stamps">
+    <section class="sheet" aria-label="Sheet of eight stamps, Coastal birds">
+      <p class="sel-top"><span>Skerholm Post</span><span>Kystfugle, 8 frimærker</span><span>Arkets værdi 55,50 kr</span></p>
+      <p class="plate tl" aria-label="Plate 1A">1A</p>
+      <p class="plate tr" aria-hidden="true">1A</p>
+      <p class="plate bl" aria-hidden="true">1A</p>
+      <p class="plate br" aria-hidden="true">1A</p>
+      <div class="dots" aria-label="Colour registration dots">{DOTS.map(colour => <i style={`--dot: ${colour}`}></i>)}</div>
+      <div class="bars" aria-hidden="true">{DOTS.map(colour => <i style={`--dot: ${colour}`}></i>)}</div>
+      <i class="arrow top" aria-hidden="true"></i>
+      <i class="arrow bottom" aria-hidden="true"></i>
+      <i class="arrow left" aria-hidden="true"></i>
+      <i class="arrow right" aria-hidden="true"></i>
+      <p class="sel-bottom">Trykt i dybtryk af Statens Seddeltrykkeri, 2026. Takket 13½.</p>
+
+      <div class="block">
+        {BIRDS.map((bird, i) => (
+          <button type="button" class="stamp" style={`--ink: ${bird.ink}`} data-index={i} aria-label={`${bird.en}, ${bird.value} kroner`}>
+            <span class="paper">
+              <img src={`/examples/images/birdie-${bird.img}.jpg`} alt="" />
+              <span class="name">{bird.local}</span>
+              <span class="band"><b>{bird.value}</b><span>Skerholm</span></span>
+            </span>
+          </button>
+        ))}
+        <div class="stamp label" aria-label="Sheet label: Coastal birds, first day 14 November 2026">
+          <span class="paper">
+            <span class="label-text"><b>Kystfugle</b><span>Coastal birds</span><span class="fdc">Første dag<br />14.11.2026</span></span>
+          </span>
+        </div>
+        <svg class="cancel" viewBox="0 0 160 100" aria-hidden="true">
+          <defs><path id="ring" d="M 50 50 m -31 0 a 31 31 0 1 1 62 0 a 31 31 0 1 1 -62 0" /></defs>
+          <circle cx="50" cy="50" r="40" />
+          <circle cx="50" cy="50" r="24" />
+          <text class="ring"><textPath href="#ring" startOffset="2%">SKERHOLM HAVN</textPath></text>
+          <text x="50" y="47" text-anchor="middle" class="day">14 11 26</text>
+          <text x="50" y="59" text-anchor="middle" class="hour">10–11</text>
+          <path class="waves" d="M 92 30 q 8 -6 17 0 t 17 0 t 17 0 t 17 0 M 92 43 q 8 -6 17 0 t 17 0 t 17 0 t 17 0 M 92 56 q 8 -6 17 0 t 17 0 t 17 0 t 17 0 M 92 69 q 8 -6 17 0 t 17 0 t 17 0 t 17 0" />
+        </svg>
+      </div>
+    </section>
+
+    <section class="loupe" aria-live="polite">
+      <div class="big" id="big"></div>
+      <div class="facts">
+        <h1 id="b-name">Atlantic puffin</h1>
+        <p class="latin" id="b-latin">Fratercula arctica</p>
+        <p id="b-note">Nests in burrows on the north cliffs from April; gone to sea by August.</p>
+        <p class="value"><span id="b-value">4,50</span> kr</p>
+      </div>
+    </section>
+
+    <section class="issue">
+      <h2>Coastal birds</h2>
+      <p>Seven birds of the island’s shores and harbours, issued 14 November 2026 in sheets of eight with a label. Photogravure in four colours, perforated 13½.</p>
+      <p class="hint">Point at a stamp, or move to it with Tab, to see it half as big again.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+  // The sheet and the loupe stand in the middle of the window's height, on a whole square.
+  onSquares(({ down, narrow }) => {
+    const top = narrow ? 0 : Math.max(3, Math.floor((down - 27) / 2));
+    document.querySelector<HTMLElement>('.stamps')!.style.setProperty('--top', String(top));
+  });
+</script>
+
+<script define:vars={{ BIRDS }}>
+  // The enlarged stamp is a copy of the one chosen, drawn on squares half as big again.
+  const big = document.getElementById('big');
+  const fields = { name: document.getElementById('b-name'), latin: document.getElementById('b-latin'), note: document.getElementById('b-note'), value: document.getElementById('b-value') };
+  const stamps = [...document.querySelectorAll('.stamp[data-index]')];
+  function show(stamp) {
+    const bird = BIRDS[Number(stamp.dataset.index)];
+    big.innerHTML = '';
+    const copy = stamp.cloneNode(true);
+    copy.removeAttribute('data-index');
+    copy.setAttribute('tabindex', '-1');
+    copy.setAttribute('aria-hidden', 'true');
+    big.append(copy);
+    fields.name.textContent = bird.en;
+    fields.latin.textContent = bird.latin;
+    fields.note.textContent = bird.note;
+    fields.value.textContent = bird.value;
+    stamps.forEach(other => other.classList.toggle('chosen', other === stamp));
+  }
+  stamps.forEach(stamp => {
+    stamp.addEventListener('pointerenter', () => show(stamp));
+    stamp.addEventListener('focus', () => show(stamp));
+    stamp.addEventListener('click', () => show(stamp));
+  });
+  show(stamps[0]);
+</script>
+
+<style is:global>
+  html { background: #dfe4e2; }
+  .stamps {
+    --ground: #dfe4e2;
+    --sheet: #fbfbf8;
+    --ink-text: #1d2328;
+    background: var(--ground);
+    color: var(--ink-text);
+    font-family: 'Gill Sans', 'Gill Sans MT', Optima, sans-serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* The sheet: three squares of selvage at the sides, four above, three below. */
+  .sheet {
+    grid-column: 3 / span 38;
+    grid-row: var(--top, 4) / span 27;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(38, var(--u));
+    grid-template-rows: repeat(27, var(--u));
+    background: var(--sheet);
+    box-shadow: 0 calc(1px * var(--sf)) calc(2px * var(--sf)) rgb(30 40 40 / 0.18);
+  }
+  .sel-top { grid-column: 4 / -4; grid-row: 2; margin: 0; display: flex; justify-content: space-between; font-size: calc(12px * var(--sf)); color: #5b6670; }
+  .sel-bottom { grid-column: 4 / -4; grid-row: -2; margin: 0; font-size: calc(11px * var(--sf)); color: #5b6670; text-align: center; }
+  .plate { margin: 0; font-size: calc(12px * var(--sf)); color: #5b6670; text-align: center; }
+  .plate.tl { grid-column: 1 / span 3; grid-row: 2; }
+  .plate.tr { grid-column: -4 / span 3; grid-row: 2; }
+  .plate.bl { grid-column: 1 / span 3; grid-row: -2; }
+  .plate.br { grid-column: -4 / span 3; grid-row: -2; }
+  .dots { grid-column: 2; grid-row: 7 / span 8; display: grid; grid-auto-rows: calc(2 * var(--u)); place-items: center; }
+  .dots i { width: calc(12px * var(--sf)); height: calc(12px * var(--sf)); border-radius: 50%; background: var(--dot); }
+  .bars { grid-column: -3; grid-row: 17 / span 8; display: grid; grid-auto-rows: calc(2 * var(--u)); }
+  .bars i { background: var(--dot); margin: calc(var(--u) / 4) calc(var(--u) / 4); opacity: 0.9; }
+  .arrow { width: var(--u); height: var(--u); background: #8a949c; }
+  .arrow.top { grid-column: 19 / span 2; grid-row: 4; clip-path: polygon(30% 20%, 70% 20%, 50% 90%); width: calc(2 * var(--u)); }
+  .arrow.bottom { grid-column: 19 / span 2; grid-row: -3; clip-path: polygon(50% 10%, 70% 80%, 30% 80%); width: calc(2 * var(--u)); }
+  .arrow.left { grid-column: 3; grid-row: 14 / span 2; clip-path: polygon(20% 30%, 90% 50%, 20% 70%); height: calc(2 * var(--u)); }
+  .arrow.right { grid-column: -4; grid-row: 14 / span 2; clip-path: polygon(80% 30%, 10% 50%, 80% 70%); height: calc(2 * var(--u)); }
+
+  /* The block of stamps, four by two, each eight squares by ten. */
+  .block { grid-column: 4 / span 32; grid-row: 5 / span 20; position: relative; display: grid; grid-template-columns: repeat(4, calc(8 * var(--u))); grid-template-rows: repeat(2, calc(10 * var(--u))); }
+
+  .stamp {
+    all: unset;
+    --su: var(--u);
+    --hole: calc(var(--su) * 0.15);
+    position: relative;
+    display: block;
+    width: calc(8 * var(--su));
+    height: calc(10 * var(--su));
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  /* Perforation: two holes a square along every edge, centred on the square lines. */
+  .stamp::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--su) / -4);
+    pointer-events: none;
+    background:
+      radial-gradient(circle, var(--ground) var(--hole), transparent calc(var(--hole) + 0.6px)) 0 0 / calc(var(--su) / 2) calc(var(--su) / 2) repeat-x,
+      radial-gradient(circle, var(--ground) var(--hole), transparent calc(var(--hole) + 0.6px)) 0 100% / calc(var(--su) / 2) calc(var(--su) / 2) repeat-x,
+      radial-gradient(circle, var(--ground) var(--hole), transparent calc(var(--hole) + 0.6px)) 0 0 / calc(var(--su) / 2) calc(var(--su) / 2) repeat-y,
+      radial-gradient(circle, var(--ground) var(--hole), transparent calc(var(--hole) + 0.6px)) 100% 0 / calc(var(--su) / 2) calc(var(--su) / 2) repeat-y;
+    z-index: 2;
+  }
+  .paper {
+    position: absolute;
+    inset: calc(var(--su) / 2);
+    display: grid;
+    grid-template-rows: 1fr calc(2 * var(--su));
+    background: var(--sheet);
+    outline: calc(1px * var(--sf)) solid var(--ink);
+    outline-offset: calc(var(--su) / -8);
+    padding: calc(var(--su) / 4);
+    box-sizing: border-box;
+  }
+  .paper img { display: block; width: 100%; height: 100%; object-fit: cover; min-height: 0; }
+  .name { position: absolute; left: calc(var(--su) / 2); top: calc(var(--su) * 5.75); }
+  .stamp .name { font-style: italic; color: #fff; text-shadow: 0 0 calc(4px * var(--sf)) rgb(0 0 0 / 0.5); font-size: calc(var(--su) * 0.6); line-height: var(--su); }
+  .band { display: flex; justify-content: space-between; align-items: baseline; padding-inline: calc(var(--su) / 4); background: var(--ink); color: #fff; }
+  .band b { font-weight: 600; font-size: calc(var(--su) * 1.2); line-height: calc(2 * var(--su) - var(--su) / 4); letter-spacing: -0.01em; }
+  .band span { font-size: calc(var(--su) * 0.55); letter-spacing: 0.04em; }
+  .stamp:focus-visible .paper { outline: calc(3px * var(--sf)) solid var(--ink); }
+  .stamp.chosen .paper { background: #fff; }
+  .stamp:not(.label):hover { transform: none; }
+
+  .stamp.label .paper { grid-template-rows: 1fr; outline-color: #9aa3a9; outline-style: dashed; }
+  .label-text { display: grid; align-content: center; justify-items: center; text-align: center; gap: calc(var(--u) / 2); color: #4c565e; }
+  .label-text b { font-weight: normal; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--ink-text); font-style: italic; }
+  .label-text .fdc { margin-top: var(--u); font-size: calc(12px * var(--sf)); }
+
+  /* The cancellation over the heron, struck a little crooked as cancellations are. */
+  .cancel { position: absolute; left: calc(14 * var(--u)); top: calc(4 * var(--u)); width: calc(16 * var(--u)); height: calc(10 * var(--u)); transform: rotate(-9deg); pointer-events: none; z-index: 3; fill: none; stroke: #1b1d2a; stroke-width: 2; opacity: 0.78; mix-blend-mode: multiply; }
+  .cancel text { stroke: none; fill: #1b1d2a; font-family: 'Gill Sans', sans-serif; }
+  .cancel .ring { font-size: 10px; letter-spacing: 2px; }
+  .cancel .day { font-size: 11px; }
+  .cancel .hour { font-size: 8px; }
+  .cancel .waves { stroke-width: 2.4; }
+
+  /* The loupe: the chosen stamp on squares half as big again, its facts beside it. */
+  .loupe { grid-column: 44 / -3; grid-row: var(--top, 4) / span 18; display: grid; grid-template-columns: calc(12 * var(--u)) 1fr; column-gap: calc(2 * var(--u)); }
+  .big .stamp { --su: calc(var(--u) * 1.5); cursor: default; }
+  .big .stamp.chosen .paper { background: var(--sheet); }
+  .facts h1 { margin: 0; font-weight: normal; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .facts .latin { margin: 0 0 var(--u); font-style: italic; color: #56616a; }
+  .facts p { margin: 0 0 var(--u); }
+  .facts .value { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); }
+
+  .issue { grid-column: 44 / span 22; grid-row: -10 / span 8; align-self: end; }
+  .issue h2 { margin: 0; font-weight: normal; font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .issue p { margin: 0 0 var(--u); }
+  .issue .hint { color: #56616a; margin: 0; }
+
+  @media (max-width: 1360px) {
+    .stamps .loupe { grid-template-columns: calc(12 * var(--u)); grid-template-rows: calc(15 * var(--u)) auto; grid-row: var(--top, 4) / span 27; row-gap: var(--u); }
+    .stamps .facts h1 { font-size: calc(24px * var(--sf)); }
+    .stamps .facts .value { display: none; }
+    .stamps .issue { grid-column: 3 / span 38; grid-row: -6 / span 4; }
+    .stamps .issue h2, .stamps .issue .hint { display: none; }
+    .stamps .issue p:not(.hint) { max-width: calc(36 * var(--u)); }
+  }
+
+  /* Narrow: the block two stamps across, the loupe and words after it. */
+  :root[data-narrow] .stamps { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .sheet { grid-column: 2 / -2; grid-row: auto; grid-template-columns: repeat(12, var(--u)); grid-template-rows: var(--u) var(--u) repeat(80, var(--u)) var(--u) var(--u); margin-top: var(--u); overflow: hidden; }
+  :root[data-narrow] .sheet > :not(.block) { display: none; }
+  :root[data-narrow] .sheet > .sel-bottom { display: block; grid-column: 1 / -1; grid-row: -3 / span 2; font-size: calc(10px * var(--sf)); }
+  :root[data-narrow] .sheet > .sel-top { display: block; grid-column: 1 / -1; grid-row: 1 / span 2; text-align: center; }
+  :root[data-narrow] .sheet > .sel-top span:not(:first-child) { display: none; }
+  /* A coil of stamps, one above another. */
+  :root[data-narrow] .block { grid-column: 3 / span 8; grid-row: 3 / span 80; grid-template-columns: calc(8 * var(--u)); grid-template-rows: repeat(8, calc(10 * var(--u))); }
+  :root[data-narrow] .cancel { left: calc(-1 * var(--u)); top: calc(22 * var(--u)); width: calc(11 * var(--u)); height: calc(7 * var(--u)); }
+  :root[data-narrow] .loupe { grid-column: 2 / -2; grid-row: auto; grid-template-columns: 1fr; grid-template-rows: auto; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .big { display: none; }
+  :root[data-narrow] .facts .value { display: block; }
+  :root[data-narrow] .issue { grid-column: 2 / -2; grid-row: auto; }
+</style>

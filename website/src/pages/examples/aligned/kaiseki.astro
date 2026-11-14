@@ -1,0 +1,211 @@
+---
+// After a kaiseki house's oshinagaki, the menu brushed on a long sheet: seven courses read right to
+// left in vertical lines, every character on a square (sixteen units of face and four of air), the
+// course names two squares a character. Washi made of noise and fibres, ink, one maple leaf and the
+// house's seal in the leaf's red.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const COURSES = [
+  { n: '一', jp: '先付', dish: '菊花と春菊のお浸し、いくら', en: 'Sakizuke', note: 'Chrysanthemum petals and shungiku steeped in dashi, with salmon roe.' },
+  { n: '二', jp: '八寸', dish: '銀杏松葉、柿なます、焼栗、鴨ロース', en: 'Hassun', note: 'Ginkgo nuts on pine needles, persimmon namasu, roast chestnut, duck.' },
+  { n: '三', jp: '向付', dish: '鰆の焼霜造り、寒鰤', en: 'Mukōzuke', note: 'Spanish mackerel seared on the skin, winter yellowtail, fresh wasabi.' },
+  { n: '四', jp: '焚合', dish: '海老芋、聖護院蕪、穴子', en: 'Takiawase', note: 'Ebi-imo taro, Shōgoin turnip and conger eel, simmered apart, served together.' },
+  { n: '五', jp: '焼物', dish: '甘鯛の若狭焼き、はじかみ', en: 'Yakimono', note: 'Tilefish grilled Wakasa style, scales crisp, with a pickled ginger shoot.' },
+  { n: '六', jp: '御飯', dish: '松茸ご飯、赤出汁、香の物', en: 'Gohan', note: 'Matsutake rice from the clay pot, red miso soup, the house pickles.' },
+  { n: '七', jp: '水菓子', dish: '洋梨と和三盆の寒天', en: 'Mizugashi', note: 'Pear set in kanten with wasanbon sugar.' },
+];
+
+// A Japanese maple leaf on a 100-unit square: seven narrow lobes from a point near the base, the
+// middle one longest, each edge cut into small teeth, the stem below.
+function maple(): string {
+  const cx = 50;
+  const cy = 64;
+  const lobes = [
+    { angle: -120, length: 22, width: 0.2 },
+    { angle: -78, length: 36, width: 0.24 },
+    { angle: -38, length: 46, width: 0.24 },
+    { angle: 0, length: 52, width: 0.24 },
+    { angle: 38, length: 46, width: 0.24 },
+    { angle: 78, length: 36, width: 0.24 },
+    { angle: 120, length: 22, width: 0.2 },
+  ];
+  const sinus = 12;
+  const at = (deg: number, r: number, side = 0) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    // side: a distance across the lobe, at right angles to its spine.
+    const x = cx + r * Math.cos(a) - side * Math.sin(a);
+    const y = cy + r * Math.sin(a) + side * Math.cos(a);
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  };
+  const points: string[] = [at(180, 4)];
+  lobes.forEach((lobe, i) => {
+    const steps = 21;
+    const half = lobe.length * lobe.width * 0.62;
+    const edge = (side: number) => {
+      const out: string[] = [];
+      for (let k = 0; k <= steps; k++) {
+        const s = side < 0 ? k / steps : 1 - k / steps;
+        const r = sinus * 0.6 + (lobe.length - sinus * 0.6) * s;
+        const w = half * Math.pow(Math.sin(Math.PI * Math.pow(s, 0.75)), 0.9) * (1 - 0.25 * s) + (s < 0.15 ? (0.15 - s) * 20 : 0);
+        const tooth = k % 3 === 1 && s > 0.3 && s < 0.95 ? 1.6 : 0;
+        out.push(at(lobe.angle, r, side * (w + tooth)));
+      }
+      return out;
+    };
+    points.push(...edge(-1), at(lobe.angle, lobe.length + 3), ...edge(1));
+    if (i < lobes.length - 1) points.push(at((lobe.angle + lobes[i + 1].angle) / 2, sinus));
+  });
+  points.push(at(180, 5));
+  return points.join(' ');
+}
+const leaf = maple();
+---
+<AlignedStudy slug="kaiseki" theme="light">
+  <main class="stage kaiseki">
+    <svg class="washi" aria-hidden="true" preserveAspectRatio="none">
+      <filter id="fibres" x="0" y="0" width="1" height="1">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="grain" />
+        <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 -1.4 0.82" result="speck" />
+        <feTurbulence type="turbulence" baseFrequency="0.003 0.3" numOctaves="2" seed="11" result="long" />
+        <feColorMatrix in="long" type="matrix" values="0 0 0 0 0.98  0 0 0 0 0.97  0 0 0 0 0.93  0 0 0 5 -3.3" result="fibre" />
+        <feMerge><feMergeNode in="speck" /><feMergeNode in="fibre" /></feMerge>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#fibres)" />
+    </svg>
+
+    <header class="title">
+      <h1 lang="ja">霜月の献立</h1>
+      <p class="house" lang="ja">祇園　料亭柚木</p>
+      <p class="date" lang="ja">令和八年十一月</p>
+    </header>
+    <p class="seal" lang="ja" aria-label="Seal of Yuzuki"><span>柚木</span></p>
+
+    <ol class="courses">
+      {COURSES.map(course => (
+        <li class="course">
+          <span class="num" lang="ja">{course.n}</span>
+          <h2 lang="ja">{course.jp}</h2>
+          <p class="dish" lang="ja">{course.dish}</p>
+          <p class="en"><b>{course.en}</b>{course.note}</p>
+        </li>
+      ))}
+    </ol>
+
+    <svg class="leaf" viewBox="0 0 100 100" aria-hidden="true">
+      <path class="stem" d="M50 64 C 51 78, 54 88, 60 99" />
+      <polygon points={leaf} />
+      <g class="veins"><path d="M50 64 L50 16 M50 64 L22 28 M50 64 L78 28 M50 64 L16 56 M50 64 L84 56 M50 64 L32 76 M50 64 L68 76" /></g>
+    </svg>
+
+    <section class="colophon">
+      <h3>Yuzuki, Gion</h3>
+      <p>An autumn menu for the eleventh month, served at the hinoki counter from six. Eight seats; one sitting a night.</p>
+      <p>Seven courses, ¥26,400 a guest. Sake chosen to the courses, ¥9,800: tonight a yamahai from Akita, warmed for the takiawase.</p>
+      <p class="small">The menu follows the market. Tell us when you book what you cannot eat, and we will cook around it.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #e8e1d0; }
+  .kaiseki {
+    --paper: #e8e1d0;
+    --ink: #1f1c18;
+    --wash: #554d43;
+    --momiji: #b3261e;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: 'Hiragino Mincho ProN', 'Hiragino Mincho Pro', 'Yu Mincho', serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+  }
+  .washi { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .kaiseki > :not(.washi) { z-index: 1; }
+
+  /* Vertical lines: each character a square, the face sixteen units and four of air. */
+  .kaiseki [lang='ja'] { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: calc(4px * var(--sf)); font-feature-settings: 'vpal' 0; }
+
+  /* The title column at the right edge, the seal under it. */
+  .title { grid-column: -11 / -3; grid-row: 4 / -6; display: flex; flex-direction: row-reverse; gap: var(--u); writing-mode: horizontal-tb; }
+  .title h1 { margin: 0; font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: calc(12px * var(--sf)); font-weight: 600; }
+  .title h1 { flex: none; width: calc(3 * var(--u)); }
+  .title p { flex: none; width: var(--u); margin: 0; color: var(--wash); }
+  .title .house { margin-top: calc(5 * var(--u)); color: var(--ink); }
+  .title .date { margin-top: calc(9 * var(--u)); }
+  .seal {
+    grid-column: -7 / span 3;
+    grid-row: -8 / span 4;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    background: var(--momiji);
+    color: var(--paper);
+    font-size: calc(30px * var(--sf));
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0 !important;
+    box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--momiji), inset 0 0 0 calc(4px * var(--sf)) var(--paper);
+  }
+  .seal span { display: block; }
+
+  /* Seven courses, right to left, five squares each, a faint rule between them. */
+  .courses {
+    grid-column: -48 / -13;
+    grid-row: 4 / -3;
+    display: grid;
+    grid-template-columns: repeat(7, calc(5 * var(--u)));
+    direction: rtl;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .course {
+    direction: ltr;
+    display: grid;
+    grid-template-columns: repeat(5, var(--u));
+    grid-template-rows: calc(2 * var(--u)) 1fr calc(6 * var(--u));
+    box-shadow: inset calc(-1px * var(--sf)) 0 rgb(31 28 24 / 0.18);
+    min-height: 0;
+  }
+  .course:first-child { box-shadow: none; }
+  .num { grid-column: 4 / span 1; grid-row: 1; color: var(--momiji); font-size: calc(16px * var(--sf)); }
+  .course h2 { grid-column: 3 / span 2; grid-row: 2; margin: 0; font-size: calc(32px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: calc(8px * var(--sf)); font-weight: 600; }
+  .dish { grid-column: 1 / span 2; grid-row: 2; margin: 0; justify-self: end; max-block-size: 100%; overflow: hidden; }
+  .en { grid-column: 1 / -1; grid-row: 3; margin: 0; padding-inline: calc(var(--u) / 2); font-family: 'Hoefler Text', 'Hiragino Mincho ProN', serif; font-size: calc(12px * var(--sf)); line-height: calc(var(--u) * 0.8); color: var(--wash); overflow: hidden; }
+  .en b { display: block; font-style: italic; font-weight: normal; color: var(--ink); font-size: calc(14px * var(--sf)); line-height: var(--u); margin-block-end: calc(var(--u) * 0.2); }
+
+  /* The leaf and the colophon to the left. */
+  .leaf { grid-column: 6 / span 14; grid-row: 8 / span 14; width: 100%; height: 100%; overflow: visible; transform: rotate(-18deg); }
+  .leaf polygon { fill: var(--momiji); }
+  .leaf .stem { fill: none; stroke: var(--momiji); stroke-width: 1.6; stroke-linecap: round; }
+  .leaf .veins path { fill: none; stroke: rgb(232 225 208 / 0.35); stroke-width: 0.6; }
+  .colophon { grid-column: 4 / span 14; grid-row: -16 / -3; align-self: end; font-family: 'Hoefler Text', 'Hiragino Mincho ProN', serif; font-size: calc(14px * var(--sf)); color: var(--ink); }
+  .colophon h3 { margin: 0 0 var(--u); font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: normal; font-style: italic; }
+  .colophon p { margin: 0 0 var(--u); }
+  .colophon .small { color: var(--wash); font-size: calc(12px * var(--sf)); margin: 0; }
+
+  /* A smaller computer: the colophon gives way to the courses. */
+  @media (max-width: 1360px) {
+    .kaiseki .colophon { grid-column: 3 / span 14; }
+    .kaiseki .leaf { grid-column: 3 / span 12; grid-row: 4 / span 12; }
+  }
+  @media (max-width: 1100px) {
+    :root:not([data-narrow]) .kaiseki .colophon { display: none; }
+  }
+
+  /* Narrow: the title, then each course as a block of vertical lines with the English beside it. */
+  :root[data-narrow] .kaiseki { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .washi { grid-area: auto; position: absolute; inset: 0; z-index: 0; }
+  :root[data-narrow] .title { grid-column: 2 / -2; grid-row: 2 / span 14; }
+  :root[data-narrow] .title .house { margin-top: var(--u); }
+  :root[data-narrow] .title .date { margin-top: calc(4 * var(--u)); }
+  :root[data-narrow] .seal { grid-column: 2 / span 3; grid-row: 13 / span 3; }
+  :root[data-narrow] .leaf { grid-column: 2 / span 4; grid-row: 6 / span 4; }
+  :root[data-narrow] .courses { grid-column: 2 / -2; grid-row: 18; grid-template-columns: 1fr; direction: ltr; margin-top: var(--u); }
+  :root[data-narrow] .course { grid-template-columns: repeat(12, var(--u)); grid-template-rows: var(--u) calc(16 * var(--u)); box-shadow: inset 0 calc(-1px * var(--sf)) rgb(31 28 24 / 0.18); padding-block: var(--u); }
+  :root[data-narrow] .num { grid-column: 12; grid-row: 1; }
+  :root[data-narrow] .course h2 { grid-column: 10 / span 2; grid-row: 1 / span 2; }
+  :root[data-narrow] .dish { grid-column: 8 / span 2; grid-row: 1 / span 2; justify-self: end; }
+  :root[data-narrow] .en { grid-column: 1 / span 7; grid-row: 1 / span 2; padding-inline: 0; font-size: calc(13px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .colophon { grid-column: 2 / -2; grid-row: 19; margin-top: calc(2 * var(--u)); }
+</style>

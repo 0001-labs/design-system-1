@@ -1,0 +1,210 @@
+---
+// After a Japanese dictionary of colour combinations (Sanzo Wada's of the 1930s): all 348
+// combinations as plates of colour fields on whole squares, numbered, two, three and four colours to
+// a plate, a page of plates at a time; the chosen combination enlarged with its names and values.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="colour-dictionary" theme="light">
+  <main class="stage wada">
+    <header class="title">
+      <h1 lang="ja">配色事典</h1>
+      <p class="en">A dictionary of colour combinations</p>
+      <p class="after">348 combinations of 159 colours, after the plates of Sanzo Wada, 1933–34.</p>
+    </header>
+
+    <nav class="volumes" aria-label="Volumes">
+      <button type="button" data-from="1" data-to="120"><span lang="ja">二色</span>Two colours<small>1–120</small></button>
+      <button type="button" data-from="121" data-to="240"><span lang="ja">三色</span>Three colours<small>121–240</small></button>
+      <button type="button" data-from="241" data-to="348"><span lang="ja">四色</span>Four colours<small>241–348</small></button>
+    </nav>
+
+    <section class="plates" id="plates" aria-label="Plates; arrow keys move between them" data-own-keys tabindex="0"></section>
+
+    <footer class="pager">
+      <button type="button" id="prev" aria-label="Previous page">Previous</button>
+      <span id="page-label">Page 1</span>
+      <button type="button" id="next" aria-label="Next page">Next</button>
+    </footer>
+
+    <article class="enlarged" id="enlarged" aria-live="polite"></article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const COLOURS = 'English Red|c65f2b;Cerulian Blue|0b8895;Yellow Orange|eb952b;Dark Tyrian Blue|0b2a3b;Raw Sienna|ad6a2a;Pale Lemon Yellow|feefab;Isabella Color|bca069;Red Violet|492156;Cossack Green|3d6e3e;Vandar Poel’s Blue|0e445e;Grenadine Pink|e57963;Deep Indigo|00041a;Orange|e36a27;Glaucous Green|afc8ba;Cinnamon Rufous|b36e44;Grayish Lavender A|adaac9;Violet Red|52294d;Dull Blue Violet|75678d;Dark Citrine|807b54;Ivory Buff|e5cf9d;Mineral Gray|9caba4;Green Blue|138788;Veronia Purple|7c4656;Spinel Red|e36a86;Naples Yellow|f8e59d;Benzol Green|008a7d;Vandyke Red|6b201e;Pale King’s Blue|a3d0d9;Eugenia Red | B|c94d56;Sea Green|00aa8f;Fawn|c6aa9e;Dusky Madder Violet|3a1738;Mars Brown Tobacco|522d17;Night Green|7dbd40;Calamine Blue|75c6c3;Laelia Pink|bd899b;Yellow|fff100;Deep Lyons Blue|1a3870;Cinnamon Buff|f5c17b;Light Mauve|8d6999;Sepia|53411f;Etruscan Red|bf5148;Nile Blue|b9e0db;Golden Yellow|e99b57;Pale Raw Umber|61472c;Corinthian Pink|efb0b1;Slate Color|293a3f;Madder Brown|5f2519;Krongbergs Green|7a7f59;Salvia Blue|8fa4b9;Pompeian Red|972235;Red Orange|c93b28;Ochraceous Salmon|cc9c74;Eosine Pink|e5778a;Neutral Gray|afb9b7;Light Brown Drab|aa8d89;Carmine Red|922933;Sulphine Yellow|b79930;Turquoise Green|b2dac3;Brick Red|963d25;Diamine Green|047e3e;Carmine|b81736;Helvetia Blue|00507b;Vinaceous Tawny|b55b2b;Citron Yellow|a8b041;Yellow Ocher|d7ae44;Violet|413670;Aconite Violet|956195;Light Porcelain Green|06877d;Olympic Blue|5478a0;Seashell Pink|f6d1b6;Lemon Yellow|f4eb4a;Black|070a0b;Grayish Lavender B|b4a1a7;Rosolanc Purple|a43966;Blue|0062a2;Sulpher Yellow|f3edbf;Light Glaucous Blue|a0c2c5;Old Rose|c46570;White|ffffff;Taupe Brown|693c4a;Hay’s Russet|652c24;Citrine|998e34;Light Green Yellow|becc53;Cotinga Purple|3a0f31;Vistoris Lake|5c393b;Dark Soft Violet|5c5989;Olive Ocher|cbae43;Olive Green|61693d;Warm Gray|989d90;Lincoln Green|484d2e;Rainette Green|6e7f57;Violet Blue|353c58;Pinkish Cinnamon|e5ae7c;Venice Green|5fbeb2;Olive Buff|bbc08f;Deep Slate Green|0c2320;Antwarp Blue|006780;Orange Rufous|b2642b;Coral Red|e7877c;Dusky Green|00433b;Dull Violet Black|000d28;Olive|787732;Buffy Citrine|8a7f4b;Cameo Pink|d7adad;Chromium Green|698b67;Apricot Yellow|fdda16;Light Grayish Olive|79785a;Blackish Olive|394a38;Brown|693a25;Vandyke Brown|3b2c18;Yellow Green|a5cd6f;Orange Yellow|f0ad28;Peach Red|df5333;Blue Violet|58478c;Cream Yellow|f4ba68;Pale Burnt Lake|6a2224;Olive Yellow|989857;Pistachio Green|5e8771;Khaki|b0822f;Peacock Blue|00878a;Scarlet|b92d3f;Dull Viridian Green|00885c;Hydrangea Red|953b49;Lilac|ac7ba0;Deep Grayish Olive|555135;Jasper Red|d94c27;Cobalt Green|8ecaa0;Pansy Purple|661330;Dark Medici Blue|4e686a;Ecru|baa98b;Hermosa Pink|f1bcc6;Deep Violet / Plumbeous|676a70;Deep Slate Olive|1d271c;Burnt Sienna|9d4c28;Green|409064;Ochre Red|9a4e47;Light Brownish Olive|746545;Vinaceous Cinnamon|e4a186;Sudan Brown|945f4c;Apricot Orange|e88550;Orange Citrine|89672f;Eupatorium Purple|af4f81;Pomegranite Purple|a4204f;Dark Slate Purple|613c4b;Purple Drab|744e50;Pyrite Yellow|bfac56;Fresh Color|e98a77;Andover Green|64776d;Oil Green|778a38;Red|93223e;Spectrum Red|ce2027;Dark Greenish Glaucous|aebca0;Maple|bb9966;Eugenia Red | A|d15c57;Artemesia Green|698b85;Indian Lake|b3385e;Light Pinkish Cinnamon|f4c395;Violet Carmine|613541'.split(';').map(entry => { const [name, hex] = entry.split('|'); return { name, hex: `#${hex}` }; });
+  // Combination n is COMBOS[n - 1]: indexes into COLOURS, two, three or four of them.
+  const COMBOS = '0.1 2.3 4.5 6.7 8.9 10.11 12.13 14.15 16.17 14.18 19.20 6.21 4.22 23.24 25.15 26.27 28.29 30.31 32.33 34.35 10.29 36.37 38.39 40.22 41.42 43.44 45.46 47.11 48.49 50.20 51.5 52.33 4.46 53.54 55.56 57.58 59.7 60.37 61.62 63.64 18.34 65.66 45.67 68.69 70.71 12.72 41.73 74.62 27.75 19.31 56.75 76.72 2.31 25.77 78.79 73.66 80.46 81.29 53.82 5.3 83.84 36.72 85.1 67.86 57.34 87.88 69.3 55.36 89.72 4.90 50.52 76.27 44.91 58.21 27.92 5.89 28.9 93.94 47.21 76.39 43.89 81.31 95.92 70.96 63.97 4.29 45.64 70.75 2.92 53.67 85.98 99.25 82.77 19.100 81.101 65.102 45.41 47.92 5.1 103.17 104.37 19.98 14.31 56.76 104.105 97.101 106.107 53.59 5.108 109.110 5.111 10.72 70.110 112.97 24.113 104.114 61.72 65.110 77.3 104.50 109.52.90 61.115.25 99.71.80 116.65.117 30.1.92 19.65.37 38.118.86 45.94.39 106.119.49 4.56.66 4.0.120 76.43.82 26.82.29 53.39.7 76.8.49 121.122.7 41.38.118 43.71.94 49.11.54 43.97.46 12.111.3 123.57.49 75.124.89 74.12.72 109.64.101 119.125.60 23.26.58 87.112.1 87.12.96 70.64.13 76.2.9 41.81.77 53.112.64 61.36.75 126.25.11 87.127.66 128.87.69 71.14.33 119.34.15 57.44.129 109.93.62 78.91.124 106.58.97 51.112.66 104.23.85 10.24.96 130.27.9 71.9.22 45.5.89 74.112.7 116.2.13 14.97.7 71.47.58 45.73.80 93.95.114 131.70.34 116.103.15 19.77.21 51.43.37 38.39.54 56.66.84 4.110.11 132.22.7 23.19.107 55.41.5 81.52.75 62.73.67 91.49.127 71.133.94 19.0.72 55.65.75 115.110.132 10.24.68 126.70.69 23.5.54 64.27.114 53.86.54 134.106.135 136.137.37 56.95.105 10.102.127 58.127.46 5.138.90 74.14.77 116.138.66 45.43.14 139.13.72 76.21.97 19.2.49 38.71.90 140.117.11 50.141.49 138.106.27 19.139.66 115.75.142 126.135.72 116.52.60 62.15.132 126.105.100 143.52.67 56.54.72 65.2.98 55.52.58 23.129.80 61.100.144 85.115.66 131.77.1 56.5.54 43.133.54 10.58.127 104.81.69 61.93.11 56.103.92 38.44.27 19.2.73 119.37.145 56.47.49 52.84.89 55.146.13 147.36.1 51.5.6.129 53.134.60.72 4.19.88.46 55.63.148.97 56.149.3.46 45.59.76.38 4.106.25.37 53.119.15.144 81.130.87.129 146.113.29.42 150.36.60.46 28.4.57.21 71.140.84.46 45.76.102.35 4.146.34.72 138.12.122.72 151.112.75.67 116.93.102.97 71.21.62.89 78.138.13.29 150.5.34.89 28.19.82.8 134.93.58.46 45.51.152.1 78.106.117.101 151.19.91.25 115.2.25.75 55.4.133.42 4.116.67.72 28.76.88.8 143.127.21.96 5.12.58.49 131.128.139.54 113.18.69.39 41.130.47.80 53.70.111.72 23.74.102.101 115.87.8.100 4.138.130.3 28.90.35.80 5.25.127.97 28.153.127.124 136.116.105.94 154.106.29.100 55.134.113.58 134.112.120.92 53.146.27.34 2.40.80.72 71.83.92.101 85.5.90.127 83.29.127.34 5.93.6.130 4.58.155.135 76.115.8.49 115.36.75.101 76.52.44.46 134.2.88.92 4.71.113.72 156.138.149.97 10.115.58.34 151.19.91.67 115.130.42.97 24.113.133.54 81.115.18.25 93.106.64.58 71.25.122.42 61.15.67.84 30.121.0.127 43.140.92.9 76.93.102.133 50.115.152.83 134.2.155.62 61.36.60.72 53.81.37.31 10.76.43.142 26.122.66.7 157.130.71.58 137.108.100.96 4.106.2.8 99.76.149.77 55.76.133.49 151.59.142.114 38.64.47.72 50.69.67.54 28.24.65.96 76.113.111.33 53.4.130.73 59.140.110.68 115.73.84.46 95.42.49.21 156.101.39.66 99.121.133.100 134.71.127.75 70.102.111.97 26.2.66.46 53.81.5.108 85.35.158.72 56.112.100.73 52.0.77.92 113.29.54.72 10.8.133.77 45.115.141.133 134.19.125.9 38.37.67.72 81.42.94.114 74.58.83.148 117.29.62.124 95.8.133.84'.split(' ').map(group => group.split('.').map(Number));
+
+  // Each plate is four squares by four, its fields laid as the book lays two, three or four colours.
+  const LAYOUTS: Record<number, [number, number, number, number][]> = {
+    2: [[1, 1, 3, 4], [4, 1, 1, 4]],
+    3: [[1, 1, 4, 2], [1, 3, 2, 2], [3, 3, 2, 2]],
+    4: [[1, 1, 2, 4], [3, 1, 2, 2], [3, 3, 1, 2], [4, 3, 1, 2]],
+  };
+  const plates = document.getElementById('plates')!;
+  const enlarged = document.getElementById('enlarged')!;
+  const pageLabel = document.getElementById('page-label')!;
+  const prev = document.getElementById('prev') as HTMLButtonElement;
+  const next = document.getElementById('next') as HTMLButtonElement;
+  const volumes = [...document.querySelectorAll<HTMLButtonElement>('.volumes button')];
+
+  let chosen = 1;
+  let start = 1;
+  let perPage = 30;
+  let across = 6;
+
+  const pad = (n: number) => String(n).padStart(3, '0');
+  // Words on a colour in black or white, whichever reads better.
+  function ink(hex: string) {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return (l + 0.05) / 0.05 > 1.05 / (l + 0.05) ? '#111' : '#fff';
+  }
+
+  function plate(n: number) {
+    const combo = COMBOS[n - 1];
+    const fields = combo.map((c, i) => {
+      const [x, y, w, h] = LAYOUTS[combo.length][i];
+      return `<i style="grid-area:${y}/${x}/span ${h}/span ${w};background:${COLOURS[c].hex}"></i>`;
+    }).join('');
+    const names = combo.map(c => COLOURS[c].name).join(', ');
+    return `<button type="button" class="plate${n === chosen ? ' chosen' : ''}" data-n="${n}" aria-label="Combination ${n}: ${names}" tabindex="-1"><span class="fields">${fields}</span><span class="num">${n}</span></button>`;
+  }
+
+  // Pages keep to their volume, as the book does: two colours, then three, then four.
+  const VOLUMES = [{ from: 1, to: 120, name: 'Two colours' }, { from: 121, to: 240, name: 'Three colours' }, { from: 241, to: 348, name: 'Four colours' }];
+  let end = 1;
+  function drawPage() {
+    const volume = VOLUMES.find(v => chosen <= v.to)!;
+    start = volume.from + Math.floor((chosen - volume.from) / perPage) * perPage;
+    end = Math.min(volume.to, start + perPage - 1);
+    let html = '';
+    for (let n = start; n <= end; n++) html += plate(n);
+    plates.innerHTML = html;
+    pageLabel.textContent = `${volume.name}, ${start}–${end}`;
+    prev.disabled = start === 1;
+    next.disabled = end === 348;
+    volumes.forEach(v => v.setAttribute('aria-current', String(chosen >= Number(v.dataset.from) && chosen <= Number(v.dataset.to))));
+  }
+
+  function drawEnlarged() {
+    const combo = COMBOS[chosen - 1];
+    const bands = combo.map(c => {
+      const colour = COLOURS[c];
+      return `<div class="band" style="background:${colour.hex};color:${ink(colour.hex)}"><b>${colour.name}</b><span>${colour.hex.toUpperCase()}</span></div>`;
+    }).join('');
+    enlarged.innerHTML = `<p class="big-num">No. ${pad(chosen)}</p><div class="bands" style="--k:${combo.length}">${bands}</div>`;
+  }
+
+  function choose(n: number, focus = false) {
+    chosen = Math.max(1, Math.min(348, n));
+    const onPage = chosen >= start && chosen <= end;
+    if (!onPage) drawPage();
+    else plates.querySelectorAll('.plate').forEach(p => p.classList.toggle('chosen', Number((p as HTMLElement).dataset.n) === chosen));
+    drawEnlarged();
+    if (focus) plates.querySelector<HTMLElement>(`[data-n="${chosen}"]`)?.focus();
+  }
+
+  plates.addEventListener('click', event => {
+    const p = (event.target as HTMLElement).closest<HTMLElement>('.plate');
+    if (p) choose(Number(p.dataset.n), true);
+  });
+  plates.addEventListener('keydown', event => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -across, ArrowDown: across }[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    choose(chosen + step, true);
+  });
+  prev.addEventListener('click', () => choose(start - 1));
+  next.addEventListener('click', () => choose(end + 1));
+  volumes.forEach(v => v.addEventListener('click', () => choose(Number(v.dataset.from))));
+
+  // As many plates as the window holds: five squares a plate across, six down.
+  onSquares(({ across: a, down, narrow }) => {
+    const wide = narrow ? a - 2 : a - 38;
+    const high = narrow ? 36 : down - 7;
+    across = Math.max(2, Math.floor((wide + 1) / 5));
+    const rows = Math.max(2, Math.floor(high / 6));
+    perPage = across * rows;
+    plates.style.setProperty('--plates-across', String(across));
+    plates.style.setProperty('--plates-down', String(rows));
+    drawPage();
+    drawEnlarged();
+  });
+</script>
+
+<style is:global>
+  html { background: #f3f3f0; }
+  .wada {
+    --paper: #f3f3f0;
+    --ink: #1b1a19;
+    --soft: #6a6862;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--typeface-canon), 'Hiragino Mincho ProN', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .wada button { all: unset; cursor: pointer; box-sizing: border-box; }
+  .wada button:focus-visible { outline: calc(2px * var(--sf)) solid var(--ink); outline-offset: calc(2px * var(--sf)); }
+
+  .title { grid-column: 3 / span 12; grid-row: 3 / span 12; }
+  .title h1 { margin: 0; font-family: 'Hiragino Mincho ProN', serif; font-weight: 600; font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: 0.06em; }
+  .title p { margin: 0; }
+  .title .en { font-size: calc(20px * var(--sf)); line-height: calc(1.5 * var(--u)); margin-top: var(--u); font-style: italic; }
+  .title .after { margin-top: var(--u); color: var(--soft); font-size: calc(13px * var(--sf)); }
+
+  .volumes { grid-column: 3 / span 12; grid-row: 17 / span 9; display: grid; grid-auto-rows: calc(3 * var(--u)); }
+  .volumes button { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr auto; align-items: center; border-top: 1px solid #d6d4cd; }
+  .volumes button span { font-family: 'Hiragino Mincho ProN', serif; font-size: calc(18px * var(--sf)); }
+  .volumes small { color: var(--soft); font-size: calc(12px * var(--sf)); }
+  .volumes button[aria-current='true'] { font-style: italic; }
+  .volumes button[aria-current='true'] span { color: #b5332a; }
+
+  /* The plates: four squares a side and one between, the number under each. */
+  .plates {
+    grid-column: 17 / -21;
+    grid-row: 3 / -4;
+    display: grid;
+    grid-template-columns: repeat(var(--plates-across, 6), calc(4 * var(--u)));
+    grid-auto-rows: calc(6 * var(--u));
+    column-gap: var(--u);
+    align-content: start;
+    outline: none;
+  }
+  .plate { display: grid; grid-template-rows: calc(4 * var(--u)) var(--u); }
+  .fields { display: grid; grid-template-columns: repeat(4, var(--u)); grid-template-rows: repeat(4, var(--u)); }
+  .fields i { display: block; }
+  /* A hair of shadow, so a white field still shows its edge on the paper. */
+  .fields { box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06); }
+  .num { font-size: calc(12px * var(--sf)); color: var(--soft); font-variant-numeric: tabular-nums; }
+  .plate.chosen .num { color: var(--ink); text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .plate.chosen .fields { outline: calc(2px * var(--sf)) solid var(--ink); outline-offset: calc(3px * var(--sf)); }
+  .plates:focus-visible .plate.chosen .fields { outline-style: dashed; }
+
+  .pager { grid-column: 17 / span 24; grid-row: -3; display: flex; gap: var(--u); font-size: calc(12px * var(--sf)); color: var(--soft); }
+  .pager button { color: var(--ink); text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .pager button:disabled { color: #b8b6b0; text-decoration: none; cursor: default; }
+
+  /* The chosen combination, its colours as tall fields with names and values. */
+  .enlarged { grid-column: -19 / span 16; grid-row: 3 / -4; display: grid; grid-template-rows: calc(3 * var(--u)) 1fr; }
+  .big-num { margin: 0; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); font-variant-numeric: tabular-nums; }
+  .bands { display: grid; grid-template-rows: repeat(var(--k), 1fr); min-height: 0; }
+  .band { display: flex; flex-direction: column; justify-content: end; padding: var(--u); min-height: 0; overflow: hidden; }
+  .band b { font-weight: normal; font-size: calc(20px * var(--sf)); line-height: calc(1.5 * var(--u)); }
+  .band span { font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); letter-spacing: 0.04em; }
+
+  @media (max-width: 1360px) {
+    .wada .title h1 { font-size: calc(48px * var(--sf)); }
+  }
+
+  /* Narrow: title and the chosen combination first, then plates two across. */
+  :root[data-narrow] .wada { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .wada > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .title { margin-top: var(--u); }
+  :root[data-narrow] .volumes { margin-block: var(--u); }
+  :root[data-narrow] .enlarged { height: calc(16 * var(--u)); grid-row: auto; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .pager { margin-top: var(--u); }
+</style>

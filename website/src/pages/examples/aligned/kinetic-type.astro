@@ -1,0 +1,275 @@
+---
+// After a title sequence: words drawn on a five-by-seven matrix where every cell is a square. The
+// cells pour out of one red square in the corner and walk to their places a whole square per beat,
+// never between lines; a press sends them on to the next line of the sequence.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="kinetic-type" theme="light">
+  <main class="stage kinetic" id="kinetic">
+    <h1 class="sr" id="phrase">One square at a time</h1>
+    <canvas class="traces" id="traces" aria-hidden="true"></canvas>
+    <div class="cells" id="cells" aria-hidden="true"></div>
+    <i class="source" id="source" aria-hidden="true"></i>
+    <p class="caption">
+      <b>Sequence for a film about surveyors</b>
+      Each square of every letter moves one square a beat, and only along the lines. Press anywhere, or the space bar, for the next card.
+    </p>
+    <p class="card-count" id="card" aria-live="polite">Card 1 of 4</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // Five by seven, a row a string; # is a cell.
+  const FONT: Record<string, string[]> = {
+    A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
+    C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'],
+    D: ['####.', '#...#', '#...#', '#...#', '#...#', '#...#', '####.'],
+    E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'],
+    F: ['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+    G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.####'],
+    H: ['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    I: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '#####'],
+    L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'],
+    N: ['#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#', '#...#'],
+    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+    P: ['####.', '#...#', '#...#', '####.', '#....', '#....', '#....'],
+    Q: ['.###.', '#...#', '#...#', '#...#', '#.#.#', '#..#.', '.##.#'],
+    R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+    S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'],
+    T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+    U: ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+    W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '##.##', '#...#'],
+    Y: ['#...#', '#...#', '.#.#.', '..#..', '..#..', '..#..', '..#..'],
+  };
+  // On a phone the same words in a three-by-five face, so a short word fits a line.
+  const SMALL: Record<string, string[]> = {
+    A: ['.#.', '#.#', '###', '#.#', '#.#'], B: ['##.', '#.#', '##.', '#.#', '##.'], C: ['.##', '#..', '#..', '#..', '.##'],
+    D: ['##.', '#.#', '#.#', '#.#', '##.'], E: ['###', '#..', '##.', '#..', '###'], F: ['###', '#..', '##.', '#..', '#..'],
+    G: ['.##', '#..', '#.#', '#.#', '.##'], H: ['#.#', '#.#', '###', '#.#', '#.#'], I: ['###', '.#.', '.#.', '.#.', '###'],
+    L: ['#..', '#..', '#..', '#..', '###'], M: ['#.#', '###', '###', '#.#', '#.#'], N: ['##.', '#.#', '#.#', '#.#', '#.#'],
+    O: ['.#.', '#.#', '#.#', '#.#', '.#.'], P: ['##.', '#.#', '##.', '#..', '#..'], Q: ['.#.', '#.#', '#.#', '###', '.##'],
+    R: ['##.', '#.#', '##.', '#.#', '#.#'], S: ['.##', '#..', '.#.', '..#', '##.'], T: ['###', '.#.', '.#.', '.#.', '.#.'],
+    U: ['#.#', '#.#', '#.#', '#.#', '###'], W: ['#.#', '#.#', '###', '###', '#.#'], Y: ['#.#', '#.#', '.#.', '.#.', '.#.'],
+  };
+  const face = (narrow: boolean) => narrow
+    ? { glyphs: SMALL, advance: 4, space: 1, lineHigh: 7, margin: 1 }
+    : { glyphs: FONT, advance: 6, space: 2, lineHigh: 9, margin: 3 };
+  const CARDS = [
+    ['ONE SQUARE', 'AT A TIME'],
+    ['STEP BY', 'STEP'],
+    ['NO HALF', 'MEASURES'],
+    ['ONLY WHOLE', 'SQUARES'],
+  ];
+
+  const stage = document.getElementById('kinetic')!;
+  const layer = document.getElementById('cells')!;
+  const source = document.getElementById('source')!;
+  const phrase = document.getElementById('phrase')!;
+  const cardLabel = document.getElementById('card')!;
+  const traces = document.getElementById('traces') as HTMLCanvasElement;
+  const pen = traces.getContext('2d')!;
+
+  // Every square a cell has passed through is left a shade darker: the routes stay on the page.
+  function sizeTraces(across: number, rows: number) {
+    const ratio = window.devicePixelRatio || 1;
+    traces.width = Math.round(across * unit * ratio);
+    traces.height = Math.round(rows * unit * ratio);
+    traces.style.width = `${across * unit}px`;
+    traces.style.height = `${rows * unit}px`;
+    pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  // A route is drawn through the squares' centres, a thin line, under the cells.
+  const trace = (x0: number, y0: number, x1: number, y1: number) => {
+    pen.strokeStyle = '#d9a800';
+    pen.lineWidth = Math.max(1, unit / 10);
+    pen.lineCap = 'square';
+    pen.beginPath();
+    pen.moveTo((x0 + 0.5) * unit, (y0 + 0.5) * unit);
+    pen.lineTo((x1 + 0.5) * unit, (y1 + 0.5) * unit);
+    pen.stroke();
+  };
+  function traceRoute(cell: Cell) {
+    trace(cell.x, cell.y, cell.tx, cell.y);
+    trace(cell.tx, cell.y, cell.tx, cell.ty);
+  }
+
+  type Cell = { el: HTMLElement; x: number; y: number; tx: number; ty: number; wait: number; leaving: boolean };
+  let cells: Cell[] = [];
+  let card = 0;
+  let unit = 20;
+  let origin = { x: 2, y: 40 };
+  let timer = 0;
+
+  // Lines broken to fit the window: whole words where they fit, otherwise as many letters as fit.
+  function layout(lines: string[], across: number, narrow: boolean) {
+    const { advance, space, margin } = face(narrow);
+    const room = across - 2 * margin;
+    // A letter is its face and one square of air; a space adds one or two more between words.
+    const width = (text: string) => [...text].reduce((sum, ch) => sum + (ch === ' ' ? space : advance), 0) - 1;
+    const rows: string[] = [];
+    for (const line of lines) {
+      let row = '';
+      for (const word of line.split(' ')) {
+        const next = row ? `${row} ${word}` : word;
+        if (width(next) <= room || !row) row = next;
+        else { rows.push(row); row = word; }
+      }
+      rows.push(row);
+    }
+    // A word wider than the room is cut into pieces that fit.
+    const fit = Math.max(1, Math.floor((room + 1) / advance));
+    return rows.flatMap(row => {
+      const out: string[] = [];
+      let current = '';
+      for (const word of row.split(' ')) {
+        if (word.length > fit) {
+          if (current) { out.push(current); current = ''; }
+          for (let i = 0; i < word.length; i += fit) out.push(word.slice(i, i + fit));
+        } else current = current ? `${current} ${word}` : word;
+      }
+      if (current) out.push(current);
+      return out;
+    });
+  }
+
+  // Where each cell of a card belongs, in squares from the stage's top left.
+  function targets(lines: string[], across: number, down: number, narrow: boolean) {
+    const rows = layout(lines, across, narrow);
+    const { glyphs, advance, space, lineHigh, margin } = face(narrow);
+    const top = narrow ? 3 : Math.max(7, Math.floor((down - rows.length * lineHigh + 2) / 2) - 2);
+    const spots: [number, number][] = [];
+    rows.forEach((row, r) => {
+      let x = margin;
+      for (const ch of row) {
+        if (ch === ' ') { x += space; continue; }
+        const glyph = glyphs[ch];
+        glyph.forEach((line, gy) => [...line].forEach((pixel, gx) => { if (pixel === '#') spots.push([x + gx, top + r * lineHigh + gy]); }));
+        x += advance;
+      }
+    });
+    return { spots, bottom: top + rows.length * lineHigh };
+  }
+
+  const put = (cell: Cell) => { cell.el.style.transform = `translate(${cell.x * unit}px, ${cell.y * unit}px)`; };
+
+  function newCell(): Cell {
+    const el = document.createElement('i');
+    layer.append(el);
+    return { el, x: origin.x, y: origin.y, tx: origin.x, ty: origin.y, wait: 0, leaving: false };
+  }
+
+  // Assign this card's places: cells already out keep walking to the nearest new place, in reading
+  // order; the rest wait their turn in the source square; spare cells walk home and vanish.
+  function play(instant: boolean, measures: { across: number; down: number; narrow: boolean }) {
+    const { spots, bottom } = targets(CARDS[card], measures.across, measures.down, measures.narrow);
+    const rows = measures.narrow ? bottom + 12 : measures.down;
+    if (measures.narrow) stage.style.setProperty('--rows', String(rows));
+    sizeTraces(measures.across, rows);
+    const live = cells.filter(cell => !cell.leaving);
+    // Order the spots by their distance from the source, so the stream fills from the nearest corner.
+    const order = spots.slice().sort((a, b) => (a[0] - b[0]) || (b[1] - a[1]));
+    live.sort((a, b) => (a.x - b.x) || (b.y - a.y));
+    const next: Cell[] = [];
+    order.forEach(([tx, ty], i) => {
+      const cell = live[i] ?? newCell();
+      cell.tx = tx;
+      cell.ty = ty;
+      cell.wait = live[i] ? Math.floor(i / 8) : Math.floor(i / 2);
+      cell.leaving = false;
+      next.push(cell);
+    });
+    live.slice(order.length).forEach((cell, i) => { cell.tx = origin.x; cell.ty = origin.y; cell.leaving = true; cell.wait = i; next.push(cell); });
+    cells = next.concat(cells.filter(cell => cell.leaving && !next.includes(cell)));
+    phrase.textContent = CARDS[card].join(' ').toLowerCase().replace(/^./, c => c.toUpperCase());
+    cardLabel.textContent = `Card ${card + 1} of ${CARDS.length}`;
+
+    clearInterval(timer);
+    if (instant) {
+      cells.forEach(cell => { if (!cell.leaving) traceRoute(cell); });
+      cells = cells.filter(cell => {
+        if (cell.leaving) { cell.el.remove(); return false; }
+        cell.x = cell.tx; cell.y = cell.ty; cell.el.classList.remove('moving'); put(cell); return true;
+      });
+      return;
+    }
+    cells.forEach(put);
+    timer = window.setInterval(beat, 24);
+  }
+
+  // One beat: every cell that is due moves one square, along first, then up or down.
+  function beat() {
+    let busy = false;
+    cells = cells.filter(cell => {
+      if (cell.wait > 0) { cell.wait--; busy = true; return true; }
+      const dx = Math.sign(cell.tx - cell.x);
+      const dy = Math.sign(cell.ty - cell.y);
+      const was = [cell.x, cell.y];
+      if (dx) cell.x += dx;
+      else if (dy) cell.y += dy;
+      if ((dx || dy) && !cell.leaving) trace(was[0], was[1], cell.x, cell.y);
+      const arrived = cell.x === cell.tx && cell.y === cell.ty;
+      cell.el.classList.toggle('moving', !arrived);
+      put(cell);
+      if (arrived && cell.leaving) { cell.el.remove(); return false; }
+      if (!arrived) busy = true;
+      return true;
+    });
+    if (!busy) clearInterval(timer);
+  }
+
+  let measures = { across: 72, down: 45, narrow: false };
+  onSquares(next => {
+    unit = next.unit;
+    measures = next;
+    origin = next.narrow ? { x: next.across - 3, y: 1 } : { x: 2, y: next.down - 3 };
+    source.style.setProperty('--sx', String(origin.x));
+    source.style.setProperty('--sy', String(origin.y));
+    // A new window size settles at once rather than marching again.
+    play(cells.length > 0 || reducedMotion(), next);
+  });
+
+  const advance = () => { card = (card + 1) % CARDS.length; play(reducedMotion(), measures); };
+  stage.addEventListener('click', event => { if (!(event.target as HTMLElement).closest('a, button')) advance(); });
+  window.addEventListener('keydown', event => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); advance(); } });
+</script>
+
+<style is:global>
+  html { background: #ffd400; }
+  .kinetic {
+    --ground: #ffd400;
+    --ink: #000;
+    --run: #e5161d;
+    background: var(--ground);
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .kinetic .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
+  .cells { grid-column: 1 / -1; grid-row: 1 / -1; position: relative; }
+  .traces { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .cells i { position: absolute; left: 0; top: 0; width: var(--u); height: var(--u); background: var(--ink); will-change: transform; }
+  .cells i.moving { background: var(--run); }
+  .source { position: absolute; left: calc(var(--sx, 2) * var(--u)); top: calc(var(--sy, 40) * var(--u)); width: var(--u); height: var(--u); box-sizing: border-box; border: calc(3px * var(--sf)) solid var(--run); }
+
+  .caption {
+    grid-column: 3 / span 22;
+    grid-row: 2 / span 4;
+    margin: 0;
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    max-width: calc(22 * var(--u));
+    z-index: 1;
+  }
+  .caption b { display: block; font-family: var(--typeface-medium); font-weight: normal; }
+  .card-count { grid-column: -24 / span 10; grid-row: -2; margin: 0; font-family: var(--typeface-compressed); font-size: calc(16px * var(--sf)); line-height: var(--u); text-transform: none; }
+
+  :root[data-narrow] .kinetic { grid-template-rows: repeat(var(--rows, 40), var(--u)); }
+  :root[data-narrow] .cells { grid-row: 1 / -1; }
+  :root[data-narrow] .caption { grid-column: 2 / -2; grid-row: -9 / span 5; max-width: none; background: var(--ground); }
+  :root[data-narrow] .card-count { grid-column: 2 / span 8; grid-row: -4; }
+</style>
