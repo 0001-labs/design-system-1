@@ -1,0 +1,205 @@
+---
+// After a photocopied zine: a spread of cut-up photographs pushed through the copier until they are
+// all grain and contrast, a title in letters cut from twenty different magazines, label-maker tape,
+// sticky tape and a felt-tip. Every piece is tilted, but every piece's box still sits on squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const FACES = ['Impact', 'Didot', 'Courier New', 'Futura', 'Rockwell', 'Bodoni 72', 'American Typewriter', 'Chalkduster', 'Copperplate', 'Times New Roman', 'Marker Felt', 'Herculanum', 'Silom', 'Phosphate', 'Superclarendon', 'Big Caslon', 'Gill Sans', 'Georgia', 'Avenir Next', 'Hoefler Text'];
+const LOOKS = ['paper', 'ink', 'paper', 'grey', 'print', 'paper', 'ink'];
+
+/** Letters cut from magazines: each its own face, box and tilt, sized in whole squares. */
+function ransom(text: string, seed: number, base = 4) {
+  return [...text].map((ch, i) => {
+    if (ch === ' ') return { space: true };
+    const n = (i + 1) * 7 + seed * 13;
+    const high = base + (n % 3 === 0 ? 1 : 0);
+    const wide = ch === "'" ? 2 : /[MW]/i.test(ch) ? high + 1 : high - (n % 2 === 0 ? 1 : 0);
+    return {
+      ch: n % 4 === 1 ? ch.toLowerCase() : ch,
+      wide,
+      high,
+      face: FACES[n % FACES.length],
+      look: LOOKS[n % LOOKS.length],
+      turn: ((n * 37) % 15) - 7,
+      italic: n % 6 === 0,
+    };
+  });
+}
+const TITLE = [ransom('BIRDS', 1), ransom("DON'T", 2), ransom('PAY RENT', 3)];
+const SWAP = ransom('SWAP NOT SHOP', 5, 3);
+---
+<AlignedStudy slug="zine" theme="light">
+  <main class="stage pigeonhole">
+    <div class="fold" aria-hidden="true"></div>
+
+    <!-- The left page -->
+    <p class="hand issue">Pigeon Hole, issue 4. Spring.</p>
+    <h1 class="ransom title" aria-label="Birds don't pay rent">
+      {TITLE.map(word => (
+        <span class="word" aria-hidden="true">
+          {word.map(l => l.space
+            ? <span class="gap"></span>
+            : <span class={`cut ${l.look}`} style={`--w:${l.wide};--h:${l.high};--turn:${l.turn}deg;font-family:'${l.face}',serif;${l.italic ? 'font-style:italic;' : ''}`}>{l.ch}</span>)}
+        </span>
+      ))}
+    </h1>
+    <figure class="clip starling">
+      <img src="/examples/images/birdie-starling.jpg" alt="A starling on a ledge, photocopied to grain" />
+      <span class="tape tl" aria-hidden="true"></span><span class="tape br" aria-hidden="true"></span>
+    </figure>
+    <p class="hand derek">This one lives over the launderette on Mill Street. We call him Derek.</p>
+    <svg class="scrawl" viewBox="0 0 6 4" aria-hidden="true"><path d="M5.6 0.6 C4.4 0.4 2.6 1 1.4 2.6 M1.4 2.6 L1.5 1.6 M1.4 2.6 L2.4 2.7" /></svg>
+    <figure class="clip heron">
+      <img src="/examples/images/birdie-heron.jpg" alt="A heron, cut out in a rough oval" />
+    </figure>
+    <p class="hand price">Photocopied at the library. 10p or a swap.</p>
+    <p class="folio left-folio hand">4</p>
+
+    <!-- The right page -->
+    <p class="dymo roof">Who owns the roof?</p>
+    <div class="typed">
+      <p>The starlings moved into the roof of the old print works in March, about forty of them, through the gap where the slates came off in the storm.</p>
+      <p>The developers want the gap fixed by May. The starlings want it left. Nobody asked the starlings, so we did.</p>
+      <p>They said: chk chk chk wheeee. We are taking that as a no.</p>
+    </div>
+    <figure class="clip swallow">
+      <img src="/examples/images/birdie-swallow.jpg" alt="A swallow on a wire, very high contrast" />
+      <span class="tape tr" aria-hidden="true"></span>
+    </figure>
+    <figure class="clip cranes">
+      <img src="/examples/images/birdie-jay.jpg" alt="A jay, torn into a strip" />
+    </figure>
+    <div class="seen hand">
+      <p class="seen-title">Seen in March</p>
+      <ul>
+        <li class="done">a heron on the bus shelter</li>
+        <li>two magpies fighting over a crisp packet</li>
+        <li class="done">a wren <em>inside</em> the post office</li>
+      </ul>
+    </div>
+    <p class="ransom swap" aria-label="Swap not shop">
+      {SWAP.map(l => l.space
+        ? <span class="gap" aria-hidden="true"></span>
+        : <span class={`cut ${l.look}`} aria-hidden="true" style={`--w:${l.wide};--h:${l.high};--turn:${l.turn}deg;font-family:'${l.face}',serif;`}>{l.ch}</span>)}
+    </p>
+    <p class="hand meet">Next meet: Saturday, 2 pm, back room of the Crown. Bring scissors.</p>
+    <p class="folio right-folio hand">5</p>
+
+    <svg class="toner" aria-hidden="true"><filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" /><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.05" /></filter><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #efeee9; }
+  .pigeonhole {
+    --paper: #efeee9;
+    --toner: #111;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 0.55), transparent calc(var(--u) / 2)),
+      linear-gradient(0deg, rgb(0 0 0 / 0.4), transparent calc(var(--u) / 3)),
+      radial-gradient(ellipse at 50% 50%, transparent 62%, rgb(0 0 0 / 0.18) 100%),
+      var(--paper);
+    color: var(--toner);
+    font-family: 'American Typewriter', 'Courier New', monospace;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  :where(.pigeonhole) :is(p, h1, ul, figure) { margin: 0; padding: 0; }
+
+  /* The spine: a toner shadow down the middle of the spread, with two staples. */
+  .fold { position: absolute; inset: 0 auto 0 50%; width: calc(2 * var(--u)); transform: translateX(-50%); background: linear-gradient(90deg, transparent, rgb(0 0 0 / 0.22) 48%, rgb(0 0 0 / 0.35) 50%, rgb(0 0 0 / 0.22) 52%, transparent); pointer-events: none; }
+  .fold::before, .fold::after { content: ''; position: absolute; left: 50%; width: calc(3px * var(--sf)); height: calc(2 * var(--u)); transform: translateX(-50%); background: #555; box-shadow: 0 0 0 1px #222; }
+  .fold::before { top: calc(8 * var(--u)); }
+  .fold::after { bottom: calc(8 * var(--u)); }
+
+  /* The copier's grain over everything. */
+  .toner { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: multiply; opacity: 0.35; pointer-events: none; }
+
+  .hand { font-family: 'Marker Felt', 'Bradley Hand', 'Chalkboard SE', cursive; font-size: calc(17px * var(--sf)); line-height: var(--u); }
+
+  /* Ransom letters: each a box of whole squares, tilted about its middle. */
+  .ransom { display: flex; flex-wrap: wrap; align-items: end; align-content: start; font-weight: normal; }
+  .word { display: flex; align-items: end; margin-right: var(--u); }
+  .gap { width: calc(2 * var(--u)); }
+  .cut {
+    display: grid;
+    place-items: center;
+    width: calc(var(--w) * var(--u));
+    height: calc(var(--h) * var(--u));
+    font-size: calc(var(--h) * var(--u) * 0.78);
+    line-height: 1;
+    transform: rotate(var(--turn));
+    box-shadow: 1px 1px 0 rgb(0 0 0 / 0.35);
+    overflow: hidden;
+  }
+  .cut.paper { background: #fbfbf8; color: #111; }
+  .cut.ink { background: #111; color: #f4f4f0; }
+  .cut.grey { background: #b9b9b6; color: #111; }
+  .cut.print { background: repeating-linear-gradient(0deg, #e6e6e2 0 calc(var(--u) / 5), #d2d2ce 0 calc(var(--u) / 5 + 1px)); color: #111; }
+
+  .issue { grid-column: 3 / span 16; grid-row: 2 / span 1; transform: rotate(-2deg); }
+  .title { grid-column: 3 / -37; grid-row: 4 / span 18; row-gap: calc(var(--u) / 1); }
+
+  /* Photographs cut with scissors and pushed through the copier. */
+  .clip { position: relative; margin: 0; }
+  .clip img { display: block; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(4) brightness(1.25); }
+  .starling { grid-column: 4 / span 15; grid-row: -19 / span 14; transform: rotate(-3deg); }
+  .starling img { clip-path: polygon(2% 4%, 30% 0, 62% 3%, 98% 1%, 100% 40%, 97% 72%, 99% 98%, 60% 100%, 28% 97%, 0 99%, 3% 60%, 0 30%); }
+  .heron { grid-column: 18 / span 9; grid-row: -12 / span 9; transform: rotate(6deg); }
+  .heron img { clip-path: ellipse(48% 46% at 50% 50%); filter: grayscale(1) contrast(5) brightness(1.3); }
+  .tape { position: absolute; width: calc(4 * var(--u)); height: var(--u); background: rgb(225 225 215 / 0.62); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06); clip-path: polygon(0 10%, 6% 0, 12% 12%, 18% 0, 82% 0, 88% 10%, 94% 0, 100% 14%, 100% 90%, 94% 100%, 88% 88%, 82% 100%, 18% 100%, 12% 90%, 6% 100%, 0 86%); }
+  .tape.tl { top: calc(var(--u) / -2); left: calc(-1 * var(--u)); transform: rotate(-35deg); }
+  .tape.br { bottom: calc(var(--u) / -2); right: calc(-1 * var(--u)); transform: rotate(-30deg); }
+  .tape.tr { top: calc(var(--u) / -2); right: calc(-1 * var(--u)); transform: rotate(38deg); }
+  .derek { grid-column: 20 / span 9; grid-row: -19 / span 4; transform: rotate(3deg); }
+  .scrawl { grid-column: 18 / span 4; grid-row: -15 / span 3; width: 100%; height: 100%; fill: none; stroke: var(--toner); stroke-width: 0.12; stroke-linecap: round; stroke-linejoin: round; }
+  .price { grid-column: 5 / span 12; grid-row: -4 / span 1; transform: rotate(-1deg); }
+  .folio { font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .left-folio { grid-column: 3 / span 2; grid-row: -3 / span 2; }
+  .right-folio { grid-column: -16 / span 2; grid-row: -3 / span 2; text-align: right; }
+
+  /* Label-maker tape: white letters pressed into black plastic. */
+  .dymo {
+    grid-column: -32 / span 18;
+    grid-row: 3 / span 2;
+    justify-self: start;
+    align-self: center;
+    padding-inline: var(--u);
+    height: calc(2 * var(--u));
+    background: linear-gradient(#2a2a2a, #0a0a0a 60%, #1a1a1a);
+    color: #f4f4f0;
+    font: bold calc(20px * var(--sf)) / calc(2 * var(--u)) 'Andale Mono', 'Courier New', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.8), 0 -1px 0 rgb(255 255 255 / 0.25);
+    transform: rotate(-2deg);
+  }
+  .typed { grid-column: -32 / span 16; grid-row: 6 / span 18; display: flex; flex-direction: column; gap: var(--u); }
+  .typed p { background: #fbfbf8; padding: calc(var(--u) / 2); box-shadow: 1px 1px 0 rgb(0 0 0 / 0.25); }
+  .typed p:nth-child(2) { transform: rotate(1.2deg); margin-left: var(--u); }
+  .typed p:nth-child(3) { transform: rotate(-1.5deg); }
+  .swallow { grid-column: -14 / -3; grid-row: 5 / span 13; transform: rotate(4deg); }
+  .swallow img { clip-path: polygon(0 2%, 100% 0, 97% 100%, 3% 97%); }
+  .cranes { grid-column: -32 / span 16; grid-row: 21 / span 5; transform: rotate(-2deg); }
+  .cranes img { clip-path: polygon(0 8%, 9% 0, 22% 6%, 40% 1%, 58% 7%, 77% 0, 100% 5%, 98% 94%, 80% 100%, 61% 93%, 42% 99%, 20% 92%, 3% 100%); }
+  .seen { grid-column: -14 / -3; grid-row: 20 / span 6; transform: rotate(-2deg); }
+  .seen-title { text-decoration: underline wavy; text-underline-offset: calc(4px * var(--sf)); }
+  .seen ul { list-style: none; }
+  .seen li { padding-left: var(--u); position: relative; }
+  .seen li::before { content: ''; position: absolute; left: 0; top: calc(var(--u) / 4); width: calc(var(--u) / 2); height: calc(var(--u) / 2); border: 2px solid var(--toner); border-radius: 2px 4px 3px 2px; }
+  .seen li.done::after { content: '✗'; position: absolute; left: 0; top: calc(-2px * var(--sf)); width: calc(var(--u) / 2 + 4px); text-align: center; font-size: calc(18px * var(--sf)); }
+  .swap { grid-column: -32 / -3; grid-row: -14 / span 8; align-content: center; padding-inline: var(--u); background: #111; transform: rotate(-1deg); }
+  .swap .cut { box-shadow: 2px 2px 0 rgb(255 255 255 / 0.25); }
+  .meet { grid-column: -32 / span 20; grid-row: -5 / span 2; transform: rotate(1deg); }
+
+  :root[data-narrow] .pigeonhole { padding-bottom: calc(3 * var(--u)); overflow-x: clip; }
+  :root[data-narrow] .fold, :root[data-narrow] .scrawl { display: none; }
+  :root[data-narrow] .pigeonhole > :not(.fold, .toner) { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); }
+  :root[data-narrow] .starling, :root[data-narrow] .swallow { height: calc(12 * var(--u)); }
+  :root[data-narrow] .heron { width: calc(8 * var(--u)); height: calc(8 * var(--u)); justify-self: end; }
+  :root[data-narrow] .word { flex-wrap: wrap; margin-bottom: var(--u); }
+  :root[data-narrow] .cranes { height: calc(5 * var(--u)); }
+  :root[data-narrow] .dymo { font-size: calc(14px * var(--sf)); justify-self: start; height: auto; line-height: var(--u); padding-block: calc(var(--u) / 2); }
+  :root[data-narrow] .cut { width: calc(min(var(--w), 3) * var(--u)); height: calc(min(var(--h), 3) * var(--u)); font-size: calc(min(var(--h), 3) * var(--u) * 0.78); }
+  :root[data-narrow] .right-folio { text-align: left; }
+</style>

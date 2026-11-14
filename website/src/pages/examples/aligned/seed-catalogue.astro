@@ -1,0 +1,229 @@
+---
+// After a seedsman's catalogue of about 1912: slab serifs, mustard and leaf green on paper gone the
+// colour of weak tea, a beetroot engraved in hatched lines, varieties priced by the packet and the
+// ounce, and an order sheet whose boxes are whole squares. The sheet adds itself up, in shillings.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const VARIETIES = [
+  { name: 'Crimson Globe Beet', note: 'Round, smooth and blood-red to the heart; sweet when lifted the size of a cricket ball.', pkt: 3, oz: 8 },
+  { name: 'James’s Scarlet Carrot', note: 'Stump-rooted, close-grained, the best keeper for the clamp through a hard winter.', pkt: 3, oz: 10 },
+  { name: 'Telegraph Pea', note: 'Tall, heavy-cropping; pods of nine and ten. Sticks of five feet wanted.', pkt: 4, oz: 6 },
+  { name: 'Ailsa Craig Onion', note: 'Straw-skinned and mild, grown to two pounds and more by our own men.', pkt: 4, oz: 18 },
+  { name: 'Hollins’ Early Drumhead', note: 'A cabbage for the first cutting in June; firm, white and quick to heart.', pkt: 3, oz: 12 },
+  { name: 'Tender & True Parsnip', note: 'Hollow-crowned, free from canker; the sort to win the show bench.', pkt: 3, oz: 6 },
+  { name: 'Lincolnshire Runner Bean', note: 'Scarlet flowers, then pods a foot long, stringless when young.', pkt: 6, oz: 5 },
+];
+const ORDER = VARIETIES.slice(0, 6);
+const price = (d: number) => (d >= 12 ? `${Math.floor(d / 12)}s.${d % 12 ? ` ${d % 12}d.` : ''}` : `${d}d.`);
+---
+<AlignedStudy slug="seed-catalogue" theme="light">
+  <main class="stage seedsman">
+    <header class="mast">
+      <p class="firm">Hollins Brothers, Seedsmen</p>
+      <h1>Reliable Garden Seeds</h1>
+      <p class="ribbon">Spring catalogue for 1912, from the trial grounds at Ashby Hill, Lincolnshire</p>
+    </header>
+
+    <section class="varieties" aria-label="Kitchen garden varieties">
+      <h2>The kitchen garden</h2>
+      <ul>
+        {VARIETIES.map(v => (
+          <li>
+            <p class="row"><b>{v.name}</b><span class="lead"></span><span class="cost">Pkt. {price(v.pkt)} Oz. {price(v.oz)}</span></p>
+            <p class="note">{v.note}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <figure class="plate">
+      <svg id="beet" role="img" aria-label="An engraving of a beetroot with three leaves"></svg>
+      <figcaption><b>Crimson Globe.</b> Engraved from a root grown on our grounds, two-thirds natural size.</figcaption>
+    </figure>
+
+    <form class="order" id="order" aria-labelledby="order-title">
+      <h2 id="order-title">Order sheet</h2>
+      <p class="hint">Write the number wanted in each box.</p>
+      <div class="table" role="table" aria-label="Seeds ordered">
+        <div class="tr th" role="row"><span role="columnheader">Variety</span><span role="columnheader">Pkts.</span><span role="columnheader">Ozs.</span></div>
+        {ORDER.map((v, i) => (
+          <div class="tr" role="row">
+            <span role="cell">{v.name.replace(/ (Beet|Carrot|Pea|Onion|Parsnip|Runner Bean)$/, '')}</span>
+            <span role="cell"><input inputmode="numeric" maxlength="2" aria-label={`Packets of ${v.name}`} data-price={v.pkt} /></span>
+            <span role="cell"><input inputmode="numeric" maxlength="2" aria-label={`Ounces of ${v.name}`} data-price={v.oz} /></span>
+          </div>
+        ))}
+      </div>
+      <p class="total"><span>Amount enclosed</span><output id="total" for="order">nothing yet</output></p>
+      <p class="terms">Carriage paid on orders of five shillings and over. Postal orders to be crossed “Hollins Bros.”</p>
+      <p class="stamp" aria-hidden="true"><span>Tested<br />for<br />growth</span></p>
+    </form>
+    <p class="warehouse">Seed Warehouse, Market Place, Ashby Hill. Established 1868.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  // The engraving: shapes filled with parallel hatching, a second, closer hatching on the shadow side.
+  const beet = document.getElementById('beet') as unknown as SVGSVGElement;
+  const W = 18, H = 26;
+  const SHAPES = {
+    bulb: 'M9 12.2 C13.4 12.2 14 15.8 13.3 18.2 C12.6 20.6 10.6 21.7 9.5 22.3 L9.1 25.6 L8.7 22.3 C7.5 21.7 5.3 20.5 4.8 18.2 C4.2 15.6 4.8 12.2 9 12.2 Z',
+    leafLeft: 'M8.2 12.4 C6.8 10.4 5.6 9.6 4.4 9 C1.4 8.2 0.4 5.2 1.2 2.6 C4.4 2.4 6.8 5 6.6 8.2 C7.6 9.6 8.2 10.6 8.6 12.2 Z',
+    leafMid: 'M8.9 12.2 C8.8 9.6 8.9 7.6 9.1 6.2 C7.2 4.6 7.2 1.6 9.4 0.2 C11.6 1.6 11.6 4.6 9.7 6.2 C9.6 7.8 9.4 9.8 9.3 12.2 Z',
+    leafRight: 'M9.6 12.3 C10.4 10.4 11.6 9.4 12.8 8.8 C13 5.8 15 3.6 17.4 3.4 C17.8 6.4 16 8.8 13.4 9.4 C12 10.2 10.8 11.2 10 12.5 Z',
+  };
+  // Shadow: the lower right of the bulb, the right halves of the leaves.
+  const SHADOW = {
+    bulb: 'M10.6 12.4 C14.6 14 14.2 20 9.6 22.6 L14 26 L16 12 Z',
+    leafLeft: 'M1 2.5 C3 4.6 4.6 7 8.4 12.4 L10 12 L8 2 Z',
+    leafMid: 'M9.4 0 L9.3 12.4 L12 12.4 L12 0 Z',
+    leafRight: 'M17.4 3.4 C15 5.4 13 7.6 10 12.5 L18 12 L18 3 Z',
+  };
+  function hatch(angle: number, gap: number) {
+    const a = (angle * Math.PI) / 180, dx = Math.cos(a), dy = Math.sin(a);
+    const reach = Math.hypot(W, H);
+    let d = '';
+    for (let t = -reach; t < reach; t += gap) {
+      const cx = W / 2 - dy * t, cy = H / 2 + dx * t;
+      d += `M${(cx - dx * reach).toFixed(2)} ${(cy - dy * reach).toFixed(2)} L${(cx + dx * reach).toFixed(2)} ${(cy + dy * reach).toFixed(2)} `;
+    }
+    return d;
+  }
+  const defs = Object.entries(SHAPES).map(([id, d]) => `<clipPath id="c-${id}"><path d="${d}"/></clipPath><clipPath id="s-${id}"><path d="${SHADOW[id as keyof typeof SHADOW]}"/></clipPath>`).join('');
+  const angles: Record<string, number> = { bulb: -20, leafLeft: 50, leafMid: 80, leafRight: 120 };
+  const fills = Object.keys(SHAPES).map(id => `
+    <g clip-path="url(#c-${id})">
+      <path d="${hatch(angles[id], id === 'bulb' ? 0.32 : 0.42)}" stroke="${id === 'bulb' ? '#7a1f2b' : '#3e6b2b'}" stroke-width="0.06"/>
+      <g clip-path="url(#s-${id})"><path d="${hatch(angles[id] + 70, 0.26)}" stroke="#2a2116" stroke-width="0.07"/></g>
+    </g>`).join('');
+  const outlines = Object.values(SHAPES).map(d => `<path d="${d}" fill="none" stroke="#2a2116" stroke-width="0.11" stroke-linejoin="round"/>`).join('');
+  const veins = `<path d="M8.4 12.2 C6.6 8.6 4 5.4 1.4 2.8 M4.4 6.6 L2.6 6.4 M5.6 7.8 L5 5.6 M3 4.4 L2 4.4 M9.1 12.2 V0.6 M9.1 3.2 L8 2.4 M9.1 4.6 L10.2 3.8 M9.1 2 L10 1.4 M9.8 12.4 C12 9.4 14.6 6.4 17.2 3.6 M13.6 7.6 L15.4 7.8 M12.4 8.6 L12.6 6.6 M15.4 5.6 L16.6 5.6" fill="none" stroke="#2a2116" stroke-width="0.07"/>
+    <path d="M6.2 14.2 C6.8 13.6 7.8 13.2 8.8 13.2 M5.6 17.6 C6 19 7 20.2 8.2 20.8" fill="none" stroke="#f3e7c2" stroke-width="0.16" stroke-linecap="round"/>
+    <path d="M9.1 25.6 C9.4 24.8 9.8 24.6 10.4 24.8 M8.9 23.8 C8.4 23.4 8 23.4 7.6 23.6" fill="none" stroke="#2a2116" stroke-width="0.06"/>`;
+  beet.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  beet.innerHTML = `<defs>${defs}</defs>${fills}${outlines}${veins}`;
+
+  // The order sheet totals itself in shillings and pence.
+  const form = document.getElementById('order') as HTMLFormElement;
+  const total = document.getElementById('total') as HTMLOutputElement;
+  const words = (d: number) => {
+    if (!d) return 'nothing yet';
+    const pounds = Math.floor(d / 240), s = Math.floor((d % 240) / 12), p = d % 12;
+    return [pounds ? `£${pounds}` : '', s ? `${s}s.` : '', p ? `${p}d.` : ''].filter(Boolean).join(' ');
+  };
+  form.addEventListener('input', event => {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.replace(/\D/g, '').slice(0, 2);
+    let pence = 0;
+    form.querySelectorAll<HTMLInputElement>('input[data-price]').forEach(field => { pence += (Number(field.value) || 0) * Number(field.dataset.price); });
+    total.value = words(pence);
+  });
+  form.addEventListener('submit', event => event.preventDefault());
+</script>
+
+<style is:global>
+  html { background: #eadcae; }
+  .seedsman {
+    --paper: #eadcae;
+    --ink: #2a2116;
+    --mustard: #c99a1e;
+    --leaf: #3e6b2b;
+    --beet: #7a1f2b;
+    color: var(--ink);
+    font-family: 'Iowan Old Style', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background:
+      radial-gradient(circle at 12% 88%, rgb(150 100 30 / 0.16), transparent 18%),
+      radial-gradient(circle at 92% 8%, rgb(150 100 30 / 0.14), transparent 22%),
+      radial-gradient(circle at 70% 70%, rgb(255 250 220 / 0.35), transparent 40%),
+      var(--paper);
+  }
+  :where(.seedsman) :is(p, h1, h2, ul, figure) { margin: 0; padding: 0; }
+
+  .mast { grid-column: 3 / -3; grid-row: 2 / span 6; display: grid; grid-template-rows: var(--u) calc(3 * var(--u)) calc(2 * var(--u)); justify-items: center; text-align: center; }
+  .firm { font-family: Rockwell, 'Courier New', serif; font-size: calc(15px * var(--sf)); color: var(--leaf); }
+  .mast h1 { font: bold calc(54px * var(--sf)) / calc(3 * var(--u)) Superclarendon, Rockwell, Georgia, serif; color: var(--leaf); letter-spacing: -0.005em; white-space: nowrap; }
+  .ribbon {
+    align-self: end;
+    height: calc(1.5 * var(--u));
+    margin-bottom: calc(var(--u) / 4);
+    padding-inline: calc(2 * var(--u));
+    background: var(--mustard);
+    color: var(--ink);
+    font: calc(13px * var(--sf)) / calc(1.5 * var(--u)) Rockwell, Georgia, serif;
+    white-space: nowrap;
+    width: max-content;
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--u) / 2) 50%, 100% 100%, 0 100%, calc(var(--u) / 2) 50%);
+  }
+
+  .seedsman h2 { font: bold calc(22px * var(--sf)) / calc(2 * var(--u)) Superclarendon, Rockwell, serif; color: var(--beet); }
+  .varieties { grid-column: 3 / span 19; grid-row: 9 / -4; }
+  .warehouse { grid-column: 3 / span 19; grid-row: -3 / span 1; font-family: Rockwell, serif; font-size: calc(12px * var(--sf)); color: var(--leaf); }
+  .varieties ul { list-style: none; display: grid; gap: var(--u); padding-top: var(--u); }
+  .row { display: flex; align-items: baseline; gap: calc(var(--u) / 4); }
+  .row b { font: bold calc(15px * var(--sf)) / var(--u) Rockwell, Georgia, serif; white-space: nowrap; }
+  .lead { flex: 1; border-bottom: 2px dotted rgb(42 33 22 / 0.55); transform: translateY(calc(-4px * var(--sf))); min-width: var(--u); }
+  .cost { font-family: Rockwell, Georgia, serif; font-size: calc(13px * var(--sf)); color: var(--leaf); white-space: nowrap; }
+  .note { font-style: italic; color: #4a3d2a; }
+
+  .plate { grid-column: 24 / -25; grid-row: 9 / -2; display: grid; grid-template-rows: 1fr calc(3 * var(--u)); justify-items: center; }
+  .plate svg { width: 100%; height: 100%; }
+  .plate figcaption { align-self: end; text-align: center; font-style: italic; font-size: calc(13px * var(--sf)); max-width: calc(16 * var(--u)); }
+  .plate b { font-style: normal; font-family: Rockwell, serif; }
+
+  /* A rubber stamp in green, five squares round. */
+  .stamp {
+    align-self: end;
+    width: calc(5 * var(--u));
+    height: calc(5 * var(--u));
+    margin: calc(2 * var(--u)) var(--u) 0 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--leaf), inset 0 0 0 calc(6px * var(--sf)) var(--paper), inset 0 0 0 calc(7px * var(--sf)) var(--leaf);
+    color: var(--leaf);
+    font: bold calc(12px * var(--sf)) / calc(14px * var(--sf)) Rockwell, serif;
+    text-align: center;
+    transform: rotate(-12deg);
+    opacity: 0.85;
+    mix-blend-mode: multiply;
+  }
+
+  .order { grid-column: -23 / -3; grid-row: 9 / -2; display: flex; flex-direction: column; }
+  .hint { font-style: italic; margin-bottom: var(--u); }
+  .table { display: grid; box-shadow: inset 0 0 0 2px var(--ink); }
+  .tr { display: grid; grid-template-columns: 1fr calc(3 * var(--u)) calc(3 * var(--u)); height: calc(2 * var(--u)); align-items: center; box-shadow: inset 0 -1px 0 var(--ink); }
+  .tr > span { padding-left: calc(var(--u) / 2); font-family: Rockwell, serif; font-size: calc(13px * var(--sf)); }
+  .tr > span + span { box-shadow: inset 1px 0 0 var(--ink); height: 100%; display: grid; place-items: center; padding: 0; }
+  .th { background: var(--leaf); color: var(--paper); height: calc(2 * var(--u)); }
+  .th > span + span { box-shadow: inset 1px 0 0 var(--paper); }
+  .order input {
+    width: calc(2 * var(--u));
+    height: var(--u);
+    box-sizing: border-box;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--ink);
+    background: rgb(255 250 230 / 0.55);
+    font: calc(14px * var(--sf)) / var(--u) 'Bradley Hand', 'Noteworthy', cursive;
+    color: #24308a;
+    text-align: center;
+    padding: 0;
+  }
+  .order input:focus-visible { outline: 2px solid var(--mustard); outline-offset: 1px; }
+  .total { display: flex; justify-content: space-between; align-items: center; height: calc(2 * var(--u)); padding-inline: calc(var(--u) / 2); margin-top: var(--u); background: var(--mustard); font-family: Rockwell, serif; }
+  .total output { font-family: 'Bradley Hand', 'Noteworthy', cursive; font-size: calc(17px * var(--sf)); color: #24308a; }
+  .terms { margin-top: var(--u); font-size: calc(12px * var(--sf)); font-style: italic; }
+
+  :root[data-narrow] .seedsman { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .seedsman > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .mast { grid-template-rows: auto; margin-top: var(--u); gap: var(--u); }
+  :root[data-narrow] .mast h1 { white-space: normal; font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .ribbon { white-space: normal; width: auto; height: auto; padding-block: calc(var(--u) / 4); line-height: var(--u); clip-path: none; padding-inline: var(--u); }
+  :root[data-narrow] .row { flex-wrap: wrap; }
+  :root[data-narrow] .row .lead { display: none; }
+  :root[data-narrow] .row .cost { width: 100%; }
+  :root[data-narrow] .plate { height: calc(18 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .stamp { display: none; }
+  :root[data-narrow] .order { margin-top: var(--u); }
+</style>

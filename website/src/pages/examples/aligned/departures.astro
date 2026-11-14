@@ -1,0 +1,259 @@
+---
+// After a split-flap departure board: every square of the board is one flap, the whole wall of
+// them as wide and as low as the window allows. The departures are birds leaving for their winter
+// grounds. On load the flaps run through the alphabet to their letters, one wave from the left.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="departures" theme="dark">
+  <main class="stage departures" id="board-stage">
+    <h1 class="sr-only">Departures to the winter grounds</h1>
+    <div class="title" id="title" aria-hidden="true"></div>
+    <div class="clock" id="clock" aria-hidden="true"></div>
+    <p class="sub" id="sub">Winter grounds <span>Hivernage</span></p>
+    <div class="labels" id="labels" aria-hidden="true"></div>
+    <div class="wall" id="wall" aria-hidden="true"></div>
+    <div class="sr-only"><table id="table"></table></div>
+    <p class="foot" id="foot">Flocks board from the reed beds. Departures wait for a north wind and a clear night.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  interface Departure { time: string; flight: string; bird: string; to: string; via: string; stand: string; remark: string }
+  const DEPARTURES: Departure[] = [
+    { time: '05:50', flight: 'SW 214', bird: 'SWALLOW', to: 'LAKE VICTORIA', via: 'GIBRALTAR', stand: 'R1', remark: 'DEPARTED' },
+    { time: '06:10', flight: 'CR 007', bird: 'CRANE', to: 'EXTREMADURA', via: 'GALLOCANTA', stand: 'F4', remark: 'BOARDING' },
+    { time: '06:25', flight: 'SP 031', bird: 'SPOONBILL', to: "BANC D'ARGUIN", via: 'WADDEN SEA', stand: 'M2', remark: 'BOARDING' },
+    { time: '06:40', flight: 'WS 088', bird: 'WHITE STORK', to: 'OKAVANGO', via: 'BOSPORUS', stand: 'T1', remark: 'THERMALS 11' },
+    { time: '07:05', flight: 'CU 112', bird: 'CUCKOO', to: 'CONGO BASIN', via: 'ITALY', stand: 'W3', remark: 'ON TIME' },
+    { time: '07:20', flight: 'NG 003', bird: 'NIGHTINGALE', to: 'SENEGAL DELTA', via: 'CAMARGUE', stand: 'H2', remark: 'NIGHT ONLY' },
+    { time: '07:35', flight: 'OS 140', bird: 'OSPREY', to: 'INNER NIGER', via: 'PYRENEES', stand: 'L5', remark: 'ON TIME' },
+    { time: '07:50', flight: 'BG 052', bird: 'BARNACLE GSE', to: 'SOLWAY FIRTH', via: 'NORWAY', stand: 'S1', remark: 'DELAYED' },
+    { time: '08:15', flight: 'SF 900', bird: 'SWIFT', to: 'MOZAMBIQUE', via: 'SAHARA', stand: 'A9', remark: 'AIRBORNE' },
+    { time: '08:30', flight: 'WE 061', bird: 'WHEATEAR', to: 'SAHEL', via: 'GREENLAND', stand: 'R3', remark: 'ON TIME' },
+    { time: '08:45', flight: 'AT 710', bird: 'ARCTIC TERN', to: 'WEDDELL SEA', via: 'AZORES', stand: 'C2', remark: 'LONG HAUL' },
+    { time: '09:05', flight: 'GW 011', bird: 'GODWIT', to: 'NEW ZEALAND', via: '', stand: 'M7', remark: 'NONSTOP' },
+    { time: '09:20', flight: 'HP 404', bird: 'HOOPOE', to: 'NILE DELTA', via: 'CRETE', stand: 'O1', remark: 'DELAYED' },
+    { time: '09:40', flight: 'RE 233', bird: 'REDSTART', to: 'GHANA', via: 'MALLORCA', stand: 'G6', remark: 'ON TIME' },
+    { time: '10:05', flight: 'BC 019', bird: 'BEE-EATER', to: 'KALAHARI', via: 'SICILY', stand: 'B8', remark: 'WAIT WIND' },
+    { time: '10:30', flight: 'OR 520', bird: 'ORIOLE', to: 'ZAMBIA', via: 'BALKANS', stand: 'Y2', remark: 'ON TIME' },
+    { time: '11:00', flight: 'MS 076', bird: 'MARSH HARR', to: 'LAKE CHAD', via: 'MALTA', stand: 'D4', remark: 'CANCELLED' },
+    { time: '11:25', flight: 'NJ 301', bird: 'NIGHTJAR', to: 'CAMEROON', via: 'TUNISIA', stand: 'N3', remark: 'DUSK' },
+  ];
+  // What the remarks say as the morning goes on: one row turns over at a time.
+  const NEXT: Record<string, string> = { 'ON TIME': 'BOARDING', BOARDING: 'DEPARTED', DELAYED: 'BOARDING', 'WAIT WIND': 'ON TIME', 'NIGHT ONLY': 'BOARDING', DUSK: 'BOARDING', 'THERMALS 11': 'BOARDING' };
+  const TONE: Record<string, string> = { BOARDING: 'go', AIRBORNE: 'go', DEPARTED: 'dim', DELAYED: 'wait', 'WAIT WIND': 'wait', CANCELLED: 'stop' };
+  const ALPHABET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-'.";
+
+  /** The board's columns, most needed first; extra width goes to the destination. */
+  const COLUMNS: { key: keyof Departure; label: string; width: number; need: number }[] = [
+    { key: 'time', label: 'Time', width: 5, need: 0 },
+    { key: 'to', label: 'To', width: 13, need: 0 },
+    { key: 'remark', label: 'Remarks', width: 11, need: 1 },
+    { key: 'flight', label: 'Flight', width: 6, need: 2 },
+    { key: 'bird', label: 'Bird', width: 12, need: 3 },
+    { key: 'stand', label: 'Stand', width: 2, need: 4 },
+    { key: 'via', label: 'Via', width: 13, need: 5 },
+  ];
+  const ORDER: (keyof Departure)[] = ['time', 'flight', 'bird', 'to', 'via', 'stand', 'remark'];
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const wall = $('wall'), title = $('title'), clock = $('clock'), labels = $('labels');
+  let cells: HTMLSpanElement[][] = [];
+  let layout: { key: keyof Departure; at: number; width: number }[] = [];
+  let timers: number[] = [];
+
+  /** The columns that fit `width` squares, in board order, the gaps one flap wide. */
+  function fit(width: number) {
+    const chosen: typeof COLUMNS = [];
+    let used = -1;
+    for (const column of [...COLUMNS].sort((a, b) => a.need - b.need)) {
+      if (used + 1 + column.width <= width) { chosen.push(column); used += 1 + column.width; }
+    }
+    const spare = width - used;
+    const placed = ORDER.map(key => chosen.find(column => column.key === key)).filter(Boolean) as typeof COLUMNS;
+    let at = 0;
+    return placed.map(column => {
+      const columnWidth = column.width + (column.key === 'to' ? Math.min(spare, 7) : 0);
+      const slot = { key: column.key, at, width: columnWidth, label: column.label };
+      at += columnWidth + 1;
+      return slot;
+    });
+  }
+
+  function flaps(container: HTMLElement, columns: number, rows: number) {
+    container.style.setProperty('--cols', String(columns));
+    container.style.setProperty('--rows', String(rows));
+    const grid: HTMLSpanElement[][] = [];
+    const fragment = document.createDocumentFragment();
+    for (let row = 0; row < rows; row++) {
+      grid.push([]);
+      for (let column = 0; column < columns; column++) {
+        const flap = document.createElement('span');
+        flap.className = 'flap';
+        flap.textContent = ' ';
+        fragment.append(flap);
+        grid[row].push(flap);
+      }
+    }
+    container.replaceChildren(fragment);
+    return grid;
+  }
+
+  /** Runs a flap through the alphabet to `letter`, starting after `delay` ms. */
+  function turn(flap: HTMLSpanElement, letter: string, delay: number, tone?: string) {
+    const set = () => { flap.textContent = letter; flap.dataset.tone = tone ?? ''; };
+    if (reducedMotion() || letter === flap.textContent) { set(); return; }
+    const from = Math.max(0, ALPHABET.indexOf(flap.textContent ?? ' '));
+    const to = Math.max(0, ALPHABET.indexOf(letter));
+    const steps = Math.min(14, (to - from + ALPHABET.length) % ALPHABET.length || ALPHABET.length);
+    let step = 0;
+    timers.push(window.setTimeout(function next() {
+      step++;
+      if (step >= steps) { set(); flap.classList.remove('turning'); return; }
+      flap.textContent = ALPHABET[(to - steps + step + ALPHABET.length) % ALPHABET.length];
+      flap.classList.toggle('turning');
+      timers.push(window.setTimeout(next, 45));
+    }, delay));
+  }
+
+  function write(grid: HTMLSpanElement[][], row: number, at: number, width: number, text: string, delay = 0, tone?: string) {
+    const letters = text.toUpperCase().slice(0, width).padEnd(width, ' ');
+    for (let index = 0; index < width; index++) {
+      const flap = grid[row]?.[at + index];
+      if (flap) turn(flap, letters[index], delay + (at + index) * 22, letters[index] === ' ' ? undefined : tone);
+    }
+  }
+
+  function clockText() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    timers.forEach(clearTimeout);
+    timers = [];
+    const stage = $('board-stage');
+    const width = across - (narrow ? 2 : 4);
+    const top = narrow ? 2 : 3;
+    // Title and clock: flaps two squares a letter on a computer, one on a phone.
+    const big = narrow ? 1 : 2;
+    stage.style.setProperty('--big', String(big));
+    const titleGrid = flaps(title, 10, 1);
+    write(titleGrid, 0, 0, 10, 'DEPARTURES', 200);
+    const clockGrid = flaps(clock, 5, 1);
+    write(clockGrid, 0, 0, 5, clockText(), 600);
+
+    // The wall: every square under the labels down to the second row from the foot.
+    layout = narrow ? [] : fit(width);
+    const firstRow = top + 2 * big + (narrow ? 3 : 4);
+    stage.style.setProperty('--wall-top', String(firstRow));
+    const rows = narrow ? DEPARTURES.length * 3 : Math.max(4, down - firstRow - 2);
+    stage.style.setProperty('--wall-rows', String(rows));
+    if (!narrow) {
+      title.style.gridArea = `${top} / 3 / span ${big} / span ${10 * big}`;
+      clock.style.gridArea = `${top} / span ${5 * big} / span ${big} / -3`;
+      $('sub').style.gridRow = String(top + big + 1);
+      $('foot').style.removeProperty('grid-row');
+      labels.style.gridRow = String(firstRow - 1);
+      wall.style.gridRow = `${firstRow} / span ${rows}`;
+    } else {
+      [title, clock, $('sub'), labels].forEach(element => element.style.removeProperty('grid-area'));
+      [$('sub'), labels].forEach(element => element.style.removeProperty('grid-row'));
+      wall.style.gridRow = `6 / span ${rows}`;
+      $('foot').style.gridRow = String(6 + rows + 1);
+    }
+    cells = flaps(wall, width, rows);
+    labels.innerHTML = layout.map(slot => `<span style="grid-column: ${slot.at + 1} / span ${slot.width}">${slot.key === 'stand' ? 'St' : COLUMNS.find(c => c.key === slot.key)!.label}</span>`).join('');
+    labels.style.setProperty('--cols', String(width));
+
+    DEPARTURES.forEach((departure, index) => {
+      if (narrow) {
+        // A phone: the time and the destination on one row, the remark under them, a blank row between.
+        const row = index * 3;
+        write(cells, row, 0, 5, departure.time, 300 + index * 60);
+        write(cells, row, 6, width - 6, departure.to, 300 + index * 60);
+        write(cells, row + 1, 6, width - 6, departure.remark, 300 + index * 60, TONE[departure.remark]);
+        return;
+      }
+      if (index >= rows) return;
+      for (const slot of layout) {
+        const key = slot.key;
+        write(cells, index, slot.at, slot.width, departure[key], 300 + index * 70, key === 'remark' ? TONE[departure.remark] : undefined);
+      }
+    });
+
+    // The same board for a screen reader.
+    $('table').innerHTML = `<caption>Departures to the winter grounds</caption><tr>${ORDER.map(key => `<th>${key}</th>`).join('')}</tr>` +
+      DEPARTURES.map(departure => `<tr>${ORDER.map(key => `<td>${departure[key]}</td>`).join('')}</tr>`).join('');
+  });
+
+  // Once the wall has settled, one remark turns over now and then, and the clock keeps the minute.
+  if (!reducedMotion()) {
+    window.setInterval(() => {
+      const candidates = DEPARTURES.map((departure, index) => ({ departure, index })).filter(({ departure }) => NEXT[departure.remark]);
+      if (!candidates.length) return;
+      const { departure, index } = candidates[Math.floor(Math.random() * candidates.length)];
+      departure.remark = NEXT[departure.remark];
+      const slot = layout.find(item => item.key === 'remark');
+      if (slot && index < cells.length) write(cells, index, slot.at, slot.width, departure.remark, 0, TONE[departure.remark]);
+      else if (!layout.length) write(cells, index * 3 + 1, 6, (cells[0]?.length ?? 12) - 6, departure.remark, 0, TONE[departure.remark]);
+    }, 7000);
+  }
+  window.setInterval(() => {
+    const text = clockText();
+    const grid = [...clock.children] as HTMLSpanElement[];
+    [...text].forEach((letter, index) => { if (grid[index] && grid[index].textContent !== letter) turn(grid[index], letter, index * 40); });
+  }, 15000);
+</script>
+
+<style is:global>
+  html { background: #000; }
+  .departures {
+    --flap: #2b2b29;
+    --flap-low: #242422;
+    --letter: #f3efe2;
+    color: var(--letter);
+    font-family: var(--typeface-medium);
+    background: #000;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* A flap: one square, split across the middle, its letter on the line. */
+  .title, .clock, .wall { display: grid; grid-template-columns: repeat(var(--cols), calc(var(--u) * var(--size, 1))); grid-auto-rows: calc(var(--u) * var(--size, 1)); }
+  .flap {
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid #000;
+    border-radius: calc(2px * var(--sf));
+    background: linear-gradient(to bottom, var(--flap) 0 calc(50% - 0.5px), #000 calc(50% - 0.5px) calc(50% + 0.5px), var(--flap-low) calc(50% + 0.5px));
+    text-align: center;
+    font-size: calc(15px * var(--sf) * var(--size, 1));
+    line-height: calc(var(--u) * var(--size, 1) - 2px);
+    text-transform: uppercase;
+  }
+  .flap.turning { background: linear-gradient(to bottom, #3a3a37 0 calc(50% - 0.5px), #000 calc(50% - 0.5px) calc(50% + 0.5px), var(--flap-low) calc(50% + 0.5px)); }
+  .flap[data-tone='go'] { color: #5ee08a; }
+  .flap[data-tone='wait'] { color: #ffb21a; }
+  .flap[data-tone='stop'] { color: #ff5a4a; }
+  .flap[data-tone='dim'] { color: #85827a; }
+
+  .title { --size: var(--big); }
+  .clock { --size: var(--big); }
+  .clock .flap { color: #ffb21a; }
+  .sub { grid-column: 3 / span 30; margin: 0; font-family: var(--typeface-regular); font-size: calc(14px * var(--sf)); line-height: var(--u); color: #b9b5aa; }
+  .sub span { margin-inline-start: var(--u); color: #6f6c64; font-style: italic; }
+  .labels { grid-column: 3 / -3; display: grid; grid-template-columns: repeat(var(--cols), var(--u)); font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); line-height: var(--u); color: #8a877e; }
+  .labels span { white-space: nowrap; }
+  .wall { grid-column: 3 / -3; }
+  .foot { grid-column: 3 / span 40; grid-row: -2 / span 1; margin: 0; font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); line-height: var(--u); color: #6f6c64; }
+
+  :root[data-narrow] .title { grid-column: 2 / span 10; grid-row: 2; }
+  :root[data-narrow] .clock { grid-column: span 5 / -2; grid-row: 4; }
+  :root[data-narrow] .sub { grid-column: 2 / -2; grid-row: 4; }
+  :root[data-narrow] .labels { display: none; }
+  :root[data-narrow] .wall { grid-column: 2 / -2; }
+  :root[data-narrow] .foot { grid-column: 2 / -2; grid-row: auto; padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .sub span { display: none; }
+</style>

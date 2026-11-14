@@ -1,0 +1,147 @@
+---
+/**
+ * The frame of every aligned study: Desktop aligned on, the window measured in whole squares
+ * (`--u`, `--across`, `--down` on the root, `data-narrow` under forty across), a `.stage` grid that
+ * is exactly the window, and a chip on the last row to step between the studies. Without `slug` it
+ * frames the index. Never published: every page is `noindex` and none is linked from the docs.
+ */
+import '../../../DS1/1-root/one.css';
+import { STUDIES, studyAt, studyHref } from '../data/aligned-studies';
+
+interface Props {
+  slug?: string;
+  theme?: 'light' | 'dark';
+  /** A stylesheet of faces from Google Fonts, when the study uses one. */
+  fonts?: string;
+  /** The page scrolls on a computer too, instead of being exactly the window. */
+  scroll?: boolean;
+}
+
+const { slug, theme = 'light', fonts, scroll = false } = Astro.props;
+const at = slug ? studyAt(slug) : null;
+const title = at ? `${at.study.title} — Aligned studies` : 'Aligned studies';
+const description = at ? at.study.after : `${STUDIES.length} studies on Desktop aligned, after kinds of sites and printed matter.`;
+const pad = (n: number) => String(n).padStart(String(STUDIES.length).length, '0');
+const back = at ? `/examples/aligned/#${at.study.section}` : '/examples/aligned/';
+---
+<!doctype html>
+<html lang="en" class={`${theme}-theme`} data-study={slug ?? 'index'} data-scroll={scroll ? '' : undefined}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {fonts && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
+    {fonts && <link rel="stylesheet" href={fonts} />}
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+    {at && (
+      <nav class="study-chip" aria-label="Aligned studies">
+        <a href={studyHref(at.previous.slug)} rel="prev" aria-label={`Previous: ${at.previous.title}`} data-key="ArrowLeft">←</a>
+        <a href={back} class="count" aria-label={`Study ${at.number} of ${STUDIES.length}; all studies`}>{pad(at.number)} / {STUDIES.length}</a>
+        <a href={studyHref(at.next.slug)} rel="next" aria-label={`Next: ${at.next.title}`} data-key="ArrowRight">→</a>
+        <button type="button" class="grid-toggle" aria-pressed="false">Grid</button>
+      </nav>
+    )}
+    <script>
+      import '../../../DS1/0-face/grid';
+      import { startStudy } from '../lib/aligned-study';
+
+      const root = document.documentElement;
+      // In the index's contact sheet a study is a picture: no chip, no keys.
+      const embedded = window.self !== window.top;
+      root.toggleAttribute('data-embedded', embedded);
+      startStudy();
+
+      const chip = document.querySelector<HTMLElement>('.study-chip');
+      const gridButton = chip?.querySelector<HTMLButtonElement>('.grid-toggle');
+      let gridVisible = false;
+      gridButton?.addEventListener('click', () => window.dispatchEvent(new CustomEvent('design-system-toggle-grid')));
+      window.addEventListener('design-system-grid-changed', event => {
+        gridVisible = (event as CustomEvent<{ visible: boolean }>).detail.visible;
+        gridButton?.setAttribute('aria-pressed', String(gridVisible));
+      });
+
+      if (chip && !embedded) {
+        window.addEventListener('keydown', event => {
+          if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return;
+          // Fields, and anything a study keeps its own keys in, keep theirs.
+          const target = event.target as HTMLElement;
+          if (target.closest?.('input, textarea, select, [contenteditable="true"], [data-own-keys]')) return;
+          const link = chip.querySelector<HTMLAnchorElement>(`[data-key="${event.key}"]`);
+          if (link) { window.location.href = link.href; return; }
+          // Escape hides the grid first (grid.ts); only with it hidden does it go to the index.
+          if (event.key === 'i' || event.key === 'I' || (event.key === 'Escape' && !gridVisible)) window.location.href = chip.querySelector<HTMLAnchorElement>('.count')!.href;
+        });
+      }
+    </script>
+  </body>
+</html>
+<style is:global>
+  :root {
+    --sf: 1;
+    --ds-sf: var(--sf);
+    /* One square, exact under Desktop aligned; --across and --down are set by the script. */
+    --u: var(--ds-grid-unit);
+    --across: 72;
+    --down: 40;
+    /* The window in squares, as lengths. */
+    --wide: calc(var(--across) * var(--u));
+    --high: calc(var(--down) * var(--u));
+  }
+  html, body { margin: 0; }
+  body { min-height: 100vh; }
+  /* A study is exactly the window on a computer; a narrow window or a phone scrolls its simpler column. */
+  :root:not([data-narrow]):not([data-scroll]) body { overflow: hidden; height: 100vh; box-sizing: border-box; }
+
+  /* The window as a grid of whole squares. Place pieces by square lines, counting from the end with
+     negative lines (`grid-column: -9 / -2`), so the study adapts to any window. */
+  .stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--across), var(--u));
+    grid-template-rows: repeat(var(--down), var(--u));
+    width: var(--wide);
+    height: var(--high);
+    margin-inline: auto;
+    overflow: hidden;
+  }
+  .stage > * { min-width: 0; min-height: 0; }
+  /* Narrow: the rows grow with what is in them and the page scrolls. */
+  :root[data-narrow] .stage { grid-template-rows: none; grid-auto-rows: minmax(var(--u), auto); height: auto; min-height: var(--high); overflow: visible; }
+
+  /* Previous, the count and next on the last row's right end, reading on any ground. */
+  .study-chip {
+    position: fixed;
+    right: var(--u);
+    bottom: 0;
+    z-index: 2147483000;
+    display: grid;
+    grid-template-columns: calc(2 * var(--u)) calc(4 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u));
+    height: var(--u);
+    font-family: var(--typeface-regular);
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    color: #fff;
+    mix-blend-mode: difference;
+    font-variant-numeric: tabular-nums;
+  }
+  .study-chip a, .study-chip button {
+    all: unset;
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    color: inherit;
+    white-space: nowrap;
+  }
+  .study-chip a:hover, .study-chip button:hover, .study-chip button[aria-pressed='true'] { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .study-chip a:focus-visible, .study-chip button:focus-visible { outline: 1px solid currentColor; outline-offset: -1px; }
+  /* A narrow window or a phone scrolls, so the chip becomes a bar of its own along the foot. */
+  :root[data-narrow] .study-chip { right: 0; left: 0; justify-content: end; padding-inline-end: var(--u); background: #000; mix-blend-mode: normal; }
+  :root[data-narrow] body { padding-bottom: var(--u); }
+  :root[data-embedded] .study-chip { display: none; }
+  @media print { .study-chip { display: none; } }
+</style>

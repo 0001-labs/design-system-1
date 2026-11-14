@@ -1,0 +1,154 @@
+---
+// After a museum's wayfinding: a green wall, arrows as big as the fields they stand in, gallery
+// numbers you can read from the far door, pictograms on tiles of whole squares, and the quiet white
+// labels that hang beside the paintings. The arrows and pictograms are drawn on the squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+// Pictograms on a 12 by 12 drawing (four to a square), white on the tile's green.
+const pictos: Record<string, { name: string; draw: string }> = {
+  stairs: { name: 'Stairs', draw: '<path d="M2 10h2v-2h2v-2h2v-2h2v-2" fill="none" stroke-width="1.4" stroke-linejoin="miter"/><circle cx="4.2" cy="2.6" r="1.1"/>' },
+  lift: { name: 'Lift', draw: '<rect x="2" y="1.5" width="8" height="9" fill="none" stroke-width="1.2"/><path d="M6 3l2 2.4H4z M6 9l2-2.4H4z" stroke="none"/>' },
+  cafe: { name: 'Café', draw: '<path d="M2.5 5h6v3.2a2.3 2.3 0 0 1-2.3 2.3H4.8a2.3 2.3 0 0 1-2.3-2.3z" stroke="none"/><path d="M8.5 6h0.8a1.3 1.3 0 0 1 0 2.6H8.4" fill="none" stroke-width="0.9"/><path d="M4.5 1.5c-.8 1 .8 1.5 0 2.6M6.6 1.5c-.8 1 .8 1.5 0 2.6" fill="none" stroke-width="0.7"/>' },
+  cloakroom: { name: 'Cloakroom', draw: '<path d="M6 4.6V3.8a1.2 1.2 0 1 0-1.2-1.2" fill="none" stroke-width="0.9"/><path d="M6 4.6L1.5 8.6h9z" fill="none" stroke-width="1" stroke-linejoin="round"/>' },
+  toilets: { name: 'Toilets', draw: '<circle cx="3.5" cy="2.4" r="1.1"/><path d="M2.4 4h2.2v6.5H2.4z" stroke="none"/><circle cx="8.5" cy="2.4" r="1.1"/><path d="M8.5 3.9l2 4h-1.3v2.6H7.8V7.9H6.5z" stroke="none"/><path d="M6 1v10" stroke-width="0.4"/>' },
+  info: { name: 'Information', draw: '<circle cx="6" cy="6" r="4.6" fill="none" stroke-width="1"/><circle cx="6" cy="3.7" r="0.8"/><path d="M5.3 5.2h1.4v4H5.3z" stroke="none"/>' },
+  shop: { name: 'Shop', draw: '<path d="M2.5 4.5h7l-0.6 6h-5.8z" stroke="none"/><path d="M4.4 4.5V3.4a1.6 1.6 0 0 1 3.2 0v1.1" fill="none" stroke-width="0.8"/>' },
+};
+const picto = (key: string) => `<svg viewBox="0 0 12 12" class="picto" role="img" aria-label="${pictos[key].name}"><g fill="currentColor" stroke="currentColor">${pictos[key].draw}</g></svg>`;
+
+const signs = [
+  { turn: 180, rooms: '14–19', words: 'European painting, 1850–1950', icons: ['toilets'] },
+  { turn: -90, rooms: '20–26', words: 'Prints and drawings, level 2', icons: ['stairs', 'lift'] },
+  { turn: 0, rooms: '', words: 'Café, shop and cloakroom', icons: ['cafe', 'shop', 'cloakroom'], big: 'Café' },
+  { turn: 90, rooms: '1–6', words: 'Sculpture court, level 0', icons: ['stairs', 'lift', 'info'] },
+];
+---
+<AlignedStudy slug="wayfinding" theme="dark">
+  <main class="stage way">
+    <header class="where">
+      <p class="museum">Harwick Museum of Art</p>
+      <p class="level"><b>1</b><span>East wing</span></p>
+    </header>
+
+    <ol class="signs" aria-label="Directions from gallery 14">
+      {signs.map(sign => (
+        <li class="sign">
+          <svg class="arrow" viewBox="0 0 6 6" aria-hidden="true" style={`--turn: ${sign.turn}deg`}><path d="M0.5 2.5H3.25V0.75L5.5 3L3.25 5.25V3.5H0.5Z" /></svg>
+          <p class="rooms">{sign.rooms || sign.big}</p>
+          <p class="words">{sign.words}</p>
+          <span class="icons" set:html={sign.icons.map(picto).join('')} />
+        </li>
+      ))}
+    </ol>
+
+    <ul class="tiles" aria-label="Pictograms">
+      {Object.keys(pictos).map(key => <li><span class="tile" set:html={picto(key)} /><span class="tile-name">{pictos[key].name}</span></li>)}
+    </ul>
+
+    <section class="room" aria-label="You are in gallery 14">
+      <p class="room-label">Gallery</p>
+      <p class="room-number">14</p>
+      <p class="room-title">The northern light, 1880–1910</p>
+    </section>
+
+    <article class="label one">
+      <h2>Agnes Mørch</h2>
+      <p class="who">Danish, 1871–1946</p>
+      <p class="title"><i>Herring boats leaving the harbour at dawn</i>, 1903</p>
+      <p>Oil on canvas<br />92 × 141 cm</p>
+      <p class="credit">Bequest of Johan and Ellen Kvist, 1958<br />1958.114</p>
+    </article>
+
+    <article class="label two">
+      <h2>Tomas Ehrling</h2>
+      <p class="who">Swedish, 1866–1931</p>
+      <p class="title"><i>The white room, Saturday</i>, 1909</p>
+      <p>Oil on canvas<br />61 × 50 cm</p>
+      <p class="note">For twenty years Ehrling painted the rooms of his flat with nobody in them, only the light.</p>
+      <p class="credit">Purchased with support from the Friends of the Museum, 1977<br />1977.9</p>
+    </article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // Four signs share the height between the header and the tiles; each is as many squares high as
+  // its arrow is wide, with a square between them.
+  onSquares(({ down, narrow }) => {
+    const free = down - 6 - 7;
+    const sign = narrow ? 3 : Math.max(5, Math.min(8, Math.floor((free + 1) / 4) - 1));
+    document.documentElement.style.setProperty('--sign', String(sign));
+  });
+</script>
+
+<style is:global>
+  html { background: #0f5a43; }
+  .way {
+    --wall: #0f5a43;
+    --white: #f7f8f4;
+    --pale: #a9cbbd;
+    --sign: 6;
+    color: var(--white);
+    background: var(--wall);
+    font-family: "Avenir Next", Avenir, var(--typeface-regular);
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+  }
+  .way p, .way h2, .way ol, .way ul { margin: 0; padding: 0; list-style: none; }
+
+  .where { grid-column: 2 / -32; grid-row: 2 / span 3; display: flex; justify-content: space-between; align-items: start; border-top: 4px solid var(--white); padding-top: calc(var(--u) - 4px); }
+  .museum { font-weight: 600; font-size: calc(18px * var(--sf)); }
+  .level { display: flex; gap: calc(var(--u) / 2); align-items: center; font-weight: 500; }
+  .level b { display: grid; place-items: center; width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; background: var(--white); color: var(--wall); font-size: calc(22px * var(--sf)); font-weight: 700; }
+
+  /* The signs: an arrow field, the numbers beside it, the words beneath, pictograms at the end. */
+  .signs { grid-column: 2 / -32; grid-row: 6 / -7; display: grid; grid-template-rows: repeat(4, calc(var(--sign) * var(--u))); row-gap: var(--u); }
+  .sign { display: grid; grid-template-columns: calc(var(--sign) * var(--u)) var(--u) 1fr auto; grid-template-rows: 1fr var(--u) var(--u); }
+  .arrow { grid-row: 1 / -1; width: 100%; height: 100%; fill: var(--white); transform: rotate(var(--turn)); }
+  .rooms { grid-column: 3; grid-row: 1; align-self: end; font-weight: 700; font-size: calc((var(--sign) - 2) * var(--u) * 0.98); line-height: calc((var(--sign) - 2) * var(--u)); letter-spacing: -0.03em; font-variant-numeric: lining-nums; white-space: nowrap; }
+  .words { grid-column: 3 / -1; grid-row: 2; font-weight: 500; font-size: calc(18px * var(--sf)); white-space: nowrap; }
+  .sign::after { content: ''; grid-column: 3 / -1; grid-row: 3; align-self: end; height: 2px; background: var(--white); opacity: 0.35; }
+  .sign:last-child::after { display: none; }
+  .icons { grid-column: 4; grid-row: 1; align-self: end; display: flex; gap: calc(var(--u) / 2); }
+  .icons .picto { width: calc(2 * var(--u)); height: calc(2 * var(--u)); background: var(--white); color: var(--wall); }
+
+  /* The tiles: three squares each, the name on the square beneath. */
+  .tiles { grid-column: 2 / -32; grid-row: span 4 / -2; display: flex; }
+  .tiles li { display: grid; grid-template-rows: calc(3 * var(--u)) var(--u); justify-items: start; width: calc(4 * var(--u)); flex: none; }
+  .tile { display: block; width: calc(3 * var(--u)); height: calc(3 * var(--u)); background: var(--white); color: var(--wall); border-radius: calc(var(--u) / 4); }
+  .tile .picto { width: 100%; height: 100%; }
+  .tile-name { font-size: calc(11px * var(--sf)); color: var(--pale); white-space: nowrap; }
+
+  /* The room you are in: its number as tall as a door's lintel. */
+  .room { grid-column: -30 / -2; grid-row: 2 / span 16; display: grid; grid-template-rows: var(--u) 1fr calc(2 * var(--u)); border-top: 4px solid var(--white); padding-top: calc(var(--u) - 4px); }
+  .room-label { font-weight: 600; font-size: calc(18px * var(--sf)); }
+  .room-number { font-weight: 700; font-size: calc(13 * var(--u) * 0.98); line-height: calc(12 * var(--u)); letter-spacing: -0.06em; margin-left: calc(var(--u) * -0.6); align-self: end; }
+  .room-title { align-self: end; font-size: calc(18px * var(--sf)); font-weight: 500; color: var(--pale); }
+
+  /* Wall labels: white card, small sober type, the title in italic. */
+  .label { grid-row: span 14 / -3; background: var(--white); color: #1b1d1b; padding: var(--u); font-size: calc(13px * var(--sf)); line-height: var(--u); display: flex; flex-direction: column; box-shadow: 0 calc(var(--u) / 2) 0 rgb(0 0 0 / 0.18); }
+  .label.one { grid-column: -30 / span 13; grid-row: span 12 / -3; }
+  .label.two { grid-column: -16 / -2; grid-row: span 15 / -3; }
+  .label h2 { font-size: calc(14px * var(--sf)); font-weight: 700; }
+  .label .who { color: #5b605b; }
+  .label .title { margin-top: var(--u); }
+  .label .note { margin-top: var(--u); color: #2c302c; }
+  .label .credit { margin-top: auto; color: #5b605b; font-size: calc(11px * var(--sf)); }
+
+  /* A narrow window: the number first, then the signs and the labels down the wall. */
+  :root[data-narrow] .way { padding-bottom: calc(3 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .way > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .room { order: -1; grid-template-rows: var(--u) calc(9 * var(--u)) calc(2 * var(--u)); }
+  :root[data-narrow] .where { order: -2; }
+  :root[data-narrow] .room-number { font-size: calc(10 * var(--u)); line-height: calc(9 * var(--u)); }
+  :root[data-narrow] .signs { grid-template-rows: none; grid-auto-rows: auto; }
+  :root[data-narrow] .sign { grid-template-columns: calc(var(--sign) * var(--u)) var(--u) minmax(0, 1fr); grid-template-rows: calc(var(--sign) * var(--u)) auto var(--u); }
+  :root[data-narrow] .arrow { grid-row: 1; }
+  :root[data-narrow] .rooms { font-size: calc(2 * var(--u)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .words { grid-column: 1 / -1; white-space: normal; margin-top: calc(var(--u) / 2); }
+  :root[data-narrow] .icons { grid-column: 1 / -1; grid-row: 4; margin-top: calc(var(--u) / 2); }
+  :root[data-narrow] .sign::after { grid-column: 1 / -1; grid-row: 5; }
+  :root[data-narrow] .tiles { flex-wrap: wrap; }
+  :root[data-narrow] .label { grid-row: auto; }
+</style>

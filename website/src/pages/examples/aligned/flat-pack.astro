@@ -1,0 +1,285 @@
+---
+// After a wordless flat-pack manual: black line drawings on white, a field of whole squares for
+// every step, the parts counted with a times sign, the little figure who should not carry it alone,
+// a cross for the hammer and a tick for the key. No words anywhere; only numbers.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const panels = [
+  { id: 'parts', step: '', label: 'Parts: two sides, two boards, eight dowels, four bolts, one hex key' },
+  { id: 'people', step: '', label: 'Two people are needed to lift it' },
+  { id: 's1', step: '1', label: 'Press four dowels into each side' },
+  { id: 'hammer', step: '', label: 'Do not hammer the dowels; press them by hand' },
+  { id: 's2', step: '2', label: 'Fit both boards onto one side' },
+  { id: 's3', step: '3', label: 'Fit the second side' },
+  { id: 's4', step: '4', label: 'Tighten the four bolts with the hex key' },
+  { id: 's5', step: '5', label: 'The shelf, finished' },
+];
+---
+<AlignedStudy slug="flat-pack" theme="light">
+  <main class="stage pack" aria-label="Assembly instructions for shelf 40712, in pictures">
+    <p class="model" aria-label="Model 40712">40712</p>
+    {panels.map((panel, index) => (
+      <figure class="panel" style={`--i: ${index}`} aria-label={panel.label}>
+        {panel.step && <span class="step">{panel.step}</span>}
+        <svg id={panel.id} aria-hidden="true"></svg>
+      </figure>
+    ))}
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // Isometric projection: x goes right and down, z left and down, y straight up.
+  type Pt = [number, number];
+  const C = Math.cos(Math.PI / 6);
+  const P = (x: number, y: number, z: number): Pt => [(x - z) * C, (x + z) * 0.5 - y];
+
+  class Drawing {
+    parts: string[] = [];
+    box = [Infinity, Infinity, -Infinity, -Infinity];
+    see(pts: Pt[]) { for (const [x, y] of pts) { this.box[0] = Math.min(this.box[0], x); this.box[1] = Math.min(this.box[1], y); this.box[2] = Math.max(this.box[2], x); this.box[3] = Math.max(this.box[3], y); } }
+    poly(pts: Pt[], cls = 'face') { this.see(pts); this.parts.push(`<polygon class="${cls}" points="${pts.map(p => p.map(n => n.toFixed(3)).join(',')).join(' ')}"/>`); return this; }
+    line(pts: Pt[], cls = 'line') { this.see(pts); this.parts.push(`<polyline class="${cls}" points="${pts.map(p => p.map(n => n.toFixed(3)).join(',')).join(' ')}"/>`); return this; }
+    raw(svg: string, pts: Pt[] = []) { this.see(pts); this.parts.push(svg); return this; }
+    /** A solid block: its top, its +x side and its +z side, the three the eye can see. */
+    block(x: number, y: number, z: number, w: number, h: number, d: number, cls = 'face') {
+      this.poly([P(x, y + h, z), P(x + w, y + h, z), P(x + w, y + h, z + d), P(x, y + h, z + d)], cls);
+      this.poly([P(x + w, y, z), P(x + w, y + h, z), P(x + w, y + h, z + d), P(x + w, y, z + d)], cls);
+      this.poly([P(x, y, z + d), P(x + w, y, z + d), P(x + w, y + h, z + d), P(x, y + h, z + d)], cls);
+      return this;
+    }
+    /** A ring on a plane facing +x (a hole in a side's inner face). */
+    holeX(x: number, y: number, z: number, r: number) { return this.poly(ring(a => P(x, y + Math.sin(a) * r, z + Math.cos(a) * r)), 'hole'); }
+    holeY(x: number, y: number, z: number, r: number) { return this.poly(ring(a => P(x + Math.cos(a) * r, y, z + Math.sin(a) * r)), 'hole'); }
+    /** A dowel lying along x, from x0 to x1. */
+    dowelX(x0: number, x1: number, y: number, z: number, r: number) {
+      const pts = [...ring(a => P(x0, y + Math.sin(a) * r, z + Math.cos(a) * r)), ...ring(a => P(x1, y + Math.sin(a) * r, z + Math.cos(a) * r))];
+      this.poly(hull(pts));
+      return this.poly(ring(a => P(x1, y + Math.sin(a) * r, z + Math.cos(a) * r)));
+    }
+    arrow(from: Pt, to: Pt, size = 0, cls = 'arrow') {
+      const ang = Math.atan2(to[1] - from[1], to[0] - from[0]);
+      const s = size || Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.22;
+      const head: Pt[] = [[to[0] - Math.cos(ang - 0.45) * s, to[1] - Math.sin(ang - 0.45) * s], to, [to[0] - Math.cos(ang + 0.45) * s, to[1] - Math.sin(ang + 0.45) * s]];
+      this.line([from, to], cls);
+      return this.poly(head, 'head');
+    }
+    /** The drawing fitted, centred, into a rectangle of the panel's squares. */
+    fit(x: number, y: number, w: number, h: number) {
+      const [x0, y0, x1, y1] = this.box;
+      const k = Math.min(w / (x1 - x0), h / (y1 - y0));
+      const dx = x + (w - (x1 - x0) * k) / 2 - x0 * k;
+      const dy = y + (h - (y1 - y0) * k) / 2 - y0 * k;
+      return `<g transform="translate(${dx.toFixed(3)} ${dy.toFixed(3)}) scale(${k.toFixed(4)})">${this.parts.join('')}</g>`;
+    }
+  }
+  const ring = (at: (a: number) => Pt, n = 24): Pt[] => Array.from({ length: n }, (_, i) => at((i / n) * Math.PI * 2));
+  function hull(points: Pt[]): Pt[] {
+    const p = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o: Pt, a: Pt, b: Pt) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lower: Pt[] = [], upper: Pt[] = [];
+    for (const q of p) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop(); lower.push(q); }
+    for (const q of [...p].reverse()) { while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop(); upper.push(q); }
+    return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+  }
+
+  // The shelf: sides 2 thick, 40 high, 28 deep; boards between them, 66 long.
+  const H = 40, D = 28, W = 70, T = 2;
+  const DOWELS: [number, number][] = [[11, 7], [11, 21], [39 - T, 7], [39 - T, 21]];
+  const side = (g: Drawing, x: number, holes = false) => {
+    g.block(x, 0, 0, T, H, D);
+    if (holes) DOWELS.forEach(([y, z]) => g.holeX(x + T, y, z, 0.9));
+    return g;
+  };
+  const boards = (g: Drawing, x: number) => g.block(x, 10, 0, W - 2 * T, T, D).block(x, H - T, 0, W - 2 * T, T, D);
+
+  // Two-dimensional pieces: the figure, the hex key, the cross and the tick.
+  const person = (x: number, y: number, s: number, arms = 'down') => {
+    const armPath = arms === 'up' ? `M${x - 1.1 * s} ${y + 0.6 * s}L${x - 1.5 * s} ${y - 0.6 * s}M${x + 1.1 * s} ${y + 0.6 * s}L${x + 1.5 * s} ${y - 0.6 * s}` : `M${x - 1.1 * s} ${y + 0.6 * s}L${x - 1.4 * s} ${y + 2.4 * s}M${x + 1.1 * s} ${y + 0.6 * s}L${x + 1.4 * s} ${y + 2.4 * s}`;
+    return `<circle class="ink" cx="${x}" cy="${y - 1.1 * s}" r="${0.75 * s}"/><path class="ink" d="M${x - 1.1 * s} ${y + 0.2 * s}Q${x - 1.1 * s} ${y - 0.2 * s} ${x - 0.7 * s} ${y - 0.2 * s}H${x + 0.7 * s}Q${x + 1.1 * s} ${y - 0.2 * s} ${x + 1.1 * s} ${y + 0.2 * s}V${y + 2.6 * s}H${x + 0.65 * s}V${y + 5 * s}H${x + 0.1 * s}V${y + 2.9 * s}H${x - 0.1 * s}V${y + 5 * s}H${x - 0.65 * s}V${y + 2.6 * s}H${x - 1.1 * s}Z"/><path class="limb" d="${armPath}"/>`;
+  };
+  const cross = (x: number, y: number, r: number) => `<circle class="mark-ring" cx="${x}" cy="${y}" r="${r}"/><path class="mark no" d="M${x - r * 0.45} ${y - r * 0.45}L${x + r * 0.45} ${y + r * 0.45}M${x + r * 0.45} ${y - r * 0.45}L${x - r * 0.45} ${y + r * 0.45}"/>`;
+  const tick = (x: number, y: number, r: number) => `<circle class="mark-ring" cx="${x}" cy="${y}" r="${r}"/><path class="mark yes" d="M${x - r * 0.5} ${y + r * 0.02}L${x - r * 0.12} ${y + r * 0.4}L${x + r * 0.5} ${y - r * 0.38}"/>`;
+  const count = (x: number, y: number, n: number, size = 1.4) => `<text class="count" x="${x}" y="${y}" font-size="${size}">${n}×</text>`;
+  const hexKey = (g: Drawing, x: number, y: number, z: number, s: number) => {
+    g.block(x, y, z, 0.8 * s, 0.8 * s, 6 * s);
+    g.block(x, y, z + 6 * s - 0.8 * s, 0.8 * s, 0.8 * s, 0.8 * s);
+    return g.block(x, y, z + 5.2 * s, 2.4 * s, 0.8 * s, 0.8 * s);
+  };
+  const bolt = (g: Drawing, x: number, y: number, z: number) => {
+    g.dowelX(x - 4, x, y, z, 0.35);
+    g.dowelX(x, x + 0.8, y, z, 0.9);
+    return g.poly(ring(a => P(x + 0.8, y + Math.sin(a) * 0.4, z + Math.cos(a) * 0.4), 6), 'hole');
+  };
+
+  const draw = (id: string, w: number, h: number, inner: string) => {
+    const svg = document.getElementById(id) as unknown as SVGSVGElement;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.innerHTML = inner;
+  };
+
+  onSquares(({ across, down, narrow }) => {
+    const pw = narrow ? across - 2 : Math.floor((across - 2 - 3) / 4);
+    const ph = narrow ? 14 : Math.floor((down - 2 - 1 - 1) / 2);
+    const root = document.documentElement.style;
+    root.setProperty('--pw', String(pw));
+    root.setProperty('--ph', String(ph));
+    const left = narrow ? 2 : Math.floor((across - (4 * pw + 3)) / 2) + 1;
+    root.setProperty('--left', String(left));
+    document.querySelectorAll<HTMLElement>('.panel').forEach((panel, i) => {
+      panel.style.gridColumn = `${left + (i % 4) * (pw + 1)} / span ${pw}`;
+      panel.style.gridRow = `${2 + Math.floor(i / 4) * (ph + 1)} / span ${ph}`;
+    });
+    const m = 1; // a square's margin inside each panel
+    const tall = ph - 2 * m;
+    const wide = pw - 2 * m;
+
+    // Parts: a cell for each, its count beneath.
+    {
+      const cellW = wide / 2, cellH = (tall - 1) / 3;
+      const cell = (i: number) => [m + (i % 2) * cellW, m + 1 + Math.floor(i / 2) * cellH] as const;
+      let out = '';
+      const items: [Drawing, number][] = [
+        [side(new Drawing(), 0, true), 2],
+        [new Drawing().block(0, 0, 0, W - 2 * T, T, D), 2],
+        [new Drawing().dowelX(0, 4, 0, 0, 0.6).dowelX(0, 4, -2.2, 0, 0.6), 8],
+        [bolt(new Drawing(), 0, 0, 0), 4],
+        [hexKey(new Drawing(), 0, 0, 0, 1), 1],
+      ];
+      items.forEach(([g, n], i) => {
+        const [x, y] = cell(i);
+        out += g.fit(x + 0.5, y, cellW - 1, cellH - 2) + count(x + 0.5, y + cellH - 0.5, n);
+      });
+      draw('parts', pw, ph, out);
+    }
+
+    // Two people for the carton; one alone gets a cross.
+    {
+      const s = Math.min(wide / 14, tall / 15);
+      const cx = pw / 2;
+      const top = m + tall * 0.12;
+      const carton = (x: number, y: number, w: number) => `<rect class="carton" x="${x}" y="${y}" width="${w}" height="${1.6 * s}"/>`;
+      const half = tall / 2;
+      let out = '';
+      out += carton(cx - 5 * s, top + 1.2 * s, 6 * s) + person(cx + 2.4 * s, top + 1.6 * s, s * 0.95) + cross(cx + 5.8 * s, top + 2.4 * s, 1.3 * s);
+      out += `<path class="split" d="M${m} ${m + half}H${pw - m}"/>`;
+      out += person(cx - 4.2 * s, top + half + 1.6 * s, s * 0.95, 'up') + person(cx + 1.2 * s, top + half + 1.6 * s, s * 0.95, 'up') + carton(cx - 6 * s, top + half - 0.4 * s, 8.6 * s) + tick(cx + 5.8 * s, top + half + 2.4 * s, 1.3 * s);
+      draw('people', pw, ph, out);
+    }
+
+    // 1: four dowels go into each side, pressed in by hand.
+    {
+      const g = side(new Drawing(), 0, true);
+      DOWELS.forEach(([y, z]) => g.dowelX(7, 13, y, z, 1.1));
+      DOWELS.forEach(([y, z]) => g.arrow(P(24, y, z), P(15, y, z), 2.2));
+      draw('s1', pw, ph, g.fit(m + 1, m + 3, wide - 2, tall - 6) + count(pw - m - 3.4, ph - m - 0.4, 2, 1.6));
+    }
+
+    // Do not hammer; press by hand.
+    {
+      const half = tall / 2;
+      const s = Math.min(wide / 12, half / 9);
+      const cx = pw / 2 - 2 * s;
+      const board = (y: number) => `<path class="line" d="M${cx - 3.5 * s} ${y}h${7 * s}"/>`;
+      const dowel = (y: number) => `<rect class="tool" x="${cx - 0.5 * s}" y="${y - 2.2 * s}" width="${s}" height="${2.2 * s}" rx="${0.3 * s}"/>`;
+      // The hammer coming down: its head just over the dowel, its handle up to the right.
+      const hammer = (top: number) => {
+        const hb = top - 0.3 * s, ht = hb - 1.4 * s;
+        return `<path class="tool" d="M${cx + 0.1 * s} ${ht}L${cx + 3.3 * s} ${ht - 4 * s}L${cx + 4.1 * s} ${ht - 3.5 * s}L${cx + 0.9 * s} ${ht}Z"/><rect class="tool" x="${cx - 2 * s}" y="${ht}" width="${4 * s}" height="${1.4 * s}"/>`;
+      };
+      const finger = (top: number) => `<path class="tool" d="M${cx - 0.9 * s} ${top - 5.2 * s}V${top - 0.9 * s}a${0.9 * s} ${0.9 * s} 0 0 0 ${1.8 * s} 0V${top - 5.2 * s}"/><path class="line" d="M${cx - 0.9 * s} ${top - 2.4 * s}h${0.8 * s}"/>`;
+      const press = (top: number) => `<path class="arrowline" d="M${cx + 2.2 * s} ${top - 5 * s}v${3.4 * s}"/><path class="head" d="M${cx + 1.5 * s} ${top - 2 * s}l${0.7 * s} ${1 * s}l${0.7 * s} ${-1 * s}z"/>`;
+      const y1 = m + half - s, y2 = m + tall - s;
+      let out = '';
+      out += board(y1) + dowel(y1) + hammer(y1 - 2.2 * s) + cross(pw - m - 2.4 * s, m + half / 2 + s, 1.3 * s);
+      out += `<path class="split" d="M${m} ${m + half}H${pw - m}"/>`;
+      out += board(y2) + dowel(y2) + finger(y2 - 2.2 * s) + press(y2 - 2.2 * s) + tick(pw - m - 2.4 * s, m + half + half / 2 + s, 1.3 * s);
+      draw('hammer', pw, ph, out);
+    }
+
+    // 2: both boards slide onto the dowels of one side.
+    {
+      const g = side(new Drawing(), 0, true);
+      DOWELS.forEach(([y, z]) => g.dowelX(T, T + 2, y, z, 0.9));
+      g.arrow(P(T + 26, H + 3, D / 2), P(T + 6, H + 3, D / 2), 3);
+      g.arrow(P(T + 26, 15, D / 2), P(T + 6, 15, D / 2), 3);
+      boards(g, T + 12);
+      draw('s2', pw, ph, g.fit(m + 1, m + 3, wide - 2, tall - 4));
+    }
+
+    // 3: the second side closes it.
+    {
+      const g = side(new Drawing(), 0);
+      boards(g, T);
+      g.block(W + 10, 0, 0, T, H, D);
+      g.arrow(P(W + 30, H / 2, D / 2), P(W + 12, H / 2, D / 2), 3);
+      draw('s3', pw, ph, g.fit(m + 1, m + 3, wide - 2, tall - 4));
+    }
+
+    // 4: the bolts, turned with the key: a close look in a ring.
+    {
+      const s = Math.min(wide, tall - 3) / 12;
+      const cx = pw / 2, cy = m + 3 + (tall - 3) / 2;
+      const r = 5.2 * s;
+      let out = `<circle class="lens" cx="${cx}" cy="${cy}" r="${r}"/>`;
+      out += `<circle class="face2" cx="${cx}" cy="${cy}" r="${1.9 * s}"/>`;
+      out += `<polygon class="hole" points="${ring(a => [cx + Math.cos(a) * 0.8 * s, cy + Math.sin(a) * 0.8 * s] as Pt, 6).map(p => p.join(',')).join(' ')}"/>`;
+      out += `<path class="tool" d="M${cx - 0.35 * s} ${cy}V${cy - 4.2 * s}a${0.35 * s} ${0.35 * s} 0 0 1 ${0.35 * s} ${-0.35 * s}H${cx + 3.6 * s}V${cy - 3.85 * s}H${cx + 0.35 * s}V${cy}Z"/>`;
+      out += `<path class="arrowline" d="M${cx + 3.2 * s} ${cy + 1.2 * s}A${3.4 * s} ${3.4 * s} 0 0 1 ${cx - 1.6 * s} ${cy + 3.1 * s}"/>`;
+      out += `<path class="head" d="M${cx - 1.4 * s} ${cy + 2.3 * s}L${cx - 2.4 * s} ${cy + 3.3 * s}L${cx - 1.0 * s} ${cy + 3.8 * s}Z"/>`;
+      draw('s4', pw, ph, out + count(pw - m - 3.4, ph - m - 0.4, 4, 1.6));
+    }
+
+    // 5: done, with something on it.
+    {
+      const g = side(new Drawing(), 0);
+      boards(g, T);
+      g.block(T + 34, 12, 6, 14, 7, 16);
+      g.block(W - T, 0, 0, T, H, D);
+      [0, 2.6, 5.2, 7.8].forEach((x, i) => g.block(T + 8 + x, H, 4, 2.2, [10, 9, 11, 8][i], 14));
+      draw('s5', pw, ph, g.fit(m + 1, m + 3, wide - 2, tall - 5) + tick(pw - m - 1.6, ph - m - 1.6, 1.3));
+    }
+  });
+</script>
+
+<style is:global>
+  html { background: #fff; --pw: 16; --ph: 20; --left: 2; }
+  .pack {
+    background: #fff;
+    color: #000;
+    font-family: var(--typeface-medium);
+  }
+  .model { grid-column: var(--left) / span 10; grid-row: -2; margin: 0; font-size: calc(13px * var(--sf)); line-height: var(--u); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+
+  /* Eight panels of pw by ph squares, four across, a square apart. */
+  .panel {
+    margin: 0;
+    position: relative;
+    box-shadow: inset 0 0 0 2px #000;
+    border-radius: calc(var(--u) / 4);
+  }
+  .panel svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .step { position: absolute; left: var(--u); top: calc(var(--u) / 2); font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+
+  .panel .face { fill: #fff; stroke: #000; stroke-width: calc(1.4px * var(--sf)); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .panel .hole { fill: #000; stroke: none; }
+  .panel .line, .panel .arrow, .panel .arrowline { fill: none; stroke: #000; stroke-width: calc(1.4px * var(--sf)); vector-effect: non-scaling-stroke; stroke-linecap: round; }
+  .panel .arrow, .panel .arrowline { stroke-width: calc(2.2px * var(--sf)); }
+  .panel .head { fill: #000; stroke: #000; stroke-width: calc(1px * var(--sf)); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .panel .ink { fill: #000; }
+  .panel .limb { fill: none; stroke: #000; stroke-width: 0.42; stroke-linecap: round; }
+  .panel .carton { fill: #fff; stroke: #000; stroke-width: calc(1.6px * var(--sf)); vector-effect: non-scaling-stroke; }
+  .panel .tool, .panel .face2 { fill: #fff; stroke: #000; stroke-width: calc(1.6px * var(--sf)); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .panel .lens { fill: #fff; stroke: #000; stroke-width: calc(2.4px * var(--sf)); vector-effect: non-scaling-stroke; }
+  .panel .split { stroke: #000; stroke-width: calc(1px * var(--sf)); vector-effect: non-scaling-stroke; stroke-dasharray: 4 4; }
+  .panel .mark-ring { fill: #fff; stroke: #000; stroke-width: calc(2.4px * var(--sf)); vector-effect: non-scaling-stroke; }
+  .panel .mark { fill: none; stroke-width: calc(4px * var(--sf)); vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+  .panel .mark.no { stroke: #000; } .panel .mark.yes { stroke: #000; }
+  .panel .count { font-family: var(--typeface-medium); fill: #000; letter-spacing: -0.02em; }
+
+  /* A narrow window: the panels one under another, a square apart. */
+  :root[data-narrow] .pack { padding-bottom: calc(3 * var(--u)); padding-top: var(--u); }
+  :root[data-narrow] .panel { grid-column: 2 / -2 !important; grid-row: auto / span 14 !important; height: calc(14 * var(--u)); margin-bottom: var(--u); }
+  :root[data-narrow] .model { grid-column: 2 / -2; grid-row: auto; order: 9; }
+</style>

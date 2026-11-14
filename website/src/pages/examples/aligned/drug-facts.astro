@@ -1,0 +1,262 @@
+---
+// After pharmacy packaging: the face of a carton, loud with its name, its strength and a coloured
+// band, beside the facts panel the law sets out so strictly that it already reads like a grid.
+// Heavy rules open each section, the directions are a table whose cells are whole squares, and the
+// caplets in the blister are two squares long.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="drug-facts" theme="light">
+  <main class="stage pharmacy">
+    <section class="carton" aria-label="Carton front">
+      <p class="house">Fennick Pharmacy</p>
+      <h1 class="name">Nocturol<sup>PM</sup></h1>
+      <p class="claim">Night-time pain relief with a sleep aid</p>
+      <div class="band" aria-hidden="true">
+        <svg class="moon" id="moon"></svg>
+      </div>
+      <p class="strength"><b>Acetaminophen 500 mg</b> Pain reliever<br /><b>Diphenhydramine HCl 25 mg</b> Nighttime sleep aid</p>
+      <div class="blister" aria-label="Twenty caplets">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="count"><b>20</b> caplets</p>
+      <p class="seal">Do not use if the printed foil under the cap is broken or missing</p>
+      <p class="lot" aria-label="Lot and expiry">LOT 26K114<br />EXP 11/2028</p>
+      <p class="burst" aria-hidden="true"><span>Non-habit<br />forming</span></p>
+    </section>
+
+    <article class="facts" aria-labelledby="facts-title">
+      <h2 id="facts-title">Drug Facts</h2>
+      <section class="rule-heavy">
+        <div class="pair head"><span><b>Active ingredients</b> (in each caplet)</span><span>Purposes</span></div>
+        <div class="pair"><span class="lead">Acetaminophen 500 mg</span><span>Pain reliever</span></div>
+        <div class="pair"><span class="lead">Diphenhydramine HCl 25 mg</span><span>Nighttime sleep aid</span></div>
+      </section>
+      <section class="rule-heavy">
+        <p><b>Uses</b> temporarily relieves occasional headaches and minor aches and pains that keep you awake</p>
+      </section>
+      <section class="rule-heavy warnings">
+        <h3>Warnings</h3>
+        <p><b>Liver warning:</b> This product contains acetaminophen. Severe liver damage may occur if you take more than 4,000 mg of acetaminophen in 24 hours, with other drugs containing acetaminophen, or with 3 or more alcoholic drinks every day.</p>
+        <p class="rule-thin"><b>Do not use</b> with any other product containing diphenhydramine, even one used on skin; in children under 12 years</p>
+        <p class="rule-thin"><b>Ask a doctor before use if you have</b> liver disease; glaucoma; trouble urinating due to an enlarged prostate</p>
+        <p class="rule-thin"><b>When using this product</b> drowsiness will occur; avoid alcoholic drinks; do not drive or operate machinery</p>
+        <p class="rule-thin"><b>Stop use and ask a doctor if</b> sleeplessness lasts for more than 2 weeks</p>
+        <p class="rule-thin"><b>Keep out of reach of children.</b> In case of overdose, get medical help right away.</p>
+      </section>
+      <section class="rule-heavy">
+        <h3>Directions</h3>
+        <table class="dose">
+          <tr><th scope="row">adults and children 12 years and over</th><td>take 2 caplets at bedtime; do not take more than 2 caplets in 24 hours</td></tr>
+          <tr><th scope="row">children under 12 years</th><td>do not use</td></tr>
+        </table>
+      </section>
+      <section class="rule-heavy">
+        <p><b>Other information</b> store at 20–25°C (68–77°F); avoid high humidity</p>
+      </section>
+      <section class="rule-heavy">
+        <p><b>Inactive ingredients</b> carnauba wax, corn starch, FD&amp;C blue no. 1, hypromellose, magnesium stearate, polyethylene glycol, titanium dioxide</p>
+      </section>
+      <section class="rule-heavy">
+        <p><b>Questions?</b> Call 1-800-555-0142, weekdays 9 am to 5 pm</p>
+      </section>
+    </article>
+
+    <footer class="back">
+      <svg class="barcode" id="barcode" role="img" aria-label="Barcode 0 41260 77215 3"></svg>
+      <p>Distributed by Fennick Pharmacy Ltd.<br />14 Harrow Lane, Dunmore DM4 2QT<br />Compare to the active ingredients in leading night-time brands</p>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The night on the band: a crescent cut from two circles of whole-square radii, and stars as
+  // crosses sitting on square corners.
+  const moon = document.getElementById('moon') as unknown as SVGSVGElement;
+  const barcode = document.getElementById('barcode') as unknown as SVGSVGElement;
+  onSquares(({ unit }) => {
+    const band = moon.parentElement!;
+    const wide = Math.max(4, Math.round(band.clientWidth / unit));
+    const high = Math.max(5, Math.round(band.clientHeight / unit));
+    moon.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    // The moon's radius is a third of the band, in whole squares, its centre on a square corner.
+    const r = Math.max(2, Math.floor(high / 3));
+    const cx = wide - r - 2;
+    const cy = Math.round(high / 2);
+    const stars: string[] = [];
+    for (let x = 1; x < wide; x++) {
+      for (let y = 1; y < high; y++) {
+        const hash = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+        if (hash > 0.045 || Math.hypot(x - cx, y - cy) < r + 1.5 || (x < 7 && y > high - 4)) continue;
+        stars.push(`M ${x - 0.3} ${y} H ${x + 0.3} M ${x} ${y - 0.3} V ${y + 0.3}`);
+      }
+    }
+    moon.innerHTML = `
+      <defs><mask id="crescent"><rect width="${wide}" height="${high}" fill="#fff"/><circle cx="${cx - Math.round(r / 2)}" cy="${cy - Math.round(r / 2)}" r="${r}" fill="#000"/></mask></defs>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffd400" mask="url(#crescent)"/>
+      <path d="${stars.join(' ')}" stroke="#fff" stroke-width="0.12" stroke-linecap="round"/>`;
+  });
+
+  // Bars a quarter square wide, from the digits' pattern; guard bars run a square longer.
+  const digits = '041260772153';
+  const PATTERN = ['3211', '2221', '2122', '1411', '1132', '1231', '1114', '1312', '1213', '3112'];
+  const widths = [1, 1, 1, ...digits.slice(0, 6).split('').flatMap(d => PATTERN[+d].split('').map(Number)), 1, 1, 1, 1, 1, ...digits.slice(6).split('').flatMap(d => PATTERN[+d].split('').map(Number)), 1, 1, 1];
+  let x = 0;
+  const bars: string[] = [];
+  widths.forEach((w, i) => {
+    const guard = i < 3 || (i >= 27 && i < 32) || i >= widths.length - 3;
+    if (i % 2 === 0) bars.push(`<rect x="${x / 8}" y="0" width="${w / 8}" height="${guard ? 3 : 2.5}"/>`);
+    x += w;
+  });
+  const span = Math.ceil(x / 8);
+  barcode.setAttribute('viewBox', `0 0 ${span} 3`);
+  barcode.parentElement!.style.setProperty('--bars', String(span));
+  barcode.innerHTML = bars.join('');
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .pharmacy {
+    --ink: #000;
+    --indigo: #2433a8;
+    --yellow: #ffd400;
+    --hair: #c9c9c9;
+    color: var(--ink);
+    background: #fff;
+    font-family: var(--typeface-regular);
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+  }
+  :where(.pharmacy) :is(p, h1, h2, h3) { margin: 0; }
+
+  /* The carton's face: a white board with a fine edge, its parts stacked in whole squares. */
+  .carton {
+    grid-column: 3 / -37;
+    grid-row: 3 / -3;
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--u) 1fr var(--u);
+    grid-template-rows: var(--u) var(--u) calc(5 * var(--u)) var(--u) var(--u) minmax(calc(5 * var(--u)), 1fr) var(--u) calc(2 * var(--u)) var(--u) calc(4 * var(--u)) var(--u) var(--u) var(--u) calc(2 * var(--u)) var(--u);
+    box-shadow: inset 0 0 0 1px var(--hair);
+    overflow: hidden;
+  }
+  .carton > * { grid-column: 2; }
+  .house { grid-row: 2; font-family: var(--typeface-medium); font-size: calc(13px * var(--sf)); color: var(--indigo); }
+  .name {
+    grid-row: 3;
+    align-self: end;
+    font: calc(104px * var(--sf)) / calc(5 * var(--u)) var(--typeface-medium);
+    letter-spacing: -0.045em;
+    color: var(--indigo);
+    white-space: nowrap;
+  }
+  .name sup { font-size: 0.32em; letter-spacing: 0; vertical-align: top; position: relative; top: 0.5em; margin-left: 0.15em; color: var(--ink); background: var(--yellow); padding-inline: 0.2em; line-height: 1.3; }
+  .claim { grid-row: 4; font-family: var(--typeface-medium); font-size: calc(16px * var(--sf)); }
+  .band { grid-row: 6; grid-column: 1 / -1; background: var(--indigo); }
+  .moon { display: block; width: 100%; height: 100%; }
+  .strength { grid-row: 8; font-size: calc(13px * var(--sf)); }
+  .strength b { font-family: var(--typeface-medium); font-weight: normal; display: inline-block; min-width: calc(11 * var(--u)); }
+
+  /* Ten caplets, each two squares by one, in bubbles three by two. */
+  .blister {
+    grid-row: 10;
+    display: grid;
+    grid-template-columns: repeat(5, calc(3 * var(--u)));
+    grid-template-rows: repeat(2, calc(2 * var(--u)));
+    width: max-content;
+    background: linear-gradient(#ececec, #f7f7f7);
+    box-shadow: inset 0 0 0 1px var(--hair);
+  }
+  .blister span { display: grid; place-items: center; }
+  .blister span::before {
+    content: '';
+    width: calc(2 * var(--u));
+    height: var(--u);
+    border-radius: var(--u);
+    background: linear-gradient(90deg, var(--indigo) 50%, #4b5be0 50%);
+    box-shadow: inset 0 calc(-3px * var(--sf)) 0 rgb(0 0 0 / 0.18), 0 0 0 calc(5px * var(--sf)) rgb(255 255 255 / 0.8), 0 0 0 calc(6px * var(--sf)) #d8d8d8;
+  }
+  .count { grid-row: 12; font-size: calc(16px * var(--sf)); }
+  .count b { font-family: var(--typeface-medium); font-weight: normal; }
+  .seal {
+    grid-row: 14;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    padding-inline: calc(var(--u) / 2);
+    background: var(--yellow);
+    font-family: var(--typeface-medium);
+    max-width: calc(20 * var(--u));
+  }
+  /* A round burst of yellow on the band's edge, four squares across. */
+  .burst {
+    grid-row: 6;
+    grid-column: 2;
+    justify-self: start;
+    align-self: end;
+    width: calc(5 * var(--u));
+    height: calc(5 * var(--u));
+    margin-bottom: calc(-2 * var(--u));
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 calc(3px * var(--sf)) var(--indigo);
+    color: var(--indigo);
+    text-align: center;
+    font: calc(12px * var(--sf)) / calc(16px * var(--sf)) var(--typeface-medium);
+    z-index: 1;
+  }
+  .lot {
+    position: absolute;
+    right: var(--u);
+    top: var(--u);
+    font: calc(11px * var(--sf)) / var(--u) var(--typeface-mono);
+    color: #6d6d6d;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  /* The facts panel: a black frame, a heavy bar over each section and hairlines between warnings. */
+  .facts {
+    grid-column: -34 / -3;
+    grid-row: 2 / -2;
+    align-self: start;
+    padding: 0 calc(var(--u) / 2) var(--u);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+  .facts h2 { font: calc(34px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); letter-spacing: -0.02em; }
+  .facts h3 { font: calc(15px * var(--sf)) / var(--u) var(--typeface-medium); }
+  .facts b { font-family: var(--typeface-medium); font-weight: normal; }
+  .rule-heavy { position: relative; }
+  .rule-heavy::before { content: ''; position: absolute; inset: 0 calc(var(--u) / -2) auto; height: calc(4px * var(--sf)); background: var(--ink); }
+  .rule-heavy > :first-child { padding-top: calc(var(--u) / 2); }
+  .rule-thin { box-shadow: inset 0 1px 0 var(--ink); }
+  .pair { display: grid; grid-template-columns: 1fr auto; }
+  .pair.head span { font-family: var(--typeface-medium); }
+  .pair .lead { display: flex; gap: calc(var(--u) / 4); }
+  .pair .lead::after { content: ''; flex: 1; border-bottom: 1px dotted var(--ink); transform: translateY(calc(-5px * var(--sf))); margin-right: calc(var(--u) / 4); }
+  .warnings h3 { font-size: calc(17px * var(--sf)); }
+
+  /* The back's foot: the barcode and the distributor, anchored to the bottom. */
+  .back { grid-column: -34 / -3; grid-row: -6 / span 4; display: grid; grid-template-columns: calc(var(--bars, 8) * var(--u)) 1fr; gap: var(--u); align-items: start; color: #333; font-size: calc(11px * var(--sf)); }
+  .barcode { width: calc(var(--bars, 8) * var(--u)); height: calc(3 * var(--u)); fill: var(--ink); }
+  /* Directions: rows two squares high, the age column twelve squares wide. */
+  .dose { width: 100%; border-collapse: collapse; margin-bottom: var(--u); }
+  .dose th, .dose td { height: calc(2 * var(--u)); padding: 0 calc(var(--u) / 4); box-sizing: border-box; vertical-align: middle; text-align: left; font-weight: normal; box-shadow: inset 0 0 0 0.5px var(--ink); }
+  .dose th { width: calc(11 * var(--u)); }
+
+  :root[data-narrow] .pharmacy { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .pharmacy > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .carton { grid-template-rows: var(--u) var(--u) calc(3 * var(--u)) calc(2 * var(--u)) var(--u) calc(6 * var(--u)) var(--u) calc(4 * var(--u)) var(--u) auto var(--u) var(--u) var(--u) calc(3 * var(--u)) var(--u); margin-block: var(--u); }
+  :root[data-narrow] .name { font-size: calc(46px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .strength b { display: block; min-width: 0; }
+  :root[data-narrow] .blister { grid-template-columns: repeat(3, calc(3 * var(--u))); }
+  :root[data-narrow] .blister span:nth-child(n + 7) { display: none; }
+  :root[data-narrow] .lot, :root[data-narrow] .burst { display: none; }
+  :root[data-narrow] .back { grid-template-columns: 1fr; }
+  :root[data-narrow] .dose th { width: calc(5 * var(--u)); }
+  :root[data-narrow] .dose th, :root[data-narrow] .dose td { height: auto; min-height: calc(2 * var(--u)); padding-block: calc(var(--u) / 2); }
+</style>

@@ -1,0 +1,285 @@
+---
+// After a Sunday comic strip: panels on whole fields with a gutter of one square, Ben-Day dots a
+// third of a square apart, balloons with tails, and sound effects too big for their panels. The
+// strip is about a blackbird who sings the first song of the day, at twelve minutes past five.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="comic-strip" theme="light" fonts="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap">
+  <main class="stage funnies">
+    <header class="masthead">
+      <h1>The Dawn Chorus</h1>
+      <p>Barry the blackbird, in “First Song”</p>
+    </header>
+
+    <section class="panel p1" aria-label="Panel 1">
+      <svg class="scene" data-scene="1" aria-hidden="true"></svg>
+      <p class="caption" style="left: var(--u); top: var(--u);">5:12 a.m. Above Linden Street.</p>
+    </section>
+
+    <section class="panel p2" aria-label="Panel 2">
+      <svg class="scene" data-scene="2" aria-hidden="true"></svg>
+      <div class="balloon" data-tail="9,7" style="left: var(--u); top: var(--u); width: calc(11 * var(--u)); height: calc(5 * var(--u));"><p>First song of the day. Make it count, Barry.</p></div>
+    </section>
+
+    <section class="panel p3" aria-label="Panel 3">
+      <svg class="scene" data-scene="3" aria-hidden="true"></svg>
+      <p class="sfx tweet" aria-label="Sound: Tweedle-weeo!">Tweedle-<br />weeo!</p>
+    </section>
+
+    <section class="panel p4" aria-label="Panel 4">
+      <svg class="scene" data-scene="4" aria-hidden="true"></svg>
+      <div class="balloon shout" data-tail="4,6" style="left: var(--u); top: var(--u); width: calc(12 * var(--u)); height: calc(5 * var(--u));"><p>It’s five in the morning!!</p></div>
+      <div class="balloon shout" data-tail="3,6" style="left: calc(15 * var(--u)); top: calc(2 * var(--u)); width: calc(13 * var(--u)); height: calc(5 * var(--u));"><p>Some of us work nights, Barry!</p></div>
+      <p class="sfx slam" aria-label="Sound: slam!">Slam!</p>
+      <p class="sfx bang" aria-label="Sound: bang!">Bang!</p>
+    </section>
+
+    <section class="panel p5" aria-label="Panel 5">
+      <svg class="scene" data-scene="5" aria-hidden="true"></svg>
+      <div class="balloon" data-tail="6,6" style="left: var(--u); top: var(--u); width: calc(9 * var(--u)); height: calc(3 * var(--u));"><p>…Tough crowd.</p></div>
+      <div class="balloon small" data-tail="4,7" style="right: var(--u); top: var(--u); width: calc(8 * var(--u)); height: calc(4 * var(--u));"><p>I thought it was lovely, Barry.</p></div>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const INK = '#111';
+  type Box = { w: number; h: number };
+
+  // A blackbird (or, with `sparrow`, a house sparrow) about four squares long at size 1, facing right.
+  function bird(x: number, y: number, s: number, opts: { open?: boolean; flip?: boolean; sparrow?: boolean; sweat?: boolean } = {}) {
+    const body = opts.sparrow ? '#b07a3f' : '#161616';
+    const head = opts.sparrow ? '#8a8f96' : '#161616';
+    const beak = opts.sparrow ? '#3a2a1a' : '#ffb000';
+    const beakPath = opts.open
+      ? `<path d="M2 -1.25 L3.2 -1.6 L2.1 -0.95 Z M2 -0.85 L3 -0.2 L2 -0.6 Z" fill="${beak}" stroke="${INK}" stroke-width="0.08" stroke-linejoin="round"/>`
+      : `<path d="M2.05 -1.15 L2.95 -0.9 L2.05 -0.7 Z" fill="${beak}" stroke="${INK}" stroke-width="0.08" stroke-linejoin="round"/>`;
+    return `<g transform="translate(${x} ${y}) scale(${opts.flip ? -s : s} ${s})">
+      <path d="M-1.2 0 L-3 1 L-2.6 1.4 L-0.8 0.6 Z" fill="${body}" stroke="${INK}" stroke-width="0.1" stroke-linejoin="round"/>
+      <path d="M0.1 0.9 V1.9 M-0.4 0.9 V1.9 M-0.2 1.9 H0.5 M-0.7 1.9 H0" stroke="${INK}" stroke-width="0.12" stroke-linecap="round"/>
+      <ellipse cx="0" cy="0" rx="1.7" ry="1.15" transform="rotate(-14)" fill="${body}" stroke="${INK}" stroke-width="0.1"/>
+      <path d="M-1.1 -0.3 Q -0.2 0.5 0.9 -0.1" fill="none" stroke="${opts.sparrow ? '#5a3a1a' : '#4a5c8a'}" stroke-width="0.14" stroke-linecap="round"/>
+      <circle cx="1.35" cy="-0.95" r="0.85" fill="${head}" stroke="${INK}" stroke-width="0.1"/>
+      ${opts.sparrow ? '<path d="M1.6 -0.55 Q 1.9 -0.2 1.5 0.05 Q 1.2 -0.2 1.6 -0.55 Z" fill="#111"/><path d="M0.6 -1.1 Q 1.3 -1.9 2.1 -1.2" fill="#7a4a22"/>' : ''}
+      <path d="M0.9 -1.55 Q 1.4 -1.9 1.95 -1.5" fill="none" stroke="${opts.sparrow ? '#cfd3d8' : '#5a6f9e'}" stroke-width="0.12" stroke-linecap="round"/>
+      ${beakPath}
+      <circle cx="1.6" cy="-1.1" r="0.24" fill="${opts.sparrow ? '#fff' : '#ffb000'}" stroke="${INK}" stroke-width="0.06"/>
+      <circle cx="1.65" cy="-1.1" r="0.12" fill="${INK}"/>
+      ${opts.sweat ? '<path d="M0.6 -2.2 Q 0.35 -1.8 0.6 -1.65 Q 0.85 -1.8 0.6 -2.2 Z" fill="#7fd3ff" stroke="#111" stroke-width="0.06"/>' : ''}
+    </g>`;
+  }
+
+  // A terrace of houses along the panel's foot, each a whole number of squares; windows one square.
+  function terrace(box: Box, lit: boolean, from = 0) {
+    const widths = [6, 5, 7, 5, 6, 8, 5, 6, 7, 5, 6];
+    const heights = [7, 9, 8, 10, 7, 9, 8, 10, 7, 9, 8];
+    let x = -1, i = from, out = '';
+    const chimneys: { x: number; y: number }[] = [];
+    while (x < box.w) {
+      const w = widths[i % widths.length];
+      const h = Math.min(heights[i % heights.length], box.h - 4);
+      const top = box.h - h;
+      out += `<path d="M${x} ${box.h} V${top + 2} L${x + w / 2} ${top} L${x + w} ${top + 2} V${box.h} Z" fill="${i % 2 ? '#24307a' : '#1b2563'}" stroke="${INK}" stroke-width="0.12"/>`;
+      if (i % 3 === 1) { out += `<rect x="${x + w - 2}" y="${top - 1}" width="1" height="2" fill="#7a2a2a" stroke="${INK}" stroke-width="0.1"/>`; chimneys.push({ x: x + w - 1.5, y: top - 1 }); }
+      for (let wy = top + 3; wy < box.h - 1; wy += 2) {
+        for (let wx = x + 1; wx < x + w - 1; wx += 2) {
+          const on = lit && (Math.sin(wx * 3.1 + wy * 1.7) > -0.85);
+          out += `<rect x="${wx}" y="${wy}" width="1" height="1" fill="${on ? '#ffe600' : '#0e1540'}" stroke="${INK}" stroke-width="0.08"/>`;
+        }
+      }
+      x += w;
+      i++;
+    }
+    return { svg: out, chimneys };
+  }
+
+  function burst(cx: number, cy: number, r: number, rays = 24, colour = '#ffe600') {
+    let d = '';
+    for (let i = 0; i < rays; i++) {
+      const a = (i / rays) * Math.PI * 2, b = ((i + 0.5) / rays) * Math.PI * 2;
+      d += `M${cx} ${cy} L${cx + Math.cos(a) * r} ${cy + Math.sin(a) * r} L${cx + Math.cos(b) * r} ${cy + Math.sin(b) * r} Z `;
+    }
+    return `<path d="${d}" fill="${colour}"/>`;
+  }
+
+  const notes = (pts: [number, number, number][]) => pts.map(([x, y, s]) => `<text x="${x}" y="${y}" font-size="${s}" fill="${INK}" font-family="Bangers, sans-serif">♪</text>`).join('');
+
+  const SCENES: Record<string, (box: Box) => string> = {
+    '1': box => {
+      const t = terrace(box, false, 2);
+      const c = t.chimneys[0] ?? { x: box.w - 4, y: box.h - 9 };
+      return `<circle cx="${Math.round(box.w * 0.62)}" cy="${box.h - 6}" r="4" fill="#ffe600" stroke="${INK}" stroke-width="0.12"/>${t.svg}${bird(c.x, c.y - 0.95, 0.5)}`;
+    },
+    '2': box => {
+      const s = Math.max(1.6, Math.min(box.h / 5.2, box.w / 7.5));
+      return `<rect x="${Math.round(box.w * 0.25)}" y="${box.h - 2}" width="${box.w}" height="2" fill="#7a2a2a" stroke="${INK}" stroke-width="0.12"/>
+        <path d="M${Math.round(box.w * 0.25)} ${box.h - 1} H${box.w}" stroke="${INK}" stroke-width="0.08"/>
+        ${bird(box.w * 0.6 - 0.6 * s, box.h - 2 - 1.9 * s, s)}`;
+    },
+    '3': box => {
+      const s = Math.max(1.4, Math.min(box.h / 6, box.w / 7));
+      const cx = box.w * 0.45, cy = box.h * 0.62;
+      return `${burst(cx + 2 * s, cy - s, Math.hypot(box.w, box.h))}
+        ${bird(cx, cy, s, { open: true })}
+        ${notes([[box.w - 4, box.h * 0.55, 3], [box.w - 6, box.h * 0.8, 2], [2, box.h - 2, 2.5]])}`;
+    },
+    '4': box => terrace(box, true, 0).svg,
+    '5': box => {
+      const s = Math.max(1, Math.min(box.h / 9, box.w / 11));
+      const roof = box.h - 3;
+      return `<rect x="0" y="${roof}" width="${box.w}" height="3" fill="#24307a" stroke="${INK}" stroke-width="0.12"/>
+        <rect x="${Math.round(box.w * 0.3)}" y="${roof - 3}" width="${Math.max(6, Math.round(box.w * 0.4))}" height="3" fill="#7a2a2a" stroke="${INK}" stroke-width="0.12"/>
+        ${bird(box.w * 0.3 + s, roof - 3 - 1.9 * s, s, { sweat: true })}
+        ${bird(box.w * 0.82, roof - 1.9 * s * 0.55, s * 0.55, { flip: true, sparrow: true })}`;
+    },
+  };
+
+  // Balloons: an oval (or, for a shout, a jagged star) and a tail to the speaker, drawn behind the
+  // words. Stroke first, then fill, so the tail and the oval share one outline.
+  function drawBalloon(el: HTMLElement, unit: number) {
+    const w = Math.round(el.offsetWidth / unit), h = Math.round(el.offsetHeight / unit);
+    const [tx, ty] = (el.dataset.tail ?? `${w / 2},${h + 2}`).split(',').map(Number);
+    const shout = el.classList.contains('shout');
+    let shape: string;
+    if (shout) {
+      const points: string[] = [];
+      const n = 22;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const k = i % 2 ? 0.86 : 1.04;
+        points.push(`${w / 2 + Math.cos(a) * (w / 2) * k},${h / 2 + Math.sin(a) * (h / 2) * k}`);
+      }
+      shape = `<polygon points="${points.join(' ')}"/>`;
+    } else shape = `<ellipse cx="${w / 2}" cy="${h / 2}" rx="${w / 2}" ry="${h / 2}"/>`;
+    const tail = `<path d="M${Math.max(1, Math.min(w - 1, tx)) - 0.8} ${h / 2} L${tx} ${ty} L${Math.max(1, Math.min(w - 1, tx)) + 0.8} ${h / 2} Z"/>`;
+    let svg = el.querySelector<SVGSVGElement>(':scope > svg');
+    if (!svg) { svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); el.prepend(svg); }
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = `<g stroke="${INK}" stroke-width="0.24" fill="${INK}">${tail}${shape}</g><g fill="#fff">${tail}${shape}</g>`;
+  }
+
+  const panels = [...document.querySelectorAll<HTMLElement>('.panel')];
+
+  onSquares(({ unit, across, down, narrow }) => {
+    const W = across - 2;
+    const top = 6;
+    let boxes: { col: number; row: number; w: number; h: number }[];
+    if (narrow) {
+      const highs = [13, 15, 15, 15, 18];
+      let row = top;
+      boxes = panels.map((_, i) => { const box = { col: 2, row, w: W, h: highs[i] }; row += highs[i] + 1; return box; });
+    } else {
+      const H = down - top;
+      const h1 = Math.floor((H - 1) / 2), h2 = H - 1 - h1;
+      const a = Math.floor((W - 2) * 0.3), b = Math.floor((W - 2) * 0.33), c = W - 2 - a - b;
+      const d = Math.floor((W - 1) * 0.64), e = W - 1 - d;
+      boxes = [
+        { col: 2, row: top, w: a, h: h1 },
+        { col: 2 + a + 1, row: top, w: b, h: h1 },
+        { col: 2 + a + b + 2, row: top, w: c, h: h1 },
+        { col: 2, row: top + h1 + 1, w: d, h: h2 },
+        { col: 2 + d + 1, row: top + h1 + 1, w: e, h: h2 },
+      ];
+    }
+    panels.forEach((panel, i) => {
+      const box = boxes[i];
+      panel.style.gridColumn = `${box.col} / span ${box.w}`;
+      panel.style.gridRow = `${box.row} / span ${box.h}`;
+      panel.style.height = `${box.h * unit}px`;
+      panel.style.setProperty('--pw', String(box.w));
+      panel.style.setProperty('--ph', String(box.h));
+      const scene = panel.querySelector<SVGSVGElement>('.scene')!;
+      scene.setAttribute('viewBox', `0 0 ${box.w} ${box.h}`);
+      scene.innerHTML = SCENES[scene.dataset.scene!]({ w: box.w, h: box.h });
+    });
+    document.querySelectorAll<HTMLElement>('.balloon').forEach(el => drawBalloon(el, unit));
+  });
+</script>
+
+<style is:global>
+  html { background: #ffe600; }
+  .funnies {
+    --ink: #111;
+    --yellow: #ffe600;
+    --magenta: #ec008c;
+    --cyan: #00aeef;
+    --dot: calc(var(--u) / 3);
+    background: var(--yellow);
+    color: var(--ink);
+    font-family: 'Comic Neue', 'Chalkboard SE', 'Comic Sans MS', sans-serif;
+    font-weight: 700;
+    font-size: calc(14px * var(--sf));
+    line-height: calc(16px * var(--sf));
+  }
+  :where(.funnies) :is(p, h1) { margin: 0; }
+
+  .masthead { grid-column: 2 / -2; grid-row: 2 / span 3; display: flex; align-items: end; gap: calc(2 * var(--u)); }
+  .masthead h1 {
+    font: calc(64px * var(--sf)) / calc(3 * var(--u)) Bangers, Impact, sans-serif;
+    letter-spacing: 0.03em;
+    color: #ee2a24;
+    -webkit-text-stroke: calc(2px * var(--sf)) var(--ink);
+    paint-order: stroke fill;
+    text-shadow: calc(4px * var(--sf)) calc(4px * var(--sf)) 0 var(--ink);
+    white-space: nowrap;
+  }
+  .masthead p { font-size: calc(16px * var(--sf)); line-height: var(--u); padding-bottom: calc(var(--u) / 4); }
+
+  /* A panel: a heavy black border drawn inside its squares, and its ground of Ben-Day dots. */
+  .panel { position: relative; overflow: hidden; box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--ink); background-color: #fff; }
+  .panel::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--ink); pointer-events: none; }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .p1 { background: radial-gradient(circle, var(--magenta) 0 32%, transparent 34%) 0 0 / var(--dot) var(--dot), linear-gradient(#ff9ccc, #ffd9a0); }
+  .p2 { background: radial-gradient(circle, var(--cyan) 0 30%, transparent 32%) 0 0 / var(--dot) var(--dot), #dff4ff; }
+  .p3 { background: #ee2a24; }
+  .p4 { background: radial-gradient(circle, #3b4bb0 0 34%, transparent 36%) 0 0 / var(--dot) var(--dot), #121a52; }
+  .p5 { background: radial-gradient(circle, var(--magenta) 0 22%, transparent 24%) 0 0 / var(--dot) var(--dot), #ffe3ef; }
+
+  .caption {
+    position: absolute;
+    padding: calc(2px * var(--sf)) calc(var(--u) / 2);
+    min-height: var(--u);
+    box-sizing: border-box;
+    background: var(--yellow);
+    box-shadow: 0 0 0 calc(2px * var(--sf)) var(--ink);
+    text-transform: uppercase;
+    font-size: calc(13px * var(--sf));
+  }
+
+  .balloon { position: absolute; display: grid; place-items: center; z-index: 1; }
+  .balloon > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .balloon p { position: relative; width: 76%; text-align: center; text-transform: uppercase; font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  .balloon.shout p { font-size: calc(17px * var(--sf)); }
+  .balloon.small p { font-size: calc(13px * var(--sf)); line-height: calc(16px * var(--sf)); }
+
+  /* Sound effects: Bangers with a black outline and a hard shadow, tilted off the squares. */
+  .sfx {
+    position: absolute;
+    font-family: Bangers, Impact, sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    -webkit-text-stroke: calc(3px * var(--sf)) var(--ink);
+    paint-order: stroke fill;
+    letter-spacing: 0.02em;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .tweet { left: var(--u); top: calc(2 * var(--u)); font-size: calc(64px * var(--sf)); line-height: calc(3 * var(--u)); color: var(--yellow); transform: rotate(-8deg); transform-origin: left top; text-shadow: calc(5px * var(--sf)) calc(5px * var(--sf)) 0 var(--ink); }
+  .slam { right: calc(3 * var(--u)); top: calc(2 * var(--u)); font-size: calc(60px * var(--sf)); line-height: calc(3 * var(--u)); color: #ee2a24; transform: rotate(10deg); text-shadow: calc(4px * var(--sf)) calc(4px * var(--sf)) 0 var(--yellow); }
+  .bang { right: calc(12 * var(--u)); top: calc(7 * var(--u)); font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--cyan); transform: rotate(-12deg); }
+
+  :root[data-narrow] .funnies { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .masthead { flex-direction: column; align-items: start; gap: 0; grid-row: 2 / span 4; }
+  :root[data-narrow] .masthead h1 { font-size: calc(46px * var(--sf)); line-height: calc(2 * var(--u)); white-space: normal; }
+  :root[data-narrow] .tweet { font-size: calc(54px * var(--sf)); }
+  :root[data-narrow] .balloon { width: calc(10 * var(--u)) !important; }
+  :root[data-narrow] .balloon p { font-size: calc(13px * var(--sf)); line-height: calc(16px * var(--sf)); }
+  :root[data-narrow] .balloon[style*="left: calc(15"] { left: calc(1 * var(--u)) !important; top: calc(7 * var(--u)) !important; width: calc(9 * var(--u)) !important; height: calc(4 * var(--u)) !important; }
+  :root[data-narrow] .balloon.small { width: calc(7 * var(--u)) !important; height: calc(3 * var(--u)) !important; top: calc(4 * var(--u)) !important; }
+  :root[data-narrow] .balloon.small p { font-size: calc(11px * var(--sf)); }
+  :root[data-narrow] .p5 .balloon:not(.small) { width: calc(7 * var(--u)) !important; }
+  :root[data-narrow] :is(.bang, .slam) { display: none; }
+</style>

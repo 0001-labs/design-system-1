@@ -1,0 +1,113 @@
+---
+// After a cookbook spread: the left page a photograph to the gutter and the edges, the right page
+// a recipe set in Hoefler Text, its ingredients in a measured column and its method in numbered
+// steps, a running head and a folio. Someone has written in the margin in pencil.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const ingredients = [
+  ['2 tbsp', 'dark honey'],
+  ['500 ml', 'whole milk'],
+  ['6', 'cardamom pods, cracked'],
+  ['1 strip', 'orange peel'],
+  ['1 tbsp', 'cocoa powder'],
+  ['60 g', 'dark chocolate, chopped'],
+  ['1 pinch', 'flaky salt'],
+];
+const method = [
+  'Warm the honey in a small pan and let it bubble, without stirring, until it is the colour of strong tea and smells of toffee, 3 to 4 minutes.',
+  'Off the heat, pour in a splash of the milk; it will spit and seize. Whisk it smooth, then add the rest of the milk, the cardamom and the peel.',
+  'Bring just to a simmer, then leave it to steep off the heat for 5 minutes.',
+  'Lift out the pods and peel. Whisk in the cocoa and chocolate over a low heat until glossy.',
+  'Pour into warmed mugs and finish with the salt.',
+];
+---
+<AlignedStudy slug="cookbook" theme="light">
+  <main class="stage spread">
+    <figure class="plate">
+      <img src="/examples/images/cup.jpg" alt="A speckled tan enamel mug on a pale grey table, seen from the side" />
+      <figcaption>The porch mug.</figcaption>
+    </figure>
+    <p class="pencil" aria-label="Pencil note: best after the cold swim, more salt">best after the<br />cold swim!<br /><span>more salt</span></p>
+    <div class="gutter" aria-hidden="true"></div>
+
+    <header class="running"><i>Mornings by the lake</i><span>87</span></header>
+    <h1 class="dish">Burnt honey cocoa</h1>
+    <p class="headnote">We drink this from the enamel mugs that hang on the porch hook, after the morning swim, when your hands will not quite work. Take the honey further than feels right: it should smell of toffee and a little of smoke, and that bitterness is what keeps the cocoa from being sweet.</p>
+    <p class="serves"><span>Serves 2</span><span>15 minutes</span></p>
+
+    <section class="ingredients" aria-label="Ingredients">
+      <ul>{ingredients.map(([q, what]) => <li><span class="q">{q}</span><span>{what}</span></li>)}</ul>
+    </section>
+    <section class="method" aria-label="Method">
+      <ol>{method.map(step => <li>{step}</li>)}</ol>
+    </section>
+    <aside class="note"><b>For the grown-ups</b> stir a spoon of dark rum in with the salt. For children, stop the honey at the colour of amber.</aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+  // The spine falls on a whole square: the photograph takes the left half, the recipe starts three in.
+  onSquares(({ across }) => {
+    const half = Math.floor(across / 2);
+    const root = document.documentElement.style;
+    root.setProperty('--half', String(half));
+    root.setProperty('--rp', String(half + 4));
+    root.setProperty('--ing', String(Math.max(10, Math.floor((across - half - 6) * 0.38))));
+  });
+</script>
+
+<style is:global>
+  html { background: #fbfaf8; --half: 36; --rp: 40; --ing: 12; }
+  .spread {
+    --paper: #fbfaf8;
+    --ink: #2a2421;
+    --soft: #7b726b;
+    --pine: #34503f;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: "Hoefler Text", "Big Caslon", Georgia, serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .spread h1, .spread p, .spread ul, .spread ol, .spread figure { margin: 0; padding: 0; }
+
+  /* The left page: the photograph to every edge. */
+  .plate { grid-column: 1 / span var(--half); grid-row: 1 / -1; position: relative; overflow: hidden; background: #d9d9db; }
+  .plate img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; display: block; }
+  .plate figcaption { position: absolute; left: calc(2 * var(--u)); bottom: var(--u); font-style: italic; font-size: calc(13px * var(--sf)); color: #555; }
+  .pencil { grid-column: 3 / span 12; grid-row: 3 / span 4; font-family: "Bradley Hand", "Noteworthy", cursive; font-size: calc(18px * var(--sf)); line-height: var(--u); color: #4c4a52; opacity: 0.8; transform: rotate(-6deg); transform-origin: 0 0; }
+  .pencil span { display: inline-block; margin-top: calc(var(--u) / 2); margin-left: var(--u); text-decoration: underline; text-decoration-thickness: 1px; }
+  .gutter { grid-column: var(--half) / span 4; grid-row: 1 / -1; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.12) 24.5%, rgb(0 0 0 / 0.2) 25%, rgb(0 0 0 / 0.07) 27%, rgb(0 0 0 / 0) 60%); }
+
+  /* The right page. */
+  .running { grid-column: var(--rp) / -3; grid-row: 2; display: flex; justify-content: space-between; color: var(--soft); font-size: calc(13px * var(--sf)); }
+  .running span { font-variant-numeric: oldstyle-nums; color: var(--ink); }
+  .dish { grid-column: var(--rp) / -3; grid-row: 5 / span 3; font-family: "Big Caslon", "Hoefler Text", serif; font-weight: 400; font-size: calc(54px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.01em; white-space: nowrap; }
+  .headnote { grid-column: var(--rp) / -4; grid-row: 9 / span 5; max-width: calc(30 * var(--u)); font-size: calc(16px * var(--sf)); font-style: italic; color: #3d3632; }
+  .serves { grid-column: var(--rp) / -3; grid-row: 15; display: flex; gap: calc(2 * var(--u)); color: var(--pine); font-variant-numeric: oldstyle-nums; border-top: 1px solid #d8d2c8; padding-top: calc(var(--u) - 1px); height: var(--u); box-sizing: content-box; }
+
+  .ingredients { grid-column: var(--rp) / span var(--ing); grid-row: 18 / -3; }
+  .ingredients li { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; column-gap: calc(var(--u) / 2); list-style: none; }
+  .ingredients .q { text-align: right; font-variant-numeric: oldstyle-nums; color: var(--pine); white-space: nowrap; }
+  .method { grid-column: var(--rp) / -3; grid-row: 18 / -3; margin-left: calc((var(--ing) + 1) * var(--u)); }
+  .method ol { list-style: none; counter-reset: step; }
+  .method li { counter-increment: step; position: relative; padding-left: calc(2 * var(--u)); margin-bottom: var(--u); max-width: calc(20 * var(--u)); }
+  .method li::before { content: counter(step); position: absolute; left: 0; font-family: "Big Caslon", serif; font-size: calc(20px * var(--sf)); color: var(--pine); font-variant-numeric: oldstyle-nums; }
+
+  .note { grid-column: var(--rp) / span var(--ing); grid-row: span 6 / -3; align-self: end; border-top: 1px solid #d8d2c8; padding-top: calc(var(--u) - 1px); font-size: calc(14px * var(--sf)); color: #4a423d; }
+  .note b { font-weight: 400; font-style: italic; color: var(--pine); }
+
+  /* A narrow window: the photograph on top, then the recipe. */
+  :root[data-narrow] .spread { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .spread > * { grid-column: 2 / -2; grid-row: auto; margin-left: 0; }
+  :root[data-narrow] .plate { grid-column: 1 / -1; grid-row: 1 / span 18; height: calc(18 * var(--u)); }
+  :root[data-narrow] .pencil { grid-column: 2 / -2; grid-row: 2 / span 4; z-index: 1; }
+  :root[data-narrow] .gutter { display: none; }
+  :root[data-narrow] .running { margin-top: var(--u); }
+  :root[data-narrow] .dish { white-space: normal; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .headnote { margin-top: var(--u); }
+  :root[data-narrow] .serves { margin-block: var(--u); }
+  :root[data-narrow] .method { margin-top: var(--u); }
+  :root[data-narrow] .note { margin-top: var(--u); }
+</style>

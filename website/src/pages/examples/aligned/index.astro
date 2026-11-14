@@ -1,0 +1,111 @@
+---
+// The contact sheet of the aligned studies, in sections. One section shows at a time, and only its
+// frames load: each is a live study 1440 by 900 drawn down to sixteen squares by ten, its title and
+// what it is drawn after on the three squares under it. The section is kept in the address.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+import { SECTIONS, STUDIES, studyHref } from '../../../data/aligned-studies';
+const pad = (n: number) => String(n).padStart(String(STUDIES.length).length, '0');
+const numbered = STUDIES.map((study, index) => ({ ...study, number: index + 1 }));
+const sections = SECTIONS.map(section => ({ ...section, studies: numbered.filter(study => study.section === section.key) })).filter(section => section.studies.length);
+---
+<AlignedStudy theme="dark" scroll>
+  <main class="sheet">
+    <header class="masthead">
+      <h1>Aligned studies</h1>
+      <p>{STUDIES.length} pages drawn on Desktop aligned, where a computer’s window is a whole number of squares wide and the height’s leftover goes to the top. Each takes after a kind of site or printed matter, often paired with something it would never meet. Kept here, unpublished.</p>
+      <p class="keys">Open one, then step through all of them in order with ← and →. I or Escape comes back to its section; the chip on the last row turns the grid on.</p>
+    </header>
+    <nav class="sections" aria-label="Sections">
+      {sections.map(section => (
+        <a href={`#${section.key}`} data-section={section.key}>{section.title} <span>{section.studies.length}</span></a>
+      ))}
+    </nav>
+    {sections.map(section => (
+      <section class="section" id={section.key} data-section={section.key} hidden aria-labelledby={`${section.key}-title`}>
+        <h2 id={`${section.key}-title`}>{section.title}</h2>
+        <p class="about">{section.about}</p>
+        <ol class="frames">
+          {section.studies.map(study => (
+            <li>
+              <a href={studyHref(study.slug)}>
+                <span class="thumb"><iframe data-src={studyHref(study.slug)} loading="lazy" tabindex="-1" aria-hidden="true" title={study.title}></iframe></span>
+                <span class="caption"><b><i>{pad(study.number)}</i>{study.title}</b><span>{study.after}</span></span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))}
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+  // A frame sixteen squares wide (twelve on a phone), its page drawn down to fit exactly.
+  onSquares(({ unit, across }) => {
+    const wide = across >= 20 ? 16 : 12;
+    const high = across >= 20 ? 10 : 8;
+    const root = document.documentElement;
+    root.style.setProperty('--thumb-w', String(wide));
+    root.style.setProperty('--thumb-h', String(high));
+    root.style.setProperty('--thumb-scale', String((wide * unit) / 1440));
+    root.style.setProperty('--frame-h', `${(1440 * high) / wide}px`);
+  });
+
+  // One section at a time: the address names it, and its frames are given their pages only when it opens.
+  const sections = [...document.querySelectorAll<HTMLElement>('.section')];
+  const tabs = [...document.querySelectorAll<HTMLAnchorElement>('.sections a')];
+  function open() {
+    const key = decodeURIComponent(location.hash.slice(1));
+    const current = sections.find(section => section.dataset.section === key) ?? sections[0];
+    for (const section of sections) section.hidden = section !== current;
+    for (const tab of tabs) {
+      if (tab.dataset.section === current.dataset.section) tab.setAttribute('aria-current', 'page');
+      else tab.removeAttribute('aria-current');
+    }
+    current.querySelectorAll<HTMLIFrameElement>('iframe[data-src]').forEach(frame => {
+      frame.src = frame.dataset.src!;
+      frame.removeAttribute('data-src');
+    });
+  }
+  window.addEventListener('hashchange', open);
+  open();
+</script>
+
+<style is:global>
+  html { background: #000; color: #f2f2ee; }
+  .sheet { --thumb-w: 16; --thumb-h: 10; padding: calc(2 * var(--u)) calc(2 * var(--u)) calc(3 * var(--u)); font-family: var(--typeface-regular); font-size: calc(14px * var(--sf)); line-height: var(--u); }
+
+  .masthead { display: grid; grid-template-columns: repeat(auto-fill, calc(16 * var(--u) + var(--u))); margin-bottom: var(--u); }
+  .masthead h1 { grid-column: 1 / -1; margin: 0 0 var(--u); font: calc(96px * var(--sf)) / calc(5 * var(--u)) var(--typeface-compressed); letter-spacing: -0.01em; }
+  .masthead p { grid-column: span 2; margin: 0 0 var(--u); max-width: calc(33 * var(--u)); color: #cfcfc8; }
+  .masthead .keys { grid-column: span 1; color: #8d8d86; font-size: calc(12px * var(--sf)); }
+
+  /* The sections as a row of words, one square high, the open one underlined. */
+  .sections { display: flex; flex-wrap: wrap; column-gap: calc(2 * var(--u)); margin-bottom: calc(2 * var(--u)); border-top: 1px solid #2c2c29; padding-top: calc(var(--u) - 1px); }
+  .sections a { color: #a3a39c; text-decoration: none; white-space: nowrap; line-height: var(--u); }
+  .sections a span { color: #5f5f59; font-family: var(--typeface-mono); font-size: calc(12px * var(--sf)); }
+  .sections a:hover { color: #f2f2ee; }
+  .sections a[aria-current='page'] { color: #f2f2ee; text-decoration: underline; text-underline-offset: calc(4px * var(--sf)); }
+  .sections a:focus-visible { outline: 1px solid #f2f2ee; outline-offset: calc(2px * var(--sf)); }
+
+  .section h2 { margin: 0; font: normal calc(40px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); }
+  .section .about { margin: 0 0 var(--u); color: #8d8d86; }
+
+  .frames { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, calc(var(--thumb-w) * var(--u))); gap: var(--u); }
+  .frames li { margin: 0; }
+  .frames a { display: block; color: inherit; text-decoration: none; }
+  .thumb { position: relative; display: block; width: calc(var(--thumb-w) * var(--u)); height: calc(var(--thumb-h) * var(--u)); overflow: hidden; background: #1a1a18; outline: 1px solid #2c2c29; outline-offset: -1px; }
+  .thumb iframe { position: absolute; top: 0; left: 0; width: 1440px; height: var(--frame-h, 900px); border: 0; transform-origin: 0 0; transform: scale(var(--thumb-scale, 0.2222)); pointer-events: none; }
+  .frames a:hover .thumb, .frames a:focus-visible .thumb { outline: 2px solid #f2f2ee; outline-offset: -2px; }
+  .frames a:focus-visible { outline: none; }
+  .caption { display: block; height: calc(3 * var(--u)); overflow: hidden; }
+  .caption b { display: block; font-family: var(--typeface-medium); font-weight: normal; height: var(--u); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .caption b i { font-style: normal; font-family: var(--typeface-mono); font-size: calc(12px * var(--sf)); color: #8d8d86; display: inline-block; width: calc(2 * var(--u)); }
+  .caption > span { display: block; color: #a3a39c; font-size: calc(12px * var(--sf)); line-height: calc(16px * var(--sf)); padding-left: calc(2 * var(--u)); max-height: calc(32px * var(--sf)); overflow: hidden; }
+
+  :root[data-narrow] .sheet { padding-inline: var(--u); }
+  :root[data-narrow] .masthead { display: block; }
+  :root[data-narrow] .masthead h1 { font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .sections { column-gap: var(--u); }
+</style>
