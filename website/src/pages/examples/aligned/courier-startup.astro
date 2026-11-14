@@ -1,0 +1,382 @@
+---
+// After a startup's landing page, played straight: the announcement pill, the two-line promise,
+// the live product card, the row of client logos, the stats band, three steps, three pricing
+// tiers, the questions. The service is same-day delivery by homing pigeon, and the brand colour is
+// the pink of a pigeon's feet. The page scrolls, every section a whole number of squares tall; on
+// load, Gerald flies the first two thirds of his route on the tracking map.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const clients = [
+  { name: 'Brimble & Sons', face: 'Baskerville, serif', style: 'font-style: italic' },
+  { name: 'Dovecote Bank', face: 'Copperplate, serif', style: 'letter-spacing: .06em' },
+  { name: 'The Daily Crumb', face: '"Big Caslon", Didot, serif', style: '' },
+  { name: 'St Aldric’s', face: '"Gill Sans", sans-serif', style: 'font-weight: 600' },
+  { name: 'northgate', face: 'Futura, sans-serif', style: 'font-weight: 700; letter-spacing: -.02em' },
+  { name: 'Kettleworth Legal', face: 'Optima, sans-serif', style: '' },
+];
+const tiers = [
+  { name: 'Squab', price: 'Free', per: 'for small offices and the curious', points: ['3 flights a month', '1 loft, near you', 'Letters up to 20 g', 'Daylight flights only'], cta: 'Start free' },
+  { name: 'Homer', price: '£39', per: 'a month, billed yearly', points: ['60 flights a month', '5 lofts across the city', 'Parcels up to 75 g', 'Live tracking by sighting', 'Priority seed'], cta: 'Book a pigeon', popular: true },
+  { name: 'Flock', price: 'Custom', per: 'for hospitals, banks and law firms', points: ['Unlimited flights', 'A dedicated loft on your roof', '99.5% on time, weather permitting', 'A pigeon named after your CEO'], cta: 'Talk to sales' },
+];
+const faqs = [
+  { q: 'What happens if it rains?', a: 'Pigeons fly in rain; paper does not enjoy it. Every capsule comes in a waxed sleeve, and in a storm your pigeon will wait it out on a statue and finish the trip when it clears.' },
+  { q: 'Can a pigeon carry a laptop?', a: 'No. A key, a USB stick, a signed contract folded small, a ring. Proposals are our fastest-growing add-on.' },
+  { q: 'How does the pigeon know where to go?', a: 'It doesn’t need to. Each pigeon is raised in the recipient’s loft, so it always flies home. We drive it to you; it does the rest.' },
+  { q: 'Is it secure?', a: 'Capsules are sealed and tamper-evident, and the pigeon cannot read. Flock plans add a second, decoy pigeon on sensitive routes.' },
+  { q: 'Do you use drones?', a: 'No. A drone cannot land on a ledge, wait out a hailstorm and come home on its own. Ours do this daily.' },
+];
+---
+<AlignedStudy slug="courier-startup" theme="light" scroll>
+  <main class="stage homer" id="homer">
+    <nav class="hm-nav" aria-label="Homer">
+      <a class="hm-logo" href="#homer"><svg viewBox="0 0 2 2" aria-hidden="true"><circle cx="1" cy="1" r="1" fill="#ff5c8d" /><path d="M .45 1.2 C .6 .7 1.1 .55 1.45 .8 L 1.7 .75 L 1.5 .95 C 1.5 1.3 1.1 1.5 .45 1.2 Z" fill="#252a36" /></svg>homer</a>
+      <ul>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">Questions</a></li>
+      </ul>
+      <a class="hm-signin" href="#pricing">Sign in</a>
+      <a class="hm-btn" href="#pricing">Book a pigeon</a>
+    </nav>
+
+    <section class="hm-hero">
+      <p class="hm-pill"><b>New</b> Night flights, with owls on the late shift</p>
+      <h1>Same-day<br />delivery,<br />by pigeon.</h1>
+      <p class="hm-lede">Homer moves keys, documents and small parcels across the city by trained homing pigeon. No traffic, no vans, no emissions beyond the occasional feather.</p>
+      <div class="hm-ctas">
+        <a class="hm-btn big" href="#pricing">Book a pigeon</a>
+        <a class="hm-btn ghost big" href="#faq">Talk to sales</a>
+      </div>
+      <p class="hm-proof"><span class="hm-stars" aria-hidden="true">★★★★★</span> 4.8 from 2,300 businesses. Cancel any time; the pigeon will understand.</p>
+
+      <figure class="hm-card" aria-label="Live tracking: flight HM-2071, Gerald, eleven minutes from Canary Wharf">
+        <div class="hm-card-top">
+          <span class="hm-live"><i></i>In the air</span>
+          <span>Flight HM-2071</span>
+        </div>
+        <svg class="hm-map" id="map" viewBox="0 0 28 12" aria-hidden="true">
+          <rect width="28" height="12" fill="#f3f4f8" />
+          <path d="M -1 8.6 C 4 7.4 7 10.2 11 9.4 S 17 6.2 20 7.6 S 25 10.4 29 9" fill="none" stroke="#cfe0ee" stroke-width="1.1" />
+          <g stroke="#e2e4eb" stroke-width="0.14" fill="none">
+            <path d="M0 2 H28 M0 5 H28 M3 0 V12 M8 0 V12 M14 0 V12 M19 0 V12 M24 0 V12 M0 11 L9 0 M12 12 L27 0" />
+          </g>
+          <path id="route" d="M 4 3 C 9 0.6 15 1.2 18 4.6 S 22 9.6 24.2 9.4" fill="none" stroke="#ff5c8d" stroke-width="0.16" stroke-dasharray="0.35 0.3" />
+          <circle cx="4" cy="3" r="0.35" fill="#252a36" />
+          <circle cx="24.2" cy="9.4" r="0.45" fill="none" stroke="#252a36" stroke-width="0.14" />
+          <circle cx="24.2" cy="9.4" r="0.16" fill="#252a36" />
+          <text x="4" y="4.4" class="hm-place">Clerkenwell</text>
+          <text x="24.2" y="11" class="hm-place" text-anchor="middle">Canary Wharf</text>
+          <g id="gerald">
+            <circle r="1.3" fill="#ff5c8d" opacity=".2" />
+            <g transform="scale(0.17) translate(-8 -6)">
+              <path d="M2 8 C3 4 7 3 10 4 L13 2.5 C14.5 2 15.5 3 15 4 L13.6 4.6 C14 7 12 10 7 10 L3 10.6 Z" fill="#8f96a6" />
+              <path d="M11.4 3.2 C12.6 3 13.6 3.6 13.6 4.6 C12.6 5.4 11.4 5.2 10.6 4.6 Z" fill="url(#neck)" />
+              <path d="M4 6.6 C6 5.6 9 5.6 10.4 7.4 C8 8.8 5.6 8.6 4 6.6 Z" fill="#6f7686" />
+              <path d="M5.4 7 L8.8 7.2 M5.8 7.8 L8.6 7.9" stroke="#252a36" stroke-width="0.5" />
+              <path d="M15 3.6 L16.4 3.9 L15 4.3 Z" fill="#252a36" />
+              <circle cx="13.9" cy="3.3" r="0.35" fill="#ff8a3d" />
+              <path d="M7 10 L6.4 11.6 M8.4 10 L8.6 11.6" stroke="#ff5c8d" stroke-width="0.6" stroke-linecap="round" />
+            </g>
+          </g>
+          <defs>
+            <linearGradient id="neck" x1="0" x2="1"><stop offset="0" stop-color="#2fbf8f" /><stop offset="1" stop-color="#9a4fd0" /></linearGradient>
+          </defs>
+        </svg>
+        <dl class="hm-facts">
+          <div><dt>Pigeon</dt><dd>Gerald, 3 years, 412 flights</dd></div>
+          <div><dt>Arriving in</dt><dd><b>11 min</b></dd></div>
+          <div><dt>Carrying</dt><dd>1 key, 1 USB stick (sealed)</dd></div>
+          <div><dt>Altitude</dt><dd>60 m, steady</dd></div>
+        </dl>
+      </figure>
+    </section>
+
+    <section class="hm-logos" aria-label="Clients">
+      <p>Trusted by teams who have had enough of couriers</p>
+      <ul>
+        {clients.map(c => <li style={`font-family: ${c.face}; ${c.style}`}>{c.name}</li>)}
+      </ul>
+    </section>
+
+    <section class="hm-stats">
+      <div><b>97.3%</b><span>land on the right roof</span></div>
+      <div><b>14 min</b><span>average flight inside zone 1</span></div>
+      <div><b>0</b><span>parking tickets, ever</span></div>
+      <div><b>1,200</b><span>pigeons on the payroll</span></div>
+    </section>
+
+    <section class="hm-how" id="how">
+      <h2>How it works</h2>
+      <p class="hm-how-lede">Homing pigeons only ever fly one way: home. So we built the network backwards.</p>
+      <ol>
+        <li><b>Book in the app</b><span>Tell us who it’s for. We pick a pigeon raised in a loft near them.</span></li>
+        <li><b>We bring the pigeon to you</b><span>A loft keeper arrives within the hour with the bird and a sealed capsule.</span></li>
+        <li><b>It flies home</b><span>Straight to the recipient’s loft, at about 80 km/h. You watch it on the map.</span></li>
+      </ol>
+    </section>
+
+    <section class="hm-pricing" id="pricing">
+      <h2>Simple pricing. No hidden seed.</h2>
+      {tiers.map((t, i) => (
+        <article class={`hm-tier t${i + 1}${t.popular ? ' popular' : ''}`}>
+          {t.popular && <p class="hm-tag">Most popular</p>}
+          <h3>{t.name}</h3>
+          <p class="hm-price">{t.price}</p>
+          <p class="hm-per">{t.per}</p>
+          <ul>{t.points.map(p => <li>{p}</li>)}</ul>
+          <a class={`hm-btn${t.popular ? '' : ' ghost'}`} href="#homer">{t.cta}</a>
+        </article>
+      ))}
+    </section>
+
+    <section class="hm-faq" id="faq">
+      <h2>Questions, answered</h2>
+      <p class="hm-faq-aside">Anything else? Write to the loft at coo@homer.example and a person will answer. Not a pigeon.</p>
+      <div class="hm-qs">
+        {faqs.map((f, i) => (
+          <details name="hm-faq" open={i === 0}>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <section class="hm-end">
+      <h2>Your next delivery could be a bird.</h2>
+      <a class="hm-btn dark big" href="#homer">Book a pigeon</a>
+    </section>
+
+    <footer class="hm-foot">
+      <span>© 2026 Homer Logistics Ltd. Registered loft no. 4471.</span>
+      <span>Careers, mostly in pigeon handling</span>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const root = document.documentElement;
+  onSquares(({ across, narrow }) => {
+    // A column of sixty squares in the middle when the window allows; otherwise a single stack.
+    const stack = narrow || across < 64;
+    root.classList.toggle('hm-stack', stack);
+    const a = Math.floor((across - 60) / 2) + 1;
+    root.style.setProperty('--hm-a', String(a));
+    root.style.setProperty('--hm-b', String(a + 32));
+    root.style.setProperty('--hm-p2', String(a + 21));
+    root.style.setProperty('--hm-p3', String(a + 42));
+    root.style.setProperty('--hm-f', String(a + 20));
+    root.style.setProperty('--hm-s2', String(a + 15));
+    root.style.setProperty('--hm-s3', String(a + 30));
+    root.style.setProperty('--hm-s4', String(a + 45));
+  });
+
+  // Gerald flies the first two thirds of the route, then keeps station there, bobbing a little.
+  const route = document.getElementById('route') as unknown as SVGPathElement;
+  const gerald = document.getElementById('gerald') as unknown as SVGGElement;
+  const length = route.getTotalLength();
+  const AT = 0.64;
+  const place = (f: number, bob = 0) => {
+    const p = route.getPointAtLength(length * f);
+    const q = route.getPointAtLength(Math.min(length, length * f + 0.2));
+    const flip = q.x < p.x ? -1 : 1;
+    gerald.setAttribute('transform', `translate(${p.x} ${p.y + bob}) scale(${flip} 1)`);
+  };
+  if (reducedMotion()) place(AT);
+  else {
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / 3200);
+      const eased = 1 - Math.pow(1 - t, 3);
+      place(AT * eased, t === 1 ? Math.sin(now / 420) * 0.08 : 0);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+</script>
+
+<style is:global>
+  html { background: #ffffff; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  .homer {
+    --pink: #ff5c8d;
+    --pink-soft: #ffe3ec;
+    --slate: #252a36;
+    --grey: #eceef3;
+    --mid: #6b7183;
+    background: #fff;
+    color: var(--slate);
+    font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+  }
+  /* The page scrolls: rows of one square, as many as the sections take. */
+  :root:not([data-narrow]) .homer.stage { grid-template-rows: none; grid-auto-rows: var(--u); height: auto; overflow: visible; }
+  .homer > section, .homer > nav, .homer > footer { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; grid-auto-rows: var(--u); align-content: start; }
+  .homer a { color: inherit; }
+  .homer :focus-visible { outline: 2px solid var(--slate); outline-offset: 2px; }
+
+  .hm-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: calc(2 * var(--u)); padding: 0 var(--u);
+    border-radius: var(--u);
+    background: var(--pink); color: var(--slate) !important;
+    font-weight: 700; text-decoration: none; white-space: nowrap;
+    box-sizing: border-box;
+  }
+  .hm-btn:hover { background: #ff477e; }
+  .hm-btn.ghost { background: transparent; box-shadow: inset 0 0 0 2px var(--slate); }
+  .hm-btn.ghost:hover { background: var(--grey); }
+  .hm-btn.dark { background: var(--slate); color: #fff !important; }
+  .hm-btn.big { height: calc(3 * var(--u)); padding: 0 calc(1.5 * var(--u)); border-radius: calc(1.5 * var(--u)); font-size: calc(17px * var(--sf)); }
+
+  /* Nav. */
+  .hm-nav { grid-row: span 4; }
+  .hm-nav > * { grid-row: 2 / span 2; align-self: center; }
+  .hm-logo { grid-column: var(--hm-a) / span 8; display: flex; align-items: center; gap: calc(var(--u) / 2); font-weight: 800; font-size: calc(26px * var(--sf)); letter-spacing: -.04em; text-decoration: none; }
+  .hm-logo svg { width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  .hm-nav ul { grid-column: var(--hm-p2) / span 22; display: flex; gap: calc(2 * var(--u)); margin: 0; padding: 0; list-style: none; }
+  .hm-nav ul a, .hm-signin { text-decoration: none; font-weight: 500; }
+  .hm-nav ul a:hover, .hm-signin:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .hm-signin { grid-column: var(--hm-p3) / span 6; text-align: right; }
+  .hm-nav .hm-btn { grid-column: var(--hm-p3) / span 18; justify-self: end; }
+
+  /* Hero. */
+  .hm-hero { grid-row: span 30; }
+  .hm-hero > :not(.hm-card) { grid-column: var(--hm-a) / span 30; }
+  .hm-pill { grid-row: 3 / span 2; justify-self: start; align-self: center; margin: 0; padding: 0 var(--u) 0 calc(var(--u) / 4); height: calc(1.5 * var(--u)); display: flex; align-items: center; gap: calc(var(--u) / 2); border-radius: var(--u); background: var(--pink-soft); font-size: calc(14px * var(--sf)); }
+  .hm-pill b { background: var(--pink); border-radius: var(--u); padding: 0 calc(var(--u) / 2); font-size: calc(12px * var(--sf)); line-height: var(--u); }
+  .hm-hero h1 { grid-row: 6 / span 12; margin: 0; font-weight: 800; font-size: calc(76px * var(--sf)); line-height: calc(4 * var(--u)); letter-spacing: -.045em; }
+  .hm-lede { grid-row: 19 / span 5; margin: 0; font-size: calc(20px * var(--sf)); line-height: calc(1.5 * var(--u)); color: var(--mid); max-width: 30em; }
+  .hm-ctas { grid-row: 24 / span 3; display: flex; gap: var(--u); align-items: start; }
+  .hm-proof { grid-row: 28; margin: 0; font-size: calc(14px * var(--sf)); color: var(--mid); }
+  .hm-stars { color: var(--pink); letter-spacing: .1em; margin-right: calc(var(--u) / 4); }
+
+  .hm-card {
+    grid-column: var(--hm-b) / span 28;
+    grid-row: 5 / span 21;
+    margin: 0;
+    display: grid;
+    grid-template-rows: calc(2 * var(--u)) calc(12 * var(--u)) 1fr;
+    background: #fff;
+    border-radius: var(--u);
+    box-shadow: 0 0 0 1px #e1e3ea, 0 var(--u) calc(2 * var(--u)) rgba(37,42,54,.12);
+    overflow: hidden;
+    rotate: 1.5deg;
+  }
+  .hm-card-top { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--u); font-size: calc(14px * var(--sf)); color: var(--mid); }
+  .hm-live { display: flex; align-items: center; gap: calc(var(--u) / 3); color: var(--slate); font-weight: 600; }
+  .hm-live i { width: calc(var(--u) / 2.5); height: calc(var(--u) / 2.5); border-radius: 50%; background: var(--pink); box-shadow: 0 0 0 4px var(--pink-soft); }
+  .hm-map { width: 100%; height: 100%; display: block; }
+  .hm-place { font-size: 0.55px; fill: var(--mid); font-family: "Avenir Next", sans-serif; }
+  .hm-facts { margin: 0; padding: var(--u); display: grid; grid-template-columns: 1fr 1fr; row-gap: var(--u); column-gap: var(--u); align-content: start; }
+  .hm-facts div { display: grid; }
+  .hm-facts dt { font-size: calc(12px * var(--sf)); color: var(--mid); }
+  .hm-facts dd { margin: 0; font-weight: 500; }
+  .hm-facts dd b { font-size: calc(26px * var(--sf)); line-height: calc(1.5 * var(--u)); font-weight: 800; letter-spacing: -.03em; }
+
+  /* Logos. */
+  .hm-logos { grid-row: span 7; background: var(--grey); }
+  .hm-logos p { grid-column: var(--hm-a) / span 60; grid-row: 2; margin: 0; text-align: center; color: var(--mid); font-size: calc(14px * var(--sf)); }
+  .hm-logos ul { grid-column: var(--hm-a) / span 60; grid-row: 4 / span 2; margin: 0; padding: 0; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  .hm-logos li { font-size: calc(22px * var(--sf)); color: #8a8f9e; white-space: nowrap; }
+
+  /* Stats. */
+  .hm-stats { grid-row: span 8; }
+  .hm-stats div { grid-row: 3 / span 4; display: grid; grid-template-rows: calc(3 * var(--u)) var(--u); border-left: 2px solid var(--pink); padding-left: var(--u); }
+  .hm-stats div:nth-child(1) { grid-column: var(--hm-a) / span 14; }
+  .hm-stats div:nth-child(2) { grid-column: var(--hm-s2) / span 14; }
+  .hm-stats div:nth-child(3) { grid-column: var(--hm-s3) / span 14; }
+  .hm-stats div:nth-child(4) { grid-column: var(--hm-s4) / span 15; }
+  .hm-stats b { font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); font-weight: 800; letter-spacing: -.04em; }
+  .hm-stats span { color: var(--mid); }
+
+  /* How it works. */
+  .hm-how { grid-row: span 15; background: var(--slate); color: #fff; }
+  .hm-how h2, .hm-pricing h2, .hm-faq h2, .hm-end h2 { margin: 0; font-weight: 800; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -.035em; }
+  .hm-how h2 { grid-column: var(--hm-a) / span 30; grid-row: 3 / span 2; }
+  .hm-how-lede { grid-column: var(--hm-b) / span 28; grid-row: 3 / span 2; margin: 0; align-self: center; color: #b9bfcf; font-size: calc(18px * var(--sf)); }
+  .hm-how ol { grid-column: var(--hm-a) / span 60; grid-row: 7 / span 6; margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, calc(18 * var(--u))); column-gap: calc(3 * var(--u)); counter-reset: hm; }
+  .hm-how li { counter-increment: hm; display: grid; grid-template-rows: calc(3 * var(--u)) var(--u) auto; }
+  .hm-how li::before { content: counter(hm); width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; background: var(--pink); color: var(--slate); font-weight: 800; display: grid; place-items: center; }
+  .hm-how li b { font-size: calc(18px * var(--sf)); }
+  .hm-how li span { color: #b9bfcf; }
+
+  /* Pricing. */
+  .hm-pricing { grid-row: span 26; }
+  .hm-pricing h2 { grid-column: var(--hm-a) / span 60; grid-row: 3 / span 2; text-align: center; }
+  .hm-tier {
+    grid-row: 7 / span 18;
+    display: grid;
+    grid-template-rows: var(--u) calc(2 * var(--u)) calc(3 * var(--u)) var(--u) var(--u) 1fr calc(2 * var(--u));
+    padding: var(--u);
+    border-radius: var(--u);
+    box-shadow: inset 0 0 0 1px #dfe2e9;
+    position: relative;
+  }
+  .hm-tier.t1 { grid-column: var(--hm-a) / span 18; }
+  .hm-tier.t2 { grid-column: var(--hm-p2) / span 18; }
+  .hm-tier.t3 { grid-column: var(--hm-p3) / span 18; }
+  .hm-tier.popular { background: var(--pink-soft); box-shadow: inset 0 0 0 3px var(--pink); }
+  .hm-tag { position: absolute; top: calc(var(--u) / -2); left: var(--u); margin: 0; height: var(--u); padding: 0 calc(var(--u) / 2); border-radius: var(--u); background: var(--pink); font-size: calc(12px * var(--sf)); font-weight: 700; }
+  .hm-tier h3 { grid-row: 2; margin: 0; font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; }
+  .hm-price { grid-row: 3; margin: 0; font-size: calc(52px * var(--sf)); line-height: calc(3 * var(--u)); font-weight: 800; letter-spacing: -.04em; }
+  .hm-per { grid-row: 4; margin: 0; color: var(--mid); font-size: calc(14px * var(--sf)); }
+  .hm-tier ul { grid-row: 6; margin: 0; padding: 0; list-style: none; }
+  .hm-tier li { padding-left: calc(1.5 * var(--u)); position: relative; }
+  .hm-tier li::before { content: ''; position: absolute; left: 0; top: calc(var(--u) * .3); width: calc(var(--u) * .7); height: calc(var(--u) * .4); border-left: 2px solid var(--slate); border-bottom: 2px solid var(--slate); transform: rotate(-45deg); transform-origin: 30% 60%; }
+  .hm-tier .hm-btn { grid-row: 7; }
+
+  /* Questions. */
+  .hm-faq { grid-row: span 19; background: var(--grey); }
+  .hm-faq h2 { grid-column: var(--hm-a) / span 17; grid-row: 3 / span 4; }
+  .hm-faq-aside { grid-column: var(--hm-a) / span 15; grid-row: 8 / span 4; margin: 0; color: var(--mid); }
+  .hm-qs { grid-column: var(--hm-f) / span 40; grid-row: 3 / span 15; }
+  .hm-qs details { border-top: 1px solid #cfd3dd; }
+  .hm-qs summary { height: calc(2 * var(--u)); display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-weight: 600; font-size: calc(18px * var(--sf)); list-style: none; }
+  .hm-qs summary::-webkit-details-marker { display: none; }
+  .hm-qs summary::after { content: '+'; font-weight: 400; font-size: calc(24px * var(--sf)); transition: rotate .2s; }
+  .hm-qs details[open] summary::after { rotate: 45deg; }
+  .hm-qs details p { margin: 0 0 var(--u); color: var(--mid); max-width: 34em; }
+
+  /* The end. */
+  .hm-end { grid-row: span 11; background: var(--pink); }
+  .hm-end h2 { grid-column: var(--hm-a) / span 60; grid-row: 3 / span 3; text-align: center; font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); }
+  .hm-end .hm-btn { grid-column: var(--hm-a) / span 60; grid-row: 7 / span 3; justify-self: center; }
+  .hm-foot { grid-row: span 5; color: var(--mid); font-size: calc(13px * var(--sf)); }
+  .hm-foot span { grid-row: 2; }
+  .hm-foot span:first-child { grid-column: var(--hm-a) / span 30; }
+  .hm-foot span:last-child { grid-column: var(--hm-b) / span 16; }
+
+  /* A narrow window: one stack. */
+  :root.hm-stack .homer.stage { grid-template-rows: none; grid-auto-rows: minmax(var(--u), auto); height: auto; overflow: visible; }
+  :root.hm-stack .homer > section, :root.hm-stack .homer > nav, :root.hm-stack .homer > footer { display: flex; flex-direction: column; align-items: flex-start; grid-row: auto; padding: var(--u) var(--u) calc(2 * var(--u)); gap: var(--u); box-sizing: border-box; width: 100%; grid-auto-rows: auto; }
+  :root.hm-stack .homer > * > * { grid-column: auto; grid-row: auto; }
+  :root.hm-stack .hm-nav { flex-direction: row !important; flex-wrap: wrap; align-items: center !important; padding-bottom: var(--u) !important; }
+  :root.hm-stack .hm-nav ul, :root.hm-stack .hm-signin { display: none; }
+  :root.hm-stack .hm-nav .hm-btn { margin-left: auto; }
+  :root.hm-stack .hm-hero h1 { font-size: calc(44px * var(--sf)); line-height: calc(2.5 * var(--u)); }
+  :root.hm-stack .hm-pill { height: auto; padding-block: 0; }
+  :root.hm-stack .hm-ctas { flex-wrap: wrap; }
+  :root.hm-stack .hm-card { width: 100%; rotate: 0deg; grid-template-rows: calc(2 * var(--u)) auto auto; }
+  :root.hm-stack .hm-map { height: auto; aspect-ratio: 28 / 12; }
+  :root.hm-stack .hm-facts { grid-template-columns: 1fr; }
+  :root.hm-stack .hm-logos ul { flex-wrap: wrap; gap: var(--u) calc(2 * var(--u)); justify-content: flex-start; }
+  :root.hm-stack .hm-logos p { text-align: left; }
+  :root.hm-stack .hm-stats { display: grid !important; grid-template-columns: 1fr 1fr; }
+  :root.hm-stack .hm-stats b { font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); white-space: nowrap; }
+  :root.hm-stack .hm-stats div { grid-template-rows: calc(2 * var(--u)) auto; }
+  :root.hm-stack .hm-qs summary { height: auto; min-height: calc(2 * var(--u)); gap: var(--u); padding-block: calc(var(--u) / 2); }
+  :root.hm-stack .hm-how ol { display: flex; flex-direction: column; gap: var(--u); }
+  :root.hm-stack .hm-how li { grid-template-rows: calc(2.5 * var(--u)) auto auto; }
+  :root.hm-stack .hm-pricing h2 { text-align: left; }
+  :root.hm-stack .hm-tier { width: 100%; box-sizing: border-box; grid-template-rows: var(--u) calc(2 * var(--u)) calc(3 * var(--u)) auto var(--u) auto calc(3 * var(--u)); }
+  :root.hm-stack .hm-tier .hm-btn { align-self: end; }
+  :root.hm-stack .hm-qs { width: 100%; }
+  :root.hm-stack .hm-end { align-items: center !important; text-align: center; }
+  :root.hm-stack .hm-end h2 { font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root.hm-stack .hm-foot { padding-bottom: calc(3 * var(--u)) !important; }
+</style>

@@ -1,0 +1,332 @@
+---
+// After a self-assessment tax return: pale green tints, numbered boxes and comb fields where every
+// character has a square of its own, so the form's combs are the window's grid. This one has been
+// filled in, in a large and confident hand, by a dragon: the hoard valued by weight, the cave
+// claimed as a home office, the amount due struck through and something else offered instead.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+/** A word in a comb, one character a square, padded on the right. */
+const letters = (word: string, n: number) => [...word.padEnd(n, ' ')].slice(0, n);
+/** A sum of money in a comb: nine boxes of pounds, right aligned, and two of pence. */
+const pounds = (amount: string) => {
+  const [whole, pence = '00'] = amount.split('.');
+  return { whole: [...whole.padStart(9, ' ')], pence: [...pence] };
+};
+/** A slight tilt for each hand-written character, the same on every load. */
+const tilt = (i: number, seed = 0) => `--t: ${(((i * 37 + seed * 11) % 9) - 4) * 0.8}deg; --y: ${(((i * 53 + seed * 7) % 5) - 2) * 0.6}px`;
+
+const hoard = [
+  { box: 9, label: 'Coin, of mixed realms', amount: '184260000', note: 'by weight, 4.2 tonnes, sat on' },
+  { box: 10, label: 'Gems, cut and uncut', amount: '41750000', note: 'sorted by colour, then by mood' },
+  { box: 11, label: 'Crowns and regalia', amount: '2400000', note: '3 crowns (one slightly bitten)' },
+  { box: 12, label: 'Chalices and goblets', amount: '618000', note: '41, less the dented one' },
+  { box: 13, label: 'Armour, previous owners’', amount: '3150', note: 'scrap value only' },
+];
+const expenses = [
+  { box: 17, label: 'Repairs to cave after knights', amount: '12400', note: 'new rockfall at the door' },
+  { box: 18, label: 'Disposal of armour', amount: '450', note: '3 suits, taken to the tip' },
+  { box: 19, label: 'Fire insurance premium', amount: '0', note: 'declined by 14 insurers' },
+];
+---
+<AlignedStudy slug="tax-return" theme="light">
+  <main class="stage taxr">
+    <header class="tx-head">
+      <p class="tx-office"><span class="tx-crest" aria-hidden="true"></span>Revenue Office of the Northern Marches</p>
+      <h1>Tax return <span>for hoarders and other keepers of treasure</span></h1>
+    </header>
+    <div class="tx-meta">
+      <div class="tx-meta-row"><span>Tax year</span><b>6 April 2025 to 5 April 2026</b></div>
+      <div class="tx-meta-row"><span>Unique taxpayer reference</span>
+        <span class="tx-comb" style="--n: 10">{letters('4117093328', 10).map((c, i) => <i class="hand" style={tilt(i, 1)}>{c}</i>)}</span>
+      </div>
+      <p class="tx-ink">Write in black ink, not fire.</p>
+    </div>
+
+    <div class="tx-cols">
+      <section class="tx-col">
+        <h2><b>1</b>Your details</h2>
+        <div class="tx-item"><span class="n">1</span><span class="l">First name</span><span class="tx-comb" style="--n: 12">{letters('MORWENNA', 12).map((c, i) => <i class="hand" style={tilt(i, 2)}>{c}</i>)}</span></div>
+        <div class="tx-item"><span class="n">2</span><span class="l">Surname</span><span class="tx-comb" style="--n: 12">{letters('CINDERHOARD', 12).map((c, i) => <i class="hand" style={tilt(i, 3)}>{c}</i>)}</span></div>
+        <div class="tx-item lined"><span class="n">3</span><span class="l">Address</span><p class="tx-lines" style="--lines: 3"><span class="hand">The Cave, under Gallows Fell<br />Harrowdale, the Northern Marches<br />(the large hole, past the bones)</span></p></div>
+        <div class="tx-item"><span class="n">4</span><span class="l">Date of hatching</span><span class="tx-comb date" style="--n: 8">{letters('01110412', 8).map((c, i) => <i class="hand" style={tilt(i, 4)}>{c}</i>)}</span></div>
+        <div class="tx-item lined"><span class="n">5</span><span class="l">Daytime telephone</span><p class="tx-lines" style="--lines: 2"><span class="hand">None. Shout into the mouth of the cave and wait.</span></p></div>
+        <h2><b>2</b>Employment</h2>
+        <div class="tx-item lined"><span class="n">6</span><span class="l">Occupation</span><p class="tx-lines" style="--lines: 1"><span class="hand">Hoarding, self-employed</span></p></div>
+        <div class="tx-item lined"><span class="n">7</span><span class="l">Employer’s name</span><p class="tx-lines" style="--lines: 2"><span class="hand">Myself. Also, under protest, the village of Little Ashby.</span></p></div>
+        <div class="tx-item lined"><span class="n">8</span><span class="l">Benefits in kind</span><p class="tx-lines" style="--lines: 2"><span class="hand">312 sheep, 4 goats, a bicycle (inedible)</span></p></div>
+      </section>
+
+      <section class="tx-col">
+        <h2><b>3</b>The hoard, at valuation</h2>
+        {hoard.map((h, k) => { const p = pounds(h.amount); return (
+          <div class="tx-item money"><span class="n">{h.box}</span><span class="l">{h.label}</span>
+            <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{p.whole.map((c, i) => <i class="hand" style={tilt(i, k + 5)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2">{p.pence.map((c, i) => <i class="hand" style={tilt(i, k)}>{c}</i>)}</span></span>
+            <span class="tx-note hand">{h.note}</span>
+          </div>
+        ); })}
+        <div class="tx-item money total"><span class="n">14</span><span class="l"><b>Total value of hoard</b></span>
+          <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{pounds('229031150').whole.map((c, i) => <i class="hand" style={tilt(i, 9)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2"><i class="hand">0</i><i class="hand">0</i></span></span>
+        </div>
+        <h2><b>4</b>Use of home as office</h2>
+        <div class="tx-item lined"><span class="n">15</span><span class="l">Share of home used for business</span><p class="tx-lines" style="--lines: 1"><span class="hand">All of it. I sleep on the business.</span></p></div>
+        <div class="tx-item money"><span class="n">16</span><span class="l">Heating and lighting</span>
+          <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{pounds('0').whole.map((c, i) => <i class="hand" style={tilt(i, 2)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2"><i class="hand">0</i><i class="hand">0</i></span></span>
+          <span class="tx-note hand">self-heating</span>
+        </div>
+      </section>
+
+      <section class="tx-col">
+        <h2><b>5</b>Allowable expenses</h2>
+        {expenses.map((h, k) => { const p = pounds(h.amount); return (
+          <div class="tx-item money"><span class="n">{h.box}</span><span class="l">{h.label}</span>
+            <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{p.whole.map((c, i) => <i class="hand" style={tilt(i, k + 3)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2"><i class="hand">0</i><i class="hand">0</i></span></span>
+            <span class="tx-note hand">{h.note}</span>
+          </div>
+        ); })}
+        <h2><b>6</b>Tax calculation</h2>
+        <div class="tx-item money"><span class="n">20</span><span class="l">Tax due, box 14 less expenses, at 40%</span>
+          <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{pounds('91607320').whole.map((c, i) => <i class="hand" style={tilt(i, 6)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2"><i class="hand">0</i><i class="hand">0</i></span></span>
+        </div>
+        <div class="tx-item money struck"><span class="n">21</span><span class="l"><b>Amount you will pay</b></span>
+          <span class="tx-money"><span class="pound">£</span><span class="tx-comb" style="--n: 9">{pounds('91607320').whole.map((c, i) => <i class="hand" style={tilt(i, 7)}>{c}</i>)}</span><span class="tx-comb pence" style="--n: 2"><i class="hand">0</i><i class="hand">0</i></span></span>
+          <span class="tx-note hand big">one goblet (the dented one)</span>
+        </div>
+        <div class="tx-declare">
+          <p class="tx-stamp" aria-label="Office stamp: received 2 February 2026, Harrowdale; edges singed">Received<br /><b>2 Feb 2026</b><br />Harrowdale office<br />Edges singed</p>
+          <p class="tx-declaration"><span class="n">22</span>I declare that the information I have given on this return is correct and complete to the best of my knowledge and belief.</p>
+          <div class="tx-sign"><span class="l">Signature</span><span class="tx-signature">Morwenna C.</span></div>
+          <div class="tx-item"><span class="n">23</span><span class="l">Date</span><span class="tx-comb date" style="--n: 8">{letters('31012026', 8).map((c, i) => <i class="hand" style={tilt(i, 8)}>{c}</i>)}</span></div>
+        </div>
+      </section>
+    </div>
+    <div class="tx-official">
+      <span class="tx-official-head">For official use only</span>
+      <span class="tx-official-box">Checked<span class="tx-comb" style="--n: 3"><i></i><i></i><i></i></span></span>
+      <span class="tx-pencil">Query box 21: value of one dented goblet? Refer to the Dragons Unit. Do not visit in person.</span>
+    </div>
+    <p class="tx-foot">SA-H 2026. Page 1 of 1. Continue on a separate sheet if your hoard does not fit.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+  const root = document.documentElement.style;
+  onSquares(({ across }) => {
+    // Three columns of whole squares with a square between them.
+    const colw = Math.floor((across - 4) / 3);
+    root.setProperty('--tx-colw', String(colw));
+    root.setProperty('--tx-two', String(colw * 2 + 1));
+  });
+</script>
+
+<style is:global>
+  html { background: #fbfdf9; }
+  .taxr {
+    --paper: #fbfdf9;
+    --tint: #ddeedc;
+    --tint-deep: #b9dbbb;
+    --green: #155b35;
+    --line: #6aa57e;
+    --ink: #1e1a3d;
+    background: var(--paper);
+    color: var(--green);
+    font-family: var(--typeface-regular);
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+  }
+  .taxr .hand {
+    font-family: "Bradley Hand", "Noteworthy", "Marker Felt", cursive;
+    font-weight: 700;
+    color: var(--ink);
+    font-style: normal;
+  }
+
+  /* The head of the form. */
+  .tx-head { grid-column: 2 / span 40; grid-row: 2 / span 4; }
+  .tx-office { margin: 0; display: flex; gap: calc(var(--u) / 2); align-items: center; font-family: var(--typeface-medium); font-size: calc(13px * var(--sf)); }
+  .tx-crest {
+    width: var(--u); height: var(--u); border-radius: 50%;
+    background: radial-gradient(circle, var(--paper) 0 28%, transparent 29%), conic-gradient(var(--green) 0 25%, var(--line) 0 50%, var(--green) 0 75%, var(--line) 0);
+  }
+  .tx-head h1 { margin: var(--u) 0 0; font-family: var(--typeface-medium); font-weight: 400; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.02em; color: var(--green); white-space: nowrap; }
+  .tx-head h1 span { font-family: var(--typeface-regular); font-size: calc(20px * var(--sf)); letter-spacing: 0; color: var(--line); }
+
+  .tx-meta { grid-column: -24 / -2; grid-row: 2 / span 4; background: var(--tint); padding: 0 var(--u); }
+  .tx-meta-row { display: flex; justify-content: space-between; align-items: center; height: var(--u); }
+  .tx-meta-row + .tx-meta-row { margin-top: var(--u); }
+  .tx-meta-row b { font-family: var(--typeface-medium); font-weight: 400; }
+  .tx-ink { margin: 0; text-align: right; font-style: italic; color: var(--line); }
+
+  /* Comb fields: a square for each character, ruled with the form's green. */
+  .tx-comb {
+    display: inline-grid;
+    grid-template-columns: repeat(var(--n), var(--u));
+    height: var(--u);
+    background: #fff repeating-linear-gradient(90deg, transparent 0 calc(var(--u) - 1px), var(--line) calc(var(--u) - 1px) var(--u));
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    box-shadow: inset 1px 0 var(--line);
+  }
+  .tx-comb i { display: block; text-align: center; font-size: calc(17px * var(--sf)); line-height: var(--u); transform: rotate(var(--t, 0deg)) translateY(var(--y, 0)); }
+  .tx-comb.date { background-image: repeating-linear-gradient(90deg, transparent 0 calc(var(--u) - 1px), var(--line) calc(var(--u) - 1px) var(--u)), linear-gradient(90deg, transparent calc(2 * var(--u) - 2px), var(--green) calc(2 * var(--u) - 2px) calc(2 * var(--u) + 1px), transparent 0 calc(4 * var(--u) - 2px), var(--green) calc(4 * var(--u) - 2px) calc(4 * var(--u) + 1px), transparent 0); }
+
+  /* Three columns of sections. */
+  .tx-cols {
+    grid-column: 2 / -2;
+    grid-row: 7 / -2;
+    display: grid;
+    grid-template-columns: repeat(3, calc(var(--tx-colw, 22) * var(--u)));
+    column-gap: var(--u);
+    align-items: start;
+  }
+  .tx-col { position: relative; }
+  .tx-col h2 {
+    margin: 0 0 var(--u);
+    height: var(--u);
+    display: grid;
+    grid-template-columns: var(--u) 1fr;
+    column-gap: calc(var(--u) / 2);
+    background: var(--green);
+    color: var(--paper);
+    font-family: var(--typeface-medium);
+    font-weight: 400;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .tx-col h2 b { background: var(--paper); color: var(--green); text-align: center; font-weight: 400; outline: 1px solid var(--green); outline-offset: -1px; }
+  .tx-col h2 ~ h2 { margin-top: var(--u); }
+
+  .tx-item { display: grid; grid-template-columns: var(--u) 1fr auto; column-gap: calc(var(--u) / 2); align-items: start; margin-bottom: var(--u); }
+  .tx-item .n, .tx-declaration .n { width: var(--u); height: var(--u); background: var(--tint-deep); text-align: center; font-family: var(--typeface-medium); font-size: calc(10px * var(--sf)); }
+  .tx-item .l { line-height: var(--u); }
+  .tx-item.lined { grid-template-columns: var(--u) 1fr; }
+  .tx-lines {
+    grid-column: 1 / -1;
+    margin: 0;
+    height: calc(var(--lines) * var(--u));
+    background: #fff repeating-linear-gradient(transparent 0 calc(var(--u) - 1px), var(--tint-deep) calc(var(--u) - 1px) var(--u));
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    padding-inline: calc(var(--u) / 2);
+    font-size: calc(17px * var(--sf));
+    line-height: var(--u);
+    overflow: hidden;
+  }
+  .tx-lines .hand { display: block; line-height: var(--u); }
+  .tx-item.money { grid-template-columns: var(--u) 1fr auto; }
+  .tx-money { display: flex; }
+  .tx-money .pound { width: var(--u); text-align: center; font-family: var(--typeface-medium); }
+  .tx-money .pence { margin-left: calc(var(--u) / -2); position: relative; }
+  .tx-money .tx-comb + .pence { margin-left: 0; }
+  .tx-money .pence::before { content: ''; position: absolute; left: -2px; bottom: 3px; width: 3px; height: 3px; background: var(--green); border-radius: 50%; }
+  .tx-note { grid-column: 3; justify-self: end; font-size: calc(15px * var(--sf)); line-height: var(--u); white-space: nowrap; transform: rotate(-1.2deg); }
+  .tx-item.total { padding-top: 0; }
+  .tx-item.total .tx-comb { outline-width: 2px; outline-offset: -2px; }
+
+  /* The amount due, struck through with a single furious stroke, and the offer beneath it. */
+  .tx-item.struck .tx-money { position: relative; }
+  .tx-item.struck .tx-money::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--u) * 0.6);
+    right: calc(var(--u) * -0.3);
+    top: 50%;
+    height: calc(3px * var(--sf));
+    background: var(--ink);
+    border-radius: 2px;
+    transform: rotate(-4deg);
+  }
+  .tx-note.big { font-size: calc(19px * var(--sf)); transform: rotate(-3deg) translateY(2px); }
+
+  .tx-declare { position: relative; background: radial-gradient(70% 60% at 100% 100%, rgba(110,55,10,.38), rgba(150,90,30,.12) 55%, transparent 75%), var(--tint); padding: var(--u); padding-bottom: 0; }
+  .tx-declaration { margin: 0 0 var(--u); display: grid; grid-template-columns: var(--u) 1fr; column-gap: calc(var(--u) / 2); }
+  .tx-sign { display: grid; grid-template-columns: var(--u) 1fr; column-gap: calc(var(--u) / 2); height: calc(3 * var(--u)); margin-bottom: var(--u); }
+  .tx-sign .l { grid-column: 2; grid-row: 1; }
+  .tx-signature {
+    grid-column: 2; grid-row: 1;
+    align-self: end;
+    height: calc(3 * var(--u));
+    background: #fff;
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    padding-left: calc(var(--u) * 3);
+    font-family: "Snell Roundhand", "Apple Chancery", cursive;
+    font-size: calc(38px * var(--sf));
+    line-height: calc(3 * var(--u));
+    color: var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+  /* Three claw strokes under the name. */
+  .tx-signature::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--u) * 2.5);
+    right: var(--u);
+    bottom: calc(var(--u) * 0.45);
+    height: calc(var(--u) * 0.5);
+    background:
+      linear-gradient(var(--ink), var(--ink)) 0 0 / 100% 2px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 6% 50% / 92% 2px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 12% 100% / 80% 2px no-repeat;
+    transform: rotate(-2deg);
+    opacity: .8;
+  }
+  .tx-sign + .tx-item { margin-bottom: var(--u); }
+  .tx-declare .tx-item { grid-template-columns: var(--u) 1fr auto; }
+
+  .tx-stamp {
+    position: absolute;
+    right: calc(var(--u) * 0.5);
+    top: calc(var(--u) * 3.6);
+    margin: 0;
+    padding: calc(var(--u) / 4) calc(var(--u) / 2);
+    border: 2px solid #c0392b;
+    border-radius: 4px;
+    color: #c0392b;
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 700;
+    font-size: calc(11px * var(--sf));
+    line-height: calc(16px * var(--sf));
+    text-align: center;
+    transform: rotate(-9deg);
+    opacity: .78;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .tx-stamp b { font-size: calc(15px * var(--sf)); }
+  .tx-official {
+    grid-column: 2 / span var(--tx-two, 45);
+    grid-row: -5 / span 2;
+    display: grid;
+    grid-template-columns: calc(9 * var(--u)) calc(7 * var(--u)) 1fr;
+    grid-template-rows: var(--u) var(--u);
+    column-gap: var(--u);
+    background: repeating-linear-gradient(-45deg, transparent 0 6px, rgba(21,91,53,.07) 6px 7px), var(--tint);
+    padding-inline: calc(var(--u) / 2);
+  }
+  .tx-official-head { grid-row: 1 / span 2; align-self: center; font-family: var(--typeface-medium); }
+  .tx-official-box { grid-row: 1 / span 2; display: flex; gap: calc(var(--u) / 2); align-items: center; }
+  .tx-pencil { grid-row: 1 / span 2; align-self: center; font-family: "Noteworthy", "Chalkboard SE", cursive; font-size: calc(14px * var(--sf)); color: #6b6b6b; transform: rotate(-1deg); line-height: var(--u); }
+  .tx-foot { grid-column: 2 / span 40; grid-row: -2; margin: 0; color: var(--line); }
+
+  /* Narrow: one column, each comb its own row beneath its label. */
+  :root[data-narrow] .taxr { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .taxr > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .tx-head h1 { white-space: normal; font-size: calc(32px * var(--sf)); }
+  :root[data-narrow] .tx-head h1 span { display: block; line-height: var(--u); margin-top: var(--u); }
+  :root[data-narrow] .tx-meta { margin: var(--u) 0; padding: var(--u); }
+  :root[data-narrow] .tx-meta-row { flex-direction: column; align-items: flex-start; height: auto; }
+  :root[data-narrow] .tx-meta-row .tx-comb { margin-left: calc(var(--u) * -0); }
+  :root[data-narrow] .tx-cols { grid-template-columns: 1fr; row-gap: var(--u); }
+  :root[data-narrow] .tx-official { grid-template-columns: 1fr; grid-template-rows: none; padding: calc(var(--u) / 2); margin-top: var(--u); }
+  :root[data-narrow] .tx-official > * { grid-row: auto; }
+  :root[data-narrow] .tx-item, :root[data-narrow] .tx-item.money, :root[data-narrow] .tx-declare .tx-item { grid-template-columns: var(--u) 1fr; }
+  :root[data-narrow] .tx-item > :is(.tx-comb, .tx-money) { grid-column: 1 / -1; }
+  :root[data-narrow] .tx-note { grid-column: 1 / -1; justify-self: start; white-space: normal; }
+  :root[data-narrow] .tx-declare { margin-inline: calc(var(--u) * -1); }
+  :root[data-narrow] .tx-signature { padding-left: var(--u); }
+  :root[data-narrow] .tx-stamp { top: calc(var(--u) * 5); }
+  :root[data-narrow] .tx-lines { height: auto; min-height: calc(var(--lines) * var(--u)); }
+  </style>

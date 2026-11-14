@@ -1,0 +1,402 @@
+---
+// After a topographic survey sheet: one kilometre is four squares, so the blue grid of the map is
+// the window's grid taken four at a time, numbered round the neatline. The fell is generated:
+// contours every ten metres, an index contour every fifty, a tarn in the hollow, a wood in green
+// stipple, a beck finding its way down, footpaths in red. Point anywhere for its grid reference.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="topographic" theme="light">
+  <main class="stage topo">
+    <div class="tp-map" id="map">
+      <canvas id="terrain" aria-hidden="true"></canvas>
+      <svg id="overlay" aria-hidden="true"></svg>
+    </div>
+
+    <aside class="tp-panel">
+      <p class="tp-sheet">Sheet 117</p>
+      <h1>Harrowdale and Ashby Water</h1>
+      <p class="tp-scale-words">1:25 000. Four squares to the kilometre.</p>
+
+      <div class="tp-bar" aria-label="Scale bar, two kilometres">
+        <div class="tp-bar-blocks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="tp-bar-nums"><span>0</span><span>1</span><span>2 km</span></div>
+      </div>
+
+      <ul class="tp-legend">
+        <li><svg viewBox="0 0 2 1"><path d="M0 .5 C.6 .2 1.4 .8 2 .5" stroke="#b5642a" stroke-width=".12" fill="none" /></svg>Index contour, 50 m</li>
+        <li><svg viewBox="0 0 2 1"><path d="M0 .5 C.6 .2 1.4 .8 2 .5" stroke="#d49b66" stroke-width=".06" fill="none" /></svg>Contour, 10 m</li>
+        <li><svg viewBox="0 0 2 1"><path d="M0 .5 H2" stroke="#d3302a" stroke-width=".1" stroke-dasharray=".22 .14" /></svg>Public footpath</li>
+        <li><svg viewBox="0 0 2 1"><path d="M0 .5 H2" stroke="#333" stroke-width=".42" /><path d="M0 .5 H2" stroke="#f3cf3c" stroke-width=".3" /></svg>Minor road</li>
+        <li><svg viewBox="0 0 2 1"><path d="M0 .6 C.6 .3 1.3 .8 2 .4" stroke="#2f83c5" stroke-width=".09" fill="none" /></svg>Beck</li>
+        <li><svg viewBox="0 0 2 1"><rect x=".1" y=".15" width="1.8" height=".7" rx=".3" fill="#cfe7f4" stroke="#2f83c5" stroke-width=".05" /></svg>Tarn</li>
+        <li><svg viewBox="0 0 2 1"><rect x=".1" y=".15" width="1.8" height=".7" fill="#e2efd4" /><g fill="#3e7c30"><circle cx=".4" cy=".35" r=".05" /><circle cx=".8" cy=".62" r=".05" /><circle cx="1.2" cy=".32" r=".05" /><circle cx="1.6" cy=".6" r=".05" /><circle cx="1" cy=".5" r=".04" /><circle cx=".25" cy=".7" r=".04" /><circle cx="1.75" cy=".3" r=".04" /></g></svg>Wood</li>
+        <li><svg viewBox="0 0 2 1"><path d="M1 .18 L1.34 .8 H.66 Z" fill="none" stroke="#1d1d1b" stroke-width=".06" /><circle cx="1" cy=".6" r=".07" fill="#1d1d1b" /></svg>Triangulation pillar</li>
+        <li><svg viewBox="0 0 2 1"><path d="M0 .5 H2 M1 0 V1" stroke="#3a87cf" stroke-width=".05" /></svg>Kilometre grid</li>
+      </ul>
+
+      <p class="tp-here" aria-live="polite"><span>Under the pointer</span><output id="here">Point at the map</output></p>
+      <p class="tp-note">Surveyed 1898 by the Fell and Dale Survey; revised from air photographs 2024. Rights of way shown are not evidence of a right of way.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const map = document.getElementById('map') as HTMLElement;
+  const canvas = document.getElementById('terrain') as HTMLCanvasElement;
+  const svg = document.getElementById('overlay') as unknown as SVGSVGElement;
+  const here = document.getElementById('here') as HTMLOutputElement;
+  const root = document.documentElement;
+  const KM = 4; // squares to the kilometre
+  const EAST0 = 34;
+  const NORTH0 = 12;
+
+  // Gradient noise, seeded, and a few octaves of it.
+  const perm = new Uint8Array(512);
+  {
+    let seed = 117;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const p = Array.from({ length: 256 }, (_, i) => i);
+    for (let i = 255; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  }
+  const grad = (h: number, x: number, y: number) => { const a = (h & 7) * Math.PI / 4; return Math.cos(a) * x + Math.sin(a) * y; };
+  const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+  const noise = (x: number, y: number) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const X = xi & 255, Y = yi & 255;
+    const u = fade(xf), v = fade(yf);
+    const aa = perm[perm[X] + Y], ab = perm[perm[X] + Y + 1], ba = perm[perm[X + 1] + Y], bb = perm[perm[X + 1] + Y + 1];
+    const l1 = grad(aa, xf, yf) + u * (grad(ba, xf - 1, yf) - grad(aa, xf, yf));
+    const l2 = grad(ab, xf, yf - 1) + u * (grad(bb, xf - 1, yf - 1) - grad(ab, xf, yf - 1));
+    return l1 + v * (l2 - l1);
+  };
+  const fbm = (x: number, y: number, oct = 5) => { let s = 0, a = 1, f = 1, n = 0; for (let i = 0; i < oct; i++) { s += a * noise(x * f, y * f); n += a; a *= 0.5; f *= 2; } return s / n; };
+
+  let W = 0, H = 0; // inner map in squares
+  let thin = false; // a narrow window: a smaller dale
+  let height: (x: number, y: number) => number = () => 0;
+  let lakeLevel = 0;
+  let inTarn: (x: number, y: number) => boolean = () => false;
+
+  const ref = (x: number, y: number) => {
+    const e = EAST0 + x / KM, n = NORTH0 + (H - y) / KM;
+    const f = (v: number) => String(Math.floor(v * 10) % 1000).padStart(3, '0');
+    return `${f(e)} ${f(n)}`;
+  };
+
+  const draw = (unit: number) => {
+    // The terrain in kilometres: a fell to the north east, a hollow holding the tarn, ridges between.
+    const peak = { x: W * 0.72, y: H * 0.28 }, hollow = { x: W * (thin ? 0.64 : 0.32), y: H * (thin ? 0.62 : 0.6) };
+    height = (x, y) => {
+      const kx = x / KM, ky = y / KM;
+      const dp = Math.hypot((x - peak.x) / KM, (y - peak.y) / KM);
+      const dh = Math.hypot((x - hollow.x) / KM, ((y - hollow.y) / KM) * 1.4);
+      return 300 + 160 * fbm(kx * 0.3 + 3.1, ky * 0.3 + 7.7, 4) + 340 * Math.exp(-(dp * dp) / 10) - 230 * Math.exp(-(dh * dh) / 3.2) + 45 * Math.abs(fbm(kx * 0.6, ky * 0.6, 3));
+    };
+    const S = 0.25; // a sample every quarter square
+    const nx = Math.ceil(W / S) + 1, ny = Math.ceil(H / S) + 1;
+    const h = new Float32Array(nx * ny);
+    const wood = new Float32Array(nx * ny);
+    let min = Infinity, max = -Infinity, top = { x: 0, y: 0 };
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const v = height(i * S, j * S);
+      h[j * nx + i] = v;
+      if (v < min) min = v;
+      if (v > max) { max = v; top = { x: i * S, y: j * S }; }
+      wood[j * nx + i] = fbm(i * S / KM * 0.55 + 11, j * S / KM * 0.55 - 4, 3);
+    }
+    lakeLevel = Math.ceil((height(hollow.x, hollow.y) + (thin ? 20 : 55)) / 10) * 10 - 2;
+    // The tarn is the hollow's water only; other dips stay dry ground.
+    const reach = thin ? Math.min(W, H) * 0.4 : Math.max(4, Math.min(W, H) * 0.3);
+    const nearHollow = (q: number) => Math.hypot((q % nx) * S - hollow.x, Math.floor(q / nx) * S - hollow.y) < reach;
+    inTarn = (x, y) => height(x, y) < lakeLevel && Math.hypot(x - hollow.x, y - hollow.y) < reach;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * unit * dpr);
+    canvas.height = Math.round(H * unit * dpr);
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(unit * dpr, 0, 0, unit * dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // Filled regions by marching squares: the part of each cell where test(value) holds.
+    const fillWhere = (field: Float32Array, level: number, below: boolean, colour: string, mask?: (k: number) => boolean) => {
+      ctx.beginPath();
+      for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const k = [j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i];
+        const pts = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+        const ins = k.map(q => (below ? field[q] < level : field[q] > level) && (!mask || mask(q)));
+        if (!ins.some(Boolean)) continue;
+        const poly: number[][] = [];
+        for (let c = 0; c < 4; c++) {
+          const d = (c + 1) % 4;
+          if (ins[c]) poly.push(pts[c]);
+          if (ins[c] !== ins[d] && (!mask || (mask(k[c]) && mask(k[d])))) {
+            const t = (level - field[k[c]]) / (field[k[d]] - field[k[c]]);
+            const tt = Math.max(0, Math.min(1, isFinite(t) ? t : 0.5));
+            poly.push([pts[c][0] + (pts[d][0] - pts[c][0]) * tt, pts[c][1] + (pts[d][1] - pts[c][1]) * tt]);
+          } else if (ins[c] !== ins[d]) {
+            poly.push([(pts[c][0] + pts[d][0]) / 2, (pts[c][1] + pts[d][1]) / 2]);
+          }
+        }
+        poly.forEach(([x, y], q) => (q ? ctx.lineTo(x * S, y * S) : ctx.moveTo(x * S, y * S)));
+        ctx.closePath();
+      }
+      ctx.fillStyle = colour;
+      ctx.fill('nonzero');
+    };
+
+    // The wood: on the middle slopes, out of the water and off the tops.
+    const woodMask = (q: number) => !(h[q] < lakeLevel + 15 && nearHollow(q)) && h[q] < max - 150;
+    fillWhere(wood, 0.16, false, '#e2efd4', woodMask);
+    let seed = 7;
+    const rnd = () => (seed = (seed * 48271) % 2147483647) / 2147483647;
+    ctx.fillStyle = '#3e7c30';
+    const step = 0.42;
+    for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step) {
+      const px = x + rnd() * step, py = y + rnd() * step;
+      const q = Math.round(py / S) * nx + Math.round(px / S);
+      if (wood[q] > 0.19 && woodMask(q)) { ctx.beginPath(); ctx.arc(px, py, 0.045 + rnd() * 0.025, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // The tarn.
+    fillWhere(h, lakeLevel, true, '#cfe7f4', nearHollow);
+
+    // Contours, every ten metres; every fifth heavier.
+    const segments: Record<number, number[][]> = {};
+    for (let level = Math.ceil(min / 10) * 10; level <= max; level += 10) {
+      const segs: number[][] = [];
+      for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const k = [j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i];
+        const pts = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+        const cross: number[][] = [];
+        for (let c = 0; c < 4; c++) {
+          const d = (c + 1) % 4, a = h[k[c]], b = h[k[d]];
+          if ((a < level) !== (b < level)) {
+            const t = (level - a) / (b - a);
+            cross.push([(pts[c][0] + (pts[d][0] - pts[c][0]) * t) * S, (pts[c][1] + (pts[d][1] - pts[c][1]) * t) * S]);
+          }
+        }
+        if (level < lakeLevel + 5 && nearHollow(k[0])) continue;
+        if (cross.length >= 2) segs.push([...cross[0], ...cross[1]]);
+        if (cross.length === 4) segs.push([...cross[2], ...cross[3]]);
+      }
+      segments[level] = segs;
+      const index = level % 50 === 0;
+      ctx.beginPath();
+      for (const [a, b, c, d] of segs) { ctx.moveTo(a, b); ctx.lineTo(c, d); }
+      ctx.strokeStyle = index ? '#b5642a' : '#d49b66';
+      ctx.lineWidth = index ? 0.09 : 0.045;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    // The shore over the contours.
+    ctx.beginPath();
+    {
+      const segs: number[][] = [];
+      for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const k = [j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i];
+        const pts = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+        const cross: number[][] = [];
+        for (let c = 0; c < 4; c++) {
+          const d = (c + 1) % 4, a = h[k[c]], b = h[k[d]];
+          if ((a < lakeLevel) !== (b < lakeLevel) && nearHollow(k[c])) { const t = (lakeLevel - a) / (b - a); cross.push([(pts[c][0] + (pts[d][0] - pts[c][0]) * t) * S, (pts[c][1] + (pts[d][1] - pts[c][1]) * t) * S]); }
+        }
+        if (cross.length >= 2) segs.push([...cross[0], ...cross[1]]);
+      }
+      for (const [a, b, c, d] of segs) { ctx.moveTo(a, b); ctx.lineTo(c, d); }
+    }
+    ctx.strokeStyle = '#2f83c5';
+    ctx.lineWidth = 0.06;
+    ctx.stroke();
+
+    // Becks: from springs high on the fell, down the steepest way until they reach the tarn or the edge.
+    const at = (x: number, y: number) => h[Math.max(0, Math.min(ny - 1, Math.round(y / S))) * nx + Math.max(0, Math.min(nx - 1, Math.round(x / S)))];
+    const becks: number[][][] = [];
+    for (const [sx, sy] of [[top.x - 2.2, top.y + 1.6], [top.x - 5, top.y - 0.8], [top.x + 1.5, top.y + 4.5]]) {
+      let x = sx, y = sy;
+      const line: number[][] = [[x, y]];
+      let hdg = 0;
+      for (let n = 0; n < 900; n++) {
+        const e = 0.2;
+        const gx = height(x + e, y) - height(x - e, y), gy = height(x, y + e) - height(x, y - e);
+        const len = Math.hypot(gx, gy) || 1;
+        // A little momentum so the water meanders instead of stalling in a dimple.
+        const dx = -gx / len, dy = -gy / len;
+        const ang = Math.atan2(dy, dx);
+        hdg = n ? hdg + Math.atan2(Math.sin(ang - hdg), Math.cos(ang - hdg)) * 0.35 : ang;
+        x += Math.cos(hdg) * 0.12; y += Math.sin(hdg) * 0.12;
+        line.push([x, y]);
+        if (x < 0 || y < 0 || x > W || y > H || inTarn(x, y)) break;
+        // A beck that only circles has found a pool: let it end there.
+        if (n > 16) { const [ox, oy] = line[line.length - 16]; if (Math.hypot(x - ox, y - oy) < 0.7) { line.splice(-14); break; } }
+      }
+      becks.push(line);
+    }
+    ctx.strokeStyle = '#2f83c5';
+    becks.forEach((line, b) => {
+      ctx.beginPath();
+      line.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.lineWidth = b === 0 ? 0.08 : 0.06;
+      ctx.stroke();
+    });
+
+    // Heights on the index contours, read uphill, with a paper halo; never two near each other.
+    const placed: number[][] = [];
+    ctx.font = `0.42px "Gill Sans", "Gill Sans MT", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const level of Object.keys(segments).map(Number).filter(l => l % 50 === 0)) {
+      const segs = segments[level];
+      for (let s = 0; s < segs.length; s += 37) {
+        const [a, b, c, d] = segs[s];
+        const mx = (a + c) / 2, my = (b + d) / 2;
+        if (mx < 1.5 || my < 1 || mx > W - 1.5 || my > H - 1) continue;
+        if (placed.some(([px, py]) => Math.hypot(px - mx, py - my) < 6.5)) continue;
+        if (inTarn(mx, my)) continue;
+        placed.push([mx, my]);
+        let ang = Math.atan2(d - b, c - a);
+        if (ang > Math.PI / 2) ang -= Math.PI; else if (ang < -Math.PI / 2) ang += Math.PI;
+        ctx.save();
+        ctx.translate(mx, my);
+        ctx.rotate(ang);
+        ctx.lineWidth = 0.22;
+        ctx.strokeStyle = '#fbfbf6';
+        ctx.strokeText(String(level), 0, 0);
+        ctx.fillStyle = '#a65a24';
+        ctx.fillText(String(level), 0, 0);
+        ctx.restore();
+      }
+    }
+
+    // The overlay, in squares: the neatline, the kilometre grid and its numbers, paths, names.
+    const F = 1; // the margin band, one square
+    const TW = W + 2 * F, TH = H + 2 * F;
+    svg.setAttribute('viewBox', `0 0 ${TW} ${TH}`);
+    let s = '';
+    let grid = '';
+    for (let x = 0; x <= W; x += KM) grid += `M ${F + x} ${F} V ${F + H} `;
+    for (let y = H; y >= 0; y -= KM) grid += `M ${F} ${F + y} H ${F + W} `;
+    s += `<path d="${grid}" stroke="#3a87cf" stroke-width="0.035" opacity=".85"/>`;
+    s += `<rect x="${F}" y="${F}" width="${W}" height="${H}" fill="none" stroke="#1d1d1b" stroke-width="0.07"/>`;
+    s += `<rect x="0.04" y="0.04" width="${TW - 0.08}" height="${TH - 0.08}" fill="none" stroke="#1d1d1b" stroke-width="0.03"/>`;
+    let nums = '';
+    for (let x = 0, e = EAST0; x <= W; x += KM, e++) nums += `<text x="${F + x}" y="0.55">${e}</text><text x="${F + x}" y="${TH - 0.45}">${e}</text>`;
+    for (let y = H, n = NORTH0; y >= 0; y -= KM, n++) nums += `<text x="0.5" y="${F + y + 0.05}">${n}</text><text x="${TW - 0.5}" y="${F + y + 0.05}">${n}</text>`;
+    s += `<g class="tp-nums">${nums}</g>`;
+
+    const smooth = (pts: number[][]) => {
+      let d = `M ${pts[0][0] + F} ${pts[0][1] + F}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] ?? pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] ?? p2;
+        d += ` C ${p1[0] + (p2[0] - p0[0]) / 6 + F} ${p1[1] + (p2[1] - p0[1]) / 6 + F} ${p2[0] - (p3[0] - p1[0]) / 6 + F} ${p2[1] - (p3[1] - p1[1]) / 6 + F} ${p2[0] + F} ${p2[1] + F}`;
+      }
+      return d;
+    };
+    // The road along the dale floor, south of the tarn.
+    const road = [[0, H * 0.86], [W * 0.18, H * 0.83], [W * 0.36, H * 0.9], [W * 0.55, H * 0.84], [W * 0.75, H * 0.88], [W, H * 0.8]];
+    s += `<path d="${smooth(road)}" stroke="#333" stroke-width="0.34" fill="none"/><path d="${smooth(road)}" stroke="#f3cf3c" stroke-width="0.24" fill="none"/>`;
+    // Footpaths: from the farm up the fell to the pillar, and round the tarn.
+    const farm = [W * 0.16, H * 0.8];
+    const up = [farm, [W * 0.11, H * 0.64], [W * 0.17, H * 0.44], [W * 0.34, H * 0.37], [(W * 0.34 + top.x) / 2, (H * 0.37 + top.y) / 2 + 1], [top.x - 0.4, top.y + 0.4]];
+    const round = [[W * 0.5, H * 0.86], [W * 0.52, H * 0.7], [W * 0.42, H * 0.42], [W * 0.24, H * 0.36], [W * 0.08, H * 0.48], [0, H * 0.44]];
+    for (const p of thin ? [up] : [up, round]) s += `<path d="${smooth(p)}" stroke="#d3302a" stroke-width="0.09" stroke-dasharray="0.22 0.14" fill="none"/>`;
+    // The farm, the pillar on the summit, spot heights.
+    s += `<rect x="${farm[0] + F - 0.18}" y="${farm[1] + F - 0.18}" width="0.36" height="0.36" fill="#1d1d1b"/>`;
+    s += `<text class="tp-place" x="${farm[0] + F + 0.4}" y="${farm[1] + F + 0.15}">Fellgate</text>`;
+    s += `<path d="M ${top.x + F} ${top.y + F - 0.32} l 0.3 0.52 h -0.6 Z" fill="#fbfbf6" stroke="#1d1d1b" stroke-width="0.05"/><circle cx="${top.x + F}" cy="${top.y + F + 0.04}" r="0.06" fill="#1d1d1b"/>`;
+    s += `<text class="tp-spot" x="${top.x + F + 0.45}" y="${top.y + F + 0.1}">${Math.round(max)}</text>`;
+    s += `<text class="tp-fell" x="${Math.max(F + 3.2, Math.min(F + W - 3.2, top.x + F))}" y="${top.y + F - 1.1}">HARROW PIKE</text>`;
+    for (const [fx, fy] of [[0.12, 0.2], [0.55, 0.16], [0.9, 0.62], [0.62, 0.66]]) {
+      const x = W * fx, y = H * fy, v = Math.round(height(x, y));
+      if (inTarn(x, y)) continue;
+      s += `<circle cx="${x + F}" cy="${y + F}" r="0.06" fill="#1d1d1b"/><text class="tp-spot" x="${x + F + 0.2}" y="${y + F + 0.1}">${v}</text>`;
+    }
+    // Names: the tarn at its middle, the wood at its own.
+    let lx = 0, ly = 0, ln = 0, wx = 0, wy = 0, wn = 0;
+    for (let j = 0; j < ny; j += 2) for (let i = 0; i < nx; i += 2) {
+      const q = j * nx + i;
+      if (h[q] < lakeLevel && nearHollow(q)) { lx += i * S; ly += j * S; ln++; }
+      else if (wood[q] > 0.25 && woodMask(q)) { wx += i * S; wy += j * S; wn++; }
+    }
+    if (ln) s += `<text class="tp-water" x="${lx / ln + F}" y="${ly / ln + F + 0.15}">Ashby Water</text>`;
+    if (wn && (!ln || Math.hypot(wx / wn - lx / ln, wy / wn - ly / ln) > 4)) s += `<text class="tp-woodname" x="${wx / wn + F}" y="${wy / wn + F}">Coldkeld Wood</text>`;
+    if (becks[0]) { const m = becks[0][Math.floor(becks[0].length * 0.45)]; if (m) s += `<text class="tp-beck" x="${m[0] + F + 0.3}" y="${m[1] + F}">Scale Beck</text>`; }
+    svg.innerHTML = s;
+  };
+
+  map.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect();
+    const unit = r.width / W;
+    const x = (e.clientX - r.left) / unit, y = (e.clientY - r.top) / unit;
+    if (x < 0 || y < 0 || x > W || y > H) { here.textContent = 'Point at the map'; return; }
+    const v = height(x, y);
+    here.textContent = `${ref(x, y)}, ${inTarn(x, y) ? 'in the tarn' : `${Math.round(v)} m`}`;
+  });
+  map.addEventListener('pointerleave', () => { here.textContent = 'Point at the map'; });
+
+  onSquares(({ unit, across, down, narrow }) => {
+    // The frame is whole squares; the map inside it is whole kilometres where it can be.
+    const frameW = narrow ? across - 2 : across - 16;
+    const frameH = narrow ? 24 : down - 2;
+    thin = narrow;
+    W = frameW - 2;
+    H = frameH - 2;
+    root.style.setProperty('--tp-w', String(frameW));
+    root.style.setProperty('--tp-h', String(frameH));
+    draw(unit);
+  });
+</script>
+
+<style is:global>
+  html { background: #fbfbf6; }
+  .topo {
+    --paper: #fbfbf6;
+    --ink: #1d1d1b;
+    --blue: #2f83c5;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Gill Sans", "Gill Sans MT", Calibri, sans-serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .tp-map { grid-column: 2 / span var(--tp-w, 56); grid-row: 2 / span var(--tp-h, 43); position: relative; cursor: crosshair; }
+  .tp-map canvas { position: absolute; left: var(--u); top: var(--u); width: calc(100% - 2 * var(--u)); height: calc(100% - 2 * var(--u)); }
+  .tp-map svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .tp-nums text { font-size: 0.5px; text-anchor: middle; dominant-baseline: central; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .tp-place { font-size: 0.5px; fill: var(--ink); }
+  .tp-spot { font-size: 0.4px; fill: var(--ink); }
+  .tp-fell { font-size: 0.62px; letter-spacing: 0.12px; text-anchor: middle; fill: #5a3a1c; font-weight: 600; paint-order: stroke; stroke: var(--paper); stroke-width: 0.16px; }
+  .tp-water { font-family: "Hoefler Text", "Baskerville", Georgia, serif; font-style: italic; font-size: 0.72px; text-anchor: middle; fill: #1f6aa5; letter-spacing: 0.06px; }
+  .tp-woodname { font-family: "Hoefler Text", Georgia, serif; font-style: italic; font-size: 0.5px; text-anchor: middle; fill: #2d6324; paint-order: stroke; stroke: #e2efd4; stroke-width: 0.14px; }
+  .tp-beck { font-family: "Hoefler Text", Georgia, serif; font-style: italic; font-size: 0.42px; fill: #1f6aa5; paint-order: stroke; stroke: var(--paper); stroke-width: 0.12px; }
+
+  .tp-panel { grid-column: -14 / -2; grid-row: 2 / -2; display: grid; grid-template-rows: auto auto auto auto auto auto 1fr; align-content: start; }
+  .tp-sheet { margin: 0; font-size: calc(54px * var(--sf)); line-height: calc(3 * var(--u)); font-weight: 600; letter-spacing: -0.02em; }
+  .tp-panel h1 { margin: 0; font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); font-weight: 400; padding-bottom: calc(var(--u) / 2); border-bottom: calc(4px * var(--sf)) solid var(--ink); }
+  .tp-scale-words { margin: var(--u) 0 0; color: #555; }
+
+  .tp-bar { margin-top: var(--u); }
+  .tp-bar-blocks { display: grid; grid-template-columns: repeat(8, var(--u)); height: calc(var(--u) / 2); }
+  .tp-bar-blocks i { border: 1px solid var(--ink); border-left-width: 0; }
+  .tp-bar-blocks i:first-child { border-left-width: 1px; }
+  .tp-bar-blocks i:nth-child(odd) { background: var(--ink); }
+  .tp-bar-nums { display: grid; grid-template-columns: repeat(2, calc(4 * var(--u))) auto; height: calc(var(--u) * 1.5); line-height: calc(var(--u) * 1.5); font-size: calc(12px * var(--sf)); }
+  .tp-bar-nums span { transform: translateX(-0.3em); }
+
+  .tp-legend { list-style: none; margin: var(--u) 0 0; padding: var(--u) 0 0; border-top: 1px solid var(--ink); }
+  .tp-legend li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; column-gap: calc(var(--u) / 2); height: var(--u); align-items: center; font-size: calc(13px * var(--sf)); }
+  .tp-legend svg { width: calc(2 * var(--u)); height: var(--u); display: block; }
+
+  .tp-here { margin: var(--u) 0 0; display: grid; border-top: 1px solid var(--ink); padding-top: calc(var(--u) / 2); }
+  .tp-here span { font-size: calc(12px * var(--sf)); color: #555; }
+  .tp-here output { font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); font-variant-numeric: tabular-nums; }
+  .tp-note { margin: 0; align-self: end; font-size: calc(11px * var(--sf)); line-height: calc(16px * var(--sf)); color: #555; padding-bottom: var(--u); }
+
+  :root[data-narrow] .topo { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .tp-map { grid-column: 2 / -2; grid-row: 6 / span 24; }
+  :root[data-narrow] .tp-panel { grid-column: 2 / -2; grid-row: 1 / span 5; display: contents; }
+  :root[data-narrow] .tp-sheet { grid-column: 2 / -2; grid-row: 1 / span 3; margin-top: var(--u); }
+  :root[data-narrow] .tp-panel h1 { grid-column: 2 / -2; grid-row: 4 / span 2; font-size: calc(18px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .tp-panel > :is(.tp-scale-words, .tp-bar, .tp-legend, .tp-here, .tp-note) { grid-column: 2 / -2; grid-row: auto; }
+</style>
