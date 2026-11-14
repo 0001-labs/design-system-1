@@ -259,8 +259,11 @@ export class Overlay extends LitElement {
       if (this.pendingOpen) return;
       // Let slotted Lit fields/buttons render before the browser chooses focus.
       // Otherwise their empty shadow roots can make the dialog itself receive it.
-      const updates = [...dialog.querySelectorAll("*")].map(element => (element as LitElement).updateComplete);
-      this.pendingOpen = Promise.all(updates).then(() => {
+      // Waiting for every descendant blocked heavy sheets (for example a project people panel).
+      const updates = [...dialog.querySelectorAll("ds-input, ds-button, ds-select, ds-checkbox, ds-radio, ds-tabs")]
+        .map((element) => (element as LitElement).updateComplete);
+      const ready = updates.length ? Promise.all(updates) : Promise.resolve();
+      this.pendingOpen = ready.then(() => {
         this.pendingOpen = null;
         if (this.dialog !== dialog || !this.open || !this.isConnected) { this.syncOpen(); return; }
         this.showDialog(dialog);
