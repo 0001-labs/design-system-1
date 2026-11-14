@@ -12,8 +12,8 @@ import '../../../../DS1/1-root/figures.css';
   </head>
   <body>
     <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
+    <p class="first" id="first" aria-hidden="true"></p>
     <main id="page">
-      <p class="first" id="first" aria-hidden="true"></p>
       <div class="words">
         <h1>Desktop aligned</h1>
         <p class="lead">The window is a whole number of squares wide: the scale moves slightly up or down, whichever is less. What the height has left over goes to the first row, so the bottom edge lands on a square too. Resize the window and watch the last squares.</p>
@@ -130,11 +130,13 @@ import '../../../../DS1/1-root/figures.css';
   html, body { margin: 0; background: var(--background); color: var(--text-color); font-family: var(--typeface-regular); font-size: var(--ds-type-size-default); line-height: var(--ds-unit); }
 
   /* The window under the leftover: whole rows high with the mode on, the window's own height without it. */
-  #page { --u: var(--ds-grid-unit); --tint: color-mix(in srgb, var(--zenith-blue) 60%, transparent); position: relative; box-sizing: border-box; height: calc(100vh - var(--ds-grid-top, 0px)); overflow: hidden; padding: calc(2 * var(--u)) calc(2 * var(--u)) 0 var(--u); }
+  body { --u: var(--ds-grid-unit); --tint: color-mix(in srgb, var(--zenith-blue) 60%, transparent); }
+  #page { position: relative; box-sizing: border-box; height: calc(100vh - var(--ds-grid-top, 0px)); overflow: hidden; padding: calc(2 * var(--u)) calc(2 * var(--u)) 0 var(--u); }
   #page :is(h1, p) { margin: 0; }
 
   /* The first row, one square and the leftover above it, with its words on the square's sixteen. */
-  .first { position: absolute; inset: calc(-1 * var(--ds-grid-top, 0px)) 0 auto 0; box-sizing: border-box; height: calc(var(--u) + var(--ds-grid-top, 0px)); padding: calc(var(--ds-grid-top, 0px) + 4px * var(--sf)) var(--u) 0; background: var(--tint); color: var(--text-color); line-height: calc(16px * var(--sf)); white-space: nowrap; overflow: hidden; }
+  /* Outside #page, whose overflow would cut off the leftover above it. */
+  .first { position: absolute; inset: 0 0 auto 0; margin: 0; box-sizing: border-box; height: calc(var(--u) + var(--ds-grid-top, 0px)); padding: calc(var(--ds-grid-top, 0px) + 4px * var(--sf)) var(--u) 0; background: var(--tint); color: var(--text-color); line-height: calc(16px * var(--sf)); white-space: nowrap; overflow: hidden; }
   :root:not([data-desktop-aligned]) .first { display: none; }
 
   .words { position: relative; display: flex; flex-direction: column; gap: var(--u); max-width: calc(53 * var(--u)); }

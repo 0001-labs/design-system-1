@@ -65,21 +65,29 @@ test("resizing the window aligns it again, and turning the mode off returns to a
   expect(Number.isNaN(off.top)).toBe(true);
 });
 
-test("the grid overlay leaves out the rule at the leftover's edge, and none without the mode", async ({ page }) => {
+test("the grid overlay grows and shrinks with the square, and leaves out the rule at the leftover's edge", async ({ page }) => {
   // 1440 × 910: a 20px square, 45 rows and 10px left over on top.
   await open(page, 1440, 910, "?grid=1");
-  const firstRule = () => page.evaluate(() => {
+  const drawn = () => page.evaluate(() => {
     const grid = document.querySelector("[data-ds-grid-overlay]")!.shadowRoot!.querySelector(".grid")!;
-    const after = getComputedStyle(grid, "::after");
-    return { mask: after.maskImage || after.webkitMaskImage, rules: after.backgroundPosition };
+    const own = getComputedStyle(grid), after = getComputedStyle(grid, "::after");
+    return { lines: own.backgroundImage, tile: own.backgroundSize, rules: after.backgroundImage, ruleTile: after.backgroundSize, mask: after.maskImage || after.webkitMaskImage };
   });
-  const on = await firstRule();
+  const on = await drawn();
   expect((await measure(page)).top).toBe(10);
+  // One repeating gradient across the overlay, never a tile a square wide: browsers round tiles to
+  // whole pixels, so a 20.14px square drawn as tiles drifts off the page's squares.
+  for (const image of [on.lines, on.rules]) expect(image).toContain("repeating-linear-gradient");
+  for (const tile of [on.tile, on.ruleTile]) expect(tile).toBe("auto");
   // Rules start at the leftover, and everything down to 1px past it is masked out.
   expect(on.rules).toContain("10px");
   expect(on.mask).toContain("11px");
+  // At another width the lines follow the scaled square.
+  await page.setViewportSize({ width: 1453, height: 910 });
+  await expect.poll(async () => (await measure(page)).columns).toBe(73);
+  expect((await drawn()).lines).toMatch(/19\.9\d*px/);
   await page.evaluate(() => (window as unknown as { align: (on: boolean) => void }).align(false));
-  const off = await firstRule();
+  const off = await drawn();
   expect(off.rules).not.toContain("10px");
   expect(off.mask).toMatch(/-\d{5,}/);
 });

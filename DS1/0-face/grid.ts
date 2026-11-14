@@ -47,18 +47,20 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       inset: 0;
       --cell: var(--ds-grid-unit, calc(var(--unit, 20px) * var(--sf, 1)));
       --line: var(--ds-grid-color, light-dark(#61528440, #e0caff50));
-      background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
-      background-size: var(--cell) var(--cell);
-      background-position: calc(var(--ds-grid-origin-x, 0px) - var(--ds-grid-scroll-x, 0px) - var(--ds-grid-line-offset, 0px)) 0;
+      --x: calc(var(--ds-grid-origin-x, 0px) - var(--ds-grid-scroll-x, 0px) - var(--ds-grid-line-offset, 0px));
+      --y: calc(var(--ds-grid-origin-y, 0px) - var(--ds-grid-scroll-y, 0px) - var(--ds-grid-line-offset, 0px));
+      /* One repeating gradient across the whole overlay, never a tile per square: browsers round a
+         tile to whole pixels (WebKit draws a 20.14px square as 20px), so tiled lines drift off the
+         squares under any scale but 1. A repeating gradient keeps its stops where they are put, and
+         repeats them before its first one too. */
+      background-image: repeating-linear-gradient(to right, var(--line) var(--x), var(--line) calc(var(--x) + 1px), transparent calc(var(--x) + 1px), transparent calc(var(--x) + var(--cell)));
     }
     /* The rules across are drawn apart from the lines down, so the page's first one can be left out. */
     .grid::after {
       content: "";
       position: absolute;
       inset: 0;
-      background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px);
-      background-size: var(--cell) var(--cell);
-      background-position: 0 calc(var(--ds-grid-origin-y, 0px) - var(--ds-grid-scroll-y, 0px) - var(--ds-grid-line-offset, 0px));
+      background-image: repeating-linear-gradient(to bottom, var(--line) var(--y), var(--line) calc(var(--y) + 1px), transparent calc(var(--y) + 1px), transparent calc(var(--y) + var(--cell)));
     }
     /* Desktop aligned (scaling.ts) adds the height's leftover, --ds-grid-top, to the first row:
        the rule at the leftover's edge is not drawn while it is in view, so that row shows as one
