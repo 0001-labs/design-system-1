@@ -23,7 +23,7 @@ const server = createServer(async (request, response) => {
   } catch {
     // Examples take the published token-only base; every other missing asset remains a failure.
     if (url.pathname.startsWith('/ds1/')) {
-      const result = await fetch(new URL(url.pathname, 'https://designsystem1.com')).catch(() => null);
+      const result = await fetch(new URL(url.pathname, 'https://designsystem1.com'), { signal: AbortSignal.timeout(5_000) }).catch(() => null);
       if (result?.ok) { response.setHeader('Content-Type', result.headers.get('content-type') ?? 'text/css'); response.end(Buffer.from(await result.arrayBuffer())); return; }
     }
     response.writeHead(404).end();
@@ -88,7 +88,10 @@ try {
       } finally { await browser.close(); }
     }
   }));
-} finally { server.close(); }
+} finally {
+  server.close();
+  server.closeAllConnections();
+}
 const report: ExampleReport = { schema: 1, generatedAt: new Date().toISOString(), revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).trim(), widths, themes, examples: DOC_EXAMPLES.map(example => results.find(result => result.id === example.id)!) };
 await writeFile(join(folder, 'system-data/examples.json'), JSON.stringify(report));
 if (results.some(result => result.errors.length)) process.exitCode = 1;
