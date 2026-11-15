@@ -12,8 +12,9 @@ describe("the Emails place's list", () => {
 
 describe("an email in words", () => {
   it("names every kind the Worker sends, and shows an unknown one as it is", () => {
-    expect(Object.keys(EMAIL_KIND_NAMES)).toEqual(["form-inquiry", "sign-in-code", "booking-confirmation", "booking-team-note", "booking-cancelled", "gift-card", "gift-card-receipt"]);
+    expect(Object.keys(EMAIL_KIND_NAMES)).toEqual(["form-inquiry", "sign-in-code", "booking-confirmation", "booking-team-note", "booking-cancelled", "gift-card", "gift-card-receipt", "email-confirm", "email-flow"]);
     expect(kindName("form-inquiry")).toBe("Form enquiry");
+    expect(kindName("email-flow")).toBe("Flow email");
     expect(kindName("booking-team-note")).toBe("Booking note to the team");
     expect(kindName("newsletter")).toBe("newsletter");
   });
