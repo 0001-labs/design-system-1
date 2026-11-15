@@ -10,103 +10,103 @@ Each rule names the test that holds it. While editing a site, a drag that breaks
 
 The Edit action stays centred above its control, including after resizing, while pressing the control itself follows its normal action.
 
-Held by `tests/control-edit.mjs`: “Hover Edit works for native links, imported links and DS1 buttons”.
+Manual check: “Hover Edit works for native links, imported links and DS1 buttons”.
 
 ### `spacing.always-visible`
 
 Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-focused or actively adjusted space, including zero-size gaps and padding.
 
-Held by `tests/spacing-visibility.mjs`: “hover-only spacing guides”.
+Manual check: “hover-only spacing guides”.
 
 ### `spacing.sides-apart`
 
 A page's, section's or card's top and bottom and its sides are two spaces: the handle across the top changes only the top and bottom, the handle down the side only the sides, and the document records both.
 
-Held by `tests/spacing-sides.mjs`: “top and side padding apart”.
+Manual check: “top and side padding apart”.
 
 ### `spacing.vertical-growth`
 
 Content containers grow vertically when edited spacing needs more room, including after resizing and reopening, instead of clipping their words.
 
-Held by `tests/template-spacing.mjs`: “resized page grows with its spacing after reopening”.
+Manual check: “resized page grows with its spacing after reopening”.
 
 ### `navigation.no-nesting`
 
 Following a canvas link never loads an editor inside the editor; local anchors remain in the page and external destinations open separately.
 
-Held by `tests/template-spacing.mjs`: “safe links”.
+Manual check: “safe links”.
 
 ### `canvas.component-assets`
 
 Site-owned device artwork and chrome load through the authenticated file gateway in inline and URL canvases, including after reopening.
 
-Held by `tests/carousel-frames.mjs`: “Device frames load through site files and carousel insertion stays unavailable”.
+Manual check: “Device frames load through site files and carousel insertion stays unavailable”.
 
 ### `carousel.existing-content`
 
 Carousel slides keep their existing editable words, while menus and insertion commands cannot add writing, groups, sections or generated blocks inside them.
 
-Held by `tests/carousel-frames.mjs`: “Device frames load through site files and carousel insertion stays unavailable”.
+Manual check: “Device frames load through site files and carousel insertion stays unavailable”.
 
 ### `carousel.imported-row`
 
 Imported carousel tracks keep each authored slide whole and only reorder horizontally, both while carrying and after release.
 
-Held by `tests/carousel-imported.mjs`: “Imported showcase cards stay in one horizontal row”.
+Manual check: “Imported showcase cards stay in one horizontal row”.
 
 ### `emails.templates`
 
 Editable email wording saves automatically with revision checks, keeps newer typing and failed drafts, previews real form placeholders and survives reopening without sending an email.
 
-Held by `tests/places-shared.mjs`: “Enquiry templates save automatically, preserve newer typing and failed drafts, preview fields and reopen”.
+Manual check: “Enquiry templates save automatically, preserve newer typing and failed drafts, preview fields and reopen”.
 
 ### `carousel.reorder`
 
 Dragging a carousel card by its body or picture reorders the complete card only within its own horizontal row, never moves it vertically or nests it, preserves its contents and saves the order for reopening and publication.
 
-Held by `tests/carousel-reorder.mjs`: “Carousel cards drag horizontally, save and reopen in their new order”.
+Manual check: “Carousel cards drag horizontally, save and reopen in their new order”.
 
 ### `selection.writing-only`
 
 Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.
 
-Held by `tests/text-selection.mjs`: “Canvas selection stays within active writing”.
+Manual check: “Canvas selection stays within active writing”.
 
 ### `drag.appearance`
 
 Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes. One that paints no background is carried on the colour it stood on, so the words it passes never show through its own.
 
-Held by `tests/drag-appearance.mjs`: “Dragged content preserves typography, wrapping and appearance”.
+Manual check: “Dragged content preserves typography, wrapping and appearance”.
 
 ### `native.templates`
 
 Every authored template retains its words and desktop/phone layout through the shared block renderer.
 
-Held by `tests/template-native.mjs`: “content and design preserved through shared blocks”.
+Manual check: “content and design preserved through shared blocks”.
 
 ### `native.inline-writing`
 
 Buttons and links keep their normal press; their hover Edit action edits words in place with spaces, selection, saving and reopening, without a page-wide editing mode.
 
-Held by `tests/control-edit.mjs`: “Hover Edit works for native links, imported links and DS1 buttons”.
+Manual check: “Hover Edit works for native links, imported links and DS1 buttons”.
 
 ### `native.workspace`
 
 All lab pages, templates and private site drafts use the published page model and editor; spacing survives saving and reopening, and a refused save retains the local document for recovery.
 
-Held by `tests/workspace-native.mjs`: “Shared workspace editor: native blocks”.
+Manual check: “Shared workspace editor: native blocks”.
 
 ### `spacing.hit-area`
 
 In Chromium and WebKit, resize labels never intercept a neighbouring spacing handle; pointer and keyboard spacing changes persist after reopening.
 
-Held by `tests/soendergaarden-spacing.mjs`: “Søndergården front: publication retry”.
+Manual check: “Søndergården front: publication retry”.
 
 ### `spacing.sticky-header`
 
 Scrolling a sticky header over the page never creates a spacing handle across content; paragraph gaps remain directly draggable.
 
-Held by `tests/soendergaarden-spacing.mjs`: “Scrolled paragraph gaps stay directly draggable”.
+Manual check: “Scrolled paragraph gaps stay directly draggable”.
 
 ### `native.gutters`
 
@@ -118,7 +118,7 @@ Held by `src/native-page-model.test.ts`: “maps two featured and three ordinary
 
 A native page edits the same typed blocks and responsive measures that publication renders, with each block owning its mobile defaults and every saved gesture surviving reopening.
 
-Held by `tests/native-page.mjs`: “Native page: real model/scroll/public geometry”.
+Manual check: “Native page: real model/scroll/public geometry”.
 
 ### `native.sections`
 
@@ -152,7 +152,7 @@ Held by `src/c9y-constraints.test.ts`: “a sibling makes room past its centre a
 
 A dropped block lands once, directly at its committed place, within a pixel; the editor commits the final layout before the carried block lands.
 
-Held by `tests/reorder.mjs`: “Single landing”.
+Manual check: “Single landing”.
 
 ### `drag.grid`
 
@@ -212,13 +212,13 @@ With reduced motion, a block dropped in the editor lands at once: nothing animat
 
 The browser half of motion.reduced: the editor's own drop, measured in a page that asks for less motion.
 
-Held by `tests/drag-reduced-motion.mjs`: “With reduced motion a drop lands at once”.
+Manual check: “With reduced motion a drop lands at once”.
 
 ### `drag.cancel-home`
 
 Escape, the window losing focus or the page being hidden while a block is carried sends it home: the document is unchanged, no drag marks or moved siblings are left behind, the selection is kept and the block can be carried again.
 
-Held by `tests/drag-cancel.mjs`: “Escape, a lost window and a hidden page send a carried block home”.
+Manual check: “Escape, a lost window and a hidden page send a carried block home”.
 
 ### `drag.release-anywhere`
 
@@ -226,19 +226,19 @@ A block carried out of the canvas and released over the app ends its drag there:
 
 The canvas keeps the pointer it was pressed in until release, in Chromium and WebKit alike, so the drag never sticks to a pointer that has left it.
 
-Held by `tests/drag-release-outside.mjs`: “Releasing a carried block outside the canvas ends the drag”.
+Manual check: “Releasing a carried block outside the canvas ends the drag”.
 
 ### `drag.auto-scroll`
 
 A block held near the canvas's top or bottom edge scrolls the page within a second, and dropped past the last block it lands last, once, without moving anything again.
 
-Held by `tests/drag-autoscroll.mjs`: “A block held at the bottom edge scrolls the page and lands last”.
+Manual check: “A block held at the bottom edge scrolls the page and lands last”.
 
 ### `drag.scroll-while-carried`
 
 Scrolling the page while a block is carried keeps the drop under the pointer: the block lands where it was carried, once.
 
-Held by `tests/drag-wheel.mjs`: “Scrolling under a carried block keeps the drop under the pointer”.
+Manual check: “Scrolling under a carried block keeps the drop under the pointer”.
 
 ### `drag.no-self-nesting`
 
@@ -246,7 +246,7 @@ A block that holds blocks is never dropped into itself or into anything it holds
 
 Drag never offers a list inside the carried item, so its own lists neither take the drop nor make room.
 
-Held by `tests/drag-nesting.mjs`: “A block is never dropped into itself or what it holds”.
+Manual check: “A block is never dropped into itself or what it holds”.
 
 ### `drag.across-containers`
 
@@ -254,19 +254,19 @@ A block moves between columns and out to the page in one landing; a column's sin
 
 The carried column stands at its block's height from the lift, so the room it makes is the room the block takes, and a list it enters reserves that room until the commit fills it.
 
-Held by `tests/drag-columns.mjs`: “Blocks move between columns and out to the page”.
+Manual check: “Blocks move between columns and out to the page”.
 
 ### `drag.touch`
 
 A finger lifts a block only after holding still; a finger that moves at once scrolls the page and changes nothing.
 
-Held by `tests/drag-touch.mjs`: “A finger lifts a block after a hold and scrolls without one”.
+Manual check: “A finger lifts a block after a hold and scrolls without one”.
 
 ### `drag.undo-redo`
 
 A pointer reorder is one step of the history: undo and redo restore the order and every block's place, each saved once.
 
-Held by `tests/drag-undo.mjs`: “A pointer reorder undoes and redoes as one saved step”.
+Manual check: “A pointer reorder undoes and redoes as one saved step”.
 
 ### `drag.target-shown`
 
@@ -274,7 +274,7 @@ While a block is carried, the list it will land in is outlined by a 1px line (th
 
 Outlines and opacity never move a block, so drag.one-movement and motion.transform-only hold.
 
-Held by `tests/drag-affordance.mjs`: “The list a carried block will land in is shown”.
+Manual check: “The list a carried block will land in is shown”.
 
 ### `drag.selection-together`
 
@@ -282,7 +282,7 @@ Carrying one of several selected sibling blocks carries them all, counted on the
 
 They are folded into one carrier, spaced as their list spaces them, before the lift is measured, so the room made is the room they take together and drag.one-movement holds.
 
-Held by `tests/drag-selection.mjs`: “Selected blocks move together”.
+Manual check: “Selected blocks move together”.
 
 ### `drag.preview-as-drawn`
 
@@ -290,13 +290,13 @@ The carried preview is the block as the page draws it: its components drawn as t
 
 The preview is Drag's copy, not a block of the page: the editor takes its own marks off it, and Drag copies the tree of a component the canvas cannot draw a second time.
 
-Held by `tests/drag-preview.mjs`: “A carried section looks as it did before the lift”.
+Manual check: “A carried section looks as it did before the lift”.
 
 ### `drag.one-carrier`
 
 One press carries a block once: writing the page carries is not carried by its own editor as well, and that editor moves its own blocks again once the press is over.
 
-Held by `tests/drag-preview.mjs`: “One press lifts one preview”.
+Manual check: “One press lifts one preview”.
 
 ### `drag.edge-intent`
 
@@ -304,13 +304,13 @@ A block lifted beside the canvas's top or bottom edge scrolls nothing until the 
 
 Picking a block up is not asking to scroll: a page that runs away under a block just lifted loses the place it was to be dropped.
 
-Held by `tests/drag-edge.mjs`: “A block lifted at the foot of the canvas stays put until it is carried on down”.
+Manual check: “A block lifted at the foot of the canvas stays put until it is carried on down”.
 
 ### `drag.regrab`
 
 A press while the last drop is still landing lands it at once and is itself carried, so rearranging several blocks never waits on an animation.
 
-Held by `tests/drag-regrab.mjs`: “A block pressed while the last drop lands is carried at once”.
+Manual check: “A block pressed while the last drop lands is carried at once”.
 
 ### `drag.always-ends`
 

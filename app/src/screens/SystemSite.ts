@@ -74,7 +74,7 @@ export class SystemSite extends AppElement {
       ${CONSTRAINT_CATALOGUE.filter(matches).map(rule => html`<section class="system-rule" id=${rule.id}>
         <div class="system-line"><a class="ds-link" href=${`#${rule.id}`}>${rule.id}</a><ds-tag>${rule.tag}</ds-tag><code>${rule.code}</code></div>
         <div data-ds-prose><p>${rule.rule}${rule.why ? ` ${rule.why}` : ''}</p></div>
-        <div class="system-line">${rule.components.map(tag => html`<ds-tag>${tag}</ds-tag>`)}<a class="ds-link" href=${source('DS1/0-face/constraints.ts')} target="_blank" rel="noopener">Core rule</a><a class="ds-link" href=${source(rule.check.file)} target="_blank" rel="noopener">Source test</a></div>
+        <div class="system-line">${rule.components.map(tag => html`<ds-tag>${tag}</ds-tag>`)}<a class="ds-link" href=${source('DS1/0-face/constraints.ts')} target="_blank" rel="noopener">Core rule</a>${'file' in rule.check ? html`<a class="ds-link" href=${source(rule.check.file)} target="_blank" rel="noopener">Source test</a>` : html`<ds-tag>Manual review</ds-tag>`}</div>
         <ds-text literal tone="muted" wrap>${rule.check.test}</ds-text>
       </section>`)}
       ${FOUNDATION_CONSTRAINTS.filter(matches).map(rule => html`<section class="system-rule" id=${rule.id}>

@@ -94,7 +94,7 @@ export default defineSchema({
     .index("by_library_version", ["libraryId", "version"]),
 
   /**
-   * Dev-only capture of the most recent magic link per email, so Playwright can
+   * Dev-only capture of the most recent magic link per email, so local sign-in checks can
    * sign in without a mail server.
    *
    * Written and read only when DEV_LOGIN_LINKS is set, which is an explicit

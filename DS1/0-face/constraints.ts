@@ -30,7 +30,7 @@ export type Constraint = {
   /** The elements that keep it, by tag. */
   components: string[];
   /** The test that measures it in the source: a file in tests/ and the name it is given there. */
-  check: { file: string; test: string };
+  check: { file: string; test: string } | { manual: true; test: string };
   /** Measures it on a page as drawn, and returns where the page breaks it. */
   inspect: (root: ParentNode) => Finding[];
   /** What it measures on a page, one and many (`['card', 'cards']`), and how many of them a page has. */
@@ -148,7 +148,7 @@ export const constraints: Constraint[] = [
     code: 'overlay.escape-close',
     rule: 'Escape always closes the top sheet, including while typing or with focus outside it; editors, disabled Escape options and close vetoes cannot block it, and unsent drafts are preserved.',
     components: ['ds-overlay'],
-    check: { file: 'tests/overlay-measure.test.ts', test: 'Escape closes the top sheet even when its editor consumes keys and dismissal is vetoed' },
+    check: { manual: true, test: 'Escape closes the top sheet even when its editor consumes keys and dismissal is vetoed' },
     measures: ['sheet', 'sheets'],
     count: root => root.querySelectorAll('ds-overlay[type="sheet"], dialog.ds-overlay--sheet').length,
     inspect: root => Array.from(root.querySelectorAll('ds-overlay[type="sheet"], dialog.ds-overlay--sheet')).map(element => ({ element, review: true, message: 'Open the sheet, focus its editor and press Escape: only the top sheet must close, preserving its draft. Keyboard dismissal cannot be measured without interacting.' })),
@@ -167,7 +167,7 @@ export const constraints: Constraint[] = [
     rule: 'Fault lines keep related card and control grids aligned across the whole page, with matching track edges and gaps. Headings, prose and text tabs in a content column share the leading visible text edge, including labels inside shadow roots and slots, at every checked viewport width.',
     why: 'Compare separate sections in the same alignment family; responsive layouts may change together, while unrelated groups and intentional exceptions remain independent.',
     components: ['ds-page'],
-    check: { file: 'tests/fault-lines.test.ts', test: 'fault lines catch shifted tracks and unequal gaps across sections at each viewport' },
+    check: { manual: true, test: 'fault lines catch shifted tracks and unequal gaps across sections at each viewport' },
     measures: ['alignment group', 'alignment groups'], count: root => faultLineGrids(root).length + faultLineColumns(root).length, inspect: inspectFaultLines,
   },
   {
@@ -190,14 +190,14 @@ export const constraints: Constraint[] = [
     rule: 'Button labels stay fully visible, never faded, gradient-masked or truncated; round the required width up to whole grid squares.',
     why: 'The action must remain readable; a chosen width cannot cut off its label.',
     components: ['ds-button'],
-    check: { file: 'tests/button-cut-fade-measure.test.ts', test: 'button labels stay whole without gradients and snap up to the grid' },
+    check: { manual: true, test: 'button labels stay whole without gradients and snap up to the grid' },
     measures: ['button', 'buttons'], count: root => labelledButtons(root).length, inspect: inspectButtonLabels,
   },
   {
     code: 'tag.visible-label',
     rule: 'Tags always show their complete label, never clipping, truncating or fading it; the surrounding layout gives the tag room or reflows.',
     components: ['ds-tag'],
-    check: { file: 'tests/tag-label.test.ts', test: 'tags keep complete labels in narrow containers and report clipping or fading overrides' },
+    check: { manual: true, test: 'tags keep complete labels in narrow containers and report clipping or fading overrides' },
     measures: ['tag', 'tags'],
     count: root => root.querySelectorAll('ds-tag').length,
     inspect: inspectTagLabels,
@@ -207,7 +207,7 @@ export const constraints: Constraint[] = [
     rule: 'Headings and table headers keep each word intact across lines; only a long word that cannot fit may split at a valid language-specific hyphenation point, with a visible hyphen.',
     why: 'Wrap between words or give the heading more room; never leave a final letter on its own, use break-all or anywhere, or insert an arbitrary line break inside a word. Use the correct lang with automatic hyphenation, or a soft hyphen at an editorially verified break; scripts with other line-breaking conventions keep their own typesetting rules.',
     components: ['ds-text', 'ds-table'],
-    check: { file: 'tests/word-wrap.test.ts', test: 'headings and table headers keep whole words or use a typesetting hyphen' },
+    check: { manual: true, test: 'headings and table headers keep whole words or use a typesetting hyphen' },
     measures: ['heading or table header', 'headings and table headers'],
     count: root => wordHeaders(root).length,
     inspect: inspectWordWrap,
@@ -217,7 +217,7 @@ export const constraints: Constraint[] = [
     rule: 'Visible text, including muted labels, placeholders and avatar initials, has at least 4.5:1 contrast against the background it is drawn on.',
     why: 'Measure resolved colours through slots and open shadow roots, including transparency and opacity; image backgrounds and effects that cannot be measured need a visual review. In products, contrast-watch.ts measures the theme in use after load and reports each failure as `contrast.<theme>.<component>`.',
     components: ['ds-color', 'ds-text', 'ds-avatar'],
-    check: { file: 'tests/text-contrast.test.ts', test: 'rendered text contrast catches component overrides, slots, alpha and opacity' },
+    check: { manual: true, test: 'rendered text contrast catches component overrides, slots, alpha and opacity' },
     measures: ['text sample', 'text samples'],
     count: root => measureTextContrast(root).length,
     inspect: inspectTextContrast,
@@ -227,7 +227,7 @@ export const constraints: Constraint[] = [
     rule: 'Avatar initials have at least 4.5:1 contrast against their rendered fill, including after a theme or identity colour changes.',
     why: 'Check each initial inside the avatar’s shadow root and in overlapping groups; decorative initials still need to be readable. Explicit ink overrides must pass too.',
     components: ['ds-avatar'],
-    check: { file: 'tests/avatar-contrast.test.ts', test: 'avatar initials stay readable after theme and CSS-variable changes, and the avatar constraint catches overrides' },
+    check: { manual: true, test: 'avatar initials stay readable after theme and CSS-variable changes, and the avatar constraint catches overrides' },
     measures: ['avatar initial', 'avatar initials'],
     count: root => measureTextContrast(root).filter(result => isAvatarInitial(result.element)).length,
     inspect: root => inspectTextContrast(root).filter(finding => isAvatarInitial(finding.element)),

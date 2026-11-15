@@ -10,7 +10,7 @@ const http = httpRouter();
 auth.addHttpRoutes(http);
 
 /**
- * Dev-only: hand back the most recent magic link so Playwright can sign in
+ * Dev-only: hand back the most recent magic link so local sign-in checks can sign in
  * without a mail server.
  *
  * Guarded twice — here and in `devLinks.ts` — and 404s rather than 403s when

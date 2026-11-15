@@ -17,13 +17,14 @@ import { calculateScalingFactor, defaultScalingConfig } from '../DS1/0-face/scal
 // a hosted library) is fetched from `--origin`, https://designsystem1.com unless named.
 //
 // It only reads: GETs, without cookies or credentials, so it is safe against production. It needs
-// Playwright's WebKit (`vp exec playwright install webkit`).
+// Google Chrome in headless mode.
 import { build } from 'esbuild';
 import { mkdirSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { createHash } from 'node:crypto';
 import { extname, join, resolve } from 'node:path';
-import { devices, webkit, type Page, type Response } from 'playwright';
+import puppeteer, { KnownDevices, type Page, type HTTPResponse } from 'puppeteer-core';
+import { setTimeout as delay } from 'node:timers/promises';
 
 /** Representative phone, tablet and desktop widths; --widths adds breakpoint boundaries. */
 const WIDTHS = [320, 375, 393, 430, 768, 1024, 1440];
@@ -169,7 +170,7 @@ let peakRss = process.memoryUsage().rss;
 const noteMemory = () => { peakRss = Math.max(peakRss, process.memoryUsage().rss); };
 let documentLoads = 0;
 // Keep release checks invisible even when Playwright debugging is enabled in the shell.
-const browser = await webkit.launch({ headless: true });
+const browser = await puppeteer.launch({ channel: 'chrome', headless: true });
 const batches = viewportBatches(widths);
 const report: string[] = [];
 /** What the rules could not measure and a person must look at: listed, never a failure. */
@@ -189,7 +190,7 @@ async function scrollForMeasurement(page: Page) {
     }
     scrollTo(0, 0);
   });
-  await page.waitForTimeout(80);
+  await delay(80);
 }
 
 async function afterViewportChange(page: Page, width: number, mobile: boolean) {
@@ -201,7 +202,7 @@ async function afterViewportChange(page: Page, width: number, mobile: boolean) {
       void document.documentElement.scrollWidth;
     }, sf);
   }
-  await page.waitForTimeout(80);
+  await delay(80);
 }
 
 async function recordAtWidth(page: Page, url: string, width: number) {
@@ -232,27 +233,27 @@ async function openPage(url: string, last: boolean): Promise<boolean> {
   for (const batch of batches) {
     const mobile = batch[0]! < 768;
     const first = batch[0]!;
-    const context = await browser.newContext({
-      ...(mobile ? devices['iPhone 14'] : {}),
-      viewport: { width: first, height: 844 },
-      screen: { width: first, height: 844 },
-      colorScheme: theme,
-    });
-    const page = await context.newPage();
+    const context = await browser.createBrowserContext();
     try {
+      const page = await context.newPage();
+      const phone = KnownDevices['iPhone 14'];
+      const viewport = { ...(mobile ? phone.viewport : {}), width: first, height: 844 };
+      if (mobile) await page.setUserAgent(phone.userAgent);
+      await page.setViewport(viewport);
+      await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]);
       const attempts: { error?: string; status?: number; url?: string; ray?: string }[] = [];
-      let documentResponse: Response | undefined;
+      let documentResponse: HTTPResponse | undefined;
       page.on('response', response => {
-        if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponse = response;
+        if (response.request().isNavigationRequest() && response.request().frame() === page.mainFrame()) documentResponse = response;
       });
       const navigate = async (timeout: number) => {
         documentResponse = undefined;
         try {
-          const response = await page.goto(url, { waitUntil: 'networkidle', timeout });
+          const response = await page.goto(url, { waitUntil: 'networkidle0', timeout });
           attempts.push(response ? { status: response.status(), url: response.url(), ray: response.headers()['cf-ray'] } : { error: 'Navigation returned no document response' });
           return response;
         } catch (error) {
-          const response = documentResponse as Response | undefined;
+          const response = documentResponse as HTTPResponse | undefined;
           attempts.push({ error: (error as Error).message, status: response?.status(), url: response?.url(), ray: response?.headers()['cf-ray'] });
           if (response && !response.ok()) return response;
           throw error;
@@ -289,7 +290,7 @@ async function openPage(url: string, last: boolean): Promise<boolean> {
       }, theme);
       await page.addScriptTag({ content: checker });
       for (const width of batch) {
-        if (width !== first) await page.setViewportSize({ width, height: 844 });
+        if (width !== first) await page.setViewport({ ...viewport, width });
         await afterViewportChange(page, width, mobile);
         await recordAtWidth(page, url, width);
       }

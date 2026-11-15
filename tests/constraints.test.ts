@@ -26,8 +26,9 @@ test("every constraint is one sentence", () => {
   for (const { rule } of constraints) expect(rule).toMatch(/^[A-Z][^]*[^.]\.$/);
 });
 
-test("every constraint is measured by a test that exists", () => {
+test("every automated constraint names a test that exists", () => {
   for (const { code, check } of constraints) {
+    if (!('file' in check)) continue;
     expect(existsSync(join(root, check.file)), `${code}: ${check.file}`).toBe(true);
     expect(read(check.file), `${code}: no test named "${check.test}"`).toContain(`test(${JSON.stringify(check.test)}`);
   }

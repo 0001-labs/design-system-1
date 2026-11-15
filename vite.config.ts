@@ -63,8 +63,7 @@ export default defineConfig({
     // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
     // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
     clearMocks: false,
-    // The Playwright specs in e2e/ run with `vp run test:e2e`, not Vitest
-    exclude: ["**/node_modules/**", "**/.git/**", "e2e/**"],
+    exclude: ["**/node_modules/**", "**/.git/**"],
   },
   root: ".",
   server: {

@@ -171,7 +171,7 @@ The constraints (`DS1/0-face/constraints.ts`, the design-system-1 skill's Constr
 - **In the source:** `tests/constraints.test.ts` and each rule's own test (`check.file`) run with `vp test`, which `vp run release` runs before publishing. Run `vp test tests/constraints.test.ts tests/carousel.test.ts tests/card.test.ts tests/page.test.ts …` by hand after changing a rule or a component that keeps one.
 - **On the pages:** `vp run constraints:site` (`scripts/constraints-phone.ts --dist website/dist`) serves the built site here, opens every page in its sitemap and every full-page layout example under `/examples/layouts/` in Playwright's WebKit at 320, 375, 393, 430, 768, 1024 and 1440px wide, runs every rule, and fails while any is broken. What a rule cannot measure (words over a picture, a blend) it lists to review by eye, apart from what is broken, and that does not fail the run. The browser sweep is paused: it takes the Mac's sound and memory with it, so the script exits at once unless `DS1_BROWSER_CONSTRAINTS=1` is set, and agents set that only when Joachim asks for a run. Neither the deploy nor any agent runs it on its own. Fix the piece a finding names, in the example or the component, never by hiding the overflow or dropping the page from the check.
 
-`vp run constraints:phone <address>` runs the same check against a live site, over its sitemap, with GETs only; it is paused the same way; run it only when Joachim asks. Both need `vp exec playwright install webkit` once.
+`vp run constraints:phone <address>` runs the same check against a live site, over its sitemap, with GETs only; it is paused the same way; run it only when Joachim asks. Both need Google Chrome installed locally once.
 
 ## Integration
 

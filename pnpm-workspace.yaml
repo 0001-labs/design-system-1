@@ -13,6 +13,7 @@ catalog:
   vite: npm:@voidzero-dev/vite-plus-core@1.3.0
   vite-plus: 1.3.0
 overrides:
+  vite-plus>playwright: "-"
   astro>vite: "^6.4.1"
   vite@*: "catalog:"
 peerDependencyRules:

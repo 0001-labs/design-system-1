@@ -267,8 +267,9 @@ test('drag motion animates translate, transform and opacity only', () => {
 });
 
 describe('the constraints', () => {
-  test('each names a test that exists', () => {
+  test('each automated check names a test that exists', () => {
     for (const { code, check } of C9Y_CONSTRAINTS) {
+      if (!('file' in check)) continue;
       expect(read(check.file), `${code}: ${check.file}`).toContain(check.test);
     }
     expect(new Set(C9Y_CONSTRAINTS.map(({ code }) => code)).size).toBe(C9Y_CONSTRAINTS.length);

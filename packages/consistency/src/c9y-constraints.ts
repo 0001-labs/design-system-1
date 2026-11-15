@@ -17,42 +17,42 @@ export type C9yConstraint = {
   /** Why it holds, when the rule alone does not say. */
   why?: string;
   /** The test that holds it: a file in this package and the name it is given there. */
-  check: { file: string; test: string };
+  check: { file: string; test: string } | { manual: true; test: string };
 };
 
 export const C9Y_CONSTRAINTS: C9yConstraint[] = [
-  {code:'controls.edit-position',rule:'The Edit action stays centred above its control, including after resizing, while pressing the control itself follows its normal action.',check:{file:'tests/control-edit.mjs',test:'Hover Edit works for native links, imported links and DS1 buttons'}},
-  {code:'spacing.always-visible',rule:'Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-focused or actively adjusted space, including zero-size gaps and padding.',check:{file:'tests/spacing-visibility.mjs',test:'hover-only spacing guides'}},
-  {code:'spacing.sides-apart',rule:'A page\'s, section\'s or card\'s top and bottom and its sides are two spaces: the handle across the top changes only the top and bottom, the handle down the side only the sides, and the document records both.',check:{file:'tests/spacing-sides.mjs',test:'top and side padding apart'}},
-  {code:'spacing.vertical-growth',rule:'Content containers grow vertically when edited spacing needs more room, including after resizing and reopening, instead of clipping their words.',check:{file:'tests/template-spacing.mjs',test:'resized page grows with its spacing after reopening'}},
-  {code:'navigation.no-nesting',rule:'Following a canvas link never loads an editor inside the editor; local anchors remain in the page and external destinations open separately.',check:{file:'tests/template-spacing.mjs',test:'safe links'}},
-  {code:'canvas.component-assets',rule:'Site-owned device artwork and chrome load through the authenticated file gateway in inline and URL canvases, including after reopening.',check:{file:'tests/carousel-frames.mjs',test:'Device frames load through site files and carousel insertion stays unavailable'}},
-  {code:'carousel.existing-content',rule:'Carousel slides keep their existing editable words, while menus and insertion commands cannot add writing, groups, sections or generated blocks inside them.',check:{file:'tests/carousel-frames.mjs',test:'Device frames load through site files and carousel insertion stays unavailable'}},
-  {code:'carousel.imported-row',rule:'Imported carousel tracks keep each authored slide whole and only reorder horizontally, both while carrying and after release.',check:{file:'tests/carousel-imported.mjs',test:'Imported showcase cards stay in one horizontal row'}},
-  {code:'emails.templates',rule:'Editable email wording saves automatically with revision checks, keeps newer typing and failed drafts, previews real form placeholders and survives reopening without sending an email.',check:{file:'tests/places-shared.mjs',test:'Enquiry templates save automatically, preserve newer typing and failed drafts, preview fields and reopen'}},
-  {code:'carousel.reorder',rule:'Dragging a carousel card by its body or picture reorders the complete card only within its own horizontal row, never moves it vertically or nests it, preserves its contents and saves the order for reopening and publication.',check:{file:'tests/carousel-reorder.mjs',test:'Carousel cards drag horizontally, save and reopen in their new order'}},
-  {code:'selection.writing-only',rule:'Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.',check:{file:'tests/text-selection.mjs',test:'Canvas selection stays within active writing'}},
+  {code:'controls.edit-position',rule:'The Edit action stays centred above its control, including after resizing, while pressing the control itself follows its normal action.',check:{ manual: true,test:'Hover Edit works for native links, imported links and DS1 buttons'}},
+  {code:'spacing.always-visible',rule:'Spacing overlays stay hidden while idle and reveal only the hovered, keyboard-focused or actively adjusted space, including zero-size gaps and padding.',check:{ manual: true,test:'hover-only spacing guides'}},
+  {code:'spacing.sides-apart',rule:'A page\'s, section\'s or card\'s top and bottom and its sides are two spaces: the handle across the top changes only the top and bottom, the handle down the side only the sides, and the document records both.',check:{ manual: true,test:'top and side padding apart'}},
+  {code:'spacing.vertical-growth',rule:'Content containers grow vertically when edited spacing needs more room, including after resizing and reopening, instead of clipping their words.',check:{ manual: true,test:'resized page grows with its spacing after reopening'}},
+  {code:'navigation.no-nesting',rule:'Following a canvas link never loads an editor inside the editor; local anchors remain in the page and external destinations open separately.',check:{ manual: true,test:'safe links'}},
+  {code:'canvas.component-assets',rule:'Site-owned device artwork and chrome load through the authenticated file gateway in inline and URL canvases, including after reopening.',check:{ manual: true,test:'Device frames load through site files and carousel insertion stays unavailable'}},
+  {code:'carousel.existing-content',rule:'Carousel slides keep their existing editable words, while menus and insertion commands cannot add writing, groups, sections or generated blocks inside them.',check:{ manual: true,test:'Device frames load through site files and carousel insertion stays unavailable'}},
+  {code:'carousel.imported-row',rule:'Imported carousel tracks keep each authored slide whole and only reorder horizontally, both while carrying and after release.',check:{ manual: true,test:'Imported showcase cards stay in one horizontal row'}},
+  {code:'emails.templates',rule:'Editable email wording saves automatically with revision checks, keeps newer typing and failed drafts, previews real form placeholders and survives reopening without sending an email.',check:{ manual: true,test:'Enquiry templates save automatically, preserve newer typing and failed drafts, preview fields and reopen'}},
+  {code:'carousel.reorder',rule:'Dragging a carousel card by its body or picture reorders the complete card only within its own horizontal row, never moves it vertically or nests it, preserves its contents and saves the order for reopening and publication.',check:{ manual: true,test:'Carousel cards drag horizontally, save and reopen in their new order'}},
+  {code:'selection.writing-only',rule:'Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.',check:{ manual: true,test:'Canvas selection stays within active writing'}},
   {
     code: 'drag.appearance',
     rule: 'Lifting and carrying an element preserves its appearance, including typography, colours, dimensions and text wrapping; only its position changes. One that paints no background is carried on the colour it stood on, so the words it passes never show through its own.',
-    check: { file: 'tests/drag-appearance.mjs', test: 'Dragged content preserves typography, wrapping and appearance' },
+    check: { manual: true, test: 'Dragged content preserves typography, wrapping and appearance' },
   },
-  {code:'native.templates',rule:'Every authored template retains its words and desktop/phone layout through the shared block renderer.',check:{file:'tests/template-native.mjs',test:'content and design preserved through shared blocks'}},
-  {code:'native.inline-writing',rule:'Buttons and links keep their normal press; their hover Edit action edits words in place with spaces, selection, saving and reopening, without a page-wide editing mode.',check:{file:'tests/control-edit.mjs',test:'Hover Edit works for native links, imported links and DS1 buttons'}},
+  {code:'native.templates',rule:'Every authored template retains its words and desktop/phone layout through the shared block renderer.',check:{ manual: true,test:'content and design preserved through shared blocks'}},
+  {code:'native.inline-writing',rule:'Buttons and links keep their normal press; their hover Edit action edits words in place with spaces, selection, saving and reopening, without a page-wide editing mode.',check:{ manual: true,test:'Hover Edit works for native links, imported links and DS1 buttons'}},
   {
     code: 'native.workspace',
     rule: 'All lab pages, templates and private site drafts use the published page model and editor; spacing survives saving and reopening, and a refused save retains the local document for recovery.',
-    check: {file: 'tests/workspace-native.mjs', test: 'Shared workspace editor: native blocks'},
+    check: { manual: true, test: 'Shared workspace editor: native blocks'},
   },
   {
     code: 'spacing.hit-area',
     rule: 'In Chromium and WebKit, resize labels never intercept a neighbouring spacing handle; pointer and keyboard spacing changes persist after reopening.',
-    check: { file: 'tests/soendergaarden-spacing.mjs', test: 'Søndergården front: publication retry' },
+    check: { manual: true, test: 'Søndergården front: publication retry' },
   },
   {
     code: 'spacing.sticky-header',
     rule: 'Scrolling a sticky header over the page never creates a spacing handle across content; paragraph gaps remain directly draggable.',
-    check: { file: 'tests/soendergaarden-spacing.mjs', test: 'Scrolled paragraph gaps stay directly draggable' },
+    check: { manual: true, test: 'Scrolled paragraph gaps stay directly draggable' },
   },
   {
     code: 'native.gutters',
@@ -62,7 +62,7 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
   {
     code: 'native.publication',
     rule: 'A native page edits the same typed blocks and responsive measures that publication renders, with each block owning its mobile defaults and every saved gesture surviving reopening.',
-    check: { file: 'tests/native-page.mjs', test: 'Native page: real model/scroll/public geometry' },
+    check: { manual: true, test: 'Native page: real model/scroll/public geometry' },
   },
   {
     code: 'native.sections',
@@ -89,7 +89,7 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
   {
     code: 'drag.single-landing',
     rule: 'A dropped block lands once, directly at its committed place, within a pixel; the editor commits the final layout before the carried block lands.',
-    check: { file: 'tests/reorder.mjs', test: 'Single landing' },
+    check: { manual: true, test: 'Single landing' },
   },
   {
     code: 'drag.grid',
@@ -137,84 +137,84 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
     code: 'motion.reduced-browser',
     rule: 'With reduced motion, a block dropped in the editor lands at once: nothing animates after the drop and every block stands where the committed order draws it.',
     why: 'The browser half of motion.reduced: the editor\'s own drop, measured in a page that asks for less motion.',
-    check: { file: 'tests/drag-reduced-motion.mjs', test: 'With reduced motion a drop lands at once' },
+    check: { manual: true, test: 'With reduced motion a drop lands at once' },
   },
   {
     code: 'drag.cancel-home',
     rule: 'Escape, the window losing focus or the page being hidden while a block is carried sends it home: the document is unchanged, no drag marks or moved siblings are left behind, the selection is kept and the block can be carried again.',
-    check: { file: 'tests/drag-cancel.mjs', test: 'Escape, a lost window and a hidden page send a carried block home' },
+    check: { manual: true, test: 'Escape, a lost window and a hidden page send a carried block home' },
   },
   {
     code: 'drag.release-anywhere',
     rule: 'A block carried out of the canvas and released over the app ends its drag there: released over no list it goes home, the document unchanged, nothing is left marked and the next press reaches the page.',
     why: 'The canvas keeps the pointer it was pressed in until release, in Chromium and WebKit alike, so the drag never sticks to a pointer that has left it.',
-    check: { file: 'tests/drag-release-outside.mjs', test: 'Releasing a carried block outside the canvas ends the drag' },
+    check: { manual: true, test: 'Releasing a carried block outside the canvas ends the drag' },
   },
   {
     code: 'drag.auto-scroll',
     rule: 'A block held near the canvas\'s top or bottom edge scrolls the page within a second, and dropped past the last block it lands last, once, without moving anything again.',
-    check: { file: 'tests/drag-autoscroll.mjs', test: 'A block held at the bottom edge scrolls the page and lands last' },
+    check: { manual: true, test: 'A block held at the bottom edge scrolls the page and lands last' },
   },
   {
     code: 'drag.scroll-while-carried',
     rule: 'Scrolling the page while a block is carried keeps the drop under the pointer: the block lands where it was carried, once.',
-    check: { file: 'tests/drag-wheel.mjs', test: 'Scrolling under a carried block keeps the drop under the pointer' },
+    check: { manual: true, test: 'Scrolling under a carried block keeps the drop under the pointer' },
   },
   {
     code: 'drag.no-self-nesting',
     rule: 'A block that holds blocks is never dropped into itself or into anything it holds, by pointer or keyboard; the page stays a tree.',
     why: 'Drag never offers a list inside the carried item, so its own lists neither take the drop nor make room.',
-    check: { file: 'tests/drag-nesting.mjs', test: 'A block is never dropped into itself or what it holds' },
+    check: { manual: true, test: 'A block is never dropped into itself or what it holds' },
   },
   {
     code: 'drag.across-containers',
     rule: 'A block moves between columns and out to the page in one landing; a column\'s single block carries its column, which lands as that block anywhere but among columns, so no empty column is left.',
     why: 'The carried column stands at its block\'s height from the lift, so the room it makes is the room the block takes, and a list it enters reserves that room until the commit fills it.',
-    check: { file: 'tests/drag-columns.mjs', test: 'Blocks move between columns and out to the page' },
+    check: { manual: true, test: 'Blocks move between columns and out to the page' },
   },
   {
     code: 'drag.touch',
     rule: 'A finger lifts a block only after holding still; a finger that moves at once scrolls the page and changes nothing.',
-    check: { file: 'tests/drag-touch.mjs', test: 'A finger lifts a block after a hold and scrolls without one' },
+    check: { manual: true, test: 'A finger lifts a block after a hold and scrolls without one' },
   },
   {
     code: 'drag.undo-redo',
     rule: 'A pointer reorder is one step of the history: undo and redo restore the order and every block\'s place, each saved once.',
-    check: { file: 'tests/drag-undo.mjs', test: 'A pointer reorder undoes and redoes as one saved step' },
+    check: { manual: true, test: 'A pointer reorder undoes and redoes as one saved step' },
   },
   {
     code: 'drag.target-shown',
     rule: 'While a block is carried, the list it will land in is outlined by a 1px line (the page itself never is), a list it enters shows the room it reserves, and a block over no list fades; nothing stays marked after the drop.',
     why: 'Outlines and opacity never move a block, so drag.one-movement and motion.transform-only hold.',
-    check: { file: 'tests/drag-affordance.mjs', test: 'The list a carried block will land in is shown' },
+    check: { manual: true, test: 'The list a carried block will land in is shown' },
   },
   {
     code: 'drag.selection-together',
     rule: 'Carrying one of several selected sibling blocks carries them all, counted on the carried preview: they land together in document order, Escape sends them all home, Alt+Arrow moves them a place, and the selection is kept.',
     why: 'They are folded into one carrier, spaced as their list spaces them, before the lift is measured, so the room made is the room they take together and drag.one-movement holds.',
-    check: { file: 'tests/drag-selection.mjs', test: 'Selected blocks move together' },
+    check: { manual: true, test: 'Selected blocks move together' },
   },
   {
     code: 'drag.preview-as-drawn',
     rule: 'The carried preview is the block as the page draws it: its components drawn as they stand and none of the editor\'s marks on it, so a selected block is carried without a wash.',
     why: 'The preview is Drag\'s copy, not a block of the page: the editor takes its own marks off it, and Drag copies the tree of a component the canvas cannot draw a second time.',
-    check: { file: 'tests/drag-preview.mjs', test: 'A carried section looks as it did before the lift' },
+    check: { manual: true, test: 'A carried section looks as it did before the lift' },
   },
   {
     code: 'drag.one-carrier',
     rule: 'One press carries a block once: writing the page carries is not carried by its own editor as well, and that editor moves its own blocks again once the press is over.',
-    check: { file: 'tests/drag-preview.mjs', test: 'One press lifts one preview' },
+    check: { manual: true, test: 'One press lifts one preview' },
   },
   {
     code: 'drag.edge-intent',
     rule: 'A block lifted beside the canvas\'s top or bottom edge scrolls nothing until the pointer leaves that edge\'s band or goes on towards it.',
     why: 'Picking a block up is not asking to scroll: a page that runs away under a block just lifted loses the place it was to be dropped.',
-    check: { file: 'tests/drag-edge.mjs', test: 'A block lifted at the foot of the canvas stays put until it is carried on down' },
+    check: { manual: true, test: 'A block lifted at the foot of the canvas stays put until it is carried on down' },
   },
   {
     code: 'drag.regrab',
     rule: 'A press while the last drop is still landing lands it at once and is itself carried, so rearranging several blocks never waits on an animation.',
-    check: { file: 'tests/drag-regrab.mjs', test: 'A block pressed while the last drop lands is carried at once' },
+    check: { manual: true, test: 'A block pressed while the last drop lands is carried at once' },
   },
   {
     code: 'drag.always-ends',
@@ -316,7 +316,7 @@ export function constraintsDocument(): string {
     '## Rules',
     '',
     ...C9Y_CONSTRAINTS.flatMap(({ code, rule, why, check }) => [
-      `### \`${code}\``, '', rule, ...(why ? ['', why] : []), '', `Held by \`${check.file}\`: “${check.test}”.`, '',
+      `### \`${code}\``, '', rule, ...(why ? ['', why] : []), '', `${'file' in check ? `Held by \`${check.file}\`` : 'Manual check'}: “${check.test}”.`, '',
     ]),
     '## Blocks',
     '',

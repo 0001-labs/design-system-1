@@ -4,7 +4,8 @@ import { createServer } from 'node:http';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { devices, webkit } from 'playwright';
+import puppeteer, { KnownDevices } from 'puppeteer-core';
+import { setTimeout as delay } from 'node:timers/promises';
 import { DOC_EXAMPLES } from '../shared/doc-examples';
 import type { ExampleCheck, ExampleReport, ExampleResult } from '../shared/constraint-catalogue';
 const folder = resolve('website/dist');
@@ -49,30 +50,33 @@ try {
   await Promise.all(Array.from({ length: 4 }, async () => {
     for (let example = queue.shift(); example; example = queue.shift()) {
       const result: ExampleResult = { id: example.id, checks: [], errors: [] };
-      // Bound WebKit's lifetime as well as its contexts: a long-lived browser can
-      // stop navigating after many examples on an unattended, closed-lid host.
-      const browser = await webkit.launch({ headless: true });
+      const browser = await puppeteer.launch({ channel: 'chrome', headless: true });
       try {
-        const context = await browser.newContext({ ...devices['iPhone 14'], colorScheme: 'light' });
+        const context = await browser.createBrowserContext();
         const page = await context.newPage();
+        const phone = KnownDevices['iPhone 14'];
+        await page.setUserAgent(phone.userAgent);
+        await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
         try {
           for (const width of widths) {
-            await page.setViewportSize({ width, height: 844 });
-            const response = await page.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle', timeout: 30_000 });
+            await page.setViewport({ ...phone.viewport, width, height: 844 });
+            const response = await page.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle0', timeout: 30_000 });
             if (!response?.ok()) throw new Error(`${width}px: page returned ${response?.status() ?? 'no response'}`);
             await page.evaluate(async () => { await document.fonts.ready; for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight) { scrollTo(0, y); await new Promise(done => setTimeout(done, 30)); } scrollTo(0, 0); });
             await page.addScriptTag({ content: inspector });
             for (const theme of themes) {
               await page.evaluate(theme => (window as any).__systemTheme(theme), theme);
-              await page.waitForTimeout(350);
+              await delay(350);
               const checks = await page.evaluate(() => (window as any).__systemInspect()) as Omit<ExampleCheck, 'width' | 'theme'>[];
               result.checks.push(...checks.map(check => ({ ...check, width, theme })));
             }
           }
-          const preview = await browser.newContext({ viewport: { width: 800, height: 500 }, colorScheme: 'light', deviceScaleFactor: 1 });
+          const preview = await browser.createBrowserContext();
           try {
             const picture = await preview.newPage();
-            await picture.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle' });
+            await picture.setViewport({ width: 800, height: 500, deviceScaleFactor: 1 });
+            await picture.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
+            await picture.goto(`${base}${example.href}?ph=out`, { waitUntil: 'networkidle0' });
             await picture.evaluate(() => document.fonts.ready);
             await picture.screenshot({ path: join(folder, 'system-previews', `${example.id}.png`), type: 'png' });
             result.preview = `/system-previews/${example.id}.png`;
