@@ -396,7 +396,7 @@ function travel(from, to) {
 }
 
 // The transport.
-let frame = 0, lastTime = 0, lastBeat = -1, audio = null;
+let frame = 0, lastTime = 0, lastBeat = -1, audio = null, cpuAt = 0;
 function tick(now) {
   const step = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
@@ -407,6 +407,7 @@ function tick(now) {
   lastBeat = Math.floor(pos);
   showPosition(true);
   meters();
+  if (now - cpuAt > 600) { cpuAt = now; el('cpu').textContent = 'CPU ' + (12 + Math.floor(Math.random() * 9)) + '%'; }
   if (playing) frame = requestAnimationFrame(tick);
 }
 function setPressed(button, on) { button.toggleAttribute('active', on); button.setAttribute('aria-pressed', String(on)); }
@@ -433,6 +434,7 @@ function pause() {
   setPlayButton(false);
   keepTake();
   meters(true);
+  el('cpu').textContent = 'CPU 3%';
 }
 function keepTake() {
   const track = TRACKS.find(item => item.arm);
@@ -484,8 +486,6 @@ function meters(reset) {
   master.level = reset ? 0 : Math.min(1, loudest * dbGain(master.vol));
   [...TRACKS, master].forEach(track => root.querySelectorAll('[data-meter="' + track.id + '"]').forEach((meter, index) => meter.style.setProperty('--level', clamp(track.level * (index % 2 ? 0.94 : 1), 0, 1).toFixed(3))));
 }
-let cpuTick = 0;
-setInterval(() => { cpuTick++; el('cpu').textContent = 'CPU ' + (playing ? 12 + ((cpuTick * 7) % 9) : 3) + '%'; }, 600);
 
 // The ruler: a click moves the playhead, a drag along the bar numbers sets the loop.
 function showLoop() {
@@ -795,7 +795,7 @@ function showGrid() {
   const across = style.getPropertyValue('--ds-grid-columns').trim(), down = style.getPropertyValue('--ds-grid-rows').trim();
   el('grid').textContent = document.documentElement.hasAttribute('data-desktop-aligned') && across ? across + ' × ' + down + ' squares' : '';
 }
-addEventListener('resize', () => requestAnimationFrame(showGrid));
+new ResizeObserver(() => requestAnimationFrame(showGrid)).observe(document.documentElement);
 
 renderTracks(); renderClips(); renderMixer(); renderBrowser(); syncTracks(); showLoop(); renderInspector(); showPosition(false); requestAnimationFrame(showGrid);
 `,
