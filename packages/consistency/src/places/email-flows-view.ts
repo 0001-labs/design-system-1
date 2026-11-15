@@ -1,22 +1,28 @@
 /**
  * The pure parts of the email flow designer: no DOM, so they test on their own. The flows, their kinds and the
  * document are the platform's (`Consistency/platform/worker/email-flows.ts`, System's Emails part); these write a
- * flow's timing in words, start a flow from its kind, add an email to one, and find an email's words in a language.
+ * flow's timing in words, start a flow from its kind, add an email to one, find an email's words in a language, and
+ * say what sending has done and what an email lacks to be sent.
  */
 export type DelayUnit = 'minutes' | 'hours' | 'days';
 export interface FlowEmail { subject: string; text: string }
 export interface FlowStep { event: string; delay: { amount: number; unit: DelayUnit }; emails: Record<string, FlowEmail> }
-export interface Flow { kind: string; steps: FlowStep[] }
-export interface FlowsDocument { flows: Flow[] }
+export interface Flow { kind: string; on?: boolean; steps: FlowStep[] }
+/** `offer`: the site's offer in each language, what `{{offer}}` stands for. */
+export interface FlowsDocument { flows: Flow[]; offer?: Record<string, string> }
 export interface FlowsSnapshot { build: string; base: string; revision: number; document: FlowsDocument }
 export interface FlowKind {
   kind: string; name: string; trigger: string;
-  events: { id: string; name: string }[];
+  /** `live`: the platform raises it, filling `values`; an email waiting on another event is not sent yet. */
+  events: { id: string; name: string; live?: boolean; values?: string[] }[];
   fields: string[];
   steps: { event: string; delay: { amount: number; unit: DelayUnit }; subject: string; text: string }[];
 }
-/** What `emails/flows` answers: the site's flows, the kinds it may have, its languages and the made up values. */
-export interface FlowsAnswer { flows: FlowsSnapshot; kinds: FlowKind[]; languages: { code: string; name: string }[]; values: Record<string, string> }
+export interface FlowStats { waiting: number; sent: number; failed: number; cancelled: number }
+/** What sending has done: each flow's emails by state, the latest failures, the subscribers, the signup page. */
+export interface FlowsSending { stats: Record<string, FlowStats>; failures: { kind: string; step: number; email: string; error: string; at: number }[]; subscribers: Record<string, number>; signup: string }
+/** What `emails/flows` answers: the site's flows, the kinds it may have, its languages, the made up values and sending. */
+export interface FlowsAnswer { flows: FlowsSnapshot; kinds: FlowKind[]; languages: { code: string; name: string }[]; values: Record<string, string>; sending?: FlowsSending }
 
 export const DELAY_UNITS: readonly DelayUnit[] = ['minutes', 'hours', 'days'];
 export const MAX_FLOW_STEPS = 10;
@@ -61,6 +67,24 @@ export function inOrder(flow: Flow, kind: Pick<FlowKind, 'events'> | undefined, 
   const rank = (step: FlowStep) => [kind?.events.findIndex(event => event.id === step.event) ?? 0, step.delay.amount * MINUTES[step.delay.unit]];
   const order = flow.steps.map((step, at) => ({ step, at })).sort((a, b) => { const [ea, da] = rank(a.step), [eb, db] = rank(b.step); return ea! - eb! || da! - db! || a.at - b.at; });
   return { flow: { ...flow, steps: order.map(each => each.step) }, index: order.findIndex(each => each.at === index) };
+}
+
+/** A flow's emails by state in words: "2 waiting · 5 sent · 1 failed", or that nothing has gone yet. */
+export function statsName(stats: FlowStats | undefined): string {
+  const parts = stats ? (['waiting', 'sent', 'failed'] as const).filter(state => stats[state]).map(state => `${stats[state]} ${state}`) : [];
+  return parts.length ? parts.join(' · ') : 'Nothing sent yet';
+}
+
+/**
+ * What keeps an email from going: its event is not one the platform raises yet, or its words use fields that event
+ * does not fill (`{{offer}}` is filled once the site has an offer). Empty when it can go.
+ */
+export function blockers(words: FlowEmail, step: Pick<FlowStep, 'event'>, kind: Pick<FlowKind, 'events'> | undefined, hasOffer: boolean): { live: boolean; missing: string[] } {
+  const event = kind?.events.find(each => each.id === step.event);
+  if (!event?.live) return { live: false, missing: [] };
+  const filled = new Set((event.values ?? []).filter(field => field !== 'offer' || hasOffer));
+  const used = [...`${words.subject} ${words.text}`.matchAll(/{{\s*([a-zA-Z][\w]{0,31})\s*}}/g)].map(found => found[1]!);
+  return { live: true, missing: [...new Set(used.filter(field => !filled.has(field)))] };
 }
 
 /** The document with one flow replaced (or taken away, given null). */

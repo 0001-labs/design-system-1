@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test';
-import { firstWordsLanguage, flowOf, inOrder, replaceFlow, whenName, withEmail, wordsOf, type FlowKind } from './email-flows-view';
+import { blockers, firstWordsLanguage, flowOf, inOrder, replaceFlow, statsName, whenName, withEmail, wordsOf, type FlowKind } from './email-flows-view';
 
 const welcome: FlowKind = { kind: 'welcome', name: 'Welcome', trigger: 'Someone signs up', events: [{ id: 'signup', name: 'signing up' }], fields: ['name'], steps: [
   { event: 'signup', delay: { amount: 0, unit: 'days' }, subject: 'Welcome', text: 'Hi {{name}}' },
@@ -43,6 +43,14 @@ describe('email flow designer', () => {
     expect(sorted.index).toBe(1);
     flow.steps[0]!.delay = { amount: 47, unit: 'hours' };
     expect(inOrder(flow, welcome, 0).index).toBe(0);
+  });
+  test('says what sending did and what keeps an email from going', () => {
+    expect(statsName(undefined)).toBe('Nothing sent yet');
+    expect(statsName({ waiting: 2, sent: 5, failed: 0, cancelled: 3 })).toBe('2 waiting · 5 sent');
+    const live: FlowKind = { ...welcome, events: [{ id: 'signup', name: 'signing up', live: true, values: ['name', 'offer'] }] };
+    expect(blockers({ subject: 'Hi {{name}}', text: '{{offer}}' }, { event: 'signup' }, live, true)).toEqual({ live: true, missing: [] });
+    expect(blockers({ subject: 'Hi {{name}}', text: '{{offer}} {{tracking}}' }, { event: 'signup' }, live, false)).toEqual({ live: true, missing: ['offer', 'tracking'] });
+    expect(blockers({ subject: 'Hi', text: 'Hi' }, { event: 'signup' }, welcome, true).live).toBe(false);
   });
   test('replaces and takes away a flow', () => {
     const document = { flows: [flowOf(welcome, 'en')] };

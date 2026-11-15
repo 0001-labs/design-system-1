@@ -78,6 +78,8 @@
 .place-flow{display:flex;flex-direction:column;gap:calc(var(--ds-unit) / 2);min-width:0}
 .place-flow__when{flex:0 0 calc(8 * var(--ds-unit));white-space:nowrap;overflow:hidden;color:var(--ds-text-color-muted)}
 .place-flow__timing>ds-input{flex:0 0 calc(4 * var(--ds-unit));width:auto}
+.place-flow__state{gap:calc(var(--ds-unit) / 2)}
+.place-flows__offer{max-width:calc(24 * var(--ds-unit))}
 .place-email__subject{flex:1 1 auto}
 .place-email[data-failed]{color:var(--ds-danger-color)}
 ds-tag[data-tone="danger"]{--ds-tag-accent:var(--ds-danger-color)}

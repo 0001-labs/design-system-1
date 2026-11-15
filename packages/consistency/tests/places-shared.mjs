@@ -56,13 +56,13 @@ try {
   const flowWrites = [];
   let flowsSnapshot = { build: 'flows', base: 'flows-1', revision: 0, document: { flows: [] } };
   const flowKinds = [
-    { kind: 'welcome', name: 'Welcome', trigger: 'Someone signs up for the site’s emails', events: [{ id: 'signup', name: 'signing up' }], fields: ['name', 'site', 'offer', 'link'], steps: [
+    { kind: 'welcome', name: 'Welcome', trigger: 'Someone signs up for the site’s emails', events: [{ id: 'signup', name: 'signing up', live: true, values: ['name', 'site', 'link', 'offer'] }], fields: ['name', 'site', 'offer', 'link'], steps: [
       { event: 'signup', delay: { amount: 0, unit: 'days' }, subject: 'Welcome to {{site}}', text: 'Hi {{name}}, here is {{offer}}.' },
       { event: 'signup', delay: { amount: 2, unit: 'days' }, subject: 'What people love', text: 'These.' },
       { event: 'signup', delay: { amount: 5, unit: 'days' }, subject: 'Your offer ends soon', text: 'Soon.' }] },
-    { kind: 'cart', name: 'Cart left', trigger: 'Someone adds to the cart and does not buy', events: [{ id: 'cart', name: 'adding to the cart' }], fields: ['name', 'items', 'link'], steps: [{ event: 'cart', delay: { amount: 1, unit: 'hours' }, subject: 'You left something', text: '{{items}}' }] },
+    { kind: 'cart', name: 'Cart left', trigger: 'Someone adds to the cart and does not buy', events: [{ id: 'cart', name: 'adding to the cart', live: false }], fields: ['name', 'items', 'link'], steps: [{ event: 'cart', delay: { amount: 1, unit: 'hours' }, subject: 'You left something', text: '{{items}}' }] },
   ];
-  const flowsAnswer = () => ({ flows: flowsSnapshot, kinds: flowKinds, languages: [{ code: 'da', name: 'Dansk' }, { code: 'en', name: 'English' }], values: { name: 'Alex', site: 'CPH Raft', offer: '10% off', link: 'https://example.com/', items: 'A raft' } });
+  const flowsAnswer = () => ({ flows: flowsSnapshot, kinds: flowKinds, languages: [{ code: 'da', name: 'Dansk' }, { code: 'en', name: 'English' }], values: { name: 'Alex', site: 'CPH Raft', offer: '10% off', link: 'https://example.com/', items: 'A raft' }, sending: { stats: { welcome: { waiting: 2, sent: 5, failed: 0, cancelled: 0 } }, failures: [], subscribers: { subscribed: 3 }, signup: 'https://cphraft.c9y.site/_c9y/emails/subscribe' } });
   const emailWrites = [];
   let emailRevision = 0, emailSource = { subject: 'Enquiry from {{name}}', text: 'From {{email}}\n\n{{message}}' };
   const emailTemplate = () => ({ kind: 'form-inquiry', from: 'Forms <forms@example.com>', to: 'owner@example.com', subject: emailSource.subject.replace('{{name}}', 'Alex'), text: emailSource.text.replace('{{email}}', 'alex@example.com').replace('{{message}}', 'A new website'), html: '<pre>A new website</pre>', attachments: [], editing: { build: 'email-build', base: 'email-base', revision: emailRevision, document: { ...emailSource }, values: { name: 'Alex', email: 'alex@example.com', message: 'A new website' } } });
@@ -340,7 +340,7 @@ try {
   await mail.getByRole('tab', { name: 'Flows' }).click();
   const flowsPlace = mail.locator('consistency-email-flows');
   await flowsPlace.locator('ds-empty').waitFor();
-  if (!(await said(flowsPlace)).includes('not sent yet')) fail('The designer does not say nothing is sent');
+  if (!(await said(flowsPlace)).includes('A flow sends once it is on')) fail('The designer does not say when a flow sends');
   await flowsPlace.locator('select[aria-label="Add a flow"]').selectOption('welcome');
   for (let i = 0; i < 60 && !flowWrites.length; i++) await page.waitForTimeout(50);
   if (flowsSnapshot.document.flows[0]?.kind !== 'welcome' || flowsSnapshot.document.flows[0].steps.length !== 3) fail('Adding a flow did not save it with its first emails');
@@ -365,8 +365,26 @@ try {
   for (let i = 0; i < 60 && amounts() !== '2,3,5'; i++) await page.waitForTimeout(50);
   if (amounts() !== '2,3,5' || flowsSnapshot.document.flows[0].steps[1].emails.en.subject !== 'Welcome, {{name}}') fail('The timing did not save in order: ' + amounts());
   if (await page.evaluate(() => document.querySelector('consistency-place-emails #place-email-title')?.textContent) !== 'Welcome, Alex') fail('The moved email did not stay open');
+  // The switch: off until pressed, then saved on; Welcome names its signup page and what it has sent.
+  const welcomeSwitch = flowsPlace.getByRole('switch', { name: 'Welcome is on' });
+  if (await welcomeSwitch.getAttribute('aria-checked') !== 'false') fail('A new flow is not off');
+  await welcomeSwitch.click();
+  for (let i = 0; i < 60 && !flowsSnapshot.document.flows[0].on; i++) await page.waitForTimeout(50);
+  if (!flowsSnapshot.document.flows[0].on) fail('Switching a flow on did not save');
+  if (!(await flowsPlace.innerText()).includes('2 waiting · 5 sent')) fail('The flow does not say what it has sent');
+  if (!(await flowsPlace.locator('a.ds-link').getAttribute('href'))?.endsWith('/_c9y/emails/subscribe')) fail('Welcome does not name its signup page');
+  await flowsPlace.getByRole('textbox', { name: 'Your offer' }).fill('15% off your first order');
+  for (let i = 0; i < 60 && flowsSnapshot.document.offer?.en !== '15% off your first order'; i++) await page.waitForTimeout(50);
+  if (flowsSnapshot.document.offer?.en !== '15% off your first order') fail('The offer did not save in the language chosen');
   if (process.env.PLACES_SHOT) await page.screenshot({ path: `${process.env.PLACES_SHOT}/flows.png` });
   await flowDrawer.getByRole('button', { name: 'Close', exact: true }).click();
+  // A flow waiting on something the site cannot raise says so.
+  await flowsPlace.locator('select[aria-label="Add a flow"]').selectOption('cart');
+  await page.waitForFunction(() => document.querySelector('consistency-email-flows ds-list[heading="Cart left"] ds-tag')?.textContent.trim() === 'Not sent yet');
+  await mail.locator('ds-overlay dialog[open]').getByRole('button', { name: 'Close', exact: true }).click();
+  for (let i = 0; i < 60 && flowsSnapshot.document.flows.length !== 2; i++) await page.waitForTimeout(50);
+  await flowsPlace.locator('.place-flow', { hasText: 'Cart left' }).getByRole('button', { name: 'Take the flow away' }).click();
+  for (let i = 0; i < 60 && flowsSnapshot.document.flows.length !== 1; i++) await page.waitForTimeout(50);
   await flowsPlace.getByRole('button', { name: 'Take the flow away' }).click();
   for (let i = 0; i < 60 && flowsSnapshot.document.flows.length; i++) await page.waitForTimeout(50);
   if (flowsSnapshot.document.flows.length) fail('Taking a flow away did not save');

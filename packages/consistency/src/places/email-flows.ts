@@ -5,7 +5,13 @@
  * started with their first words. Pressing an email opens it in the place's non-modal drawer: when it goes (a
  * number, a unit and, for a kind with several, the event it waits on), its subject and message, the fields it may
  * use, and a preview with made up people. The whole document saves by itself a moment after each change, on its
- * revision; a refused save keeps the edits and says so. Nothing is sent: the designer comes before sending.
+ * revision; a refused save keeps the edits and says so.
+ *
+ * Each flow has a switch: on, it sends (the platform's `email-sending.ts`), each email at its time after what starts
+ * it, and the group says what it has sent, has waiting and could not send. An email waiting on an event the platform
+ * does not raise yet is marked Not sent yet; one whose words use a field its event does not fill is named in the
+ * drawer, since it would not be sent. The site's offer, what `{{offer}}` stands for, is written above the flows, and
+ * Welcome names the site's signup page.
  *
  * The owner's alone, behind `consistency-email-flows`; the Emails place shows the tab only when the flows answer.
  */
@@ -19,10 +25,11 @@ import '../../../../DS1/2-core/ds-tag';
 import '../../../../DS1/2-core/ds-text';
 import '../../../../DS1/2-core/ds-message';
 import '../../../../DS1/2-core/ds-empty';
+import '../../../../DS1/2-core/ds-switch';
 import { DocumentState } from '../document-state';
 import { siteApi } from './api';
 import { emailDocument, templatePreview } from './emails-view';
-import { DELAY_UNITS, MAX_FLOW_STEPS, firstWordsLanguage, flowOf, inOrder, replaceFlow, whenName, withEmail, wordsOf, type DelayUnit, type Flow, type FlowKind, type FlowsAnswer, type FlowsDocument, type FlowsSnapshot, type FlowStep } from './email-flows-view';
+import { DELAY_UNITS, MAX_FLOW_STEPS, blockers, firstWordsLanguage, flowOf, inOrder, replaceFlow, statsName, whenName, withEmail, wordsOf, type DelayUnit, type Flow, type FlowKind, type FlowsAnswer, type FlowsDocument, type FlowsSnapshot, type FlowStep } from './email-flows-view';
 
 /** The email the drawer shows: its flow's kind and its place in the flow. */
 export interface ShownFlowEmail { kind: string; index: number }
@@ -44,7 +51,7 @@ export class ConsistencyEmailFlows extends LitElement {
     this.state?.destroy();
     this.state = new DocumentState(answer.flows, async value => {
       const saved = await siteApi<FlowsAnswer>(this.site, 'emails/flows', { method: 'PUT', json: value });
-      this.answer = { ...this.answer, flows: saved.flows };
+      this.answer = { ...this.answer, flows: saved.flows, sending: saved.sending };
       return saved.flows;
     }, () => { this.requestUpdate(); this.changed(); });
     this.requestUpdate();
@@ -102,7 +109,11 @@ export class ConsistencyEmailFlows extends LitElement {
     const state = this.state, flows = this.document.flows, missing = this.answer.kinds.filter(kind => !this.flow(kind.kind));
     const removedName = this.removed ? this.kindOf(this.removed)?.name ?? this.removed : '';
     return html`<div class="place-flows">
-      <ds-message literal tone="neutral" heading="Designed here, not sent yet" text="Flows wait for what a person does, then send their emails in turn. Set them up and read them here; sending them is the next step."></ds-message>
+      <ds-message literal tone="neutral" heading="A flow sends once it is on" text="Each email goes at its time after what starts it, with a link to stop them. An email marked Not sent yet waits for something the site cannot raise yet."></ds-message>
+      ${this.failures()}
+      <ds-input class="place-flows__offer" literal label="Your offer" aria-label="Your offer" autocomplete="off" maxlength="200" .value=${this.document.offer?.[this.lang] ?? ''}
+        @input-change=${(event: CustomEvent<{ value: string }>) => this.setOffer(event.detail.value)} @focusout=${() => void this.flush()}></ds-input>
+      <ds-text literal wrap tone="muted" text="What {{offer}} stands for in this language, such as 10% off your first order. An email that uses it is not sent while it is empty."></ds-text>
       ${state.error ? html`<ds-message role="alert" tone="danger" literal heading="The flows could not be saved" text=${state.error}></ds-message>
         <div class="place-email-editor__actions"><ds-button secondary @click=${() => void this.flush()}>Try again</ds-button><ds-button secondary @click=${() => void this.reload()}>Use saved version</ds-button></div>` : nothing}
       ${this.removed ? html`<div class="place-flows__removed"><ds-text literal text=${`${removedName} was taken away.`}></ds-text><ds-button secondary @click=${() => this.undo()}>Undo</ds-button></div>` : nothing}
@@ -115,18 +126,40 @@ export class ConsistencyEmailFlows extends LitElement {
     </div>`;
   }
 
+  private setOffer(words: string) {
+    const offer = { ...this.document.offer };
+    if (words.trim()) offer[this.lang] = words.replace(/[\r\n{}]+/g, ' ').slice(0, 200); else delete offer[this.lang];
+    this.commit({ ...this.document, offer });
+  }
+  private toggle(flow: Flow) { this.setFlow({ ...flow, on: !flow.on }); }
+  private get hasOffer() { return Boolean((this.document.offer?.[this.lang] ?? Object.values(this.document.offer ?? {}).find(words => words.trim()) ?? '').trim()); }
+
+  /** The latest emails that could not go, by flow and why. */
+  private failures() {
+    const failed = this.answer.sending?.failures ?? [];
+    if (!failed.length) return nothing;
+    return html`<ds-message role="status" tone="warning" literal heading="Some emails were not sent" text=${failed.map(each => `${this.kindOf(each.kind)?.name ?? each.kind}, to ${each.email}: ${each.error}`).join(' ')}></ds-message>`;
+  }
+
   private group(flow: Flow) {
-    const kind = this.kindOf(flow.kind);
+    const kind = this.kindOf(flow.kind), name = kind?.name ?? flow.kind, signup = flow.kind === 'welcome' ? this.answer.sending?.signup : undefined;
     return html`<div class="place-flow">
-      <ds-list class="place-emails__list" heading=${kind?.name ?? flow.kind}>
+      <ds-list class="place-emails__list" heading=${name}>
+        <ds-row class="place-flow__state">
+          <ds-switch><button type="button" role="switch" aria-checked=${String(!!flow.on)} aria-label=${`${name} is on`} @click=${() => this.toggle(flow)}></button></ds-switch>
+          <span>${flow.on ? 'On' : 'Off'}</span>
+          <span class="ds-row__name place-muted">${statsName(this.answer.sending?.stats[flow.kind])}</span>
+        </ds-row>
         <ds-row><span class="ds-row__name place-muted">${kind?.trigger ?? ''}</span></ds-row>
+        ${signup ? html`<ds-row><span class="ds-row__name">Signup page: <a class="ds-link" href=${signup} target="_blank" rel="noopener">${signup.replace(/^https:\/\//, '')}</a></span></ds-row>` : nothing}
         ${flow.steps.map((step, index) => {
           const { words, from } = wordsOf(step, this.lang, this.answer.languages);
           const subject = templatePreview(words, this.answer.values).subject;
           return html`<ds-row interactive class="place-email" label=${`${whenName(step, kind)}: ${subject || 'No subject yet'}`}
             ?current=${this.shown?.kind === flow.kind && this.shown.index === index} @click=${() => this.open({ kind: flow.kind, index })}>
             <span class="place-flow__when">${whenName(step, kind)}</span>
-            ${from !== this.lang ? html`<ds-tag class="place-email__kind" data-tone="muted">${from ? 'Not written' : 'Empty'}</ds-tag>` : nothing}
+            ${!blockers(words, step, kind, this.hasOffer).live ? html`<ds-tag class="place-email__kind" data-tone="muted">Not sent yet</ds-tag>`
+              : from !== this.lang ? html`<ds-tag class="place-email__kind" data-tone="muted">${from ? 'Not written' : 'Empty'}</ds-tag>` : nothing}
             <span class="ds-row__name place-email__subject ${subject ? '' : 'place-muted'}">${subject || 'No subject yet'}</span>
           </ds-row>`;
         })}
@@ -145,12 +178,19 @@ export class ConsistencyEmailFlows extends LitElement {
     } catch (error) { if (this.state) { this.state.error = (error as Error).message; this.requestUpdate(); } }
   }
 
+  /** Why this email would not be sent, when it would not. */
+  private blocked(words: { subject: string; text: string }, step: FlowStep, kind: FlowKind | undefined) {
+    const { live, missing } = blockers(words, step, kind, this.hasOffer);
+    if (!live) return html`<ds-message literal tone="neutral" heading="Not sent yet" text="Nothing on the site raises what this email waits for yet. It sends once something does."></ds-message>`;
+    return missing.length ? html`<ds-message role="status" literal tone="warning" heading="This email would not be sent" text=${`${missing.map(field => `{{${field}}}`).join(', ')} ${missing.length > 1 ? 'have' : 'has'} no value when it goes. Take ${missing.length > 1 ? 'them' : 'it'} out${missing.includes('offer') ? ', or write your offer above' : ''}.`}></ds-message>` : nothing;
+  }
+
   /** The drawer's title and description for the email shown. */
   drawerHead(): { title: string; description: string } | null {
     const flow = this.shown && this.flow(this.shown.kind), step = flow?.steps[this.shown!.index];
     if (!flow || !step) return null;
     const kind = this.kindOf(flow.kind), { words } = wordsOf(step, this.lang, this.answer.languages);
-    return { title: templatePreview(words, this.answer.values).subject || 'No subject yet', description: `${kind?.name ?? flow.kind} · ${whenName(step, kind)}. Previewed with made up people; nothing is sent.` };
+    return { title: templatePreview(words, this.answer.values).subject || 'No subject yet', description: `${kind?.name ?? flow.kind} · ${whenName(step, kind)}. Previewed with made up people.` };
   }
 
   /** The email shown, to edit: when it goes, its words in the language chosen, and its preview. */
@@ -161,7 +201,8 @@ export class ConsistencyEmailFlows extends LitElement {
     const own = step.emails[this.lang] ?? { subject: '', text: '' }, { words, from } = wordsOf(step, this.lang, this.answer.languages);
     const fromName = this.answer.languages.find(language => language.code === from)?.name ?? from;
     const write = (field: 'subject' | 'text', value: string) => this.setStep(flow.kind, index, each => ({ ...each, emails: { ...each.emails, [this.lang]: { ...(each.emails[this.lang] ?? { subject: '', text: '' }), [field]: value } } }));
-    const preview = templatePreview(own.subject || own.text ? own : words, this.answer.values);
+    const offer = this.document.offer?.[this.lang] ?? Object.values(this.document.offer ?? {}).find(each => each.trim());
+    const preview = templatePreview(own.subject || own.text ? own : words, { ...this.answer.values, ...(offer?.trim() ? { offer: offer.trim() } : {}) });
     return html`<div class="place-email-editor">
       <div class="place-flow__timing">
         <ds-input literal label="When" aria-label="How long after" type="number" inputmode="numeric" .value=${String(step.delay.amount)}
@@ -174,6 +215,7 @@ export class ConsistencyEmailFlows extends LitElement {
         </select></ds-select>` : html`<ds-text literal tone="muted" text=${`after ${kind?.events[0]?.name ?? step.event}`}></ds-text>`}
       </div>
       ${from && from !== this.lang ? html`<ds-text literal wrap tone="muted" text=${`Not written in this language yet. The preview shows the ${fromName} words.`}></ds-text>` : nothing}
+      ${this.blocked(own.subject || own.text ? own : words, step, kind)}
       <ds-input literal label="Subject" aria-label="Email subject" autocomplete="off" maxlength="200" .value=${own.subject} placeholder=${from !== this.lang ? words.subject : ''}
         @input-change=${(event: CustomEvent<{ value: string }>) => write('subject', event.detail.value.replace(/[\r\n]+/g, ' '))} @focusout=${() => void this.flush()}></ds-input>
       <ds-input literal multiline rows="8" max-rows="20" label="Message" aria-label="Email message" maxlength="8000" .value=${own.text} placeholder=${from !== this.lang ? words.text : ''}
