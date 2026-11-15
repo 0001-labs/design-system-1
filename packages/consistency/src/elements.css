@@ -25,3 +25,10 @@
 .consistency-element-preview-inner .consistency-element-preview-cursor{left:55%;top:45%}
 /* Card words always keep one square inside every edge, in all presets. */
 :is(.consistency-content-element,.consistency-element-preview) ds-card{--ds-card-text-inset-min:calc(20px * var(--sf))}
+
+/* The signup block (signup.ts): the published form's layout, its words written in place, its controls inert. */
+.consistency-content-signup .c9y-native-signup { display:grid; gap:calc(var(--ds-unit) / 2); justify-items:start; max-width:calc(16 * var(--ds-unit)); margin:0; }
+.consistency-content-signup .c9y-native-signup > .ds-field { width:100%; }
+.consistency-content-signup .c9y-native-signup-note { margin:0; color:var(--ds-text-color-muted); }
+.consistency-content-signup .c9y-native-signup-trap { display:none; }
+.consistency-content-signup .c9y-native-signup input { pointer-events:none; }

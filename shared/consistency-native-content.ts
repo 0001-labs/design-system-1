@@ -3,6 +3,7 @@
 import { parseBlocks, blockRuns, readColumns, readTabs, tableRows, tableAlignments, exportMarkdown, DEFAULT_ATOMS, type Block, type AtomSyntax } from '../website/src/vendor/aa/parse.js';
 import { readBasicContentElement } from './consistency-content';
 import { readCarousel } from './consistency-carousel';
+import { readSignup, signupMarkup } from './consistency-signup';
 import { icons } from '../DS1/2-core/generated/icons-immediate';
 import { icons as extraIcons } from '../DS1/2-core/generated/icons-extra';
 import metrics from '../DS1/1-root/component-metrics.css?raw';
@@ -141,6 +142,8 @@ export function renderNativeRegion(source: string, options: { images?: readonly 
           const styles = [`--ds-card-height:${unit(component.height ?? 160)}`, ...(component.width ? [`--ds-card-width:${unit(component.width)}`] : []), ...Object.entries(component.gaps ?? {}).map(([key,value]) => `--ds-card-${key}-gap:${unit(value)}`)];
           return `<article class="ds-card${component.variant !== 'filled' ? ' ds-card--outlined' : ''}"${component.tone ? ` data-tone="${component.tone}"` : ''} style="${styles.join(';')}"><span class="ds-card__label">${escape(component.label)}</span><span class="ds-card__title">${escape(component.title)}</span><div class="ds-card__body">${escape(component.body).replaceAll('\n', '<br>')}</div></article>`;
         }
+        const signup = readSignup(block.source);
+        if (signup) return signupMarkup(signup);
         const carousel = readCarousel(block.source);
         if (carousel) {
           const name = `${prefix}-carousel-${++serial}`;

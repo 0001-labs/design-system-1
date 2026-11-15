@@ -29,6 +29,10 @@
 .c9y-native-slides > figure { flex:0 0 100%; min-width:0; height:100%; margin:0; scroll-snap-align:start; }
 .c9y-native-slides img { display:block; width:100%; height:100%; }
 .c9y-native-carousel > nav { display:flex; gap:calc(var(--ds-unit) / 2); justify-content:center; }
+.c9y-native-signup { display:grid; gap:calc(var(--ds-unit) / 2); justify-items:start; max-width:calc(16 * var(--ds-unit)); margin:0; }
+.c9y-native-signup > .ds-field { width:100%; }
+.c9y-native-signup-note { margin:0; color:var(--ds-text-color-muted); }
+.c9y-native-signup-trap { position:absolute; left:-10000px; width:1px; height:1px; overflow:hidden; }
 .c9y-native-image-empty { height:calc(160px * var(--sf,1)); background:var(--ds-fill); }
 .c9y-native-icon { display:inline-flex; width:var(--ds-unit); height:var(--ds-unit); vertical-align:middle; align-items:center; justify-content:center; }
 .c9y-native-icon svg { width:calc(16px * var(--sf,1)); height:calc(16px * var(--sf,1)); }

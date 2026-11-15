@@ -137,6 +137,7 @@ export default {
           'site-design.ts': read('shared/consistency-site-design.ts'),
           'consistency-content.ts': read('shared/consistency-content.ts'),
           'consistency-carousel.ts': read('shared/consistency-carousel.ts'),
+          'consistency-signup.ts': read('shared/consistency-signup.ts'),
           'icons-immediate.ts': read('DS1/2-core/generated/icons-immediate.ts'),
           'icons-extra.ts': read('DS1/2-core/generated/icons-extra.ts'),
           'aa/parse.js': read('website/src/vendor/aa/parse.js'),
