@@ -238,7 +238,7 @@ export const SECTIONS: KindDefinition[] = [
       title: words('The title; one line of Markdown, a heading of `level` unless it carries its own #', true),
       text: words('A line or two under the title'),
       actions: actions('Buttons under the words, primary first; each may name its `face` and `size`'),
-      turns: { type: 'turns', max: 40, group: 'behaviour', meaning: 'What the hero changes to in turn, after the kicker, title and picture it is written with: a published page changes to the next every `turnEvery` seconds and when the title is pressed, a kicker of digits counting to its new number; the editor and a reader without scripts see the hero as written', item: {
+      turns: { type: 'turns', max: 100, group: 'behaviour', meaning: 'What the hero changes to in turn, after the kicker, title and picture it is written with: a published page changes to the next every `turnEvery` seconds and when the title is pressed, a kicker of digits counting to its new number; the editor and a reader without scripts see the hero as written', item: {
         kicker: { type: 'text', max: 200, meaning: 'The kicker of this turn, plain words; the kicker stays as it is when absent' },
         title: { type: 'text', max: 500, required: true, meaning: 'The title of this turn, plain words' },
         picture: picture('The picture of this turn; the picture stays as it is when absent'),
