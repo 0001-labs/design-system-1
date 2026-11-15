@@ -378,18 +378,18 @@ const components: C9yComponent[] = [
 ];
 
 const sites: C9ySite[] = [
-  {id:'peer',label:'Peer',code:'PEER',codeStatus:'agreed',siteCode:'48ABFR',addresses:['https://deep-dew-cream.c9y.site'],folder:'/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Other projects/Peer',systemNode:'peer',summary:'56 public English/Japanese routes declared as shared native block pages. Marketplace data remains owned by Peer’s existing backend.'},
-  {id:'consistency',label:'Consistency',code:'C9Y',codeStatus:'agreed',siteCode:'98XXBV',addresses:['https://consistency.c9y.site'],folder:'/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Consistency/site',systemNode:'consistency',summary:'The public landing and examples page use the same native blocks and editor as every site.'},
+  {id:'peer',label:'Peer',code:'PEER',codeStatus:'agreed',siteCode:'48ABFR',addresses:['https://deep-dew-cream.c9y.site'],folder:'/Users/joachim/0001/Other projects/Peer',systemNode:'peer',summary:'56 public English/Japanese routes declared as shared native block pages. Marketplace data remains owned by Peer’s existing backend.'},
+  {id:'consistency',label:'Consistency',code:'C9Y',codeStatus:'agreed',siteCode:'98XXBV',addresses:['https://consistency.c9y.site'],folder:'/Users/joachim/0001/Consistency/site',systemNode:'consistency',summary:'The public landing and examples page use the same native blocks and editor as every site.'},
   {
     id: 'design-system-1', label: 'Design system 1',
     siteCode: '01Docs', addresses: ['https://designsystem1.com'],
-    folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Design system 1/website',
+    folder: '/Users/joachim/0001/Open source/Design system 1/website',
     summary: 'The documentation: not a platform site but this Worker\'s own build, opened in Aa from its Markdown with its components as atoms. Saved pages go live over the build and are pulled back into Git.',
   },
   {
     id: 'tivoli-garden-japan-2027', label: 'Tivoli Garden Youth Guard in Japan 2027',
     siteCode: '26WGEE', addresses: ['https://aqua-azure-brown.c9y.site'],
-    folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Consistency/platform/sites/tivoli-garden-japan-2027',
+    folder: '/Users/joachim/0001/Consistency/platform/sites/tivoli-garden-japan-2027',
     summary: 'Recovered builder pages on the shared native runtime: editable words, pictures, columns and spacing, with a private draft. Original form delivery remains a legacy compatibility dependency.',
   },
 
@@ -400,7 +400,7 @@ const sites: C9ySite[] = [
     codeStatus: 'agreed',
     siteCode: '92KTNN',
     addresses: ['https://flavo.c9y.site', 'https://sky-shell-cream.c9y.site'],
-    folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/Flavo/website',
+    folder: '/Users/joachim/0001/Clients/Flavo/website',
     systemNode: 'flavo',
     summary: 'A Copenhagen flower shop and event florist: native pages rendered by its own platform runtime, a shop and rental catalogue, requests and sales as orders.',
   },
@@ -411,7 +411,7 @@ const sites: C9ySite[] = [
     codeStatus: 'proposed',
     siteCode: '52OFXF',
     addresses: ['https://old-olive-violet.c9y.site'],
-    folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/CPH Raft',
+    folder: '/Users/joachim/0001/Clients/CPH Raft',
     systemNode: 'cph-raft',
     summary: 'Raft trips and floating glamping in Copenhagen harbour: a static site in three languages with the Site engine’s booking and gift cards.',
   },
@@ -422,7 +422,7 @@ const sites: C9ySite[] = [
     codeStatus: 'agreed',
     siteCode: '21USNT',
     addresses: ['https://aqua-antique-white.c9y.site'],
-    folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/Soendergaarden',
+    folder: '/Users/joachim/0001/Clients/Soendergaarden',
     systemNode: 'soendergaarden',
     summary: 'The residents’ website of Søndergården 1931 on Amager: a static Danish site whose words are edited through the Site engine, with no bookings or analytics.',
   },

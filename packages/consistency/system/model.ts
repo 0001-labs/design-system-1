@@ -98,12 +98,12 @@ export type C9ySystem = {
 
 /** Repository labels used in `source` and `evidence`, and their folders. */
 export const REPOSITORIES: Record<string, string> = {
-  'Peer':'/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Other projects/Peer',
-  'Consistency landing':'/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Consistency/site',
-  'Design system 1': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Design system 1',
-  'Consistency': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Consistency',
-  'Site engine': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/0001/system/parts/site-engine',
-  'Flavo': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/Flavo/website',
-  'CPH Raft': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/CPH Raft',
-  'Søndergården': '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/Soendergaarden',
+  'Peer':'/Users/joachim/0001/Other projects/Peer',
+  'Consistency landing':'/Users/joachim/0001/Consistency/site',
+  'Design system 1': '/Users/joachim/0001/Open source/Design system 1',
+  'Consistency': '/Users/joachim/0001/Consistency',
+  'Site engine': '/Users/joachim/0001/0001/system/parts/site-engine',
+  'Flavo': '/Users/joachim/0001/Clients/Flavo/website',
+  'CPH Raft': '/Users/joachim/0001/Clients/CPH Raft',
+  'Søndergården': '/Users/joachim/0001/Clients/Soendergaarden',
 };

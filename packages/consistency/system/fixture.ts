@@ -34,12 +34,12 @@ export const FIXTURE: C9ySystem = {
   sites: [
     {
       id: 'flavo', label: 'Flavo', code: 'FLV', codeStatus: 'agreed', siteCode: '12ABCD',
-      addresses: ['https://flavo.example', 'https://www.flavo.example'], folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/Flavo/website',
+      addresses: ['https://flavo.example', 'https://www.flavo.example'], folder: '/Users/joachim/0001/Clients/Flavo/website',
       systemNode: 'flavo', summary: 'A flavour shop.',
     },
     {
       id: 'cph-raft', label: 'CPH Raft', code: 'CPR', codeStatus: 'proposed', siteCode: '34EFGH',
-      addresses: ['https://cphraft.example'], folder: '/Users/joachim/Library/Mobile Documents/com~apple~CloudDocs/0001/Clients/CPH Raft',
+      addresses: ['https://cphraft.example'], folder: '/Users/joachim/0001/Clients/CPH Raft',
       systemNode: 'cph-raft', summary: 'Raft trips in Copenhagen.',
     },
   ],
