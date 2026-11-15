@@ -210,8 +210,9 @@ export const PRIMITIVES: KindDefinition[] = [
 export const SECTIONS: KindDefinition[] = [
   {
     kind: 'hero', layer: 'section',
-    description: 'A photo across the page with the words and actions on a panel over it: the top of a page.',
+    description: 'The top of a page: a photo across the page with the words and actions on a panel over it, or a column with the title over the photo and the words under it.',
     fields: {
+      arrangement: choice(['over', 'column'], 'over', 'The words on a panel over the picture, or a column `panelWidth` wide: the kicker and the title, the picture `height` high, then the text and the actions; a column draws no panel'),
       height: squares(12, 40, 24, 'The section\'s height; the picture fills it'),
       mobileHeight: mobileSquares(12, 40, 'The height on a phone; `height` when absent'),
       fill: choice(['fixed', 'window'], 'fixed', 'The height as given, or no more than four fifths of the window (`min(height, 80svh)`), so a short window still shows what follows'),
@@ -234,6 +235,7 @@ export const SECTIONS: KindDefinition[] = [
     examples: [
       { id: 'top', kind: 'hero', height: 24, fill: 'window', panel: 'centre', panelTone: 'cream', panelWidth: 24, translucent: true, room: 'flush', level: 1, fit: 'cover', picture: { ...PICTURE, focus: { x: 50, y: 30 } }, logo: { src: '/photos/logo.svg', alt: 'Green raft' }, title: 'The cosiest boat hire in town', text: 'Sail the canals on a raft for eight, with a barbecue in the middle.', actions: [{ text: 'Book', href: '/book/', appearance: 'primary', face: 'outlined', size: 'medium' }, { text: 'Prices', href: '/prices/', appearance: 'secondary' }] },
       { id: 'cabin', kind: 'hero', height: 30, mobileHeight: 20, panel: 'left', panelTone: 'dark', room: 'gap', picture: { src: '/photos/harbour.jpg', alt: 'A floating cabin at dusk', fit: 'cover' }, kicker: 'Blue raft', title: 'Floating glamping', actions: [{ text: 'Stay a night', href: '/stay/', appearance: 'primary' }] },
+      { id: 'studio', kind: 'hero', arrangement: 'column', height: 15, mobileHeight: 12, panelWidth: 20, room: 'gap', picture: { src: '/photos/harbour.jpg', alt: 'The workshop by the harbour' }, kicker: 'Since 1998', title: 'Boats built by hand', text: 'A small yard on the harbour, building and mending wooden boats.', actions: [{ text: 'Visit the yard', href: '/yard/', appearance: 'primary' }] },
     ],
   },
   {

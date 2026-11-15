@@ -58,7 +58,7 @@ export interface NativeRuntimeSlot { name: string; props: NativeRuntimeProps }
 export type NativeMeasure = 'reading' | 'wide' | 'full';
 export type NativeRoom = 'flush' | 'gap';
 export interface NativeHero extends NativeBlockBase {
-  kind: 'hero'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
+  kind: 'hero'; arrangement?: 'over' | 'column'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
   picture: NativePicture; logo?: NativePicture; kicker?: NativeWords; title: NativeWords; text?: NativeWords; actions?: NativeAction[];
 }
 export interface NativeSplit extends NativeBlockBase {
@@ -413,7 +413,7 @@ export function nativeSectionStyles(block: NativeSection): Record<string,string>
 export function nativeSectionAttributes(block: NativeSection): Record<string,string> {
   const field=<T,>(name:string)=>sectionField<T>(block,name);
   const attrs:Record<string,string>={};
-  if(block.kind==='hero'){attrs['data-panel']=field<string>('panel');attrs['data-room']=field<string>('room');if(field<boolean>('translucent'))attrs['data-translucent']='';}
+  if(block.kind==='hero'){if(field<string>('arrangement')==='column')attrs['data-arrangement']='column';attrs['data-panel']=field<string>('panel');attrs['data-room']=field<string>('room');if(field<boolean>('translucent'))attrs['data-translucent']='';}
   if(block.kind==='split'){if(field<boolean>('reverse'))attrs['data-reverse']='';attrs['data-heading-align']=field<string>('headingAlign');}
   if(block.kind==='statement'){attrs['data-align']=field<string>('align');attrs['data-heading-align']=field<string>('headingAlign');if(block.panel)attrs['data-tone']=block.panel;if(field<boolean>('hiddenTitle'))attrs['data-hidden-title']='';}
   if(block.kind==='panels')attrs['data-room']=field<string>('room');
@@ -493,7 +493,12 @@ export function expandNativeSection(block: NativeSection): { children: NativeBlo
   const actions=(slot:string,values:NativeAction[]|undefined,appearance:NativeLink['appearance'],item?:number,classes?:string)=>values?.length?[put(flowBlock(at(slot,item),'row',10,values.map((value,index)=>put(actionBlock(sub(at(slot,item),index),value,index?undefined:appearance),{slot,item:index})),{mobileDirection:'row'}),{slot,item,classes})]:[];
   const panel=(children:NativeBlock[],padding:number)=>put(flowBlock(sub(id,'panel'),'column',20,children,{padding}),{slot:'panel',classes:'c9y-native-toned',attrs:{'data-tone':field<string>('panelTone')}});
   switch(block.kind){
-    case 'hero':return{marks,children:[
+    // A column reads as it is drawn: the kicker and the title, the picture, then the words and actions; no panel.
+    case 'hero':if(field<string>('arrangement')==='column')return{marks,children:[
+      ...picture('logo',block.logo,{height:60,fit:'contain'}),...words('kicker',block.kicker),...words('title',block.title,field<number>('level')),
+      ...picture('picture',block.picture,{fit:block.picture.fit??field<'cover'|'contain'>('fit')}),
+      ...words('text',block.text),...actions('actions',block.actions,'primary'),
+    ]};return{marks,children:[
       ...picture('picture',block.picture,{fit:block.picture.fit??field<'cover'|'contain'>('fit')}),
       panel([...picture('logo',block.logo,{height:60,fit:'contain'}),...words('kicker',block.kicker),...words('title',block.title,field<number>('level')),...words('text',block.text),...actions('actions',block.actions,'primary')],20),
     ]};

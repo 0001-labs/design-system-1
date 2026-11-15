@@ -17,6 +17,20 @@ const sq = (squares: number) => `calc(${squares * 20}px * var(--sf,1))`;
 const sheet = readFileSync(join(import.meta.dirname, '../shared/consistency-native-page.css'), 'utf8');
 
 describe('section kinds expand to primitives', () => {
+  test('a hero as a column reads as it is drawn: kicker, title, picture, words and actions, with no panel', () => {
+    const studio = hero(2);
+    const html = render(studio);
+    expect(html).toContain('data-section="hero" data-arrangement="column"');
+    expect(html).not.toContain('data-slot="panel"');
+    const order = ['data-slot="kicker"', 'data-slot="title"', 'data-slot="picture"', 'data-slot="text"', 'data-slot="actions"'].map(slot => html.indexOf(slot));
+    expect(order.every(at => at > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(html).toContain('<h1>Boats built by hand</h1>');
+    expect(nativeBlockStyles(studio)).toEqual({ '--c9y-hero-height': sq(15), '--c9y-hero-mobile-height': sq(12), '--c9y-panel-width': sq(20) });
+    // The arrangement over the picture carries no mark of it, so every page drawn before reads the same.
+    expect(render(hero())).not.toContain('data-arrangement');
+  });
+
   test('a hero is a picture and a toned panel of logo, kicker, title, text and actions', () => {
     const top = hero();
     const html = render(top);

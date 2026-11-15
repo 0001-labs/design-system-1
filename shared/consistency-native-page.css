@@ -68,6 +68,10 @@ details.c9y-native-flow{display:block}
 [data-section="hero"][data-panel="left"]>[data-slot="panel"]{justify-self:start}
 [data-section="hero"][data-panel="right"]>[data-slot="panel"]{justify-self:end}
 [data-section="hero"] [data-slot="logo"] img{width:auto;max-width:100%;max-height:calc(3 * var(--c9y-unit));margin-inline:inherit}
+/* A hero as a column: the kicker and the title above the picture, the words and the actions under it, in a column the panel's width. */
+.c9y-native-section[data-section="hero"][data-arrangement="column"]{display:flex;flex-direction:column;align-items:stretch;gap:var(--c9y-unit);width:min(100%,var(--c9y-panel-width,calc(24 * var(--c9y-unit))));min-height:0;margin-inline:auto;padding:0;overflow:visible}
+[data-section="hero"][data-arrangement="column"]>[data-slot="picture"]{position:static;inset:auto;margin:0;max-width:100%}
+[data-section="hero"][data-arrangement="column"]>[data-slot="picture"] img{width:100%;height:var(--c9y-hero-height);border-radius:var(--c9y-radius)}
 [data-section="hero"] [data-slot="kicker"],[data-section="split"] [data-slot="kicker"]{color:var(--ds-text-color-muted)}
 .c9y-native-page>[data-section="header"]+:is([data-section="hero"],[data-section="panels"])[data-room="flush"],.c9y-native-page>[data-section="header"]+:is([hidden],[data-hidden-title])+:is([data-section="hero"],[data-section="panels"])[data-room="flush"]{margin-top:calc(-1 * var(--c9y-page-gap,0px))}
 /* Split: the words on a panel laid `overlap` squares over the photo's edge, the heading centred when the field says. */
@@ -165,6 +169,8 @@ details.c9y-native-flow{display:block}
 [data-section="split"]>[data-slot="panel"],[data-section="split"][data-reverse]>[data-slot="panel"]{grid-row:2;margin:calc(-1 * var(--c9y-split-overlap,calc(2 * var(--c9y-unit)))) calc(var(--c9y-unit) / 2) 0}
 .c9y-native-section[data-section="hero"]{min-height:var(--c9y-hero-mobile-height,var(--c9y-hero-height))}
 [data-section="hero"]>[data-slot="panel"]{padding-inline:var(--c9y-unit)}
+.c9y-native-section[data-section="hero"][data-arrangement="column"]{min-height:0;padding-inline:var(--c9y-unit)}
+[data-section="hero"][data-arrangement="column"]>[data-slot="picture"] img{height:var(--c9y-hero-mobile-height,var(--c9y-hero-height))}
 .c9y-native-card{min-height:var(--c9y-card-mobile-height,var(--c9y-card-height))}
 .c9y-native-section[data-section="bento"]{grid-auto-rows:minmax(var(--c9y-bento-mobile-height,var(--c9y-bento-height)),auto)}
 [data-section="facts"]>.c9y-native-flow{grid-template-columns:minmax(0,1fr)}

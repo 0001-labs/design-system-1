@@ -723,8 +723,17 @@
     {
       "kind": "hero",
       "layer": "section",
-      "description": "A photo across the page with the words and actions on a panel over it: the top of a page.",
+      "description": "The top of a page: a photo across the page with the words and actions on a panel over it, or a column with the title over the photo and the words under it.",
       "fields": {
+        "arrangement": {
+          "type": "choice",
+          "choices": [
+            "over",
+            "column"
+          ],
+          "default": "over",
+          "meaning": "The words on a panel over the picture, or a column `panelWidth` wide: the kicker and the title, the picture `height` high, then the text and the actions; a column draws no panel"
+        },
         "height": {
           "type": "squares",
           "min": 12,
@@ -890,6 +899,29 @@
             {
               "text": "Stay a night",
               "href": "/stay/",
+              "appearance": "primary"
+            }
+          ]
+        },
+        {
+          "id": "studio",
+          "kind": "hero",
+          "arrangement": "column",
+          "height": 15,
+          "mobileHeight": 12,
+          "panelWidth": 20,
+          "room": "gap",
+          "picture": {
+            "src": "/photos/harbour.jpg",
+            "alt": "The workshop by the harbour"
+          },
+          "kicker": "Since 1998",
+          "title": "Boats built by hand",
+          "text": "A small yard on the harbour, building and mending wooden boats.",
+          "actions": [
+            {
+              "text": "Visit the yard",
+              "href": "/yard/",
               "appearance": "primary"
             }
           ]
