@@ -13,6 +13,7 @@ import { ConsistencyPlacePages } from './pages';
 import { ConsistencyPlaceEmails } from './emails';
 import { ConsistencyPlaceDesign } from './design';
 import { ConsistencyPlaceOrders } from './orders';
+import { ConsistencyPlacePeerProducts } from './peer-products';
 import { flavoPlaces } from './flavo';
 
 export { SiteApiError, siteApi, sitePlaces, type SitePlace } from './api';
@@ -25,6 +26,7 @@ export const PLACES = new Map<string, PlaceFactory>();
 PLACES.set('pages', site => new ConsistencyPlacePages(site));
 PLACES.set('emails', site => new ConsistencyPlaceEmails(site));
 PLACES.set('design', site => new ConsistencyPlaceDesign(site));
+PLACES.set('peer-products', site => new ConsistencyPlacePeerProducts(site));
 
 /** The site's places the app can show, in the site's order. */
 export const shownPlaces = (places: readonly SitePlace[]) => places.filter(place => PLACES.has(place.id));
