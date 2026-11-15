@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 import type { OverlayCloseReason, OverlayType } from "../DS1/4-page/ds-overlay";
 vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
 await import("../DS1/4-page/ds-overlay");
+await import("../DS1/3-unit/ds-menu");
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -142,4 +143,26 @@ test("Escape closes only the top sheet, including when focus is on the page", as
   second.outside.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
   expect(second.host.open).toBe(false);
   expect(first.host.open).toBe(true);
+});
+
+test("Escape dismisses an open floating menu inside a sheet before closing the sheet", async () => {
+  const { host, native } = await fixture("sheet", false);
+  const trigger = document.createElement("button");
+  trigger.id = "sheet-menu-trigger";
+  const menu = document.createElement("ds-menu");
+  menu.floating = true;
+  menu.for = "sheet-menu-trigger";
+  menu.innerHTML = '<button role="menuitem">Rename</button>';
+  host.querySelector("dialog")!.append(trigger, menu);
+  await host.show();
+  menu.open = true;
+  await menu.updateComplete;
+  const escape = () => trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+  escape();
+  await menu.updateComplete;
+  expect(menu.open).toBe(false);
+  expect(native.open).toBe(true);
+  escape();
+  await host.updateComplete;
+  expect(native.open).toBe(false);
 });

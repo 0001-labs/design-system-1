@@ -4,6 +4,7 @@ import { define } from "../0-face/define";
 import "../2-core/ds-button";
 import "../2-core/ds-icon";
 import { bindOverlaySwipe, type OverlayEdge } from "../0-face/overlay-swipe";
+import { topFloatingMenu } from "../3-unit/ds-menu";
 import "./styles/ds-overlay.css";
 import "../1-root/overlay.css";
 import frameStyles from "./styles/ds-overlay.css?inline";
@@ -376,9 +377,10 @@ export class Overlay extends LitElement {
     return stack[stack.length - 1] === this;
   }
 
-  /** A sheet always gives Escape back to closing, before an editor can consume it. */
+  /** A sheet gives Escape to an open floating menu first; otherwise it closes before an editor can consume it. */
   private onSheetEscape = (event: KeyboardEvent) => {
     if (event.key !== "Escape" || this.kind !== "sheet" || !this.isTop()) return;
+    if (topFloatingMenu(this.ownerDocument)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     this.requestClose("escape");

@@ -18,6 +18,12 @@ export type MenuAnchor = HTMLElement | Pick<DOMRectReadOnly, "left" | "top" | "r
 
 const openMenus = new WeakMap<Document, Set<Menu>>();
 
+/** The topmost open floating menu, if any. Mobile sheet Escape defers to it. */
+export function topFloatingMenu(document: Document): Menu | undefined {
+  const menu = [...(openMenus.get(document) ?? [])].at(-1);
+  return menu?.open && menu.floating ? menu : undefined;
+}
+
 type MenuNavigation = { menus: Set<Menu>; blocked: Set<Menu>; point: { x: number; y: number } | null; version: number };
 const navigationState = new WeakMap<Document, MenuNavigation>();
 function menuNavigation(document: Document): MenuNavigation {
