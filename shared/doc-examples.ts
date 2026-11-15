@@ -12,6 +12,7 @@ export const DOC_EXAMPLES = [
   ['sidebar', 'Sidebar'], ['split', 'List and detail'], ['inspector', 'Inspector'],
   ['column', 'Column'], ['centered', 'Centred'], ['tiles', 'Tiles'],
   ['financial', 'Financial services'],
+  ['workbench-multitrack', 'Workbench · Multitrack'],
   ['html-article', 'HTML · Article'], ['html-form', 'HTML · Form'],
   ['html-report', 'HTML · Report'], ['html-reference', 'HTML · Reference'],
 ].map(([id, label]) => ({ id: id!, label: label!, defaultEnabled: id !== 'financial',

@@ -136,7 +136,7 @@ On a computer the root gets `data-desktop-aligned` and four values:
 - **The scroll bar's room is kept.** `grid.css` sets `scrollbar-gutter: stable` on the root, so a scroll bar that comes and goes never changes the width the scale is worked out from.
 - **Phones and tablets keep their own rule.** There the option does nothing: fourteen squares across, and none of the values above.
 
-`alignedGrid(width, height, snap, pixelRatio)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare. The [field grids example](/examples/desktop-aligned-grids/) lays pictures out on field grids of whole squares, after the Swiss grid systems: each picture fills whole fields with its caption on the square below, and a picture can run to the window's edge.
+`alignedGrid(width, height, snap, pixelRatio)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare. The [field grids example](/examples/desktop-aligned-grids/) lays pictures out on field grids of whole squares, after the Swiss grid systems: each picture fills whole fields with its caption on the square below, and a picture can run to the window's edge. The [Multitrack workbench](/start-here/examples/#workbenches) is a whole tool on it: its panes, tracks and beat grid are whole squares under the leftover.
 
 ## In the styles
 
