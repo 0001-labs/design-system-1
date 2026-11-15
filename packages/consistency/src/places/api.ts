@@ -32,13 +32,15 @@ async function answer<T>(url: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export const siteApiUrl = (code: string, route: string) => `${base(code)}/api/${route.replace(/^\/+/, '')}`;
+
 /**
  * One of the site's routes, with its query if it takes one (`bookings?status=confirmed`), as JSON. A body is sent
  * as JSON: give it as a string, or as `json` to have it written.
  */
 export function siteApi<T>(code: string, route: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, ...rest } = init;
-  return answer<T>(`${base(code)}/api/${route.replace(/^\/+/, '')}`, json === undefined ? rest : { ...rest, body: JSON.stringify(json) });
+  return answer<T>(siteApiUrl(code, route), json === undefined ? rest : { ...rest, body: JSON.stringify(json) });
 }
 
 /** The site's menus, as its current build's config gives them. */

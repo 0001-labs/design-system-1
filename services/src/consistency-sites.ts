@@ -53,7 +53,7 @@ export const API_ROUTES = [
   // Flavo's own: its business operations (the platform answers them for Flavo alone). Its design route went with its
   // design chooser (26 October 2026: Gallery is its one homepage design).
   allow('business', 'POST'),
-  allow('peer-products', 'GET'),
+  allow('peer-products(?:/[a-zA-Z0-9_-]{1,120}(?:/photos/[a-zA-Z0-9_-]{1,120})?)?', 'GET'),
 ] as const;
 
 /** The allowlisted route a path under `api/` names, or null. */

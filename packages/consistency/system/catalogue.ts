@@ -302,7 +302,7 @@ const components: C9yComponent[] = [
     layer: 'place',
     summary: 'A read-only list of Peer’s marketplace listings for its workspace.',
     presents: ['ds-list', 'ds-row', 'ds-button'],
-    adds: ['listing titles, statuses and prices read from the site’s SQLite database'],
+    adds: ['listing details and photos read through the site’s workspace API'],
     systems: ['Peer marketplace SQLite'],
     realisedAs: [{ as: 'place', id: 'peer-products' }],
     source: [APP('places/peer-products.ts'), PLATFORM('worker/peer.ts'), PLATFORM('worker/peer-store.ts')],
