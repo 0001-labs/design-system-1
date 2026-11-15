@@ -95,7 +95,7 @@ details.c9y-native-flow{display:block}
 [data-section="cards"][data-variant="outlined"] .c9y-native-card{box-shadow:inset 0 0 0 1px var(--ds-border-color)}
 /* A wide card takes two cards' room; as a strip the cards stand in one row that scrolls sideways. */
 [data-section="cards"]>.c9y-native-card[data-wide]{grid-column:span 2}
-[data-section="cards"][data-strip]{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}
+[data-section="cards"][data-strip]{display:flex;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}
 [data-section="cards"][data-strip]>.c9y-native-card{flex:0 0 calc((100% - (var(--c9y-columns) - 1) * var(--c9y-unit)) / var(--c9y-columns));scroll-snap-align:start}
 [data-section="cards"][data-strip]>.c9y-native-card[data-wide]{flex-basis:calc(2 * (100% - (var(--c9y-columns) - 1) * var(--c9y-unit)) / var(--c9y-columns) + var(--c9y-unit))}
 .c9y-native-card>[data-slot="label"]{color:var(--ds-text-color-muted)}

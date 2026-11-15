@@ -23,6 +23,7 @@ describe('section kinds expand to primitives', () => {
     expect(html).toMatch(/class="c9y-native-node c9y-native-flow c9y-native-card c9y-native-toned" data-native-block="work\.items\.0"[^>]*data-tone="cream"[^>]*data-wide/);
     expect(html).toMatch(/data-native-block="work\.items\.1"[^>]*data-tone="pastel-1"/);
     expect(html).not.toMatch(/data-native-block="work\.items\.1"[^>]*data-wide/);
+    expect(sheet).toContain('[data-section="cards"][data-strip]{display:flex;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}');
     // Cards in rows carry neither mark, so every page drawn before reads the same.
     expect(render(example('cards'))).not.toContain('data-strip'); expect(render(example('cards'))).not.toContain('data-wide');
   });
