@@ -17,6 +17,21 @@ const sq = (squares: number) => `calc(${squares * 20}px * var(--sf,1))`;
 const sheet = readFileSync(join(import.meta.dirname, '../shared/consistency-native-page.css'), 'utf8');
 
 describe('section kinds expand to primitives', () => {
+  test('cards stand as a strip that scrolls sideways, each with a tone and a width of its own', () => {
+    const html = render(example('cards', 2));
+    expect(html).toContain('data-section="cards" data-variant="filled" data-tone="cream" data-strip');
+    expect(html).toMatch(/class="c9y-native-node c9y-native-flow c9y-native-card c9y-native-toned" data-native-block="work\.items\.0"[^>]*data-tone="cream"[^>]*data-wide/);
+    expect(html).toMatch(/data-native-block="work\.items\.1"[^>]*data-tone="pastel-1"/);
+    expect(html).not.toMatch(/data-native-block="work\.items\.1"[^>]*data-wide/);
+    // Cards in rows carry neither mark, so every page drawn before reads the same.
+    expect(render(example('cards'))).not.toContain('data-strip'); expect(render(example('cards'))).not.toContain('data-wide');
+  });
+
+  test('a narrow measure is twenty squares, for a statement and for a column of items', () => {
+    expect(nativeBlockStyles({ id: 's', kind: 'statement', measure: 'narrow', text: 'Words' })['--c9y-statement-width']).toBe(sq(20));
+    expect(nativeBlockStyles({ id: 'a', kind: 'action', measure: 'narrow', button: { text: 'Go', href: '/' } })['--c9y-measure']).toBe(sq(20));
+  });
+
   test('a hero as a column reads as it is drawn: kicker, title, picture, words and actions, with no panel', () => {
     const studio = hero(2);
     const html = render(studio);
@@ -185,19 +200,20 @@ describe('the measures the old sites needed, as fields with defaults', () => {
     expect(sheet).toContain('[data-section="statement"][data-heading-align="centre"]>[data-slot="heading"]{text-align:center}');
     expect(sheet).toContain('.c9y-native-section[data-hidden-title]{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}');
   });
-  test('grids stand in a measure: reading, wide or the page, with a square from a phone\'s edges', () => {
+  test('grids stand in a measure: narrow, reading, wide or the page, with a square from a phone\'s edges', () => {
     for (const kind of ['cards', 'gallery', 'bento', 'questions', 'facts', 'list', 'action'] as const) {
       const block = example(kind);
       expect(render({ ...block, measure: 'reading' } as NativeBlock), kind).toContain(`data-measure="reading"`); expect(render({ ...block, measure: 'reading' } as NativeBlock), kind).toContain(`--c9y-measure:${sq(32)}`);
+      expect(render({ ...block, measure: 'narrow' } as NativeBlock), kind).toContain(`--c9y-measure:${sq(20)}`);
       expect(render({ ...block, measure: 'wide' } as NativeBlock), kind).toContain(`--c9y-measure:${sq(62)}`);
       expect(render({ ...block, measure: 'full' } as NativeBlock), kind).toContain('--c9y-measure:none');
       delete (block as Record<string, unknown>).measure;
       expect(render(block), kind).toContain('data-measure="full"');
-      expect(refusal([{ ...block, measure: 'narrow' } as never]).reason, kind).toBe(`${kind} ${block.id}.measure: "narrow" is not one of reading, wide, full`);
+      expect(refusal([{ ...block, measure: 'tiny' } as never]).reason, kind).toBe(`${kind} ${block.id}.measure: "tiny" is not one of narrow, reading, wide, full`);
     }
     expect(refusal([{ ...hero(), measure: 'wide' } as never]).reason).toBe('hero top: "measure" is not a field or slot of this kind');
     expect(sheet).toContain('.c9y-native-section[data-measure]{width:100%;max-width:var(--c9y-measure,none);margin-inline:auto}');
-    expect(sheet).toContain('.c9y-native-section:is([data-measure="wide"],[data-measure="full"]){padding-inline:var(--c9y-unit)}');
+    expect(sheet).toContain('.c9y-native-section:is([data-measure="narrow"],[data-measure="wide"],[data-measure="full"]){padding-inline:var(--c9y-unit)}');
   });
   test('a button names its face and size, written as the library\'s attributes only when it does', () => {
     const plain = render({ ...example('action', 1), button: { text: 'Go', href: '/go/' } } as NativeBlock);

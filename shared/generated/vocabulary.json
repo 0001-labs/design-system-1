@@ -1058,12 +1058,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "reading",
-          "meaning": "The column's measure: reading, 32 squares; wide, 50 squares; full, the page"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 50 squares; full, the page"
         },
         "panel": {
           "type": "tone",
@@ -1280,7 +1281,7 @@
     {
       "kind": "cards",
       "layer": "section",
-      "description": "Cards side by side, each with a label, a title, words, a photo on its foot and a link.",
+      "description": "Cards side by side, each with a label, a title, words, a photo on its foot and a link; in rows, or as one strip that scrolls sideways.",
       "fields": {
         "columns": {
           "type": "integer",
@@ -1289,15 +1290,21 @@
           "default": 3,
           "meaning": "Cards per row"
         },
+        "strip": {
+          "type": "boolean",
+          "default": false,
+          "meaning": "One row that scrolls sideways in place of rows that wrap: `columns` cards across the measure, the rest reached by scrolling"
+        },
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         },
         "height": {
           "type": "squares",
@@ -1355,6 +1362,15 @@
             "action": {
               "type": "action",
               "meaning": "A link at the foot of the words, with its `face` and `size`; a card whose whole body is a link keeps this"
+            },
+            "tone": {
+              "type": "tone",
+              "meaning": "The card's own fill; the section's `tone` when absent"
+            },
+            "wide": {
+              "type": "boolean",
+              "default": false,
+              "meaning": "Twice a card's width"
             }
           }
         }
@@ -1437,6 +1453,42 @@
               }
             }
           ]
+        },
+        {
+          "id": "work",
+          "kind": "cards",
+          "columns": 3,
+          "strip": true,
+          "measure": "wide",
+          "height": 20,
+          "mobileHeight": 16,
+          "variant": "filled",
+          "items": [
+            {
+              "label": "Green raft",
+              "title": "A table for eight",
+              "picture": {
+                "src": "/photos/harbour.jpg",
+                "alt": "Three green rafts on the canal"
+              },
+              "tone": "cream",
+              "wide": true
+            },
+            {
+              "label": "Blue raft",
+              "title": "A night on the water",
+              "picture": {
+                "src": "/photos/harbour.jpg",
+                "alt": "The cabin at dusk"
+              },
+              "tone": "pastel-1"
+            },
+            {
+              "label": "The yard",
+              "title": "Built by hand",
+              "tone": "dark"
+            }
+          ]
         }
       ]
     },
@@ -1455,12 +1507,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         },
         "height": {
           "type": "squares",
@@ -1577,12 +1630,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         },
         "rhythm": {
           "type": "choice",
@@ -1757,12 +1811,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         }
       },
       "slots": {
@@ -1836,12 +1891,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         }
       },
       "slots": {
@@ -1929,12 +1985,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         }
       },
       "slots": {
@@ -2054,12 +2111,13 @@
         "measure": {
           "type": "choice",
           "choices": [
+            "narrow",
             "reading",
             "wide",
             "full"
           ],
           "default": "full",
-          "meaning": "The column's measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone's edges"
+          "meaning": "The column's measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone's edges"
         }
       },
       "slots": {

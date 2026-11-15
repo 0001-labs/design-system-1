@@ -55,7 +55,7 @@ export interface NativeAction { text: string; href: string; appearance?: 'plain'
 export interface NativeLine { text: string; href?: string }
 export interface NativeLanguage { text: string; href: string; picture?: NativePicture }
 export interface NativeRuntimeSlot { name: string; props: NativeRuntimeProps }
-export type NativeMeasure = 'reading' | 'wide' | 'full';
+export type NativeMeasure = 'narrow' | 'reading' | 'wide' | 'full';
 export type NativeRoom = 'flush' | 'gap';
 export interface NativeHero extends NativeBlockBase {
   kind: 'hero'; arrangement?: 'over' | 'column'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
@@ -70,9 +70,9 @@ export interface NativeStatement extends NativeBlockBase {
   heading?: NativeWords; text: NativeWords; actions?: NativeAction[];
 }
 export interface NativePanels extends NativeBlockBase { kind: 'panels'; columns?: number; gap?: number; room?: NativeRoom; items: NativeHero[] }
-export interface NativeCardItem { label?: NativeWords; title: NativeWords; text?: NativeWords; picture?: NativePicture; action?: NativeAction }
+export interface NativeCardItem { label?: NativeWords; title: NativeWords; text?: NativeWords; picture?: NativePicture; action?: NativeAction; tone?: Tone; wide?: boolean }
 export interface NativeCards extends NativeBlockBase {
-  kind: 'cards'; columns?: number; measure?: NativeMeasure; height?: number; mobileHeight?: number; tone?: Tone; variant?: 'filled' | 'outlined'; items: NativeCardItem[];
+  kind: 'cards'; columns?: number; strip?: boolean; measure?: NativeMeasure; height?: number; mobileHeight?: number; tone?: Tone; variant?: 'filled' | 'outlined'; items: NativeCardItem[];
 }
 export interface NativeGallery extends NativeBlockBase {
   kind: 'gallery'; columns?: number; measure?: NativeMeasure; height?: number; mobileHeight?: number; strip?: boolean; fit?: 'cover' | 'contain'; pictures: NativePicture[];
@@ -380,9 +380,9 @@ export function nativeBlockStyles(block: NativeBlock): Record<string,string> {
   if(isNativeSection(block))Object.assign(styles,nativeSectionStyles(block));
   return styles;
 }
-/** The sections whose items stand in a column of a chosen measure: reading 32 squares, wide 62, full the page. */
+/** The sections whose items stand in a column of a chosen measure: narrow 20 squares, reading 32, wide 62, full the page. */
 const MEASURED_KINDS: readonly string[] = ['cards','gallery','bento','questions','facts','list','action'];
-const measureWidth=(value:NativeMeasure)=>value==='reading'?squares(32):value==='wide'?squares(62):'none';
+const measureWidth=(value:NativeMeasure)=>value==='narrow'?squares(20):value==='reading'?squares(32):value==='wide'?squares(62):'none';
 /** A section's fields as custom properties, read by consistency-native-page.css; tones travel as `data-tone` names. */
 export function nativeSectionStyles(block: NativeSection): Record<string,string> {
   const styles:Record<string,string>={};
@@ -398,7 +398,7 @@ export function nativeSectionStyles(block: NativeSection): Record<string,string>
     styles['--c9y-split-columns']=reverse?`minmax(0,${words}fr) minmax(0,${picture}fr)`:`minmax(0,${picture}fr) minmax(0,${words}fr)`;
     styles['--c9y-split-image-height']=squares(field<number>('imageHeight'));styles['--c9y-split-mobile-image-height']=squares(given<number>('mobileImageHeight')??field<number>('imageHeight'));styles['--c9y-split-overlap']=squares(field<number>('overlap'));
   }
-  if(block.kind==='statement'){const measure=field<NativeMeasure>('measure');styles['--c9y-statement-width']=measure==='wide'?squares(50):measure==='reading'?squares(32):'none';}
+  if(block.kind==='statement'){const measure=field<NativeMeasure>('measure');styles['--c9y-statement-width']=measure==='wide'?squares(50):measure==='reading'?squares(32):measure==='narrow'?squares(20):'none';}
   if(block.kind==='panels'){styles['--c9y-columns']=String(field<number>('columns'));styles['--c9y-gap']=squares(field<number>('gap'));}
   if(block.kind==='cards'){styles['--c9y-columns']=String(field<number>('columns'));styles['--c9y-card-height']=squares(field<number>('height'));styles['--c9y-card-mobile-height']=squares(given<number>('mobileHeight')??field<number>('height'));}
   if(block.kind==='gallery'){styles['--c9y-columns']=String(field<number>('columns'));styles['--c9y-gallery-height']=squares(field<number>('height'));styles['--c9y-gallery-mobile-height']=squares(given<number>('mobileHeight')??field<number>('height'));}
@@ -417,7 +417,7 @@ export function nativeSectionAttributes(block: NativeSection): Record<string,str
   if(block.kind==='split'){if(field<boolean>('reverse'))attrs['data-reverse']='';attrs['data-heading-align']=field<string>('headingAlign');}
   if(block.kind==='statement'){attrs['data-align']=field<string>('align');attrs['data-heading-align']=field<string>('headingAlign');if(block.panel)attrs['data-tone']=block.panel;if(field<boolean>('hiddenTitle'))attrs['data-hidden-title']='';}
   if(block.kind==='panels')attrs['data-room']=field<string>('room');
-  if(block.kind==='cards'){attrs['data-variant']=field<string>('variant');attrs['data-tone']=field<string>('tone');}
+  if(block.kind==='cards'){attrs['data-variant']=field<string>('variant');attrs['data-tone']=field<string>('tone');if(field<boolean>('strip'))attrs['data-strip']='';}
   if(block.kind==='gallery'&&field<boolean>('strip'))attrs['data-strip']='';
   if(block.kind==='bento')attrs['data-rhythm']=field<string>('rhythm');
   if(block.kind==='list'){if(field<boolean>('dated'))attrs['data-dated']='';if(field<boolean>('grouped'))attrs['data-grouped']='';}
@@ -510,7 +510,7 @@ export function expandNativeSection(block: NativeSection): { children: NativeBlo
     case 'panels':return{marks,children:block.items.map((hero,index)=>put(hero,{slot:'items',item:index}))};
     case 'cards':return{marks,children:block.items.map((item,index)=>put(flowBlock(sub(id,'items',index),'column',10,[
       ...words('label',item.label,undefined,index),...words('title',item.title,3,index),...words('text',item.text,undefined,index),...action('action',item.action,'plain',index),...picture('picture',item.picture,{fit:'cover'},index),
-    ],{padding:20}),{slot:'items',item:index,classes:`c9y-native-card${field<string>('variant')==='filled'?' c9y-native-toned':''}`}))};
+    ],{padding:20}),{slot:'items',item:index,classes:`c9y-native-card${field<string>('variant')==='filled'||item.tone?' c9y-native-toned':''}`,...(item.tone||item.wide?{attrs:{...(item.tone?{'data-tone':item.tone}:{}),...(item.wide?{'data-wide':''}:{})}}:{})}))};
     case 'gallery':return{marks,children:block.pictures.map((value,index)=>put(pictureBlock(sub(id,'pictures',index),value,{fit:value.fit??field<'cover'|'contain'>('fit')}),{slot:'pictures',item:index}))};
     case 'bento':{const tones=field<Tone[]>('tones'),strong=field<string>('titleFace')==='strong';return{marks,children:block.items.map((item,index)=>put(flowBlock(sub(id,'items',index),'column',10,[
       ...picture('picture',item.picture,{fit:'cover'},index),...(strong?words('title',strongLine(item.title),undefined,index):words('title',item.title,3,index)),...words('text',item.text,undefined,index),...action('action',item.action,'plain',index),

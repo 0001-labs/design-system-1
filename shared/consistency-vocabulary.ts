@@ -70,7 +70,7 @@ const squares = (min: number, max: number, def: number, meaning: string, step?: 
 /** A measure on a phone (700px and narrower) with no default of its own: the computer's measure when absent. */
 const mobileSquares = (min: number, max: number, meaning: string): FieldDefinition => ({ type: 'squares', min, max, meaning });
 /** The column a grid of items stands in; the sections that take it share one definition. */
-const MEASURE: FieldDefinition = { type: 'choice', choices: ['reading', 'wide', 'full'], default: 'full', meaning: 'The column\'s measure: reading, 32 squares; wide, 62 squares; full, the page; wide and full keep a square from a phone\'s edges' };
+const MEASURE: FieldDefinition = { type: 'choice', choices: ['narrow', 'reading', 'wide', 'full'], default: 'full', meaning: 'The column\'s measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone\'s edges' };
 const headingAlign = (what: string): FieldDefinition => ({ type: 'choice', choices: ['start', 'centre'], default: 'start', meaning: `${what} against the start, or centred` });
 const choice = (choices: readonly string[], def: string, meaning: string): FieldDefinition => ({ type: 'choice', choices, default: def, meaning });
 const tone = (meaning: string, def?: Tone): FieldDefinition => ({ type: 'tone', meaning, ...(def ? { default: def } : {}) });
@@ -265,7 +265,7 @@ export const SECTIONS: KindDefinition[] = [
     kind: 'statement', layer: 'section',
     description: 'A section of writing alone, in a reading column, optionally on a panel.',
     fields: {
-      measure: choice(['reading', 'wide', 'full'], 'reading', 'The column\'s measure: reading, 32 squares; wide, 50 squares; full, the page'),
+      measure: choice(['narrow', 'reading', 'wide', 'full'], 'reading', 'The column\'s measure: narrow, 20 squares; reading, 32 squares; wide, 50 squares; full, the page'),
       panel: tone('A panel of this tone under the writing; none when absent'),
       align: choice(['start', 'centre'], 'start', 'The words against the start, or centred'),
       headingAlign: headingAlign('The heading alone'),
@@ -307,9 +307,10 @@ export const SECTIONS: KindDefinition[] = [
   },
   {
     kind: 'cards', layer: 'section',
-    description: 'Cards side by side, each with a label, a title, words, a photo on its foot and a link.',
+    description: 'Cards side by side, each with a label, a title, words, a photo on its foot and a link; in rows, or as one strip that scrolls sideways.',
     fields: {
       columns: { type: 'integer', min: 1, max: 4, default: 3, meaning: 'Cards per row' },
+      strip: boolean(false, 'One row that scrolls sideways in place of rows that wrap: `columns` cards across the measure, the rest reached by scrolling'),
       measure: MEASURE,
       height: squares(6, 40, 16, 'A card\'s height; a card grows for longer words'),
       mobileHeight: mobileSquares(6, 40, 'A card\'s height on a phone; `height` when absent'),
@@ -323,6 +324,8 @@ export const SECTIONS: KindDefinition[] = [
         text: words('The words'),
         picture: picture('A photo on the card\'s foot'),
         action: action('A link at the foot of the words, with its `face` and `size`; a card whose whole body is a link keeps this'),
+        tone: tone('The card\'s own fill; the section\'s `tone` when absent'),
+        wide: boolean(false, 'Twice a card\'s width'),
       } },
     },
     examples: [
@@ -334,6 +337,11 @@ export const SECTIONS: KindDefinition[] = [
       { id: 'news', kind: 'cards', columns: 2, height: 8, variant: 'outlined', items: [
         { label: 'May 2026', title: 'Newsletter', text: 'The balconies are painted and the roses are out.', action: { text: 'Read', href: '/news/may-2026/' } },
         { label: 'March 2026', title: 'Annual meeting', text: 'Minutes from the residents\' meeting.', action: { text: 'Read', href: '/news/march-2026/' } },
+      ] },
+      { id: 'work', kind: 'cards', columns: 3, strip: true, measure: 'wide', height: 20, mobileHeight: 16, variant: 'filled', items: [
+        { label: 'Green raft', title: 'A table for eight', picture: PICTURE, tone: 'cream', wide: true },
+        { label: 'Blue raft', title: 'A night on the water', picture: { src: '/photos/harbour.jpg', alt: 'The cabin at dusk' }, tone: 'pastel-1' },
+        { label: 'The yard', title: 'Built by hand', tone: 'dark' },
       ] },
     ],
   },
