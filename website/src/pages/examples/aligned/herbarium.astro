@@ -1,0 +1,307 @@
+---
+// After a herbarium sheet as an online collection shows it: the mounted specimen as tall as the
+// window, its label, slips and stamp, and the record beside it. The plants are drawn on the sheet's
+// squares; a loupe that jumps from square to square magnifies them.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="herbarium" theme="light">
+  <main class="stage herbarium">
+    <figure class="sheet" id="sheet">
+      <svg class="drawing" id="drawing" role="img" aria-labelledby="name"></svg>
+      <div class="loupe" id="loupe" aria-hidden="true"><svg id="loupe-drawing"></svg></div>
+    </figure>
+
+    <article class="record">
+      <p class="house">Herbarium of the Northern Shore</p>
+      <h1 id="name"><i id="binomial"></i> <span id="author"></span></h1>
+      <p class="common" id="common"></p>
+      <dl class="fields" id="fields"></dl>
+      <p class="notes" id="notes"></p>
+      <div class="others" id="others" role="group" aria-label="Other sheets in the folder"></div>
+      <p class="hint">Hold the pointer over the sheet to look through the loupe.</p>
+    </article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  interface Specimen {
+    id: string; binomial: string; author: string; common: string; family: string;
+    number: string; collector: string; date: string; locality: string; habitat: string; elevation: string;
+    notes: string; slip: string; draw: (w: number, h: number, random: () => number) => string;
+  }
+
+  /** A seeded random, so a sheet draws the same plant at every size. */
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const f = (n: number) => n.toFixed(3);
+  const DRY = ['#6f6a37', '#7d7442', '#5f5c2f', '#857a48', '#6a6232'];
+
+  function fern(w: number, h: number, random: () => number) {
+    const base = { x: w * 0.46, y: h - 9 }, tip = { x: w * 0.58, y: 2.5 }, bend = { x: w * 0.3, y: h * 0.45 };
+    const at = (t: number) => ({
+      x: (1 - t) ** 2 * base.x + 2 * (1 - t) * t * bend.x + t ** 2 * tip.x,
+      y: (1 - t) ** 2 * base.y + 2 * (1 - t) * t * bend.y + t ** 2 * tip.y,
+    });
+    let out = `<path d="M ${f(base.x)} ${f(base.y + 2)} Q ${f(bend.x)} ${f(bend.y)} ${f(tip.x)} ${f(tip.y)}" fill="none" stroke="#5a4f28" stroke-width="0.14" stroke-linecap="round"/>`;
+    const pairs = 26;
+    for (let index = 0; index < pairs * 2; index++) {
+      const t = 0.16 + (index / (pairs * 2)) * 0.82;
+      const side = index % 2 ? 1 : -1;
+      const p = at(t), q = at(t + 0.01);
+      const along = Math.atan2(q.y - p.y, q.x - p.x);
+      // Pinnae longest a third of the way up, nothing at the tip.
+      const length = Math.max(0.6, (w * 0.42) * Math.sin(Math.PI * Math.min(1, (t - 0.1) / 0.95)) * (1 - 0.25 * t));
+      const angle = along + side * (Math.PI / 2 - 0.5);
+      const colour = DRY[Math.floor(random() * DRY.length)];
+      const end = { x: p.x + Math.cos(angle) * length, y: p.y + Math.sin(angle) * length };
+      out += `<path d="M ${f(p.x)} ${f(p.y)} L ${f(end.x)} ${f(end.y)}" stroke="${colour}" stroke-width="0.06" fill="none"/>`;
+      const count = Math.max(2, Math.round(length / 0.42));
+      for (let k = 0; k < count; k++) {
+        const s = (k + 0.5) / count;
+        const size = 0.28 * (1 - s * 0.7) * (0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, t * 1.4)));
+        const cx = p.x + Math.cos(angle) * length * s, cy = p.y + Math.sin(angle) * length * s;
+        for (const flank of [-1, 1]) {
+          const a = angle + flank * 1.05;
+          const ox = cx + Math.cos(a) * size * 0.9, oy = cy + Math.sin(a) * size * 0.9;
+          out += `<ellipse cx="${f(ox)}" cy="${f(oy)}" rx="${f(size)}" ry="${f(size * 0.48)}" transform="rotate(${f((a * 180) / Math.PI)} ${f(ox)} ${f(oy)})" fill="${colour}" opacity="${f(0.75 + random() * 0.25)}"/>`;
+        }
+      }
+    }
+    // The rhizome and its roots at the foot.
+    for (let r = 0; r < 14; r++) {
+      const x = base.x + (random() - 0.5) * 2.4;
+      out += `<path d="M ${f(base.x)} ${f(base.y + 2)} q ${f((random() - 0.5) * 3)} ${f(1 + random())} ${f(x - base.x)} ${f(1.6 + random() * 1.4)}" stroke="#4a3d22" stroke-width="0.05" fill="none"/>`;
+    }
+    return out;
+  }
+
+  function grass(w: number, h: number, random: () => number) {
+    let out = '';
+    const foot = h - 8;
+    // Two blades and three stems, each ending in a loose panicle of hanging, heart-shaped spikelets.
+    for (const blade of [-1, 1]) {
+      out += `<path d="M ${f(w * 0.45)} ${f(foot)} q ${f(blade * 3)} ${f(-h * 0.2)} ${f(blade * 5)} ${f(-h * 0.32)} q ${f(-blade * 1.2)} ${f(h * 0.14)} ${f(-blade * 4.6)} ${f(h * 0.32)} z" fill="#8a8148" opacity="0.8"/>`;
+    }
+    for (let stem = 0; stem < 3; stem++) {
+      const top = { x: w * (0.3 + stem * 0.2) + (random() - 0.5) * 2, y: 3 + stem * 4 + random() * 2 };
+      out += `<path d="M ${f(w * 0.45)} ${f(foot)} Q ${f(w * 0.45 + (top.x - w * 0.45) * 0.2)} ${f(h * 0.5)} ${f(top.x)} ${f(top.y)}" stroke="#7a7038" stroke-width="0.08" fill="none"/>`;
+      for (let branch = 0; branch < 9; branch++) {
+        const by = top.y + branch * 1.1;
+        const bx = top.x + (by - top.y) * 0.08;
+        const side = branch % 2 ? 1 : -1;
+        const reach = 1.4 + random() * 2.4;
+        const ex = bx + side * reach, ey = by + 0.6 + random();
+        out += `<path d="M ${f(bx)} ${f(by)} Q ${f(bx + side * reach * 0.6)} ${f(by - 0.5)} ${f(ex)} ${f(ey)}" stroke="#7a7038" stroke-width="0.03" fill="none"/>`;
+        const sx = ex, sy = ey + 0.42;
+        const size = 0.36 + random() * 0.16;
+        out += `<path d="M ${f(sx)} ${f(sy - size)} C ${f(sx + size * 1.4)} ${f(sy - size * 0.4)} ${f(sx + size * 0.6)} ${f(sy + size)} ${f(sx)} ${f(sy + size * 1.1)} C ${f(sx - size * 0.6)} ${f(sy + size)} ${f(sx - size * 1.4)} ${f(sy - size * 0.4)} ${f(sx)} ${f(sy - size)} Z" fill="${DRY[branch % DRY.length]}" stroke="#4d4724" stroke-width="0.025"/>`;
+        for (let rib = 1; rib < 4; rib++) out += `<path d="M ${f(sx - size * 0.7)} ${f(sy - size * 0.6 + rib * size * 0.42)} h ${f(size * 1.4)}" stroke="#4d4724" stroke-width="0.018" opacity="0.6"/>`;
+      }
+    }
+    return out;
+  }
+
+  function beech(w: number, h: number, random: () => number) {
+    let out = '';
+    const start = { x: w * 0.2, y: h - 10 }, end = { x: w * 0.78, y: 4 };
+    out += `<path d="M ${f(start.x)} ${f(start.y)} C ${f(w * 0.35)} ${f(h * 0.6)} ${f(w * 0.5)} ${f(h * 0.4)} ${f(end.x)} ${f(end.y)}" stroke="#5b4630" stroke-width="0.22" fill="none" stroke-linecap="round"/>`;
+    const leaves = 9;
+    for (let index = 0; index < leaves; index++) {
+      const t = 0.12 + index * 0.095;
+      const x = start.x + (end.x - start.x) * t + Math.sin(t * 6) * 0.8;
+      const y = start.y + (end.y - start.y) * t;
+      const side = index % 2 ? 1 : -1;
+      const length = 3.2 + random() * 1.6 - Math.abs(t - 0.5) * 1.5;
+      const angle = (side > 0 ? -0.35 : Math.PI + 0.35) + (random() - 0.5) * 0.4;
+      const deg = (angle * 180) / Math.PI;
+      const colour = DRY[index % DRY.length];
+      let leaf = `<path d="M 0 0 C ${f(length * 0.3)} ${f(-length * 0.34)} ${f(length * 0.8)} ${f(-length * 0.3)} ${f(length)} 0 C ${f(length * 0.8)} ${f(length * 0.3)} ${f(length * 0.3)} ${f(length * 0.34)} 0 0 Z" fill="${colour}" stroke="#4b4423" stroke-width="0.04"/>`;
+      leaf += `<path d="M 0 0 L ${f(length)} 0" stroke="#4b4423" stroke-width="0.04"/>`;
+      for (let vein = 1; vein < 8; vein++) {
+        const vx = (vein / 8) * length;
+        const reach = Math.sin((vein / 8) * Math.PI) * length * 0.27;
+        leaf += `<path d="M ${f(vx)} 0 l ${f(reach * 0.6)} ${f(-reach)} M ${f(vx)} 0 l ${f(reach * 0.6)} ${f(reach)}" stroke="#4b4423" stroke-width="0.022" opacity="0.8"/>`;
+      }
+      out += `<path d="M ${f(x)} ${f(y)} L ${f(x + Math.cos(angle) * 0.5)} ${f(y + Math.sin(angle) * 0.5)}" stroke="#5b4630" stroke-width="0.06"/>`;
+      out += `<g transform="translate(${f(x + Math.cos(angle) * 0.5)} ${f(y + Math.sin(angle) * 0.5)}) rotate(${f(deg)})">${leaf}</g>`;
+    }
+    // Two beechnut husks near the tip.
+    for (const [nx, ny] of [[end.x - 1.4, end.y + 2.2], [end.x + 0.6, end.y + 3]]) {
+      out += `<circle cx="${f(nx)}" cy="${f(ny)}" r="0.55" fill="#6a5432" stroke="#3f3120" stroke-width="0.04"/>`;
+      for (let spike = 0; spike < 14; spike++) {
+        const a = (spike / 14) * Math.PI * 2;
+        out += `<path d="M ${f(nx + Math.cos(a) * 0.5)} ${f(ny + Math.sin(a) * 0.5)} l ${f(Math.cos(a) * 0.25)} ${f(Math.sin(a) * 0.25)}" stroke="#3f3120" stroke-width="0.03"/>`;
+      }
+    }
+    return out;
+  }
+
+  const SPECIMENS: Specimen[] = [
+    { id: 'fern', binomial: 'Dryopteris filix-mas', author: '(L.) Schott', common: 'Male fern', family: 'Dryopteridaceae', number: '004211', collector: 'A. Holm 214', date: '12 June 1931', locality: 'Beech wood above the fjord, Hvidsten', habitat: 'Shaded north slope, damp leaf litter', elevation: '40 m', notes: 'Fronds to 90 cm, in a shuttlecock from one crown. Sori in two rows each side of the midrib, still green. Gathered after rain; pressed the same evening between blotters.', slip: 'Det. I. Varga 1978: perhaps D. affinis?', draw: fern },
+    { id: 'grass', binomial: 'Briza media', author: 'L.', common: 'Quaking grass', family: 'Poaceae', number: '004219', collector: 'A. Holm 231', date: '3 July 1931', locality: 'Chalk meadow behind the mill, Hvidsten', habitat: 'Dry grassland, grazed in spring', elevation: '22 m', notes: 'Spikelets purplish, heart-shaped, trembling at the least air. Many plants together; the meadow sounds when the wind crosses it.', slip: 'Conf. E. Lund 1964', draw: grass },
+    { id: 'beech', binomial: 'Fagus sylvatica', author: 'L.', common: 'Beech', family: 'Fagaceae', number: '004226', collector: 'A. Holm 260', date: '28 September 1931', locality: 'Edge of the same wood, by the road', habitat: 'Hedge of old pollards', elevation: '35 m', notes: 'A twig with leaves turning and two husks already open. Leaves silky beneath, the veins in seven or eight pairs.', slip: 'Specimen ex herb. Holm', draw: beech },
+  ];
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const sheet = $('sheet'), drawing = $('drawing') as unknown as SVGSVGElement, loupe = $('loupe'), loupeDrawing = $('loupe-drawing') as unknown as SVGSVGElement;
+  let current = 0;
+  let size = { w: 28, h: 40, unit: 20 };
+  const ZOOM = 3;
+  const LOUPE = 8;
+
+  /** The whole sheet in its own squares: the plant, the strips, the label, slip, stamp, packet, scale. */
+  function sheetMarkup(specimen: Specimen, w: number, h: number) {
+    const random = seeded(specimen.id.length * 7919 + 17);
+    let out = `<rect width="${w}" height="${h}" fill="#fbfaf4"/>`;
+    out += specimen.draw(w, h, random);
+    // Gummed strips across the stems, each three squares by one.
+    for (const [x, y] of [[w * 0.42, h - 12], [w * 0.36, h * 0.55], [w * 0.47, h * 0.3]]) {
+      out += `<rect x="${Math.round(x) - 1.5}" y="${Math.round(y)}" width="3" height="0.5" fill="#f1ead2" stroke="#d9cfae" stroke-width="0.03" opacity="0.95"/>`;
+    }
+    // The fragment packet, top left.
+    out += `<g transform="translate(1 1)"><rect width="5" height="6" fill="#efe8d4" stroke="#cfc4a3" stroke-width="0.04"/><path d="M 0 0 L 2.5 2 L 5 0" fill="none" stroke="#cfc4a3" stroke-width="0.04"/><text x="2.5" y="4.4" text-anchor="middle" class="hand" font-size="0.8">fragm.</text></g>`;
+    // The barcode, top right: bars on tenths of a square, whole squares in all.
+    const bars = [...specimen.number + '0731'].flatMap(d => [Number(d) % 3 + 1, 1, (Number(d) + 1) % 2 + 1, 1]);
+    let bx = w - 7;
+    let barcode = '';
+    for (let index = 0; index < bars.length && bx < w - 1; index++) {
+      const width = bars[index] * 0.1;
+      if (index % 2 === 0) barcode += `<rect x="${f(bx)}" y="1" width="${f(width)}" height="2" fill="#111"/>`;
+      bx += width;
+    }
+    out += barcode + `<text x="${w - 4}" y="3.8" text-anchor="middle" class="mono" font-size="0.55">NSH ${specimen.number}</text>`;
+    // The accession stamp, red, three squares across.
+    out += `<g transform="translate(${w - 16} ${h - 6})" opacity="0.82"><circle cx="1.5" cy="1.5" r="1.42" fill="none" stroke="#b8322a" stroke-width="0.09"/><circle cx="1.5" cy="1.5" r="1.1" fill="none" stroke="#b8322a" stroke-width="0.03"/><text x="1.5" y="1.35" text-anchor="middle" class="stamp" font-size="0.36">HERB. N.S.</text><text x="1.5" y="1.95" text-anchor="middle" class="stamp" font-size="0.42">${specimen.number}</text></g>`;
+    // The determination slip and the label, bottom right.
+    out += `<g transform="translate(${w - 12} ${h - 11})"><rect width="11" height="1.5" fill="#fffef8" stroke="#cbc6b3" stroke-width="0.03"/><text x="0.5" y="1.05" class="hand" font-size="0.62">${specimen.slip}</text></g>`;
+    const lines = [
+      ['Herbarium of the Northern Shore', 'head'],
+      [specimen.family, 'type'],
+      [`${specimen.binomial} ${specimen.author}`, 'name'],
+      [specimen.locality, 'type'],
+      [specimen.habitat, 'type'],
+      [`${specimen.date}    ${specimen.collector}`, 'type'],
+    ];
+    out += `<g transform="translate(${w - 12} ${h - 9})"><rect width="11" height="7" fill="#fffef8" stroke="#8d8774" stroke-width="0.05"/><rect x="0.2" y="0.2" width="10.6" height="6.6" fill="none" stroke="#8d8774" stroke-width="0.02"/>`;
+    lines.forEach(([text, kind], index) => { out += `<text x="0.6" y="${1.2 + index}" class="${kind}" font-size="${kind === 'head' ? 0.5 : 0.55}">${text}</text>`; });
+    out += `</g>`;
+    // The scale: a ruler of squares and twelve colour patches, bottom left.
+    let scale = `<g transform="translate(1 ${h - 3})"><rect width="10" height="1" fill="#fff" stroke="#222" stroke-width="0.03"/>`;
+    for (let cm = 0; cm < 10; cm++) {
+      scale += `<rect x="${cm}" y="0" width="1" height="0.5" fill="${cm % 2 ? '#fff' : '#222'}"/>`;
+      scale += `<text x="${cm + 0.1}" y="0.9" class="mono" font-size="0.35">${cm}</text>`;
+    }
+    const patches = ['#735244', '#c29682', '#627a9d', '#576c43', '#8580b1', '#67bdaa', '#d67e2c', '#505ba6', '#c15a63', '#5e3c6c', '#9dbc40', '#e0a32e'];
+    patches.forEach((colour, index) => { scale += `<rect x="${index % 6}" y="${Math.floor(index / 6) - 3}" width="1" height="1" fill="${colour}"/>`; });
+    scale += `<text x="0" y="-0.3" class="mono" font-size="0.35">cm</text></g>`;
+    return out + scale;
+  }
+
+  function show(index: number) {
+    current = index;
+    const specimen = SPECIMENS[index];
+    const { w, h } = size;
+    const markup = sheetMarkup(specimen, w, h);
+    drawing.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    drawing.innerHTML = markup;
+    loupeDrawing.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    loupeDrawing.innerHTML = markup;
+    $('binomial').textContent = specimen.binomial;
+    $('author').textContent = specimen.author;
+    $('common').textContent = `${specimen.common}, ${specimen.family}`;
+    const fields: [string, string][] = [
+      ['Catalogue', `NSH ${specimen.number}`], ['Collector', specimen.collector], ['Date', specimen.date],
+      ['Locality', specimen.locality], ['Habitat', specimen.habitat], ['Elevation', specimen.elevation], ['Mounted', 'Gummed strips, packet with fragments'],
+    ];
+    $('fields').innerHTML = fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('');
+    $('notes').textContent = specimen.notes;
+    $('others').innerHTML = SPECIMENS.map((other, at) => `<button type="button" aria-pressed="${at === index}" aria-label="${other.common}"><svg viewBox="0 0 28 40">${`<rect width="28" height="40" fill="#fbfaf4"/>` + other.draw(28, 40, seeded(other.id.length * 7919 + 17))}</svg><span>${other.common}</span></button>`).join('');
+  }
+
+  $('others').addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest('button');
+    if (!button) return;
+    show([...$('others').children].indexOf(button));
+  });
+
+  onSquares(({ unit, down, across, narrow }) => {
+    // A phone draws the sheet as it would be forty squares high, then shows it twelve wide.
+    const h = narrow ? 40 : down - 4;
+    const w = narrow ? 28 : Math.round(h * 0.7);
+    size = { w, h, unit };
+    document.documentElement.style.setProperty('--phone-sheet-h', String(Math.round(((across - 2) * 40) / 28)));
+    const root = document.documentElement;
+    root.style.setProperty('--sheet-w', String(w));
+    root.style.setProperty('--sheet-h', String(h));
+    root.style.setProperty('--loupe', String(LOUPE));
+    ($('sheet').nextElementSibling as HTMLElement).style.gridColumn = narrow ? '' : `${w + 6} / -3`;
+    loupeDrawing.style.width = `${w * unit * ZOOM}px`;
+    loupeDrawing.style.height = `${h * unit * ZOOM}px`;
+    show(current);
+  });
+
+  // The loupe sits on square corners: its centre jumps from one to the next, never between them.
+  sheet.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse' || document.documentElement.hasAttribute('data-narrow')) return;
+    const box = sheet.getBoundingClientRect();
+    const { unit, w, h } = size;
+    const x = Math.min(w - 1, Math.max(1, Math.round((event.clientX - box.left) / unit)));
+    const y = Math.min(h - 1, Math.max(1, Math.round((event.clientY - box.top) / unit)));
+    loupe.style.setProperty('--x', String(x));
+    loupe.style.setProperty('--y', String(y));
+    loupeDrawing.style.transform = `translate(${(LOUPE / 2 - x * ZOOM) * unit}px, ${(LOUPE / 2 - y * ZOOM) * unit}px)`;
+    loupe.hidden = false;
+    loupe.classList.add('on');
+  });
+  sheet.addEventListener('pointerleave', () => loupe.classList.remove('on'));
+</script>
+
+<style is:global>
+  html { background: #dfe3dc; }
+  .herbarium { --ink: #1f231d; --muted: #5e6658; color: var(--ink); background: #dfe3dc; font-family: var(--typeface-regular); font-size: calc(14px * var(--sf)); line-height: var(--u); }
+
+  .sheet { grid-column: 3 / span var(--sheet-w); grid-row: 3 / span var(--sheet-h); position: relative; margin: 0; box-shadow: 0 calc(1px * var(--sf)) 0 #c3c8bd, 0 0 0 1px #cfd3c8; cursor: crosshair; }
+  .drawing { display: block; width: 100%; height: 100%; }
+  .drawing text, .loupe text { fill: #2a261c; }
+  .drawing .hand, .loupe .hand { font-family: Noteworthy, 'Bradley Hand', 'Marker Felt', cursive; fill: #2f3a6b; }
+  .drawing .type, .loupe .type, .drawing .head, .loupe .head { font-family: 'American Typewriter', 'Courier New', monospace; }
+  .drawing .head, .loupe .head { font-size: 0.42px; letter-spacing: 0.04em; }
+  .drawing .name, .loupe .name { font-family: 'Hoefler Text', Baskerville, Georgia, serif; font-style: italic; }
+  .drawing .mono, .loupe .mono { font-family: var(--typeface-mono); }
+  .drawing .stamp, .loupe .stamp { font-family: var(--typeface-compressed); fill: #b8322a; }
+
+  /* The loupe: eight squares across, its centre on a square corner, three times as near. */
+  .loupe { position: absolute; left: calc((var(--x, 0) - var(--loupe) / 2) * var(--u)); top: calc((var(--y, 0) - var(--loupe) / 2) * var(--u)); width: calc(var(--loupe) * var(--u)); height: calc(var(--loupe) * var(--u)); border-radius: 50%; overflow: hidden; pointer-events: none; opacity: 0; box-shadow: 0 0 0 calc(3px * var(--sf)) #2b2f28, 0 calc(10px * var(--sf)) calc(30px * var(--sf)) rgb(30 34 28 / 0.35); background: #fbfaf4; transition: opacity 120ms ease-out; }
+  .loupe.on { opacity: 1; }
+  .loupe svg { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  @media (prefers-reduced-motion: reduce) { .loupe { transition: none; } }
+
+  .record { grid-row: 3 / -3; display: grid; grid-template-columns: repeat(auto-fill, var(--u)); grid-auto-rows: min-content; align-content: start; max-width: calc(34 * var(--u)); }
+  .record > * { grid-column: 1 / -1; margin: 0; }
+  .house { color: var(--muted); }
+  .record h1 { margin-top: var(--u); font: normal calc(44px * var(--sf)) / calc(3 * var(--u)) 'Hoefler Text', Baskerville, Georgia, serif; }
+  .record h1 i { font-style: italic; }
+  .record h1 span { font-size: calc(20px * var(--sf)); color: var(--muted); }
+  .common { margin-bottom: var(--u); font-family: var(--typeface-medium); }
+  .fields { border-top: 1px solid #b9bfb2; margin-bottom: var(--u); }
+  .fields div { display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; border-bottom: 1px solid #c9cec2; min-height: calc(var(--u) - 1px); }
+  .fields dt { color: var(--muted); }
+  .fields dd { margin: 0; }
+  .notes { font-family: Noteworthy, 'Bradley Hand', cursive; font-size: calc(15px * var(--sf)); color: #2f3a6b; margin-bottom: calc(2 * var(--u)); max-width: calc(28 * var(--u)); }
+  .others { display: flex; gap: var(--u); margin-bottom: var(--u); }
+  .others button { all: unset; cursor: pointer; display: grid; grid-template-rows: calc(10 * var(--u)) var(--u); width: calc(7 * var(--u)); }
+  .others svg { width: 100%; height: 100%; box-shadow: 0 0 0 1px #c3c8bd; }
+  .others span { font-size: calc(12px * var(--sf)); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .others button[aria-pressed='true'] svg { box-shadow: 0 0 0 calc(2px * var(--sf)) var(--ink); }
+  .others button[aria-pressed='true'] span { color: var(--ink); }
+  .others button:focus-visible svg { outline: 2px solid #2f3a6b; outline-offset: calc(3px * var(--sf)); }
+  .hint { font-size: calc(12px * var(--sf)); color: var(--muted); }
+
+  :root[data-narrow] .herbarium { display: flex; flex-direction: column; box-sizing: border-box; padding: calc(2 * var(--u)) var(--u) calc(3 * var(--u)); }
+  :root[data-narrow] .sheet { flex: none; width: calc((var(--across) - 2) * var(--u)); height: calc(var(--phone-sheet-h) * var(--u)); cursor: default; }
+  :root[data-narrow] .record { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .others button { width: calc(3 * var(--u)); grid-template-rows: calc(5 * var(--u)) var(--u); }
+  :root[data-narrow] .record h1 { font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .hint { display: none; }
+</style>

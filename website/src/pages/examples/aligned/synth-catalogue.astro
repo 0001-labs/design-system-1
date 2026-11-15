@@ -1,0 +1,313 @@
+---
+// After a small electronics maker's catalogue: warm grey, orange knobs, a plan drawing of the
+// instrument and an exploded view, both drawn in squares (a square is ten millimetres; the exploded
+// view's corners land on whole squares). The drawing plays: press a key, turn a knob.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const KEYS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B', 'C'];
+const KNOBS = [
+  { id: 'wave', label: 'wave', x: 13 },
+  { id: 'cutoff', label: 'cutoff', x: 17 },
+  { id: 'decay', label: 'decay', x: 21 },
+  { id: 'volume', label: 'volume', x: 25 },
+];
+// The exploded view in a 2:1 projection: a point on a layer's plan (x, y) at height offset h
+// lands at (x − y + 8, (x + y) / 2 + h), so even sums keep every corner on a square.
+const P = (x: number, y: number, h: number) => `${x - y + 8},${(x + y) / 2 + h}`;
+const slab = (w: number, d: number, h: number, t: number) => {
+  const top = [P(0, 0, h), P(w, 0, h), P(w, d, h), P(0, d, h)].join(' ');
+  const front = [P(0, d, h), P(w, d, h), P(w, d, h + t), P(0, d, h + t)].join(' ');
+  const side = [P(w, 0, h), P(w, d, h), P(w, d, h + t), P(w, 0, h + t)].join(' ');
+  return { top, front, side };
+};
+// Drawn from the bottom up, so each part above covers the one below.
+const LAYERS = [
+  { n: 6, h: 16, t: 1.5, cls: 'shell' },
+  { n: 4, h: 12, t: 0.8, cls: 'tray' },
+  { n: 3, h: 7, t: 0.4, cls: 'board' },
+  { n: 1, h: 2, t: 0.5, cls: 'panel' },
+].map(layer => ({ ...layer, ...slab(12, 4, layer.h, layer.t) }));
+const at = (x: number, y: number, h: number) => ({ sx: x - y + 8, sy: (x + y) / 2 + h });
+const quad = (x: number, y: number, w: number, d: number, h: number) => [P(x, y, h), P(x + w, y, h), P(x + w, y + d, h), P(x, y + d, h)].join(' ');
+const CAPS = [2, 4, 6, 8].map(x => at(x, 1, -1));
+const CHIPS = [[2, 1, 2, 2], [5, 1, 3, 2], [9, 1, 2, 1]].map(([x, y, w, d]) => quad(x, y, w, d, 7));
+const CELLS = [quad(1, 0.5, 7, 1, 12), quad(1, 2, 7, 1, 12)];
+const SPEAKER = at(10, 2.5, 12);
+---
+<AlignedStudy slug="synth-catalogue" theme="light">
+  <main class="stage synth">
+    <header class="maker">
+      <p class="brand">Ferrite Works</p>
+      <p class="issue">Catalogue no. 6, autumn 2026</p>
+    </header>
+
+    <svg class="plan" id="plan" viewBox="0 0 30 16" role="group" aria-label="The Sparrow seen from above: a screen, four orange knobs and thirteen touch keys. Press a key to hear it.">
+      <rect class="body" x="1" y="1" width="28" height="14" rx="0.6" />
+      <rect class="screen" x="3" y="3" width="6" height="3" rx="0.2" />
+      <text class="lcd" id="lcd" x="3.5" y="4.4">SAW</text>
+      <text class="lcd small" id="lcd2" x="3.5" y="5.5">ready</text>
+      {[3, 4, 5, 6, 7, 8, 9].map(x => [7, 8].map(y => <circle class="hole" cx={x} cy={y} r="0.18" />))}
+      <circle class="led" id="led" cx="27" cy="2.5" r="0.25" />
+      {KNOBS.map(knob => (
+        <g class="knob" data-knob={knob.id} tabindex="0" role="slider" aria-label={knob.label} aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" data-own-keys transform={`translate(${knob.x} 4.5)`}>
+          <circle class="knob-ring" r="1.6" />
+          <g class="knob-cap"><circle r="1.3" /><line x1="0" y1="-0.3" x2="0" y2="-1.15" /></g>
+          <text class="knob-label" y="2.6" text-anchor="middle">{knob.label}</text>
+        </g>
+      ))}
+      {KEYS.map((key, i) => (
+        <g class:list={['key', { sharp: key.includes('♯') }]} data-note={i} role="button" tabindex="0" aria-label={`Key ${key}`}>
+          <rect x={2 + i * 2 + 0.1} y="9.5" width="1.8" height="4.5" rx="0.15" />
+          <text x={3 + i * 2} y="13.5" text-anchor="middle">{key}</text>
+        </g>
+      ))}
+      <text class="badge" x="27" y="8.2" text-anchor="end">Sparrow</text>
+    </svg>
+
+    <section class="name">
+      <h1>Sparrow</h1>
+      <p>Four voices, one octave of touch keys, a speaker and two AA cells, in a case the size of a paperback. It fits the pocket of a work jacket and plays for fourteen hours.</p>
+      <p class="price">€ 249</p>
+    </section>
+
+    <svg class="exploded" viewBox="0 0 28 26" aria-label="Exploded view of the Sparrow, six parts numbered">
+      {LAYERS.map(layer => (
+        <g class={`slab ${layer.cls}`}>
+          <polygon class="side" points={layer.side} />
+          <polygon class="front" points={layer.front} />
+          <polygon class="top" points={layer.top} />
+          {layer.cls === 'board' && CHIPS.map(chip => <polygon class="chip" points={chip} />)}
+          {layer.cls === 'tray' && CELLS.map(cell => <polygon class="cell" points={cell} />)}
+          {layer.cls === 'tray' && <ellipse class="speaker" cx={SPEAKER.sx} cy={SPEAKER.sy} rx="1.4" ry="0.7" />}
+        </g>
+      ))}
+      <g class="axes">
+        {[[0, 0], [12, 0], [12, 4], [0, 4]].map(([x, y]) => <line x1={x - y + 8} y1={(x + y) / 2 + 2.5} x2={x - y + 8} y2={(x + y) / 2 + 16} />)}
+      </g>
+      {CAPS.map(cap => (
+        <g class="cap">
+          <rect x={cap.sx - 0.7} y={cap.sy} width="1.4" height="1" />
+          <ellipse cx={cap.sx} cy={cap.sy + 1} rx="0.7" ry="0.35" />
+          <ellipse class="cap-top" cx={cap.sx} cy={cap.sy} rx="0.7" ry="0.35" />
+        </g>
+      ))}
+      <g class="leaders">
+        <path d={`M ${CAPS[3].sx + 0.8} ${CAPS[3].sy} L 18 1 H 24`} /><circle cx="25" cy="1" r="0.7" /><text x="25" y="1.3">2</text>
+        <path d="M 20 8 H 24" /><circle cx="25" cy="8" r="0.7" /><text x="25" y="8.3">1</text>
+        <path d="M 20 13 H 24" /><circle cx="25" cy="13" r="0.7" /><text x="25" y="13.3">3</text>
+        <path d={`M ${SPEAKER.sx + 1.4} ${SPEAKER.sy} L 19.5 15.5 H 24`} /><circle cx="25" cy="15.5" r="0.7" /><text x="25" y="15.8">5</text>
+        <path d="M 20 18.5 H 24" /><circle cx="25" cy="18.5" r="0.7" /><text x="25" y="18.8">4</text>
+        <path d="M 20 23 H 24" /><circle cx="25" cy="23" r="0.7" /><text x="25" y="23.3">6</text>
+      </g>
+    </svg>
+
+    <svg class="side-view" viewBox="0 0 30 4" aria-label="Side view: 22 millimetres thick, the knobs standing 6 millimetres proud">
+      <rect class="body" x="1" y="1.6" width="28" height="2.2" rx="0.5" />
+      {[13, 17, 21, 25].map(x => <rect class="cap" x={x - 1.3} y="1" width="2.6" height="0.6" rx="0.1" />)}
+      <rect class="foot" x="3" y="3.8" width="2" height="0.2" /><rect class="foot" x="25" y="3.8" width="2" height="0.2" />
+      <path class="dim" d="M 1 0.4 H 10 M 20 0.4 H 29 M 1 0 V 0.8 M 29 0 V 0.8" />
+      <text x="15" y="0.7" text-anchor="middle">280</text>
+    </svg>
+
+    <ol class="parts">
+      <li><b>1</b>Top panel, 2 mm aluminium, bead-blasted</li>
+      <li><b>2</b>Knob caps, turned aluminium, orange anodised</li>
+      <li><b>3</b>Main board: four voices on one chip</li>
+      <li><b>4</b>Battery tray for two AA cells</li>
+      <li><b>5</b>Speaker, 28 mm, one watt</li>
+      <li><b>6</b>Lower shell, recycled ABS, warm grey</li>
+    </ol>
+
+    <dl class="specs">
+      <div><dt>Voices</dt><dd>4, two oscillators each</dd></div>
+      <div><dt>Filter</dt><dd>12 dB low-pass, resonant</dd></div>
+      <div><dt>Keys</dt><dd>13 touch pads, one octave, shifts ±3</dd></div>
+      <div><dt>Power</dt><dd>2 × AA, about 14 hours; USB-C</dd></div>
+      <div><dt>Size</dt><dd>280 × 140 × 22 mm, 310 g</dd></div>
+    </dl>
+  </main>
+</AlignedStudy>
+
+<script>
+  // The drawing plays: thirteen keys from middle C, four knobs for wave, cutoff, decay and volume.
+  const plan = document.getElementById('plan')!;
+  const lcd = document.getElementById('lcd')!;
+  const lcd2 = document.getElementById('lcd2')!;
+  const led = document.getElementById('led')!;
+  const WAVES: OscillatorType[] = ['sawtooth', 'square', 'triangle', 'sine'];
+  const WAVE_NAMES = ['SAW', 'SQR', 'TRI', 'SIN'];
+  const values: Record<string, number> = { wave: 0, cutoff: 60, decay: 40, volume: 60 };
+  let audio: AudioContext | null = null;
+
+  function setKnob(id: string, value: number) {
+    const knob = plan.querySelector<SVGGElement>(`[data-knob="${id}"]`)!;
+    const v = id === 'wave' ? ((Math.round(value) % 4) + 4) % 4 : Math.max(0, Math.min(100, value));
+    values[id] = v;
+    const angle = id === 'wave' ? -135 + v * 90 : -135 + v * 2.7;
+    knob.querySelector('.knob-cap')!.setAttribute('transform', `rotate(${angle})`);
+    knob.setAttribute('aria-valuenow', String(Math.round(id === 'wave' ? v * 33 : v)));
+    knob.setAttribute('aria-valuetext', id === 'wave' ? WAVE_NAMES[v] : `${Math.round(v)}`);
+    lcd.textContent = id === 'wave' ? WAVE_NAMES[v] : id.toUpperCase().slice(0, 3);
+    lcd2.textContent = id === 'wave' ? 'wave' : `${Math.round(v)} / 100`;
+  }
+  Object.entries(values).forEach(([id, v]) => setKnob(id, v));
+  lcd.textContent = 'SAW';
+  lcd2.textContent = 'ready';
+
+  plan.querySelectorAll<SVGGElement>('.knob').forEach(knob => {
+    const id = knob.dataset.knob!;
+    knob.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      knob.focus();
+      if (id === 'wave') { setKnob(id, values.wave + 1); return; }
+      const from = event.clientY;
+      const start = values[id];
+      knob.setPointerCapture(event.pointerId);
+      const move = (e: PointerEvent) => setKnob(id, start + (from - e.clientY) / 2);
+      const up = () => { knob.removeEventListener('pointermove', move); knob.removeEventListener('pointerup', up); };
+      knob.addEventListener('pointermove', move);
+      knob.addEventListener('pointerup', up);
+    });
+    knob.addEventListener('keydown', event => {
+      const step = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[event.key];
+      if (!step) return;
+      event.preventDefault();
+      setKnob(id, values[id] + step * (id === 'wave' ? 1 : 5));
+    });
+  });
+
+  function play(note: number) {
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    const osc = audio.createOscillator();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    osc.type = WAVES[values.wave];
+    osc.frequency.value = 261.63 * Math.pow(2, note / 12);
+    filter.type = 'lowpass';
+    filter.frequency.value = 200 * Math.pow(2, values.cutoff / 14);
+    filter.Q.value = 6;
+    const decay = 0.15 + (values.decay / 100) * 1.8;
+    const level = (values.volume / 100) * 0.25;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(level, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    osc.connect(filter).connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + decay + 0.05);
+    const names = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B', 'C'];
+    lcd.textContent = `${names[note]}${note === 12 ? 5 : 4}`;
+    lcd2.textContent = `${Math.round(osc.frequency.value)} Hz`;
+    led.classList.add('on');
+    setTimeout(() => led.classList.remove('on'), 160);
+  }
+  plan.querySelectorAll<SVGGElement>('.key').forEach(key => {
+    const note = Number(key.dataset.note);
+    key.addEventListener('pointerdown', () => { key.classList.add('down'); play(note); });
+    ['pointerup', 'pointerleave'].forEach(type => key.addEventListener(type, () => key.classList.remove('down')));
+    key.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); play(note); } });
+  });
+</script>
+
+<style is:global>
+  html { background: #c8c3bb; }
+  .synth {
+    --ground: #c8c3bb;
+    --body: #e2dfd9;
+    --line: #2c2a27;
+    --mid: #8d877e;
+    --orange: #ff6410;
+    --lcd: #26241f;
+    background: var(--ground);
+    color: var(--line);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .maker { grid-column: 3 / -3; grid-row: 2; display: flex; justify-content: space-between; }
+  .maker p { margin: 0; }
+  .brand { font-family: var(--typeface-medium); }
+  .issue { color: #59544d; }
+
+  /* The plan: thirty squares by sixteen, a square ten millimetres. */
+  .plan { grid-column: 3 / span 30; grid-row: 5 / span 16; width: 100%; height: 100%; overflow: visible; }
+  .plan .body { fill: var(--body); stroke: var(--line); stroke-width: 0.06; }
+  .plan .screen { fill: var(--lcd); }
+  .plan .lcd { fill: var(--orange); font-family: var(--typeface-mono); font-size: 1.1px; }
+  .plan .lcd.small { font-size: 0.6px; fill: #ffb27f; }
+  .plan .hole { fill: var(--mid); }
+  .plan .led { fill: #6b2a0c; transition: fill 60ms; }
+  .plan .led.on { fill: var(--orange); }
+  .plan .knob { cursor: ns-resize; outline: none; }
+  .plan .knob[data-knob='wave'] { cursor: pointer; }
+  .plan .knob-ring { fill: none; stroke: var(--mid); stroke-width: 0.05; stroke-dasharray: 0.12 0.2; }
+  .plan .knob-cap circle { fill: var(--orange); }
+  .plan .knob-cap line { stroke: #fff; stroke-width: 0.18; stroke-linecap: round; }
+  .plan .knob-label, .plan .key text, .plan .badge { font-family: var(--typeface-regular); font-size: 0.55px; fill: #59544d; }
+  .plan .badge { font-family: var(--typeface-medium); font-size: 0.8px; fill: var(--line); }
+  .plan .knob:focus-visible .knob-ring { stroke: var(--line); stroke-width: 0.12; stroke-dasharray: none; }
+  .plan .key { cursor: pointer; outline: none; }
+  .plan .key rect { fill: #f4f2ee; stroke: var(--mid); stroke-width: 0.05; }
+  .plan .key.sharp rect { fill: #5b5650; }
+  .plan .key.sharp text { fill: #e2dfd9; }
+  .plan .key.down rect, .plan .key:active rect { fill: var(--orange); }
+  .plan .key:focus-visible rect { stroke: var(--line); stroke-width: 0.14; }
+
+  .name { grid-column: 3 / span 30; grid-row: 23 / span 14; }
+  .name h1 { margin: 0 0 var(--u); font-family: var(--typeface-medium); font-weight: normal; font-size: calc(96px * var(--sf)); line-height: calc(5 * var(--u)); letter-spacing: -0.04em; }
+  .name p { margin: 0 0 var(--u); max-width: calc(26 * var(--u)); font-size: calc(16px * var(--sf)); }
+  .name .price { font-family: var(--typeface-medium); font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--orange); filter: brightness(0.8); }
+
+  /* The exploded view: twenty-eight squares by twenty-six, corners on whole squares. */
+  .exploded { grid-column: -31 / span 28; grid-row: 4 / span 26; width: 100%; height: 100%; overflow: visible; }
+  .exploded .slab polygon { stroke: var(--line); stroke-width: 0.05; stroke-linejoin: round; }
+  .exploded .top { fill: var(--body); }
+  .exploded .front { fill: #b9b3aa; }
+  .exploded .side { fill: #a29c92; }
+  .exploded .board .top { fill: #d3cec6; }
+  .exploded .shell .top { fill: #cfcac2; }
+  .exploded .chip { fill: var(--line); }
+  .exploded .speaker { fill: #6f6a63; stroke: var(--line); stroke-width: 0.05; }
+  .exploded .cell { fill: #fff; stroke: var(--line); stroke-width: 0.05; }
+  .exploded .cap rect, .exploded .cap ellipse { fill: #d9530c; stroke: none; }
+  .exploded .cap .cap-top { fill: var(--orange); }
+  .exploded .axes line { stroke: var(--mid); stroke-width: 0.04; stroke-dasharray: 0.25 0.2; }
+  .exploded .leaders path { fill: none; stroke: var(--line); stroke-width: 0.04; }
+  .exploded .leaders circle { fill: var(--ground); stroke: var(--line); stroke-width: 0.05; }
+  .exploded .leaders text { font-family: var(--typeface-medium); font-size: 0.8px; text-anchor: middle; fill: var(--line); }
+
+  .side-view { grid-column: 3 / span 30; grid-row: -7 / span 4; width: 100%; height: 100%; overflow: visible; }
+  .side-view .body { fill: var(--body); stroke: var(--line); stroke-width: 0.06; }
+  .side-view .cap { fill: var(--orange); }
+  .side-view .foot { fill: var(--line); }
+  .side-view .dim { fill: none; stroke: var(--line); stroke-width: 0.04; }
+  .side-view text { font-family: var(--typeface-regular); font-size: 0.6px; fill: var(--line); }
+
+  .parts { grid-column: -31 / span 14; grid-row: -12 / span 6; margin: 0; padding: 0; list-style: none; font-size: calc(12px * var(--sf)); }
+  .parts li { display: grid; grid-template-columns: var(--u) 1fr; min-height: var(--u); }
+  .parts b { font-family: var(--typeface-medium); font-weight: normal; color: #b0470b; }
+  .specs { grid-column: -16 / span 13; grid-row: -12 / span 10; margin: 0; font-size: calc(12px * var(--sf)); }
+  .specs div { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr; }
+  .specs dt { color: #59544d; }
+  .specs dd { margin: 0; }
+
+  @media (max-width: 1360px) {
+    .synth .exploded { grid-column: -27 / span 24; grid-row: 4 / span 22; }
+    .synth .parts { grid-column: -29 / span 13; grid-row: -13 / span 7; }
+    .synth .specs { grid-column: -15 / span 13; }
+    .synth .name h1 { font-size: calc(80px * var(--sf)); line-height: calc(4 * var(--u)); }
+  }
+
+  /* Narrow: the plan the window's width less a square each side, then the rest in order. */
+  :root[data-narrow] .synth { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .synth > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .maker { flex-direction: column; margin-top: var(--u); }
+  :root[data-narrow] .plan { height: calc(6.4 * var(--u)); margin-block: calc(2 * var(--u)) var(--u); }
+  :root[data-narrow] .name h1 { font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .exploded { height: calc(11 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .side-view { height: calc(1.6 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .parts { margin-bottom: var(--u); }
+  :root[data-narrow] .specs div { grid-template-columns: calc(4 * var(--u)) 1fr; }
+</style>

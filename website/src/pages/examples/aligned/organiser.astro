@@ -1,0 +1,376 @@
+---
+// After a monochrome palm organiser of the late nineties: a graphite case on a leather blotter, a
+// grey-green screen of 160 × 160 pixels drawn dot by dot with the shadow each dot casts on the
+// reflector, the week of 8 November 1998, a writing area that takes the stylus, and the card of
+// single-stroke letters that came in the box. The power button lights the screen green.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="organiser" theme="dark" fonts="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap">
+  <main class="stage org" id="org">
+    <h1 class="org-sr">Pocketwise organiser, week of 8 November 1998</h1>
+
+    <div class="org-device" id="device">
+      <p class="org-brand">pocketwise<span>IIIx</span></p>
+      <span class="org-ir" aria-hidden="true"></span>
+      <button type="button" class="org-power" id="power" aria-pressed="false" aria-label="Backlight"></button>
+      <div class="org-screen" id="screen" tabindex="0" data-own-keys role="application" aria-label="Week view. Left and right arrows choose an appointment.">
+        <canvas id="lcd"></canvas>
+      </div>
+      <p class="org-sr" id="said" aria-live="polite"></p>
+      <div class="org-silk" aria-hidden="true">
+        <svg class="org-icons" viewBox="0 0 2 6"><path d="M0.5 1.3 L1 0.85 L1.5 1.3 V1.75 H0.5 Z M0.4 4.4 H1.6 M0.4 4.75 H1.6 M0.4 5.1 H1.6" /></svg>
+        <div class="org-graffiti">
+          <canvas id="ink"></canvas>
+          <span class="org-abc">abc</span><span class="org-123">123</span>
+        </div>
+        <svg class="org-icons" viewBox="0 0 2 6"><path d="M0.45 0.7 H1.55 V1.8 H0.45 Z M0.7 1 H1.3 M0.7 1.3 H0.85 M1.15 1.3 H1.3 M0.7 1.55 H0.85 M1.15 1.55 H1.3" /><circle cx="0.9" cy="4.6" r="0.35" /><path d="M1.15 4.85 L1.55 5.25" /></svg>
+      </div>
+      <div class="org-buttons" aria-hidden="true">
+        <span><svg viewBox="0 0 2 2"><rect x="0.55" y="0.6" width="0.9" height="0.85" /><path d="M0.55 0.85 H1.45 M0.8 0.5 V0.7 M1.2 0.5 V0.7" /></svg></span>
+        <span><svg viewBox="0 0 2 2"><circle cx="1" cy="0.8" r="0.22" /><path d="M0.6 1.45 C0.65 1.1 1.35 1.1 1.4 1.45" /></svg></span>
+        <span class="org-rocker"><i></i><i></i></span>
+        <span><svg viewBox="0 0 2 2"><path d="M0.55 0.65 l0.12 0.12 l0.2 -0.24 M1 0.7 H1.45 M0.55 1.15 l0.12 0.12 l0.2 -0.24 M1 1.2 H1.45" /></svg></span>
+        <span><svg viewBox="0 0 2 2"><path d="M0.6 0.55 H1.25 L1.45 0.75 V1.45 H0.6 Z M0.75 0.85 H1.3 M0.75 1.05 H1.3 M0.75 1.25 H1.1" /></svg></span>
+      </div>
+    </div>
+
+    <span class="org-stylus" aria-hidden="true"></span>
+
+    <aside class="org-card">
+      <h2>Writing with the stylus</h2>
+      <p>One stroke a letter, starting at the dot. Letters on the left of the box, numbers on the right.</p>
+      <div class="org-strokes" id="strokes"></div>
+      <p class="org-card-foot">Try it in the box under the screen. The organiser will not understand you either.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const device = $('device'), screen = $('screen'), said = $('said'), power = $('power');
+  const lcd = $('lcd') as HTMLCanvasElement, ink = $('ink') as HTMLCanvasElement;
+  const stylus = document.querySelector<HTMLElement>('.org-stylus')!, card = document.querySelector<HTMLElement>('.org-card')!;
+
+  interface Appointment { day: number; start: number; end: number; title: string; note: string }
+  // Sunday 8 to Saturday 14 November 1998, in hours.
+  const WEEK: Appointment[] = [
+    { day: 0, start: 10, end: 12, title: 'Car boot sale', note: 'Sell the fondue set' },
+    { day: 1, start: 9, end: 10, title: 'Staff meeting', note: 'Bring floppy' },
+    { day: 1, start: 13, end: 14, title: 'Lunch Ines', note: 'She pays' },
+    { day: 2, start: 11, end: 12.5, title: 'Defrag disk', note: 'Do not touch' },
+    { day: 2, start: 16, end: 17, title: 'Return tapes', note: 'Be kind rewind' },
+    { day: 3, start: 14, end: 15, title: 'Dentist', note: 'Bring x-rays' },
+    { day: 4, start: 8, end: 9, title: 'Hotsync', note: 'Cradle at desk' },
+    { day: 4, start: 10, end: 13, title: 'Y2K audit', note: '417 days left' },
+    { day: 5, start: 17, end: 18, title: 'Pager battery', note: 'AAA not AA' },
+    { day: 6, start: 9, end: 11, title: 'Tape the match', note: 'VCR at 9:00' },
+  ];
+  const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let selected = 5, lit = false;
+
+  /** The screen's 160 × 160 picture, drawn with the pixel face and read back as on and off. */
+  const bitmap = document.createElement('canvas');
+  bitmap.width = bitmap.height = 160;
+  const b = bitmap.getContext('2d', { willReadFrequently: true })!;
+  const time = (hour: number) => `${hour > 12 ? Math.floor(hour - 12) : Math.floor(hour)}:${hour % 1 ? '30' : '00'}${hour >= 12 ? 'p' : 'a'}`;
+
+  function compose() {
+    b.clearRect(0, 0, 160, 160);
+    b.fillStyle = '#000';
+    b.font = '8px Silkscreen';
+    b.textBaseline = 'top';
+    const text = (s: string, x: number, y: number, clear = false) => {
+      b.globalCompositeOperation = clear ? 'destination-out' : 'source-over';
+      b.fillText(s, x, y);
+      b.globalCompositeOperation = 'source-over';
+    };
+    // The title tab and the date.
+    b.fillRect(0, 0, 54, 11);
+    b.fillRect(0, 11, 160, 1);
+    text('Week', 4, 2, true);
+    text('Nov 8-14 98', 64, 2);
+    // Days, today (Thursday) inverted.
+    const left = 20, colW = 20, top = 30, hour = 9;
+    DAYS.forEach((day, index) => {
+      const x = left + index * colW;
+      if (index === 4) { b.fillRect(x + 1, 13, colW - 1, 16); text(day, x + 8, 14, true); text(String(8 + index), x + (8 + index > 9 ? 4 : 7), 21, true); }
+      else { text(day, x + 8, 14); text(String(8 + index), x + (8 + index > 9 ? 4 : 7), 21); }
+    });
+    // Mum's birthday, an untimed event: a diamond above Thursday.
+    // Hours, dotted.
+    for (let h = 8; h <= 18; h++) {
+      const y = top + (h - 8) * hour;
+      for (let x = left; x < 160; x += 2) b.fillRect(x, y, 1, 1);
+      if (h < 18) text(String(h > 12 ? h - 12 : h), h > 9 && h <= 12 ? 3 : 7, y + 1);
+    }
+    for (let index = 0; index <= 7; index++) b.fillRect(left + index * colW, 13, 1, top + 10 * hour - 13);
+    // Appointments as bars; the chosen one hatched.
+    WEEK.forEach((a, index) => {
+      const x = left + a.day * colW + 3, y = top + (a.start - 8) * hour + 1, h = (a.end - a.start) * hour - 1;
+      b.fillRect(x, y, colW - 5, h);
+      if (index === selected) {
+        b.clearRect(x + 1, y + 1, colW - 7, h - 2);
+        for (let yy = y + 1; yy < y + h - 1; yy++) for (let xx = x + 1; xx < x + colW - 6; xx++) if ((xx + yy) % 3 === 0) b.fillRect(xx, yy, 1, 1);
+      }
+    });
+    // The chosen appointment under the grid.
+    const a = WEEK[selected];
+    b.fillRect(0, 122, 160, 1);
+    text(`${NAMES[a.day]} ${time(a.start)} ${a.title}`, 2, 125);
+    text(a.note, 2, 135);
+    // The buttons along the foot.
+    b.strokeStyle = '#000';
+    b.lineWidth = 1;
+    b.beginPath(); b.roundRect(0.5, 147.5, 33, 11, 4); b.stroke();
+    text('Go to', 5, 150);
+    b.beginPath(); b.roundRect(37.5, 147.5, 24, 11, 4); b.stroke();
+    text('Day', 41, 150);
+    b.fillRect(65, 147, 30, 13);
+    text('Week', 67, 150, true);
+    b.beginPath(); b.roundRect(99.5, 147.5, 26, 11, 4); b.stroke();
+    text('Mth', 103, 150);
+    b.beginPath(); b.moveTo(136, 153); b.lineTo(142, 149); b.lineTo(142, 157); b.closePath(); b.fill();
+    b.beginPath(); b.moveTo(158, 153); b.lineTo(152, 149); b.lineTo(152, 157); b.closePath(); b.fill();
+  }
+
+  /** Every pixel as a square with a hair of gap, its shadow cast down and right on the reflector. */
+  function paint() {
+    const size = lcd.width, p = size / 160;
+    const c = lcd.getContext('2d')!;
+    const data = b.getImageData(0, 0, 160, 160).data;
+    const ground = lit ? '#7fd38a' : '#a3ad8f', off = lit ? '#77c982' : '#9ba586', on = lit ? '#0e3a1a' : '#1d2418', shade = lit ? 'rgb(14 58 26 / 0.16)' : 'rgb(29 36 24 / 0.14)';
+    c.fillStyle = ground;
+    c.fillRect(0, 0, size, size);
+    const dot = Math.max(1, p * 0.86);
+    c.fillStyle = off;
+    for (let y = 0; y < 160; y++) for (let x = 0; x < 160; x++) c.fillRect(x * p, y * p, dot, dot);
+    c.fillStyle = shade;
+    for (let y = 0; y < 160; y++) for (let x = 0; x < 160; x++) if (data[(y * 160 + x) * 4 + 3] > 110) c.fillRect(x * p + p * 0.35, y * p + p * 0.45, dot, dot);
+    c.fillStyle = on;
+    for (let y = 0; y < 160; y++) for (let x = 0; x < 160; x++) if (data[(y * 160 + x) * 4 + 3] > 110) c.fillRect(x * p, y * p, dot, dot);
+  }
+
+  function render() {
+    compose();
+    paint();
+    const a = WEEK[selected];
+    said.textContent = `${NAMES[a.day]} ${8 + a.day} November, ${time(a.start)}: ${a.title}. ${a.note}.`;
+  }
+
+  screen.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    selected = (selected + (event.key === 'ArrowRight' ? 1 : WEEK.length - 1)) % WEEK.length;
+    render();
+  });
+  screen.addEventListener('pointerdown', event => {
+    const box = lcd.getBoundingClientRect();
+    const x = ((event.clientX - box.left) / box.width) * 160, y = ((event.clientY - box.top) / box.height) * 160;
+    const day = Math.floor((x - 20) / 20), hour = 8 + (y - 30) / 9;
+    const hit = WEEK.findIndex(a => a.day === day && hour >= a.start && hour < a.end);
+    if (hit >= 0) { selected = hit; render(); }
+  });
+  power.addEventListener('click', () => {
+    lit = !lit;
+    power.setAttribute('aria-pressed', String(lit));
+    device.toggleAttribute('data-lit', lit);
+    paint();
+  });
+
+  // The writing area takes the stylus; the ink fades as the screen would forget it.
+  const inkContext = ink.getContext('2d')!;
+  let strokes: { x: number; y: number; t: number }[][] = [];
+  let drawing = false, inkFrame = 0;
+  function inkLoop() {
+    const now = performance.now();
+    strokes = strokes.filter(stroke => stroke.length && now - stroke[stroke.length - 1].t < 1600);
+    inkContext.clearRect(0, 0, ink.width, ink.height);
+    inkContext.lineCap = inkContext.lineJoin = 'round';
+    inkContext.lineWidth = 2.2 * devicePixelRatio;
+    for (const stroke of strokes) {
+      const age = drawing && stroke === strokes[strokes.length - 1] ? 0 : (now - stroke[stroke.length - 1].t) / 1600;
+      inkContext.strokeStyle = `rgb(230 236 240 / ${Math.max(0, 0.85 * (1 - age))})`;
+      inkContext.beginPath();
+      stroke.forEach((point, index) => (index ? inkContext.lineTo(point.x, point.y) : inkContext.moveTo(point.x, point.y)));
+      inkContext.stroke();
+    }
+    inkFrame = strokes.length || drawing ? requestAnimationFrame(inkLoop) : 0;
+  }
+  const at = (event: PointerEvent) => { const box = ink.getBoundingClientRect(); return { x: (event.clientX - box.left) * devicePixelRatio, y: (event.clientY - box.top) * devicePixelRatio, t: performance.now() }; };
+  ink.addEventListener('pointerdown', event => { drawing = true; ink.setPointerCapture(event.pointerId); strokes.push([at(event)]); if (!inkFrame) inkFrame = requestAnimationFrame(inkLoop); });
+  ink.addEventListener('pointermove', event => { if (drawing) strokes[strokes.length - 1].push(at(event)); });
+  const lift = () => { drawing = false; };
+  ink.addEventListener('pointerup', lift);
+  ink.addEventListener('pointercancel', lift);
+
+  // The card of strokes: each letter in three squares, its stroke starting at a dot.
+  const STROKES: [string, string][] = [
+    ['A', 'M0.6 2.5 L1.5 0.5 L2.4 2.5'], ['B', 'M0.8 0.5 L0.8 2.5 L0.8 0.6 C2.6 0.4 2.6 1.5 1.1 1.5 C2.8 1.5 2.7 2.6 0.9 2.5'],
+    ['C', 'M2.4 0.8 C1.9 0.3 0.6 0.4 0.6 1.5 C0.6 2.6 1.9 2.7 2.4 2.2'], ['D', 'M0.8 0.5 L0.8 2.5 L0.8 0.5 C2.9 0.4 2.9 2.6 0.9 2.5'],
+    ['E', 'M2.3 0.6 C0.6 0.4 0.6 1.4 1.6 1.5 C0.5 1.6 0.5 2.6 2.3 2.4'], ['F', 'M2.4 0.5 L0.8 0.5 L0.8 2.5'],
+    ['G', 'M2.4 0.8 C1.9 0.3 0.6 0.4 0.6 1.5 C0.6 2.6 2.3 2.7 2.4 1.6 L1.6 1.6'], ['H', 'M0.8 0.4 L0.8 2.5 C0.9 1.3 2.3 1.2 2.3 2 L2.3 2.5'],
+    ['I', 'M1.5 0.5 L1.5 2.5'], ['J', 'M2 0.5 L2 2 C2 2.7 0.9 2.7 0.8 2.1'],
+    ['K', 'M2.3 0.5 L0.9 1.6 L2.3 2.5'], ['L', 'M0.8 0.5 L0.8 2.5 L2.3 2.5'],
+    ['M', 'M0.6 2.5 L0.8 0.5 L1.5 2 L2.2 0.5 L2.4 2.5'], ['N', 'M0.7 2.5 L0.7 0.5 L2.3 2.5 L2.3 0.5'],
+    ['O', 'M1.5 0.5 C0.4 0.5 0.4 2.5 1.5 2.5 C2.6 2.5 2.6 0.5 1.5 0.5'], ['P', 'M0.8 2.5 L0.8 0.5 C2.7 0.4 2.7 1.6 0.9 1.5'],
+    ['Q', 'M1.5 0.5 C0.4 0.5 0.4 2.5 1.5 2.5 C2.6 2.5 2.6 0.5 1.6 0.5 C2.1 1.2 2.4 2.1 2.6 2.6'], ['R', 'M0.8 2.5 L0.8 0.5 C2.7 0.4 2.7 1.6 0.9 1.5 L2.3 2.5'],
+    ['S', 'M2.3 0.7 C1.5 0.2 0.6 0.6 0.8 1.2 C1 1.7 2.3 1.4 2.3 2 C2.3 2.7 1.1 2.7 0.6 2.3'], ['T', 'M0.6 0.6 L2.4 0.6 L2.4 2.5'],
+    ['U', 'M0.7 0.5 L0.7 1.8 C0.7 2.7 2.3 2.7 2.3 1.8 L2.3 0.5'], ['V', 'M0.6 0.5 L1.5 2.5 L2.4 0.5'],
+    ['W', 'M0.5 0.5 L0.9 2.5 L1.5 1.1 L2.1 2.5 L2.5 0.5'], ['X', 'M0.6 0.5 L2.4 2.5 C2.7 2.6 2.6 0.6 2.4 0.5 L0.6 2.5'],
+    ['Y', 'M0.7 0.5 C0.7 1.6 2.3 1.6 2.3 0.5 L2.3 2 C2.3 2.8 1 2.8 0.8 2.3'], ['Z', 'M0.6 0.6 L2.4 0.6 L0.6 2.4 L2.4 2.4'],
+    ['space', 'M0.5 1.6 L2.5 1.6'], ['back', 'M2.5 1.6 L0.5 1.6'],
+  ];
+  $('strokes').innerHTML = STROKES.map(([letter, d]) => {
+    const start = d.match(/M([\d.]+) ([\d.]+)/)!;
+    return `<figure><svg viewBox="0 0 3 3" aria-hidden="true"><path d="${d}"/><circle cx="${start[1]}" cy="${start[2]}" r="0.16"/></svg><figcaption>${letter}</figcaption></figure>`;
+  }).join('');
+
+  onSquares(({ across, down, narrow, unit }) => {
+    let L: number;
+    if (narrow) {
+      L = across - 4;
+      device.style.cssText = `grid-column: 1 / -1; grid-row: auto; --l: ${L};`;
+      stylus.style.cssText = '';
+      card.style.cssText = '';
+    } else {
+      L = Math.max(14, Math.min(24, down - 20));
+      const deviceW = L + 6, deviceH = L + 17;
+      const total = deviceW + 3 + 21;
+      const left = Math.max(3, Math.floor((across - total) / 2) + 1);
+      const top = Math.max(2, Math.floor((down - deviceH) / 2) + 1);
+      device.style.cssText = `grid-column: ${left} / span ${deviceW}; grid-row: ${top} / span ${deviceH}; --l: ${L};`;
+      stylus.style.cssText = `grid-column: ${left + deviceW + 1} / span 1; grid-row: ${top + 4} / span ${Math.min(deviceH - 6, 30)};`;
+      const cardTop = Math.max(2, Math.floor((down - 26) / 2) + 1);
+      card.style.cssText = `grid-column: ${left + deviceW + 4} / span 20; grid-row: ${cardTop} / span ${Math.min(26, down - 3)};`;
+    }
+    const dpr = devicePixelRatio || 1;
+    lcd.width = lcd.height = Math.round(L * unit * dpr);
+    requestAnimationFrame(() => {
+      const box = ink.getBoundingClientRect();
+      ink.width = Math.round(box.width * dpr);
+      ink.height = Math.round(box.height * dpr);
+    });
+    document.fonts.load('8px Silkscreen').then(render, render);
+  });
+</script>
+
+<style is:global>
+  html[data-study='organiser'] { background: #4a1c22; }
+  .org {
+    --graphite: #3b3e42;
+    --silk: #c5ccd2;
+    /* A leather blotter: oxblood, grained, with the stitched edge a square in from the window. */
+    background:
+      linear-gradient(#4a1c22, #4a1c22) padding-box,
+      #4a1c22;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.03 0 0 0 0 0.04 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23l)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 40% 30%, #6b2a31, #4a1c22 70%, #3a1419);
+    font-family: var(--typeface-regular);
+    color: #f1e9e4;
+  }
+  .org::before {
+    content: '';
+    grid-column: 2 / -2;
+    grid-row: 2 / -2;
+    border: 1px dashed rgb(232 190 170 / 0.35);
+    border-radius: calc(0.5 * var(--u));
+    pointer-events: none;
+  }
+  .org-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .org p, .org h2, .org figure { margin: 0; }
+
+  /* The case: rows of top 3, the screen, 7 of glass and writing area, 5 of buttons, 2 of chin. */
+  .org-device {
+    --l: 24;
+    position: relative;
+    display: grid;
+    grid-template-columns: calc(3 * var(--u)) calc(var(--l) * var(--u)) calc(3 * var(--u));
+    grid-template-rows: calc(3 * var(--u)) calc(var(--l) * var(--u)) calc(7 * var(--u)) calc(5 * var(--u)) calc(2 * var(--u));
+    border-radius: calc(2.5 * var(--u)) calc(2.5 * var(--u)) calc(3.5 * var(--u)) calc(3.5 * var(--u));
+    background:
+      linear-gradient(100deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0) 30%, rgb(0 0 0 / 0) 75%, rgb(0 0 0 / 0.25)),
+      linear-gradient(to bottom, #4a4e53, var(--graphite) 40%, #2e3134);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), inset 0 calc(-0.3 * var(--u)) calc(0.6 * var(--u)) rgb(0 0 0 / 0.4), calc(0.5 * var(--u)) var(--u) calc(1.2 * var(--u)) rgb(20 4 6 / 0.65);
+    align-self: start;
+  }
+  .org-brand { grid-column: 2; grid-row: 1; align-self: center; font-family: Futura, 'Avenir Next', sans-serif; font-style: italic; font-weight: 600; font-size: calc(16px * var(--sf)); line-height: var(--u); color: var(--silk); letter-spacing: 0.01em; }
+  .org-brand span { font-style: normal; font-weight: 400; font-size: calc(11px * var(--sf)); margin-left: calc(0.4 * var(--u)); opacity: 0.7; }
+  .org-ir { position: absolute; top: calc(-0.2 * var(--u)); left: calc(50% - 2 * var(--u)); width: calc(4 * var(--u)); height: calc(0.6 * var(--u)); border-radius: calc(0.3 * var(--u)); background: linear-gradient(#5a1414, #240707); }
+  .org-power { all: unset; position: absolute; top: var(--u); right: calc(3 * var(--u)); width: var(--u); height: var(--u); border-radius: 50%; background: radial-gradient(circle at 40% 35%, #8b9096, #3a3d41 70%); box-shadow: 0 1px 0 rgb(255 255 255 / 0.15), inset 0 -1px 2px rgb(0 0 0 / 0.5); cursor: pointer; }
+  .org-power::after { content: ''; position: absolute; inset: 30%; border-radius: 50%; border: 1px solid #d7dde2; border-top-color: transparent; }
+  .org-power[aria-pressed='true'] { background: radial-gradient(circle at 40% 35%, #a8f0b2, #2f8a42 70%); }
+  .org-power:focus-visible, .org-screen:focus-visible { outline: 2px solid #f6d36b; outline-offset: 2px; }
+
+  .org-screen { grid-column: 2; grid-row: 2; position: relative; cursor: pointer; box-shadow: 0 0 0 calc(0.25 * var(--u)) #1d1f22, 0 0 0 calc(0.3 * var(--u)) #55595e; }
+  .org-screen canvas { display: block; width: 100%; height: 100%; }
+  .org-screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(125deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 35%); }
+  .org[data-lit] .org-screen, .org-device[data-lit] .org-screen { box-shadow: 0 0 0 calc(0.25 * var(--u)) #1d1f22, 0 0 0 calc(0.3 * var(--u)) #55595e, 0 0 calc(1.5 * var(--u)) rgb(120 230 140 / 0.35); }
+
+  /* The glass below the screen, printed in silver: two icons each side, the writing box between. */
+  .org-silk { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: calc(3 * var(--u)) 1fr calc(3 * var(--u)); padding-block: var(--u); }
+  .org-icons { width: calc(2 * var(--u)); height: calc(5 * var(--u)); justify-self: center; fill: none; stroke: var(--silk); stroke-width: 0.08; stroke-linecap: round; }
+  .org-graffiti { position: relative; display: grid; grid-template-columns: 3fr 2fr; border: 1px solid var(--silk); border-radius: calc(0.3 * var(--u)); background: linear-gradient(to right, transparent calc(60% - 0.5px), var(--silk) calc(60% - 0.5px) calc(60% + 0.5px), transparent calc(60% + 0.5px)); }
+  .org-graffiti canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  .org-abc, .org-123 { align-self: end; padding: 0 calc(0.4 * var(--u)); font-size: calc(10px * var(--sf)); line-height: var(--u); color: var(--silk); opacity: 0.7; pointer-events: none; }
+  .org-123 { justify-self: end; }
+
+  /* Hard buttons: round, an icon each, the rocker between. */
+  .org-buttons { grid-column: 1 / -1; grid-row: 4; display: flex; justify-content: center; align-items: center; gap: var(--u); }
+  .org-buttons > span { width: calc(3 * var(--u)); height: calc(3 * var(--u)); border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 45% 35%, #6c7177, #2c2f33 72%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 calc(0.15 * var(--u)) calc(0.2 * var(--u)) rgb(0 0 0 / 0.5); }
+  .org-buttons svg { width: calc(2 * var(--u)); height: calc(2 * var(--u)); fill: none; stroke: var(--silk); stroke-width: 0.08; }
+  .org-buttons .org-rocker { width: calc(2 * var(--u)); height: calc(4 * var(--u)); border-radius: var(--u); display: grid; grid-template-rows: 1fr 1fr; place-items: center; }
+  .org-rocker i { width: 0; height: 0; border: calc(0.25 * var(--u)) solid transparent; }
+  .org-rocker i:first-child { border-bottom-color: var(--silk); border-top-width: 0; }
+  .org-rocker i:last-child { border-top-color: var(--silk); border-bottom-width: 0; }
+
+  .org-stylus {
+    justify-self: center;
+    width: calc(0.6 * var(--u));
+    border-radius: calc(0.3 * var(--u)) calc(0.3 * var(--u)) 50% 50% / calc(0.3 * var(--u)) calc(0.3 * var(--u)) calc(1.2 * var(--u)) calc(1.2 * var(--u));
+    background:
+      linear-gradient(to bottom, transparent 0 calc(3 * var(--u)), rgb(0 0 0 / 0.35) calc(3 * var(--u)) calc(3 * var(--u) + 1px), transparent calc(3 * var(--u) + 1px)),
+      linear-gradient(to right, #6f7479, #e8ebed 40%, #9aa0a5 65%, #55595e);
+    box-shadow: calc(0.3 * var(--u)) calc(0.5 * var(--u)) calc(0.4 * var(--u)) rgb(20 4 6 / 0.6);
+  }
+
+  /* The card from the box: white board, black strokes, red start dots. */
+  .org-card {
+    box-sizing: border-box;
+    padding: var(--u);
+    display: flex;
+    flex-direction: column;
+    gap: var(--u);
+    background: #f7f6f3;
+    color: #1c1d1f;
+    border-radius: calc(0.25 * var(--u));
+    box-shadow: calc(0.3 * var(--u)) calc(0.6 * var(--u)) calc(0.8 * var(--u)) rgb(20 4 6 / 0.55);
+    transform: rotate(1.2deg);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    overflow: hidden;
+  }
+  .org-card h2 { font-family: Futura, 'Avenir Next', sans-serif; font-weight: 600; font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .org-strokes { display: grid; grid-template-columns: repeat(6, calc(3 * var(--u))); grid-auto-rows: calc(3 * var(--u)); }
+  .org-strokes figure { position: relative; box-shadow: inset -1px -1px 0 #d9d6cf; }
+  .org-strokes svg { width: 100%; height: 100%; fill: none; stroke: #1c1d1f; stroke-width: 0.12; stroke-linecap: round; stroke-linejoin: round; }
+  .org-strokes circle { fill: #d4372c; stroke: none; }
+  .org-strokes figcaption { position: absolute; left: calc(0.2 * var(--u)); top: 0; font-size: calc(9px * var(--sf)); line-height: calc(0.8 * var(--u)); color: #8a857c; }
+  .org-card-foot { margin-top: auto !important; color: #5a5650; font-style: italic; font-family: var(--typeface-canon); font-size: calc(12px * var(--sf)); }
+
+  /* Narrow: the device as wide as the phone, the card under it. */
+  :root[data-narrow] .org { padding-bottom: calc(3 * var(--u)); row-gap: calc(2 * var(--u)); }
+  :root[data-narrow] .org::before { display: none; }
+  :root[data-narrow] .org-device { margin-top: var(--u); grid-template-columns: calc(2 * var(--u)) calc(var(--l) * var(--u)) calc(2 * var(--u)); width: calc((var(--l) + 4) * var(--u)); justify-self: center; }
+  :root[data-narrow] .org-brand { font-size: calc(14px * var(--sf)); }
+  :root[data-narrow] .org-power { right: calc(2 * var(--u)); }
+  :root[data-narrow] .org-silk { grid-template-columns: calc(2 * var(--u)) 1fr calc(2 * var(--u)); }
+  :root[data-narrow] .org-buttons { gap: calc(0.5 * var(--u)); }
+  :root[data-narrow] .org-buttons > span:not(.org-rocker) { width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .org-stylus { display: none; }
+  :root[data-narrow] .org-card { grid-column: 1 / -1; grid-row: auto; transform: none; align-items: center; }
+  :root[data-narrow] .org-strokes { grid-template-columns: repeat(4, calc(3 * var(--u))); }
+</style>

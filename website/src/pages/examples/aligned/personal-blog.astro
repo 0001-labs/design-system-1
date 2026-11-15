@@ -1,0 +1,265 @@
+---
+// After a personal blog of 2004: a fixed column of 760 pixels, thirty-eight squares, centred on a
+// tiled background whose tile is two squares; posts with a date over them and a comment count under
+// them, and a sidebar of blogroll, archives, tags, badges and a hit counter. It scrolls, as they did.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const BLOGROLL = [
+  ['the moth', 'night shifts on ward 9'],
+  ['ruthless', 'Ruth, not sleeping'],
+  ['a cardigan for every weather', ''],
+  ['petrol station romance', ''],
+  ['Captain Biscuit', 'updated!'],
+  ['the lighthouse keeper’s daughter', ''],
+  ['notes from a small kitchen', ''],
+  ['Jonny’s pixel diary', ''],
+];
+const ARCHIVES = [
+  ['November 2004', 6], ['October 2004', 14], ['September 2004', 11], ['August 2004', 3],
+  ['July 2004', 9], ['June 2004', 12], ['May 2004', 17], ['April 2004', 8],
+];
+const TAGS: [string, number][] = [
+  ['biscuits', 3], ['buses', 2], ['cats (not mine)', 1], ['dreams', 1], ['the kettle', 4], ['leeds', 3], ['library', 2],
+  ['memes', 1], ['radiator', 2], ['rain', 3], ['ukulele', 4], ['whitby', 1], ['work', 1], ['tea', 2],
+];
+---
+<AlignedStudy slug="personal-blog" theme="light" scroll>
+  <main class="stage blog">
+    <div class="pb-page" id="pb-page">
+      <header class="pb-banner">
+        <svg class="pb-kettle" viewBox="0 0 5 4" aria-hidden="true">
+          <path d="M 1 3.6 L 1.2 1.6 C 1.3 1 3.7 1 3.8 1.6 L 4 3.6 Z" fill="#fff" />
+          <path d="M 1.15 2 C 0.4 1.8 0.3 1.3 0.2 1" stroke="#fff" stroke-width="0.22" fill="none" stroke-linecap="round" />
+          <path d="M 2 1.2 C 2 0.5 3 0.5 3 1.2" stroke="#fff" stroke-width="0.18" fill="none" />
+          <path d="M 0.2 0.8 C 0 0.5 0.4 0.3 0.2 0" stroke="#fff" stroke-width="0.08" fill="none" opacity="0.7" />
+        </svg>
+        <h1><a href="#top">the kettle is on</a></h1>
+        <p>notes from a third-floor flat in Leeds, with a radiator that has opinions</p>
+      </header>
+      <nav class="pb-nav" aria-label="Blog">
+        <a href="#top">home</a> | <a href="#about">about me</a> | <a href="#archives">archives</a> | <a href="#pb-photo">photos</a> | <a href="#top">email me</a>
+      </nav>
+
+      <div class="pb-main">
+        <article class="pb-post">
+          <h2 class="pb-date">Tuesday, November 16, 2004</h2>
+          <h3><a href="#top">the radiator has opinions</a></h3>
+          <p>
+            It knocks three times at 6.40 every morning, then once more at 6.52, as if it forgot something. The landlord says this is
+            “character”. I say it is a ghost who has learned Morse code and has nothing to tell me.
+          </p>
+          <p>
+            Tonight I bled it with a key from the hardware shop on Kirkstall Road, and it sighed so loudly the man downstairs knocked on
+            the ceiling. Now there are two of them knocking. I am outnumbered in my own flat.
+          </p>
+          <p class="pb-current"><b>mood:</b> smug, then worried <b>listening to:</b> the shipping forecast, for company</p>
+          <p class="pb-byline">posted by mags at 11:42 PM | <a href="#top">4 comments</a> | <a href="#top">permalink</a></p>
+        </article>
+
+        <article class="pb-post">
+          <h2 class="pb-date">Sunday, November 14, 2004</h2>
+          <h3><a href="#top">meme: five things in my bag</a></h3>
+          <p>Stolen from the moth, who stole it from someone who stole it from a magazine.</p>
+          <ol>
+            <li>Middlemarch, three weeks overdue, bookmark on page 41 since August</li>
+            <li>half a Twix, the left half</li>
+            <li>two bus tickets for the same journey, long story</li>
+            <li>hand cream from 1999, unopened, a gift from my aunt who thinks I have dry hands</li>
+            <li>a plectrum, and no guitar (see: ukulele)</li>
+          </ol>
+          <p>I tag ruthless, Captain Biscuit and anyone else who reads this. So, nobody.</p>
+          <p class="pb-byline">posted by mags at 9:15 PM | <a href="#top">11 comments</a> | <a href="#top">permalink</a></p>
+        </article>
+
+        <article class="pb-post" id="pb-photo">
+          <h2 class="pb-date">Friday, November 12, 2004</h2>
+          <h3><a href="#top">the mug in question</a></h3>
+          <p>Several of you asked. Here it is. Yes, it was a pound. Yes, it holds nearly a pint.</p>
+          <figure class="pb-figure">
+            <img src="/examples/images/cup.jpg" alt="A cup of tea on a table" width="480" height="320" />
+            <figcaption>(click for bigger) (you can’t, I haven’t worked out how)</figcaption>
+          </figure>
+          <p class="pb-byline">posted by mags at 6:03 PM | <a href="#top">2 comments</a> | <a href="#top">permalink</a></p>
+        </article>
+
+        <article class="pb-post">
+          <h2 class="pb-date">Wednesday, November 10, 2004</h2>
+          <h3><a href="#top">I bought a ukulele</a></h3>
+          <p>
+            It is pale yellow and it came with a chord chart and a leaflet that says, in four languages, that anyone can learn it in
+            a weekend. It has been two weekends. Anyone has not.
+          </p>
+          <p class="pb-byline">posted by mags at 10:58 PM | <a href="#top">7 comments</a> | <a href="#top">permalink</a></p>
+        </article>
+
+        <p class="pb-older"><a href="#top">&laquo; older posts</a></p>
+      </div>
+
+      <aside class="pb-side">
+        <section class="pb-box" id="about">
+          <h4>about me</h4>
+          <div class="pb-about">
+            <img src="/examples/images/birdie-robin.jpg" alt="" width="60" height="60" />
+            <p><b>mags</b><br />27, Leeds. Librarian by day, ukulele disappointment by night.</p>
+          </div>
+          <p><a href="#about">View my complete profile</a></p>
+        </section>
+
+        <section class="pb-box">
+          <h4>blogroll</h4>
+          <ul class="pb-roll">
+            {BLOGROLL.map(([name, note]) => (
+              <li><a href="#top">{name}</a>{note === 'updated!' ? <span class="pb-new">updated!</span> : note && <span class="pb-rollnote"> {note}</span>}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section class="pb-box" id="archives">
+          <h4>archives</h4>
+          <ul>{ARCHIVES.map(([month, n]) => <li><a href="#top">{month}</a> ({n})</li>)}</ul>
+        </section>
+
+        <section class="pb-box">
+          <h4>tags</h4>
+          <p class="pb-cloud">{TAGS.map(([tag, w]) => <a href="#top" class={`pb-w${w}`}>{tag}</a>)}</p>
+        </section>
+
+        <section class="pb-box">
+          <h4>currently reading</h4>
+          <p><i>Middlemarch</i>, still. Page 41. Dorothea is about to make a terrible decision and I cannot watch.</p>
+        </section>
+
+        <section class="pb-box pb-badges" aria-label="Badges">
+          <span class="pb-badge" style="--a:#f60"><b>RSS</b><i>feed</i></span>
+          <span class="pb-badge" style="--a:#5a7d2a"><b>XHTML</b><i>1.0</i></span>
+          <span class="pb-badge" style="--a:#36c"><b>made</b><i>on a Mac</i></span>
+          <span class="pb-badge" style="--a:#936"><b>tea</b><i>powered</i></span>
+        </section>
+
+        <section class="pb-box pb-counter">
+          <p>you are visitor no.</p>
+          <p class="pb-digits" aria-label="4311">{'004311'.split('').map(d => <span>{d}</span>)}</p>
+          <p class="pb-since">since March 2003</p>
+        </section>
+      </aside>
+
+      <footer class="pb-foot">
+        © 2004 mags. All words mine, all typos too. Best viewed at 1024×768 with the kettle on.
+      </footer>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+  // Thirty-eight squares, as 760 pixels was, centred on whole squares.
+  const page = document.getElementById('pb-page')!;
+  onSquares(({ across, narrow }) => {
+    page.style.gridColumn = narrow ? '1 / -1' : `${Math.floor((across - 38) / 2) + 1} / span 38`;
+  });
+</script>
+
+<style is:global>
+  /* The tile: two squares of periwinkle with a small white star, as the background of so many. */
+  html {
+    background: #b9c9ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23b9c9ec'/%3E%3Crect x='20' y='20' width='20' height='20' fill='%23aebfe6'/%3E%3Crect width='20' height='20' fill='%23aebfe6'/%3E%3Cpath d='M30 4l1.5 4.5H36l-3.6 2.7 1.4 4.4L30 13l-3.8 2.6 1.4-4.4L24 8.5h4.5z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='10' cy='30' r='1.6' fill='%23fff' opacity='.7'/%3E%3C/svg%3E") 0 0 / calc(2 * var(--u)) calc(2 * var(--u));
+  }
+  .blog {
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(var(--u), auto);
+    height: auto !important;
+    min-height: var(--high);
+    padding-bottom: calc(3 * var(--u));
+    box-sizing: border-box;
+    overflow: visible;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    color: #333;
+  }
+  .blog a { color: #2a5db0; }
+  .blog a:visited { color: #8a3a8a; }
+  .blog a:hover { color: #e05a00; }
+  .blog a:focus-visible { outline: 1px dotted #333; outline-offset: 1px; }
+
+  .pb-page {
+    grid-row: 2; background: #fff; box-shadow: 0 0 0 1px #8ea3cf, calc(4px * var(--sf)) calc(4px * var(--sf)) 0 rgb(60 80 140 / 0.25);
+    display: grid; grid-template-columns: var(--u) calc(24 * var(--u)) var(--u) calc(11 * var(--u)) var(--u);
+    grid-template-rows: calc(6 * var(--u)) var(--u) auto auto;
+  }
+
+  .pb-banner {
+    grid-column: 1 / -1; position: relative; padding: var(--u) var(--u) 0 calc(5 * var(--u));
+    background: linear-gradient(#5f86cf, #93b0e4 70%, #b6cbef); color: #fff;
+  }
+  .pb-kettle { position: absolute; left: var(--u); top: var(--u); width: calc(3 * var(--u)); height: calc(3 * var(--u)) ; }
+  .pb-banner h1 { margin: 0; font: bold calc(36px * var(--sf)) / calc(3 * var(--u)) 'Trebuchet MS', sans-serif; letter-spacing: -0.02em; text-shadow: calc(2px * var(--sf)) calc(2px * var(--sf)) 0 #3d5f9e; }
+  .blog .pb-banner h1 a { color: #fff; text-decoration: none; }
+  .pb-banner p { margin: 0; font-style: italic; font-family: Georgia, serif; font-size: calc(13px * var(--sf)); }
+
+  .pb-nav { grid-column: 1 / -1; padding-inline: var(--u); background: #e6edf9; box-shadow: inset 0 -1px #b8c7e6; font-size: calc(11px * var(--sf)); color: #8ea3cf; }
+  .blog .pb-nav a { color: #2a5db0; font-weight: bold; text-decoration: none; }
+  .blog .pb-nav a:hover { text-decoration: underline; }
+
+  .pb-main { grid-column: 2; grid-row: 3; padding-top: var(--u); }
+  .pb-post { padding-bottom: var(--u); margin-bottom: var(--u); box-shadow: 0 1px 0 #d8d8d8; }
+  .pb-date { margin: 0; font-size: calc(11px * var(--sf)); font-weight: bold; color: #e05a00; }
+  .pb-post h3 { margin: 0; font: bold calc(17px * var(--sf)) / calc(2 * var(--u)) 'Trebuchet MS', sans-serif; }
+  .blog .pb-post h3 a { color: #2b3f6b; text-decoration: none; }
+  .pb-post p, .pb-post ol { margin: 0 0 var(--u); }
+  .pb-post ol { padding-left: calc(2 * var(--u)); }
+  .pb-current { font-size: calc(11px * var(--sf)); color: #777; }
+  .pb-current b { color: #555; }
+  .pb-current b + b, .pb-current b:nth-of-type(2) { margin-left: calc(var(--u) / 2); }
+  .blog .pb-byline { margin: 0; font-size: calc(11px * var(--sf)); color: #888; text-align: right; }
+  .pb-figure { margin: 0 0 var(--u); }
+  .pb-figure img { display: block; width: calc(16 * var(--u)); height: calc(10 * var(--u)); object-fit: cover; box-sizing: border-box; padding: calc(var(--u) / 4); background: #fff; box-shadow: 0 0 0 1px #ccc; filter: saturate(1.3) contrast(1.08); }
+  .pb-figure figcaption { font-size: calc(10px * var(--sf)); color: #999; }
+  .pb-older { margin: 0 0 var(--u); font-weight: bold; }
+
+  .pb-side { grid-column: 4; grid-row: 3; padding-top: var(--u); }
+  .pb-box { margin-bottom: var(--u); background: #f5f8fd; box-shadow: inset 0 0 0 1px #c9d6ee; padding: 0 calc(var(--u) / 2) var(--u); font-size: calc(11px * var(--sf)); }
+  .pb-box h4 { margin: 0 calc(var(--u) / -2) var(--u); padding-inline: calc(var(--u) / 2); background: #93b0e4; color: #fff; font: bold calc(12px * var(--sf)) / var(--u) 'Trebuchet MS', sans-serif; }
+  .pb-box p, .pb-box ul { margin: 0; }
+  .pb-box ul { padding: 0; list-style: none; }
+  .pb-box li::before { content: '» '; color: #93b0e4; }
+  .pb-about { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr; column-gap: calc(var(--u) / 2); margin-bottom: var(--u); }
+  .pb-about img { width: calc(3 * var(--u)); height: calc(3 * var(--u)); object-fit: cover; box-shadow: 0 0 0 1px #8ea3cf; }
+  .pb-rollnote { color: #999; }
+  .pb-new { margin-left: calc(var(--u) / 4); padding: 0 calc(var(--u) / 4); background: #ff3; color: #c00; font-weight: bold; font-size: calc(9px * var(--sf)); animation: pb-blink 1s steps(2) infinite; line-height: var(--u); vertical-align: top; display: inline-block; height: var(--u); }
+  @keyframes pb-blink { 50% { visibility: hidden; } }
+  @media (prefers-reduced-motion: reduce) { .pb-new { animation: none; } }
+
+  .pb-cloud { display: flex; flex-wrap: wrap; align-items: center; column-gap: calc(var(--u) / 3); line-height: calc(2 * var(--u)); }
+  .pb-cloud a { white-space: nowrap; }
+  .pb-cloud .pb-w1 { font-size: calc(10px * var(--sf)); }
+  .pb-cloud .pb-w2 { font-size: calc(13px * var(--sf)); }
+  .pb-cloud .pb-w3 { font-size: calc(16px * var(--sf)); }
+  .pb-cloud .pb-w4 { font-size: calc(21px * var(--sf)); font-weight: bold; letter-spacing: -0.02em; }
+
+  /* Badges of the time, four squares by one, in two rows. */
+  .pb-badges { display: grid; grid-template-columns: repeat(2, calc(4 * var(--u))); gap: var(--u); padding-top: var(--u); justify-content: center; background: none; box-shadow: none; }
+  .pb-badge { display: grid; grid-template-columns: 45% 55%; height: var(--u); box-shadow: inset 0 0 0 1px #666; font: calc(9px * var(--sf)) / var(--u) Verdana, sans-serif; text-align: center; overflow: hidden; }
+  .pb-badge b { background: var(--a); color: #fff; box-shadow: inset 0 0 0 1px #666; }
+  .pb-badge i { font-style: normal; background: #eee; color: #333; white-space: nowrap; }
+
+  .pb-counter { text-align: center; padding-top: var(--u); }
+  .pb-digits { display: flex; justify-content: center; margin-block: calc(var(--u) / 4) !important; }
+  .pb-digits span { width: var(--u); height: calc(1.5 * var(--u)); line-height: calc(1.5 * var(--u)); background: linear-gradient(#000 50%, #222 50%); color: #7f7; font: bold calc(15px * var(--sf)) / calc(1.5 * var(--u)) 'Courier New', monospace; box-shadow: inset 0 0 0 1px #555; }
+  .pb-since { color: #999; }
+
+  .pb-foot { grid-column: 1 / -1; grid-row: 4; padding: var(--u); background: #e6edf9; text-align: center; font-size: calc(10px * var(--sf)); color: #667; }
+
+  /* Narrow: the column goes the phone's width, the sidebar under the posts. */
+  :root[data-narrow] .pb-page { grid-template-columns: var(--u) minmax(0, 1fr) var(--u); grid-template-rows: auto var(--u) auto auto auto; box-shadow: none; }
+  :root[data-narrow] .blog { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pb-page { grid-row: 1; }
+  :root[data-narrow] .pb-banner { padding: var(--u) var(--u) var(--u) calc(4 * var(--u)); }
+  :root[data-narrow] .pb-kettle { width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .pb-banner h1 { font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .pb-nav { height: auto; }
+  :root[data-narrow] .pb-main { grid-column: 2; grid-row: 3; }
+  :root[data-narrow] .pb-side { grid-column: 2; grid-row: 4; }
+  :root[data-narrow] .pb-foot { grid-row: 5; }
+  :root[data-narrow] .pb-figure img { width: 100%; height: calc(8 * var(--u)); }
+</style>

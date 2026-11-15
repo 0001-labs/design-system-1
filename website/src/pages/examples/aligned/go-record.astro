@@ -1,0 +1,342 @@
+---
+// After a go game record (kifu): the board's nineteen lines are the window's own square lines, two
+// squares apart on a computer, one on a small window, so every stone sits on a grid intersection.
+// The stones carry their move numbers; Back and Next (or the arrow keys on the board) step through
+// the first forty-one moves while the commentary column keeps pace, with two diagrams beside it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const comments: { move: number; text: string }[] = [
+  { move: 1, text: 'Black takes the upper right star point. Tsuruoka has opened here in every game of the cup.' },
+  { move: 5, text: 'A stone high on the right side, so both of Black’s corners face the same open water.' },
+  { move: 6, text: 'Mori approaches at once, before the right side can harden into a wall.' },
+  { move: 7, text: 'A pincer three lines away. Severe; Diagram 1 shows the quieter enclosure most players choose.' },
+  { move: 8, text: 'White slides under to the 3-3 point: a small life in the corner, the outside given away.' },
+  { move: 13, text: 'Black’s wall now faces the right side, and the stone at 5 works twice.' },
+  { move: 14, text: 'The same approach in the other corner, and Black pincers again. Consistency, or stubbornness?' },
+  { move: 22, text: 'Standard to here. White is settled on the top; Black keeps the move.' },
+  { move: 29, text: 'Tengen. The room went quiet, and one commentator put down his tea.' },
+  { move: 30, text: 'Mori ignores the centre stone and takes the last wide point on the top side.' },
+  { move: 35, text: 'Black reaches toward the middle. The stone at 29 is beginning to make sense.' },
+  { move: 38, text: 'White invades the right. Diagram 2: why Black cannot simply cut at 40.' },
+  { move: 41, text: 'Black caps from the outside. Mori spent thirty-eight minutes on her reply; the record continues overleaf.' },
+];
+---
+<AlignedStudy slug="go-record" theme="dark">
+  <main class="stage gorec">
+    <div class="gr-board" id="board" data-own-keys tabindex="0" aria-label="The board. Left and right arrows step through the moves; Home and End go to the first and last.">
+      <svg id="boardSvg" aria-hidden="true"></svg>
+    </div>
+
+    <header class="gr-head">
+      <p class="gr-cup" lang="ja">第三十一期 鴨川杯 決勝 第二局</p>
+      <p class="gr-cup-en">The 31st Kamogawa Cup, final, game two</p>
+      <h1>The tengen game</h1>
+    </header>
+
+    <dl class="gr-players">
+      <div><dt><span class="gr-dot b"></span>Black</dt><dd>Tsuruoka Sen, 4-dan</dd></div>
+      <div><dt><span class="gr-dot w"></span>White</dt><dd>Mori Kaede, 7-dan</dd></div>
+      <div><dt>Komi</dt><dd>6½ points, three hours each</dd></div>
+      <div><dt>Played</dt><dd>Kyoto, 12 October 2026</dd></div>
+      <div><dt>Result</dt><dd>White by 2½ after 214 moves</dd></div>
+    </dl>
+
+    <div class="gr-controls" role="group" aria-label="Moves">
+      <button type="button" id="first" aria-label="First move">|◀</button>
+      <button type="button" id="back" aria-label="Back one move">◀</button>
+      <output id="readout" aria-live="polite"></output>
+      <button type="button" id="next" aria-label="Next move">▶</button>
+      <button type="button" id="last" aria-label="Last move">▶|</button>
+    </div>
+
+    <ol class="gr-comments" id="comments" reversed>
+      {comments.map(c => (
+        <li data-move={c.move}>
+          <button type="button" class="gr-jump" data-move={c.move} aria-label={`Go to move ${c.move}`}>{c.move}</button>
+          <p>{c.text}</p>
+        </li>
+      ))}
+    </ol>
+
+    <figure class="gr-diagram d1">
+      <svg id="dia1" viewBox="0 0 9 7" aria-hidden="true"></svg>
+      <figcaption><b>Diagram 1</b> 7 at 1 instead: White extends to 2 and both sides settle.</figcaption>
+    </figure>
+    <figure class="gr-diagram d2">
+      <svg id="dia2" viewBox="0 0 9 7" aria-hidden="true"></svg>
+      <figcaption><b>Diagram 2</b> If Black cuts at 1, White 2 and 4 leave the cutting stone short of breath.</figcaption>
+    </figure>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The first forty-one moves, as [column, row] counted from the top left, 1 to 19. No captures.
+  const MOVES: [number, number][] = [
+    [16, 4], [4, 16], [16, 16], [4, 4], [17, 10], [14, 17], [12, 17], [17, 17], [17, 16], [16, 17],
+    [15, 16], [18, 16], [18, 15], [14, 3], [11, 3], [17, 3], [16, 3], [17, 4], [17, 5], [18, 5],
+    [18, 6], [15, 3], [3, 14], [3, 10], [3, 17], [4, 17], [3, 16], [4, 15], [10, 10], [10, 4],
+    [12, 5], [7, 4], [17, 13], [9, 16], [14, 10], [6, 12], [8, 8], [14, 7], [12, 8], [15, 8],
+    [16, 7],
+  ];
+  const LETTERS = 'ABCDEFGHJKLMNOPQRST';
+  const name = ([x, y]: [number, number]) => `${LETTERS[x - 1]}${20 - y}`;
+
+  const board = document.getElementById('board') as HTMLElement;
+  const svg = document.getElementById('boardSvg') as unknown as SVGSVGElement;
+  const readout = document.getElementById('readout') as HTMLOutputElement;
+  const items = [...document.querySelectorAll<HTMLLIElement>('#comments li')];
+  const root = document.documentElement;
+
+  let n = MOVES.length;
+  let pitch = 2;
+  let margin = 1;
+
+  const stone = (cx: number, cy: number, r: number, colour: 'b' | 'w', label: string, last: boolean, size: number) => {
+    const fill = colour === 'b' ? 'url(#grB)' : 'url(#grW)';
+    const ink = last ? (colour === 'b' ? '#f3c96f' : '#9a2e14') : colour === 'b' ? '#f4efe4' : '#1d1a17';
+    const fs = label.length > 1 ? size * 0.42 : size * 0.5;
+    return `<circle cx="${cx + r * 0.08}" cy="${cy + r * 0.12}" r="${r}" fill="rgba(60,30,0,.35)"/>`
+      + `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"${colour === 'w' ? ' stroke="#8f8676" stroke-width="0.02"' : ''}/>`
+      + (label ? `<text x="${cx}" y="${cy}" fill="${ink}" font-size="${fs}"${last ? ' font-weight="700"' : ''}>${label}</text>` : '');
+  };
+
+  const defs = `<defs>
+    <radialGradient id="grB" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#6b6b6b"/><stop offset=".35" stop-color="#222"/><stop offset="1" stop-color="#050505"/></radialGradient>
+    <radialGradient id="grW" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#f1eee6"/><stop offset="1" stop-color="#cfc8b9"/></radialGradient>
+  </defs>`;
+
+  const draw = () => {
+    const span = 18 * pitch + 2 * margin;
+    const at = (i: number) => margin + (i - 1) * pitch;
+    let s = defs;
+    let lines = '';
+    for (let i = 1; i <= 19; i++) {
+      lines += `M ${at(1)} ${at(i)} H ${at(19)} M ${at(i)} ${at(1)} V ${at(19)} `;
+    }
+    s += `<path d="${lines}" stroke="#3a2610" stroke-width="${pitch >= 2 ? 0.05 : 0.045 * Math.max(pitch, 1)}" fill="none"/>`;
+    s += `<rect x="${at(1)}" y="${at(1)}" width="${18 * pitch}" height="${18 * pitch}" fill="none" stroke="#3a2610" stroke-width="${pitch >= 2 ? 0.1 : 0.08}"/>`;
+    for (const x of [4, 10, 16]) for (const y of [4, 10, 16]) s += `<circle cx="${at(x)}" cy="${at(y)}" r="${0.09 * Math.max(pitch, 1)}" fill="#3a2610"/>`;
+    // Co-ordinates in the margin: letters along the top and foot, numbers down both sides.
+    const lf = Math.min(margin * 0.55, 0.5);
+    let labels = '';
+    for (let i = 1; i <= 19; i++) {
+      labels += `<text x="${at(i)}" y="${margin / 2}">${LETTERS[i - 1]}</text><text x="${at(i)}" y="${span - margin / 2}">${LETTERS[i - 1]}</text>`;
+      labels += `<text x="${margin / 2}" y="${at(i)}">${20 - i}</text><text x="${span - margin / 2}" y="${at(i)}">${20 - i}</text>`;
+    }
+    s += `<g class="gr-coords" font-size="${lf}">${labels}</g>`;
+    let stones = '';
+    for (let i = 0; i < n; i++) {
+      const [x, y] = MOVES[i];
+      stones += stone(at(x), at(y), pitch * 0.48, i % 2 ? 'w' : 'b', String(i + 1), i === n - 1, pitch);
+    }
+    s += `<g class="gr-stones">${stones}</g>`;
+    svg.innerHTML = s;
+    svg.setAttribute('viewBox', `0 0 ${span} ${span}`);
+
+    if (n === 0) readout.textContent = 'Empty board';
+    else readout.innerHTML = `<span class="gr-long">Move </span><b>${n}</b><span class="gr-long"> of ${MOVES.length},</span> ${n % 2 ? 'Black' : 'White'}<span class="gr-long"> at</span> ${name(MOVES[n - 1])}`;
+    // The commentary keeps pace: the latest remark leads, earlier ones follow, later ones wait.
+    let current = 0;
+    items.forEach(li => { const m = Number(li.dataset.move); if (m <= n) current = Math.max(current, m); });
+    items.forEach(li => {
+      const m = Number(li.dataset.move);
+      li.hidden = m > n;
+      li.toggleAttribute('data-current', m === current);
+    });
+    document.querySelector('.d1')?.toggleAttribute('data-lit', current === 7);
+    document.querySelector('.d2')?.toggleAttribute('data-lit', current === 38);
+  };
+
+  const go = (to: number) => { n = Math.max(0, Math.min(MOVES.length, to)); draw(); };
+  document.getElementById('first')!.addEventListener('click', () => go(0));
+  document.getElementById('back')!.addEventListener('click', () => go(n - 1));
+  document.getElementById('next')!.addEventListener('click', () => go(n + 1));
+  document.getElementById('last')!.addEventListener('click', () => go(MOVES.length));
+  document.querySelectorAll<HTMLButtonElement>('.gr-jump').forEach(b => b.addEventListener('click', () => go(Number(b.dataset.move))));
+  board.addEventListener('keydown', e => {
+    const to = { ArrowLeft: n - 1, ArrowRight: n + 1, Home: 0, End: MOVES.length }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    go(to);
+  });
+
+  // Two corner diagrams, one square between lines; a thick edge where the fragment meets the board's edge.
+  const diagram = (el: SVGSVGElement, edges: { right?: boolean; bottom?: boolean; top?: boolean }, given: [number, number, 'b' | 'w'][], numbered: [number, number, 'b' | 'w'][]) => {
+    let s = defs.replace(/grB/g, el.id + 'B').replace(/grW/g, el.id + 'W');
+    let d = '';
+    for (let i = 1; i <= 8; i++) d += `M ${i - 0.5} 0.5 V 6.5 `;
+    for (let j = 1; j <= 6; j++) d += `M 0 ${j - 0.5} H 9 `;
+    // Trim the grid to the board's edge where the fragment reaches it.
+    s += `<clipPath id="${el.id}c"><rect x="${edges.right ? -1 : -1}" y="${edges.top ? 0.5 : -1}" width="${edges.right ? 9 : 11}" height="${edges.bottom ? (edges.top ? 6 : 7.5) : 9}"/></clipPath>`;
+    s += `<g clip-path="url(#${el.id}c)"><path d="${d}" stroke="#3a2610" stroke-width="0.05"/></g>`;
+    if (edges.right) s += `<path d="M 8.5 ${edges.top ? 0.5 : 0} V ${edges.bottom ? 6.5 : 7}" stroke="#3a2610" stroke-width="0.1"/>`;
+    if (edges.bottom) s += `<path d="M 0 6.5 H ${edges.right ? 8.5 : 9}" stroke="#3a2610" stroke-width="0.1"/>`;
+    for (const [x, y, c] of given) s += stone(x - 0.5, y - 0.5, 0.48, c, '', false, 1).replace(/url\(#gr/g, `url(#${el.id}`);
+    numbered.forEach(([x, y, c], i) => { s += stone(x - 0.5, y - 0.5, 0.48, c, String(i + 1), false, 1).replace(/url\(#gr/g, `url(#${el.id}`); });
+    el.innerHTML = s;
+  };
+  // Diagram 1, the lower right corner (board columns 11 to 19, rows 13 to 19).
+  diagram(document.getElementById('dia1') as unknown as SVGSVGElement, { right: true, bottom: true },
+    [[6, 4, 'b'], [4, 5, 'w'], [7, 1, 'b']],
+    [[5, 2, 'b'], [1, 5, 'w']]);
+  // Diagram 2, the right side around White's invasion.
+  diagram(document.getElementById('dia2') as unknown as SVGSVGElement, { right: true },
+    [[6, 1, 'b'], [4, 4, 'w'], [5, 4, 'w'], [6, 3, 'b'], [2, 5, 'b'], [7, 6, 'b']],
+    [[5, 3, 'b'], [5, 2, 'w'], [4, 3, 'b'], [6, 2, 'w']]);
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) { pitch = 0.5; margin = 1.5; }
+    else if (down >= 40 && across >= 62) { pitch = 2; margin = 1; }
+    else { pitch = 1; margin = 1; }
+    const span = 18 * pitch + 2 * margin;
+    const top = narrow ? 1 : Math.max(1, Math.floor((down - span - 1) / 2) + 1);
+    root.style.setProperty('--gr-span', String(span));
+    root.style.setProperty('--gr-top', String(top));
+    root.style.setProperty('--gr-col', String(span + 4));
+    draw();
+  });
+</script>
+
+<style is:global>
+  html { background: #1f2c48; }
+  .gorec {
+    --ground: #1f2c48;
+    --kaya: #dcae5f;
+    --paper: #efe7d6;
+    --quiet: #9fa9bf;
+    --gold: #e9bf6b;
+    color: var(--paper);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px),
+      var(--ground);
+    font-family: "Iowan Old Style", "Palatino", Georgia, serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* The board: kaya, its grain running top to bottom, and a side one square deep. */
+  .gr-board {
+    grid-column: 2 / span var(--gr-span, 38);
+    grid-row: var(--gr-top, 2) / span var(--gr-span, 38);
+    position: relative;
+    background:
+      radial-gradient(120% 80% at 30% 20%, rgba(255,236,190,.35), transparent 60%),
+      repeating-linear-gradient(91deg, rgba(120,70,10,0) 0 7px, rgba(120,70,10,.07) 7px 8px, rgba(120,70,10,0) 8px 19px, rgba(120,70,10,.05) 19px 21px),
+      repeating-linear-gradient(89.4deg, rgba(255,240,200,.0) 0 31px, rgba(255,240,200,.12) 31px 34px, rgba(255,240,200,0) 34px 57px),
+      var(--kaya);
+    box-shadow: 0 var(--u) 0 #8f5f22, 0 calc(var(--u) + 1px) 0 rgba(0,0,0,.35);
+    outline: none;
+  }
+  .gr-board:focus-visible { box-shadow: 0 var(--u) 0 #8f5f22, 0 0 0 2px var(--gold); }
+  .gr-board svg { display: block; width: 100%; height: 100%; }
+  .gr-board text, .gr-diagram text {
+    font-family: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", sans-serif;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-variant-numeric: tabular-nums;
+  }
+  .gr-coords text { fill: #6b4718; font-weight: 500; }
+
+  /* The column beside the board. */
+  .gorec > :is(.gr-head, .gr-players, .gr-controls, .gr-comments, .gr-diagram) { grid-column: var(--gr-col, 42) / -2; }
+  .gr-head { grid-row: 2 / span 6; }
+  .gr-cup { margin: 0; font-family: "Hiragino Mincho ProN", serif; font-size: calc(14px * var(--sf)); letter-spacing: .1em; color: var(--gold); }
+  .gr-cup-en { margin: 0; color: var(--quiet); }
+  .gr-head h1 {
+    margin: var(--u) 0 0;
+    font-family: "Hiragino Mincho ProN", "Iowan Old Style", serif;
+    font-weight: 600;
+    font-size: calc(46px * var(--sf));
+    line-height: calc(3 * var(--u));
+    letter-spacing: -.01em;
+  }
+
+  .gr-players { grid-row: 9 / span 5; margin: 0; }
+  .gr-players div { display: grid; grid-template-columns: calc(5 * var(--u)) 1fr; }
+  .gr-players dt { color: var(--quiet); display: flex; align-items: center; gap: calc(var(--u) / 4); }
+  .gr-players dd { margin: 0; }
+  .gr-dot { width: calc(.7 * var(--u)); height: calc(.7 * var(--u)); border-radius: 50%; display: inline-block; }
+  .gr-dot.b { background: radial-gradient(circle at 35% 30%, #777, #050505 70%); box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+  .gr-dot.w { background: radial-gradient(circle at 35% 30%, #fff, #cfc8b9 80%); }
+
+  .gr-controls {
+    grid-row: 15 / span 2;
+    display: grid;
+    grid-template-columns: repeat(2, calc(2 * var(--u))) 1fr repeat(2, calc(2 * var(--u)));
+    align-items: stretch;
+    border-block: 1px solid rgba(239,231,214,.25);
+  }
+  .gr-controls button {
+    all: unset;
+    cursor: pointer;
+    text-align: center;
+    font-family: var(--typeface-regular);
+    font-size: calc(12px * var(--sf));
+    color: var(--gold);
+  }
+  .gr-controls button:hover { background: rgba(233,191,107,.12); }
+  .gr-controls button:focus-visible, .gr-jump:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .gr-controls output { display: block; text-align: center; line-height: calc(2 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; color: var(--paper); }
+  .gr-controls output b { font-weight: 600; color: var(--gold); }
+
+  .gr-comments {
+    grid-row: 18 / -13;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 calc(100% - 2 * var(--u)), transparent);
+            mask-image: linear-gradient(#000 calc(100% - 2 * var(--u)), transparent);
+  }
+  .gr-comments li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; column-gap: var(--u); padding-bottom: var(--u); color: var(--quiet); }
+  .gr-comments li[data-current] { color: var(--paper); font-size: calc(18px * var(--sf)); line-height: calc(1.5 * var(--u)); }
+  .gr-comments li[data-current] p { line-height: calc(1.5 * var(--u)); }
+  .gr-comments p { margin: 0; max-width: 34em; }
+  .gr-jump {
+    all: unset;
+    cursor: pointer;
+    width: calc(1.5 * var(--u));
+    height: calc(1.5 * var(--u));
+    margin: calc(var(--u) / 4);
+    margin-top: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: "Avenir Next Condensed", "Avenir Next", sans-serif;
+    font-weight: 600;
+    font-size: calc(11px * var(--sf));
+    line-height: 1;
+  }
+  .gr-comments li[data-move] .gr-jump { background: radial-gradient(circle at 35% 30%, #fff, #cfc8b9 80%); color: #1d1a17; }
+  .gr-comments li:is([data-move="1"], [data-move="5"], [data-move="7"], [data-move="13"], [data-move="29"], [data-move="35"], [data-move="41"]) .gr-jump { background: radial-gradient(circle at 35% 30%, #777, #050505 70%); color: #f4efe4; box-shadow: 0 0 0 1px rgba(255,255,255,.2); }
+
+  .gr-diagram { grid-row: -12 / -2; margin: 0; display: grid; grid-template-rows: calc(7 * var(--u)) calc(3 * var(--u)); width: calc(9 * var(--u)); }
+  .gr-diagram svg { outline: 2px solid transparent; outline-offset: 0; transition: outline-color .3s; }
+  .gr-diagram[data-lit] svg { outline-color: var(--gold); }
+  .gr-diagram { justify-self: start; }
+  .gr-diagram.d2 { margin-left: calc(10 * var(--u)); }
+  .gr-diagram svg { width: 100%; height: 100%; background: var(--kaya); }
+  .gr-diagram figcaption { font-size: calc(12px * var(--sf)); line-height: calc(16px * var(--sf)); padding-top: calc(2px * var(--sf)); color: var(--quiet); width: calc(9 * var(--u)); }
+  .gr-diagram figcaption b { color: var(--paper); font-weight: 600; }
+
+  /* Narrow: the board on top at half a square between lines, then the record in one column. */
+  :root[data-narrow] .gorec { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .gr-board { grid-column: 2 / span 12; grid-row: auto; aspect-ratio: 1; margin-top: var(--u); margin-bottom: var(--u); }
+  :root[data-narrow] .gorec > :is(.gr-head, .gr-players, .gr-controls, .gr-comments, .gr-diagram) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .gr-head { order: -1; margin-top: var(--u); }
+  :root[data-narrow] .gr-head h1 { font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .gr-players div { grid-template-columns: calc(4 * var(--u)) 1fr; }
+  :root[data-narrow] .gr-players { margin-bottom: var(--u); }
+  :root[data-narrow] .gr-controls { margin-bottom: var(--u); }
+  :root[data-narrow] .gr-comments { mask-image: none; -webkit-mask-image: none; }
+  :root[data-narrow] .gr-comments li[data-current], :root[data-narrow] .gr-comments li[data-current] p { font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .gr-controls output { font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .gr-long { display: none; }
+  :root[data-narrow] .gr-diagram, :root[data-narrow] .gr-diagram.d2 { margin: 0 0 var(--u); grid-column: 2 / span 9; grid-template-rows: calc(7 * var(--u)) auto; }
+</style>

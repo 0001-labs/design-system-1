@@ -1,0 +1,181 @@
+---
+// After a summer festival poster: a sunburst from a striped sun that rises as the page opens, the
+// festival's name in compressed capitals, and three days of invented bands in tiers that shrink
+// from a headliner three squares high to a run of names one square high. Every tier is a stage.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const DAYS = [
+  {
+    day: 'Friday', date: '18 June',
+    head: 'The Velvet Allotment',
+    second: ['Moth Choir', 'Paprika Cartel'],
+    third: ['Grandma’s Jet Ski', 'Low Tide Orchestra', 'Kids on Hay', 'Mild Peril'],
+    fourth: ['Dry Stone Wall', 'Sorry Aunt Linda', 'The Last Bus', 'DJ Factor 50', 'Eel Thunder'],
+  },
+  {
+    day: 'Saturday', date: '19 June',
+    head: 'Saint Disco',
+    second: ['Ultraviolet Sheep', 'Concrete Lilies'],
+    third: ['Big Weather', 'Tractor Beam', 'Marmalade Riot', 'The Hedgerows'],
+    fourth: ['Pony Club Noir', 'Wasp Season', 'Glasshouse Choir', 'Wet Paint', 'Uncle Fax'],
+  },
+  {
+    day: 'Sunday', date: '20 June',
+    head: 'Golden Hour',
+    second: ['The Long Grass', 'Hay Fever'],
+    third: ['Picnic Riot', 'Midges', 'Bramble & Son', 'Second Cousins'],
+    fourth: ['Lost Wellington', 'The Cream Teas', 'Hosepipe Ban', 'Morris Code', 'Last Orders'],
+  },
+];
+---
+<AlignedStudy slug="festival-lineup" theme="light">
+  <main class="stage fl">
+    <svg class="fl-burst" id="burst" aria-hidden="true"></svg>
+
+    <h1 class="fl-name">Haylight</h1>
+    <p class="fl-when"><b>18 to 20 June 2027</b> Ferrow Valley, three days in the long grass</p>
+
+    <div class="fl-days">
+      {DAYS.map(d => (
+        <section class="fl-day" aria-label={`${d.day} ${d.date}`}>
+          <h2><span>{d.day}</span> {d.date}</h2>
+          <p class="fl-stage"><span>The Big Barn</span></p>
+          <p class="fl-head">{d.head}</p>
+          <ul class="fl-second">{d.second.map(n => <li>{n}</li>)}</ul>
+          <p class="fl-stage"><span>The Orchard</span></p>
+          <ul class="fl-third">{d.third.map(n => <li>{n}</li>)}</ul>
+          <p class="fl-stage"><span>Duckpond Tent</span></p>
+          <ul class="fl-fourth">{d.fourth.map(n => <li>{n}</li>)}</ul>
+        </section>
+      ))}
+    </div>
+
+    <p class="fl-small">Weekend £165, camping opens Thursday at noon. No glass in the arena. Dogs on leads; the sheep have right of way.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The sun and its burst, in squares: the sun rises from the horizon, which is the top of the days,
+  // cut by gaps a square high that come closer as they near it; the rays start at its centre.
+  const burst = document.getElementById('burst') as unknown as SVGSVGElement;
+  const stage = document.querySelector<HTMLElement>('.fl')!;
+  let risen = false;
+  onSquares(({ across, down, narrow }) => {
+    const w = across, h = narrow ? 20 : down;
+    const horizon = narrow ? 14 : 14;
+    const R = narrow ? 5 : Math.min(12, Math.floor(down / 3.6));
+    const cx = narrow ? across - 7 : across - R - 3;
+    const cy = horizon;
+    burst.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const rays: string[] = [];
+    const far = Math.hypot(w, h) * 1.2;
+    const N = 28;
+    for (let i = 0; i < N; i += 2) {
+      const a1 = (i / N) * Math.PI * 2, a2 = ((i + 1) / N) * Math.PI * 2;
+      rays.push(`M${cx} ${cy}L${(cx + Math.cos(a1) * far).toFixed(2)} ${(cy + Math.sin(a1) * far).toFixed(2)}L${(cx + Math.cos(a2) * far).toFixed(2)} ${(cy + Math.sin(a2) * far).toFixed(2)}Z`);
+    }
+    const gaps = narrow ? [1, 3] : [1, 3, 6];
+    const cuts = gaps.map(g => `<rect x="${cx - R - 1}" y="${cy - g}" width="${2 * R + 2}" height="1" fill="#000"/>`).join('');
+    burst.innerHTML = `
+      <defs>
+        <clipPath id="fl-frame"><rect x="0" y="0" width="${w}" height="${h}"/></clipPath>
+        <mask id="fl-slats" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="${w}" height="${cy}" fill="#fff"/>${cuts}</mask>
+      </defs>
+      <g clip-path="url(#fl-frame)"><path class="fl-rays" d="${rays.join('')}"/></g>
+      <g mask="url(#fl-slats)"><g class="fl-sun"><circle cx="${cx}" cy="${cy}" r="${R}"/><circle class="fl-core" cx="${cx}" cy="${cy}" r="${R - 2}"/></g></g>`;
+    // The tiers spread to fill the height in whole squares.
+    if (!narrow) stage.style.setProperty('--tg', String(Math.max(1, Math.floor((down - 3 - 15 - 19) / 4))));
+    if (!risen && !reducedMotion()) {
+      const unit = burst.getBoundingClientRect().height / h;
+      burst.querySelector('.fl-sun')!.animate([{ transform: `translateY(${R * unit}px)` }, { transform: 'translateY(0)' }], { duration: 1800, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
+      burst.querySelector('.fl-rays')!.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1800, easing: 'ease-out' });
+    }
+    risen = true;
+  });
+</script>
+
+<style is:global>
+  html { background: #ff6a1a; }
+  .fl {
+    --orange: #ff6a1a;
+    --ray: #ff8a2e;
+    --sun: #ffd93b;
+    --core: #ffe873;
+    --violet: #2a0b5e;
+    --pink: #ff2e8f;
+    color: var(--violet);
+    font-family: var(--typeface-medium);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background: var(--orange);
+  }
+
+  .fl-burst { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; overflow: hidden; }
+  .fl-rays { fill: var(--ray); transform-origin: center; transform-box: fill-box; }
+  .fl-sun circle { fill: var(--sun); }
+  .fl-sun .fl-core { fill: var(--core); }
+  .fl-sun { transform-box: fill-box; }
+
+  /* The name: eight squares of compressed capitals, the window's width less the sun. */
+  .fl-name {
+    grid-column: 3 / -3;
+    grid-row: 3 / span 9;
+    z-index: 1;
+    margin: 0;
+    font-family: var(--typeface-compressed);
+    font-weight: 700;
+    font-size: calc(9 * var(--u) * 1.32);
+    line-height: calc(9 * var(--u));
+    letter-spacing: -0.015em;
+    text-transform: uppercase;
+    color: var(--violet);
+  }
+  .fl-when { grid-column: 3 / -3; grid-row: 12 / span 2; z-index: 1; margin: 0; font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .fl-when b { color: #fff; background: var(--pink); padding: 0 calc(var(--u) / 2); margin-right: calc(var(--u) / 2); font-weight: 400; }
+
+  .fl-days {
+    grid-column: 3 / -3;
+    grid-row: 15 / -3;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0 var(--u);
+    align-content: start;
+  }
+  .fl-day { display: grid; align-content: start; text-align: center; background: rgb(255 255 255 / 0.0); }
+  .fl-day h2 {
+    margin: 0 0 calc(var(--tg, 1) * var(--u));
+    height: calc(2 * var(--u));
+    font-family: var(--typeface-medium);
+    font-weight: 400;
+    font-size: calc(18px * var(--sf));
+    line-height: calc(2 * var(--u));
+    background: var(--violet);
+    color: var(--sun);
+  }
+  .fl-day h2 span { color: #fff; }
+  .fl-stage { margin: 0 0 calc(var(--u) / 2); height: var(--u); font-size: calc(12px * var(--sf)); line-height: var(--u); }
+  .fl-stage span { display: inline-block; padding: 0 calc(var(--u) / 2); background: var(--pink); color: #fff; }
+  .fl-day :is(ul) { margin: 0; padding: 0; list-style: none; }
+  .fl-head, .fl-second, .fl-third { font-family: var(--typeface-compressed); text-transform: uppercase; font-weight: 700; letter-spacing: -0.005em; }
+  .fl-head { margin: 0; font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); white-space: nowrap; }
+  .fl-second { margin-bottom: calc(var(--tg, 1) * var(--u)) !important; font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .fl-third { margin-bottom: calc(var(--tg, 1) * var(--u)) !important; font-size: calc(22px * var(--sf)); line-height: var(--u); display: flex; flex-wrap: wrap; justify-content: center; gap: 0 calc(var(--u) / 2); }
+  .fl-third li:not(:last-child)::after, .fl-fourth li:not(:last-child)::after { content: '✺'; color: var(--pink); margin-left: calc(var(--u) / 2); font-size: 0.7em; vertical-align: 0.1em; }
+  .fl-fourth { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 calc(var(--u) / 2); font-size: calc(14px * var(--sf)); }
+
+  .fl-small { grid-column: 3 / -14; grid-row: -2 / span 1; z-index: 1; margin: 0; font-size: calc(12px * var(--sf)); }
+
+  /* Narrow: the sun over the name, the days one under another. */
+  :root[data-narrow] .fl { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .fl-burst { grid-row: 1 / span 20; height: calc(20 * var(--u)); }
+  :root[data-narrow] .fl > :not(.fl-burst) { grid-column: 2 / -2; }
+  :root[data-narrow] .fl-name { grid-row: 2 / span 3; font-size: calc(2.6 * var(--u) * 1.32); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .fl-when { grid-row: 5 / span 4; align-self: start; font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .fl-when b { display: block; width: max-content; margin-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .fl-days { grid-row: 15 / span 1; grid-template-columns: 1fr; gap: calc(2 * var(--u)); }
+  :root[data-narrow] .fl-small { grid-row: 16; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .fl-head { font-size: calc(40px * var(--sf)); white-space: normal; }
+</style>

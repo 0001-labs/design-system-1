@@ -1,0 +1,341 @@
+---
+// After a passport's visa pages, well travelled: two pages of fine guilloche, a visa sticker and
+// stamps in every ink, from countries that are moods. Each stamp's box is whole squares before
+// the officer's wrist turns it. Pressing a page stamps it again, somewhere new.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="passport-visas" theme="light">
+  <main class="stage pv" id="pv">
+    <h1 class="pv-sr">Passport, visa pages 14 and 15</h1>
+    <svg class="pv-defs" aria-hidden="true">
+      <filter id="pv-ink" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="4" result="noise" />
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.4 2.5" result="specks" />
+        <feComposite in="SourceGraphic" in2="specks" operator="in" />
+      </filter>
+    </svg>
+    <section class="pv-page pv-left" id="left" aria-label="Page 14"></section>
+    <section class="pv-page pv-right" id="right" aria-label="Page 15"></section>
+    <p class="pv-hint" id="hint">Press a page to be admitted somewhere.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  type Kind = 'rect' | 'round' | 'oval' | 'hex' | 'tri' | 'note';
+  interface Stamp { kind: Kind; ink: string; country: string; date: string; port: string; id: string; way: 'in' | 'out' | ''; note?: string }
+
+  const INKS = { violet: '#5b3f9e', red: '#c0322b', green: '#2f7d4f', blue: '#2453a6', brown: '#8a5a2b', black: '#2a2a2e', teal: '#16807f', orange: '#d0631d', magenta: '#a8326e' };
+
+  // The places already visited, as the officers stamped them.
+  const STAMPS: (Stamp & { page: 0 | 1; fx: number; fy: number; rot: number })[] = [
+    { page: 0, fx: 0.08, fy: 0.12, rot: -8, kind: 'rect', ink: INKS.red, country: 'Kingdom of Mild Panic', date: '03 MAR 2026', port: 'Gate 47, still running', id: '118', way: 'in' },
+    { page: 0, fx: 0.6, fy: 0.3, rot: 11, kind: 'round', ink: INKS.green, country: 'Federated States of Sunday Afternoon', date: '29 MAR', port: '', id: '2', way: 'in' },
+    { page: 0, fx: 0.2, fy: 0.92, rot: -3, kind: 'note', ink: INKS.black, country: 'Duchy of Hunger', date: '11:58 to 12:40', port: '', id: '', way: '', note: 'Admitted for lunch only' },
+    { page: 0, fx: 0.82, fy: 0.8, rot: -6, kind: 'oval', ink: INKS.blue, country: 'Lowlands of Boredom', date: 'SUN 15:10', port: 'Waiting room B', id: '0', way: 'in' },
+    { page: 1, fx: 0.06, fy: 0.02, rot: 6, kind: 'oval', ink: INKS.violet, country: 'Principality of Déjà Vu', date: '14 APR 2026', port: 'Arrivals, again', id: '707', way: 'in' },
+    { page: 1, fx: 0.1, fy: 0.07, rot: 4, kind: 'oval', ink: INKS.violet, country: 'Principality of Déjà Vu', date: '14 APR 2026', port: 'Arrivals, again', id: '707', way: 'in' },
+    { page: 1, fx: 0.7, fy: 0.04, rot: -14, kind: 'hex', ink: INKS.brown, country: 'Free Port of Nostalgia', date: '1998', port: 'Old harbour', id: '33', way: 'out' },
+    { page: 1, fx: 0.42, fy: 0.36, rot: -5, kind: 'tri', ink: INKS.blue, country: 'United Provinces of Second Thoughts', date: '02 JUN', port: 'Entry, exit, entry', id: '', way: '' },
+    { page: 1, fx: 0.04, fy: 0.5, rot: 9, kind: 'round', ink: INKS.teal, country: 'Archipelago of Calm', date: '18 JUL', port: '', id: 'shoes off', way: 'in' },
+    { page: 1, fx: 0.86, fy: 0.42, rot: 16, kind: 'note', ink: INKS.magenta, country: 'Republic of Wistfulness', date: 'Overstayed', port: '', id: '', way: '', note: 'Left by the window' },
+    { page: 1, fx: 0.58, fy: 0.78, rot: -10, kind: 'rect', ink: INKS.black, country: 'Union of Overthinking', date: '09 SEP 2026', port: 'Exit refused, see p. 22', id: '404', way: 'out' },
+    { page: 1, fx: 0.12, fy: 0.96, rot: 3, kind: 'rect', ink: INKS.orange, country: 'Sultanate of Impatience', date: '10 SEP 2026', port: 'Fast lane', id: '1', way: 'in' },
+  ];
+
+  // What the next press finds, in turn.
+  const MORE: Stamp[] = [
+    { kind: 'round', ink: INKS.red, country: 'Emirate of Small Victories', date: '14 NOV', port: '', id: '9', way: 'in' },
+    { kind: 'rect', ink: INKS.blue, country: 'Grand Duchy of Procrastination', date: 'TOMORROW', port: 'Window 3, later', id: '00', way: 'in' },
+    { kind: 'hex', ink: INKS.green, country: 'Commonwealth of Relief', date: '14 NOV 2026', port: 'Customs, nothing to declare', id: '58', way: 'out' },
+    { kind: 'oval', ink: INKS.orange, country: 'Free State of Saturday Morning', date: '07:10', port: 'Duvet border', id: '6', way: 'in' },
+    { kind: 'tri', ink: INKS.violet, country: 'Territory of Awe', date: 'NOW', port: 'Clifftop post', id: '', way: '' },
+    { kind: 'note', ink: INKS.brown, country: 'Shire of Mild Regret', date: '14 NOV', port: '', id: '', way: '', note: 'Stay was too short' },
+    { kind: 'round', ink: INKS.black, country: 'Republic of Quiet Pride', date: '14 NOV', port: '', id: '1', way: 'out' },
+    { kind: 'rect', ink: INKS.magenta, country: 'Kingdom of Daydreams', date: 'SOMETIME', port: 'Back of the classroom', id: '12', way: 'in' },
+  ];
+
+  const SIZE: Record<Kind, [number, number]> = { rect: [8, 4], round: [5, 5], oval: [7, 4], hex: [6, 5], tri: [6, 5], note: [7, 3] };
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  let uid = 0;
+
+  /** One stamp as SVG on its own box of squares, twenty units to a square. */
+  function stampSvg(s: Stamp) {
+    const [w, h] = SIZE[s.kind];
+    const W = w * 20, H = h * 20;
+    const id = `pvp${uid++}`;
+    const arrow = s.way === 'in' ? 'M 0 0 h 8 m -3 -3 l 3 3 l -3 3 M 10 -4 v 8' : s.way === 'out' ? 'M -2 -4 v 8 M 1 0 h 8 m -3 -3 l 3 3 l -3 3' : '';
+    let body = '';
+    if (s.kind === 'rect') {
+      body = `<rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="3" class="pv-line2"/><rect x="5" y="5" width="${W - 10}" height="${H - 10}" rx="1.5" class="pv-line"/>
+        <text x="${W / 2}" y="18" class="pv-t-small">${esc(s.country)}</text>
+        <text x="${W / 2}" y="${H / 2 + 7}" class="pv-t-big">${esc(s.date)}</text>
+        <text x="${W / 2}" y="${H - 11}" class="pv-t-small">${esc(s.port)}</text>
+        <path d="${arrow}" transform="translate(12 ${H / 2})" class="pv-line"/><text x="${W - 14}" y="${H / 2 + 4}" class="pv-t-id">${esc(s.id)}</text>`;
+    } else if (s.kind === 'round') {
+      const r = W / 2 - 3;
+      body = `<circle cx="${W / 2}" cy="${H / 2}" r="${r}" class="pv-line2"/><circle cx="${W / 2}" cy="${H / 2}" r="${r - 12}" class="pv-line"/>
+        <path id="${id}" d="M ${W / 2 - r + 7} ${H / 2} a ${r - 7} ${r - 7} 0 1 1 ${(r - 7) * 2} 0 a ${r - 7} ${r - 7} 0 1 1 ${-(r - 7) * 2} 0" fill="none"/>
+        <text class="pv-t-ring"><textPath href="#${id}" startOffset="50%">${esc(s.country)}</textPath></text>
+        <text x="${W / 2}" y="${H / 2 + 4}" class="pv-t-mid">${esc(s.date)}</text>
+        <text x="${W / 2}" y="${H / 2 + 15}" class="pv-t-id">${esc(s.id)}</text>
+        <path d="${arrow}" transform="translate(${W / 2 - 5} ${H / 2 - 10}) scale(0.8)" class="pv-line"/>`;
+    } else if (s.kind === 'oval') {
+      body = `<ellipse cx="${W / 2}" cy="${H / 2}" rx="${W / 2 - 3}" ry="${H / 2 - 3}" class="pv-line2"/><ellipse cx="${W / 2}" cy="${H / 2}" rx="${W / 2 - 8}" ry="${H / 2 - 8}" class="pv-line"/>
+        <text x="${W / 2}" y="22" class="pv-t-small">${esc(s.country)}</text>
+        <text x="${W / 2}" y="${H / 2 + 6}" class="pv-t-mid">${esc(s.date)}</text>
+        <text x="${W / 2}" y="${H - 17}" class="pv-t-small">${esc(s.port)}</text>`;
+    } else if (s.kind === 'hex') {
+      const p = [[W * 0.25, 3], [W * 0.75, 3], [W - 3, H / 2], [W * 0.75, H - 3], [W * 0.25, H - 3], [3, H / 2]].map(q => q.join(' ')).join(' L ');
+      body = `<path d="M ${p} Z" class="pv-line2"/>
+        <text x="${W / 2}" y="24" class="pv-t-small">${esc(s.country)}</text>
+        <text x="${W / 2}" y="${H / 2 + 9}" class="pv-t-big">${esc(s.date)}</text>
+        <text x="${W / 2}" y="${H - 20}" class="pv-t-small">${esc(s.port)}</text>
+        <path d="${arrow}" transform="translate(${W / 2 - 6} ${H - 11}) scale(0.8)" class="pv-line"/>`;
+    } else if (s.kind === 'tri') {
+      body = `<path d="M ${W / 2} 3 L ${W - 3} ${H - 3} L 3 ${H - 3} Z" class="pv-line2"/><path d="M ${W / 2} 14 L ${W - 13} ${H - 8} L 13 ${H - 8} Z" class="pv-line"/>
+        <text x="${W / 2}" y="${H - 34}" class="pv-t-tiny">${esc(s.country.replace('United Provinces of ', ''))}</text>
+        <text x="${W / 2}" y="${H - 20}" class="pv-t-mid">${esc(s.date)}</text>
+        <text x="${W / 2}" y="${H - 11}" class="pv-t-tiny">${esc(s.port)}</text>`;
+    } else {
+      body = `<rect x="2" y="2" width="${W - 4}" height="${H - 4}" class="pv-line"/>
+        <text x="8" y="15" class="pv-t-small pv-left-text">${esc(s.country)}</text>
+        <text x="8" y="31" class="pv-t-mid pv-left-text">${esc(s.date)}</text>
+        <text x="8" y="${H - 9}" class="pv-t-hand">${esc(s.note ?? '')}</text>
+        <path d="M ${W - 46} ${H - 14} c 6 -14 10 6 14 -4 s 6 -10 9 2 s 8 -6 14 -3" class="pv-line pv-sign"/>`;
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" style="color: ${s.ink}" aria-hidden="true">${body}</svg>`;
+  }
+
+  /** The page's ground: fine guilloche waves, a rosette, in two pale inks. */
+  function guilloche(P: number, H: number, seed: number) {
+    const W = P * 20, HH = H * 20;
+    let out = '';
+    for (let band = 0; band < 26; band++) {
+      const y0 = (band / 25) * HH;
+      let d = '';
+      for (let x = 0; x <= W; x += 6) {
+        const y = y0 + 9 * Math.sin(x / 31 + band * 0.7 + seed) + 5 * Math.sin(x / 13 - band * 0.3);
+        d += `${x ? 'L' : 'M'} ${x} ${y.toFixed(1)} `;
+      }
+      out += `<path d="${d}" class="${band % 2 ? 'pv-g1' : 'pv-g2'}"/>`;
+    }
+    // A hypotrochoid rosette in the middle of the page.
+    const cx = W / 2, cy = HH * 0.55, R = Math.min(W, HH) * 0.36, r = R * 0.23, dist = R * 0.42;
+    let d = '';
+    for (let i = 0; i <= 2400; i++) {
+      const t = (i / 2400) * Math.PI * 2 * 23;
+      const x = cx + (R - r) * Math.cos(t) + dist * Math.cos(((R - r) / r) * t);
+      const y = cy + (R - r) * Math.sin(t) - dist * Math.sin(((R - r) / r) * t);
+      d += `${i ? 'L' : 'M'} ${x.toFixed(1)} ${y.toFixed(1)} `;
+    }
+    out += `<path d="${d}" class="pv-rose"/>`;
+    return `<svg class="pv-ground" viewBox="0 0 ${W} ${HH}" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
+  }
+
+  /** The passport number punched through the page as holes, five rows of dots to a figure. */
+  const DIGITS: Record<string, string[]> = {
+    X: ['101', '101', '010', '101', '101'], R: ['110', '101', '110', '101', '101'], 0: ['111', '101', '101', '101', '111'], 1: ['010', '110', '010', '010', '111'],
+    2: ['111', '001', '111', '100', '111'], 4: ['101', '101', '111', '001', '001'], 7: ['111', '001', '010', '010', '010'],
+  };
+  function perforation(number: string) {
+    let out = '';
+    [...number].forEach((ch, n) => {
+      DIGITS[ch].forEach((row, j) => [...row].forEach((on, i) => {
+        // The figures run down the page, turned a quarter, so each reads sideways.
+        if (on === '1') out += `<circle cx="${(4 - j) * 5 + 3}" cy="${n * 22 + i * 5 + 3}" r="1.6"/>`;
+      }));
+    });
+    return `<svg class="pv-holes" viewBox="0 0 26 ${number.length * 22}" aria-hidden="true">${out}</svg>`;
+  }
+
+  const left = document.getElementById('left')!, right = document.getElementById('right')!;
+  let geometry = { P: 34, H: 41, top: 3, heights: [41, 41] };
+  let next = 0;
+
+  function place(page: HTMLElement, s: Stamp, col: number, row: number, rot: number, fresh = false) {
+    const [w, h] = SIZE[s.kind];
+    const el = document.createElement('div');
+    el.className = 'pv-stamp' + (fresh && !reducedMotion() ? ' is-fresh' : '');
+    el.style.gridColumn = `${col + 1} / span ${w}`;
+    el.style.gridRow = `${row + 1} / span ${h}`;
+    el.style.setProperty('--rot', `${rot}deg`);
+    el.innerHTML = stampSvg(s);
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', `${s.way === 'out' ? 'Exit' : 'Entry'} stamp: ${s.country}, ${s.date}`);
+    page.appendChild(el);
+  }
+
+  function visa(P: number) {
+    const rows = visaRows();
+    return `<article class="pv-visa" style="grid-column: 2 / span ${P - 2}; grid-row: 3 / span ${rows}" aria-label="Visa">
+      <div class="pv-visa-ground">${guilloche(P - 2, rows, 9)}</div>
+      <header><span>Republic of Wistfulness</span><span>Visa</span></header>
+      <img src="/examples/images/atelier-ida.jpg" alt="" class="pv-photo" />
+      <dl>
+        <div><dt>Valid from</dt><dd>21 AUG 2026</dd></div><div><dt>Until</dt><dd>When it passes</dd></div>
+        <div><dt>Type</dt><dd>Lingering</dd></div><div><dt>Entries</dt><dd>Multiple</dd></div>
+        <div class="pv-wide"><dt>Duration of stay</dt><dd>As long as the song lasts</dd></div>
+        <div class="pv-wide"><dt>Remarks</dt><dd>Holder may look out of rain-streaked windows.</dd></div>
+        <div class="pv-wide"><dt>Surname, given names</dt><dd>HOLM, IDA MARIE</dd></div>
+      </dl>
+      <p class="pv-mrz">VWWST&lt;HOLM&lt;&lt;IDA&lt;MARIE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br />XR04471022NOR9104116F2609219&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0</p>
+    </article>`;
+  }
+
+  let narrowMode = false;
+  const visaRows = () => (narrowMode ? 27 : 15);
+
+  function draw() {
+    const { P } = geometry;
+    // Where each stamp lands: by its fraction of the page on a computer, stacked on a phone.
+    const spots = new Map<(typeof STAMPS)[number], [number, number]>();
+    const heights = [geometry.H, geometry.H];
+    if (narrowMode) {
+      const cursor = [visaRows() + 4, 3];
+      const turn = [0, 0];
+      for (const s of STAMPS) {
+        const [w, h] = SIZE[s.kind];
+        const col = turn[s.page]++ % 2 ? P - w - 1 : 1;
+        spots.set(s, [col, cursor[s.page]]);
+        cursor[s.page] += h + (s.kind === 'oval' && s.fy < 0.05 ? -3 : 1);
+      }
+      heights[0] = cursor[0] + 2; heights[1] = cursor[1] + 2;
+    } else {
+      for (const s of STAMPS) {
+        const [w, h] = SIZE[s.kind];
+        const top = s.page ? 3 : visaRows() + 4;
+        const col = 1 + Math.round(s.fx * (P - w - 2));
+        const row = Math.min(geometry.H - h - 1, top + Math.round(s.fy * (geometry.H - h - top - 2)));
+        if (row >= top) spots.set(s, [col, row]);
+      }
+    }
+    for (const [page, n] of [[left, 0], [right, 1]] as const) {
+      const H = heights[n];
+      page.style.setProperty('--p', String(P));
+      page.style.setProperty('--h', String(H));
+      page.innerHTML = guilloche(P, H, n * 3) + `<p class="pv-head" style="grid-column: 1 / -1; grid-row: 1 / span 2">Visas <span>Visum</span> Visados</p><p class="pv-num" style="grid-row: ${H} / span 1">${14 + n}</p>` + (n === 1 ? perforation('XR0447102') : '') + (n === 0 ? visa(P) : '');
+    }
+    for (const s of STAMPS) {
+      const at = spots.get(s);
+      if (at) place(s.page ? right : left, s, at[0], at[1], s.rot);
+    }
+    geometry.heights = heights;
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    narrowMode = narrow;
+    const P = narrow ? across - 2 : Math.floor((across - 2) / 2);
+    const H = narrow ? 36 : down - 3;
+    geometry = { P, H, top: 3, heights: [H, H] };
+    draw();
+  });
+
+  // A press stamps the page where it lands, the box snapped to the square under the pointer.
+  for (const page of [left, right]) {
+    page.addEventListener('click', event => {
+      const box = page.getBoundingClientRect();
+      const unit = box.width / geometry.P;
+      const s = MORE[next++ % MORE.length];
+      const [w, h] = SIZE[s.kind];
+      const col = Math.max(1, Math.min(geometry.P - w - 1, Math.floor((event.clientX - box.left) / unit - w / 2)));
+      const row = Math.max(2, Math.min(geometry.heights[page === left ? 0 : 1] - h - 1, Math.floor((event.clientY - box.top) / unit - h / 2)));
+      place(page, s, col, row, Math.round((Math.random() - 0.5) * 30), true);
+    });
+  }
+</script>
+
+<style is:global>
+  html { background: #4a1d27; }
+  .pv {
+    --cover: #4a1d27;
+    --paper: #ecf0e6;
+    --g1: #b7d0c2;
+    --g2: #e2bfc5;
+    --p: 34;
+    --h: 41;
+    background: var(--cover);
+    color: #233;
+    font-family: var(--typeface-regular);
+  }
+  .pv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+  .pv-defs { position: absolute; width: 0; height: 0; }
+
+  /* Two pages meeting at the gutter, each a grid of whole squares on the cover. */
+  .pv-page {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--p), var(--u));
+    grid-template-rows: repeat(var(--h), var(--u));
+    background: var(--paper);
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .pv-left { grid-column: 2 / span var(--p); grid-row: 2 / span var(--h); border-radius: calc(var(--u) / 2) 0 0 calc(var(--u) / 2); box-shadow: inset calc(-2 * var(--u)) 0 calc(2 * var(--u)) calc(-1 * var(--u)) rgb(60 40 30 / 0.18); }
+  .pv-right { grid-column: span var(--p) / -2; grid-row: 2 / span var(--h); border-radius: 0 calc(var(--u) / 2) calc(var(--u) / 2) 0; box-shadow: inset calc(2 * var(--u)) 0 calc(2 * var(--u)) calc(-1 * var(--u)) rgb(60 40 30 / 0.18); }
+  .pv-ground { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .pv-ground path { fill: none; stroke-width: 0.6; }
+  .pv-ground .pv-g1 { stroke: var(--g1); }
+  .pv-ground .pv-g2 { stroke: var(--g2); }
+  .pv-ground .pv-rose { stroke: var(--g1); stroke-width: 0.35; opacity: 0.9; }
+
+  .pv-head { position: relative; margin: 0; align-self: end; text-align: center; font-family: Copperplate, 'Copperplate Gothic Light', var(--typeface-canon), serif; font-size: calc(13px * var(--sf)); line-height: var(--u); letter-spacing: 0.08em; color: #5d7466; }
+  .pv-head span { color: #a76d77; margin-inline: var(--u); }
+  .pv-num { position: relative; grid-column: 1 / -1; margin: 0; text-align: center; font-family: Copperplate, var(--typeface-canon), serif; font-size: calc(12px * var(--sf)); line-height: var(--u); color: #5d7466; }
+  .pv-holes { position: absolute; right: calc(var(--u) / 2); top: calc(5 * var(--u)); width: calc(1.3 * var(--u)); height: auto; fill: var(--cover); opacity: 0.85; pointer-events: none; }
+
+  /* The stamps: rubber, uneven, turned on their squares, inks laid over each other. */
+  .pv-stamp { position: relative; transform: rotate(var(--rot)); mix-blend-mode: multiply; opacity: 0.86; pointer-events: none; }
+  .pv-stamp svg { display: block; width: 100%; height: 100%; overflow: visible; filter: url(#pv-ink); }
+  .pv-stamp .pv-line { fill: none; stroke: currentColor; stroke-width: 1.4; }
+  .pv-stamp .pv-line2 { fill: none; stroke: currentColor; stroke-width: 2.6; }
+  .pv-stamp .pv-sign { stroke-width: 1.2; stroke-linecap: round; }
+  .pv-stamp text { fill: currentColor; text-anchor: middle; font-family: var(--typeface-compressed); text-transform: uppercase; letter-spacing: 0.04em; }
+  .pv-stamp .pv-left-text { text-anchor: start; }
+  .pv-stamp .pv-t-small { font-size: 8.5px; }
+  .pv-stamp .pv-t-tiny { font-size: 7px; }
+  .pv-stamp .pv-t-ring { font-size: 7.5px; text-anchor: middle; letter-spacing: 0.12em; }
+  .pv-stamp .pv-t-mid { font-size: 12px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: none; }
+  .pv-stamp .pv-t-big { font-size: 17px; font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+  .pv-stamp .pv-t-id { font-size: 8px; font-family: 'Courier New', Courier, monospace; }
+  .pv-stamp .pv-t-hand { text-anchor: start; font-family: 'Bradley Hand', 'Noteworthy', cursive; text-transform: none; font-size: 11px; letter-spacing: 0; }
+  .pv-stamp.is-fresh { animation: pv-thunk 360ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+  @keyframes pv-thunk { from { transform: rotate(var(--rot)) scale(1.35); opacity: 0; } 55% { opacity: 0.95; } to { transform: rotate(var(--rot)) scale(1); opacity: 0.86; } }
+
+  /* The visa sticker: its own guilloche, a photo, fields and two lines for the machine. */
+  .pv-visa {
+    position: relative; z-index: 0; overflow: hidden;
+    display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; grid-template-rows: calc(2 * var(--u)) 1fr calc(2 * var(--u)); column-gap: var(--u);
+    padding: 0 var(--u); background: #f6efe0; border-radius: calc(var(--u) / 4);
+    box-shadow: 0 0 0 1px rgb(120 90 60 / 0.25);
+    container-type: inline-size;
+  }
+  .pv-visa-ground { position: absolute; inset: 0; opacity: 0.55; pointer-events: none; z-index: -1; }
+  .pv-visa-ground .pv-g1 { stroke: #d9b98c; }
+  .pv-visa-ground .pv-g2 { stroke: #b9c9dd; }
+  .pv-visa-ground .pv-rose { stroke: #d9b98c; }
+  .pv-visa header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; font-family: var(--typeface-canon); font-size: calc(16px * var(--sf)); line-height: var(--u); color: #6c3a2a; border-bottom: 1px solid rgb(108 58 42 / 0.35); padding-bottom: calc(var(--u) / 4 - 1px); }
+  .pv-visa header span + span { font-family: Copperplate, var(--typeface-canon), serif; letter-spacing: 0.1em; }
+  .pv-photo { grid-row: 2; width: calc(7 * var(--u)); height: calc(8 * var(--u)); object-fit: cover; object-position: 50% 25%; margin-top: var(--u); filter: grayscale(1) contrast(1.1) sepia(0.25); mix-blend-mode: multiply; }
+  .pv-visa dl { grid-row: 2; margin: var(--u) 0 0; display: grid; grid-template-columns: 1fr 1fr; align-content: start; column-gap: var(--u); }
+  .pv-visa dl div { min-width: 0; }
+  .pv-visa .pv-wide { grid-column: 1 / -1; }
+  .pv-visa dt { font-size: calc(9px * var(--sf)); line-height: calc(var(--u) * 0.7); color: #8a6e5a; }
+  .pv-visa dd { margin: 0 0 calc(var(--u) * 0.3); font-size: calc(13px * var(--sf)); line-height: var(--u); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #222; font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+  .pv-mrz { grid-column: 1 / -1; grid-row: 3; margin: 0; align-self: center; font-family: 'Andale Mono', Menlo, monospace; font-size: calc((100cqw - 2 * var(--u)) / 44 / 0.6); line-height: var(--u); letter-spacing: 0; white-space: nowrap; color: #222; overflow: hidden; }
+
+  .pv-hint { grid-column: 3 / -14; grid-row: -2; margin: 0; align-self: center; font-family: Copperplate, var(--typeface-canon), serif; font-size: calc(12px * var(--sf)); line-height: var(--u); color: #c9a45c; letter-spacing: 0.06em; }
+
+  @media (prefers-reduced-motion: reduce) { .pv-stamp.is-fresh { animation: none; } }
+
+  :root[data-narrow] .pv { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pv-left, :root[data-narrow] .pv-right { grid-column: 2 / span var(--p); grid-row: auto; height: calc(var(--h) * var(--u)); border-radius: calc(var(--u) / 4); margin-top: var(--u); box-shadow: none; }
+  :root[data-narrow] .pv-hint { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); }
+  :root[data-narrow] .pv-visa { grid-template-columns: calc(4 * var(--u)) 1fr; grid-template-rows: calc(3 * var(--u)) auto 1fr calc(2 * var(--u)); }
+  :root[data-narrow] .pv-visa header { flex-direction: column; align-items: start; justify-content: end; font-size: calc(14px * var(--sf)); }
+  :root[data-narrow] .pv-photo { width: calc(4 * var(--u)); height: calc(5 * var(--u)); }
+  :root[data-narrow] .pv-visa dl { grid-column: 1 / -1; grid-row: 3; }
+  :root[data-narrow] .pv-mrz { grid-row: 4; }
+  :root[data-narrow] .pv-visa dd { white-space: normal; font-size: calc(12px * var(--sf)); }
+</style>

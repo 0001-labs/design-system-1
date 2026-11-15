@@ -1,0 +1,291 @@
+---
+// After a 1997 web portal: a start page that wants to be everything at once. Times for the words,
+// Verdana for the small print, blue links underlined and the visited ones purple, every table cell
+// bevelled like a button and every cell a whole number of squares. One thing blinks.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const bird = [
+  '............',
+  '##........##',
+  '.##......##.',
+  '..###..###..',
+  '...######...',
+  '....####....',
+  '.....##.....',
+  '......#.....',
+];
+const pixels = bird.flatMap((row, y) => [...row].map((c, x) => (c === '#' ? { x, y } : null)).filter(Boolean)) as { x: number; y: number }[];
+
+const directory = [
+  ['Arts & Humanities', 'Photography, Literature, Museums'],
+  ['Business & Economy', 'Companies, Jobs, Investing'],
+  ['Computers & Internet', 'Software, Modems, HTML'],
+  ['Education', 'Universities, K-12, Libraries'],
+  ['Entertainment', 'Movies, Music, Humor, Cool Links'],
+  ['Government', 'Elections, Military, Law'],
+  ['Health', 'Medicine, Fitness, Diseases'],
+  ['News & Media', 'Newspapers, TV, Daily Headlines'],
+  ['Recreation & Sports', 'Birdwatching, Travel, Outdoors'],
+  ['Reference', 'Dictionaries, Phone Numbers, Maps'],
+  ['Regional', 'Countries, States, Cities'],
+  ['Science', 'Astronomy, Biology, Engineering'],
+  ['Social Science', 'History, Languages, Archaeology'],
+  ['Society & Culture', 'People, Religion, Food & Drink'],
+];
+const visited = new Set(['Computers & Internet', 'Recreation & Sports']);
+
+const weather = [
+  ['Seattle', 'Rain', '52', '44'],
+  ['Chicago', 'Wind', '41', '30'],
+  ['Atlanta', 'Sunny', '66', '48'],
+  ['Boston', 'Fog', '49', '40'],
+];
+const stocks = [
+  ['DOW', '7,694.66', '+44.82', true],
+  ['NASDAQ', '1,594.40', '-6.13', false],
+  ['KSTL', '31 1/4', '+2 3/8', true],
+  ['MODM', '12 7/8', '-1/2', false],
+  ['PXLW', '48 1/2', '+3/4', true],
+  ['DSKT', '9 1/8', '-1 1/16', false],
+] as const;
+const signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+const news = [
+  ['Comet Hale-Bopp photos: the best of the spring, in one gallery', false],
+  ['How to build your first home page in an afternoon', true],
+  ['Chess: man and machine to meet again in a rematch next year', false],
+  ['Holiday shopping goes online: is your credit card safe?', false],
+  ['Kestrel Chat now holds 2,000 people in one room', false],
+  ['Weather: first snow of the season expected in the Rockies', false],
+  ['Movies: the ship that could not sink is coming in December', false],
+  ['Are you Y2K ready? Ten questions to ask your bank', false],
+  ['Tamagotchi owners form support groups online', false],
+  ['The best free fonts for your home page, reviewed', false],
+] as const;
+---
+<AlignedStudy slug="web-portal" theme="light">
+  <main class="stage portal">
+    <a class="logo" href="#top" aria-label="Kestrel! home">
+      <svg viewBox="0 0 12 8" aria-hidden="true" shape-rendering="crispEdges">{pixels.map(p => <rect x={p.x} y={p.y} width="1" height="1" />)}</svg>
+      <span>Kestrel!</span>
+    </a>
+    <p class="tagline">Your home on the World Wide Web</p>
+
+    <form class="search" role="search" onsubmit="return false">
+      <label for="q">Search</label>
+      <input id="q" name="q" type="text" value="" placeholder="" autocomplete="off" />
+      <select aria-label="Where to search"><option>the Web</option><option>Usenet</option><option>Kestrel Directory</option><option>E-mail addresses</option></select>
+      <button type="submit">Search</button>
+      <p class="search-links"><a href="#advanced">advanced search</a> | <a href="#options">options</a> | <a class="visited" href="#help">help</a></p>
+    </form>
+
+    <nav class="bar" aria-label="Kestrel services">
+      {['Mail', 'Chat', 'Personals', 'Shopping', 'Maps', 'People Search', 'Stock Quotes', 'Yellow Pages', 'Free Home Pages'].map(s => <a href={'#' + s.toLowerCase().replace(/ /g, '-')}>{s}</a>)}
+    </nav>
+
+    <a class="ad" href="#cybermall">
+      <span class="ad-big">CyberMall ’97</span>
+      <span class="ad-small">300 stores, secure mode</span>
+      <span class="ad-button">CLICK HERE!</span>
+    </a>
+
+    <section class="panel weather">
+      <h2>Weather</h2>
+      <table>
+        {weather.map(([city, sky, hi, lo]) => <tr><td><a href={'#' + city}>{city}</a></td><td>{sky}</td><td class="num">{hi}°</td><td class="num lo">{lo}°</td></tr>)}
+      </table>
+      <p class="more"><a href="#weather">Enter your ZIP code</a></p>
+    </section>
+
+    <section class="panel stocks">
+      <h2>Stock Quotes</h2>
+      <table>
+        {stocks.map(([sym, price, change, up]) => <tr><td><a href={'#' + sym}>{sym}</a></td><td class="num">{price}</td><td class:list={['num', up ? 'up' : 'down']}>{up ? '▲' : '▼'} {change}</td></tr>)}
+      </table>
+      <p class="more">Delayed 20 minutes. <a href="#portfolio">My portfolio</a></p>
+    </section>
+
+    <section class="panel stars">
+      <h2>Horoscopes</h2>
+      <ul class="signs">{signs.map(sign => <li><a href={'#' + sign} class:list={{ visited: sign === 'Scorpio' }}>{sign}</a></li>)}</ul>
+      <p class="today"><b>Scorpio</b> (Oct 24 – Nov 21): A letter you have been waiting for arrives. Answer it in your best handwriting, then save a copy to floppy.</p>
+    </section>
+
+    <section class="panel dir">
+      <h2>Kestrel Directory <span>26,481 sites and counting</span></h2>
+      <ul>
+        {directory.map(([cat, subs]) => <li><a href={'#' + cat} class:list={['cat', { visited: visited.has(cat) }]}>{cat}</a><span>{subs.split(', ').map((s, i) => <>{i ? ', ' : ''}<a href={'#' + s}>{s}</a></>)}{cat === 'Recreation & Sports' && <b class="new">NEW!</b>}</span></li>)}
+      </ul>
+    </section>
+
+    <section class="panel news">
+      <h2>In the News <span>Friday, November 14, 1997</span></h2>
+      <ul>{news.map(([line, seen]) => <li><a href="#news" class:list={{ visited: seen }}>{line}</a></li>)}</ul>
+    </section>
+
+    <section class="panel mail">
+      <h2>Free E-mail!</h2>
+      <p>Get your own address at kestrel.net. Read it from any computer, anywhere.</p>
+      <div class="mail-row"><input type="text" aria-label="Choose a name" value="birdfan97" /><span>@kestrel.net</span></div>
+      <button type="button">Sign me up!</button>
+    </section>
+
+    <section class="panel ring">
+      <p class="ring-name">The Birdwatchers’ Web Ring</p>
+      <p class="ring-links"><a href="#prev">&lt;&lt; Prev</a> <a href="#random">Random</a> <a href="#list">List sites</a> <a href="#next">Next &gt;&gt;</a></p>
+    </section>
+
+    <div class="construction"><span>This corner is under construction. Come back soon!</span></div>
+
+    <section class="panel poll">
+      <h2>Kestrel Poll</h2>
+      <fieldset>
+        <legend>What speed is your modem?</legend>
+        {['14.4K', '28.8K', '33.6K', '56K, lucky me'].map((label, i) => <label><input type="radio" name="modem" checked={i === 1} /> {label}</label>)}
+      </fieldset>
+      <p class="poll-row"><button type="button">Vote</button><a href="#results">View results</a></p>
+    </section>
+
+    <section class="counter">
+      <p>You are visitor number</p>
+      <span class="digits" aria-label="00481937">{[...'00481937'].map(d => <span>{d}</span>)}</span>
+      <p class="small">since March 3, 1996. <a href="#guestbook">Sign our Guestbook!</a></p>
+    </section>
+
+    <p class="foot">Copyright © 1997 Kestrel Communications, Inc. All rights reserved. Best viewed at 800 × 600 with 256 colors. <a href="#privacy">Privacy</a> | <a href="#advertise">Advertise with us</a></p>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #fff; }
+  .portal {
+    --link: #0000ee;
+    --seen: #551a8b;
+    --navy: #000080;
+    --face: #c0c0c0;
+    --rust: #b5541d;
+    background: #fff;
+    color: #000;
+    font-family: "Times New Roman", Times, serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+  }
+  .portal a { color: var(--link); text-decoration: underline; }
+  .portal a.visited { color: var(--seen); }
+  .portal a:focus-visible, .portal button:focus-visible, .portal input:focus-visible, .portal select:focus-visible { outline: 1px dotted #000; outline-offset: 1px; }
+  .portal h2, .portal p, .portal ul, .portal table { margin: 0; padding: 0; }
+  .portal ul { list-style: none; }
+  .portal table { border-collapse: collapse; width: 100%; }
+  .portal td { height: var(--u); padding: 0 calc(var(--u) / 4); }
+
+  /* Bevels drawn inside each box, so they take nothing from its whole squares. */
+  .portal :is(.panel, .bar, button, .ad-button) { box-shadow: inset 1px 1px #fff, inset -1px -1px #000, inset 2px 2px #dfdfdf, inset -2px -2px #808080; }
+  .portal :is(input, select, .digits, .panel table, .signs) { box-shadow: inset 1px 1px #808080, inset -1px -1px #fff, inset 2px 2px #000, inset -2px -2px #dfdfdf; }
+
+  .logo { grid-column: 2 / span 18; grid-row: 2 / span 3; display: flex; gap: calc(var(--u) / 2); align-items: center; text-decoration: none !important; color: #000 !important; }
+  .logo svg { width: calc(4.5 * var(--u)); height: calc(3 * var(--u)); fill: var(--rust); }
+  .logo span { font: italic bold calc(56px * var(--sf)) / calc(3 * var(--u)) "Times New Roman", serif; letter-spacing: -0.02em; text-shadow: 3px 3px 0 #c0c0c0; }
+  .tagline { grid-column: 7 / span 16; grid-row: 5; font-family: Verdana, sans-serif; font-size: calc(11px * var(--sf)); font-style: italic; color: #333; }
+
+  .search { grid-column: -36 / -2; grid-row: 2 / span 3; display: grid; grid-template-columns: calc(4 * var(--u)) 1fr calc(8 * var(--u)) calc(5 * var(--u)); grid-template-rows: var(--u) calc(1.5 * var(--u)) var(--u); column-gap: calc(var(--u) / 2); align-items: center; font-family: Verdana, sans-serif; font-size: calc(12px * var(--sf)); }
+  .search label { grid-row: 2; font-weight: bold; }
+  .search input, .search select, .search button { grid-row: 2; height: var(--u); border: 0; box-sizing: border-box; font: calc(12px * var(--sf)) Verdana, sans-serif; padding: 0 calc(var(--u) / 5); background: #fff; color: #000; border-radius: 0; }
+  .search select { appearance: none; background: #fff linear-gradient(var(--face), var(--face)) right / var(--u) 100% no-repeat; }
+  .search button { background: var(--face); cursor: pointer; }
+  .search button:active { box-shadow: inset 1px 1px #000, inset -1px -1px #fff; }
+  .search-links { grid-column: 2 / -1; grid-row: 3; font-size: calc(11px * var(--sf)); }
+
+  .bar { grid-column: 2 / -2; grid-row: 6; display: flex; justify-content: space-between; padding: 0 var(--u); background: var(--face); font-family: Verdana, sans-serif; font-size: calc(11px * var(--sf)); font-weight: bold; white-space: nowrap; overflow: hidden; gap: var(--u); }
+
+  .ad { grid-column: 2 / span 16; grid-row: 8 / span 3; display: grid; grid-template-columns: 1fr calc(6 * var(--u)); grid-template-rows: calc(2 * var(--u)) var(--u); padding-left: calc(var(--u) / 2); border: 1px solid #000; box-sizing: border-box; background: linear-gradient(90deg, #ffff66, #ffcc00 60%, #ff9900); color: #800000 !important; text-decoration: none !important; }
+  .ad-big { font: bold italic calc(24px * var(--sf)) / calc(2 * var(--u)) "Times New Roman", serif; color: #c00; text-shadow: 2px 2px 0 #fff; }
+  .ad-small { white-space: nowrap; font: calc(10px * var(--sf)) / var(--u) Verdana, sans-serif; }
+  .ad-button { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-right: calc(var(--u) / 2); height: calc(2 * var(--u)); display: grid; place-items: center; background: var(--face); color: #000; font: bold calc(12px * var(--sf)) Verdana, sans-serif; }
+
+  /* Panels: a navy title bar a square high, then cells a square each. */
+  .panel { display: block; overflow: hidden; background: var(--face); padding: 0 calc(var(--u) / 4) 0; font-size: calc(14px * var(--sf)); }
+  .panel h2 { height: var(--u); margin: 0 calc(var(--u) / -4); padding: 0 calc(var(--u) / 2); background: linear-gradient(90deg, var(--navy), #1084d0); color: #fff; font: bold calc(12px * var(--sf)) / var(--u) Verdana, sans-serif; display: flex; justify-content: space-between; white-space: nowrap; overflow: hidden; }
+  .panel h2 span { font-weight: normal; }
+  .panel table { background: #fff; margin-top: calc(var(--u) / 2); }
+  .panel table tr:first-child td { padding-top: 0; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lo { color: #555; }
+  .up { color: #008000; } .down { color: #c00000; }
+  .more { font: calc(11px * var(--sf)) / var(--u) Verdana, sans-serif; padding: calc(var(--u) / 2) calc(var(--u) / 4) 0; }
+
+  .weather { grid-column: 2 / span 16; grid-row: 12 / span 7; }
+  .stocks { grid-column: 2 / span 16; grid-row: 20 / span 9; }
+  .stars { grid-column: 2 / span 16; grid-row: 30 / -3; }
+  .signs { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: var(--u); background: #fff; margin-top: calc(var(--u) / 2); padding: 0 calc(var(--u) / 4); font-size: calc(12px * var(--sf)); }
+  .today { padding: calc(var(--u) / 2) calc(var(--u) / 4) 0; font-size: calc(13px * var(--sf)); }
+
+  .dir { grid-column: 19 / -24; grid-row: 8 / span 21; background: #fff; }
+  .dir ul { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: calc(2 * var(--u)); column-gap: var(--u); padding: calc(var(--u) / 2) calc(var(--u) / 2) 0; }
+  .dir li { display: grid; overflow: hidden; }
+  .dir .cat { font-weight: bold; font-size: calc(16px * var(--sf)); }
+  .dir li span { font-size: calc(12px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .new { margin-left: calc(var(--u) / 4); color: #f00; font: bold calc(11px * var(--sf)) Verdana, sans-serif; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { color: #ff0; background: #f00; } }
+  @media (prefers-reduced-motion: reduce) { .new { animation: none; } }
+
+  .news { grid-column: 19 / -24; grid-row: 30 / -3; background: #fff; }
+  .news ul { padding: calc(var(--u) / 2) calc(var(--u) / 2) 0; }
+  .news li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .news li::before { content: ''; display: inline-block; width: calc(var(--u) / 4); height: calc(var(--u) / 4); background: #c00; margin-right: calc(var(--u) / 3); vertical-align: 2px; }
+
+  .mail { grid-column: -23 / -2; grid-row: 8 / span 8; }
+  .mail p { padding: calc(var(--u) / 2) calc(var(--u) / 4) 0; font-size: calc(13px * var(--sf)); }
+  .mail-row { display: flex; align-items: center; margin-top: calc(var(--u) / 2); gap: calc(var(--u) / 4); font: calc(12px * var(--sf)) Verdana, sans-serif; padding-left: calc(var(--u) / 4); }
+  .mail input { width: calc(8 * var(--u)); height: var(--u); border: 0; box-sizing: border-box; padding: 0 calc(var(--u) / 5); font: calc(12px * var(--sf)) Verdana, sans-serif; border-radius: 0; background: #fff; color: #000; }
+  .mail button { display: block; margin: calc(var(--u) / 2) 0 0 calc(var(--u) / 4); height: var(--u); padding: 0 calc(var(--u) / 2); border: 0; background: var(--face); font: bold calc(12px * var(--sf)) Verdana, sans-serif; cursor: pointer; color: #000; border-radius: 0; }
+
+  .ring { grid-column: -23 / -2; grid-row: 17 / span 3; background: #fff; text-align: center; padding-top: calc(var(--u) / 2); }
+  .ring-name { font: bold italic calc(16px * var(--sf)) / var(--u) "Times New Roman", serif; }
+  .ring-links { display: flex; justify-content: center; gap: calc(var(--u) / 2); font-size: calc(13px * var(--sf)); }
+
+  .construction { grid-column: -23 / -2; grid-row: 21 / span 3; display: grid; place-items: center; background: repeating-linear-gradient(-45deg, #ffcc00 0 calc(var(--u) / 2), #000 calc(var(--u) / 2) var(--u)); }
+  .construction span { background: #ffcc00; padding: 0 calc(var(--u) / 2); font: bold calc(11px * var(--sf)) / var(--u) Verdana, sans-serif; }
+
+  .poll { grid-column: -23 / -2; grid-row: 25 / span 7; }
+  .poll fieldset { border: 0; margin: calc(var(--u) / 2) 0 0; padding: 0 calc(var(--u) / 4); display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: var(--u); font-size: calc(14px * var(--sf)); }
+  .poll legend { grid-column: 1 / -1; padding: 0; height: var(--u); font-weight: bold; float: left; width: 100%; }
+  .poll label { display: flex; align-items: center; gap: calc(var(--u) / 4); white-space: nowrap; }
+  .poll input { margin: 0; accent-color: #000; }
+  .poll-row { display: flex; align-items: center; gap: var(--u); padding: calc(var(--u) / 2) calc(var(--u) / 4) 0; font-size: calc(13px * var(--sf)); }
+  .poll button { height: var(--u); padding: 0 var(--u); border: 0; background: var(--face); font: bold calc(12px * var(--sf)) Verdana, sans-serif; color: #000; border-radius: 0; cursor: pointer; }
+  .counter { grid-column: -23 / -2; grid-row: span 6 / -3; display: grid; grid-template-rows: var(--u) calc(2 * var(--u)) var(--u); align-content: end; justify-items: center; row-gap: calc(var(--u) / 2); font-size: calc(14px * var(--sf)); }
+  .counter .small { font: calc(11px * var(--sf)) / var(--u) Verdana, sans-serif; }
+  .digits { display: grid; grid-auto-flow: column; grid-auto-columns: calc(1.5 * var(--u)); height: calc(2 * var(--u)); padding: 2px; box-sizing: border-box; background: #000; gap: 2px; }
+  .digits span { display: grid; place-items: center; background: linear-gradient(#000, #3a3a3a 45%, #111 50%, #3a3a3a 55%, #000); color: #f2f2f2; font: bold calc(22px * var(--sf)) / 1 "Courier New", monospace; position: relative; }
+  .digits span::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #000; }
+  .digits span:last-child { color: #ff4040; }
+
+  .foot { grid-column: 2 / span 46; grid-row: -2; font: calc(10px * var(--sf)) / var(--u) Verdana, sans-serif; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* A narrow window: one column, the page a 1997 phone never had. */
+  :root[data-narrow] .portal { padding-bottom: calc(3 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .portal > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .logo span { font-size: calc(44px * var(--sf)); }
+  :root[data-narrow] .tagline { margin-top: calc(-1 * var(--u)); }
+  :root[data-narrow] .search { grid-template-columns: 1fr calc(5 * var(--u)); grid-template-rows: var(--u) var(--u) var(--u) var(--u); row-gap: calc(var(--u) / 2); }
+  :root[data-narrow] .search label { grid-row: 1; }
+  :root[data-narrow] .search input { grid-row: 2; grid-column: 1 / -1; }
+  :root[data-narrow] .search select { grid-row: 3; grid-column: 1; }
+  :root[data-narrow] .search button { grid-row: 3; grid-column: 2; }
+  :root[data-narrow] .search-links { grid-row: 4; grid-column: 1 / -1; }
+  :root[data-narrow] .bar { flex-wrap: wrap; height: auto; white-space: normal; gap: 0 var(--u); }
+  :root[data-narrow] .ad { grid-template-columns: 1fr; grid-template-rows: calc(2 * var(--u)) auto calc(2 * var(--u)); padding: 0 var(--u) var(--u); }
+  :root[data-narrow] .ad-button { grid-column: 1; grid-row: 3; justify-self: start; padding: 0 var(--u); margin-top: calc(var(--u) / 2); }
+  :root[data-narrow] .ad-big { font-size: calc(24px * var(--sf)); }
+  :root[data-narrow] .dir ul { grid-template-columns: 1fr; }
+  :root[data-narrow] .panel { padding-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .today { grid-row: span 6; }
+  :root[data-narrow] .mail p { grid-row: span 3; }
+  :root[data-narrow] .news li { white-space: normal; }
+  :root[data-narrow] .news ul { display: grid; grid-auto-rows: auto; row-gap: calc(var(--u) / 2); }
+  :root[data-narrow] .ring-links { flex-wrap: wrap; }
+  :root[data-narrow] .foot { white-space: normal; }
+  :root[data-narrow] .panel h2 span { display: none; }
+  :root[data-narrow] .mail-row { flex-wrap: wrap; }
+  :root[data-narrow] .mail-row input { width: 100%; }
+  :root[data-narrow] .construction { height: calc(3 * var(--u)); }
+</style>

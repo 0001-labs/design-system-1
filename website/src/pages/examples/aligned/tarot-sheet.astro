@@ -1,0 +1,325 @@
+---
+// After a spreadsheet: a three-card tarot reading kept in a workbook. Columns three squares wide,
+// rows a square high, the cards as merged ranges with drawings in them, conditional colours by suit
+// and weight, and a formula bar that shows what each cell really says. Click a cell, or use arrows.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const COLS = 30;
+const ROWS = 60;
+const letter = (c: number) => String.fromCharCode(64 + c);
+
+type Cell = { c: number; r: number; w?: number; h?: number; v?: string; f?: string; cls?: string; card?: 'star' | 'cups' | 'tower' };
+const CELLS: Cell[] = [
+  { c: 1, r: 1, v: 'Date', cls: 'b' },
+  { c: 2, r: 1, w: 3, v: 'Thursday 14 November 2026', f: '=TODAY()' },
+  { c: 6, r: 1, v: 'Querent', cls: 'b' },
+  { c: 7, r: 1, w: 2, v: 'M. Varga' },
+  { c: 2, r: 2, w: 11, h: 2, v: 'Three cards: what was, what is, what comes', cls: 'title' },
+
+  { c: 2, r: 5, w: 3, h: 11, card: 'star', f: '=DRAW(Major, 1)' },
+  { c: 6, r: 5, w: 3, h: 11, card: 'cups', f: '=DRAW(Cups, 1)' },
+  { c: 10, r: 5, w: 3, h: 11, card: 'tower', f: '=DRAW(Major, 1, REVERSED)' },
+  { c: 2, r: 16, w: 3, v: 'Past', cls: 'center b' },
+  { c: 6, r: 16, w: 3, v: 'Present', cls: 'center b' },
+  { c: 10, r: 16, w: 3, v: 'Future', cls: 'center b' },
+
+  { c: 2, r: 18, v: 'Draw', cls: 'head' },
+  { c: 3, r: 18, w: 2, v: 'Card', cls: 'head' },
+  { c: 5, r: 18, v: 'Arcana', cls: 'head' },
+  { c: 6, r: 18, v: 'Suit', cls: 'head' },
+  { c: 7, r: 18, v: 'Upright', cls: 'head' },
+  { c: 8, r: 18, v: 'Weight', cls: 'head num' },
+  { c: 9, r: 18, w: 4, v: 'Reading', cls: 'head' },
+
+  { c: 2, r: 19, v: 'Past' },
+  { c: 3, r: 19, w: 2, v: 'The Star', f: '=INDEX(Deck[Name], B5)' },
+  { c: 5, r: 19, v: 'Major', cls: 'major' },
+  { c: 6, r: 19, v: 'None', cls: 'muted' },
+  { c: 7, r: 19, v: 'TRUE', cls: 'center' },
+  { c: 8, r: 19, v: '3', f: '=WEIGHT(C19, G19)', cls: 'num w3' },
+  { c: 9, r: 19, w: 4, v: 'Hope after a long weather', f: '=INDEX(Deck[Upright], B5)' },
+
+  { c: 2, r: 20, v: 'Present' },
+  { c: 3, r: 20, w: 2, v: 'Three of Cups', f: '=INDEX(Deck[Name], F5)' },
+  { c: 5, r: 20, v: 'Minor', cls: 'minor' },
+  { c: 6, r: 20, v: 'Cups', cls: 'cupsfill' },
+  { c: 7, r: 20, v: 'TRUE', cls: 'center' },
+  { c: 8, r: 20, v: '2', f: '=WEIGHT(C20, G20)', cls: 'num w2' },
+  { c: 9, r: 20, w: 4, v: 'Friends, a table, a toast', f: '=INDEX(Deck[Upright], F5)' },
+
+  { c: 2, r: 21, v: 'Future' },
+  { c: 3, r: 21, w: 2, v: 'The Tower', f: '=INDEX(Deck[Name], J5)' },
+  { c: 5, r: 21, v: 'Major', cls: 'major' },
+  { c: 6, r: 21, v: 'None', cls: 'muted' },
+  { c: 7, r: 21, v: 'FALSE', cls: 'center false' },
+  { c: 8, r: 21, v: '−1', f: '=WEIGHT(C21, G21)', cls: 'num wm' },
+  { c: 9, r: 21, w: 4, v: 'A shake-up, softened', f: '=INDEX(Deck[Reversed], J5)' },
+
+  { c: 2, r: 23, w: 2, v: 'Weight total', cls: 'b' },
+  { c: 8, r: 23, v: '4', f: '=SUM(H19:H21)', cls: 'num b' },
+  { c: 2, r: 24, w: 2, v: 'Outlook', cls: 'b' },
+  { c: 8, r: 24, v: 'Fair', f: '=IF(H23>3, "Fair", "Unsettled")', cls: 'center fair' },
+
+  { c: 14, r: 5, w: 5, v: 'Deck', cls: 'head' },
+  { c: 14, r: 6, w: 3, v: 'Cards in deck' },
+  { c: 17, r: 6, v: '78', f: '=ROWS(Deck)', cls: 'num' },
+  { c: 14, r: 7, w: 3, v: 'Drawn today' },
+  { c: 17, r: 7, v: '3', f: '=COUNTA(C19:C21)', cls: 'num' },
+  { c: 14, r: 8, w: 3, v: 'Left in deck' },
+  { c: 17, r: 8, v: '75', f: '=Q6-Q7', cls: 'num' },
+  { c: 14, r: 9, w: 3, v: 'Major arcana drawn' },
+  { c: 17, r: 9, v: '2', f: '=COUNTIF(E19:E21, "Major")', cls: 'num' },
+
+  { c: 14, r: 11, w: 5, v: 'Suits this month', cls: 'head' },
+  { c: 14, r: 12, v: 'Cups', cls: 'cupsfill' },
+  { c: 15, r: 12, v: '7', f: '=COUNTIF(Journal!D:D, "Cups")', cls: 'num' },
+  { c: 16, r: 12, w: 3, v: '■■■■■■■', f: '=REPT("■", P12)', cls: 'bar cups' },
+  { c: 14, r: 13, v: 'Wands', cls: 'wandsfill' },
+  { c: 15, r: 13, v: '4', f: '=COUNTIF(Journal!D:D, "Wands")', cls: 'num' },
+  { c: 16, r: 13, w: 3, v: '■■■■', f: '=REPT("■", P13)', cls: 'bar wands' },
+  { c: 14, r: 14, v: 'Swords', cls: 'swordsfill' },
+  { c: 15, r: 14, v: '2', f: '=COUNTIF(Journal!D:D, "Swords")', cls: 'num' },
+  { c: 16, r: 14, w: 3, v: '■■', f: '=REPT("■", P14)', cls: 'bar swords' },
+  { c: 14, r: 15, v: 'Pentacles', cls: 'pentfill' },
+  { c: 15, r: 15, v: '5', f: '=COUNTIF(Journal!D:D, "Pentacles")', cls: 'num' },
+  { c: 16, r: 15, w: 3, v: '■■■■■', f: '=REPT("■", P15)', cls: 'bar pent' },
+  { c: 14, r: 16, v: 'Major', cls: 'major' },
+  { c: 15, r: 16, v: '9', f: '=COUNTIF(Journal!C:C, "Major")', cls: 'num' },
+  { c: 16, r: 16, w: 3, v: '■■■■■■■■■', f: '=REPT("■", P16)', cls: 'bar majorbar' },
+
+  { c: 2, r: 26, w: 7, v: 'Last seven readings', cls: 'head' },
+  { c: 2, r: 27, v: 'Day', cls: 'b' },
+  { c: 3, r: 27, w: 5, v: 'Cards', cls: 'b' },
+  { c: 8, r: 27, v: 'Weight', cls: 'b num' },
+  { c: 2, r: 28, v: '7 Nov' },
+  { c: 3, r: 28, w: 5, v: 'Knight of Wands, The Moon, Two of Cups', f: '=JOIN(", ", Journal!C4:E4)' },
+  { c: 8, r: 28, v: '1', f: '=SUM(Journal!F4:H4)', cls: 'num w1' },
+  { c: 2, r: 29, v: '8 Nov' },
+  { c: 3, r: 29, w: 5, v: 'Ace of Pentacles, Six of Cups, The Sun', f: '=JOIN(", ", Journal!C5:E5)' },
+  { c: 8, r: 29, v: '5', f: '=SUM(Journal!F5:H5)', cls: 'num w3' },
+  { c: 2, r: 30, v: '9 Nov' },
+  { c: 3, r: 30, w: 5, v: 'Five of Swords, The Hermit, Page of Cups', f: '=JOIN(", ", Journal!C6:E6)' },
+  { c: 8, r: 30, v: '−2', f: '=SUM(Journal!F6:H6)', cls: 'num wm' },
+  { c: 2, r: 31, v: '10 Nov' },
+  { c: 3, r: 31, w: 5, v: 'Ten of Pentacles, Temperance, Four of Wands', f: '=JOIN(", ", Journal!C7:E7)' },
+  { c: 8, r: 31, v: '4', f: '=SUM(Journal!F7:H7)', cls: 'num w2' },
+  { c: 2, r: 32, v: '11 Nov' },
+  { c: 3, r: 32, w: 5, v: 'The Lovers, Nine of Swords, Three of Wands', f: '=JOIN(", ", Journal!C8:E8)' },
+  { c: 8, r: 32, v: '0', f: '=SUM(Journal!F8:H8)', cls: 'num w0' },
+  { c: 2, r: 33, v: '12 Nov' },
+  { c: 3, r: 33, w: 5, v: 'Queen of Cups, The World, Seven of Pentacles', f: '=JOIN(", ", Journal!C9:E9)' },
+  { c: 8, r: 33, v: '6', f: '=SUM(Journal!F9:H9)', cls: 'num w3' },
+  { c: 2, r: 34, v: '13 Nov' },
+  { c: 3, r: 34, w: 5, v: 'Eight of Swords, Death, Ace of Cups', f: '=JOIN(", ", Journal!C10:E10)' },
+  { c: 8, r: 34, v: '−1', f: '=SUM(Journal!F10:H10)', cls: 'num wm' },
+  { c: 14, r: 18, w: 5, h: 3, v: 'Weights run from −3 to +3. Green cells lean fair, red cells lean unsettled; reversed cards count against.', cls: 'note' },
+];
+const ref = (cell: Cell) => letter(cell.c) + cell.r + ((cell.w ?? 1) > 1 || (cell.h ?? 1) > 1 ? ':' + letter(cell.c + (cell.w ?? 1) - 1) + (cell.r + (cell.h ?? 1) - 1) : '');
+
+// The three drawings, on a card of 9 by 11 squares.
+const ART = {
+  star: { numeral: 'XVII', name: 'The Star', svg: '<path d="M 4.5 1.6 L 5.1 3.7 L 7.2 3.9 L 5.5 5.1 L 6.1 7.2 L 4.5 5.9 L 2.9 7.2 L 3.5 5.1 L 1.8 3.9 L 3.9 3.7 Z" class="gold" /><circle cx="1.6" cy="1.6" r="0.35" class="gold" /><circle cx="7.6" cy="1.9" r="0.3" class="gold" /><circle cx="7.2" cy="6.4" r="0.25" class="gold" /><circle cx="1.5" cy="6.8" r="0.3" class="gold" /><path d="M 0.6 8.6 q 1 -0.5 2 0 t 2 0 t 2 0 t 2 0" class="water" /><path d="M 0.6 9.2 q 1 -0.5 2 0 t 2 0 t 2 0 t 2 0" class="water" />' },
+  cups: { numeral: 'III', name: 'Three of Cups', svg: [1.6, 4.5, 7.4].map((x, i) => '<path d="M ' + (x - 1) + ' ' + (3 + (i === 1 ? -1 : 0)) + ' h 2 q 0 2.2 -1 2.4 v 1.4 h 0.7 v 0.4 h -2.4 v -0.4 h 0.7 v -1.4 q -1 -0.2 -1 -2.4 Z" class="cup" />').join('') + '<path d="M 0.8 9 h 7.4" class="line" />' },
+  tower: { numeral: 'XVI', name: 'The Tower', svg: '<path d="M 3.2 9.4 v -6 h 2.6 v 6 Z" class="stone" /><path d="M 2.9 3.4 h 3.2 l -0.4 -1 h -2.4 Z" class="crown" /><rect x="4" y="5" width="1" height="1.2" class="window" /><rect x="4" y="7.2" width="1" height="1.2" class="window" /><path d="M 7.6 0.6 L 6 2.6 L 6.8 2.8 L 5.4 4.4" class="bolt" /><path d="M 0.6 9.4 h 7.8" class="line" />' },
+};
+---
+<AlignedStudy slug="tarot-sheet" theme="light">
+  <main class="stage tarot">
+    <header class="appbar">
+      <span class="doc">Readings 2026</span>
+      <nav aria-label="Menus"><span>File</span><span>Edit</span><span>View</span><span>Insert</span><span>Format</span><span>Data</span><span>Divine</span></nav>
+    </header>
+    <div class="formula" aria-live="polite">
+      <span class="ref" id="ref">B5</span>
+      <span class="fx" aria-hidden="true">fx</span>
+      <span class="ftext" id="ftext">=DRAW(Major, 1)</span>
+    </div>
+
+    <section class="sheet" id="sheet" tabindex="0" data-own-keys aria-label="Spread sheet; click a cell or use the arrow keys to see its formula">
+      <span class="corner" aria-hidden="true"></span>
+      {Array.from({ length: COLS }, (_, i) => <span class="colh" style={`grid-column: ${i + 2}`} data-c={i + 1}>{letter(i + 1)}</span>)}
+      {Array.from({ length: ROWS }, (_, i) => <span class="rowh" style={`grid-row: ${i + 2}`} data-r={i + 1}>{i + 1}</span>)}
+      <span class="lines" aria-hidden="true"></span>
+      {CELLS.map(cell => (
+        <div
+          class:list={['cell', cell.cls, { tcard: !!cell.card, rev: cell.card === 'tower' }]}
+          style={`grid-column: ${cell.c + 1} / span ${cell.w ?? 1}; grid-row: ${cell.r + 1} / span ${cell.h ?? 1}`}
+          data-c={cell.c} data-r={cell.r} data-w={cell.w ?? 1} data-h={cell.h ?? 1}
+          data-ref={ref(cell)}
+          data-f={cell.f ?? cell.v ?? ''}
+        >
+          {cell.card ? (
+            <figure>
+              <svg viewBox="0 0 9 10" aria-hidden="true"><Fragment set:html={ART[cell.card].svg} /></svg>
+              <figcaption><span>{ART[cell.card].numeral}</span>{ART[cell.card].name}</figcaption>
+            </figure>
+          ) : cell.v}
+        </div>
+      ))}
+      <span class="selection" id="selection" aria-hidden="true"></span>
+    </section>
+
+    <footer class="tabs" aria-label="Sheets">
+      <span class="add" aria-hidden="true">+</span>
+      <span class="tab on">Spread</span>
+      <span class="tab">Deck</span>
+      <span class="tab">Journal</span>
+      <span class="sum" id="sum">Count 1</span>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script>
+  const sheet = document.getElementById('sheet') as HTMLElement;
+  const selection = document.getElementById('selection') as HTMLElement;
+  const refOut = document.getElementById('ref') as HTMLElement;
+  const fOut = document.getElementById('ftext') as HTMLElement;
+  const cells = [...sheet.querySelectorAll<HTMLElement>('.cell')];
+  const letter = (c: number) => String.fromCharCode(64 + c);
+  let at = { c: 2, r: 5 };
+
+  const covering = (c: number, r: number) => cells.find(el => {
+    const d = el.dataset;
+    return c >= +d.c! && c < +d.c! + +d.w! && r >= +d.r! && r < +d.r! + +d.h!;
+  });
+
+  function select(c: number, r: number) {
+    c = Math.max(1, Math.min(30, c));
+    r = Math.max(1, Math.min(60, r));
+    const cell = covering(c, r);
+    const box = cell ? { c: +cell.dataset.c!, r: +cell.dataset.r!, w: +cell.dataset.w!, h: +cell.dataset.h! } : { c, r, w: 1, h: 1 };
+    at = { c: box.c, r: box.r };
+    selection.style.gridColumn = `${box.c + 1} / span ${box.w}`;
+    selection.style.gridRow = `${box.r + 1} / span ${box.h}`;
+    refOut.textContent = letter(box.c) + box.r;
+    fOut.textContent = cell?.dataset.f ?? '';
+    sheet.querySelectorAll('.colh, .rowh').forEach(h => {
+      const el = h as HTMLElement;
+      const on = el.dataset.c ? +el.dataset.c >= box.c && +el.dataset.c < box.c + box.w : +el.dataset.r! >= box.r && +el.dataset.r! < box.r + box.h;
+      el.classList.toggle('on', on);
+    });
+  }
+
+  sheet.addEventListener('pointerdown', event => {
+    const rect = sheet.getBoundingClientRect();
+    const unit = sheet.querySelector('.rowh')!.getBoundingClientRect().height;
+    const x = event.clientX - rect.left + sheet.scrollLeft;
+    const y = event.clientY - rect.top + sheet.scrollTop;
+    const c = Math.floor((x - 2 * unit) / (3 * unit)) + 1;
+    const r = Math.floor((y - unit) / unit) + 1;
+    if (c >= 1 && r >= 1) select(c, r);
+  });
+  sheet.addEventListener('keydown', event => {
+    const box = covering(at.c, at.r);
+    const w = box ? +box.dataset.w! : 1;
+    const h = box ? +box.dataset.h! : 1;
+    const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [w, 0], ArrowUp: [0, -1], ArrowDown: [0, h], Enter: [0, h], Tab: [w, 0] };
+    const m = moves[event.key];
+    if (!m) return;
+    event.preventDefault();
+    select(at.c + m[0], at.r + m[1]);
+  });
+  select(2, 5);
+</script>
+
+<style is:global>
+  html { background: #f8f9fa; }
+  .tarot {
+    --grid: #e1e3e6;
+    --head: #f1f3f4;
+    --ink: #202124;
+    --green: #188038;
+    color: var(--ink);
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* Chrome: the document's name and menus, then the formula bar, each a square high. */
+  .appbar { grid-column: 1 / -1; grid-row: 1 / span 1; display: flex; gap: var(--u); align-items: center; padding-inline: var(--u); background: #f8f9fa; }
+  .appbar .doc { font-size: calc(15px * var(--sf)); }
+  .appbar nav { display: flex; gap: calc(var(--u) * 0.75); color: #5f6368; }
+  .appbar nav span:last-child { color: #7b3fbf; }
+  .formula { grid-column: 1 / -1; grid-row: 2 / span 1; display: grid; grid-template-columns: calc(5 * var(--u)) calc(2 * var(--u)) 1fr; align-items: center; border-block: 1px solid var(--grid); background: #fff; box-sizing: border-box; }
+  .formula .ref { padding-left: calc(var(--u) / 2); border-right: 1px solid var(--grid); height: 100%; font-variant-numeric: tabular-nums; }
+  .formula .fx { text-align: center; color: #9aa0a6; font-style: italic; font-family: Georgia, serif; }
+  .formula .ftext { font-family: var(--typeface-mono); font-size: calc(13px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* The grid: a row header of two squares, columns of three, rows of one. */
+  .sheet { grid-column: 1 / -1; grid-row: 3 / -2; position: relative; display: grid; grid-template-columns: calc(2 * var(--u)) repeat(30, calc(3 * var(--u))); grid-template-rows: var(--u) repeat(60, var(--u)); overflow: hidden; outline: none; cursor: cell; }
+  .corner { grid-column: 1; grid-row: 1; background: var(--head); box-shadow: inset -1px -1px 0 #c7c9cc; position: sticky; top: 0; left: 0; z-index: 3; }
+  .colh, .rowh { background: var(--head); color: #5f6368; font-size: calc(11px * var(--sf)); text-align: center; z-index: 2; }
+  .colh { grid-row: 1; box-shadow: inset -1px -1px 0 #c7c9cc; position: sticky; top: 0; }
+  .rowh { grid-column: 1; box-shadow: inset -1px -1px 0 #c7c9cc; position: sticky; left: 0; }
+  .colh.on, .rowh.on { background: #d3e3fd; color: var(--ink); font-weight: bold; }
+  .lines {
+    grid-column: 2 / -1;
+    grid-row: 2 / -1;
+    background-image: linear-gradient(90deg, transparent calc(3 * var(--u) - 1px), var(--grid) calc(3 * var(--u) - 1px)), linear-gradient(transparent calc(var(--u) - 1px), var(--grid) calc(var(--u) - 1px));
+    background-size: calc(3 * var(--u)) var(--u);
+    pointer-events: none;
+  }
+  .cell { z-index: 1; padding-inline: calc(var(--u) / 4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fff; box-shadow: inset -1px -1px 0 var(--grid); }
+  .cell.b { font-weight: bold; }
+  .cell.center { text-align: center; }
+  .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cell.muted { color: #9aa0a6; }
+  .cell.head { font-weight: bold; background: #e6f4ea; box-shadow: inset 0 -2px 0 var(--green); }
+  .cell.title { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-family: Georgia, 'Times New Roman', serif; }
+  .cell.false { color: #c5221f; }
+  .cell.note { white-space: normal; color: #5f6368; font-size: calc(12px * var(--sf)); }
+
+  /* Conditional formatting: arcana and suits in fills, weights on a red to green scale. */
+  .cell.major { background: #fef0b4; }
+  .cell.minor { background: #f1f3f4; }
+  .cell.cupsfill { background: #cfe1ff; }
+  .cell.wandsfill { background: #ffd9b8; }
+  .cell.swordsfill { background: #e3dcf7; }
+  .cell.pentfill { background: #d4efd0; }
+  .cell.w3 { background: #57bb8a; color: #fff; font-weight: bold; }
+  .cell.w2 { background: #a8d8b9; }
+  .cell.wm { background: #f4a9a2; }
+  .cell.w1 { background: #dcefe2; }
+  .cell.w0 { background: #fbe3d6; }
+  .cell.fair { background: #b7e1cd; color: #0d652d; font-weight: bold; }
+  .cell.bar { letter-spacing: 0.06em; font-size: calc(11px * var(--sf)); }
+  .bar.cups { color: #4a7fd6; }
+  .bar.wands { color: #e8823a; }
+  .bar.swords { color: #8a74d0; }
+  .bar.pent { color: #4f9d47; }
+  .bar.majorbar { color: #c9a227; }
+
+  /* A card: a merged range of three columns by eleven rows, drawn in it. */
+  .cell.tcard { padding: calc(var(--u) / 2); background: #fff; }
+  .tcard figure { margin: 0; height: 100%; display: grid; grid-template-rows: 1fr var(--u); border: 2px solid var(--ink); border-radius: calc(var(--u) * 0.4); background: #1f2550; color: #fff8e1; box-sizing: border-box; overflow: hidden; }
+  .tcard svg { width: 100%; height: 100%; padding: calc(var(--u) / 2); box-sizing: border-box; }
+  .tcard figcaption { background: #fff8e1; color: var(--ink); text-align: center; font-family: Georgia, serif; font-size: calc(12px * var(--sf)); }
+  .tcard figcaption span { margin-right: calc(var(--u) / 4); font-variant: small-caps; color: #8a6d1d; }
+  .tcard.rev figure { transform: rotate(180deg); }
+  .tcard .gold { fill: #f6c945; }
+  .tcard .water { fill: none; stroke: #7fb3ff; stroke-width: 0.12; }
+  .tcard .cup { fill: #f6c945; stroke: #fff8e1; stroke-width: 0.06; }
+  .tcard .line { stroke: #fff8e1; stroke-width: 0.1; }
+  .tcard .stone { fill: #c9c3b4; }
+  .tcard .crown { fill: #f6c945; }
+  .tcard .window { fill: #ff8a3d; }
+  .tcard .bolt { fill: none; stroke: #f6c945; stroke-width: 0.25; stroke-linejoin: round; }
+
+  .selection { z-index: 2; pointer-events: none; box-shadow: inset 0 0 0 2px #1a73e8; background: rgba(26, 115, 232, 0.06); grid-column: 3 / span 3; grid-row: 6 / span 11; }
+  .sheet:focus-visible .selection { box-shadow: inset 0 0 0 3px #1a73e8; }
+
+  /* Sheet tabs on the last row, left of the frame's chip. */
+  .tabs { grid-column: 1 / -12; grid-row: -2 / span 1; display: flex; align-items: stretch; background: #f8f9fa; border-top: 1px solid var(--grid); box-sizing: border-box; }
+  .tabs .add { width: calc(2 * var(--u)); text-align: center; color: #5f6368; }
+  .tabs .tab { padding-inline: var(--u); color: #5f6368; }
+  .tabs .tab.on { background: #e1efe5; color: var(--green); font-weight: bold; box-shadow: inset 0 -2px 0 var(--green); }
+  .tabs .sum { margin-left: auto; padding-right: var(--u); color: #5f6368; }
+
+  /* A narrow window: the sheet scrolls sideways under its headers, a fixed height of rows. */
+  :root[data-narrow] .tarot { grid-template-rows: var(--u) var(--u) calc(30 * var(--u)) var(--u); padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .appbar nav { display: none; }
+  :root[data-narrow] .sheet { grid-row: 3; height: calc(30 * var(--u)); overflow: auto; }
+  :root[data-narrow] .tabs { grid-column: 1 / -1; grid-row: 4; }
+  :root[data-narrow] .tabs .sum { display: none; }
+</style>

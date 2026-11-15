@@ -1,0 +1,384 @@
+---
+// After a quiet, expensive online shop, selling stones: one of each, photographed on a pale plinth,
+// with filters for weight and how smooth the sea has made them. Every card is a whole number of
+// squares; the grid takes as many columns and rows as the window holds and pages the rest.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="stone-shop" theme="light">
+  <main class="stage galet" id="galet">
+    <p class="galet-notice">Stones under 500 g ship free. Heavier ones travel by courier, as they should.</p>
+
+    <header class="galet-bar">
+      <a class="galet-brand" href="#galet" aria-label="Galet, home">Galet</a>
+      <nav class="galet-nav" aria-label="Shop">
+        <a href="#galet" aria-current="page">Stones</a>
+        <a href="#galet">Pairs</a>
+        <a href="#galet">Plinths</a>
+        <a href="#galet">Journal</a>
+      </nav>
+      <div class="galet-tools">
+        <a href="#galet">Search</a>
+        <a href="#galet">Account</a>
+        <a href="#galet" class="galet-bag" id="bag">Bag <span class="galet-badge" id="badge" hidden>0</span></a>
+      </div>
+    </header>
+
+    <aside class="galet-filters" aria-label="Filters">
+      <fieldset>
+        <legend>Weight</legend>
+        <div class="galet-choices" data-filter="weight">
+          <button type="button" data-value="light" aria-pressed="false">Under 200 g <span></span></button>
+          <button type="button" data-value="hand" aria-pressed="false">200 to 500 g <span></span></button>
+          <button type="button" data-value="heavy" aria-pressed="false">Over 500 g <span></span></button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Smoothness</legend>
+        <div class="galet-smooth" data-filter="smooth" id="smooth"></div>
+        <p class="galet-scale"><span>Rough</span><span>Glass</span></p>
+      </fieldset>
+      <fieldset>
+        <legend>Found on</legend>
+        <div class="galet-choices" data-filter="found">
+          <button type="button" data-value="shore" aria-pressed="false">A shore <span></span></button>
+          <button type="button" data-value="river" aria-pressed="false">A riverbed <span></span></button>
+          <button type="button" data-value="field" aria-pressed="false">A ploughed field <span></span></button>
+        </div>
+      </fieldset>
+      <fieldset class="galet-colours-set">
+        <legend>Colour</legend>
+        <div class="galet-colours" data-filter="colour" id="colours"></div>
+      </fieldset>
+      <button type="button" class="galet-clear" id="clear" hidden>Clear filters</button>
+    </aside>
+
+    <section class="galet-main" aria-labelledby="galet-title">
+      <div class="galet-head">
+        <h1 id="galet-title">Stones</h1>
+        <p class="galet-count" id="count" aria-live="polite"></p>
+        <p class="galet-sort">Sorted by most recently found</p>
+      </div>
+      <ul class="galet-grid" id="grid"></ul>
+      <nav class="galet-pager" id="pager" aria-label="Pages"></nav>
+    </section>
+
+    <p class="galet-toast" id="toast" role="status"></p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Colour = 'slate' | 'chalk' | 'basalt' | 'jasper' | 'flint' | 'moss';
+  interface Stone {
+    no: string; name: string; grams: number; place: string; found: 'shore' | 'river' | 'field';
+    smooth: number; colour: Colour; price: number; sold?: boolean; band?: boolean; hole?: boolean; seed: number; long: number;
+  }
+
+  // The stock: one of each, as a stone shop has it.
+  const STONES: Stone[] = [
+    { no: '114', name: 'Grey with one white band', grams: 312, place: 'Skagen, low tide', found: 'shore', smooth: 4, colour: 'slate', price: 48, band: true, seed: 3, long: 1.35 },
+    { no: '113', name: 'Basalt egg', grams: 428, place: 'Reynisfjara', found: 'shore', smooth: 5, colour: 'basalt', price: 64, seed: 11, long: 1.25 },
+    { no: '112', name: 'Chalk that writes on slate', grams: 96, place: 'Møns Klint', found: 'shore', smooth: 2, colour: 'chalk', price: 18, seed: 5, long: 1.1 },
+    { no: '111', name: 'Red jasper, thumb-sized', grams: 41, place: 'Bornholm, Sorthat', found: 'shore', smooth: 5, colour: 'jasper', price: 36, seed: 21, long: 1.5 },
+    { no: '110', name: 'Hag stone, holed through', grams: 188, place: 'Dungeness', found: 'shore', smooth: 3, colour: 'flint', price: 120, hole: true, seed: 8, long: 1.2 },
+    { no: '109', name: 'Mossy greenstone', grams: 655, place: 'The Tay, below the weir', found: 'river', smooth: 4, colour: 'moss', price: 92, seed: 14, long: 1.4 },
+    { no: '108', name: 'Flint, one edge still sharp', grams: 274, place: 'A beet field near Odense', found: 'field', smooth: 1, colour: 'flint', price: 30, seed: 2, long: 1.3, sold: true },
+    { no: '107', name: 'Pair-less slate, very flat', grams: 143, place: 'Ballachulish', found: 'shore', smooth: 4, colour: 'slate', price: 26, seed: 31, long: 1.8 },
+    { no: '106', name: 'Granite, a sleeping shape', grams: 1240, place: 'The Gudenå at Tvilum', found: 'river', smooth: 4, colour: 'chalk', price: 140, seed: 17, long: 1.55 },
+    { no: '105', name: 'Basalt with a quartz ring', grams: 366, place: 'Giant’s Causeway, north side', found: 'shore', smooth: 5, colour: 'basalt', price: 110, band: true, seed: 40, long: 1.2 },
+    { no: '104', name: 'Ploughed-up field stone', grams: 802, place: 'Stevns, after rain', found: 'field', smooth: 2, colour: 'slate', price: 54, seed: 23, long: 1.15 },
+    { no: '103', name: 'Glass-smooth jasper', grams: 77, place: 'Lyme Regis', found: 'shore', smooth: 5, colour: 'jasper', price: 58, seed: 9, long: 1.3, sold: true },
+    { no: '102', name: 'Green schist, one good edge', grams: 233, place: 'Glen Etive', found: 'river', smooth: 3, colour: 'moss', price: 34, seed: 27, long: 1.65 },
+    { no: '101', name: 'Chalk heart, mostly', grams: 152, place: 'Étretat', found: 'shore', smooth: 3, colour: 'chalk', price: 44, seed: 33, long: 1.05 },
+    { no: '100', name: 'The hundredth stone', grams: 512, place: 'Our own doorstep', found: 'field', smooth: 3, colour: 'flint', price: 100, seed: 50, long: 1.25 },
+    { no: '099', name: 'Slate skimmer, eleven bounces', grams: 88, place: 'Loch Fyne', found: 'shore', smooth: 4, colour: 'slate', price: 22, seed: 12, long: 1.7 },
+    { no: '098', name: 'Basalt with a thumb dimple', grams: 297, place: 'The Rhône at Seyssel', found: 'river', smooth: 4, colour: 'basalt', price: 46, seed: 44, long: 1.35 },
+    { no: '097', name: 'Banded chalk, three lines', grams: 410, place: 'Seven Sisters', found: 'shore', smooth: 3, colour: 'chalk', price: 62, band: true, seed: 6, long: 1.4 },
+    { no: '096', name: 'Flint nodule with a face', grams: 690, place: 'A field at Lejre', found: 'field', smooth: 2, colour: 'flint', price: 74, seed: 19, long: 1.2 },
+    { no: '095', name: 'Jasper pair, sold as one', grams: 120, place: 'Skagen, the north point', found: 'shore', smooth: 4, colour: 'jasper', price: 70, seed: 37, long: 1.45 },
+    { no: '094', name: 'Moss agate, wet look', grams: 64, place: 'The Spey', found: 'river', smooth: 5, colour: 'moss', price: 52, seed: 29, long: 1.25 },
+    { no: '093', name: 'Doorstop granite', grams: 2150, place: 'Hammershus', found: 'field', smooth: 2, colour: 'chalk', price: 160, seed: 16, long: 1.3 },
+    { no: '092', name: 'Slate oval, faintly fossiled', grams: 205, place: 'Kimmeridge Bay', found: 'shore', smooth: 4, colour: 'slate', price: 40, seed: 48, long: 1.5 },
+    { no: '091', name: 'Basalt bead, a hole half made', grams: 58, place: 'Vík', found: 'shore', smooth: 5, colour: 'basalt', price: 32, seed: 52, long: 1.15 },
+  ];
+
+  const INKS: Record<Colour, { label: string; light: string; mid: string; dark: string; fleck: string }> = {
+    slate:  { label: 'Slate',  light: '#9aa1a3', mid: '#6d7579', dark: '#40474b', fleck: '#d7dbdc' },
+    chalk:  { label: 'Chalk',  light: '#f3f1ea', mid: '#d6d2c6', dark: '#a8a397', fleck: '#8c877b' },
+    basalt: { label: 'Basalt', light: '#5d5f63', mid: '#35373b', dark: '#1a1b1e', fleck: '#8a8c90' },
+    jasper: { label: 'Jasper', light: '#c98a73', mid: '#9d5741', dark: '#5f2c20', fleck: '#e8c1ad' },
+    flint:  { label: 'Flint',  light: '#a99f92', mid: '#776c60', dark: '#463e36', fleck: '#e3ddd2' },
+    moss:   { label: 'Moss',   light: '#9aa88a', mid: '#66755a', dark: '#38432f', fleck: '#cfd8c2' },
+  };
+  const SMOOTH_WORDS = ['', 'Rough', 'Weathered', 'Worn', 'River-smooth', 'Glass'];
+
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const f = (n: number) => n.toFixed(2);
+
+  /** A stone as one closed shape: low harmonics give it its outline, high ones its roughness. */
+  function outline(stone: Pick<Stone, 'seed' | 'long' | 'smooth'>, cx: number, cy: number, r: number) {
+    const random = seeded(stone.seed * 7919 + 1);
+    const low = [2, 3, 4].map(k => ({ k, a: (0.03 + random() * 0.07) / (k - 1), p: random() * Math.PI * 2 }));
+    const rough = 0.05 * (5 - stone.smooth) / 4;
+    const high = [7, 9, 13, 17].map(k => ({ k, a: rough * (0.4 + random() * 0.6) / Math.sqrt(k / 7), p: random() * Math.PI * 2 }));
+    const tilt = (random() - 0.5) * 0.7;
+    const points: [number, number][] = [];
+    const steps = 96;
+    for (let i = 0; i < steps; i++) {
+      const t = (i / steps) * Math.PI * 2;
+      let radius = 1;
+      for (const h of [...low, ...high]) radius += h.a * Math.cos(h.k * t + h.p);
+      const x = Math.cos(t) * radius * r * stone.long, y = Math.sin(t) * radius * r;
+      points.push([cx + x * Math.cos(tilt) - y * Math.sin(tilt), cy + x * Math.sin(tilt) + y * Math.cos(tilt)]);
+    }
+    // A closed Catmull-Rom curve through the points.
+    let d = `M ${f(points[0][0])} ${f(points[0][1])}`;
+    for (let i = 0; i < steps; i++) {
+      const p0 = points[(i - 1 + steps) % steps], p1 = points[i], p2 = points[(i + 1) % steps], p3 = points[(i + 2) % steps];
+      d += ` C ${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+    }
+    return { d: d + ' Z', tilt };
+  }
+
+  function drawStone(stone: Stone, size: number) {
+    const id = `s${stone.no}`;
+    const ink = INKS[stone.colour];
+    const random = seeded(stone.seed * 104729 + 3);
+    const r = size * 0.31 / Math.sqrt(stone.long);
+    const cx = size / 2, cy = size * 0.48;
+    const { d, tilt } = outline(stone, cx, cy, r);
+    let flecks = '';
+    const count = stone.smooth >= 5 ? 14 : 40;
+    for (let i = 0; i < count; i++) {
+      const a = random() * Math.PI * 2, q = Math.sqrt(random()) * r * 1.1;
+      flecks += `<circle cx="${f(cx + Math.cos(a) * q * stone.long)}" cy="${f(cy + Math.sin(a) * q)}" r="${f(size * (0.002 + random() * 0.005))}" fill="${ink.fleck}" opacity="${f(0.25 + random() * 0.45)}"/>`;
+    }
+    const deg = (tilt * 180) / Math.PI;
+    const band = stone.band ? `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(r * 0.18)}" ry="${f(r * 1.4)}" transform="rotate(${f(deg + 12)} ${f(cx)} ${f(cy)})" fill="none" stroke="#f4f2ec" stroke-width="${f(size * 0.018)}" opacity="0.85"/>` : '';
+    const hole = stone.hole ? `<ellipse cx="${f(cx + r * 0.35)}" cy="${f(cy - r * 0.1)}" rx="${f(r * 0.2)}" ry="${f(r * 0.16)}" fill="var(--ground)" stroke="${ink.dark}" stroke-width="${f(size * 0.01)}"/>` : '';
+    return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true">
+      <defs>
+        <radialGradient id="${id}-g" cx="0.36" cy="0.3" r="0.85"><stop offset="0" stop-color="${ink.light}"/><stop offset="0.55" stop-color="${ink.mid}"/><stop offset="1" stop-color="${ink.dark}"/></radialGradient>
+        <radialGradient id="${id}-sh" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#2a2a26" stop-opacity="0.32"/><stop offset="1" stop-color="#2a2a26" stop-opacity="0"/></radialGradient>
+        <clipPath id="${id}-c"><path d="${d}"/></clipPath>
+      </defs>
+      <ellipse cx="${f(cx + r * 0.12)}" cy="${f(cy + r * 1.02)}" rx="${f(r * stone.long * 1.15)}" ry="${f(r * 0.32)}" fill="url(#${id}-sh)"/>
+      <path d="${d}" fill="url(#${id}-g)"/>
+      <g clip-path="url(#${id}-c)">${flecks}${band}<ellipse cx="${f(cx - r * 0.35)}" cy="${f(cy - r * 0.45)}" rx="${f(r * 0.5)}" ry="${f(r * 0.22)}" fill="#fff" opacity="${f(0.05 + stone.smooth * 0.035)}"/></g>
+      ${hole}
+    </svg>`;
+  }
+
+  // Filters.
+  const chosen: Record<string, Set<string>> = { weight: new Set(), smooth: new Set(), found: new Set(), colour: new Set() };
+  const weightOf = (g: number) => (g < 200 ? 'light' : g <= 500 ? 'hand' : 'heavy');
+  const matches = (s: Stone, skip?: string) =>
+    (skip === 'weight' || !chosen.weight.size || chosen.weight.has(weightOf(s.grams))) &&
+    (skip === 'smooth' || !chosen.smooth.size || chosen.smooth.has(String(s.smooth))) &&
+    (skip === 'found' || !chosen.found.size || chosen.found.has(s.found)) &&
+    (skip === 'colour' || !chosen.colour.size || chosen.colour.has(s.colour));
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const grid = $('grid'), pager = $('pager'), count = $('count'), toast = $('toast'), badge = $('badge'), clear = $('clear');
+
+  // The smoothness scale: five small stones, from rough to glass, each a button.
+  $('smooth').innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" data-value="${n}" aria-pressed="false" aria-label="${SMOOTH_WORDS[n]}" title="${SMOOTH_WORDS[n]}">${drawStone({ ...STONES[0], seed: 60 + n, smooth: n, long: 1.25, colour: 'slate', band: false } as Stone, 40).replace('viewBox="0 0 40 40"', 'viewBox="7 6 26 26"')}</button>`).join('');
+  $('colours').innerHTML = (Object.keys(INKS) as Colour[]).map(c => `<button type="button" data-value="${c}" aria-pressed="false" aria-label="${INKS[c].label}" title="${INKS[c].label}" style="--swatch: ${INKS[c].mid}"></button>`).join('');
+
+  let page = 0;
+  let layout = { cols: 4, rows: 2, card: 13, plinth: 10, gap: 2 };
+  const bag: string[] = [];
+
+  function counts() {
+    for (const group of document.querySelectorAll<HTMLElement>('.galet-choices')) {
+      const filter = group.dataset.filter!;
+      for (const button of group.querySelectorAll<HTMLButtonElement>('button')) {
+        const value = button.dataset.value!;
+        const n = STONES.filter(s => matches(s, filter) && (filter === 'weight' ? weightOf(s.grams) : s[filter as 'found']) === value).length;
+        button.querySelector('span')!.textContent = String(n);
+      }
+    }
+  }
+
+  function render() {
+    const shown = STONES.filter(s => matches(s));
+    const per = Math.max(1, layout.cols * layout.rows);
+    const pages = Math.max(1, Math.ceil(shown.length / per));
+    page = Math.min(page, pages - 1);
+    const any = Object.values(chosen).some(set => set.size);
+    clear.hidden = !any;
+    count.textContent = shown.length === 0 ? 'No stones like that yet. The sea is working on it.' : `${shown.length} ${shown.length === 1 ? 'stone' : 'stones'}, one of each`;
+    const unit = 200;
+    grid.innerHTML = shown.slice(page * per, page * per + per).map(s => `
+      <li class="galet-card${s.sold ? ' is-sold' : ''}">
+        <div class="galet-plinth">${drawStone(s, unit)}<span class="galet-no">No. ${s.no}</span>${s.sold ? '<span class="galet-flag">Returned to the sea</span>' : ''}</div>
+        <p class="galet-name">${s.name}</p>
+        <p class="galet-meta">${s.grams.toLocaleString('en-GB')} g, ${s.place}</p>
+        <p class="galet-price">${s.sold ? 'Sold' : `€${s.price}`}</p>
+        ${s.sold ? '' : `<button type="button" class="galet-add" data-no="${s.no}" aria-label="Add No. ${s.no} to the bag">${bag.includes(s.no) ? 'In your bag' : 'Add to bag'}</button>`}
+      </li>`).join('');
+    pager.innerHTML = pages < 2 ? '' : [...Array(pages)].map((_, i) => `<button type="button" data-page="${i}"${i === page ? ' aria-current="page"' : ''}>${i + 1}</button>`).join('') + (page < pages - 1 ? `<button type="button" data-page="${page + 1}" class="galet-next">Next page</button>` : '');
+    counts();
+  }
+
+  document.querySelector('.galet-filters')!.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-value]');
+    if (!button) return;
+    const set = chosen[button.closest<HTMLElement>('[data-filter]')!.dataset.filter!];
+    const value = button.dataset.value!;
+    set.has(value) ? set.delete(value) : set.add(value);
+    button.setAttribute('aria-pressed', String(set.has(value)));
+    page = 0;
+    render();
+  });
+  clear.addEventListener('click', () => {
+    Object.values(chosen).forEach(set => set.clear());
+    document.querySelectorAll('.galet-filters [aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    render();
+  });
+  pager.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-page]');
+    if (button) { page = Number(button.dataset.page); render(); }
+  });
+  let toastTimer = 0;
+  grid.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.galet-add');
+    if (!button || bag.includes(button.dataset.no!)) return;
+    bag.push(button.dataset.no!);
+    button.textContent = 'In your bag';
+    badge.hidden = false;
+    badge.textContent = String(bag.length);
+    const stone = STONES.find(s => s.no === button.dataset.no)!;
+    toast.textContent = `No. ${stone.no} is in your bag. It will be wrapped in undyed linen.`;
+    toast.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove('is-on'), 3200);
+  });
+
+  // The grid takes the window: as many cards as fit at a readable size, the rest on further pages.
+  onSquares(({ across, down, narrow }) => {
+    const stage = $('galet');
+    if (narrow) {
+      layout = { cols: 1, rows: 6, card: across - 2, plinth: across - 4, gap: 2 };
+      stage.style.setProperty('--gap', '2');
+    } else {
+      const left = across >= 56 ? 14 : 12;
+      const main = across - left - 1;
+      // Try every column count; keep the one that shows the most stones, the larger card on a tie.
+      const room = down - 14;
+      let best = { cols: 2, rows: 1, card: 12, plinth: 9, gap: 2, total: 0 };
+      for (let cols = 2; cols < 9; cols++) {
+        const card = Math.floor((main - 2 * (cols - 1)) / cols);
+        if (card < 10) break;
+        const plinth = Math.min(Math.round(card * 0.75), room - 4);
+        const rows = Math.max(1, Math.floor((room + 2) / (plinth + 6)));
+        const gap = Math.min(4, Math.floor((main - card * cols) / (cols - 1)));
+        if (cols * rows > best.total) best = { cols, rows, card, plinth, gap, total: cols * rows };
+      }
+      layout = best;
+      stage.style.setProperty('--gap', String(best.gap));
+      stage.style.setProperty('--left-line', String(left - 1));
+      stage.style.setProperty('--main-line', String(left + 1));
+    }
+    stage.style.setProperty('--cols', String(layout.cols));
+    stage.style.setProperty('--card', String(layout.card));
+    stage.style.setProperty('--plinth', String(layout.plinth));
+    render();
+  });
+</script>
+
+<style is:global>
+  html { background: #f1f1ee; }
+  .galet {
+    --paper: #f1f1ee;
+    --ground: #e6e5e0;
+    --ink: #2c2c29;
+    --quiet: #85847d;
+    --line: #d8d7d1;
+    --cols: 4;
+    --card: 13;
+        background: var(--paper);
+    color: var(--ink);
+    font-family: var(--typeface-regular);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .galet button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  .galet a { color: inherit; text-decoration: none; }
+  .galet :is(a, button):focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+
+  .galet-notice { grid-column: 1 / -1; grid-row: 1; margin: 0; text-align: center; color: var(--quiet); font-size: calc(12px * var(--sf)); border-bottom: 1px solid var(--line); }
+
+  .galet-bar { grid-column: 2 / -2; grid-row: 3 / span 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+  .galet-brand { font-family: var(--typeface-canon); font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.01em; }
+  .galet-nav { display: flex; gap: calc(2 * var(--u)); }
+  .galet-nav a[aria-current] { text-decoration: underline; text-underline-offset: calc(5px * var(--sf)); text-decoration-thickness: 1px; }
+  .galet-tools { display: flex; gap: calc(2 * var(--u)); justify-content: end; }
+  .galet-bag { display: inline-flex; gap: calc(var(--u) / 2); align-items: center; }
+  .galet-badge { display: inline-grid; place-items: center; min-width: var(--u); height: var(--u); padding-inline: calc(var(--u) / 4); box-sizing: border-box; border-radius: calc(var(--u) / 2); background: var(--ink); color: var(--paper); font-size: calc(11px * var(--sf)); font-variant-numeric: tabular-nums; }
+  .galet-badge[hidden] { display: none; }
+
+  /* Filters: a column of quiet choices, each one square high. */
+  .galet-filters { grid-column: 2 / var(--left-line, 13); grid-row: 8 / -2; display: grid; align-content: start; gap: calc(2 * var(--u)); }
+  .galet-filters fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+  .galet-filters legend { padding: 0; margin-bottom: var(--u); font-family: var(--typeface-canon); font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  .galet-choices { display: grid; }
+  .galet-choices button { display: flex; justify-content: space-between; height: var(--u); text-align: left; color: var(--quiet); }
+  .galet-choices button::before { content: ''; width: calc(10px * var(--sf)); height: calc(10px * var(--sf)); margin: calc(5px * var(--sf)) calc(10px * var(--sf)) 0 0; border: 1px solid var(--quiet); box-sizing: border-box; flex: none; }
+  .galet-choices button[aria-pressed='true'] { color: var(--ink); }
+  .galet-choices button[aria-pressed='true']::before { background: var(--ink); border-color: var(--ink); }
+  .galet-choices button span { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .galet-smooth { display: grid; grid-template-columns: repeat(5, calc(2 * var(--u))); height: calc(2 * var(--u)); }
+  .galet-smooth button { width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; opacity: 0.5; }
+  .galet-smooth button svg { display: block; width: 100%; height: 100%; }
+  .galet-smooth button[aria-pressed='true'] { opacity: 1; background: var(--ground); }
+  .galet-scale { display: flex; justify-content: space-between; width: calc(10 * var(--u)); margin: 0; color: var(--quiet); font-size: calc(11px * var(--sf)); }
+  .galet-colours { display: grid; grid-template-columns: repeat(6, var(--u)); gap: 0 calc(var(--u) / 2); }
+  .galet-colours button { width: var(--u); height: var(--u); border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12); }
+  .galet-colours button[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
+  .galet-clear { justify-self: start; text-decoration: underline; text-underline-offset: calc(4px * var(--sf)); color: var(--quiet); }
+  .galet-clear[hidden] { display: none; }
+
+  /* The products. */
+  .galet-main { grid-column: var(--main-line, 15) / -2; grid-row: 6 / -1; display: grid; grid-template-rows: calc(4 * var(--u)) auto 1fr; min-width: 0; }
+  .galet-head { display: grid; grid-template-columns: auto 1fr auto; align-items: end; column-gap: calc(2 * var(--u)); border-bottom: 1px solid var(--line); margin-bottom: calc(2 * var(--u)); padding-bottom: calc(var(--u) - 1px); }
+  .galet-head h1 { margin: 0; font-family: var(--typeface-canon); font-weight: normal; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; }
+  .galet-count, .galet-sort { margin: 0; color: var(--quiet); }
+  .galet-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols), calc(var(--card) * var(--u))); grid-auto-rows: calc((var(--plinth) + 4) * var(--u)); gap: calc(2 * var(--u)) calc(var(--gap, 2) * var(--u)); align-content: start; }
+  .galet-card { position: relative; display: grid; grid-template-rows: calc(var(--plinth) * var(--u)) var(--u) var(--u) var(--u); grid-template-columns: 1fr auto; column-gap: var(--u); }
+  .galet-plinth { grid-column: 1 / -1; position: relative; background: var(--ground); display: grid; place-items: center; overflow: hidden; margin-bottom: var(--u); height: calc((var(--plinth) - 1) * var(--u)); }
+  .galet-plinth svg { width: 100%; height: 100%; }
+  .galet-name { grid-column: 1 / -1; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--typeface-canon); font-size: calc(15px * var(--sf)); }
+  .galet-no { position: absolute; right: var(--u); bottom: var(--u); line-height: var(--u); color: var(--quiet); font-size: calc(11px * var(--sf)); font-variant-numeric: tabular-nums; }
+  .galet-meta { grid-column: 1; grid-row: 3; margin: 0; color: var(--quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .galet-price { grid-column: 2; grid-row: 3; margin: 0; font-variant-numeric: tabular-nums; }
+  .galet-add { grid-column: 1 / -1; justify-self: start; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: calc(4px * var(--sf)); }
+  .galet-add:hover { text-decoration-color: var(--ink); }
+  .galet-card.is-sold .galet-plinth svg { filter: grayscale(0.6); opacity: 0.45; }
+  .galet-card.is-sold :is(.galet-name, .galet-price) { color: var(--quiet); }
+  .galet-flag { position: absolute; left: var(--u); top: var(--u); font-size: calc(12px * var(--sf)); color: var(--quiet); font-style: italic; font-family: var(--typeface-canon); }
+
+  .galet-pager { position: absolute; left: 0; bottom: var(--u); display: flex; gap: var(--u); height: var(--u); }
+  .galet-main { position: relative; }
+  .galet-pager button { min-width: var(--u); color: var(--quiet); font-variant-numeric: tabular-nums; }
+  .galet-pager button[aria-current] { color: var(--ink); text-decoration: underline; text-underline-offset: calc(4px * var(--sf)); }
+  .galet-next { margin-left: var(--u); }
+
+  .galet-toast { position: fixed; right: var(--u); top: calc(6 * var(--u)); margin: 0; padding: var(--u); width: calc(18 * var(--u)); box-sizing: border-box; background: var(--ink); color: var(--paper); line-height: var(--u); opacity: 0; transform: translateY(calc(var(--u) / -2)); transition: opacity 240ms ease, transform 240ms ease; pointer-events: none; z-index: 5; }
+  .galet-toast.is-on { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .galet-toast { transition: none; } }
+
+  /* A narrow window: the filters fold to rows above the stones, one card to a row. */
+  :root[data-narrow] .galet { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .galet-notice { grid-row: auto; padding-inline: var(--u); line-height: var(--u); }
+  :root[data-narrow] .galet-bar { grid-row: auto; grid-template-columns: 1fr auto; margin-top: var(--u); }
+  :root[data-narrow] .galet-nav { display: none; }
+  :root[data-narrow] .galet-tools a:not(.galet-bag) { display: none; }
+  :root[data-narrow] .galet-filters { grid-column: 2 / -2; grid-row: auto; grid-template-columns: 1fr; gap: calc(2 * var(--u)); margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .galet-colours-set { grid-column: 1 / -1; }
+  :root[data-narrow] .galet-main { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .galet-head { grid-template-columns: 1fr; }
+  :root[data-narrow] .galet-sort { display: none; }
+  :root[data-narrow] .galet-pager { position: static; margin-top: calc(2 * var(--u)); }
+</style>

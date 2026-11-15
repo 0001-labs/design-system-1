@@ -1,0 +1,353 @@
+---
+// After the glossy desktop software of the early 2000s: pinstripes, brushed metal, gel buttons and
+// a weather window whose every bead, capsule and bar is lit from above, but cut to whole squares.
+// Choose a city; the barometer swings and the umbrella meter fills. Weatherglass is invented.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="jelly-weather" theme="light">
+  <main class="stage jw" id="jw">
+    <svg width="0" height="0" class="jw-defs" aria-hidden="true">
+      <defs>
+        <radialGradient id="jw-sun" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff6a8" /><stop offset="0.45" stop-color="#ffc21c" /><stop offset="1" stop-color="#e86a00" /></radialGradient>
+        <linearGradient id="jw-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#c3d8ee" /></linearGradient>
+        <linearGradient id="jw-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa6b4" /><stop offset="1" stop-color="#4f5b69" /></linearGradient>
+        <linearGradient id="jw-drop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe6ff" /><stop offset="1" stop-color="#1d7fe0" /></linearGradient>
+        <linearGradient id="jw-bolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff59a" /><stop offset="1" stop-color="#ffb000" /></linearGradient>
+        <linearGradient id="jw-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.95" /><stop offset="1" stop-color="#fff" stop-opacity="0.08" /></linearGradient>
+      </defs>
+    </svg>
+
+    <section class="jw-window" aria-labelledby="jw-title">
+      <div class="jw-metal" aria-hidden="true"></div>
+      <div class="jw-lights" aria-hidden="true"><span class="jw-gel jw-gel-blue"></span><span class="jw-gel jw-gel-graphite"></span></div>
+      <h1 class="jw-title" id="jw-title">Weatherglass</h1>
+      <div class="jw-segments" role="group" aria-label="Show">
+        <button type="button" aria-pressed="true">Now</button><button type="button" aria-pressed="false" disabled>Hours</button><button type="button" aria-pressed="false" disabled>Tides</button>
+      </div>
+      <label class="jw-search"><span class="jw-sr">Search cities</span><input type="search" placeholder="Search cities" id="jw-search" /></label>
+      <button type="button" class="jw-pill" id="jw-refresh">Refresh</button>
+
+      <nav class="jw-cities" aria-label="Cities"><ul id="jw-cities"></ul></nav>
+
+      <div class="jw-main" aria-live="polite">
+        <div class="jw-orb" id="jw-orb"></div>
+        <p class="jw-temp" id="jw-temp">11°</p>
+        <h2 class="jw-city" id="jw-city">Bergen</h2>
+        <p class="jw-says" id="jw-says">Rain, as usual.</p>
+        <dl class="jw-facts" id="jw-facts"></dl>
+        <figure class="jw-hours"><figcaption>Chance of rain, the next twelve hours</figcaption><ol id="jw-hours"></ol></figure>
+        <ol class="jw-week" id="jw-week" aria-label="The week"></ol>
+      </div>
+
+      <div class="jw-status">
+        <div class="jw-bar" id="jw-bar" role="progressbar" aria-label="Updating forecast" aria-valuemin="0" aria-valuemax="100"><span></span></div>
+        <p id="jw-updated">Updating forecast…</p>
+      </div>
+    </section>
+
+    <section class="jw-widget jw-baro" aria-label="Barometer">
+      <svg viewBox="0 0 18 18" id="jw-baro" role="img" aria-label="Barometer"></svg>
+    </section>
+    <section class="jw-widget jw-umbrella" aria-labelledby="jw-umb-title">
+      <h2 id="jw-umb-title">Umbrella</h2>
+      <div class="jw-meter" aria-hidden="true"><span id="jw-meter"></span></div>
+      <p id="jw-umb">Take it. Take two.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { reducedMotion } from '../../../lib/aligned-study';
+
+  type Sky = 'sun' | 'cloud' | 'rain' | 'snow' | 'storm' | 'fog';
+  interface City { name: string; temp: number; sky: Sky; says: string; wind: string; wet: number; sunset: string; hpa: number; rain: number; umbrella: string; week: [string, Sky, number, number][] }
+  const DAYS = ['Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed'];
+  const week = (skies: Sky[], highs: number[], lows: number[]) => DAYS.map((d, i) => [d, skies[i], highs[i], lows[i]] as [string, Sky, number, number]);
+  const CITIES: City[] = [
+    { name: 'Bergen', temp: 11, sky: 'rain', says: 'Rain, as usual.', wind: 'SW 9 m/s', wet: 91, sunset: '15.42', hpa: 994, rain: 96, umbrella: 'Take it. Take two.', week: week(['rain', 'rain', 'rain', 'cloud', 'rain', 'rain', 'sun'], [11, 10, 9, 9, 10, 8, 7], [7, 6, 6, 5, 6, 4, 2]) },
+    { name: 'Reykjavík', temp: 2, sky: 'snow', says: 'Snow showers, then more snow.', wind: 'N 14 m/s', wet: 84, sunset: '16.05', hpa: 982, rain: 70, umbrella: 'The wind will take it. Wear a hood.', week: week(['snow', 'snow', 'cloud', 'snow', 'storm', 'cloud', 'snow'], [2, 1, 3, 0, 1, 2, -1], [-2, -3, -1, -4, -2, -3, -5]) },
+    { name: 'Lisbon', temp: 19, sky: 'sun', says: 'Clear. Washing dries by noon.', wind: 'NW 4 m/s', wet: 58, sunset: '17.21', hpa: 1024, rain: 4, umbrella: 'Leave it on the hook.', week: week(['sun', 'sun', 'cloud', 'sun', 'sun', 'sun', 'cloud'], [19, 20, 18, 19, 21, 21, 18], [12, 13, 12, 11, 13, 14, 12]) },
+    { name: 'Kyoto', temp: 14, sky: 'cloud', says: 'Overcast. The maples do not mind.', wind: 'E 2 m/s', wet: 66, sunset: '16.51', hpa: 1013, rain: 30, umbrella: 'A folding one, in the bag.', week: week(['cloud', 'cloud', 'rain', 'sun', 'sun', 'cloud', 'rain'], [14, 15, 12, 16, 17, 15, 13], [7, 8, 9, 6, 7, 8, 9]) },
+    { name: 'Valparaíso', temp: 16, sky: 'fog', says: 'Fog off the bay, gone by eleven.', wind: 'SW 6 m/s', wet: 79, sunset: '20.37', hpa: 1016, rain: 12, umbrella: 'No. The fog does not fall, it waits.', week: week(['fog', 'sun', 'sun', 'fog', 'cloud', 'sun', 'sun'], [16, 19, 21, 17, 18, 20, 22], [11, 11, 12, 12, 11, 12, 13]) },
+    { name: 'Darwin', temp: 33, sky: 'storm', says: 'Storm at four, on the dot.', wind: 'NW 5 m/s', wet: 74, sunset: '18.59', hpa: 1006, rain: 82, umbrella: 'Yes, and run.', week: week(['storm', 'storm', 'sun', 'storm', 'rain', 'storm', 'storm'], [33, 34, 35, 33, 31, 33, 34], [25, 26, 26, 25, 24, 25, 26]) },
+  ];
+
+  // A weather glyph in forty units: glossy shapes lit from above.
+  const CLOUD = 'M 9 29 a 6 6 0 0 1 1 -11.9 a 9 9 0 0 1 17 -2 a 7 7 0 0 1 4 13.9 Z';
+  function glyph(sky: Sky): string {
+    const cloud = (fill: string) => `<path d="${CLOUD}" fill="url(#${fill})" stroke="#7d9cc0" stroke-width="0.8"/><path d="M 12 17 a 9 6 0 0 1 16 -1 a 12 4 0 0 1 -16 1 Z" fill="url(#jw-gloss)" opacity="0.8"/>`;
+    const drops = [11, 19, 27].map((x, i) => `<path d="M ${x} ${31 + (i % 2) * 2} q 2.4 3.6 0 5.6 q -2.4 -2 0 -5.6 Z" fill="url(#jw-drop)" stroke="#1767b8" stroke-width="0.5"/>`).join('');
+    switch (sky) {
+      case 'sun': return `<circle cx="20" cy="20" r="13" fill="url(#jw-sun)" stroke="#d26000" stroke-width="0.8"/><ellipse cx="18" cy="13" rx="8" ry="5" fill="url(#jw-gloss)"/>`;
+      case 'cloud': return `<circle cx="27" cy="13" r="7" fill="url(#jw-sun)"/>${cloud('jw-cloud')}`;
+      case 'rain': return `<g transform="translate(0 -4)">${cloud('jw-cloud')}</g>${drops}`;
+      case 'snow': return `<g transform="translate(0 -4)">${cloud('jw-cloud')}</g>${[11, 19, 27].map((x, i) => `<circle cx="${x}" cy="${33 + (i % 2) * 2}" r="2.1" fill="#fff" stroke="#6f9fd0" stroke-width="0.7"/>`).join('')}`;
+      case 'storm': return `<g transform="translate(0 -4)">${cloud('jw-dark')}</g><path d="M 21 24 L 14 33 L 19 33 L 16 40 L 26 29 L 21 29 L 24 24 Z" fill="url(#jw-bolt)" stroke="#c98200" stroke-width="0.6"/>`;
+      case 'fog': return [14, 21, 28].map((y, i) => `<rect x="${6 + i * 2}" y="${y}" width="${28 - i * 4}" height="4.5" rx="2.25" fill="url(#jw-cloud)" stroke="#91a9c4" stroke-width="0.6"/>`).join('') + `<circle cx="28" cy="10" r="5" fill="url(#jw-sun)" opacity="0.7"/>`;
+    }
+  }
+  const svg = (sky: Sky, label?: string) => `<svg viewBox="0 0 40 40" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'}>${glyph(sky)}</svg>`;
+  const SKY_WORDS: Record<Sky, string> = { sun: 'Sunny', cloud: 'Cloudy', rain: 'Rain', snow: 'Snow', storm: 'Thunderstorm', fog: 'Fog' };
+  const ORB: Record<Sky, [string, string]> = { sun: ['#bfe8ff', '#3a9be8'], cloud: ['#dfeaf5', '#7e9ab8'], rain: ['#a9cdea', '#3d6f9e'], snow: ['#f1f7ff', '#9db8d6'], storm: ['#8f98a6', '#2c3542'], fog: ['#e8ecef', '#9aa7b2'] };
+
+  const list = document.getElementById('jw-cities')!;
+  const search = document.getElementById('jw-search') as HTMLInputElement;
+  let current = CITIES[0];
+
+  CITIES.forEach(city => {
+    const li = document.createElement('li');
+    li.innerHTML = `<button type="button"><span class="jw-bead">${svg(city.sky)}</span><span class="jw-name">${city.name}</span><span class="jw-deg">${city.temp}°</span></button>`;
+    li.querySelector('button')!.addEventListener('click', () => { current = city; render(); });
+    list.append(li);
+  });
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    [...list.children].forEach((li, i) => ((li as HTMLElement).hidden = !!q && !CITIES[i].name.toLowerCase().includes(q)));
+  });
+
+  function render() {
+    const c = current;
+    [...list.children].forEach((li, i) => li.querySelector('button')!.setAttribute('aria-current', String(CITIES[i] === c)));
+    const [light, deep] = ORB[c.sky];
+    const orb = document.getElementById('jw-orb')!;
+    orb.style.setProperty('--orb-light', light);
+    orb.style.setProperty('--orb-deep', deep);
+    orb.innerHTML = svg(c.sky, SKY_WORDS[c.sky]);
+    document.getElementById('jw-temp')!.textContent = `${c.temp}°`;
+    document.getElementById('jw-city')!.textContent = c.name;
+    document.getElementById('jw-says')!.textContent = c.says;
+    document.getElementById('jw-facts')!.innerHTML = `<div><dt>Wind</dt><dd>${c.wind}</dd></div><div><dt>Humidity</dt><dd>${c.wet} %</dd></div><div><dt>Sunset</dt><dd>${c.sunset}</dd></div><div><dt>Pressure</dt><dd>${c.hpa} hPa</dd></div>`;
+    document.getElementById('jw-week')!.innerHTML = c.week.map(([d, sky, hi, lo]) => `<li><b>${d}</b>${svg(sky, SKY_WORDS[sky])}<span class="jw-hi">${hi}°</span><span class="jw-lo">${lo}°</span></li>`).join('');
+    // Twelve gel bars for the hours from now, swelling and easing around the day's chance of rain.
+    document.getElementById('jw-hours')!.innerHTML = Array.from({ length: 12 }, (_, h) => {
+      const chance = Math.max(2, Math.min(100, Math.round(c.rain + Math.sin(h * 0.9 + c.temp) * 18 - (c.rain < 20 ? 0 : h * 1.5))));
+      return `<li style="--chance: ${chance}%"><span class="jw-sr">${(14 + h) % 24}.00, ${chance} per cent</span><i></i><b>${(14 + h) % 24}</b></li>`;
+    }).join('');
+    barometer(c.hpa);
+    document.getElementById('jw-meter')!.style.setProperty('--fill', `${c.rain}%`);
+    document.getElementById('jw-umb')!.textContent = c.umbrella;
+  }
+
+  // A barometer's dial in eighteen squares: the old words round the top, the needle at the pressure.
+  const baro = document.getElementById('jw-baro') as unknown as SVGSVGElement;
+  const angle = (hpa: number) => -135 + ((hpa - 960) / 100) * 270;
+  function barometer(hpa: number) {
+    const words: [number, string][] = [[968, 'Stormy'], [987, 'Rain'], [1006, 'Change'], [1025, 'Fair'], [1044, 'Very dry']];
+    const ticks = Array.from({ length: 51 }, (_, i) => { const a = (angle(960 + i * 2) - 90) * Math.PI / 180; const r1 = i % 5 ? 6.5 : 6.1; return `<line x1="${9 + r1 * Math.cos(a)}" y1="${9 + r1 * Math.sin(a)}" x2="${9 + 6.9 * Math.cos(a)}" y2="${9 + 6.9 * Math.sin(a)}"/>`; }).join('');
+    const labels = words.map(([p, w]) => { const a = (angle(p) - 90) * Math.PI / 180; return `<text x="${9 + 4.9 * Math.cos(a)}" y="${9 + 4.9 * Math.sin(a) + 0.25}">${w}</text>`; }).join('');
+    baro.setAttribute('aria-label', `Barometer at ${hpa} hectopascals`);
+    baro.innerHTML = `<circle cx="9" cy="9" r="8.6" class="b-bezel"/><circle cx="9" cy="9" r="7.6" class="b-face"/>
+      <g class="b-ticks">${ticks}</g><g class="b-words">${labels}</g>
+      <text x="9" y="12.4" class="b-read">${hpa}</text><text x="9" y="13.3" class="b-unit">hPa</text>
+      <g class="b-needle" style="transform: rotate(${angle(hpa)}deg)"><path d="M 8.82 9 L 9 2.6 L 9.18 9 Z"/><circle cx="9" cy="9" r="0.55"/></g>
+      <ellipse cx="9" cy="5.4" rx="6" ry="3.6" class="b-gloss"/>`;
+  }
+
+  // The one moving thing: the barber-pole bar runs while the forecast "loads", then settles.
+  const bar = document.getElementById('jw-bar')!;
+  const updated = document.getElementById('jw-updated')!;
+  let timer = 0;
+  function refresh() {
+    clearTimeout(timer);
+    bar.classList.add('is-busy');
+    bar.removeAttribute('aria-valuenow');
+    updated.textContent = 'Updating forecast…';
+    timer = window.setTimeout(() => {
+      bar.classList.remove('is-busy');
+      bar.setAttribute('aria-valuenow', '100');
+      updated.textContent = 'Updated at 14.02. Next update at 14.32.';
+    }, reducedMotion() ? 0 : 2400);
+  }
+  document.getElementById('jw-refresh')!.addEventListener('click', refresh);
+  render();
+  refresh();
+</script>
+
+<style is:global>
+  html[data-study='jelly-weather'] { background: #eeeeee repeating-linear-gradient(#eaeaea 0 2px, #f6f6f6 2px 4px); }
+  .jw {
+    --pin: calc(var(--u) / 5);
+    background: repeating-linear-gradient(#e9e9e9 0 calc(var(--pin) / 2), #f7f7f7 calc(var(--pin) / 2) var(--pin));
+    color: #1b1b1b;
+    font-family: 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+  }
+  .jw p, .jw h1, .jw h2, .jw ul, .jw ol, .jw dl, .jw dd { margin: 0; padding: 0; }
+  .jw ul, .jw ol { list-style: none; }
+  .jw-defs { position: absolute; }
+  .jw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* The window: its own lines are the stage's lines, by subgrid. */
+  .jw-window {
+    grid-column: 3 / -23;
+    grid-row: 3 / -3;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+    border-radius: calc(var(--u) / 2) calc(var(--u) / 2) calc(var(--u) / 4) calc(var(--u) / 4);
+    box-shadow: 0 calc(var(--u) / 2) var(--u) rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    background: #fff;
+  }
+  .jw-window > * { min-width: 0; min-height: 0; }
+  .jw-metal, .jw-status {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.04) 1px 2px, rgba(255, 255, 255, 0.1) 2px 4px, rgba(0, 0, 0, 0.06) 4px 5px),
+      linear-gradient(#d6d6d6, #b4b4b4 70%, #a9a9a9);
+  }
+  .jw-metal { grid-column: 1 / -1; grid-row: 1 / span 5; border-bottom: 1px solid #6d6d6d; }
+  .jw-lights { grid-column: 2 / span 3; grid-row: 1; display: flex; gap: calc(var(--u) / 2); align-items: center; padding-top: calc(var(--u) / 2); }
+  .jw-gel { width: calc(var(--u) * 0.7); height: calc(var(--u) * 0.7); border-radius: 50%; position: relative; box-shadow: inset 0 -1px 2px rgba(255, 255, 255, 0.6), 0 1px 1px rgba(0, 0, 0, 0.4); }
+  .jw-gel::before { content: ''; position: absolute; inset: 8% 22% 50%; border-radius: 50%; background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1)); }
+  .jw-gel-blue { background: radial-gradient(circle at 50% 80%, #9fe0ff, #1f78d6 60%, #0d4b9a); }
+  .jw-gel-graphite { background: radial-gradient(circle at 50% 80%, #e2e6ea, #8c96a2 60%, #56606b); }
+  .jw-title { grid-column: 1 / -1; grid-row: 1 / span 2; display: grid; place-items: center; font-size: calc(13px * var(--sf)); font-weight: normal; color: #222; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); pointer-events: none; }
+
+  /* Gel controls, two squares high. */
+  .jw-segments { grid-column: 2 / span 12; grid-row: 3 / span 2; display: flex; align-self: center; height: calc(var(--u) * 1.2); }
+  .jw-segments button, .jw-pill {
+    all: unset;
+    flex: 1;
+    position: relative;
+    text-align: center;
+    font-size: calc(11px * var(--sf));
+    line-height: calc(var(--u) * 1.2 - 2px);
+    border: 1px solid #5f6a77;
+    background: linear-gradient(#fdfdfd, #e9edf1 50%, #d6dce3 51%, #f2f5f8);
+    color: #1b1b1b;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .jw-segments button + button { border-left: none; }
+  .jw-segments button:first-child { border-radius: calc(var(--u) * 0.6) 0 0 calc(var(--u) * 0.6); }
+  .jw-segments button:last-child { border-radius: 0 calc(var(--u) * 0.6) calc(var(--u) * 0.6) 0; }
+  .jw-segments button:disabled { color: #8a8f95; cursor: default; }
+  .jw-segments button[aria-pressed='true'], .jw-pill {
+    background: linear-gradient(#cbe7ff, #7bbdf5 45%, #3c8fe0 50%, #5fb2f7 85%, #a8dcff);
+    color: #082647;
+    border-color: #2a5c94;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  .jw-pill { grid-column: -7 / span 5; grid-row: 3 / span 2; align-self: center; height: calc(var(--u) * 1.2); border-radius: calc(var(--u) * 0.6); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+  .jw-pill:active { background: linear-gradient(#9dd0fb, #4a9ce8 50%, #1f6fc4 51%, #4aa2f0); }
+  .jw-segments button:focus-visible, .jw-pill:focus-visible, .jw-search input:focus-visible, .jw-cities button:focus-visible { outline: none; box-shadow: 0 0 0 3px #6fb6ff, 0 0 0 4px #2a6fc0; }
+  .jw-search { grid-column: span 10 / -8; grid-row: 3 / span 2; align-self: center; }
+  .jw-search input { box-sizing: border-box; width: 100%; height: calc(var(--u) * 1.2); border-radius: calc(var(--u) * 0.6); border: 1px solid #7b858f; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); padding: 0 calc(var(--u) / 2); font: inherit; font-size: calc(11px * var(--sf)); background: #fff; }
+
+  /* The source list: blue-grey, the chosen city in a gel bar. */
+  .jw-cities { grid-column: 1 / span 12; grid-row: 6 / -3; background: linear-gradient(90deg, #dfe6ee, #d3dce6); border-right: 1px solid #9aa6b3; padding-top: var(--u); overflow: hidden; }
+  .jw-cities button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: calc(2 * var(--u)) 1fr calc(2 * var(--u)); align-items: center; width: 100%; height: calc(2 * var(--u)); padding-inline: calc(var(--u) / 2); cursor: pointer; font-size: calc(12px * var(--sf)); }
+  .jw-cities button[aria-current='true'] { background: linear-gradient(#8ec7ff, #3f8de0 50%, #2c79d1 51%, #5aa9f0); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3); }
+  .jw-bead { width: calc(1.4 * var(--u)); height: calc(1.4 * var(--u)); }
+  .jw-bead svg { width: 100%; height: 100%; display: block; }
+  .jw-deg { text-align: right; }
+
+  .jw-main { grid-column: 13 / -1; grid-row: 6 / -3; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; background: #fff repeating-linear-gradient(#fff 0 calc(var(--pin) / 2), #f6f8fa calc(var(--pin) / 2) var(--pin)); }
+  .jw-orb {
+    grid-column: 3 / span 8;
+    grid-row: 2 / span 8;
+    border-radius: 50%;
+    position: relative;
+    background: radial-gradient(circle at 50% 85%, var(--orb-light, #a9cdea), var(--orb-deep, #3d6f9e) 75%);
+    box-shadow: inset 0 calc(-0.3 * var(--u)) calc(0.8 * var(--u)) rgba(255, 255, 255, 0.45), 0 calc(0.3 * var(--u)) calc(0.6 * var(--u)) rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+  .jw-orb svg { position: absolute; inset: 12%; width: 76%; height: 76%; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25)); }
+  .jw-orb::after { content: ''; position: absolute; inset: 3% 16% 52%; border-radius: 50%; background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.05)); }
+  .jw-temp { grid-column: 12 / span 10; grid-row: 2 / span 5; font-size: calc(92px * var(--sf)); line-height: calc(5 * var(--u)); letter-spacing: -0.04em; color: #233446; }
+  .jw-city { grid-column: 12 / -2; grid-row: 7 / span 2; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: normal; }
+  .jw-says { grid-column: 12 / -2; grid-row: 9; color: #4c5a68; font-size: calc(13px * var(--sf)); }
+  .jw-facts { grid-column: 3 / -3; grid-row: 12 / span 4; display: grid; grid-template-columns: repeat(2, 1fr); column-gap: var(--u); align-content: start; }
+  .jw-facts div { display: grid; grid-template-columns: calc(5 * var(--u)) 1fr; border-bottom: 1px solid #dfe4ea; height: calc(2 * var(--u)); align-items: center; }
+  .jw-facts dt { color: #6b7783; }
+  .jw-hours { grid-column: 3 / -3; grid-row: 17 / -10; margin: 0; display: grid; grid-template-rows: var(--u) 1fr; row-gap: var(--u); }
+  .jw-hours figcaption { color: #6b7783; }
+  .jw-hours ol { display: grid; grid-template-columns: repeat(12, var(--u)); justify-content: space-between; align-items: end; }
+  .jw-hours li { height: 100%; display: grid; grid-template-rows: 1fr var(--u); align-items: end; }
+  .jw-hours i { display: block; height: var(--chance); min-height: var(--u); border-radius: calc(var(--u) / 2); background: linear-gradient(90deg, #8cc9ff, #2f82d6 45%, #1d6cc2 55%, #63adf2); box-shadow: inset 0 0 0 1px rgba(16, 70, 130, 0.5); position: relative; transition: height 0.6s cubic-bezier(0.3, 1.3, 0.5, 1); }
+  .jw-hours i::before { content: ''; position: absolute; inset: 2px 55% 2px 2px; border-radius: calc(var(--u) / 2); background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)); }
+  .jw-hours b { font-weight: normal; font-size: calc(10px * var(--sf)); text-align: center; color: #6b7783; }
+  .jw-week { grid-column: 3 / -3; grid-row: -9 / span 7; display: grid; grid-template-columns: repeat(7, calc(3 * var(--u))); justify-content: space-between; }
+  .jw-week li {
+    position: relative;
+    display: grid;
+    grid-template-rows: var(--u) calc(3 * var(--u)) var(--u) var(--u);
+    justify-items: center;
+    padding-top: calc(var(--u) / 2);
+    border-radius: calc(1.5 * var(--u));
+    background: linear-gradient(#f4f9ff, #d5e6f8 48%, #bcd5ef 52%, #e6f1fc);
+    box-shadow: 0 0 0 1px #8aa6c4, 0 2px 3px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+  .jw-week li::before { content: ''; position: absolute; inset: 2px 3px 55%; border-radius: calc(1.5 * var(--u)) calc(1.5 * var(--u)) 40% 40%; background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)); pointer-events: none; }
+  .jw-week b { font-weight: normal; font-size: calc(11px * var(--sf)); position: relative; }
+  .jw-week svg { width: calc(2.4 * var(--u)); height: calc(2.4 * var(--u)); align-self: center; position: relative; }
+  .jw-hi { font-size: calc(13px * var(--sf)); }
+  .jw-lo { font-size: calc(11px * var(--sf)); color: #5b6d80; }
+
+  .jw-status { grid-column: 1 / -1; grid-row: -3 / -1; display: flex; align-items: center; gap: var(--u); padding-inline: var(--u); border-top: 1px solid #7a7a7a; font-size: calc(11px * var(--sf)); color: #2b2b2b; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+  .jw-bar { width: calc(10 * var(--u)); height: calc(var(--u) * 0.6); border-radius: calc(var(--u) * 0.3); border: 1px solid #5c6670; background: linear-gradient(#bfc5cb, #e9ecef); overflow: hidden; flex: none; }
+  .jw-bar span { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(#cbe7ff, #63adf2 45%, #2f82d6 55%, #8cc9ff); }
+  .jw-bar.is-busy span {
+    background:
+      repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.55) 0 calc(var(--u) / 4), transparent calc(var(--u) / 4) calc(var(--u) / 2)),
+      linear-gradient(#cbe7ff, #63adf2 45%, #2f82d6 55%, #8cc9ff);
+    background-size: calc(var(--u) * 0.7071) 100%, auto;
+    animation: jw-barber 0.6s linear infinite;
+  }
+  @keyframes jw-barber { to { background-position: calc(var(--u) * 0.7071) 0, 0 0; } }
+
+  /* Widgets floating on the desktop beside the window. */
+  .jw-widget { z-index: 1; }
+  .jw-baro { grid-column: -21 / span 18; grid-row: 3 / span 18; }
+  .jw-baro svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 calc(0.3 * var(--u)) calc(0.4 * var(--u)) rgba(0, 0, 0, 0.35)); }
+  .jw-baro .b-bezel { fill: #c9ccd0; stroke: #737980; stroke-width: 0.08; }
+  .jw-baro .b-face { fill: #fbfaf5; stroke: #8e949b; stroke-width: 0.06; }
+  .jw-baro .b-ticks line { stroke: #2b2b2b; stroke-width: 0.05; }
+  .jw-baro .b-words text { font: 0.62px 'Lucida Grande', Verdana, sans-serif; text-anchor: middle; fill: #233446; }
+  .jw-baro .b-read { font: 1.25px 'Lucida Grande', Verdana, sans-serif; text-anchor: middle; fill: #233446; }
+  .jw-baro .b-unit { font: 0.55px 'Lucida Grande', Verdana, sans-serif; text-anchor: middle; fill: #6b7783; }
+  .jw-baro .b-needle { transform-origin: 9px 9px; transition: transform 0.9s cubic-bezier(0.3, 1.5, 0.5, 1); fill: #c0261b; }
+  .jw-baro .b-gloss { fill: url(#jw-gloss); opacity: 0.55; pointer-events: none; }
+  .jw-umbrella {
+    grid-column: -21 / span 18;
+    grid-row: 23 / span 7;
+    display: grid;
+    grid-template-rows: calc(2 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u));
+    padding: calc(var(--u) / 2) var(--u);
+    border-radius: var(--u);
+    background: linear-gradient(#5c6b7c, #2f3b49 50%, #1f2833 51%, #3c4a5a);
+    box-shadow: 0 calc(0.3 * var(--u)) calc(0.6 * var(--u)) rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color: #eef4fb;
+    position: relative;
+    overflow: hidden;
+  }
+  .jw-umbrella::before { content: ''; position: absolute; inset: 2px 4px 55%; border-radius: var(--u) var(--u) 50% 50%; background: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0)); pointer-events: none; }
+  .jw-umbrella h2 { font-size: calc(15px * var(--sf)); font-weight: normal; line-height: calc(2 * var(--u)); }
+  .jw-meter { align-self: center; height: var(--u); border-radius: calc(var(--u) / 2); background: linear-gradient(#11161c, #3a4654); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.2); overflow: hidden; }
+  .jw-meter span { display: block; height: 100%; width: var(--fill, 50%); border-radius: inherit; background: linear-gradient(#d4f0ff, #6fc0ff 45%, #2280e0 55%, #7cc8ff); transition: width 0.9s cubic-bezier(0.3, 1.3, 0.5, 1); }
+  .jw-umbrella p { font-size: calc(12px * var(--sf)); line-height: var(--u); }
+
+  /* A narrow window: the app takes the width, one thing under another. */
+  :root[data-narrow] .jw { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .jw-window { grid-column: 1 / -1; grid-row: 1 / span 52; grid-template-columns: repeat(14, var(--u)); grid-template-rows: repeat(52, var(--u)); border-radius: 0; }
+  :root[data-narrow] .jw-metal { grid-row: 1 / span 7; }
+  :root[data-narrow] .jw-segments { grid-column: 2 / -2; grid-row: 3 / span 2; }
+  :root[data-narrow] .jw-search { grid-column: 2 / -7; grid-row: 5 / span 2; }
+  :root[data-narrow] .jw-pill { grid-column: -6 / -2; grid-row: 5 / span 2; }
+  :root[data-narrow] .jw-main { grid-column: 1 / -1; grid-row: 8 / span 32; grid-template-columns: repeat(14, var(--u)); grid-template-rows: repeat(32, var(--u)); }
+  :root[data-narrow] .jw-orb { grid-column: 2 / span 6; grid-row: 2 / span 6; }
+  :root[data-narrow] .jw-temp { grid-column: 8 / -1; grid-row: 2 / span 4; font-size: calc(64px * var(--sf)); line-height: calc(4 * var(--u)); }
+  :root[data-narrow] .jw-city { grid-column: 2 / -2; grid-row: 9 / span 2; }
+  :root[data-narrow] .jw-says { grid-column: 2 / -2; grid-row: 11; }
+  :root[data-narrow] .jw-facts { grid-column: 2 / -2; grid-row: 13 / span 8; grid-template-columns: 1fr; }
+  :root[data-narrow] .jw-week { grid-column: 2 / -2; grid-row: 22 / span 10; grid-template-columns: repeat(4, calc(3 * var(--u))); grid-template-rows: repeat(2, calc(5 * var(--u))); gap: 0; justify-content: space-between; overflow: hidden; }
+  :root[data-narrow] .jw-week li { grid-template-rows: var(--u) calc(2 * var(--u)) var(--u) var(--u); padding-top: 0; transform: scale(0.94); }
+  :root[data-narrow] .jw-week svg { width: calc(1.8 * var(--u)); height: calc(1.8 * var(--u)); }
+  :root[data-narrow] .jw-week li:nth-child(n + 8) { display: none; }
+  :root[data-narrow] .jw-cities { grid-column: 1 / -1; grid-row: 40 / span 13; padding-top: calc(var(--u) / 2); border-right: none; }
+  :root[data-narrow] .jw-status, :root[data-narrow] .jw-hours { display: none; }
+  :root[data-narrow] .jw-baro { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); aspect-ratio: 1; }
+  :root[data-narrow] .jw-umbrella { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); height: calc(7 * var(--u)); box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { .jw-bar.is-busy span { animation: none; } .jw-baro .b-needle, .jw-meter span, .jw-hours i { transition: none; } }
+</style>

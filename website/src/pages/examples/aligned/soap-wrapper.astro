@@ -1,0 +1,223 @@
+---
+// After the printed paper wrapper of a Provençal soap, laid out flat before folding: the face with
+// its didone name between four exhibition medals, the sides with their small print (one upside
+// down, as it folds), the ends where lavender stands, and the dashed fold lines all on squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="soap-wrapper" theme="light">
+  <main class="stage sw" id="sw">
+    <svg class="sw-net" id="sw-net" aria-hidden="true"></svg>
+    <section class="sw-face" aria-labelledby="sw-name">
+      <p class="sw-maker">Savonnerie Marius Aubanel, à Manosque</p>
+      <p class="sw-script sw-script-top">Savon à la</p>
+      <h1 class="sw-name" id="sw-name">Lavande</h1>
+      <p class="sw-script sw-script-bottom">fine de Haute-Provence</p>
+      <p class="sw-small">Pur végétal, à l’huile d’olive et à l’essence de lavande fine</p>
+      <p class="sw-weight"><span>125 g</span></p>
+      <div class="sw-medal sw-medal-1" data-city="Paris" data-year="1889" data-ring="Exposition universelle · Médaille d’or"></div>
+      <div class="sw-medal sw-medal-2" data-city="Lyon" data-year="1894" data-ring="Exposition internationale · Grand prix"></div>
+      <div class="sw-medal sw-medal-3" data-city="Bruxelles" data-year="1897" data-ring="Exposition internationale · Diplôme d’honneur"></div>
+      <div class="sw-medal sw-medal-4" data-city="Marseille" data-year="1906" data-ring="Exposition coloniale · Hors concours"></div>
+    </section>
+    <p class="sw-side sw-side-top">Fabriqué à Manosque depuis 1872, à la chaudière, en cinq jours</p>
+    <p class="sw-side sw-side-bottom">Conserver au sec, sur une soucoupe: il durera tout l’été. Le pain se dépouille de son papier par ce côté.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const stage = document.getElementById('sw')!;
+  const net = document.getElementById('sw-net') as unknown as SVGSVGElement;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // A sprig of lavender, upright from (x, foot) to the height `tall`, in squares: grey-green leaves
+  // at the foot, then whorls of florets that thin out toward the tip.
+  function sprig(x: number, foot: number, tall: number, sway: number, seed: number): string {
+    const top = foot - tall;
+    const out: string[] = [];
+    out.push(`<path d="M ${x} ${foot} Q ${x + sway * 0.4} ${foot - tall * 0.5} ${x + sway} ${top}" class="stem"/>`);
+    for (let i = 0; i < 3; i++) {
+      const y = foot - 0.6 - i * 0.9;
+      out.push(`<ellipse class="leaf" cx="${x - 0.55}" cy="${y}" rx="0.12" ry="0.9" transform="rotate(-24 ${x} ${y + 0.8})"/>`);
+      out.push(`<ellipse class="leaf" cx="${x + 0.55}" cy="${y - 0.4}" rx="0.12" ry="0.9" transform="rotate(24 ${x} ${y + 0.4})"/>`);
+    }
+    const whorls = Math.max(5, Math.round(tall * 0.6));
+    for (let i = 0; i < whorls; i++) {
+      const t = i / (whorls - 1);
+      const along = 0.42 + 0.58 * t;
+      const cy = foot - tall * along;
+      const cx = x + sway * along * along;
+      const size = 1 - 0.55 * t;
+      const gap = i < 3 ? 0.35 : 0;
+      for (const side of [-1, 1, 0]) {
+        const fx = cx + side * 0.28 * size;
+        const fy = cy + gap + (side === 0 ? -0.18 : 0);
+        out.push(`<ellipse class="${(i + seed + side) % 2 ? 'floret' : 'floret-deep'}" cx="${fx}" cy="${fy}" rx="${0.2 * size}" ry="${0.32 * size}" transform="rotate(${side * 28} ${fx} ${fy})"/>`);
+      }
+    }
+    return out.join('');
+  }
+
+  // An exhibition medal, drawn in a hundred units across: a beaded rim, a laurel, the words round.
+  function medal(el: HTMLElement, index: number) {
+    const id = `sw-ring-${index}`;
+    el.innerHTML = `<svg viewBox="0 0 100 100" role="img" aria-label="${el.dataset.ring?.replace(' · ', ', ')}, ${el.dataset.city} ${el.dataset.year}">
+      <defs><path id="${id}" d="M 50 50 m -36 0 a 36 36 0 1 1 72 0 a 36 36 0 1 1 -72 0"/></defs>
+      <circle cx="50" cy="50" r="49" class="m-rim"/>
+      <circle cx="50" cy="50" r="45" class="m-face"/>
+      ${Array.from({ length: 48 }, (_, i) => { const a = (i / 48) * Math.PI * 2; return `<circle cx="${50 + 46.6 * Math.cos(a)}" cy="${50 + 46.6 * Math.sin(a)}" r="1.1" class="m-bead"/>`; }).join('')}
+      <circle cx="50" cy="50" r="29" class="m-inner"/>
+      <text class="m-ring"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${el.dataset.ring}</textPath></text>
+      ${Array.from({ length: 7 }, (_, i) => { const a = Math.PI * (0.62 + i * 0.07); return `<ellipse cx="${50 + 23 * Math.cos(a)}" cy="${50 + 23 * Math.sin(a)}" rx="1.6" ry="3.6" class="m-leaf" transform="rotate(${(a * 180) / Math.PI} ${50 + 23 * Math.cos(a)} ${50 + 23 * Math.sin(a)})"/><ellipse cx="${50 - 23 * Math.cos(a)}" cy="${50 + 23 * Math.sin(a)}" rx="1.6" ry="3.6" class="m-leaf" transform="rotate(${180 - (a * 180) / Math.PI} ${50 - 23 * Math.cos(a)} ${50 + 23 * Math.sin(a)})"/>`; }).join('')}
+      <text x="50" y="47" class="m-city">${el.dataset.city}</text>
+      <text x="50" y="61" class="m-year">${el.dataset.year}</text>
+    </svg>`;
+  }
+  document.querySelectorAll<HTMLElement>('.sw-medal').forEach(medal);
+
+  onSquares(({ across: A, down: D, narrow }) => {
+    // The bar's top face, its thickness, and where it sits: centred on whole squares.
+    const W = narrow ? 12 : Math.min(40, A - 24) & ~1;
+    const H = narrow ? 30 : Math.min(21, D - 16);
+    const T = narrow ? 3 : Math.min(5, Math.floor((D - H) / 2) - 3);
+    const rows = narrow ? H + 2 * T + 6 : D;
+    const c1 = Math.floor((A - W) / 2);
+    const r1 = Math.floor((rows - H) / 2);
+    const c2 = c1 + W;
+    const r2 = r1 + H;
+    stage.style.setProperty('--fc1', String(c1 + 1));
+    stage.style.setProperty('--fc2', String(c2 + 1));
+    stage.style.setProperty('--fr1', String(r1 + 1));
+    stage.style.setProperty('--fr2', String(r2 + 1));
+    stage.style.setProperty('--st1', String(r1 - T + 1));
+    stage.style.setProperty('--sb2', String(r2 + T + 1));
+    stage.style.setProperty('--net-rows', String(rows));
+    stage.style.setProperty('--face-w', String(W));
+    stage.style.setProperty('--face-h', String(H));
+
+    const out: string[] = [];
+    out.push(`<defs>
+      <pattern id="sw-paper" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" class="paper-deep"/>
+        <g transform="translate(1 3.4) scale(0.32)">${sprig(0, 0, 6, 0.5, 0)}</g>
+        <g transform="translate(3 1.4) scale(0.32)">${sprig(0, 0, 6, -0.5, 1)}</g>
+        <circle cx="3" cy="3.5" r="0.08" class="dot"/><circle cx="1" cy="1.5" r="0.08" class="dot"/>
+      </pattern>
+    </defs>`);
+    out.push(`<rect width="${A}" height="${rows}" fill="url(#sw-paper)"/>`);
+    // The two sides, which fold down over the bar's long edges.
+    out.push(`<rect class="side" x="${c1}" y="${r1 - T}" width="${W}" height="${T}"/>`);
+    out.push(`<rect class="side" x="${c1}" y="${r2}" width="${W}" height="${T}"/>`);
+    // The two ends, where the lavender stands.
+    if (!narrow) {
+      out.push(`<rect class="end" x="${c1 - T}" y="${r1}" width="${T}" height="${H}"/>`);
+      out.push(`<rect class="end" x="${c2}" y="${r1}" width="${T}" height="${H}"/>`);
+      out.push(sprig(c1 - T / 2 - 0.6, r2 - 0.5, H - 2, -0.6, 0) + sprig(c1 - T / 2 + 0.9, r2 - 0.5, H - 3.5, 0.8, 1));
+      out.push(sprig(c2 + T / 2 - 0.9, r2 - 0.5, H - 3.5, -0.8, 1) + sprig(c2 + T / 2 + 0.6, r2 - 0.5, H - 2, 0.6, 0));
+    }
+    // The face, framed in a double rule a square in.
+    out.push(`<rect class="face" x="${c1}" y="${r1}" width="${W}" height="${H}"/>`);
+    out.push(`<rect class="rule" x="${c1 + 1}" y="${r1 + 1}" width="${W - 2}" height="${H - 2}"/>`);
+    out.push(`<rect class="rule-thin" x="${c1 + 1.3}" y="${r1 + 1.3}" width="${W - 2.6}" height="${H - 2.6}"/>`);
+    // Folds: the face's edges, the sides' edges, and the ends' mitres out to the paper's edge.
+    const folds: string[] = [`M ${c1} 0 V ${rows}`, `M ${c2} 0 V ${rows}`, `M 0 ${r1} H ${A}`, `M 0 ${r2} H ${A}`, `M 0 ${r1 - T} H ${A}`, `M 0 ${r2 + T} H ${A}`];
+    if (!narrow) {
+      folds.push(`M ${c1 - T} ${r1 - T} V ${r2 + T}`, `M ${c2 + T} ${r1 - T} V ${r2 + T}`);
+      for (const [x, dir] of [[c1, -1], [c2, 1]] as const) {
+        folds.push(`M ${x} ${r1} L ${x + dir * T} ${r1 - T}`, `M ${x} ${r2} L ${x + dir * T} ${r2 + T}`);
+        folds.push(`M ${x + dir * T} ${r1} L ${x + dir * 2 * T} ${r1 - T}`, `M ${x + dir * T} ${r2} L ${x + dir * 2 * T} ${r2 + T}`);
+      }
+    }
+    out.push(`<path class="fold" d="${folds.join(' ')}"/>`);
+    // Register marks in the paper's corners, as the printer left them.
+    const mark = (x: number, y: number) => `<g class="register" transform="translate(${x} ${y})"><circle r="0.5"/><path d="M -0.9 0 H 0.9 M 0 -0.9 V 0.9"/></g>`;
+    out.push(mark(2, 2), mark(A - 2, 2), mark(2, rows - 2));
+    net.setAttribute('viewBox', `0 0 ${A} ${rows}`);
+    net.innerHTML = out.join('');
+  });
+</script>
+
+<style is:global>
+  html[data-study='soap-wrapper'] { background: #4b3170; }
+  .sw {
+    --violet: #4b3170;
+    --ink: #3e2560;
+    --lilac: #ece5f3;
+    --mid: #cdbde3;
+    --gold: #b38f3c;
+    --gold-deep: #7d6020;
+    background: var(--violet);
+    color: var(--ink);
+    font-family: Didot, 'Bodoni 72', 'Times New Roman', serif;
+  }
+  .sw-net { grid-column: 1 / -1; grid-row: 1 / span var(--net-rows, 45); width: 100%; height: 100%; }
+  .sw-net .paper-deep { fill: var(--violet); }
+  .sw-net .dot { fill: #a68fcb; }
+  .sw-net .side { fill: var(--mid); }
+  .sw-net .end { fill: #ddd1ec; }
+  .sw-net .face { fill: var(--lilac); }
+  .sw-net .rule { fill: none; stroke: var(--ink); stroke-width: 0.1; }
+  .sw-net .rule-thin { fill: none; stroke: var(--ink); stroke-width: 0.03; }
+  .sw-net .fold { fill: none; stroke: #b9a3dc; stroke-width: 0.06; stroke-dasharray: 0.5 0.5; }
+  .sw-net .register { fill: none; stroke: #b9a3dc; stroke-width: 0.06; }
+  .sw-net .stem { fill: none; stroke: #6e7a4c; stroke-width: 0.09; }
+  .sw-net .leaf { fill: #8d9a6c; }
+  .sw-net .floret { fill: #8f6cc2; }
+  .sw-net .floret-deep { fill: #5f3f92; }
+  .sw-net pattern .stem { stroke: #8d78b6; stroke-width: 0.25; }
+  .sw-net pattern .leaf { fill: #77629f; }
+  .sw-net pattern .floret, .sw-net pattern .floret-deep { fill: #9f87cb; }
+
+  /* The face: its own grid of squares, laid on the net's face. */
+  .sw-face {
+    grid-column: var(--fc1) / var(--fc2);
+    grid-row: var(--fr1) / var(--fr2);
+    display: grid;
+    grid-template-columns: repeat(var(--face-w), var(--u));
+    grid-template-rows: repeat(var(--face-h), var(--u));
+    text-align: center;
+    z-index: 1;
+  }
+  .sw-face > * { margin: 0; }
+  .sw-maker { grid-column: 3 / -3; grid-row: 3; text-wrap: balance; font-style: italic; font-size: calc(15px * var(--sf)); line-height: var(--u); letter-spacing: 0.03em; }
+  .sw-script { font-family: 'Snell Roundhand', 'Apple Chancery', cursive; color: var(--ink); }
+  .sw-script-top { grid-column: 10 / -10; grid-row: 5 / span 2; font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .sw-name { grid-column: 10 / -10; grid-row: 7 / span 5; font-weight: normal; font-size: calc(104px * var(--sf)); line-height: calc(5 * var(--u)); letter-spacing: 0.01em; }
+  .sw-script-bottom { grid-column: 10 / -10; grid-row: 12 / span 2; font-size: calc(27px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .sw-small { grid-column: 10 / -10; grid-row: 15; font-size: calc(11px * var(--sf)); line-height: var(--u); font-style: italic; }
+  .sw-weight { grid-column: 19 / span 4; grid-row: 17 / span 2; display: grid; place-items: center; }
+  .sw-weight span { display: block; width: calc(4 * var(--u)); height: calc(2 * var(--u)); border: calc(1.5px * var(--sf)) solid var(--ink); border-radius: 50%; box-sizing: border-box; font-size: calc(15px * var(--sf)); line-height: calc(2 * var(--u) - 3px * var(--sf)); }
+  .sw-medal { width: 100%; height: 100%; }
+  .sw-medal svg { display: block; width: 100%; height: 100%; }
+  .sw-medal-1 { grid-column: 3 / span 6; grid-row: 5 / span 6; }
+  .sw-medal-2 { grid-column: 3 / span 6; grid-row: 12 / span 6; }
+  .sw-medal-3 { grid-column: -9 / span 6; grid-row: 5 / span 6; }
+  .sw-medal-4 { grid-column: -9 / span 6; grid-row: 12 / span 6; }
+  .sw-medal .m-rim { fill: var(--gold-deep); }
+  .sw-medal .m-face { fill: var(--gold); }
+  .sw-medal .m-bead { fill: #e3c77c; }
+  .sw-medal .m-inner { fill: #c8a24b; stroke: var(--gold-deep); stroke-width: 0.8; }
+  .sw-medal .m-ring { font: 7.2px Didot, 'Bodoni 72', serif; fill: #3d2c08; letter-spacing: 0.4px; }
+  .sw-medal .m-leaf { fill: #8a6a24; }
+  .sw-medal .m-city { font: italic 12px Didot, 'Bodoni 72', serif; fill: #3d2c08; text-anchor: middle; }
+  .sw-medal .m-year { font: 15px Didot, 'Bodoni 72', serif; fill: #3d2c08; text-anchor: middle; }
+
+  /* The sides' small print: the top one is upside down, as it folds over the bar. */
+  .sw-side { grid-column: var(--fc1) / var(--fc2); margin: 0; z-index: 1; display: grid; place-items: center; padding-inline: var(--u); font-style: italic; font-size: calc(13px * var(--sf)); line-height: var(--u); text-align: center; }
+  .sw-side-top { grid-row: var(--st1) / var(--fr1); transform: rotate(180deg); }
+  .sw-side-bottom { grid-row: var(--fr2) / var(--sb2); }
+
+  :root[data-narrow] .sw { padding-bottom: var(--u); }
+  :root[data-narrow] .sw-maker { grid-column: 2 / -2; grid-row: 3 / span 2; font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .sw-weight { grid-column: 5 / span 4; grid-row: 27 / span 2; }
+  :root[data-narrow] .sw-script-top { grid-column: 2 / -2; grid-row: 11 / span 2; }
+  :root[data-narrow] .sw-name { grid-column: 1 / -1; grid-row: 13 / span 3; font-size: calc(46px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .sw-script-bottom { grid-column: 2 / -2; grid-row: 16 / span 2; font-size: calc(20px * var(--sf)); }
+  :root[data-narrow] .sw-medal-1 { grid-column: 2 / span 5; grid-row: 5 / span 5; }
+  :root[data-narrow] .sw-medal-3 { grid-column: 7 / span 5; grid-row: 5 / span 5; }
+  :root[data-narrow] .sw-medal-2 { grid-column: 2 / span 5; grid-row: 19 / span 5; }
+  :root[data-narrow] .sw-medal-4 { grid-column: 7 / span 5; grid-row: 19 / span 5; }
+  :root[data-narrow] .sw-small { grid-column: 2 / -2; grid-row: 24 / span 3; }
+  :root[data-narrow] .sw-side { font-size: calc(11px * var(--sf)); padding-inline: calc(var(--u) / 2); }
+</style>

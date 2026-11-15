@@ -1,0 +1,236 @@
+---
+// After a dry garden drawn in characters: every glyph of a monospace face pressed into one square,
+// so box-drawing strokes join into raked lines. Stones are solid blocks, moss a scatter of marks,
+// and around each stone the rake turns in octagons whose sides lie only at 90° and 45°.
+// The pointer is a rake: it draws rings around the square it is over; a press sets a pebble.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="sand-garden" theme="light">
+  <main class="stage karesansui">
+    <header class="place">
+      <h1>Kōsen-in, the south garden</h1>
+      <p>Five stones in white gravel, raked each morning before the gate opens at eight</p>
+    </header>
+    <canvas class="garden" id="garden" role="img" aria-label="A raked gravel garden drawn in characters: stones with moss, rings raked around them, straight lines elsewhere"></canvas>
+    <aside class="poem" lang="ja" aria-label="Haiku">
+      <p class="tate">熊手去り<br />石は輪をもつ<br />秋の風</p>
+    </aside>
+    <div class="english">
+      <p class="haiku">The rake has gone home.<br />Each stone keeps its own circles.<br />Autumn wind, passing.</p>
+      <p class="how">Move over the gravel to rake it. Press to set a pebble.</p>
+      <button type="button" class="rake" id="rake">Rake again</button>
+    </div>
+    <p class="foot">Gravel of Shirakawa granite, raked to a depth of two fingers</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  interface Stone { x: number; y: number; hx: number; hy: number; rings: number; moss: boolean }
+
+  const canvas = document.getElementById('garden') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  const INK = { line: '#77736a', stone: '#2f2d29', shade: '#5a574f', moss: '#5d6b37', edge: '#a9a49a' };
+  let cols = 0, rows = 0, unit = 20;
+  let stones: Stone[] = [];
+  let pebbles: Stone[] = [];
+  let rake: Stone | null = null;
+  let seed = 7;
+  let family = 'Menlo, monospace';
+  let glyph = { scaleX: 1, scaleY: 1, ascent: 0 };
+
+  const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const hash = (x: number, y: number) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
+
+  // Five stone groups spread along the garden, never closer than their rings allow.
+  function placeStones() {
+    stones = [];
+    const count = cols < 30 ? 2 : 5;
+    for (let i = 0, tries = 0; i < count && tries < 400; tries++) {
+      const hx = cols < 30 ? 1 : 1 + Math.floor(random() * 3);
+      const hy = 1 + Math.floor(random() * (hx > 1 ? 2 : 1));
+      const rings = cols < 30 ? 2 : 3 + Math.floor(random() * 3);
+      const x = 3 + hx + Math.floor(random() * Math.max(1, cols - 6 - 2 * hx));
+      const y = 3 + hy + Math.floor(random() * Math.max(1, rows - 6 - 2 * hy));
+      const far = stones.every(s => Math.max(Math.abs(s.x - x) - s.hx - hx, Math.abs(s.y - y) - s.hy - hy) > (cols < 30 ? s.rings + rings - 1 : 2 * (s.rings + rings) - 3));
+      if (!far) continue;
+      stones.push({ x, y, hx, hy, rings, moss: true });
+      i++;
+    }
+  }
+
+  // Ring n of a stone is the edge of an octagon: sides at r squares across and down, and a 45° side
+  // where the two distances add up to r + q.
+  function ringAt(stone: Stone, cx: number, cy: number) {
+    const dx = cx - stone.x, dy = cy - stone.y;
+    const ax = Math.max(0, Math.abs(dx) - stone.hx), ay = Math.max(0, Math.abs(dy) - stone.hy);
+    if (ax === 0 && ay === 0) {
+      const corner = stone.hx > 0 && stone.hy > 0 && Math.abs(dx) === stone.hx && Math.abs(dy) === stone.hy;
+      return corner ? { n: 0, char: stone.moss ? 'moss' : '', inside: true } : { n: -1, char: (dx > 0 || dy > 0) ? '█' : '▓', inside: true };
+    }
+    for (let n = 0; n <= stone.rings; n++) {
+      const r = n === 0 ? 1 : 1 + 2 * n;
+      const q = n === 0 ? 1 : Math.round(r * 0.5);
+      const b = Math.max(ax - r, ay - r, ax + ay - r - q);
+      if (b > 0) continue;
+      if (b < 0) return { n, char: '', inside: true };
+      if (n === 0) return { n, char: stone.moss ? 'moss' : '', inside: true };
+      let char = '─';
+      if (ax + ay - r - q === 0 && ax !== r && ay !== r) char = (dx > 0) === (dy > 0) ? '╱' : '╲';
+      else if (ax === r && ay !== r) char = '│';
+      else if (ax === r && ay === r) char = (dx > 0) === (dy > 0) ? '╱' : '╲';
+      return { n, char, inside: true };
+    }
+    return null;
+  }
+
+  function charAt(cx: number, cy: number): [string, string] {
+    if (cx === 0 || cy === 0 || cx === cols - 1 || cy === rows - 1) return ['▒', INK.edge];
+    let best: { n: number; char: string } | null = null;
+    for (const stone of [...stones, ...pebbles, ...(rake ? [rake] : [])]) {
+      const at = ringAt(stone, cx, cy);
+      if (at && (!best || at.n < best.n)) best = at;
+    }
+    if (best) {
+      if (best.char === 'moss') return [hash(cx, cy) < 0.55 ? ',;"\''[Math.floor(hash(cy, cx) * 4)] : '', INK.moss];
+      if (best.char === '▓') return ['▓', INK.shade];
+      if (best.char === '█') return ['█', INK.stone];
+      return [best.char, INK.line];
+    }
+    return [cy % 2 === 0 ? '─' : '', INK.line];
+  }
+
+  // Every glyph is scaled into exactly one square: its advance to the square's width, the full
+  // block's height to its height, so strokes meet their neighbours edge to edge.
+  function measureGlyph() {
+    const size = 100;
+    ctx.font = `${size}px ${family}`;
+    const m = ctx.measureText('█');
+    const advance = ctx.measureText('─').width || size * 0.6;
+    const height = (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) || size * 1.2;
+    glyph = { scaleX: unit / advance, scaleY: unit / height, ascent: m.actualBoundingBoxAscent || size };
+  }
+
+  function draw() {
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = cols * unit * ratio;
+    canvas.height = rows * unit * ratio;
+    canvas.style.width = `${cols * unit}px`;
+    canvas.style.height = `${rows * unit}px`;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = `100px ${family}`;
+    ctx.textBaseline = 'alphabetic';
+    for (let cy = 0; cy < rows; cy++) {
+      for (let cx = 0; cx < cols; cx++) {
+        const [char, colour] = charAt(cx, cy);
+        if (!char) continue;
+        ctx.fillStyle = colour;
+        ctx.setTransform(glyph.scaleX * ratio, 0, 0, glyph.scaleY * ratio, cx * unit * ratio, (cy * unit + glyph.ascent * glyph.scaleY) * ratio);
+        ctx.fillText(char, 0, 0);
+      }
+    }
+  }
+
+  async function start() {
+    const probe = document.createElement('span');
+    probe.style.fontFamily = 'var(--typeface-mono)';
+    document.body.append(probe);
+    const stack = getComputedStyle(probe).fontFamily;
+    probe.remove();
+    if (stack) family = `${stack}, Menlo, monospace`;
+    try { await document.fonts.load(`100px ${family}`, '─█'); } catch { /* the fallback draws */ }
+
+    onSquares(squares => {
+      unit = squares.unit;
+      // The garden's grid area (columns 3 to -15, rows 4 to -4), in squares.
+      if (squares.narrow) { cols = squares.across - 2; rows = 18; }
+      else { cols = squares.across - 16; rows = squares.down - 6; }
+      measureGlyph();
+      seed = 7;
+      placeStones();
+      pebbles = [];
+      draw();
+    });
+  }
+
+  let lastCell = '';
+  canvas.addEventListener('pointermove', event => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = Math.floor((event.clientX - rect.left) / unit), cy = Math.floor((event.clientY - rect.top) / unit);
+    const key = `${cx},${cy}`;
+    if (key === lastCell) return;
+    lastCell = key;
+    rake = cx > 1 && cy > 1 && cx < cols - 2 && cy < rows - 2 ? { x: cx, y: cy, hx: 0, hy: 0, rings: 2, moss: false } : null;
+    draw();
+  });
+  canvas.addEventListener('pointerleave', () => { rake = null; lastCell = ''; draw(); });
+  canvas.addEventListener('click', () => {
+    if (!rake) return;
+    pebbles = [...pebbles.slice(-3), { ...rake, rings: 3 }];
+    rake = null;
+    draw();
+  });
+  document.getElementById('rake')!.addEventListener('click', () => {
+    seed = Math.floor(Math.random() * 100000) + 1;
+    pebbles = [];
+    placeStones();
+    draw();
+  });
+
+  start();
+</script>
+
+<style is:global>
+  html { background: #e6e3db; }
+  .karesansui {
+    --paper: #e6e3db;
+    --ink: #3b3933;
+    --quiet: #7d796f;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Hiragino Mincho ProN', 'Hoefler Text', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  :where(.karesansui) :is(p, h1) { margin: 0; }
+
+  .place { grid-column: 4 / -16; grid-row: 2 / span 2; display: flex; align-items: baseline; gap: calc(2 * var(--u)); }
+  .place h1 { font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 300; letter-spacing: 0.02em; }
+  .place p { color: var(--quiet); }
+
+  /* The garden: a whole number of squares on each side, from the fourth row to the fourth from the foot. */
+  .garden { grid-column: 3 / -15; grid-row: 4 / -4; display: block; cursor: crosshair; touch-action: none; }
+
+  .poem { grid-column: -12 / -4; grid-row: 4 / span 12; display: flex; justify-content: center; }
+  .tate {
+    writing-mode: vertical-rl;
+    font-size: calc(26px * var(--sf));
+    line-height: calc(2 * var(--u));
+    letter-spacing: 0.3em;
+    font-weight: 300;
+  }
+  .english { grid-column: -13 / -3; grid-row: 18 / -4; display: flex; flex-direction: column; gap: var(--u); }
+  .haiku { font-style: italic; font-family: 'Hoefler Text', 'Iowan Old Style', Georgia, serif; font-size: calc(15px * var(--sf)); }
+  .how { color: var(--quiet); font-size: calc(12px * var(--sf)); }
+  .rake {
+    all: unset;
+    align-self: start;
+    height: calc(2 * var(--u));
+    padding-inline: var(--u);
+    box-shadow: inset 0 0 0 1px var(--ink);
+    font: calc(14px * var(--sf)) / calc(2 * var(--u)) 'Hiragino Mincho ProN', Georgia, serif;
+    cursor: pointer;
+  }
+  .rake:hover { background: var(--ink); color: var(--paper); }
+  .rake:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .foot { grid-column: 4 / -16; grid-row: -3 / span 1; color: var(--quiet); font-size: calc(12px * var(--sf)); }
+
+  :root[data-narrow] .karesansui { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .karesansui > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .place { flex-direction: column; gap: 0; margin-block: var(--u); }
+  :root[data-narrow] .garden { width: calc((var(--across) - 2) * var(--u)); height: calc(18 * var(--u)); }
+  :root[data-narrow] .poem { margin-block: var(--u); }
+  :root[data-narrow] .foot { margin-top: var(--u); }
+</style>

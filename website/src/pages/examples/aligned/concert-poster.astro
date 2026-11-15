@@ -1,0 +1,111 @@
+---
+// After a Swiss concert poster: unequal fields, one figure as tall as the window, and rings of
+// whole squares spreading from a corner like a held chord. Every ring is a square wide or a gap of
+// squares, so the rhythm of the music is the rhythm of the grid.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="concert-poster" theme="light">
+  <main class="stage poster">
+    <svg class="rings" id="rings" aria-hidden="true"></svg>
+    <p class="figure" aria-hidden="true">9</p>
+    <h1 class="title">Neunte<br />Sinfonie</h1>
+    <p class="house">Tonhalle am See<br />Grosser Saal</p>
+    <dl class="dates">
+      <div><dt>Do</dt><dd>14.11.</dd></div>
+      <div><dt>Fr</dt><dd>15.11.</dd></div>
+      <div><dt>Sa</dt><dd>16.11.</dd></div>
+    </dl>
+    <p class="time">19.30</p>
+    <ol class="programme">
+      <li><b>Feierlich, misterioso</b><span>I. Satz, 24 Min.</span></li>
+      <li><b>Scherzo. Bewegt, lebhaft</b><span>II. Satz, 11 Min.</span></li>
+      <li><b>Adagio. Langsam, feierlich</b><span>III. Satz, 26 Min.</span></li>
+    </ol>
+    <p class="players">Kammerorchester Seefeld<br />Leitung Ida Varga</p>
+    <p class="tickets">Karten an der Abendkasse und im Musikhaus, Seestrasse 12</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // Rings from the top right corner: a ring one square wide, then a gap that grows like a crescendo
+  // (1, 1, 2, 3, 5 squares), and again. Their radii are whole squares, so every edge meets a line.
+  const BEATS = [1, 1, 2, 3, 5, 8];
+  const rings = document.getElementById('rings') as unknown as SVGSVGElement;
+
+  onSquares(({ across, down, narrow }) => {
+    const wide = narrow ? across : Math.min(across - 28, 48);
+    const high = narrow ? 14 : down;
+    rings.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    rings.style.setProperty('--ring-w', String(wide));
+    rings.style.setProperty('--ring-h', String(high));
+    const paths: string[] = [];
+    let radius = 1;
+    let beat = 0;
+    const reach = Math.hypot(wide, high);
+    while (radius < reach) {
+      const inner = radius;
+      const outer = radius + 1;
+      // A quarter ring centred on the corner (wide, 0), as one closed shape.
+      paths.push(`M ${wide - outer} 0 A ${outer} ${outer} 0 0 0 ${wide} ${outer} L ${wide} ${inner} A ${inner} ${inner} 0 0 1 ${wide - inner} 0 Z`);
+      radius = outer + BEATS[beat++ % BEATS.length];
+    }
+    rings.innerHTML = `<path d="${paths.join(' ')}" />`;
+  });
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .poster {
+    --ink: #000;
+    --red: #ff2e17;
+    color: var(--ink);
+    font-family: var(--typeface-medium);
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+    background: #fff;
+  }
+
+  /* The rings take the right of the window, its whole height. */
+  .rings { grid-column: span var(--ring-w, 44) / -1; grid-row: 1 / span var(--ring-h, 40); width: 100%; height: 100%; fill: var(--ink); }
+
+  /* The figure: twenty-nine squares of red standing on the third line from the foot. */
+  .figure {
+    grid-column: 3 / span 30;
+    grid-row: 2 / -3;
+    align-self: end;
+    margin: 0;
+    font-family: var(--typeface-compressed);
+    font-size: calc((var(--down) - 4) * var(--u) * 1.39);
+    line-height: 0.72;
+    color: var(--red);
+    mix-blend-mode: multiply;
+    letter-spacing: -0.04em;
+    pointer-events: none;
+  }
+
+  .title { grid-column: 24 / span 22; grid-row: -9 / span 4; z-index: 1; margin: 0; font: calc(40px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); letter-spacing: -0.02em; color: var(--ink); mix-blend-mode: normal; }
+  .title { background: #fff; padding-inline: calc(var(--u) / 2); margin-inline-start: calc(var(--u) / -2); width: max-content; }
+
+  .house { grid-column: 24 / span 12; grid-row: 3 / span 2; margin: 0; z-index: 1; background: #fff; width: max-content; }
+  .dates { grid-column: 24 / span 5; grid-row: 6 / span 3; margin: 0; }
+  .dates div { display: grid; grid-template-columns: calc(2 * var(--u)) auto; }
+  .dates dt { font-family: var(--typeface-regular); }
+  .dates dd { margin: 0; }
+  .time { grid-column: 24 / span 5; grid-row: 10 / span 2; margin: 0; font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--red); }
+
+  .programme { grid-column: 24 / span 16; grid-row: -5 / span 3; margin: 0; padding: 0; list-style: none; z-index: 1; font-size: calc(12px * var(--sf)); background: #fff; }
+  .programme li { display: grid; grid-template-columns: calc(10 * var(--u)) auto; }
+  .programme span { font-family: var(--typeface-regular); }
+  .players { grid-column: 24 / span 16; grid-row: -11 / span 2; margin: 0; z-index: 1; background: #fff; width: max-content; }
+  .tickets { grid-column: 3 / span 20; grid-row: -2 / span 1; margin: 0; font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); }
+
+  /* A narrow window: rings over the head, the figure beneath them, then the words in one column. */
+  :root[data-narrow] .poster { grid-template-columns: repeat(var(--across), var(--u)); padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .rings { grid-column: 1 / -1; grid-row: 1 / span 14; }
+  :root[data-narrow] .figure { grid-column: 2 / -2; grid-row: 6 / span 14; font-size: calc(14 * var(--u) * 1.39); }
+  :root[data-narrow] .poster > :is(.title, .house, .dates, .time, .programme, .players, .tickets) { grid-column: 2 / -2; grid-row: auto; width: auto; }
+  :root[data-narrow] .title { margin-top: var(--u); }
+  :root[data-narrow] .programme li { grid-template-columns: 1fr; }
+</style>

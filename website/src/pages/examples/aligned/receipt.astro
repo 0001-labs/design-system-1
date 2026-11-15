@@ -1,0 +1,179 @@
+---
+// After a till receipt from a corner shop that sells poems by the line: thermal paper eighteen
+// squares wide on a dark counter, every printed line a square high, prices priced by the syllable,
+// a barcode in quarter squares and a torn edge. It prints as the page opens, a line at a time.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+// A line costs five cents a syllable.
+function syllables(line: string): number {
+  return line.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean).reduce((sum, word) => {
+    const groups = word.replace(/e$/, '').match(/[aeiouy]+/g);
+    return sum + Math.max(1, groups ? groups.length : 1);
+  }, 0);
+}
+const POEMS = [
+  { title: 'Groceries', lines: ['a lemon, for the light it keeps', 'bread, still warm, still asleep', 'milk that remembers the field', 'and nothing for the cat, who knows'] },
+  { title: 'Receipt for a small day', lines: ['woke', 'made coffee, forgot it', 'found it cold at four', 'drank it anyway', 'called that courage'] },
+  { title: 'Returns', lines: ['one umbrella, unopened', 'the rain went somewhere else', 'a sweater too blue to wear', 'an apology, slightly used'] },
+  { title: 'Weather, loose', lines: ['a cloud by weight', 'half a pound of drizzle', 'thunder, sold separately', 'a bag for the sun, in case'] },
+  { title: 'For the bus', lines: ['the window seat', 'the town going backwards', 'your stop, almost missed', 'the bell, pressed twice', 'the doors, kind as ever'] },
+  { title: 'Small print', lines: ['all feelings final sale', 'keep this paper for your records', 'or for the long winter', 'it burns quickly and warm'] },
+  { title: 'Late opening', lines: ['the shutter half up', 'a fox reading the price tags', 'the till drawer sighing open', 'for the last customer: you'] },
+];
+const items = POEMS.map(poem => ({ ...poem, priced: poem.lines.map(line => ({ line, cents: syllables(line) * 5 })) }));
+const lineCount = items.reduce((n, p) => n + p.lines.length, 0);
+const subtotal = items.reduce((sum, p) => sum + p.priced.reduce((s, l) => s + l.cents, 0), 0);
+const tax = Math.round(subtotal * 0.08);
+const money = (cents: number) => (cents / 100).toFixed(2);
+
+// A barcode in quarter squares: guard bars, then each digit as four bars of one to three quarters.
+const DIGITS = '041726111426';
+const PATTERNS = ['3211', '2221', '2122', '1411', '1132', '1231', '1114', '1312', '1213', '3112'];
+const bars: { x: number; w: number }[] = [];
+let x = 0;
+const push = (widths: string, dark: boolean) => { for (const w of widths) { if (dark) bars.push({ x, w: Number(w) }); x += Number(w); dark = !dark; } };
+push('111', true);
+for (const d of DIGITS) push(PATTERNS[Number(d)], false);
+push('11111', false);
+const quarters = x;
+---
+<AlignedStudy slug="receipt" theme="dark" scroll>
+  <main class="stage till">
+    <i class="slot" aria-hidden="true"></i>
+    <article class="paper" id="paper" aria-label="Receipt from Poem Mart">
+      <header class="shop">
+        <p class="shop-name">POEM MART</p>
+        <p>Corner of Ravn St. and Lindevej</p>
+        <p>Open until the last line</p>
+      </header>
+      <p class="meta"><span>14.11.2026  23:47</span><span>Till 2</span></p>
+      <p class="meta"><span>Cashier: Margit</span><span>No. 0417</span></p>
+      <p class="rule" aria-hidden="true"></p>
+
+      {items.map(poem => (
+        <section class="poem">
+          <h2>{poem.title}</h2>
+          <ul>
+            {poem.priced.map(item => <li><span>{item.line}</span><b>{money(item.cents)}</b></li>)}
+          </ul>
+        </section>
+      ))}
+
+      <p class="rule" aria-hidden="true"></p>
+      <dl class="sums">
+        <div><dt>{lineCount} lines</dt><dd>{money(subtotal)}</dd></div>
+        <div><dt>Tax on melancholy 8%</dt><dd>{money(tax)}</dd></div>
+        <div class="total"><dt>Total</dt><dd>{money(subtotal + tax)}</dd></div>
+        <div><dt>Paid in silence</dt><dd>{money(subtotal + tax)}</dd></div>
+        <div><dt>Change</dt><dd>a little</dd></div>
+      </dl>
+      <p class="rule" aria-hidden="true"></p>
+
+      <dl class="sums loyalty">
+        <div><dt>Loyalty points</dt><dd>412</dd></div>
+        <div><dt>Enough for</dt><dd>one haiku</dd></div>
+        <div><dt>You saved by reading slowly</dt><dd>0.00</dd></div>
+      </dl>
+      <p class="rule" aria-hidden="true"></p>
+
+      <p class="note">Lines priced at 5 cents a syllable. Poems may be returned unread within 30 days.</p>
+
+      <svg class="barcode" viewBox={`0 0 ${quarters} 12`} preserveAspectRatio="none" aria-label={`Barcode ${DIGITS}`}>
+        {bars.map(bar => <rect x={bar.x} y="0" width={bar.w} height="12" />)}
+      </svg>
+      <p class="digits">{DIGITS.replace(/(\d{4})(?=\d)/g, '$1 ')}</p>
+      <p class="thanks">Thank you. Come back when it rains.</p>
+      <p class="thanks small">* * *</p>
+    </article>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The paper stands in the middle on a whole square; it is as many squares long as it has lines.
+  const paper = document.getElementById('paper')!;
+  const stage = document.querySelector<HTMLElement>('.till')!;
+  let printed = false;
+  onSquares(({ across, unit, narrow }) => {
+    const wide = narrow ? across - 2 : 18;
+    stage.style.setProperty('--paper-from', String(Math.floor((across - wide) / 2) + 1));
+    stage.style.setProperty('--paper-wide', String(wide));
+    paper.style.height = 'auto';
+    const rows = Math.ceil(paper.getBoundingClientRect().height / unit);
+    paper.style.height = `${rows * unit}px`;
+    paper.style.gridRow = `1 / span ${rows}`;
+    if (printed) return;
+    printed = true;
+    if (reducedMotion()) return;
+    // It prints: the paper comes out of the slot a square at a time.
+    paper.animate([{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)' }], { duration: rows * 55, easing: `steps(${rows})`, fill: 'backwards' });
+  });
+</script>
+
+<style is:global>
+  html { background: #1f2a2e; }
+  .till {
+    --counter: #1f2a2e;
+    --paper: #f6f5f0;
+    --print: #34312d;
+    grid-template-rows: none !important;
+    grid-auto-rows: var(--u);
+    height: auto !important;
+    min-height: var(--high);
+    padding-bottom: calc(4 * var(--u));
+    box-sizing: border-box;
+    background:
+      radial-gradient(circle at 30% 40%, rgb(255 255 255 / 0.05) 0 1px, transparent 1.5px) 0 0 / calc(var(--u) * 0.7) calc(var(--u) * 0.9),
+      radial-gradient(circle at 70% 20%, rgb(0 0 0 / 0.25) 0 1px, transparent 1.5px) 0 0 / calc(var(--u) * 1.1) calc(var(--u) * 0.6),
+      var(--counter);
+  }
+
+  /* The printer's slot at the top edge of the window, the paper coming out of it. */
+  .slot { grid-column: var(--paper-from, 28) / span var(--paper-wide, 18); grid-row: 1; margin-inline: calc(var(--u) * -1); background: #0d1214; box-shadow: inset 0 calc(-3px * var(--sf)) 0 #000; z-index: 1; }
+
+  .paper {
+    grid-column: var(--paper-from, 28) / span var(--paper-wide, 18);
+    grid-row: 1;
+    align-self: start;
+    position: relative;
+    box-sizing: border-box;
+    padding: calc(2 * var(--u)) var(--u) calc(2 * var(--u));
+    background: var(--paper);
+    color: var(--print);
+    font-family: Menlo, 'Andale Mono', 'Courier New', monospace;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    box-shadow: 0 calc(2px * var(--sf)) calc(8px * var(--sf)) rgb(0 0 0 / 0.35);
+    /* The torn foot: a tooth every half square. */
+    --tooth: calc(var(--u) / 2);
+    -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat, conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) bottom / var(--tooth) var(--tooth) repeat-x;
+    mask: linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat, conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) bottom / var(--tooth) var(--tooth) repeat-x;
+  }
+  .paper p { margin: 0; }
+  .shop { text-align: center; margin-bottom: var(--u); }
+  .shop-name { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: bold; letter-spacing: 0.08em; transform: scaleY(1.15); }
+  .meta { display: flex; justify-content: space-between; white-space: pre; }
+  .rule { height: var(--u); background: repeating-linear-gradient(90deg, var(--print) 0 calc(4px * var(--sf)), transparent 0 calc(8px * var(--sf))) 0 50% / 100% 1px no-repeat; }
+
+  .poem { margin-top: var(--u); }
+  .poem h2 { margin: 0; font: inherit; font-weight: bold; text-transform: uppercase; }
+  .poem ul { margin: 0; padding: 0; list-style: none; }
+  .poem li { display: grid; grid-template-columns: 1fr auto; column-gap: var(--u); }
+  .poem li span { padding-inline-start: calc(var(--u) / 2); text-indent: calc(var(--u) / -2); }
+  .poem li b { font-weight: normal; font-variant-numeric: tabular-nums; }
+
+  .sums { margin: var(--u) 0; }
+  .sums div { display: flex; justify-content: space-between; }
+  .sums dd { margin: 0; }
+  .sums .total { font-weight: bold; font-size: calc(16px * var(--sf)); line-height: calc(2 * var(--u)); }
+
+  .note { margin-top: var(--u) !important; text-align: center; }
+  .barcode { display: block; width: calc(var(--paper-wide, 18) * var(--u) - 4 * var(--u)); height: calc(3 * var(--u)); margin: calc(2 * var(--u)) auto 0; fill: var(--print); shape-rendering: crispEdges; }
+  .digits { text-align: center; letter-spacing: 0.3em; }
+  .thanks { text-align: center; margin-top: var(--u) !important; }
+  .thanks.small { margin-top: 0 !important; }
+
+  :root[data-narrow] .paper { font-size: calc(11px * var(--sf)); }
+  :root[data-narrow] .slot { margin-inline: calc(var(--u) * -0.5); }
+</style>

@@ -1,0 +1,295 @@
+---
+// After a museum's entomology drawer: a mahogany frame, a glass lid, unit trays of pinned
+// butterflies in series, each over its own slip of a label. Every specimen is drawn in SVG on a
+// cell of six squares by four, symmetrical about its pin; the trays are eight squares wide and the
+// series as long as the drawer is deep. The brass plate reads out the label of the one you look at.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="butterfly-drawer" theme="dark">
+  <main class="stage bf" id="bf">
+    <div class="bf-wood" aria-hidden="true"></div>
+    <p class="bf-plate" id="plate" aria-live="polite"><b id="plate-name">Drawer 14. Lepidoptera of the North</b><span id="plate-data">Papilionidae, Pieridae, Nymphalidae and Lycaenidae, arranged after Linnaeus</span></p>
+    <section class="bf-drawer" id="drawer" aria-label="Drawer 14, unit trays of pinned butterflies"></section>
+    <div class="bf-glass" aria-hidden="true"></div>
+    <svg class="bf-defs" aria-hidden="true" width="0" height="0"><defs id="defs"></defs></svg>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  interface Species {
+    id: string; name: string; author: string; common: string; scale: number; shape: 'swallow' | 'pointed' | 'round' | 'nymph' | 'apollo';
+    paint: (side: string) => string; female?: (side: string) => string; places: string[];
+  }
+
+  // Wing outlines for the left half; the right half is the same, mirrored about the body.
+  const FORE: Record<Species['shape'], string> = {
+    swallow: 'M -0.15 -0.45 C -0.8 -1.45 -2.2 -1.9 -2.95 -1.75 C -2.85 -1.05 -2.35 -0.25 -1.75 0.1 C -1.1 0.2 -0.5 0.1 -0.15 0.05 Z',
+    nymph: 'M -0.15 -0.45 C -0.8 -1.4 -2.1 -1.85 -2.8 -1.65 L -2.6 -1.2 C -2.5 -0.8 -2.4 -0.3 -1.85 0.1 C -1.2 0.2 -0.5 0.1 -0.15 0.05 Z',
+    pointed: 'M -0.15 -0.45 C -0.9 -1.4 -2 -1.85 -2.75 -1.8 C -2.65 -1.15 -2.25 -0.25 -1.7 0.15 C -1.1 0.2 -0.5 0.1 -0.15 0.05 Z',
+    round: 'M -0.15 -0.4 C -0.7 -1.3 -1.8 -1.65 -2.45 -1.45 C -2.6 -0.9 -2.25 -0.15 -1.6 0.15 C -1 0.2 -0.5 0.1 -0.15 0.05 Z',
+    apollo: 'M -0.15 -0.45 C -0.8 -1.4 -2 -1.8 -2.7 -1.6 C -2.75 -0.95 -2.3 -0.2 -1.7 0.15 C -1.1 0.2 -0.5 0.1 -0.15 0.05 Z',
+  };
+  const HIND: Record<Species['shape'], string> = {
+    swallow: 'M -0.15 0 C -0.9 -0.15 -1.85 0.15 -2.05 0.65 C -2.1 1.15 -1.75 1.45 -1.45 1.55 L -1.25 1.98 L -1.02 1.62 C -0.6 1.62 -0.3 1.25 -0.12 0.9 Z',
+    nymph: 'M -0.15 0 C -0.9 -0.15 -1.9 0.2 -2.05 0.75 L -1.85 1.1 C -1.6 1.5 -1.15 1.7 -0.8 1.65 C -0.45 1.5 -0.25 1.2 -0.12 0.9 Z',
+    pointed: 'M -0.15 0 C -0.9 -0.15 -1.9 0.15 -2.05 0.7 L -1.95 1.05 C -1.7 1.5 -1.2 1.7 -0.85 1.65 C -0.5 1.5 -0.25 1.2 -0.12 0.9 Z',
+    round: 'M -0.15 0 C -0.85 -0.1 -1.75 0.15 -1.85 0.7 C -1.85 1.25 -1.3 1.6 -0.85 1.55 C -0.5 1.45 -0.25 1.15 -0.12 0.85 Z',
+    apollo: 'M -0.15 0 C -0.9 -0.15 -1.85 0.15 -1.95 0.75 C -1.95 1.3 -1.4 1.65 -0.9 1.6 C -0.5 1.5 -0.25 1.2 -0.12 0.9 Z',
+  };
+
+  const circle = (x: number, y: number, r: number, fill: string, extra = '') => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" ${extra}/>`;
+  const edge = (wing: 'f' | 'h', side: string, colour: string, width: number, opacity = 1) =>
+    `<use href="#${side}-${wing}" fill="none" stroke="${colour}" stroke-width="${width}" opacity="${opacity}"/>`;
+  const veins = (colour: string, width = 0.03) =>
+    `<path d="M -0.15 -0.3 L -2.4 -1.5 M -0.2 -0.2 L -2.6 -0.9 M -0.2 -0.1 L -2.2 -0.15 M -0.2 0.2 L -1.8 0.9 M -0.2 0.3 L -1.3 1.5 M -0.2 0.25 L -0.7 1.6" stroke="${colour}" stroke-width="${width}" fill="none"/>`;
+
+  const SPECIES: Species[] = [
+    {
+      id: 'machaon', name: 'Papilio machaon', author: 'Linnaeus, 1758', common: 'Swallowtail', scale: 1, shape: 'swallow',
+      places: ['Fårö, Gotland', 'Hornborgasjön', 'Rold Skov', 'Öland, Alvaret'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#f2d24b"/>${veins('#1b1a17', 0.04)}<path d="M -0.1 -0.55 L -0.9 -1.25 L -1 -0.15 Z" fill="#1b1a17" opacity="0.85"/>${edge('f', s, '#1b1a17', 0.5)}${[0, 1, 2, 3, 4].map(i => circle(-2.7 + i * 0.13, -1.5 + i * 0.33, 0.06, '#f2d24b')).join('')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#f2d24b"/>${veins('#1b1a17', 0.04)}${edge('h', s, '#1b1a17', 0.6)}${[0, 1, 2, 3].map(i => circle(-1.85 + i * 0.3, 0.85 + i * 0.22, 0.09, '#5a7fd0')).join('')}${circle(-0.45, 1.3, 0.17, '#d23a2a', 'stroke="#1b1a17" stroke-width="0.05"')}</g>`,
+    },
+    {
+      id: 'apollo', name: 'Parnassius apollo', author: '(Linnaeus, 1758)', common: 'Apollo', scale: 0.95, shape: 'apollo',
+      places: ['Dovre', 'Abisko', 'Valdres', 'Jotunheimen'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#f4f1e8"/>${edge('f', s, '#8f8e8a', 0.5, 0.55)}${circle(-1.05, -0.95, 0.14, '#1b1a17')}${circle(-1.6, -1.15, 0.12, '#1b1a17')}${circle(-1.35, -0.35, 0.11, '#1b1a17')}${circle(-2.05, -0.6, 0.09, '#1b1a17')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#f4f1e8"/><path d="M -0.1 0 L -0.9 0.4 L -0.3 1.2 Z" fill="#2c2b28" opacity="0.6"/>${circle(-1.25, 0.6, 0.22, '#d6372e', 'stroke="#1b1a17" stroke-width="0.07"')}${circle(-1.25, 0.6, 0.07, '#fff')}${circle(-0.95, 1.15, 0.18, '#d6372e', 'stroke="#1b1a17" stroke-width="0.07"')}${circle(-0.95, 1.15, 0.05, '#fff')}</g>`,
+    },
+    {
+      id: 'rhamni', name: 'Gonepteryx rhamni', author: '(Linnaeus, 1758)', common: 'Brimstone', scale: 0.86, shape: 'pointed',
+      places: ['Møns Klint', 'Stenshuvud', 'Dyrehaven', 'Almindingen'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#efdc45"/>${veins('#c9b434', 0.025)}${circle(-1.35, -0.7, 0.08, '#e38a1d')}${edge('f', s, '#9c8b2a', 0.06)}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#efdc45"/>${veins('#c9b434', 0.025)}${circle(-1.05, 0.75, 0.08, '#e38a1d')}${edge('h', s, '#9c8b2a', 0.06)}</g>`,
+      female: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#e9ecd2"/>${veins('#c8cbb0', 0.025)}${circle(-1.35, -0.7, 0.08, '#e38a1d')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#e9ecd2"/>${veins('#c8cbb0', 0.025)}${circle(-1.05, 0.75, 0.08, '#e38a1d')}</g>`,
+    },
+    {
+      id: 'io', name: 'Aglais io', author: '(Linnaeus, 1758)', common: 'Peacock', scale: 0.88, shape: 'nymph',
+      places: ['Silkeborg', 'Lund', 'Vejle Fjord', 'Uppsala'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#9b2a2c"/>${edge('f', s, '#5b2a22', 0.35)}<ellipse cx="-2.2" cy="-1.2" rx="0.55" ry="0.42" fill="#1d1414"/><ellipse cx="-2.2" cy="-1.2" rx="0.42" ry="0.32" fill="#e7cf6a"/><ellipse cx="-2.2" cy="-1.2" rx="0.3" ry="0.22" fill="#6a86c8"/><ellipse cx="-2.2" cy="-1.2" rx="0.12" ry="0.1" fill="#1d1414"/><path d="M -1.1 -1.45 L -1.5 -1.5 L -1.4 -1.1 Z" fill="#1d1414"/></g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#8f2629"/>${edge('h', s, '#4a221d', 0.4)}<circle cx="-1.35" cy="0.75" r="0.45" fill="#1d1414"/><circle cx="-1.35" cy="0.75" r="0.3" fill="#3e5ea8"/><circle cx="-1.35" cy="0.75" r="0.13" fill="#c9d4ee"/></g>`,
+    },
+    {
+      id: 'atalanta', name: 'Vanessa atalanta', author: '(Linnaeus, 1758)', common: 'Red admiral', scale: 0.86, shape: 'nymph',
+      places: ['Skagen', 'Falsterbo', 'Blåvand', 'Ottenby'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#1f1b1b"/><path d="M -0.95 -1.35 L -1.95 0.05" stroke="#d6402c" stroke-width="0.32"/>${circle(-2.35, -1.3, 0.11, '#f3efe6')}${circle(-2.1, -1.55, 0.08, '#f3efe6')}${circle(-2.5, -0.95, 0.07, '#f3efe6')}${circle(-1.9, -1.15, 0.09, '#f3efe6')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#2a2321"/>${edge('h', s, '#d6402c', 0.5)}${edge('h', s, '#1f1b1b', 0.12)}${circle(-1.15, 1.3, 0.05, '#1f1b1b')}${circle(-1.5, 1.1, 0.05, '#1f1b1b')}</g>`,
+    },
+    {
+      id: 'antiopa', name: 'Nymphalis antiopa', author: '(Linnaeus, 1758)', common: 'Camberwell beauty', scale: 0.98, shape: 'nymph',
+      places: ['Kvikkjokk', 'Tornedalen', 'Röros', 'Kolmården'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#46202a"/>${edge('f', s, '#efe3b6', 0.42)}${edge('f', s, '#1e1214', 0.62, 0.0)}${[0, 1, 2, 3, 4].map(i => circle(-2.35 + i * 0.13, -1.3 + i * 0.27, 0.06, '#6f8fd6')).join('')}<path d="M -1.3 -1.55 L -1.7 -1.6 L -1.6 -1.25 Z" fill="#efe3b6" opacity="0.8"/></g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#41202a"/>${edge('h', s, '#efe3b6', 0.42)}${[0, 1, 2, 3].map(i => circle(-1.75 + i * 0.27, 0.75 + i * 0.22, 0.06, '#6f8fd6')).join('')}</g>`,
+    },
+    {
+      id: 'cardamines', name: 'Anthocharis cardamines', author: '(Linnaeus, 1758)', common: 'Orange tip', scale: 0.74, shape: 'round',
+      places: ['Rold Skov', 'Söderåsen', 'Hareskoven', 'Tisvilde Hegn'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#f6f4ee"/><circle cx="-2.2" cy="-1.05" r="0.95" fill="#ee8423"/>${edge('f', s, '#5a5a56', 0.18)}${circle(-1.25, -0.75, 0.07, '#2a2a28')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#f6f4ee"/><ellipse cx="-1.1" cy="0.8" rx="0.7" ry="0.5" fill="#9aa37a" opacity="0.35"/><ellipse cx="-0.7" cy="1.2" rx="0.4" ry="0.3" fill="#9aa37a" opacity="0.35"/></g>`,
+      female: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#f6f4ee"/>${edge('f', s, '#5a5a56', 0.3)}${circle(-1.25, -0.75, 0.08, '#2a2a28')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#f6f4ee"/><ellipse cx="-1.1" cy="0.8" rx="0.7" ry="0.5" fill="#9aa37a" opacity="0.35"/></g>`,
+    },
+    {
+      id: 'phlaeas', name: 'Lycaena phlaeas', author: '(Linnaeus, 1761)', common: 'Small copper', scale: 0.6, shape: 'round',
+      places: ['Læsø', 'Anholt', 'Kullaberg', 'Råbjerg Mile'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#ef7a1d"/>${edge('f', s, '#4a3326', 0.45)}${circle(-1.0, -0.65, 0.1, '#2a1d17')}${circle(-1.45, -0.95, 0.1, '#2a1d17')}${circle(-1.6, -0.35, 0.09, '#2a1d17')}${circle(-1.9, -0.75, 0.09, '#2a1d17')}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#4d362a"/>${edge('h', s, '#ef7a1d', 0.35)}${edge('h', s, '#4d362a', 0.1)}</g>`,
+    },
+    {
+      id: 'icarus', name: 'Polyommatus icarus', author: '(Rottemburg, 1775)', common: 'Common blue', scale: 0.56, shape: 'round',
+      places: ['Stevns Klint', 'Öland, Alvaret', 'Mols Bjerge', 'Kalvøya'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#7b9be6"/><path d="M -0.1 -0.4 L -1.2 -1 L -1 0.1 Z" fill="#9db3ee" opacity="0.6"/>${edge('f', s, '#f6f6f2', 0.14)}${edge('f', s, '#2c2c3a', 0.06)}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#7b9be6"/>${edge('h', s, '#f6f6f2', 0.14)}${edge('h', s, '#2c2c3a', 0.06)}</g>`,
+      female: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#6a5240"/>${[0, 1, 2, 3].map(i => circle(-2.25 + i * 0.17, -1.05 + i * 0.3, 0.09, '#ef8f2e')).join('')}${edge('f', s, '#f6f6f2', 0.14)}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#6a5240"/>${[0, 1, 2, 3].map(i => circle(-1.7 + i * 0.27, 0.8 + i * 0.22, 0.09, '#ef8f2e')).join('')}${edge('h', s, '#f6f6f2', 0.14)}</g>`,
+    },
+    {
+      id: 'podalirius', name: 'Iphiclides podalirius', author: '(Linnaeus, 1758)', common: 'Scarce swallowtail', scale: 1, shape: 'swallow',
+      places: ['Bornholm, Hammeren', 'Kalmar', 'Gotska Sandön', 'Visby'],
+      paint: s => `<g clip-path="url(#${s}-cf)"><rect x="-3" y="-2" width="3" height="2.2" fill="#f2ebd2"/>${[0, 1, 2, 3, 4].map(i => `<path d="M ${-0.6 - i * 0.48} -2 L ${-0.25 - i * 0.42} 0.3" stroke="#1b1a17" stroke-width="${i % 2 ? 0.12 : 0.2}"/>`).join('')}${edge('f', s, '#1b1a17', 0.3)}</g>
+        <g clip-path="url(#${s}-ch)"><rect x="-3" y="-0.2" width="3" height="2.4" fill="#f2ebd2"/><path d="M -0.4 -0.2 L -0.15 1.4 M -0.95 -0.2 L -0.6 1.7" stroke="#1b1a17" stroke-width="0.14"/>${edge('h', s, '#1b1a17', 0.45)}${[0, 1, 2].map(i => circle(-1.65 + i * 0.3, 1.0 + i * 0.2, 0.08, '#6c86cf')).join('')}${circle(-0.55, 1.42, 0.12, '#e48a2a', 'stroke="#1b1a17" stroke-width="0.04"')}</g>`,
+    },
+  ];
+
+  const COLLECTORS = ['A. Lind', 'M. Holm', 'I. Berg', 'K. Strand', 'E. Nyborg'];
+  const MONTHS = ['v', 'vi', 'vii', 'viii'];
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+
+  // One symbol per species and sex, drawn once and pinned many times.
+  const defs = document.getElementById('defs')!;
+  const BODY = `<ellipse cx="0" cy="0.15" rx="0.13" ry="1.05" fill="#2a221d"/><circle cx="0" cy="-0.95" r="0.15" fill="#2a221d"/><path d="M -0.05 -1.05 Q -0.35 -1.6 -0.6 -1.85 M 0.05 -1.05 Q 0.35 -1.6 0.6 -1.85" stroke="#2a221d" stroke-width="0.035" fill="none"/>${circle(-0.6, -1.85, 0.06, '#2a221d')}${circle(0.6, -1.85, 0.06, '#2a221d')}`;
+  const symbol = (sp: Species, sex: 'm' | 'f') => {
+    const id = `${sp.id}-${sex}`;
+    const paint = sex === 'f' && sp.female ? sp.female : sp.paint;
+    return `<path id="${id}-f" d="${FORE[sp.shape]}"/><path id="${id}-h" d="${HIND[sp.shape]}"/>
+      <clipPath id="${id}-cf"><use href="#${id}-f"/></clipPath><clipPath id="${id}-ch"><use href="#${id}-h"/></clipPath>
+      <symbol id="bf-${id}" viewBox="-3 -2 6 4" overflow="visible">
+        <g id="${id}-half">${paint(id)}<use href="#${id}-f" fill="none" stroke="rgba(30,20,15,0.35)" stroke-width="0.025"/><use href="#${id}-h" fill="none" stroke="rgba(30,20,15,0.35)" stroke-width="0.025"/></g>
+        <use href="#${id}-half" transform="scale(-1 1)"/>${BODY}
+      </symbol>`;
+  };
+  defs.innerHTML = SPECIES.flatMap(sp => [symbol(sp, 'm'), symbol(sp, 'f')]).join('');
+
+  const drawer = document.getElementById('drawer')!;
+  const plateName = document.getElementById('plate-name')!;
+  const plateData = document.getElementById('plate-data')!;
+  const resting = [plateName.textContent!, plateData.textContent!];
+
+  onSquares(({ across, down, narrow }) => {
+    const inside = narrow ? across - 2 : across - 4;
+    const deep = narrow ? 0 : down - 7;
+    const trays = narrow ? 8 : Math.min(SPECIES.length, Math.floor((inside - 1) / 8));
+    const series = narrow ? 2 : Math.max(1, Math.min(7, Math.floor((deep - 4) / 5)));
+    const offset = narrow ? 0 : Math.floor((inside - trays * 8 - 1) / 2);
+    drawer.style.setProperty('--bf-rows', String(narrow ? trays * 9 : deep));
+    drawer.style.setProperty('--bf-cols', String(inside));
+
+    let html = '';
+    SPECIES.slice(0, trays).forEach((sp, t) => {
+      const random = seeded(t * 977 + 13);
+      const column = narrow ? 1 : 2 + offset + t * 8;
+      const row = narrow ? 1 + t * 9 : 2;
+      const wide = narrow ? inside : 7;
+      const high = narrow ? 8 : deep - 2;
+      html += `<div class="bf-tray" style="grid-column:${column} / span ${wide};grid-row:${row} / span ${high}"><p class="bf-tray-label"><i>${sp.name}</i><br><span>${sp.common}</span></p>`;
+      for (let n = 0; n < series; n++) {
+        const sex = sp.female ? (n % 3 === 2 ? 'f' : 'm') : random() < 0.4 ? 'f' : 'm';
+        const size = sp.scale * (0.93 + random() * 0.1) * (sex === 'f' ? 1.03 : 1);
+        const turn = (random() - 0.5) * 4;
+        const place = sp.places[Math.floor(random() * sp.places.length)];
+        const date = `${1 + Math.floor(random() * 28)}.${MONTHS[Math.floor(random() * MONTHS.length)]}.${1931 + Math.floor(random() * 58)}`;
+        const leg = COLLECTORS[Math.floor(random() * COLLECTORS.length)];
+        const faded = random() < 0.25 ? ' bf-faded' : '';
+        const mark = sex === 'f' ? '♀' : '♂';
+        const at = narrow ? `grid-column:${1 + (n % 2) * 6} / span 6;grid-row:3 / span 5` : `grid-column:1 / span 6;grid-row:${3 + n * 5} / span 5`;
+        html += `<button type="button" class="bf-specimen${faded}" style="${at}" data-name="${sp.name} ${sp.author}, ${mark}" data-data="${place}, ${date}, leg. ${leg}" aria-label="${sp.common}, ${sp.name}, ${sex === 'f' ? 'female' : 'male'}, ${place}, ${date}">
+          <svg viewBox="-3 -2 6 4" aria-hidden="true"><g transform="rotate(${turn.toFixed(2)}) scale(${size.toFixed(3)})"><use href="#bf-${sp.id}-${sex}" x="-3" y="-2" width="6" height="4" class="bf-shadow"/><use href="#bf-${sp.id}-${sex}" x="-3" y="-2" width="6" height="4"/></g><circle cx="0" cy="${(-0.55 * size).toFixed(3)}" r="0.11" class="bf-pin"/></svg>
+          <span class="bf-slip">${mark} ${place.split(',')[0]} ${date}</span>
+        </button>`;
+      }
+      html += '</div>';
+    });
+    drawer.innerHTML = html;
+
+    drawer.querySelectorAll<HTMLButtonElement>('.bf-specimen').forEach(button => {
+      const read = () => { plateName.textContent = button.dataset.name!; plateData.textContent = button.dataset.data!; };
+      const rest = () => { plateName.textContent = resting[0]; plateData.textContent = resting[1]; };
+      button.addEventListener('pointerenter', read);
+      button.addEventListener('focus', read);
+      button.addEventListener('pointerleave', rest);
+      button.addEventListener('blur', rest);
+    });
+  });
+</script>
+
+<style is:global>
+  html { background: #3d2214; }
+  .bf {
+    --wood: #5a2f1b;
+    --foam: #f1eee6;
+    color: #2b2620;
+    font-family: 'Iowan Old Style', Palatino, var(--typeface-canon), serif;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    background: var(--wood);
+  }
+  .bf-defs { position: absolute; width: 0; height: 0; }
+
+  /* Mahogany: a frame three squares deep at the top for the plate, two at the sides and foot. */
+  .bf-wood {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 3px, transparent 3px 11px, rgba(255, 200, 150, 0.04) 11px 13px, transparent 13px 23px),
+      repeating-linear-gradient(88deg, transparent 0 40px, rgba(0, 0, 0, 0.08) 40px 44px, transparent 44px 97px),
+      linear-gradient(180deg, #6a3820, #4a2614);
+  }
+
+  .bf-plate {
+    grid-column: 3 / -3;
+    grid-row: 2 / span 2;
+    justify-self: center;
+    z-index: 1;
+    display: grid;
+    margin: 0;
+    padding: 0 var(--u);
+    min-width: calc(24 * var(--u));
+    max-width: 100%;
+    box-sizing: border-box;
+    height: calc(2 * var(--u));
+    text-align: center;
+    background: linear-gradient(180deg, #e6c983, #b8913f 55%, #d4b26a);
+    box-shadow: inset 0 0 0 1px #7b5d22, inset 0 1px 0 2px rgba(255, 245, 210, 0.5), 0 2px 3px rgba(0, 0, 0, 0.45);
+    border-radius: 2px;
+    color: #2e2210;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .bf-plate b { font-weight: normal; font-style: italic; font-size: calc(14px * var(--sf)); }
+  .bf-plate span { font-size: calc(11px * var(--sf)); overflow: hidden; text-overflow: ellipsis; }
+
+  /* The drawer floor, under glass. */
+  .bf-drawer {
+    grid-column: 3 / -3;
+    grid-row: 5 / -3;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--bf-cols, 64), var(--u));
+    grid-template-rows: repeat(var(--bf-rows, 36), var(--u));
+    background: var(--foam);
+    box-shadow: inset 0 0 0 2px #2c160b, inset 0 6px 10px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  .bf-glass {
+    grid-column: 3 / -3;
+    grid-row: 5 / -3;
+    z-index: 2;
+    pointer-events: none;
+    background:
+      linear-gradient(118deg, transparent 22%, rgba(255, 255, 255, 0.22) 27%, rgba(255, 255, 255, 0.05) 31%, transparent 33%, transparent 62%, rgba(255, 255, 255, 0.12) 66%, transparent 70%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%);
+    box-shadow: inset 0 0 0 calc(var(--u) / 4) rgba(40, 20, 10, 0.35);
+  }
+
+  /* Unit trays: card walls, a label at the head, the series below. */
+  .bf-tray {
+    display: grid;
+    grid-template-columns: repeat(6, var(--u)) var(--u);
+    grid-auto-rows: var(--u);
+    background: #f7f5ef;
+    box-shadow: inset 0 0 0 1px #c9c0ad, inset 2px 2px 0 1px #fff, 1px 1px 0 #d9d2c2;
+  }
+  .bf-tray-label { grid-column: 1 / -1; grid-row: 1 / span 2; margin: 0; padding: 0 calc(var(--u) / 2); font-size: calc(11px * var(--sf)); line-height: var(--u); border-bottom: 1px solid #ddd5c4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bf-tray-label i { font-size: calc(12px * var(--sf)); }
+  .bf-tray-label span { color: #7a6f5d; }
+
+  .bf-specimen {
+    all: unset;
+    position: relative;
+    display: grid;
+    grid-template-rows: calc(4 * var(--u)) var(--u);
+    justify-items: center;
+    cursor: zoom-in;
+  }
+  .bf-specimen svg { width: calc(6 * var(--u)); height: calc(4 * var(--u)); overflow: visible; transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .bf-shadow { transform: translate(0.12px, 0.16px); filter: blur(0.06px) brightness(0); opacity: 0.18; }
+  .bf-pin { fill: #141210; stroke: rgba(255, 255, 255, 0.5); stroke-width: 0.03; }
+  .bf-faded svg use:not(.bf-shadow) { filter: sepia(0.35) saturate(0.7) brightness(1.05); }
+  .bf-slip { align-self: center; height: calc(var(--u) * 0.7); padding: 0 4px; line-height: calc(var(--u) * 0.7); background: #fff; box-shadow: 0 0 0 1px #d7cfbe; font-size: calc(9px * var(--sf)); color: #3c352b; white-space: nowrap; max-width: calc(6 * var(--u) - 4px); overflow: hidden; text-overflow: ellipsis; }
+  .bf-specimen:hover svg, .bf-specimen:focus-visible svg { transform: translateY(-3px) scale(1.04); }
+  .bf-specimen:hover .bf-shadow, .bf-specimen:focus-visible .bf-shadow { transform: translate(0.25px, 0.4px); opacity: 0.14; }
+  .bf-specimen:focus-visible .bf-slip { box-shadow: 0 0 0 2px #2b2620; }
+  @media (prefers-reduced-motion: reduce) { .bf-specimen svg { transition: none; } }
+
+  /* Narrow: a thinner frame and the trays one above the other, two specimens a tray. */
+  :root[data-narrow] .bf { padding-bottom: var(--u); }
+  :root[data-narrow] .bf-plate { grid-column: 2 / -2; grid-row: 2 / span 3; min-width: 0; width: 100%; height: auto; white-space: normal; justify-self: stretch; }
+  :root[data-narrow] .bf-plate span { white-space: nowrap; }
+  :root[data-narrow] .bf-drawer, :root[data-narrow] .bf-glass { grid-column: 2 / -2; grid-row: 6 / span 72; }
+  :root[data-narrow] .bf-wood { grid-row: 1 / span 79; }
+  :root[data-narrow] .bf-tray { grid-template-columns: repeat(12, var(--u)); }
+  :root[data-narrow] .bf-specimen svg { width: calc(6 * var(--u)); }
+</style>

@@ -1,0 +1,221 @@
+---
+// After a fine-art auction catalogue, opened flat: the lot photographed alone on the left page, its
+// number, estimate, provenance and condition report set in a careful serif on the right, for things
+// nobody thought to keep. Someone has been through this copy with a pencil.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const LOTS = [
+  {
+    number: 112, image: 'cup.jpg', page: 46, alt: 'A speckled enamel mug in oatmeal and white, on grey paper',
+    title: 'An enamel camping mug, speckled, early twenty-first century',
+    text: 'Of cylindrical form, the oatmeal glaze flecked with white like a night sky that has given up, with a loop handle and rolled rim. Bought for one camping trip and used every morning for nine years since. Height 9 cm.',
+    estimate: '€4–6',
+    provenance: 'An outdoor shop on Nørrebrogade, 2016; a tent near Silkeborg for two nights; thence by descent to the draining board.',
+    literature: 'Mentioned in a text message, 14 March 2019: “have you seen my mug”.',
+    exhibited: 'The windowsill, intermittently, 2017 to the present.',
+    condition: 'A chip to the enamel at the rim, at three o’clock, consistent with Tuesdays. Handle hot when full. Tea staining, not reversible, not regretted.',
+    pencil: 'ours?',
+  },
+  {
+    number: 113, image: 'chair.jpg', page: 48, alt: 'A wooden side chair with a spindle back and worn pink paint',
+    title: 'A turned side chair with a spindle back, traces of pink',
+    text: 'Of joined construction, the crest rail and seat rails keeping an earlier pink paint, rubbed back to the wood by elbows. One leg a millimetre short, so that the chair joins in conversations. Height 86 cm.',
+    estimate: '€40–60',
+    provenance: 'A street corner in Vesterbro, put out with a note reading “works”; carried up three flights by the present owner.',
+    literature: 'Unpublished.',
+    exhibited: 'At the head of the table for birthdays, 2018, 2021 and 2023.',
+    condition: 'The short leg as noted. A coat has hung on the back since October; buyers should not expect the coat.',
+    pencil: 'the one with the coat',
+  },
+  {
+    number: 114, image: 'headphones.jpg', page: 51, alt: 'Mint over-ear headphones lying on paper, half pink and half mint',
+    title: 'A pair of mint over-ear headphones, with cable',
+    text: 'The headband let out to its second notch and never moved again; the cable with a knot that has outlived two telephones. Photographed on the owner’s two best sheets of paper.',
+    estimate: '€25–35',
+    provenance: 'A birthday, 2020; the 7.42 to Roskilde most weekdays thereafter.',
+    literature: 'Reviewed in a group chat, 2021: “they’re fine”.',
+    exhibited: 'Round the neck, unworn, for whole afternoons.',
+    condition: 'Left cushion flaking at the seam. The right cup holds the last song played; the house cannot say which.',
+    pencil: 'bid to 30, no more',
+  },
+  {
+    number: 115, image: 'room.jpg', page: 52, alt: 'An empty white room with a curtain and one wooden folding chair',
+    title: 'The room itself, as found, with folding chair',
+    text: 'A white sitting room of about sixteen square metres, offered with its curtain, one folding chair and the light at about four in the afternoon, which cannot be guaranteed in winter.',
+    estimate: 'On request',
+    provenance: 'Rented, 2015 to date. The landlord has been informed and is not amused.',
+    literature: 'Letting agent’s particulars, 2015, page 2, as “bright”.',
+    exhibited: 'Upper left of every video call since 2020.',
+    condition: 'The radiator knocks at night. One corner of the rug curls up and cannot be persuaded. Viewing strongly recommended.',
+    pencil: 'how would we even move it',
+  },
+];
+---
+<AlignedStudy slug="auction-catalogue" theme="light">
+  <main class="stage ac" id="ac">
+    <p class="ac-head ac-head-left">Domestic Interiors, including Things Nobody Thought to Keep</p>
+    <p class="ac-head ac-head-right">Holm <span>&amp;</span> Larkin, Copenhagen</p>
+
+    {LOTS.map((lot, index) => (
+      <figure class="ac-plate" data-lot={lot.number} hidden={index > 0}>
+        <img src={`/examples/images/${lot.image}`} alt={lot.alt} />
+        <figcaption>Lot {lot.number}, actual size not shown</figcaption>
+      </figure>
+    ))}
+
+    {LOTS.map((lot, index) => (
+      <article class="ac-lot" data-lot={lot.number} hidden={index > 0} aria-labelledby={`ac-title-${lot.number}`}>
+        <div class="ac-top">
+          <p class="ac-number" aria-label={`Lot ${lot.number}`}>{lot.number}</p>
+          <p class="ac-estimate"><span>Estimate</span>{lot.estimate}</p>
+          <p class="ac-pencil" aria-label={`Pencilled in the margin: ${lot.pencil}`}>{lot.pencil}</p>
+        </div>
+        <h1 id={`ac-title-${lot.number}`}>{lot.title}</h1>
+        <p class="ac-text">{lot.text}</p>
+        <dl class="ac-notes">
+          <div><dt>Provenance</dt><dd>{lot.provenance}</dd></div>
+          <div><dt>Literature</dt><dd>{lot.literature}</dd></div>
+          <div><dt>Exhibited</dt><dd>{lot.exhibited}</dd></div>
+          <div><dt>Condition</dt><dd>{lot.condition}</dd></div>
+        </dl>
+        <form class="ac-bid" onsubmit="return false">
+          <label>Commission bid on lot {lot.number}, up to €<input type="text" inputmode="numeric" size="5" aria-label={`Highest bid on lot ${lot.number} in euros`} /></label>
+          <label>Paddle <input type="text" size="4" aria-label="Paddle number" /></label>
+        </form>
+      </article>
+    ))}
+
+    <div class="ac-lots" role="group" aria-label="Lots in this part of the sale">
+      {LOTS.map((lot, index) => (
+        <button type="button" data-lot={lot.number} aria-pressed={index === 0 ? 'true' : 'false'}>
+          <img src={`/examples/images/${lot.image}`} alt="" />
+          <span>{lot.number}</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="ac-folio ac-folio-left" id="folio-left">{LOTS[0].page}</p>
+    <p class="ac-folio ac-folio-right" id="folio-right">{LOTS[0].page + 1}</p>
+    <p class="ac-sale">Sale 4471, Thursday 21 November at ten. Buyer’s premium 25%.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const stage = document.getElementById('ac') as HTMLElement;
+  const pages: Record<string, number> = { 112: 46, 113: 48, 114: 51, 115: 52 };
+
+  // The spread's halves in whole squares; the spine sits on the line between them.
+  onSquares(({ across }) => {
+    const half = Math.floor(across / 2) + 1;
+    stage.style.setProperty('--half', String(half));
+    stage.style.setProperty('--ac-left-end', String(half - 2));
+    stage.style.setProperty('--ac-right', String(half + 2));
+  });
+
+  // Turning to a lot: its plate, its page and its folios.
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('.ac-lots button')];
+  buttons.forEach(button => button.addEventListener('click', () => {
+    const lot = button.dataset.lot!;
+    document.querySelectorAll<HTMLElement>('.ac-plate, .ac-lot').forEach(element => { element.hidden = element.dataset.lot !== lot; });
+    buttons.forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+    document.getElementById('folio-left')!.textContent = String(pages[lot]);
+    document.getElementById('folio-right')!.textContent = String(pages[lot] + 1);
+  }));
+</script>
+
+<style is:global>
+  html { background: #fbfaf8; }
+  .ac {
+    --ink: #161514;
+    --grey: #6d6a66;
+    --rule: #cfcbc4;
+    --half: 37;
+    color: var(--ink);
+    font-family: Baskerville, 'Baskerville Old Face', 'Hoefler Text', Georgia, serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+    /* Two pages and the shadow of the binding between them. */
+    background:
+      linear-gradient(90deg, transparent calc((var(--half) - 1) * var(--u) - 3 * var(--u)), rgba(60, 50, 40, 0.07) calc((var(--half) - 1) * var(--u) - 2px), rgba(60, 50, 40, 0.16) calc((var(--half) - 1) * var(--u)), rgba(60, 50, 40, 0.05) calc((var(--half) - 1) * var(--u) + 2px), transparent calc((var(--half) - 1) * var(--u) + 2 * var(--u))),
+      #fbfaf8;
+  }
+  .ac [hidden] { display: none !important; }
+
+  .ac-head { grid-row: 2; margin: 0; font-style: italic; font-size: calc(13px * var(--sf)); color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ac-head-left { grid-column: 3 / var(--ac-left-end, 35); }
+  .ac-head-right { grid-column: var(--ac-right, 39) / -3; text-align: right; font-style: normal; font-family: 'Big Caslon', Baskerville, serif; letter-spacing: 0.02em; color: var(--ink); }
+  .ac-head-right span { font-style: italic; }
+
+  .ac-plate { grid-column: 3 / var(--ac-left-end, 35); grid-row: 4 / -4; margin: 0; display: grid; grid-template-rows: minmax(0, 1fr) var(--u); gap: var(--u); }
+  .ac-plate img { width: 100%; height: 100%; object-fit: cover; display: block; background: #e9e7e3; }
+  .ac-plate figcaption { font-style: italic; font-size: calc(13px * var(--sf)); color: var(--grey); }
+
+  .ac-lot { grid-column: var(--ac-right, 39) / -3; grid-row: 4 / -8; display: flex; flex-direction: column; overflow: hidden; }
+  .ac-top { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: end; height: calc(6 * var(--u)); border-bottom: 1px solid var(--ink); }
+  .ac-number { margin: 0; font-family: 'Bodoni 72', Didot, 'Bodoni MT', serif; font-size: calc(132px * var(--sf)); line-height: calc(5 * var(--u)); letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+  .ac-estimate { margin: 0 0 calc(var(--u) / 2); text-align: right; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .ac-estimate span { display: block; font-style: italic; font-size: calc(13px * var(--sf)); line-height: var(--u); color: var(--grey); }
+  .ac-pencil {
+    position: absolute;
+    right: calc(8 * var(--u));
+    top: var(--u);
+    margin: 0;
+    font-family: 'Bradley Hand', 'Noteworthy', cursive;
+    font-size: calc(19px * var(--sf));
+    line-height: var(--u);
+    color: #5d5d63;
+    opacity: 0.85;
+    transform: rotate(-4deg);
+    transform-origin: right bottom;
+    white-space: nowrap;
+  }
+  .ac-pencil::after { content: ''; position: absolute; left: calc(100% + 4px); top: 50%; width: calc(3 * var(--u)); height: calc(1.5 * var(--u)); border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; border-top-right-radius: 100% 100%; opacity: 0.7; }
+
+  .ac-lot h1 { margin: var(--u) 0 0; font-family: 'Big Caslon', Baskerville, serif; font-weight: normal; font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); }
+  .ac-lot h1 { line-height: var(--u); padding-block: calc(var(--u) / 4); font-size: calc(20px * var(--sf)); }
+  .ac-text { margin: var(--u) 0 0; max-width: 34em; hyphens: auto; }
+  .ac-notes { margin: var(--u) 0 0; border-top: 1px solid var(--rule); }
+  .ac-notes div { display: grid; grid-template-columns: calc(6 * var(--u)) 1fr; padding-top: calc(var(--u) / 2); padding-bottom: calc(var(--u) / 2 - 1px); border-bottom: 1px solid var(--rule); }
+  .ac-notes dt { font-style: italic; color: var(--grey); font-size: calc(13px * var(--sf)); }
+  .ac-notes dd { margin: 0; font-size: calc(14px * var(--sf)); }
+
+  .ac-bid { display: flex; flex-wrap: wrap; gap: 0 calc(2 * var(--u)); margin-top: calc(2 * var(--u)); font-style: italic; font-size: calc(13px * var(--sf)); color: var(--grey); }
+  .ac-bid input { all: unset; width: calc(4 * var(--u)); height: var(--u); box-sizing: border-box; border-bottom: 1px dotted var(--grey); font: normal calc(18px * var(--sf)) / var(--u) 'Bradley Hand', 'Noteworthy', cursive; color: #3b3b42; text-align: center; }
+  .ac-bid input:focus-visible { border-bottom: 1px solid var(--ink); background: rgba(0, 0, 0, 0.03); }
+
+  /* The lots as small plates along the foot of the right page. */
+  .ac-lots { grid-column: var(--ac-right, 39) / -3; grid-row: -7 / span 4; display: grid; grid-template-columns: repeat(4, calc(4 * var(--u))); gap: var(--u); }
+  .ac-lots button { all: unset; position: relative; display: block; width: calc(4 * var(--u)); height: calc(4 * var(--u)); cursor: pointer; }
+  .ac-lots img { display: block; width: 100%; height: calc(3 * var(--u)); object-fit: cover; filter: grayscale(1) contrast(0.9); opacity: 0.7; transition: filter 0.2s ease, opacity 0.2s ease; }
+  .ac-lots span { display: block; font-size: calc(13px * var(--sf)); color: var(--grey); }
+  .ac-lots button[aria-pressed='true'] img, .ac-lots button:hover img { filter: none; opacity: 1; }
+  .ac-lots button[aria-pressed='true'] span { color: var(--ink); text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .ac-lots button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .ac-folio { grid-row: -3; margin: 0; font-size: calc(13px * var(--sf)); font-variant-numeric: oldstyle-nums; }
+  .ac-folio-left { grid-column: 3 / span 2; }
+  .ac-folio-right { grid-column: -14 / span 2; text-align: right; }
+  .ac-sale { grid-column: var(--ac-right, 39) / -15; grid-row: -3; margin: 0; font-style: italic; font-size: calc(12px * var(--sf)); color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Narrow: one page, the plate then its lot. */
+  :root[data-narrow] .ac { background: #fbfaf8; padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .ac > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .ac-head-left { white-space: normal; margin-top: var(--u); }
+  :root[data-narrow] .ac-head-right { text-align: left; }
+  :root[data-narrow] .ac-plate { order: 1; margin-top: var(--u); grid-template-rows: calc(14 * var(--u)) var(--u); }
+  :root[data-narrow] .ac-lot h1 { font-size: calc(18px * var(--sf)); }
+  :root[data-narrow] .ac-lots { order: 2; margin-top: var(--u); grid-template-columns: repeat(4, calc(2 * var(--u))); gap: var(--u); grid-template-rows: calc(3 * var(--u)); }
+  :root[data-narrow] .ac-lots button { width: calc(2 * var(--u)); height: calc(3 * var(--u)); }
+  :root[data-narrow] .ac-lots img { height: calc(2 * var(--u)); }
+  :root[data-narrow] .ac-lot { order: 3; margin-top: var(--u); overflow: visible; }
+  :root[data-narrow] .ac-number { font-size: calc(96px * var(--sf)); line-height: calc(4 * var(--u)); }
+  :root[data-narrow] .ac-top { height: calc(5 * var(--u)); }
+  :root[data-narrow] .ac-pencil { right: auto; left: calc(6 * var(--u)); top: 0; font-size: calc(16px * var(--sf)); }
+  :root[data-narrow] .ac-pencil::after { display: none; }
+  :root[data-narrow] .ac-notes div { grid-template-columns: 1fr; }
+  :root[data-narrow] .ac-folio, :root[data-narrow] .ac-sale { order: 4; }
+  :root[data-narrow] .ac-sale { white-space: normal; margin-top: var(--u); }
+  :root[data-narrow] .ac-folio { display: none; }
+</style>

@@ -1,0 +1,199 @@
+---
+// After a fine-watch catalogue: one piece, photographed straight on, as tall as the page allows,
+// and a column of quiet specifications. The dial is drawn in squares: its radius is whole squares,
+// the minute track one square deep, the subdials centred on square corners, and the small seconds
+// hand steps once a second, as a regulator's does.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="watch-catalogue" theme="dark">
+  <main class="stage atelier-vautrin">
+    <svg class="watch" id="watch" role="img" aria-label="The Régulateur Saumon: a salmon enamel dial with a central minute hand, hours in a subdial at twelve and small seconds at six, in a rose gold case on a brown alligator strap"></svg>
+
+    <p class="folio">Collection 2027, page 23</p>
+    <header class="model">
+      <p class="maker">Vautrin &amp; Fils, Le Sentier</p>
+      <h1>Régulateur<br /><em>Saumon</em></h1>
+      <p class="ref">Référence 5917R-001</p>
+    </header>
+    <p class="note">A regulator as the clockmakers of the Vallée de Joux built them for their own benches: minutes from the centre, the hours in a dial of their own at twelve, seconds at six. The salmon dial is grand feu enamel, fired eleven times.</p>
+    <dl class="specs">
+      <div><dt>Calibre</dt><dd>VF 21-1, hand-wound</dd></div>
+      <div><dt>Frequency</dt><dd>21,600 vibrations an hour</dd></div>
+      <div><dt>Power reserve</dt><dd>46 hours</dd></div>
+      <div><dt>Jewels</dt><dd>19</dd></div>
+      <div><dt>Case</dt><dd>38.5 mm, 5N rose gold</dd></div>
+      <div><dt>Back</dt><dd>Sapphire crystal</dd></div>
+      <div><dt>Strap</dt><dd>Alligator, hand-stitched</dd></div>
+      <div><dt>Edition</dt><dd>Sixty pieces</dd></div>
+    </dl>
+    <p class="price"><em>Price on request.</em> Viewings by appointment at the manufacture.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const svg = document.getElementById('watch') as unknown as SVGSVGElement;
+  let timer = 0;
+
+  const polar = (cx: number, cy: number, r: number, deg: number) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  };
+  const line = (cx: number, cy: number, r1: number, r2: number, deg: number) => {
+    const [x1, y1] = polar(cx, cy, r1, deg), [x2, y2] = polar(cx, cy, r2, deg);
+    return `M${x1.toFixed(3)} ${y1.toFixed(3)} L${x2.toFixed(3)} ${y2.toFixed(3)}`;
+  };
+
+  // A subdial: its ring, sixty or twelve marks a quarter square long, and numerals inside.
+  function subdial(cx: number, cy: number, r: number, marks: number, labels: [number, string][]) {
+    let ticks = '';
+    for (let i = 0; i < marks; i++) ticks += line(cx, cy, r - (i % (marks / 4) === 0 ? 0.6 : 0.3), r, (i * 360) / marks) + ' ';
+    const text = labels.map(([deg, label]) => {
+      const [x, y] = polar(cx, cy, r - 1.2, deg);
+      return `<text x="${x.toFixed(2)}" y="${(y + 0.28).toFixed(2)}" class="num-small">${label}</text>`;
+    }).join('');
+    const rings = Array.from({ length: Math.floor(r / 0.2) }, (_, i) => `<circle cx="${cx}" cy="${cy}" r="${(i + 1) * 0.2}"/>`).join('');
+    return `<g class="snail">${rings}</g><circle cx="${cx}" cy="${cy}" r="${r}" class="sub-ring"/><path d="${ticks}" class="ink-line" stroke-width="0.06"/>${text}`;
+  }
+
+  // A leaf hand of blued steel: from the centre to `length`, widest a third of the way out.
+  const leaf = (length: number, width: number, tail: number) =>
+    `<path d="M0 ${tail} L${-width / 2} ${-length * 0.3} L0 ${-length} L${width / 2} ${-length * 0.3} Z" class="hand"/>`;
+
+  function draw(R: number, wide: number, high: number) {
+    const cx = wide / 2, cy = high / 2;
+    const dial = R - 1;
+    const track = R - 2;
+    const hourSub = { x: cx, y: cy - Math.round(R * 0.45), r: Math.round(R * 0.24) };
+    const secSub = { x: cx, y: cy + Math.round(R * 0.45), r: Math.round(R * 0.22) };
+    const strap = Math.round(R * 1.1);
+
+    let minutes = '';
+    for (let i = 0; i < 60; i++) minutes += line(cx, cy, track - (i % 5 === 0 ? 1 : 0.5), track, i * 6) + ' ';
+    let dots = '';
+    for (let i = 0; i < 60; i += 5) {
+      const [x, y] = polar(cx, cy, track - 1.6, i * 6);
+      dots += `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="0.18" class="gold-dot"/>`;
+    }
+    const clear = track - 2.6 > Math.round(R * 0.45) + Math.round(R * 0.24) + 1;
+    const numerals = [[0, '60'], [90, '15'], [180, '30'], [270, '45']]
+      .filter(([deg]) => clear || deg === 90 || deg === 270)
+      .map(([deg, n]) => { const [x, y] = polar(cx, cy, track - 2.6, deg as number); return `<text x="${x.toFixed(2)}" y="${(y + 0.4).toFixed(2)}" class="num">${n}</text>`; })
+      .join('');
+    const scales = Array.from({ length: Math.ceil(high / 2) }, (_, i) => {
+      const y = i * 2;
+      return `<path d="M${cx - strap / 2} ${y} H${cx + strap / 2} M${cx - strap / 2} ${y + 1} H${cx + strap / 2}" class="scale"/>`;
+    }).join('');
+    const lug = (sx: number, sy: number) => `<path d="M${cx + sx * (strap / 2 + 0.6)} ${cy + sy * (R - 3)} L${cx + sx * (strap / 2 + 0.6)} ${cy + sy * (R + 2)} L${cx + sx * (strap / 2 - 0.6)} ${cy + sy * (R + 2)} L${cx + sx * (strap / 2 - 1.4)} ${cy + sy * (R - 3)} Z" class="gold"/>`;
+
+    svg.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    svg.innerHTML = `
+      <defs>
+        <radialGradient id="enamel" cx="0.42" cy="0.38" r="0.7"><stop offset="0" stop-color="#f4c2ab"/><stop offset="0.6" stop-color="#e9a68b"/><stop offset="1" stop-color="#cf8a70"/></radialGradient>
+        <linearGradient id="rose" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1c8a6"/><stop offset="0.45" stop-color="#c58a63"/><stop offset="0.55" stop-color="#e7b48f"/><stop offset="1" stop-color="#7c4a30"/></linearGradient>
+        <linearGradient id="blued" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1c3478"/><stop offset="0.5" stop-color="#4a6fd0"/><stop offset="1" stop-color="#162a63"/></linearGradient>
+        <linearGradient id="hide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f130d"/><stop offset="0.5" stop-color="#3b2418"/><stop offset="1" stop-color="#1f130d"/></linearGradient>
+      </defs>
+      <rect x="${cx - strap / 2}" y="0" width="${strap}" height="${high}" fill="url(#hide)"/>
+      ${scales}
+      ${lug(-1, -1)}${lug(1, -1)}${lug(-1, 1)}${lug(1, 1)}
+      <rect x="${cx + R - 0.2}" y="${cy - 1}" width="1.4" height="2" rx="0.3" class="gold"/>
+      <path d="${Array.from({ length: 7 }, (_, i) => `M${cx + R + 0.1 + i * 0.16} ${cy - 1} V${cy + 1}`).join(' ')}" stroke="#7c4a30" stroke-width="0.05"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" class="gold"/>
+      <circle cx="${cx}" cy="${cy}" r="${R - 0.5}" fill="none" stroke="#f6d9bf" stroke-opacity="0.5" stroke-width="0.05"/>
+      <circle cx="${cx}" cy="${cy}" r="${dial}" fill="url(#enamel)"/>
+      <circle cx="${cx}" cy="${cy}" r="${track}" class="ink-ring"/>
+      <circle cx="${cx}" cy="${cy}" r="${track - 1}" class="ink-ring"/>
+      <path d="${minutes}" class="ink-line" stroke-width="0.07"/>
+      ${dots}${numerals}
+      ${subdial(hourSub.x, hourSub.y, hourSub.r, 12, [[0, 'XII'], [90, 'III'], [180, 'VI'], [270, 'IX']])}
+      ${subdial(secSub.x, secSub.y, secSub.r, 60, [[0, '60'], [180, '30']])}
+      <text x="${cx}" y="${cy + Math.min(2.3, secSub.y - secSub.r - cy - 0.9)}" class="maker-mark">VAUTRIN &amp; FILS</text>
+      ${hourSub.y + hourSub.r + 1.2 < cy - 1 ? `<text x="${cx}" y="${cy - 2 > hourSub.y + hourSub.r + 1.2 ? cy - 2 : cy - 1}" class="dial-line">Régulateur</text>` : ''}
+      <g transform="translate(${hourSub.x} ${hourSub.y}) rotate(300)">${leaf(hourSub.r - 0.6, 0.55, 0.6)}<circle r="0.3" class="pin"/></g>
+      <g transform="translate(${secSub.x} ${secSub.y})"><g id="seconds"><path d="M0 1 V${-(secSub.r - 0.2)}" class="needle"/><circle r="0.22" class="pin"/></g></g>
+      <g transform="translate(${cx} ${cy}) rotate(60)">${leaf(track - 0.4, 0.75, 2)}<circle r="0.42" class="pin"/></g>
+    `;
+
+    const seconds = svg.querySelector<SVGGElement>('#seconds')!;
+    const tick = () => seconds.setAttribute('transform', `rotate(${(reducedMotion() ? 37 : new Date().getSeconds()) * 6})`);
+    clearInterval(timer);
+    tick();
+    if (!reducedMotion()) timer = window.setInterval(tick, 1000);
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      // On a phone the drawing is in half squares, so the radius of six squares keeps its detail.
+      const R = 2 * Math.floor((across - 2) / 2);
+      const high = R + 8;
+      svg.style.setProperty('--watch-w', String(across));
+      svg.style.setProperty('--watch-h', String(high));
+      draw(R, 2 * across, 2 * high);
+    } else {
+      const high = down;
+      const R = Math.floor((down - 6) / 2);
+      const wide = 2 * R + 6;
+      // The watch is centred in what the column of words leaves, on a whole square.
+      svg.style.setProperty('--watch-col', String(Math.max(1, Math.floor((across - 24 - wide) / 2) + 1)));
+      svg.style.setProperty('--watch-w', String(wide));
+      svg.style.setProperty('--watch-h', String(high));
+      draw(R, wide, high);
+    }
+  });
+</script>
+
+<style is:global>
+  html { background: #0f1620; }
+  .atelier-vautrin {
+    --ground: #0f1620;
+    --ivory: #ece3d2;
+    --muted: #8f8a80;
+    --rose: #d8a37f;
+    background: var(--ground);
+    color: var(--ivory);
+    font-family: Didot, 'Bodoni 72', 'Times New Roman', serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  :where(.atelier-vautrin) :is(p, h1, dl, dd) { margin: 0; }
+
+  /* The watch: as tall as the window, its strap running off the top and the foot. */
+  .watch { grid-column: var(--watch-col, 3) / span var(--watch-w, 40); grid-row: 1 / span var(--watch-h, 40); width: 100%; height: 100%; }
+  .watch .gold { fill: url(#rose); }
+  .watch .gold-dot { fill: #9c6a48; }
+  .watch .ink-ring { fill: none; stroke: #4a2a20; stroke-width: 0.05; }
+  .watch .ink-line { stroke: #4a2a20; fill: none; }
+  .watch .sub-ring { fill: none; stroke: #4a2a20; stroke-width: 0.05; }
+  .watch .snail { fill: none; stroke: #b9735b; stroke-opacity: 0.35; stroke-width: 0.03; }
+  .watch .num { font: 1.1px Didot, 'Bodoni 72', serif; fill: #4a2a20; text-anchor: middle; }
+  .watch .num-small { font: 0.7px Didot, 'Bodoni 72', serif; fill: #4a2a20; text-anchor: middle; }
+  .watch .maker-mark { font: 0.75px Didot, 'Bodoni 72', serif; letter-spacing: 0.12px; fill: #3a1f18; text-anchor: middle; }
+  .watch .dial-line { font: italic 0.7px Didot, 'Bodoni 72', serif; fill: #4a2a20; text-anchor: middle; }
+  .watch .hand { fill: url(#blued); stroke: #0f1d45; stroke-width: 0.03; }
+  .watch .needle { stroke: #23408f; stroke-width: 0.1; stroke-linecap: round; }
+  .watch .pin { fill: #1c3478; stroke: #0f1d45; stroke-width: 0.03; }
+  .watch .scale { stroke: #140b07; stroke-width: 0.06; }
+
+  .folio { grid-column: -24 / -2; grid-row: 3 / span 1; color: var(--muted); font-size: calc(12px * var(--sf)); font-style: italic; }
+  .model { grid-column: -24 / -2; grid-row: 7 / span 10; }
+  .maker { font-style: italic; color: var(--rose); }
+  .model h1 { margin-top: var(--u); font-weight: normal; font-size: calc(64px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.01em; }
+  .model h1 em { color: #e9a68b; }
+  .ref { margin-top: var(--u); font-size: calc(13px * var(--sf)); color: var(--muted); font-variant-numeric: lining-nums; }
+  .note { grid-column: -24 / -4; grid-row: 18 / span 5; }
+  .specs { grid-column: -24 / -2; grid-row: -16 / span 9; align-self: end; font-size: calc(13px * var(--sf)); }
+  .specs div { display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; box-shadow: inset 0 -1px 0 rgb(236 227 210 / 0.14); }
+  .specs dt { color: var(--muted); font-style: italic; }
+  .price { grid-column: -24 / -2; grid-row: -5 / span 2; font-size: calc(13px * var(--sf)); color: var(--muted); }
+  .price em { display: block; color: var(--ivory); font-size: calc(18px * var(--sf)); }
+
+  :root[data-narrow] .atelier-vautrin { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .watch { grid-column: 1 / -1; grid-row: 1 / span var(--watch-h); height: calc(var(--watch-h) * var(--u)); }
+  :root[data-narrow] .atelier-vautrin > :not(.watch) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .folio { margin-top: var(--u); }
+  :root[data-narrow] .model h1 { font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); }
+  :root[data-narrow] .specs div { grid-template-columns: calc(5 * var(--u)) 1fr; }
+  :root[data-narrow] .note, :root[data-narrow] .specs, :root[data-narrow] .price { margin-top: var(--u); }
+</style>

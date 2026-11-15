@@ -1,0 +1,421 @@
+---
+// After the front of a country bus: a roller blind of white letters on black linen behind glass,
+// a number box beside it, the driver's setting card and the winding handle. Every frame of the
+// blind is as tall as the window, so one turn of the handle is one destination, square for square.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+interface Frame { number: string; place: string; via?: string; from?: string; times?: string[]; note: string; }
+const FRAMES: Frame[] = [
+  { number: '', place: 'Not in Service', note: 'Running light to wherever it is needed next. Waving at it will not help.' },
+  { number: '12', place: 'Market Place', via: 'via Abbey Street', from: 'From Combe Hospital, Mondays to Saturdays', times: ['07.05', '07.35', '08.05', '08.35', '09.20', '10.20', '11.20', '12.20', '13.20', '14.20', '15.35', '17.05'], note: 'Thursdays, market day, every twenty minutes until the stalls pack up.' },
+  { number: '12', place: 'Combe Hospital', via: 'via Mill Lane and Fairfield', from: 'From Market Place, Mondays to Saturdays', times: ['06.50', '07.20', '07.50', '08.50', '09.50', '10.50', '11.50', '12.50', '13.50', '14.50', '16.10', '19.30'], note: 'The 19.30 waits at the main door for the end of visiting.' },
+  { number: '23', place: 'Railway Station', via: 'via Town Hall', from: 'From Ferry Slipway, Mondays to Saturdays', times: ['06.40', '07.25', '08.10', '09.40', '11.10', '12.40', '14.10', '15.40', '16.55', '17.40', '18.25', '21.05'], note: 'Connects with the up train most of the time.' },
+  { number: '23', place: 'Ferry Slipway', via: 'via Harbour Road (tide permitting)', from: 'From Railway Station, Mondays to Saturdays', times: ['07.00', '07.45', '08.30', '10.00', '11.30', '13.00', '14.30', '16.00', '17.15', '18.00', '18.45', '21.25'], note: 'At spring tides the bus turns at the Anchor and you walk the last hundred yards.' },
+  { number: '31', place: 'Upper Wendling', via: 'via Five Lanes and the Bell', from: 'From Market Place, Mondays to Saturdays', times: ['07.15', '09.15', '11.15', '13.15', '15.15', '17.30'], note: 'Six a day. The 17.30 is the last one up the hill; there is no coming back tonight.' },
+  { number: '31', place: 'Wendling Fête Ground', via: 'Special service, Saturday only', from: 'From Market Place, Saturday 14 June only', times: ['13.00', '13.30', '14.00', '14.30', '15.00', '15.30'], note: 'Returning from the Vicarage Meadow at 17.00 and 18.00. Bowling for the pig not included in the fare.' },
+  { number: '47', place: 'Cemetery Gates', via: 'via Gibbet Cross', from: 'From Railway Station, Mondays to Saturdays', times: ['09.45', '10.45', '11.45', '13.45', '14.45', '15.45'], note: 'Sundays, flowers carried free on the platform.' },
+  { number: '47', place: 'Ashcombe Moor', via: 'Request stops beyond the cattle grid', from: 'From Railway Station, Mondays to Saturdays', times: ['08.20', '12.20', '16.20'], note: 'Beyond the grid, raise a hand clearly. Sheep have right of way.' },
+  { number: '50', place: 'Private Hire', note: 'Outings, weddings and the darts team. Book at the garage, telephone Ashcombe 2140.' },
+  { number: '', place: 'Duplicate', via: 'Please let the service bus load first', note: 'Runs a minute behind the service bus on market days and the last day of term.' },
+  { number: '', place: 'Driver Under Instruction', note: 'Mr Pettifer’s third week. He will stop at every stop, including the ones nobody uses.' },
+  { number: '', place: 'Depot', note: 'The Old Tannery. Fuel, wash, a mug of tea, home.' },
+];
+const START = 4;
+---
+<AlignedStudy slug="bus-blind" theme="dark">
+  <main class="stage bb" id="bb" style={`--bb-frames: ${FRAMES.length}`}>
+    <div class="bb-box bb-number" aria-hidden="true">
+      <div class="bb-window">
+        <div class="bb-roll" id="bb-number-roll">
+          {FRAMES.map(frame => <div class="bb-frame"><span class="bb-digits"><span>{frame.number}</span></span></div>)}
+        </div>
+      </div>
+    </div>
+
+    <div class="bb-box bb-dest">
+      <div class="bb-window" id="bb-window" tabindex="0" data-own-keys role="slider"
+        aria-label="Destination blind" aria-valuemin="1" aria-valuemax={FRAMES.length} aria-valuenow={START + 1}
+        aria-valuetext={FRAMES[START].place}>
+        <div class="bb-roll" id="bb-roll">
+          {FRAMES.map(frame => (
+            <div class="bb-frame">
+              <span class="bb-place"><span>{frame.place}</span></span>
+              {frame.via && <span class="bb-via"><span>{frame.via}</span></span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="bb-band" aria-hidden="true"></div>
+
+    <section class="bb-card" aria-labelledby="bb-card-title">
+      <h1 id="bb-card-title">Setting card, blind no. 7</h1>
+      <p class="bb-card-sub">Ashcombe garage. Wind until the place is square in the glass; do not show a half frame to the public.</p>
+      <ol class="bb-list" id="bb-list">
+        {FRAMES.map((frame, index) => (
+          <li><button type="button" data-frame={index} aria-pressed={index === START ? 'true' : 'false'}>
+            <span class="bb-turns">{String(index * 3).padStart(2, '0')}</span>
+            <span class="bb-no">{frame.number || '–'}</span>
+            <span class="bb-name">{frame.place}</span>
+          </button></li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="bb-times" aria-live="polite" aria-label="Timetable for the place on the blind">
+      {FRAMES.map((frame, index) => (
+        <div class="bb-sheet" data-sheet={index} hidden={index !== START}>
+          <p class="bb-route"><span class="bb-route-no">{frame.number || '–'}</span><span class="bb-route-to">{frame.times ? `to ${frame.place}` : frame.place}</span></p>
+          {frame.from && <p class="bb-from">{frame.from}</p>}
+          {frame.times && <ol class="bb-grid-times">{frame.times.map(time => <li>{time}</li>)}</ol>}
+          <p class="bb-note">{frame.note}</p>
+        </div>
+      ))}
+    </section>
+
+    <p class="bb-fleet" aria-hidden="true">214</p>
+
+    <div class="bb-crank">
+      <svg class="bb-handle" id="bb-handle" viewBox="-5 -5 10 10" aria-hidden="true">
+        <circle r="4.5" class="bb-boss" />
+        <circle r="3.6" class="bb-ring" />
+        <g id="bb-arm">
+          <rect x="-0.45" y="-3.6" width="0.9" height="3.6" rx="0.45" class="bb-arm" />
+          <circle cy="-3.1" r="0.85" class="bb-knob" />
+        </g>
+        <circle r="0.9" class="bb-hub" />
+      </svg>
+      <div class="bb-buttons">
+        <button type="button" id="bb-up">Wind back</button>
+        <button type="button" id="bb-down">Wind on</button>
+      </div>
+      <p class="bb-hint">Scroll on the blind, or use the arrow keys in it.</p>
+    </div>
+
+    <p class="bb-legal">Ashcombe &amp; District Motor Services Ltd, The Old Tannery, Ashcombe.<br />Seats 43. Standing 8 at the discretion of the conductor.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const root = document.getElementById('bb')!;
+  const windowBox = document.getElementById('bb-window')!;
+  const roll = document.getElementById('bb-roll')!;
+  const numberRoll = document.getElementById('bb-number-roll')!;
+  const arm = document.getElementById('bb-arm')!;
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('#bb-list button')];
+  const total = buttons.length;
+  const names = buttons.map(button => button.querySelector('.bb-name')!.textContent ?? '');
+  const sheets = [...document.querySelectorAll<HTMLElement>('.bb-sheet')];
+  let at = 4;
+  let turns = at * 3;
+
+  /** Squeezes each line sideways until it fits its frame, as the blind makers did with long names. */
+  function squeeze() {
+    document.querySelectorAll<HTMLElement>('.bb-place > span, .bb-via > span, .bb-digits > span').forEach(line => {
+      line.style.transform = '';
+      const room = line.parentElement!.clientWidth;
+      const need = line.scrollWidth;
+      if (need > room && room > 0) line.style.transform = `scaleX(${(room / need).toFixed(3)})`;
+    });
+  }
+
+  function go(next: number) {
+    next = Math.max(0, Math.min(total - 1, next));
+    const distance = Math.abs(next - at);
+    if (!distance) return;
+    turns += (next - at) * 3;
+    at = next;
+    const still = reducedMotion();
+    // A blind runs fast past the frames between and slows into the one it stops on.
+    const duration = still ? 0 : Math.min(1600, 380 + distance * 140);
+    for (const el of [roll, numberRoll]) {
+      el.style.transitionDuration = `${duration}ms`;
+      el.style.setProperty('--bb-at', String(at));
+    }
+    arm.style.transitionDuration = `${duration}ms`;
+    arm.style.transform = `rotate(${turns * 120}deg)`;
+    if (!still && distance > 1) {
+      windowBox.classList.add('bb-running');
+      window.setTimeout(() => windowBox.classList.remove('bb-running'), duration - 220);
+    }
+    buttons.forEach((button, index) => button.setAttribute('aria-pressed', String(index === at)));
+    sheets.forEach((sheet, index) => { sheet.hidden = index !== at; });
+    windowBox.setAttribute('aria-valuenow', String(at + 1));
+    windowBox.setAttribute('aria-valuetext', names[at]);
+  }
+
+  buttons.forEach((button, index) => button.addEventListener('click', () => go(index)));
+  document.getElementById('bb-up')!.addEventListener('click', () => go(at - 1));
+  document.getElementById('bb-down')!.addEventListener('click', () => go(at + 1));
+  windowBox.addEventListener('keydown', event => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+    if (step) { event.preventDefault(); go(at + step); }
+    if (event.key === 'Home') { event.preventDefault(); go(0); }
+    if (event.key === 'End') { event.preventDefault(); go(total - 1); }
+  });
+  let wheel = 0;
+  let lastWheel = 0;
+  windowBox.addEventListener('wheel', event => {
+    event.preventDefault();
+    const now = performance.now();
+    if (now - lastWheel > 400) wheel = 0;
+    lastWheel = now;
+    wheel += event.deltaY;
+    if (Math.abs(wheel) >= 60) { go(at + Math.sign(wheel)); wheel = 0; }
+  }, { passive: false });
+
+  onSquares(() => {
+    root.style.setProperty('--bb-at', String(at));
+    roll.style.setProperty('--bb-at', String(at));
+    numberRoll.style.setProperty('--bb-at', String(at));
+    requestAnimationFrame(squeeze);
+  });
+  document.fonts?.ready.then(squeeze);
+</script>
+
+<style is:global>
+  html[data-study='bus-blind'] { background: #1f4a35; }
+  .bb {
+    --paint: #1f4a35;
+    --paint-deep: #163a29;
+    --relief: #e6dcbd;
+    --linen: #151513;
+    --letter: #f3efe2;
+    --brass: #c9a24a;
+    --card: #efe9d6;
+    --card-ink: #22201b;
+    /* The blind's window, in squares: as tall as a frame, so one frame is one stop. */
+    --bb-high: 8;
+    --bb-place: 4;
+    --bb-via: 2;
+    color: var(--relief);
+    font-family: 'Gill Sans', 'Gill Sans MT', var(--typeface-regular), sans-serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+    background: var(--paint);
+  }
+
+
+  /* The boxes: a square of polished trim around the glass, the glass around the linen. */
+  .bb-box {
+    padding: var(--u);
+    background: linear-gradient(160deg, #e9ece9 0%, #9da3a0 38%, #f6f7f5 52%, #7f8582 100%);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+  }
+  .bb-number { grid-column: 3 / span 10; grid-row: 3 / span 10; }
+  .bb-dest { grid-column: 14 / -3; grid-row: 3 / span 10; }
+  .bb-window {
+    position: relative;
+    height: calc(var(--bb-high) * var(--u));
+    overflow: hidden;
+    background: var(--linen);
+    outline: none;
+    cursor: ns-resize;
+  }
+  .bb-number .bb-window { cursor: default; }
+  /* The linen's weave, the roll's curve top and bottom, and the glass in front of it all. */
+  .bb-window::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgb(0 0 0 / 0.75) 0, rgb(0 0 0 / 0) 22%, rgb(0 0 0 / 0) 78%, rgb(0 0 0 / 0.8) 100%),
+      linear-gradient(115deg, rgb(255 255 255 / 0) 0 40%, rgb(255 255 255 / 0.07) 40% 52%, rgb(255 255 255 / 0) 52%);
+  }
+  .bb-window:focus-visible { box-shadow: 0 0 0 2px var(--brass); }
+  .bb-roll {
+    position: absolute;
+    inset: 0 0 auto;
+    transform: translateY(calc(var(--bb-at, 4) * var(--bb-high) * var(--u) * -1));
+    transition: transform 900ms cubic-bezier(0.3, 0, 0.15, 1);
+    background:
+      repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 4px),
+      var(--linen);
+  }
+  .bb-running .bb-roll { filter: blur(1.5px); }
+  .bb-frame {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    justify-items: center;
+    height: calc(var(--bb-high) * var(--u));
+    padding-inline: var(--u);
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
+    color: var(--letter);
+    font-weight: 700;
+    text-align: center;
+  }
+  .bb-place, .bb-via, .bb-digits { display: flex; justify-content: center; width: 100%; white-space: nowrap; overflow: visible; }
+  .bb-place > span, .bb-via > span, .bb-digits > span { display: block; flex: none; transform-origin: 50% 50%; }
+  .bb-place { font-size: calc(var(--bb-place) * var(--u) * 0.86); line-height: calc(var(--bb-place) * var(--u)); letter-spacing: -0.005em; }
+  .bb-via { font-size: calc(var(--bb-via) * var(--u) * 0.62); line-height: calc(var(--bb-via) * var(--u)); font-weight: 600; opacity: 0.94; }
+  .bb-digits { font-size: calc(var(--bb-high) * var(--u) * 0.78); line-height: calc(var(--bb-high) * var(--u)); letter-spacing: -0.04em; }
+
+  /* The relief band under the boxes, with its row of rivets one square apart. */
+  .bb-band {
+    grid-column: 1 / -1;
+    grid-row: 14 / span 2;
+    background:
+      radial-gradient(circle, #8d8670 0 calc(2px * var(--sf)), transparent calc(2.5px * var(--sf))) calc(var(--u) / 2) 0 / var(--u) var(--u) repeat-x,
+      radial-gradient(circle, #8d8670 0 calc(2px * var(--sf)), transparent calc(2.5px * var(--sf))) calc(var(--u) / 2) 100% / var(--u) var(--u) repeat-x,
+      var(--relief);
+  }
+
+  /* The setting card in its holder. */
+  .bb-card {
+    grid-column: 3 / span 22;
+    grid-row: 17 / -3;
+    align-self: start;
+    max-height: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    padding: var(--u);
+    background: var(--card);
+    color: var(--card-ink);
+    box-shadow: 0 0 0 calc(var(--u) / 4) #b9b39d inset;
+    overflow: hidden;
+  }
+  .bb-card h1 { margin: 0; font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 600; }
+  .bb-card-sub { margin: 0 0 var(--u); font-size: calc(14px * var(--sf)); max-width: calc(20 * var(--u)); }
+  .bb-list { margin: 0; padding: 0; list-style: none; overflow: hidden; box-shadow: inset 0 2px 0 var(--card-ink); }
+  .bb-list button {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: calc(2 * var(--u)) calc(2 * var(--u)) 1fr;
+    width: 100%;
+    height: var(--u);
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .bb-list li + li button { box-shadow: inset 0 1px 0 rgb(34 32 27 / 0.18); }
+  .bb-turns { color: #8a8270; font-size: calc(12px * var(--sf)); }
+  .bb-no { font-weight: 700; }
+  .bb-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bb-list button:hover .bb-name { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .bb-list button:focus-visible { outline: 2px solid var(--paint); outline-offset: -2px; }
+  .bb-list button[aria-pressed='true'] { background: var(--card-ink); color: var(--card); }
+  .bb-list button[aria-pressed='true'] .bb-turns { color: var(--brass); }
+
+  /* The fleet number in shaded gold transfers, as on the dash panel. */
+  .bb-fleet {
+    grid-column: -13 / -3;
+    grid-row: -7 / span 4;
+    align-self: end;
+    margin: 0;
+    font-family: 'Bodoni 72', 'Big Caslon', Georgia, serif;
+    font-weight: 700;
+    font-size: calc(4 * var(--u) * 0.9);
+    line-height: calc(4 * var(--u));
+    text-align: right;
+    color: #e2bf5f;
+    text-shadow: calc(2px * var(--sf)) calc(2px * var(--sf)) 0 #6d4f12, calc(3px * var(--sf)) calc(3px * var(--sf)) 0 rgb(0 0 0 / 0.35);
+  }
+
+  .bb-times { grid-column: 27 / -24; grid-row: 17 / -4; overflow: hidden; }
+  .bb-sheet { display: grid; grid-auto-rows: auto; }
+  .bb-sheet[hidden] { display: none; }
+  .bb-route { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; margin: 0; min-height: calc(4 * var(--u)); align-items: start; }
+  .bb-route-no {
+    display: block;
+    height: calc(4 * var(--u));
+    background: var(--relief);
+    color: var(--paint-deep);
+    font-weight: 700;
+    font-size: calc(2.6 * var(--u));
+    line-height: calc(4 * var(--u));
+    text-align: center;
+    letter-spacing: -0.03em;
+  }
+  .bb-route-to { padding-inline-start: var(--u); font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 600; color: var(--relief); }
+  .bb-from { margin: var(--u) 0 0; font-size: calc(14px * var(--sf)); color: rgb(230 220 189 / 0.75); }
+  .bb-grid-times {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, calc(4 * var(--u)));
+    margin: var(--u) 0 0;
+    padding: 0;
+    list-style: none;
+    box-shadow: inset 0 1px 0 rgb(230 220 189 / 0.35);
+    font-size: calc(20px * var(--sf));
+    line-height: calc(2 * var(--u));
+    font-variant-numeric: tabular-nums;
+    color: var(--relief);
+  }
+  .bb-grid-times li { box-shadow: inset 0 -1px 0 rgb(230 220 189 / 0.15); }
+  .bb-note { margin: var(--u) 0 0; font-size: calc(16px * var(--sf)); max-width: calc(16 * var(--u)); color: var(--relief); }
+
+  .bb-crank {
+    grid-column: -22 / -3;
+    grid-row: 17 / span 16;
+    display: grid;
+    grid-template-columns: repeat(9, var(--u)) var(--u) repeat(9, var(--u));
+    grid-template-rows: repeat(9, var(--u)) var(--u) repeat(2, var(--u)) var(--u) repeat(2, var(--u));
+    align-content: start;
+  }
+  .bb-handle { grid-column: 1 / span 9; grid-row: 1 / span 9; width: 100%; height: 100%; }
+  .bb-boss { fill: #11301f; }
+  .bb-ring { fill: none; stroke: var(--brass); stroke-width: 0.25; stroke-dasharray: 0.4 0.55; }
+  .bb-arm { fill: #c8cbc6; }
+  .bb-knob { fill: #2b221a; stroke: #c8cbc6; stroke-width: 0.2; }
+  .bb-hub { fill: #c8cbc6; }
+  #bb-arm { transform-origin: 0 0; transition: transform 900ms cubic-bezier(0.3, 0, 0.15, 1); }
+  .bb-buttons { grid-column: 11 / span 9; grid-row: 2 / span 5; display: grid; grid-auto-rows: calc(2 * var(--u)); gap: var(--u); align-content: start; }
+  .bb-buttons button {
+    all: unset;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+    height: calc(2 * var(--u));
+    line-height: calc(2 * var(--u));
+    background: var(--relief);
+    color: var(--paint-deep);
+    font-weight: 600;
+    font-size: calc(16px * var(--sf));
+    cursor: pointer;
+  }
+  .bb-buttons button:hover { background: #fff; }
+  .bb-buttons button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .bb-hint { grid-column: 11 / span 9; grid-row: 7 / span 2; margin: 0; font-size: calc(14px * var(--sf)); color: rgb(230 220 189 / 0.75); }
+
+  .bb-legal {
+    grid-column: 3 / span 30;
+    grid-row: -2 / span 1;
+    margin: 0;
+    align-self: center;
+    font-size: calc(11px * var(--sf));
+    line-height: calc(var(--u) / 2);
+    color: rgb(230 220 189 / 0.8);
+  }
+
+  /* Short windows: the card gives up its foot note and the handle its hint. */
+  @media (max-height: 760px) { .bb-hint { display: none; } }
+
+  /* A narrow window: the number, the blind, then the card and handle in one column. */
+  :root[data-narrow] .bb { --bb-high: 6; --bb-place: 2; --bb-via: 1; padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .bb > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .bb-number { grid-column: 2 / span 8; margin-top: var(--u); }
+  :root[data-narrow] .bb-times { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .bb-route-to { font-size: calc(20px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .bb-dest { margin-top: var(--u); }
+  :root[data-narrow] .bb-via { font-size: calc(var(--u) * 0.66); }
+  :root[data-narrow] .bb-digits { font-size: calc(6 * var(--u) * 0.66); }
+  :root[data-narrow] .bb-band { grid-column: 1 / -1; height: calc(2 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .bb-card { grid-row: auto; }
+  :root[data-narrow] .bb-card h1 { font-size: calc(18px * var(--sf)); line-height: var(--u); margin-bottom: var(--u); }
+  :root[data-narrow] .bb-fleet { display: none; }
+  :root[data-narrow] .bb-crank { margin-top: var(--u); grid-template-columns: repeat(6, var(--u)) var(--u) repeat(5, var(--u)); grid-template-rows: repeat(6, var(--u)); }
+  :root[data-narrow] .bb-handle { grid-column: 1 / span 6; grid-row: 1 / span 6; }
+  :root[data-narrow] .bb-buttons { grid-column: 8 / span 5; grid-row: 1 / span 5; }
+  :root[data-narrow] .bb-hint { display: none; }
+  :root[data-narrow] .bb-legal { margin-top: var(--u); line-height: var(--u); font-size: calc(12px * var(--sf)); }
+</style>

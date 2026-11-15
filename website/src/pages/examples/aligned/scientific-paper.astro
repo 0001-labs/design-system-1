@@ -1,0 +1,393 @@
+---
+// After the first page of a journal article: running head, a rail of article information, the
+// title, an abstract beside its graphical abstract, and two justified columns that the text flows
+// through line by line, every line one square. The data are in a pigeon's neck colours.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="scientific-paper" theme="light">
+  <main class="stage sci" id="sci">
+    <header class="sci-head">
+      <span><i>J. Urban Columbidae</i> 41 (2026) 213–229</span>
+      <span>Contents lists available at the Society’s library</span>
+    </header>
+
+    <aside class="sci-rail" id="rail">
+      <p class="sci-mast">
+        <svg viewBox="0 0 4 3" aria-hidden="true"><path d="M0.4 2.4 C0.9 1.2 1.9 0.8 2.7 1.1 C3 0.5 3.5 0.4 3.8 0.7 L3.5 0.9 C3.6 1.6 3.1 2.3 2.2 2.4 Z M1.3 2.4 L1 2.9 M2 2.4 L2.1 2.9" /></svg>
+        Journal of<br />Urban Columbidae
+      </p>
+      <section>
+        <h2>Article info</h2>
+        <dl class="sci-history">
+          <div><dt>Received</dt><dd>2 March 2026</dd></div>
+          <div><dt>Revised</dt><dd>19 June 2026</dd></div>
+          <div><dt>Accepted</dt><dd>1 July 2026</dd></div>
+          <div><dt>Online</dt><dd>14 November 2026</dd></div>
+        </dl>
+      </section>
+      <section>
+        <h2>Keywords</h2>
+        <p class="sci-keys"><i>Columba livia</i><br />Commuting<br />Punctuality<br />Urban foraging<br />Bread</p>
+      </section>
+      <section>
+        <h2>Highlights</h2>
+        <ul class="sci-highlights">
+          <li>61 pigeons, 412 mornings, one fountain.</li>
+          <li>The median bird leaves inside a six-minute window.</li>
+          <li>Birds follow the tram, except when late.</li>
+          <li>A bakery’s new hours moved the flock in two days.</li>
+        </ul>
+      </section>
+      <p class="sci-licence">Open access under the Pigeon Commons licence. Crumbs may be reused with attribution.</p>
+    </aside>
+
+    <h1 class="sci-title">Punctual pigeons: route fidelity and bakery-led timing in the morning commute of urban <i>Columba livia</i></h1>
+    <div class="sci-authors">
+      <p>Rasmus Duval<sup>a</sup>, Ingrid Ölund<sup>b</sup>, Tomasz Wren<sup>a,</sup>*</p>
+      <p class="sci-affil"><sup>a</sup> Department of Applied Columbiformes, Nordhavn Institute of Technology <sup>b</sup> Municipal Bread and Bin Authority, Nordhavn</p>
+    </div>
+
+    <section class="sci-abstract" id="abstract">
+      <h2>Abstract</h2>
+      <p>Feral pigeons in cities are assumed to forage on whatever turns up. We followed 61 birds carrying 2.1 g GPS loggers on 412 weekday mornings and found a commute instead. Birds left the same loft inside a median window of six minutes, took the same route on 87% of mornings and reached the fountain on the Platz within four minutes of the 07:42 disposal of day-old bread by a single bakery. When the bakery moved its disposal to 07:27, arrivals moved 14 minutes earlier within two weekdays. Rain delayed departures but not arrivals: wet birds abandoned the tramline and flew straight. We conclude that pigeons do not forage. They go to work.</p>
+    </section>
+
+    <figure class="sci-graphical" id="graphical" aria-label="Graphical abstract: from the loft along the tramline to the bakery bins and the fountain, with a straight route on rainy mornings">
+      <figcaption>Graphical abstract</figcaption>
+      <svg id="graphical-svg" aria-hidden="true"></svg>
+    </figure>
+
+    <div class="sci-col sci-col-a" id="col-a"></div>
+    <div class="sci-col sci-col-b" id="col-b">
+      <figure class="sci-figure" id="figure">
+        <svg id="chart" role="img" aria-label="Histogram of arrivals per ten minutes: before the change they peak between 07:40 and 07:50, after it between 07:20 and 07:30"></svg>
+        <figcaption><b>Fig. 1.</b> Arrivals at the fountain per 10 min, before (<span class="sci-purple">purple</span>, n = 238) and after (<span class="sci-green">green</span>, n = 174) the bakery moved its disposal from 07:42 to 07:27 (dashed lines).</figcaption>
+      </figure>
+      <div class="sci-flow" id="col-b-text"></div>
+    </div>
+
+    <template id="body">
+      <h2>1. Introduction</h2>
+      <p>Few animals are as thoroughly ignored by the people they live among as the feral pigeon (<i>Columba livia domestica</i>). Studies of its movement have dwelt on homing over long distances [1] or on flocking where food is put out [2]; daily movement inside a city has been treated as noise around a loft. Yet anyone who waits for the same tram at the same hour has seen the same birds arrive at the same ledge. Here we ask whether that regularity is real, how precise it is, and what sets the clock.</p>
+      <p>We tracked birds from four lofts in the old harbour district of Nordhavn, where one bakery empties its unsold bread into the square at a fixed time each weekday. If birds forage on whatever turns up, departures should scatter and follow weather and light. If they commute, departures should cluster tightly and follow the bakery.</p>
+      <h2>2. Methods</h2>
+      <h3>2.1. Birds and loggers</h3>
+      <p>Sixty-one adult pigeons were caught under licence at four lofts (Table 1) and fitted with 2.1 g solar GPS loggers on leg-loop harnesses, under 1% of body mass. Loggers fixed a position every 15 s between 05:30 and 10:00 on weekdays from 6 April to 26 June 2026, giving 412 complete bird-mornings. One logger was later recovered from the bakery’s bin; its bird was found nearby, in good health and visibly heavier.</p>
+      <div class="sci-table">
+        <p class="sci-table-caption"><b>Table 1.</b> Lofts, birds and timing.</p>
+        <table>
+          <thead><tr><th>Loft</th><th>Birds</th><th>Distance</th><th>Leaves</th><th>Late</th></tr></thead>
+          <tbody>
+            <tr><td>Station roof</td><td>19</td><td>1.4 km</td><td>07:31</td><td>6%</td></tr>
+            <tr><td>Library cornice</td><td>14</td><td>0.9 km</td><td>07:36</td><td>4%</td></tr>
+            <tr><td>Gasworks</td><td>16</td><td>2.6 km</td><td>07:22</td><td>11%</td></tr>
+            <tr><td>North tower</td><td>12</td><td>1.9 km</td><td>07:27</td><td>9%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>2.2. What counts as a commute</h3>
+      <p>A departure was the last fix at the loft before a movement of more than 200 m; an arrival was the first fix within 30 m of the fountain. A bird was late when it arrived more than four minutes after the bread. We modelled the probability of being late as</p>
+      <p class="sci-equation"><span><i>P</i>(late) = σ(<i>β</i><sub>0</sub> + <i>β</i><sub>1</sub><i>d</i> + <i>β</i><sub>2</sub><i>r</i> − <i>β</i><sub>3</sub><i>b</i>)</span><span>(1)</span></p>
+      <p class="sci-after">where <i>d</i> is the distance from loft to square (km), <i>r</i> the rain (mm h<sup>−1</sup>), <i>b</i> marks the days after the bakery changed its hours, and σ is the logistic function. Birds were random effects.</p>
+      <h2>3. Results</h2>
+      <h3>3.1. A six-minute window</h3>
+      <p>Departures clustered tightly: the median bird left inside a window of 6 min (interquartile range 4–9 min), and arrivals peaked between 07:40 and 07:50 (Fig. 1). Routes were faithful, with 87% of mornings following a bird’s usual route to within 50 m. Birds from three lofts followed the tramline along Kajgade; those from the gasworks used the canal.</p>
+      <h3>3.2. Rain and the express route</h3>
+      <p>Rain delayed departure by 7.4 min per mm h<sup>−1</sup> (95% CI 5.1–9.8) but had no detectable effect on lateness (<i>β</i><sub>2</sub> = 0.03, <i>p</i> = 0.71). On wet mornings birds left the tramline and flew straight, saving a median 380 m. They make up time.</p>
+      <h3>3.3. The bakery moves</h3>
+      <p>On 18 May the bakery began emptying its bread at 07:27. Arrivals moved 14 min earlier within two weekdays, and departures followed on the third (Fig. 1). No bird arrived at the old time after 21 May.</p>
+      <h2>4. Discussion</h2>
+      <p>Urban pigeons keep a timetable, and it is the bakery’s, not the sun’s. The speed of the change suggests that birds learn the time of the bread rather than inherit a habit of the loft, and the express route on wet mornings suggests they hold a deadline, not merely a routine. Whether they also take holidays is the subject of work in progress; the bakery closes in July.</p>
+      <h2>Acknowledgements</h2>
+      <p>We thank the bakery for its regularity, the drivers of tram line 4 for their indifference, and the bench by platform 3, from which most observations were made.</p>
+      <h2>References</h2>
+      <ol class="sci-refs">
+        <li>Arnholt K, Sæther B. Homing over 300 km in racing pigeons. <i>J Avian Navig</i> 1998;12:44–61.</li>
+        <li>Mendes P. Where the seed falls: flocking at feeding sites. <i>Urban Ecol Lett</i> 2009;3:1–9.</li>
+        <li>Ölund I. Bread disposal schedules in Nordic municipalities. <i>Munic Waste Rev</i> 2019;27:203–19.</li>
+        <li>Wren T, Duval R. Trams as landmarks in urban flight. <i>Proc Nordhavn Inst Technol</i> 2024;8:77–90.</li>
+      </ol>
+    </template>
+
+    <footer class="sci-foot">
+      <span>213</span>
+      <span>* Corresponding author. T. Wren, Nordhavn Institute of Technology, Kajgade 4.</span>
+    </footer>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const stage = $('sci'), colA = $('col-a'), colB = $('col-b'), bText = $('col-b-text'), abstract = $('abstract'), graphical = $('graphical'), figure = $('figure');
+  const template = $('body') as HTMLTemplateElement;
+  const chart = $('chart') as unknown as SVGSVGElement;
+  const graphicalSvg = $('graphical-svg') as unknown as SVGSVGElement;
+  const place = (el: HTMLElement, column: string, row: string) => { el.style.gridColumn = column; el.style.gridRow = row; };
+
+  // Arrivals per 10 min from 06:30 to 09:30: before and after the bakery moved.
+  const BEFORE = [0, 1, 2, 4, 7, 11, 19, 46, 58, 37, 21, 13, 8, 5, 3, 2, 1, 0];
+  const AFTER = [0, 1, 3, 6, 15, 38, 49, 27, 14, 9, 5, 3, 2, 1, 1, 0, 0, 0];
+
+  /** Fig. 1 in squares: one ten-minute bin a square wide, five arrivals a square high. */
+  function drawChart(width: number, height: number) {
+    chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const left = 2, base = height - 2, scale = (base - 1.6) / 60;
+    const bins = BEFORE.length;
+    const room = (width - left - 0.5) / bins;
+    const bin = room >= 1 ? Math.floor(room) : room;
+    let out = '';
+    for (let y = 0; y <= 6; y++) {
+      const at = base - y * 10 * scale;
+      out += `<path d="M ${left} ${at} H ${left + bins * bin}" class="grid"/>`;
+      if (y % 2 === 0) out += `<text x="${left - 0.3}" y="${at + 0.2}" text-anchor="end">${y * 10}</text>`;
+    }
+    BEFORE.forEach((value, index) => {
+      const x = left + index * bin;
+      out += `<rect x="${x + 0.1 * bin}" y="${base - value * scale}" width="${0.4 * bin}" height="${value * scale}" class="before"/>`;
+      out += `<rect x="${x + 0.5 * bin}" y="${base - AFTER[index] * scale}" width="${0.4 * bin}" height="${AFTER[index] * scale}" class="after"/>`;
+      if (index % (bin < 1 ? 6 : 3) === 0) {
+        const minutes = 6 * 60 + 30 + index * 10;
+        out += `<text x="${x}" y="${base + 1.1}" text-anchor="middle">${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}</text>`;
+      }
+    });
+    const at = (minutes: number) => left + ((minutes - 390) / 10) * bin;
+    out += `<path d="M ${at(462)} ${base} V 0.6" class="mark before-mark"/><path d="M ${at(447)} ${base} V 0.6" class="mark after-mark"/>`;
+    out += `<path d="M ${left} ${base} H ${left + bins * bin}" class="axis"/>`;
+    out += `<text x="${left}" y="0.7" class="unit">Arrivals</text>`;
+    chart.innerHTML = out;
+  }
+
+  /** The graphical abstract: the commute as a line diagram, the rain route as a dashed chord. */
+  function drawGraphical(width: number, height: number) {
+    graphicalSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const y = Math.round(height / 2) + 1;
+    const all = [
+      { x: 2, name: 'Loft', time: '07:31' },
+      { x: Math.round(width * 0.42), name: 'Tram stop', time: '07:37' },
+      { x: Math.round(width * 0.68), name: 'Bakery bins', time: '07:42' },
+      { x: width - 2, name: 'Fountain', time: '07:44' },
+    ];
+    // A narrow box keeps the loft, the bread and the fountain.
+    const stops = width < 18 ? [all[0], { ...all[2], x: Math.round(width / 2) }, all[3]] : all;
+    let out = `<path d="M ${stops[0].x} ${y} H ${stops[stops.length - 1].x}" class="line"/>`;
+    const end = stops[stops.length - 1].x, lift = Math.max(3, height / 2 - 1);
+    out += `<path d="M ${stops[0].x} ${y} Q ${(stops[0].x + end) / 2} ${y - lift} ${end} ${y}" class="rain"/>`;
+    out += `<text x="${(stops[0].x + end) / 2}" y="${y - lift / 2 - 0.6}" text-anchor="middle" class="rain-label">rain: straight, −380 m</text>`;
+    stops.forEach((stop, index) => {
+      const bread = stop.name === 'Bakery bins';
+      out += `<circle cx="${stop.x}" cy="${y}" r="${bread ? 0.55 : 0.4}" class="${bread ? 'bread' : 'stop'}"/>`;
+      const anchor = index === 0 ? 'start' : index === stops.length - 1 ? 'end' : 'middle';
+      const x = index === 0 ? stop.x - 0.4 : index === stops.length - 1 ? stop.x + 0.4 : stop.x;
+      out += `<text x="${x}" y="${y + 1.75}" text-anchor="${anchor}" class="name">${stop.name}</text><text x="${x}" y="${y + 2.75}" text-anchor="${anchor}" class="time">${stop.time}</text>`;
+    });
+    graphicalSvg.innerHTML = out;
+  }
+
+  /** Pours the article into column A, then what does not fit into B, splitting a paragraph by words. */
+  function flow() {
+    colA.replaceChildren(template.content.cloneNode(true));
+    bText.replaceChildren();
+    const overflows = (box: HTMLElement) => box.scrollHeight > box.clientHeight + 1;
+    const line = parseFloat(getComputedStyle(colA).lineHeight);
+    // A table that does not fit floats to the head of the next column, as journals set them.
+    let floated: HTMLElement | null = null;
+    const firstOut = () => {
+      const limit = colA.getBoundingClientRect().bottom;
+      return ([...colA.children] as HTMLElement[]).findIndex(child => child.getBoundingClientRect().bottom > limit + 1);
+    };
+    let first = firstOut();
+    if (first >= 0 && colA.children[first].classList.contains('sci-table')) {
+      floated = colA.children[first] as HTMLElement;
+      floated.remove();
+      first = firstOut();
+    }
+    if (first >= 0) {
+      const children = [...colA.children] as HTMLElement[];
+      const limit = colA.getBoundingClientRect().bottom;
+      // A heading never ends a column: it goes over with its paragraph unless three lines of that fit.
+      const roomy = children[first].getBoundingClientRect().top < limit - 3 * line + 1;
+      if (!(children[first].tagName === 'P' && roomy)) while (first > 0 && /^H[23]$/.test(children[first - 1].tagName)) first--;
+      const moving = children.slice(first);
+      const split = moving[0];
+      let done = false;
+      if (split.tagName === 'P' && !split.classList.contains('sci-equation')) {
+        const html = split.innerHTML;
+        const words = html.split(/(?<=\s)(?![^<]*>)/);
+        let low = 0, high = words.length;
+        while (low < high) {
+          const mid = Math.ceil((low + high) / 2);
+          split.innerHTML = words.slice(0, mid).join('');
+          if (overflows(colA)) high = mid - 1; else low = mid;
+        }
+        if (low > 0) {
+          split.innerHTML = words.slice(0, low).join('');
+          const rest = split.cloneNode() as HTMLElement;
+          rest.innerHTML = words.slice(low).join('');
+          rest.classList.add('sci-cont');
+          bText.append(rest, ...moving.slice(1));
+          done = true;
+        } else split.innerHTML = html;
+      }
+      if (!done) bText.append(...moving);
+    }
+    if (floated) bText.prepend(floated);
+    // Nor does a heading end the page.
+    const bottom = bText.getBoundingClientRect().bottom;
+    for (const child of [...bText.children] as HTMLElement[]) {
+      if (/^H[23]$/.test(child.tagName) && child.getBoundingClientRect().bottom > bottom - 2 * line) child.style.visibility = 'hidden';
+    }
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      for (const el of [abstract, graphical, colA, colB]) el.removeAttribute('style');
+      colA.replaceChildren(template.content.cloneNode(true));
+      bText.replaceChildren();
+      figure.style.setProperty('--chart', '9');
+      drawGraphical(12, 7);
+      drawChart(12, 9);
+      return;
+    }
+    const col = Math.floor((across - 18 - 2) / 2);
+    const a = `17 / span ${col}`, b = `${17 + col + 2} / span ${col}`;
+    place(abstract, a, '11 / span 1');
+    abstract.style.height = 'auto';
+    const unit = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u')) || abstract.offsetHeight;
+    const rows = Math.ceil(abstract.scrollHeight / (stage.clientHeight / down) - 0.05);
+    abstract.style.height = '';
+    place(abstract, a, `11 / span ${rows}`);
+    place(graphical, b, `11 / span ${rows}`);
+    drawGraphical(col, rows - 1);
+    const top = 11 + rows + 1;
+    place(colA, a, `${top} / -3`);
+    place(colB, b, `${top} / -3`);
+    const bodyRows = down - 2 - top;
+    const chartRows = Math.max(7, Math.min(10, bodyRows - 9));
+    figure.style.setProperty('--chart', String(chartRows));
+    drawChart(col, chartRows);
+    void unit;
+    flow();
+  });
+</script>
+
+<style is:global>
+  html[data-study='scientific-paper'] { background: #fcfcfa; }
+  .sci {
+    --ink: #1b1a1c;
+    --grey: #6c6a70;
+    --rule: #b9b6bd;
+    --purple: #6b3f8c;
+    --green: #2e7d5e;
+    --tint: #f0eef3;
+    background: #fcfcfa;
+    color: var(--ink);
+    font-family: Charter, 'Iowan Old Style', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .sci :is(p, h1, h2, h3, ul, ol, dl, dd, figure) { margin: 0; }
+  .sci sup, .sci sub { line-height: 0; font-size: 0.72em; }
+  .sci-purple { color: var(--purple); }
+  .sci-green { color: var(--green); }
+
+  .sci-head {
+    grid-column: 3 / -3;
+    grid-row: 2;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--u);
+    font-family: var(--typeface-regular);
+    font-size: calc(11px * var(--sf));
+    color: var(--grey);
+    box-shadow: inset 0 -1px 0 var(--ink);
+  }
+
+  /* The rail: masthead, history, keywords, highlights. */
+  .sci-rail { grid-column: 3 / span 12; grid-row: 4 / -3; display: flex; flex-direction: column; gap: var(--u); font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); }
+  .sci-mast { font-family: var(--typeface-canon); font-size: calc(19px * var(--sf)); line-height: var(--u); color: var(--purple); padding-bottom: var(--u); box-shadow: inset 0 -1px 0 var(--rule); }
+  .sci-mast svg { display: block; width: calc(3 * var(--u)); height: calc(2 * var(--u)); fill: var(--green); stroke: var(--purple); stroke-width: 0.12; margin-bottom: var(--u); }
+  .sci-rail h2 { font-family: var(--typeface-medium); font-size: calc(12px * var(--sf)); font-weight: normal; }
+  .sci-history div { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; }
+  .sci-history dt { color: var(--grey); }
+  .sci-highlights { padding: 0; list-style: none; }
+  .sci-highlights li { padding-left: var(--u); position: relative; }
+  .sci-highlights li::before { content: ''; position: absolute; left: 0; top: calc(0.4 * var(--u)); width: calc(0.35 * var(--u)); height: calc(0.35 * var(--u)); background: var(--green); border-radius: 50%; }
+  .sci-licence { margin-top: auto !important; color: var(--grey); font-size: calc(11px * var(--sf)); }
+
+  .sci-title { grid-column: 17 / -3; grid-row: 4 / span 4; font-family: var(--typeface-canon); font-weight: normal; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; text-wrap: balance; max-width: calc(46 * var(--u)); }
+  .sci-authors { grid-column: 17 / -3; grid-row: 8 / span 2; font-family: var(--typeface-regular); }
+  .sci-authors p:first-child { font-size: calc(15px * var(--sf)); }
+  .sci-affil { font-size: calc(11px * var(--sf)); color: var(--grey); }
+
+  .sci-abstract { background: var(--tint); padding-inline: var(--u); box-sizing: border-box; overflow: hidden; }
+  .sci-abstract h2, .sci-col h2, .sci-graphical figcaption { font-family: var(--typeface-medium); font-size: calc(13px * var(--sf)); font-weight: normal; }
+  .sci-abstract p { text-align: justify; hyphens: auto; }
+
+  .sci-graphical { display: grid; grid-template-rows: var(--u) 1fr; box-shadow: inset 0 0 0 1px var(--rule); padding-inline: 0; }
+  .sci-graphical figcaption { padding-inline: var(--u); }
+  .sci-graphical svg { width: 100%; height: 100%; overflow: visible; }
+  .sci-graphical .line { stroke: var(--purple); stroke-width: 0.3; fill: none; stroke-linecap: round; }
+  .sci-graphical .rain { stroke: var(--green); stroke-width: 0.12; stroke-dasharray: 0.4 0.3; fill: none; }
+  .sci-graphical .stop { fill: #fff; stroke: var(--purple); stroke-width: 0.16; }
+  .sci-graphical .bread { fill: var(--green); }
+  .sci-graphical text { font-family: var(--typeface-regular); font-size: 0.6px; fill: var(--ink); }
+  .sci-graphical .time { fill: var(--grey); font-variant-numeric: tabular-nums; }
+  .sci-graphical .rain-label { fill: var(--green); font-style: italic; font-family: Charter, Georgia, serif; }
+
+  /* The two columns: justified, hyphenated, every line a square. */
+  .sci-col { overflow: hidden; }
+  .sci-col p { text-align: justify; hyphens: auto; text-indent: 1.5em; }
+  .sci-col :is(h2, h3) + p, .sci-col p.sci-cont, .sci-col p.sci-after { text-indent: 0; }
+  .sci-col h2 { margin-top: var(--u); }
+  .sci-col > h2:first-child, .sci-flow > h2:first-child { margin-top: 0; }
+  .sci-col h3 { font-weight: normal; font-style: italic; font-size: inherit; }
+  .sci-equation { display: flex; justify-content: space-between; text-indent: 0 !important; padding: var(--u) 0 var(--u) calc(2 * var(--u)); font-size: calc(14px * var(--sf)); text-align: left !important; }
+  .sci-table { margin-block: var(--u); font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); }
+  .sci-table-caption { text-indent: 0 !important; text-align: left !important; }
+  .sci-table table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .sci-table th, .sci-table td { height: var(--u); padding: 0; text-align: right; font-weight: normal; line-height: calc(var(--u) - 1px); }
+  .sci-table :is(th, td):first-child { text-align: left; }
+  .sci-table thead th { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); line-height: calc(var(--u) - 2px); }
+  .sci-table tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+  .sci-refs { padding-left: calc(1.5 * var(--u)); font-size: calc(11px * var(--sf)); }
+
+  .sci-col-b { display: flex; flex-direction: column; }
+  .sci-figure { flex: none; height: calc((var(--chart, 9) + 4) * var(--u)); display: grid; grid-template-rows: calc(var(--chart, 9) * var(--u)) calc(3 * var(--u)); margin-bottom: var(--u); }
+  .sci-figure svg { width: 100%; height: 100%; overflow: visible; }
+  .sci-figure figcaption { font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); padding-top: 0; overflow: hidden; }
+  .sci-figure figcaption b { font-family: var(--typeface-medium); font-weight: normal; }
+  #chart .grid { stroke: var(--rule); stroke-width: 0.03; }
+  #chart .axis { stroke: var(--ink); stroke-width: 0.06; }
+  #chart .before { fill: var(--purple); }
+  #chart .after { fill: var(--green); }
+  #chart .mark { stroke-width: 0.06; stroke-dasharray: 0.25 0.2; }
+  #chart .before-mark { stroke: var(--purple); }
+  #chart .after-mark { stroke: var(--green); }
+  #chart text { font-family: var(--typeface-regular); font-size: 0.55px; fill: var(--grey); font-variant-numeric: tabular-nums; }
+  #chart .unit { fill: var(--ink); }
+  .sci-flow { flex: 1; min-height: 0; overflow: hidden; }
+  .sci-flow > .sci-table:first-child { margin-top: 0; }
+
+  .sci-foot { grid-column: 3 / -14; grid-row: -2; display: flex; gap: calc(2 * var(--u)); font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); color: var(--grey); white-space: nowrap; overflow: hidden; }
+  .sci-foot span:first-child { color: var(--ink); }
+
+  /* Narrow: one column, the figure after the abstract. */
+  :root[data-narrow] .sci { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .sci > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .sci-head { flex-direction: column; margin-top: var(--u); }
+  :root[data-narrow] .sci-head span:last-child { display: none; }
+  :root[data-narrow] .sci-title { font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .sci-rail { order: 3; margin-top: var(--u); }
+  :root[data-narrow] .sci-mast { display: none; }
+  :root[data-narrow] .sci-authors, :root[data-narrow] .sci-abstract, :root[data-narrow] .sci-graphical { margin-top: var(--u); }
+  :root[data-narrow] .sci-abstract { padding-block: var(--u); }
+  :root[data-narrow] .sci-graphical { height: calc(8 * var(--u)); }
+  :root[data-narrow] .sci-col-b { order: 2; margin-top: var(--u); }
+  :root[data-narrow] .sci-col-a { order: 4; }
+  :root[data-narrow] .sci-col { overflow: visible; }
+  :root[data-narrow] .sci :is(.sci-col, .sci-abstract) p { text-align: left; hyphens: manual; }
+  :root[data-narrow] .sci-equation { flex-wrap: wrap; padding-left: 0; font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .sci-foot { order: 5; flex-direction: column; white-space: normal; margin-top: var(--u); }
+</style>

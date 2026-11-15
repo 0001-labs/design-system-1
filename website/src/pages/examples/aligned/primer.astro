@@ -1,0 +1,228 @@
+---
+// After a Bauhaus primer: a teaching sheet from the preliminary course, set all in lower case in
+// Futura, the three basic forms each standing in a field of whole squares, and the old
+// questionnaire put to you: which colour does each form ask for? Press a form to answer.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const forms = [
+  { id: 'square', name: 'das quadrat', colour: 'red', lesson: 'the square is calm. it rests on all four sides and asks nothing of the eye. it is the colour of a thing that has been set down and will stay: red.' },
+  { id: 'triangle', name: 'das dreieck', colour: 'yellow', lesson: 'the triangle is restless. its point goes somewhere and takes the eye along. the sharpest form wants the sharpest colour: yellow.' },
+  { id: 'circle', name: 'der kreis', colour: 'blue', lesson: 'the circle turns and never arrives. it has no corner to stop at. deep and cool, it sinks back from the page into blue.' },
+];
+const colours = ['red', 'yellow', 'blue'];
+const words: Record<string, string> = { red: 'rot', yellow: 'gelb', blue: 'blau' };
+const shape = (id: string, size = 16) => {
+  const m = size / 16;
+  if (id === 'square') return `<rect x="${1 * m}" y="${1 * m}" width="${14 * m}" height="${14 * m}" />`;
+  if (id === 'circle') return `<circle cx="${8 * m}" cy="${8 * m}" r="${7 * m}" />`;
+  const h = 14 * Math.sqrt(3) / 2;
+  return `<path d="M${1 * m} ${15 * m}H${15 * m}L${8 * m} ${(15 - h) * m}Z" />`;
+};
+---
+<AlignedStudy slug="primer" theme="light">
+  <main class="stage primer" lang="en">
+    <header class="sheet-head">
+      <h1>die drei grundformen</h1>
+      <p class="course">werkhaus nord, vorkurs<br />wintersemester 1923/24</p>
+      <p class="sheet"><span>blatt</span><b>3</b></p>
+    </header>
+
+    {forms.map((form, index) => (
+      <section class={`form form-${index + 1}`} aria-labelledby={`name-${form.id}`}>
+        <button type="button" class="field" data-form={form.id} data-colour={form.colour} aria-label={`${form.name}: ${words[form.colour]}. press to change its colour`}>
+          <svg viewBox="0 0 16 16" aria-hidden="true" set:html={shape(form.id)} />
+        </button>
+        <h2 id={`name-${form.id}`}>{form.name}</h2>
+        <p class="lesson">{form.lesson}</p>
+      </section>
+    ))}
+
+    <aside class="answer" aria-live="polite">
+      <h2>aufgabe 1</h2>
+      <p class="ask">fill each form with the colour it asks for. press a form to change its colour.</p>
+      <table class="matrix" aria-label="form and colour">
+        <thead><tr><th></th>{colours.map(c => <th scope="col"><span class={`chip ${c}`}></span>{words[c]}</th>)}</tr></thead>
+        <tbody>
+          {forms.map(form => (
+            <tr data-row={form.id}>
+              <th scope="row">{form.name.split(' ')[1]}</th>
+              {colours.map(c => <td data-colour={c}><svg viewBox="0 0 16 16" aria-hidden="true" set:html={shape(form.id)} /></td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="verdict" id="verdict">you agree with the master on three of three forms.</p>
+    </aside>
+
+    <figure class="construct">
+      <svg viewBox="0 0 16 8" aria-hidden="true">
+        <g class="thin">
+          <path d="M1 7H7" />
+          <path d="M1 7A6 6 0 0 1 6.2 4" /><path d="M7 7A6 6 0 0 0 1.8 4" />
+          <circle cx="12" cy="4" r="3" /><path d="M12 4l2.1-2.1" /><circle cx="12" cy="4" r="0.15" class="dot" />
+          <path d="M1 0.5H15" class="dash" />
+        </g>
+        <g class="bold"><path d="M1 7H7L4 1.8Z" /></g>
+      </svg>
+      <figcaption>aufgabe 2: draw the triangle with a compass, two arcs from the ends of its base. then the circle, its point marked.</figcaption>
+    </figure>
+
+    <figure class="rhythm">
+      <figcaption>aufgabe 3: rhythm. set the forms in a row, then answer each row with its opposite.</figcaption>
+      <svg id="rhythm" aria-hidden="true"></svg>
+    </figure>
+
+    <p class="foot">ink, ruler, compass and the three tempera colours from the store. hand in by saturday, name on the back.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // Three fields as large as the window allows beside the answer column, two squares apart.
+  const rhythm = document.getElementById('rhythm') as unknown as SVGSVGElement;
+  onSquares(({ across, down, narrow }) => {
+    const root = document.documentElement.style;
+    const field = narrow ? across - 2 : Math.max(8, Math.min(Math.floor((across - 4 - 16 - 6) / 3), down - 19));
+    root.setProperty('--f', String(field));
+    [0, 1, 2].forEach(i => root.setProperty(`--c${i + 1}`, String(2 + i * (field + 2))));
+    root.setProperty('--rn', String(8 + field));
+    root.setProperty('--rl', String(10 + field));
+    root.setProperty('--rr', String(16 + field));
+    // The rhythm: forms two squares big, a square apart, as many rows as fit above the foot.
+    const wide = 3 * field + 4;
+    const high = Math.max(0, down - 3 - (17 + field));
+    const rows = narrow ? 3 : Math.floor((high + 1) / 3);
+    const cols = Math.floor((wide + 1) / 3);
+    const w = narrow ? across - 2 : wide;
+    const n = narrow ? Math.floor((w + 1) / 3) : cols;
+    root.setProperty('--rw', String(w));
+    rhythm.setAttribute('viewBox', `0 0 ${w} ${Math.max(1, rows * 3 - 1)}`);
+    rhythm.style.height = `calc(${Math.max(0, rows * 3 - 1)} * var(--u))`;
+    const FORMS = ['square', 'circle', 'triangle'];
+    const FILL = ['var(--red)', 'var(--blue)', 'var(--yellow)'];
+    let out = '';
+    for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
+      const k = (c + r) % 3;
+      const kind = r % 2 ? FORMS[(3 - (c % 3)) % 3] : FORMS[c % 3];
+      const x = c * 3, y = r * 3;
+      const fill = r % 2 ? 'none' : FILL[k];
+      const stroke = r % 2 ? 'stroke="#000" stroke-width="0.12"' : '';
+      if (kind === 'square') out += `<rect x="${x + 0.1}" y="${y + 0.1}" width="1.8" height="1.8" fill="${fill}" ${stroke}/>`;
+      else if (kind === 'circle') out += `<circle cx="${x + 1}" cy="${y + 1}" r="0.94" fill="${fill}" ${stroke}/>`;
+      else out += `<path d="M${x + 0.06} ${y + 1.9}H${x + 1.94}L${x + 1} ${y + 1.9 - 1.63}Z" fill="${fill}" ${stroke}/>`;
+    }
+    rhythm.innerHTML = out;
+  });
+
+  // The questionnaire: each press moves a form to the next primary.
+  const ORDER = ['red', 'yellow', 'blue'];
+  const WORDS: Record<string, string> = { red: 'rot', yellow: 'gelb', blue: 'blau' };
+  const MASTER: Record<string, string> = { square: 'red', triangle: 'yellow', circle: 'blue' };
+  const COUNT = ['none', 'one', 'two', 'three'];
+  const fields = [...document.querySelectorAll<HTMLButtonElement>('.field')];
+  const verdict = document.getElementById('verdict') as HTMLElement;
+
+  const show = () => {
+    let agree = 0;
+    fields.forEach(field => {
+      const form = field.dataset.form!;
+      const colour = field.dataset.colour!;
+      if (MASTER[form] === colour) agree++;
+      document.querySelectorAll(`[data-row="${form}"] td`).forEach(td => td.classList.toggle('picked', (td as HTMLElement).dataset.colour === colour));
+      const name = field.closest('.form')?.querySelector('h2')?.textContent ?? form;
+      field.setAttribute('aria-label', `${name}: ${WORDS[colour]}. press to change its colour`);
+    });
+    verdict.textContent = agree === 3
+      ? 'you agree with the master on three of three forms.'
+      : `you agree with the master on ${COUNT[agree]} of three forms. ${agree === 0 ? 'a new eye; defend it on saturday.' : 'write down why.'}`;
+  };
+  fields.forEach(field => field.addEventListener('click', () => {
+    field.dataset.colour = ORDER[(ORDER.indexOf(field.dataset.colour!) + 1) % ORDER.length];
+    show();
+  }));
+  show();
+</script>
+
+<style is:global>
+  html { background: #e2e2de; --f: 15; --c1: 2; --c2: 19; --c3: 36; --rn: 23; --rl: 25; --rr: 31; --rw: 46; }
+  .primer {
+    --paper: #e2e2de;
+    --ink: #000;
+    --red: #dd2a1b;
+    --yellow: #f4bd00;
+    --blue: #1d43a0;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: Futura, "Futura PT", "Century Gothic", var(--typeface-medium);
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .primer h1, .primer h2, .primer p, .primer figure { margin: 0; }
+  .red { --c: var(--red); } .yellow { --c: var(--yellow); } .blue { --c: var(--blue); }
+
+  .sheet-head { grid-column: 2 / -2; grid-row: 2 / span 4; display: grid; grid-template-columns: 1fr auto calc(4 * var(--u)); column-gap: calc(2 * var(--u)); align-items: start; border-bottom: 3px solid var(--ink); }
+  .sheet-head h1 { font-weight: 700; font-size: calc(58px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.02em; white-space: nowrap; }
+  .course { padding-top: var(--u); text-align: right; }
+  .sheet { display: grid; justify-items: center; }
+  .sheet span { font-size: calc(12px * var(--sf)); }
+  .sheet b { display: grid; place-items: center; width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; background: var(--ink); color: var(--paper); font-size: calc(22px * var(--sf)); }
+
+  /* Each form: its field of f by f squares, its name, and four lines of lesson. */
+  .form { display: contents; }
+  .form-1 > * { grid-column: var(--c1) / span var(--f); }
+  .form-2 > * { grid-column: var(--c2) / span var(--f); }
+  .form-3 > * { grid-column: var(--c3) / span var(--f); }
+  .field { all: unset; grid-row: 7 / span var(--f); display: block; cursor: pointer; background: #fff; box-shadow: inset 0 0 0 1px #0002; }
+  .form-1 .field { grid-column: var(--c1) / span var(--f); } .form-2 .field { grid-column: var(--c2) / span var(--f); } .form-3 .field { grid-column: var(--c3) / span var(--f); }
+  .field svg { display: block; width: 100%; height: 100%; }
+  .field[data-colour='red'] { --c: var(--red); } .field[data-colour='yellow'] { --c: var(--yellow); } .field[data-colour='blue'] { --c: var(--blue); }
+  .field svg :is(rect, circle, path) { fill: var(--c); transition: fill 160ms ease-out; }
+  .field:hover svg :is(rect, circle, path) { stroke: var(--ink); stroke-width: 0.1; }
+  .field:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .form h2 { grid-row: var(--rn) / span 2; }
+  .form h2 { font-weight: 700; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .lesson { max-width: calc(16 * var(--u)); }
+  .form .lesson { grid-row: var(--rl) / span 5; }
+
+  /* The answer column: the question, form against colour, and how you stand. */
+  .answer { grid-column: -17 / -2; grid-row: 7 / span 18; display: grid; grid-template-rows: calc(2 * var(--u)) calc(3 * var(--u)) auto auto; align-content: start; }
+  .answer h2 { font-weight: 700; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .matrix { border-collapse: collapse; margin-top: var(--u); table-layout: fixed; width: calc(15 * var(--u)); }
+  .matrix th { font-weight: 400; font-size: calc(12px * var(--sf)); height: var(--u); text-align: left; padding: 0; }
+  .matrix thead th { height: calc(2 * var(--u)); vertical-align: top; }
+  .matrix thead th:first-child { width: calc(3 * var(--u)); }
+  .chip { display: block; width: var(--u); height: calc(var(--u) / 2); background: var(--c); margin-top: calc(var(--u) / 4); margin-bottom: calc(var(--u) / 4); }
+  .matrix td { height: calc(4 * var(--u)); padding: 0 var(--u) 0 0; }
+  .matrix td svg { display: block; width: calc(3 * var(--u)); height: calc(3 * var(--u)); fill: none; stroke: var(--ink); stroke-width: 0.5; }
+  .matrix td[data-colour='red'] { --c: var(--red); } .matrix td[data-colour='yellow'] { --c: var(--yellow); } .matrix td[data-colour='blue'] { --c: var(--blue); }
+  .matrix td.picked svg { fill: var(--c); stroke: none; }
+  .verdict { margin-top: var(--u); font-weight: 700; }
+
+  .construct { grid-column: -17 / -2; grid-row: span 10 / -3; display: grid; grid-template-rows: calc(7 * var(--u)) auto; align-content: end; }
+  .construct svg { width: calc(14 * var(--u)); height: calc(7 * var(--u)); overflow: visible; }
+  .construct .thin { fill: none; stroke: var(--ink); stroke-width: 0.04; }
+  .construct .dash { stroke-dasharray: 0.2 0.2; }
+  .construct .dot { fill: var(--ink); }
+  .construct .bold { fill: none; stroke: var(--ink); stroke-width: 0.12; stroke-linejoin: miter; }
+  .construct figcaption { font-size: calc(12px * var(--sf)); }
+
+  .rhythm { grid-column: 2 / span var(--rw); grid-row: var(--rr) / -3; margin: 0; display: grid; grid-template-rows: calc(2 * var(--u)) auto; align-content: start; border-top: 3px solid var(--ink); padding-top: calc(var(--u) - 3px); }
+  .rhythm figcaption { font-weight: 700; }
+  .rhythm svg { width: 100%; display: block; }
+  .foot { grid-column: 2 / span 44; grid-row: -2; font-size: calc(12px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* A narrow window: the forms one under another, as tall as the screen is wide. */
+  :root[data-narrow] .primer { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .primer > *, :root[data-narrow] .form > * { grid-column: 2 / -2 !important; grid-row: auto !important; }
+  :root[data-narrow] .sheet-head { grid-template-columns: 1fr calc(3 * var(--u)); padding-bottom: var(--u); }
+  :root[data-narrow] .sheet-head h1 { white-space: normal; font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); grid-column: 1 / -1; }
+  :root[data-narrow] .course { text-align: left; }
+  :root[data-narrow] .field { height: calc((var(--across) - 2) * var(--u)); margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .answer { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .matrix { width: 100%; }
+  :root[data-narrow] .construct { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .construct svg { width: 100%; height: auto; aspect-ratio: 2; }
+  :root[data-narrow] .foot { white-space: normal; margin-top: var(--u); }
+  :root[data-narrow] .rhythm { grid-template-rows: auto auto; row-gap: var(--u); margin-top: var(--u); }
+</style>

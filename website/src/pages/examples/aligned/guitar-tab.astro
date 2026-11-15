@@ -1,0 +1,362 @@
+---
+// After a page of guitar tablature from a teacher's folder, read at night: six string lines through
+// the middle of six squares, every beat two squares, fret numbers sitting in whole squares, chord
+// boxes and a strumming pattern beside them. Press Play and the numbers light up as they sound.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="guitar-tab" theme="dark">
+  <main class="stage gt" id="gt">
+    <svg class="gt-sky" id="sky" aria-hidden="true"></svg>
+
+    <header class="gt-head">
+      <h1>Twinkle, Twinkle, Little&nbsp;Star</h1>
+      <p>Traditional melody, words by Jane Taylor (1806). Arranged for a sleepy room by Mira Okafor.</p>
+    </header>
+
+    <figure class="gt-tab" id="tab-box">
+      <svg id="tab" role="img" aria-label="Tablature of the melody in six phrases, with chords above and words below."></svg>
+    </figure>
+
+    <aside class="gt-side">
+      <div class="gt-tuning" aria-label="Tuning: standard, E A D G B E, low to high">
+        <p class="gt-key">Tuning</p>
+        <ol aria-hidden="true"><li>E</li><li>A</li><li>D</li><li>G</li><li>B</li><li>e</li></ol>
+        <p class="gt-key">Capo</p><p class="gt-val">None</p>
+        <p class="gt-key">Tempo</p><p class="gt-val">66 beats a minute, the speed of a pram being rocked</p>
+      </div>
+
+      <div class="gt-chords" aria-label="Chord shapes">
+        <svg id="chords" role="img" aria-label="C: x32010. F, small: xx3211. G: 320003."></svg>
+      </div>
+
+      <div class="gt-strum" aria-label="Strumming pattern: down, down up, up down up">
+        <p class="gt-key">Second time round, strum</p>
+        <svg id="strum" aria-hidden="true"></svg>
+      </div>
+
+      <div class="gt-play">
+        <button type="button" id="play" aria-pressed="false">Play it softly</button>
+        <p id="now" aria-live="polite">Pick the melody with your thumb; let each note ring.</p>
+      </div>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The melody in the lower octave, first position. [string (1 = high e), fret, beats]
+  const NOTE: Record<string, [number, number]> = { C: [5, 3], D: [4, 0], E: [4, 2], F: [4, 3], G: [3, 0], A: [3, 2] };
+  const PHRASES = [
+    { notes: 'CCGGAAG', chords: ['C', 'C', 'F', 'C'], words: ['Twin-', 'kle', 'twin-', 'kle', 'lit-', 'tle', 'star'] },
+    { notes: 'FFEEDDC', chords: ['F', 'C', 'G', 'C'], words: ['How', 'I', 'won-', 'der', 'what', 'you', 'are'] },
+    { notes: 'GGFFEED', chords: ['C', 'F', 'C', 'G'], words: ['Up', 'a-', 'bove', 'the', 'world', 'so', 'high'] },
+    { notes: 'GGFFEED', chords: ['C', 'F', 'C', 'G'], words: ['Like', 'a', 'dia-', 'mond', 'in', 'the', 'sky'] },
+    { notes: 'CCGGAAG', chords: ['C', 'C', 'F', 'C'], words: ['Twin-', 'kle', 'twin-', 'kle', 'lit-', 'tle', 'star'] },
+    { notes: 'FFEEDDC', chords: ['F', 'C', 'G', 'C'], words: ['How', 'I', 'won-', 'der', 'what', 'you', 'are'] },
+  ];
+  // A hyphen joins a word's syllables, as under a song.
+  const joined = (words: string[], i: number) => words[i];
+  const SHAPES: Record<string, (number | null)[]> = { C: [null, 3, 2, 0, 1, 0], F: [null, null, 3, 2, 1, 1], G: [3, 2, 0, 0, 0, 3] };
+  const OPEN = [82.41, 110, 146.83, 196, 246.94, 329.63]; // low E to high e
+  const freq = (string: number, fret: number) => OPEN[6 - string] * 2 ** (fret / 12);
+
+  type Event = { phrase: number; i: number; beat: number; string: number; fret: number; len: number; word: string };
+  const EVENTS: Event[] = [];
+  PHRASES.forEach((p, phrase) => {
+    [...p.notes].forEach((n, i) => {
+      const [string, fret] = NOTE[n];
+      EVENTS.push({ phrase, i, beat: phrase * 8 + i, string, fret, len: i === 6 ? 2 : 1, word: joined(p.words, i) });
+    });
+  });
+
+  const stage = document.getElementById('gt')!;
+  const tab = document.getElementById('tab') as unknown as SVGSVGElement;
+
+  function drawTab(perStaff: number, beatW: number, narrow: boolean) {
+    const clef = narrow ? 2 : 3;
+    const systems = 48 / perStaff;
+    const sysH = 9;
+    const width = clef + perStaff * beatW;
+    const height = systems * sysH - 1;
+    tab.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    stage.style.setProperty('--tab-w', String(width));
+    stage.style.setProperty('--tab-h', String(height));
+    let out = '';
+    for (let s = 0; s < systems; s++) {
+      const top = s * sysH + 1; // the chord row is above it
+      // Six strings through the middle of six squares, a bar line every four beats.
+      for (let k = 0; k < 6; k++) out += `<line class="gt-string" x1="0" x2="${width}" y1="${top + k + 0.5}" y2="${top + k + 0.5}" />`;
+      for (let b = 0; b <= perStaff; b += 4) {
+        const x = b === 0 ? 0 : clef + b * beatW;
+        out += `<line class="gt-bar${b === perStaff && s === systems - 1 ? ' is-end' : ''}" x1="${x}" x2="${x}" y1="${top + 0.5}" y2="${top + 5.5}" />`;
+      }
+      out += `<text class="gt-clef" x="${clef / 2}" y="${top + 1.5}">T</text><text class="gt-clef" x="${clef / 2}" y="${top + 3}">A</text><text class="gt-clef" x="${clef / 2}" y="${top + 4.5}">B</text>`;
+      const first = s * perStaff;
+      // Chords above, where they change; the words below each note.
+      let last = '';
+      for (let half = 0; half < perStaff / 2; half++) {
+        const beat = first + half * 2;
+        const name = PHRASES[Math.floor(beat / 8)].chords[(beat % 8) / 2];
+        if (name !== last || half === 0) out += `<text class="gt-chord" x="${clef + half * 2 * beatW + 0.5}" y="${top - 0.5}">${name}</text>`;
+        last = name;
+      }
+      if (narrow) out += `<text class="gt-line" x="0" y="${top + 6.5}">${PHRASES[s].words.map((w, i) => joined(PHRASES[s].words, i)).join(' ').replace(/- /g, '')}</text>`;
+      EVENTS.filter(e => e.beat >= first && e.beat < first + perStaff).forEach((e, n) => {
+        const x = clef + (e.beat - first) * beatW + 0.5;
+        const y = top + (e.string - 1) + 0.5;
+        out += `<g class="gt-note" data-n="${EVENTS.indexOf(e)}"><rect x="${x - 0.5}" y="${y - 0.5}" width="1" height="1" rx="0.5" /><text x="${x}" y="${y}">${e.fret}</text></g>`;
+        if (!narrow) out += `<text class="gt-word" x="${x - 0.5}" y="${top + 6.5}">${e.word}</text>`;
+        if (e.len === 2 && !narrow) out += `<line class="gt-hold" x1="${x + 0.7}" x2="${x + beatW * 2 - 0.9}" y1="${y}" y2="${y}" />`;
+        void n;
+      });
+    }
+    tab.innerHTML = out;
+  }
+
+  // Chord boxes: five gaps across, four frets down, a nut on top, x and o above.
+  function drawChords(narrow: boolean) {
+    const svg = document.getElementById('chords') as unknown as SVGSVGElement;
+    const names = ['C', 'F', 'G'];
+    const gap = narrow ? 1 : 2;
+    const w = names.length * 5 + (names.length - 1) * gap + 2;
+    svg.setAttribute('viewBox', narrow ? `-0.5 0 ${w - 1} 8` : `-1 0 ${w} 8`);
+    stage.style.setProperty('--chords-w', String(narrow ? w - 1 : w));
+    let out = '';
+    names.forEach((name, c) => {
+      const x0 = c * (5 + gap);
+      out += `<text class="gt-cname" x="${x0 + 2.5}" y="0.6">${name}</text>`;
+      out += `<rect class="gt-nut" x="${x0}" y="2" width="5" height="0.18" />`;
+      for (let f = 1; f <= 4; f++) out += `<line class="gt-fret" x1="${x0}" x2="${x0 + 5}" y1="${2 + f}" y2="${2 + f}" />`;
+      for (let s = 0; s < 6; s++) out += `<line class="gt-fret" x1="${x0 + s}" x2="${x0 + s}" y1="2" y2="6" />`;
+      SHAPES[name].forEach((fret, s) => {
+        const x = x0 + s;
+        if (fret === null) out += `<text class="gt-xo" x="${x}" y="1.5">×</text>`;
+        else if (fret === 0) out += `<circle class="gt-open" cx="${x}" cy="1.5" r="0.28" />`;
+        else out += `<circle class="gt-dot" cx="${x}" cy="${2 + fret - 0.5}" r="0.36" />`;
+      });
+      if (name === 'F') out += `<text class="gt-cnote" x="${x0 + 2.5}" y="7.3">the small one</text>`;
+    });
+    svg.innerHTML = out;
+  }
+
+  // Down, down up, up down up: eight slots of half a beat, each a square.
+  function drawStrum() {
+    const svg = document.getElementById('strum') as unknown as SVGSVGElement;
+    const PATTERN = ['d', '', 'd', 'u', '', 'u', 'd', 'u'];
+    const COUNT = ['1', '+', '2', '+', '3', '+', '4', '+'];
+    svg.setAttribute('viewBox', `0 0 ${PATTERN.length * 2} 4`);
+    let out = '';
+    PATTERN.forEach((p, i) => {
+      const x = i * 2 + 1;
+      if (p === 'd') out += `<path class="gt-arrow" d="M ${x} 0.3 V 2.4 M ${x - 0.45} 1.9 L ${x} 2.5 L ${x + 0.45} 1.9" />`;
+      if (p === 'u') out += `<path class="gt-arrow is-up" d="M ${x} 2.5 V 0.4 M ${x - 0.45} 0.9 L ${x} 0.3 L ${x + 0.45} 0.9" />`;
+      if (!p) out += `<circle class="gt-rest" cx="${x}" cy="1.4" r="0.08" />`;
+      out += `<text class="gt-count" x="${x}" y="3.5">${COUNT[i]}</text>`;
+    });
+    svg.innerHTML = out;
+  }
+
+  // Stars on the grid's own crossings, sparse and faint, kept out of the tab.
+  function drawSky(across: number, down: number) {
+    const sky = document.getElementById('sky') as unknown as SVGSVGElement;
+    sky.setAttribute('viewBox', `0 0 ${across} ${down}`);
+    sky.setAttribute('preserveAspectRatio', 'xMidYMin slice');
+    let seed = 17;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let out = '';
+    const count = Math.round(across * down / 40);
+    for (let i = 0; i < count; i++) {
+      const x = Math.round(rnd() * across);
+      const y = Math.round(rnd() * down);
+      const r = rnd() < 0.12 ? 0.09 : 0.045;
+      out += `<circle cx="${x}" cy="${y}" r="${r}" opacity="${(0.25 + rnd() * 0.5).toFixed(2)}" />`;
+    }
+    sky.innerHTML = out;
+  }
+
+  let narrowNow = false;
+  onSquares(({ across, down, narrow }) => {
+    narrowNow = narrow;
+    const roomy = !narrow && across >= 64;
+    stage.toggleAttribute('data-roomy', roomy);
+    drawTab(narrow ? 8 : 16, narrow ? 1 : 2, narrow);
+    // The side column stands four squares after the staves, however wide the window.
+    stage.style.setProperty('--side-from', String(Math.max(3 + 35 + 3, Math.min(3 + 35 + 6, across - 26))));
+    drawChords(narrow);
+    drawStrum();
+    drawSky(across, narrow ? 120 : down);
+    // Centre the staves in the room under the heading.
+    stage.style.setProperty('--tab-row', String(narrow ? 1 : Math.max(8, 8 + Math.floor((down - 8 - 2 - 26) / 2))));
+  });
+
+  // Plucked strings, made the old way: a burst of noise fed back through a gentle average.
+  let audio: AudioContext | null = null;
+  const cache = new Map<number, AudioBuffer>();
+  function pluck(f: number): AudioBuffer {
+    const key = Math.round(f * 100);
+    if (cache.has(key)) return cache.get(key)!;
+    const ctx = audio!;
+    const length = Math.floor(ctx.sampleRate * 2.6);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    const period = Math.round(ctx.sampleRate / f);
+    for (let i = 0; i < period; i++) data[i] = Math.random() * 2 - 1;
+    for (let i = period; i < length; i++) data[i] = 0.4985 * (data[i - period] + data[i - period + 1]);
+    // Soften the attack, as a thumb would.
+    let last = 0;
+    for (let i = 0; i < length; i++) { last = last + 0.45 * (data[i] - last); data[i] = last; }
+    cache.set(key, buffer);
+    return buffer;
+  }
+  function sound(f: number, when: number, gain: number) {
+    const ctx = audio!;
+    const src = ctx.createBufferSource();
+    src.buffer = pluck(f);
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(ctx.destination);
+    src.start(when);
+  }
+
+  const button = document.getElementById('play') as HTMLButtonElement;
+  const now = document.getElementById('now')!;
+  let timers: number[] = [];
+  let playing = false;
+  const light = (n: number | null) => tab.querySelectorAll('.gt-note').forEach(el => el.classList.toggle('is-on', Number((el as SVGGElement).dataset.n) === n));
+
+  function stop() {
+    playing = false;
+    timers.forEach(clearTimeout);
+    timers = [];
+    light(null);
+    button.textContent = 'Play it softly';
+    button.setAttribute('aria-pressed', 'false');
+    if (audio) { audio.close(); audio = null; cache.clear(); }
+  }
+
+  button.addEventListener('click', () => {
+    if (playing) { stop(); now.textContent = 'Stopped. Sleep well.'; return; }
+    playing = true;
+    button.textContent = 'Stop';
+    button.setAttribute('aria-pressed', 'true');
+    audio = new AudioContext();
+    const beat = 60 / 66;
+    const start = audio.currentTime + 0.15;
+    let lastChord = '';
+    EVENTS.forEach((e, n) => {
+      const t = start + e.beat * beat;
+      sound(freq(e.string, e.fret), t, 0.55);
+      // A soft strum where the chord changes, low strings first.
+      const chord = PHRASES[e.phrase].chords[Math.floor(e.i / 2)];
+      if (e.i % 2 === 0 && chord !== lastChord) {
+        SHAPES[chord].forEach((fret, s) => { if (fret !== null) sound(OPEN[s] * 2 ** (fret / 12), t + s * 0.025, 0.16); });
+        lastChord = chord;
+      }
+      timers.push(window.setTimeout(() => {
+        light(n);
+        const word = e.word.replace('-', '');
+        now.textContent = `${word[0].toUpperCase()}${word.slice(1)}: string ${e.string}, fret ${e.fret}${chord ? `, over ${chord}` : ''}`;
+        if (!narrowNow && !reducedMotion()) return;
+      }, (t - audio!.currentTime) * 1000));
+    });
+    timers.push(window.setTimeout(() => { stop(); now.textContent = 'The end. Play it again, quieter.'; }, (48 * beat + 2.6) * 1000));
+  });
+</script>
+
+<style is:global>
+  html { background: #1c2044; }
+  .gt {
+    --night: #1c2044;
+    --line: #6f7398;
+    --paper: #e9e3cf;
+    --dim: #a9a8c0;
+    --glow: #ffe9a8;
+    color: var(--paper);
+    background: var(--night);
+    font-family: 'Avenir Next', Avenir, 'Helvetica Neue', sans-serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .gt p, .gt h1, .gt ol { margin: 0; padding: 0; }
+  .gt-sky { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: var(--paper); pointer-events: none; overflow: hidden; }
+
+  .gt-head { grid-column: 3 / -3; grid-row: 2 / span 5; position: relative; }
+  .gt-head h1 { font: italic calc(56px * var(--sf)) / calc(3 * var(--u)) Didot, 'Bodoni 72', 'Times New Roman', serif; letter-spacing: -0.01em; }
+  .gt-head p { color: var(--dim); margin-top: var(--u); }
+
+  .gt-tab { grid-column: 3 / span var(--tab-w); grid-row: var(--tab-row, 8) / span var(--tab-h); margin: 0; position: relative; }
+  .gt-tab svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .gt-string { stroke: var(--line); stroke-width: 0.05; }
+  .gt-bar { stroke: var(--line); stroke-width: 0.07; }
+  .gt-bar.is-end { stroke-width: 0.2; stroke: var(--paper); }
+  .gt-clef { font: 700 0.62px var(--typeface-medium); fill: var(--dim); text-anchor: middle; dominant-baseline: central; }
+  .gt-chord { font: 0.72px var(--typeface-medium); fill: var(--glow); dominant-baseline: central; text-anchor: middle; }
+  .gt-note rect { fill: var(--night); transition: fill 200ms; }
+  .gt-note text { font: 0.74px var(--typeface-mono); fill: var(--paper); text-anchor: middle; dominant-baseline: central; transition: fill 200ms; }
+  .gt-note.is-on rect { fill: var(--glow); }
+  .gt-note.is-on text { fill: var(--night); }
+  .gt-note.is-on { filter: drop-shadow(0 0 0.3px var(--glow)) drop-shadow(0 0 0.6px rgba(255, 233, 168, 0.6)); }
+  .gt-hold { stroke: var(--dim); stroke-width: 0.06; stroke-dasharray: 0.12 0.18; }
+  .gt-word { font: 0.56px 'Avenir Next', Avenir, sans-serif; fill: var(--dim); dominant-baseline: central; }
+  .gt-line { font: italic 0.6px Didot, 'Bodoni 72', serif; fill: var(--dim); dominant-baseline: central; }
+
+  /* Beside the staves: tuning, chord boxes, the strum and the button. */
+  .gt-side { grid-column: var(--side-from, 42) / -3; grid-row: 8 / -3; display: grid; grid-template-rows: auto auto auto 1fr; row-gap: calc(2 * var(--u)); align-content: start; }
+  .gt-tuning { display: grid; grid-template-columns: calc(5 * var(--u)) 1fr; }
+  .gt-key { color: var(--dim); }
+  .gt-tuning ol { list-style: none; display: grid; grid-template-columns: repeat(6, calc(2 * var(--u))); font: calc(28px * var(--sf)) / calc(2 * var(--u)) Didot, 'Bodoni 72', serif; margin-bottom: var(--u) !important; }
+  .gt-tuning > .gt-key:first-child { line-height: calc(2 * var(--u)); }
+  .gt-val { max-width: calc(15 * var(--u)); }
+  .gt-chords svg { display: block; width: calc(var(--chords-w, 21) * var(--u)); height: calc(8 * var(--u)); margin-left: calc(-1 * var(--u)); overflow: visible; }
+  .gt-cname { font: 0.8px var(--typeface-medium); fill: var(--glow); text-anchor: middle; dominant-baseline: central; }
+  .gt-nut { fill: var(--paper); }
+  .gt-fret { stroke: var(--line); stroke-width: 0.06; }
+  .gt-dot { fill: var(--paper); }
+  .gt-open { fill: none; stroke: var(--paper); stroke-width: 0.07; }
+  .gt-xo { font: 0.7px var(--typeface-regular); fill: var(--dim); text-anchor: middle; dominant-baseline: central; }
+  .gt-cnote { font: italic 0.55px Didot, 'Bodoni 72', serif; fill: var(--dim); text-anchor: middle; dominant-baseline: central; }
+  .gt-strum svg { display: block; width: calc(16 * var(--u)); height: calc(4 * var(--u)); margin-top: var(--u); }
+  .gt-arrow { fill: none; stroke: var(--paper); stroke-width: 0.12; stroke-linecap: round; stroke-linejoin: round; }
+  .gt-arrow.is-up { stroke: var(--glow); }
+  .gt-rest { fill: var(--dim); }
+  .gt-count { font: 0.6px var(--typeface-regular); fill: var(--dim); text-anchor: middle; dominant-baseline: central; }
+  .gt-play { align-self: end; display: grid; row-gap: var(--u); }
+  .gt-play button {
+    all: unset;
+    justify-self: start;
+    height: calc(2 * var(--u));
+    padding: 0 var(--u);
+    line-height: calc(2 * var(--u));
+    border-radius: var(--u);
+    background: var(--glow);
+    color: var(--night);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .gt-play button[aria-pressed='true'] { background: transparent; color: var(--glow); box-shadow: inset 0 0 0 1px var(--glow); }
+  .gt-play button:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+  .gt-play p { color: var(--dim); min-height: calc(2 * var(--u)); max-width: calc(20 * var(--u)); }
+
+  /* Not roomy enough for the side: the staves alone, the button under the heading. */
+  .gt:not([data-roomy]) .gt-side { grid-column: 3 / -3; grid-row: 6 / span 3; display: block; }
+  .gt:not([data-roomy]) .gt-side > :not(.gt-play) { display: none; }
+  .gt:not([data-roomy]) .gt-play { display: flex; gap: var(--u); align-items: center; }
+
+  :root[data-narrow] .gt { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .gt > :not(.gt-sky) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .gt-sky { position: absolute; inset: 0; grid-row: auto; }
+  :root[data-narrow] .gt-head { margin-top: var(--u); }
+  :root[data-narrow] .gt-head h1 { font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); margin-bottom: var(--u); }
+  :root[data-narrow] .gt .gt-side { display: grid; grid-column: 2 / -2; margin-block: calc(2 * var(--u)); row-gap: calc(2 * var(--u)); }
+  :root[data-narrow] .gt .gt-side > * { display: block; }
+  :root[data-narrow] .gt .gt-play { display: grid; order: -1; }
+  :root[data-narrow] .gt-tab { width: calc(var(--tab-w) * var(--u)); height: calc(var(--tab-h) * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .gt-chords svg { width: 100%; height: auto; aspect-ratio: var(--chords-w) / 8; margin-left: 0; }
+  :root[data-narrow] .gt-side { order: 1; }
+  :root[data-narrow] .gt-tab { order: 2; }
+  :root[data-narrow] .gt-tuning ol { font-size: calc(24px * var(--sf)); }
+  :root[data-narrow] .gt-tuning { grid-template-columns: 1fr; }
+  :root[data-narrow] .gt-strum svg { width: calc(12 * var(--u)); height: calc(3 * var(--u)); }
+  :root[data-narrow] .gt .gt-side { grid-template-columns: minmax(0, 1fr); }
+</style>

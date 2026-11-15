@@ -1,0 +1,299 @@
+---
+// After a parish ballot paper and the polling-booth guidance pinned beside it: candidates listed
+// alphabetically by surname, every row four squares high with a box three squares wide, the
+// official mark in the corner and a pencil on a string. Here the candidates are ducks.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const CANDIDATES = [
+  { surname: 'DRAKE', names: 'Reginald Montague', address: 'Under the Willow, North Bank', party: 'The Bread Party', emblem: 'loaf' },
+  { surname: 'EIDER', names: 'Margaret Down', address: 'The Island (the small one)', party: 'Independent', emblem: '' },
+  { surname: 'MALLARD', names: 'Gerald', address: 'Sluice Gate Cottage, The Sluice', party: 'Reform the Reeds', emblem: 'reed' },
+  { surname: 'MUSCOVY', names: 'Dolores Agnes', address: 'Behind Margaret Hale’s bench', party: 'Peas and Oats, Not Bread', emblem: 'pea' },
+  { surname: 'TEAL', names: 'Oswald Fitzwilliam', address: 'The Boathouse Roof', party: 'The Lily Pad Party', emblem: 'pad' },
+];
+---
+<AlignedStudy slug="ballot" theme="light">
+  <main class="stage bp" id="bp">
+    <section class="bp-notice" aria-labelledby="notice-title">
+      <h1 id="notice-title">Guidance for voters</h1>
+      <ol>
+        <li>The presiding officer will give you a ballot paper. Check it carries the official mark.</li>
+        <li>Go alone into a polling booth. You may bring one duckling.</li>
+        <li>Put one cross in the box next to the candidate you choose. Use the pencil provided; it is on a string for a reason.</li>
+        <li>Write nothing else on the paper, or your vote may not be counted. This includes “quack”.</li>
+        <li>Fold the paper in half, face inwards, and put it in the ballot box.</li>
+      </ol>
+      <p class="bp-hours">Polls open 7am to 10pm in the Village Hall, Pond Lane. Bread is not permitted in the polling station.</p>
+      <p class="bp-imprint">Printed and published by the Returning Officer, Little Wetherby Parish Council, The Old Forge, Pond Lane.</p>
+    </section>
+
+    <svg class="bp-string" id="string" aria-hidden="true"></svg>
+    <div class="bp-pencil" aria-hidden="true"><i></i></div>
+
+    <form class="bp-paper" id="paper" aria-labelledby="paper-title">
+      <div class="bp-top">
+        <span class="bp-no">No. 0417</span>
+        <svg class="bp-mark" viewBox="0 0 3 3" aria-label="Official mark" role="img">
+          <g id="perf"></g>
+        </svg>
+      </div>
+      <header class="bp-head">
+        <p>Little Wetherby Parish Council</p>
+        <h2 id="paper-title">Election of the Chair of the Village Pond Committee</h2>
+        <p>Thursday 14 November 2026</p>
+      </header>
+      <div class="bp-rule">
+        <b>Vote for one candidate only</b>
+        <span>Put a cross in the box next to your choice</span>
+      </div>
+      <ul class="bp-list">
+        {CANDIDATES.map((c, i) => (
+          <li class="bp-cand">
+            <div class="bp-who">
+              <b>{c.surname}</b>
+              <span>{c.names}</span>
+              <small>{c.address}</small>
+            </div>
+            <p class="bp-party">{c.party}</p>
+            <svg class="bp-emblem" viewBox="0 0 3 3" aria-hidden="true" data-emblem={c.emblem}>
+              {c.emblem === 'loaf' && <path d="M0.4 2.3 V1.5 C0.4 0.9 0.9 0.6 1.5 0.6 C2.1 0.6 2.6 0.9 2.6 1.5 V2.3 Z M1 1.1 L1.3 1.6 M1.5 1 L1.8 1.5 M2 1.1 L2.3 1.6" />}
+              {c.emblem === 'reed' && <path d="M1.5 2.7 V0.9 M1.5 0.3 C1.75 0.3 1.8 1.2 1.5 1.2 C1.2 1.2 1.25 0.3 1.5 0.3 Z M1.5 2.4 C1 2 0.7 1.4 0.6 0.9 M1.5 2.4 C2 2 2.3 1.5 2.4 1.1" />}
+              {c.emblem === 'pea' && <path d="M0.4 2 C0.9 2.6 2.1 2.6 2.6 1.4 C2.1 1.8 0.9 1.8 0.4 2 Z M0.95 2.05 a0.2 0.2 0 1 0 0.01 0 M1.5 2.02 a0.2 0.2 0 1 0 0.01 0 M2.05 1.85 a0.2 0.2 0 1 0 0.01 0 M2.6 1.4 C2.7 1 2.5 0.6 2.2 0.5" />}
+              {c.emblem === 'pad' && <path d="M1.5 1.6 L2.6 1.2 A1.15 1.15 0 1 1 2.15 0.6 Z" />}
+            </svg>
+            <button type="button" class="bp-box" aria-pressed="false" aria-label={`Cross for ${c.names} ${c.surname[0]}${c.surname.slice(1).toLowerCase()}, ${c.party}`} data-i={i}>
+              <svg viewBox="0 0 3 3" aria-hidden="true"></svg>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p class="bp-official"><span>For the count only. Do not write here.</span><span>Rejected</span><span>Doubtful</span></p>
+      <div class="bp-foot">
+        <p class="bp-status" id="status" aria-live="polite">No cross yet.</p>
+        <button type="button" class="bp-post" id="post" disabled>Fold and post</button>
+      </div>
+    </form>
+
+    <div class="bp-done" id="done" hidden>
+      <p class="bp-done-big">In the box.</p>
+      <p>Your paper is folded and posted. The count begins at ten, by torchlight, on the bandstand. The result is announced to the pond at about half eleven.</p>
+      <button type="button" class="bp-again" id="again">Ask for another paper</button>
+      <p class="bp-refused" id="refused" hidden>The presiding officer says one paper per voter. She has written your name down.</p>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const stage = document.getElementById('bp')!;
+  const paper = document.getElementById('paper')!;
+  const status = document.getElementById('status')!;
+  const post = document.getElementById('post') as HTMLButtonElement;
+  const done = document.getElementById('done')!;
+  const boxes = [...document.querySelectorAll<HTMLButtonElement>('.bp-box')];
+  const names = boxes.map(b => b.closest('.bp-cand')!.querySelector('b')!.textContent!);
+
+  // The official mark: a ring of perforations around the parish's initials, punched by the clerk.
+  const perf = document.getElementById('perf')!;
+  let holes = '';
+  for (let i = 0; i < 28; i++) {
+    const a = (i / 28) * Math.PI * 2;
+    holes += `<circle cx="${1.5 + Math.cos(a) * 1.3}" cy="${1.5 + Math.sin(a) * 1.3}" r="0.06" />`;
+  }
+  const letters = [[1.05, 1.15], [1.05, 1.85], [1.55, 1.85], [1.85, 1.15], [2, 1.85], [2.15, 1.5], [2.3, 1.85], [2.45, 1.15]];
+  // L: down then across. W: four strokes. Holes along both.
+  const along = (a: number[], b: number[], n: number) => { for (let k = 0; k <= n; k++) holes += `<circle cx="${a[0] + (b[0] - a[0]) * k / n}" cy="${a[1] + (b[1] - a[1]) * k / n}" r="0.05" />`; };
+  along(letters[0], letters[1], 5); along(letters[1], letters[2], 3);
+  along(letters[3], letters[4], 5); along(letters[4], letters[5], 3); along(letters[5], letters[6], 3); along(letters[6], letters[7], 5);
+  perf.innerHTML = holes;
+
+  // A pencil cross: two strokes, never quite straight, never quite the same twice.
+  const wobble = () => (Math.random() - 0.5) * 0.5;
+  const stroke = (x1: number, y1: number, x2: number, y2: number) => {
+    const mx = (x1 + x2) / 2 + wobble();
+    const my = (y1 + y2) / 2 + wobble();
+    return `<path pathLength="1" d="M ${x1 + wobble()} ${y1 + wobble()} Q ${mx} ${my} ${x2 + wobble()} ${y2 + wobble()}" />`;
+  };
+
+  function update() {
+    const marked = boxes.filter(b => b.getAttribute('aria-pressed') === 'true');
+    paper.classList.toggle('is-spoilt', marked.length > 1);
+    post.disabled = marked.length !== 1;
+    if (!marked.length) status.textContent = 'No cross yet.';
+    else if (marked.length === 1) status.textContent = `One cross, for ${names[boxes.indexOf(marked[0])]}. Fold and post when you are ready.`;
+    else status.textContent = `${marked.length} crosses: this paper would be spoilt. Press a cross again to rub it out.`;
+  }
+
+  boxes.forEach(box => {
+    box.addEventListener('click', () => {
+      const svg = box.querySelector('svg')!;
+      const on = box.getAttribute('aria-pressed') !== 'true';
+      box.setAttribute('aria-pressed', String(on));
+      svg.innerHTML = on ? stroke(0.55, 0.5, 2.45, 2.5) + stroke(2.5, 0.55, 0.5, 2.45) : '';
+      if (on && !reducedMotion()) {
+        svg.querySelectorAll('path').forEach((p, i) => p.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 180, delay: i * 200, fill: 'backwards', easing: 'ease-in' }));
+      }
+      update();
+    });
+  });
+
+  post.addEventListener('click', () => {
+    const finish = () => { paper.hidden = true; done.hidden = false; (document.getElementById('again') as HTMLButtonElement).focus(); };
+    if (reducedMotion()) { finish(); return; }
+    // Folded in half, face inwards, then into the slot.
+    paper.animate([
+      { transform: 'none', opacity: 1 },
+      { transform: 'perspective(1200px) rotateX(-88deg)', transformOrigin: '50% 50%', opacity: 1, offset: 0.5 },
+      { transform: 'perspective(1200px) rotateX(-88deg) translateY(60%) scale(0.6)', opacity: 0 },
+    ], { duration: 700, easing: 'cubic-bezier(.5,0,.6,1)' }).finished.then(finish);
+  });
+  document.getElementById('again')!.addEventListener('click', () => { document.getElementById('refused')!.hidden = false; });
+
+  // The string runs from the top of the booth to the pencil, sagging a little.
+  const string = document.getElementById('string') as unknown as SVGSVGElement;
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) return;
+    // Notice, paper and pencil are fifty squares together; centre them in the window.
+    const x0 = Math.max(3, Math.floor((across - 50) / 2) + 1);
+    stage.style.setProperty('--x-notice', String(x0));
+    stage.style.setProperty('--x-paper', String(x0 + 18));
+    stage.style.setProperty('--x-string', String(x0 + 46));
+    stage.style.setProperty('--x-pencil', String(x0 + 47));
+    const high = Math.max(8, Math.floor(down / 2) - 4);
+    stage.style.setProperty('--string-h', String(high));
+    stage.style.setProperty('--pencil-row', String(high + 1));
+    string.setAttribute('viewBox', `0 0 4 ${high}`);
+    string.innerHTML = `<path d="M 3.5 0 C 3.5 ${high * 0.4} 0.2 ${high * 0.55} 1.5 ${high}" />`;
+  });
+</script>
+
+<style is:global>
+  html { background: #233f78; }
+  .bp {
+    --booth: #233f78;
+    --booth-line: #2f4f8f;
+    --paper: #fbfbf8;
+    --print: #111;
+    --graphite: #4a4a4f;
+    color: #fff;
+    background: var(--booth);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .bp p, .bp h1, .bp h2, .bp ol, .bp ul { margin: 0; padding: 0; }
+  .bp button:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+
+  /* The guidance poster, printed white on the booth's blue. */
+  .bp-notice { grid-column: var(--x-notice, 3) / span 15; grid-row: 3 / -3; display: flex; flex-direction: column; }
+  .bp-notice h1 { font: calc(32px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); letter-spacing: -0.01em; }
+  .bp-notice ol { margin-top: var(--u); list-style: none; counter-reset: step; }
+  .bp-notice li { position: relative; padding-left: calc(3 * var(--u)); margin-top: var(--u); counter-increment: step; }
+  .bp-notice li::before { content: counter(step); position: absolute; left: 0; top: 0; width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; background: #fff; color: var(--booth); font: calc(16px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); text-align: center; }
+  .bp .bp-hours { margin-top: auto; padding-top: var(--u); color: #c7d3ea; font-size: calc(13px * var(--sf)); }
+
+  /* The ballot paper: twenty-eight squares wide, the full height less two at each end. */
+  .bp-paper {
+    grid-column: var(--x-paper, 21) / span 28;
+    grid-row: 2 / -2;
+    display: grid;
+    grid-template-rows: calc(4 * var(--u)) auto calc(3 * var(--u)) auto 1fr calc(3 * var(--u));
+    padding: 0 var(--u);
+    background: var(--paper);
+    color: var(--print);
+    box-shadow: 0 calc(var(--u) / 2) 0 rgba(0, 0, 0, 0.18);
+    transform-origin: 50% 50%;
+  }
+  .bp-paper[hidden] { display: none; }
+  .bp-top { display: flex; justify-content: space-between; align-items: center; }
+  .bp-no { font-family: var(--typeface-medium); font-variant-numeric: tabular-nums; }
+  .bp-mark { width: calc(3 * var(--u)); height: calc(3 * var(--u)); fill: #c9c9c4; filter: drop-shadow(0.5px 0.5px 0 #fff) drop-shadow(-0.5px -0.5px 0 #9a9a94); }
+  .bp-head { padding-bottom: var(--u); }
+  .bp-head h2 { font: calc(20px * var(--sf)) / calc(1.5 * var(--u)) var(--typeface-medium); margin-block: calc(var(--u) / 2) !important; text-wrap: balance; }
+  .bp-rule { display: grid; align-content: center; margin-inline: calc(-1 * var(--u)); padding-inline: var(--u); background: var(--print); color: var(--paper); }
+  .bp-rule b { font-family: var(--typeface-medium); font-weight: normal; font-size: calc(16px * var(--sf)); }
+  .bp-list { list-style: none; display: grid; grid-auto-rows: calc(4 * var(--u)); align-content: start; }
+  .bp-cand {
+    display: grid;
+    grid-template-columns: calc(11 * var(--u)) calc(7 * var(--u)) calc(3 * var(--u)) calc(5 * var(--u));
+    align-items: center;
+    border-bottom: 2px solid var(--print);
+    margin-bottom: -2px;
+  }
+  .bp-who { display: grid; align-self: center; }
+  .bp-who b { font: calc(16px * var(--sf)) / var(--u) var(--typeface-medium); letter-spacing: 0.02em; }
+  .bp-who small { font-size: calc(11px * var(--sf)); color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bp-party { padding-right: var(--u); font-size: calc(13px * var(--sf)); }
+  .bp-emblem { width: calc(3 * var(--u)); height: calc(3 * var(--u)); fill: none; stroke: var(--print); stroke-width: 0.13; stroke-linecap: round; stroke-linejoin: round; }
+  .bp-box {
+    all: unset;
+    justify-self: end;
+    width: calc(3 * var(--u));
+    height: calc(3 * var(--u));
+    box-shadow: inset 0 0 0 2px var(--print);
+    cursor: crosshair;
+    background: #fff;
+  }
+  .bp-box:hover { background: #f0f0ec; }
+  .bp-box svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--graphite); stroke-width: 0.22; stroke-linecap: round; stroke-dasharray: 1; opacity: 0.88; }
+  .bp-paper.is-spoilt .bp-box[aria-pressed='true'] svg { stroke: #b0002a; }
+  .bp .bp-official { align-self: end; display: grid; grid-template-columns: 1fr calc(5 * var(--u)) calc(5 * var(--u)); padding-top: calc(var(--u) - 1px); border-top: 1px dashed #888; font-size: calc(11px * var(--sf)); color: #666; }
+  .bp-official span + span { box-shadow: inset 1px 0 #bbb; padding-left: calc(var(--u) / 2); height: calc(2 * var(--u)); }
+  .bp-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--u); }
+  .bp-status { font-size: calc(13px * var(--sf)); }
+  .bp-paper.is-spoilt .bp-status { color: #b0002a; }
+  .bp-post, .bp-again {
+    all: unset;
+    flex: none;
+    height: calc(2 * var(--u));
+    padding: 0 var(--u);
+    line-height: calc(2 * var(--u));
+    font-family: var(--typeface-medium);
+    background: var(--booth);
+    color: #fff;
+    cursor: pointer;
+  }
+  .bp-post:disabled { background: #d6d6d0; color: #77776f; cursor: default; }
+
+  /* The pencil, hanging on its string to the right of the paper. */
+  .bp-string { grid-column: var(--x-string, 49) / span 4; grid-row: 1 / span var(--string-h, 14); width: 100%; height: 100%; fill: none; stroke: #e9e4d4; stroke-width: 0.06; overflow: visible; }
+  .bp-pencil { grid-column: var(--x-pencil, 50) / span 1; grid-row: var(--pencil-row, 15) / span 9; position: relative; }
+  .bp-pencil i {
+    position: absolute;
+    inset: 0 calc(var(--u) * 0.2);
+    background: linear-gradient(90deg, #e2b33d 0 33%, #f0c75a 33% 66%, #c9982a 66%);
+    clip-path: polygon(0 calc(var(--u) * 0.6), 100% calc(var(--u) * 0.6), 100% calc(100% - var(--u) * 1.4), 50% 100%, 0 calc(100% - var(--u) * 1.4));
+  }
+  .bp-pencil::before { content: ''; position: absolute; left: calc(var(--u) * 0.2); right: calc(var(--u) * 0.2); top: 0; height: calc(var(--u) * 0.6); background: #b9b9b9; border-radius: 2px 2px 0 0; }
+  .bp-pencil::after { content: ''; position: absolute; left: 50%; bottom: 0; width: calc(var(--u) * 0.24); height: calc(var(--u) * 0.45); transform: translateX(-50%); background: #333; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+
+  .bp-done { grid-column: var(--x-paper, 21) / span 28; grid-row: 8 / span 14; display: grid; align-content: start; row-gap: var(--u); max-width: calc(24 * var(--u)); }
+  .bp-done[hidden] { display: none; }
+  .bp-done-big { font: calc(56px * var(--sf)) / calc(3 * var(--u)) var(--typeface-medium); letter-spacing: -0.02em; }
+  .bp-again { justify-self: start; background: #fff; color: var(--booth); }
+  .bp-refused { color: #ffd23f; }
+
+  .bp-imprint { margin-top: var(--u) !important; color: #c7d3ea; font-size: calc(11px * var(--sf)); line-height: var(--u); }
+
+  /* Narrow: the guidance, then the paper the width of the screen; no pencil. */
+  :root[data-narrow] .bp { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .bp > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .bp-notice { margin-block: var(--u); }
+  :root[data-narrow] .bp-notice h1 { font-size: calc(26px * var(--sf)); }
+  :root[data-narrow] .bp-string, :root[data-narrow] .bp-pencil { display: none; }
+  :root[data-narrow] .bp-paper { grid-column: 1 / -1; padding: 0 calc(var(--u) / 2); grid-template-rows: auto; }
+  :root[data-narrow] .bp-rule { margin-inline: calc(var(--u) / -2); padding: calc(var(--u) / 2); }
+  :root[data-narrow] .bp-cand { grid-template-columns: 1fr calc(2 * var(--u)) calc(4 * var(--u)); grid-template-rows: auto auto; padding-block: calc(var(--u) / 2); }
+  :root[data-narrow] .bp-list { grid-auto-rows: auto; }
+  :root[data-narrow] .bp-who small { white-space: normal; }
+  :root[data-narrow] .bp-party { grid-column: 1; grid-row: 2; }
+  :root[data-narrow] .bp-emblem { grid-column: 2; grid-row: 1 / span 2; width: calc(2 * var(--u)); height: calc(2 * var(--u)); }
+  :root[data-narrow] .bp-box { grid-column: 3; grid-row: 1 / span 2; }
+  :root[data-narrow] .bp-foot { flex-direction: column; align-items: stretch; padding-block: var(--u); }
+  :root[data-narrow] .bp-post { text-align: center; }
+  :root[data-narrow] .bp-done { grid-column: 2 / -2; margin-block: var(--u); }
+  :root[data-narrow] .bp-done-big { font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .bp-imprint { margin-block: var(--u); }
+  :root[data-narrow] .bp .bp-official { margin-top: var(--u); grid-template-columns: 1fr calc(3 * var(--u)) calc(3 * var(--u)); }
+</style>

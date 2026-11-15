@@ -1,0 +1,292 @@
+---
+// After a French pharmacy's green LED cross at night: a plus three arms across, four diodes on every
+// square, mounted on a black wall over the shop's glass plaque.
+// On load the cross lights from its centre, runs one message through its arm (the time, the
+// weather, a line of Verlaine), then rests on the temperature. The wall's stone courses are squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="pharmacy-cross" theme="dark">
+  <main class="stage pharmacy">
+    <h1 class="ph-sr">Pharmacie de l'Écluse</h1>
+    <div class="ph-glow" id="glow" aria-hidden="true"></div>
+    <div class="ph-cross" id="cross">
+      <canvas id="leds" aria-hidden="true"></canvas>
+      <span class="ph-bolt" style="top: 0; left: 50%"></span>
+      <span class="ph-bolt" style="bottom: 0; left: 50%"></span>
+      <span class="ph-bolt" style="left: 0; top: 50%"></span>
+      <span class="ph-bolt" style="right: 0; top: 50%"></span>
+    </div>
+    <p class="ph-sr" id="said" aria-live="polite"></p>
+
+    <section class="ph-plaque" aria-label="Horaires">
+      <p class="ph-name">Pharmacie de l'Écluse</p>
+      <p class="ph-who">Hélène Garnier, docteur en pharmacie</p>
+      <dl class="ph-hours">
+        <div><dt>Lundi</dt><dd>14 h – 19 h 30</dd></div>
+        <div><dt>Mardi au vendredi</dt><dd>8 h 30 – 19 h 30</dd></div>
+        <div><dt>Samedi</dt><dd>9 h – 19 h</dd></div>
+        <div><dt>Dimanche et fêtes</dt><dd>fermé</dd></div>
+      </dl>
+      <p class="ph-trade">Préparations magistrales, orthopédie, location de tire-lait</p>
+      <button type="button" class="ph-again" id="again">Repasser le message</button>
+    </section>
+
+    <aside class="ph-notice">
+      <p><b>De garde dimanche 15 novembre</b></p>
+      <p>Pharmacie Moreau<br />14, quai de Jemmapes</p>
+      <p class="ph-hand">La nuit, sonnez à la grille ou composez le 3237.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // A five-by-seven diode face, row by row. Only what the messages say.
+  const FACE: Record<string, string> = {
+    A: '01110 10001 10001 11111 10001 10001 10001', B: '11110 10001 10001 11110 10001 10001 11110',
+    C: '01110 10001 10000 10000 10000 10001 01110', D: '11110 10001 10001 10001 10001 10001 11110',
+    E: '11111 10000 10000 11110 10000 10000 11111', F: '11111 10000 10000 11110 10000 10000 10000',
+    G: '01110 10001 10000 10111 10001 10001 01111', H: '10001 10001 10001 11111 10001 10001 10001',
+    I: '01110 00100 00100 00100 00100 00100 01110', J: '00111 00010 00010 00010 00010 10010 01100',
+    K: '10001 10010 10100 11000 10100 10010 10001', L: '10000 10000 10000 10000 10000 10000 11111',
+    M: '10001 11011 10101 10101 10001 10001 10001', N: '10001 10001 11001 10101 10011 10001 10001',
+    O: '01110 10001 10001 10001 10001 10001 01110', P: '11110 10001 10001 11110 10000 10000 10000',
+    Q: '01110 10001 10001 10001 10101 10010 01101', R: '11110 10001 10001 11110 10100 10010 10001',
+    S: '01111 10000 10000 01110 00001 00001 11110', T: '11111 00100 00100 00100 00100 00100 00100',
+    U: '10001 10001 10001 10001 10001 10001 01110', V: '10001 10001 10001 10001 10001 01010 00100',
+    W: '10001 10001 10001 10101 10101 10101 01010', X: '10001 10001 01010 00100 01010 10001 10001',
+    Y: '10001 10001 10001 01010 00100 00100 00100', Z: '11111 00001 00010 00100 01000 10000 11111',
+    'É': '00010 00100 11111 10000 11110 10000 11111',
+    0: '01110 10001 10011 10101 11001 10001 01110', 1: '00100 01100 00100 00100 00100 00100 01110',
+    2: '01110 10001 00001 00010 00100 01000 11111', 3: '11111 00010 00100 00010 00001 10001 01110',
+    4: '00010 00110 01010 10010 11111 00010 00010', 5: '11111 10000 11110 00001 00001 10001 01110',
+    6: '00110 01000 10000 11110 10001 10001 01110', 7: '11111 00001 00010 00100 01000 01000 01000',
+    8: '01110 10001 10001 01110 10001 10001 01110', 9: '01110 10001 10001 01111 00001 00010 01100',
+    ':': '000 110 110 000 110 110 000', '°': '0110 1001 1001 0110 0000 0000 0000',
+    "'": '01 01 10 00 00 00 00', ',': '00 00 00 00 01 01 10', '.': '00 00 00 00 00 11 11',
+    '/': '00001 00010 00010 00100 01000 01000 10000', '-': '0000 0000 0000 1111 0000 0000 0000',
+    ' ': '000 000 000 000 000 000 000',
+  };
+
+  const TEMPERATURE = '9°C';
+  const clock = () => { const now = new Date(); return `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`; };
+  const message = () => `${clock()}    ${TEMPERATURE}    BRUINE, VENT SO 12 KM/H    IL PLEURE DANS MON COEUR COMME IL PLEUT SUR LA VILLE    PHARMACIE DE L'ÉCLUSE`;
+
+  /** A text as columns of lit rows, one blank column between letters. */
+  function columns(text: string) {
+    const out: number[][] = [];
+    for (const letter of text.toUpperCase()) {
+      const rows = (FACE[letter] ?? FACE[' ']).split(' ');
+      for (let x = 0; x < rows[0].length; x++) out.push(rows.map((row, y) => (row[x] === '1' ? y : -1)).filter(y => y >= 0));
+      out.push([]);
+    }
+    out.pop();
+    return out;
+  }
+
+  const canvas = document.getElementById('leds') as HTMLCanvasElement;
+  const cross = document.getElementById('cross')!;
+  const glow = document.getElementById('glow')!;
+  const said = document.getElementById('said')!;
+  const context = canvas.getContext('2d')!;
+  let geometry = { n: 0, arm: 0, pitch: 0, scale: 1, still: 1 };
+  let frame = 0;
+
+  /** Whether diode (x, y) is on the cross. */
+  const onCross = (x: number, y: number) => {
+    const { n, arm } = geometry;
+    return x >= 0 && y >= 0 && x < n && y < n && ((x >= arm && x < 2 * arm) || (y >= arm && y < 2 * arm));
+  };
+
+  /** Paints the diodes: `level(x, y)` from 0 (dark) to 1 (full). */
+  function paint(level: (x: number, y: number) => number) {
+    const { n, pitch } = geometry;
+    const dpr = window.devicePixelRatio || 1;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, n * pitch, n * pitch);
+    const radius = pitch * 0.36;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        if (!onCross(x, y)) continue;
+        const l = level(x, y);
+        const cx = (x + 0.5) * pitch, cy = (y + 0.5) * pitch;
+        context.beginPath();
+        context.arc(cx, cy, radius, 0, Math.PI * 2);
+        if (l <= 0) { context.fillStyle = '#0c2414'; context.fill(); continue; }
+        if (l < 0.5) { context.fillStyle = `rgba(36, 190, 84, ${0.18 + l})`; context.fill(); continue; }
+        context.shadowColor = `rgba(40, 255, 110, ${0.8 * l})`;
+        context.shadowBlur = pitch * 0.9 * l;
+        context.fillStyle = l > 0.75 ? '#b8ffcc' : `rgba(30, 235, 95, ${0.35 + 0.65 * l})`;
+        context.fill();
+        context.shadowBlur = 0;
+      }
+    }
+  }
+
+  /** The cross at rest: a lit rim, a quiet body and `text` across the arm. */
+  function rest(text: string, offset?: number) {
+    const { n, arm } = geometry;
+    const scale = offset === undefined ? geometry.still : geometry.scale;
+    const lit = new Set<number>();
+    const cols = columns(text);
+    const width = cols.length * scale;
+    const start = offset ?? Math.floor((n - width) / 2);
+    const top = arm + Math.floor((arm - 7 * scale) / 2);
+    cols.forEach((rows, cx) => rows.forEach(ry => {
+      for (let a = 0; a < scale; a++) for (let b = 0; b < scale; b++) {
+        const x = start + cx * scale + a;
+        if (x >= 0 && x < n) lit.add((top + ry * scale + b) * n + x);
+      }
+    }));
+    const rim = (x: number, y: number) => !onCross(x - 1, y) || !onCross(x + 1, y) || !onCross(x, y - 1) || !onCross(x, y + 1);
+    return (x: number, y: number) => (lit.has(y * n + x) ? 1 : rim(x, y) ? 0.7 : y >= arm && y < 2 * arm ? 0.06 : 0.22);
+  }
+
+  function run(animate: boolean) {
+    cancelAnimationFrame(frame);
+    const { n } = geometry;
+    const text = message();
+    said.textContent = text.replace(/\s+/g, ' ');
+    if (!animate) { paint(rest(TEMPERATURE)); return; }
+    const width = columns(text).length * geometry.scale;
+    const centre = (n - 1) / 2;
+    const reach = Math.hypot(centre, centre);
+    const begin = performance.now();
+    const LIGHT = 700, STEP = 38;
+    const tick = (now: number) => {
+      const elapsed = now - begin;
+      if (elapsed < LIGHT) {
+        // Lighting: a ring from the centre of the cross outwards.
+        const front = (elapsed / LIGHT) * reach;
+        paint((x, y) => { const d = Math.hypot(x - centre, y - centre); return d < front - 2 ? 0.22 : d < front ? 1 : 0; });
+      } else {
+        const shift = Math.floor((elapsed - LIGHT) / STEP);
+        const offset = n - shift;
+        if (offset < -width) { paint(rest(TEMPERATURE)); return; }
+        paint(rest(text, offset));
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+  }
+
+  let first = true;
+  onSquares(({ unit, across, down, narrow }) => {
+    // The cross is three arms across, a whole number of squares each, four diodes a
+    // square, so a line of text runs through an arm.
+    const span = narrow ? across - 2 : Math.min(across - 6, down - 17);
+    const arm = Math.max(4, Math.floor(span / 3));
+    const size = arm * 3;
+    const perSquare = 2;
+    const n = size * perSquare;
+    geometry = { n, arm: arm * perSquare, pitch: unit / perSquare, scale: arm * perSquare >= 24 ? 2 : 1, still: Math.max(1, Math.floor((arm * perSquare) / 7)) };
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(size * unit * dpr);
+    canvas.height = Math.round(size * unit * dpr);
+    const left = Math.floor((across - size) / 2) + 1;
+    const top = narrow ? 2 : 2;
+    cross.style.gridArea = `${top} / ${left} / span ${size} / span ${size}`;
+    glow.style.gridArea = `${top} / 1 / span ${size} / -1`;
+    const plaque = document.querySelector<HTMLElement>('.ph-plaque')!;
+    if (narrow) plaque.style.removeProperty('grid-column'); else plaque.style.gridColumn = `${left - 1} / span ${size + 2}`;
+    document.documentElement.style.setProperty('--ph-below', String(top + size + 1));
+    document.documentElement.style.setProperty('--ph-note', String(top + size + 2));
+    run(first && !reducedMotion());
+    if (!first) paint(rest(TEMPERATURE));
+    first = false;
+  });
+
+  document.getElementById('again')!.addEventListener('click', () => run(!reducedMotion()));
+</script>
+
+<style is:global>
+  html { background: #000; --ph-below: 34; --ph-note: 35; }
+  .ph-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .pharmacy {
+    --gilt: linear-gradient(180deg, #f4dc96 0%, #c99a3c 48%, #8a6420 52%, #e3c172 100%);
+    color: #d8c690;
+    background:
+      /* Stone courses: two squares high, joints staggered every three squares. */
+      repeating-linear-gradient(180deg, transparent 0 calc(2 * var(--u) - 1px), rgba(255, 255, 255, 0.045) calc(2 * var(--u) - 1px) calc(2 * var(--u))),
+      #000;
+  }
+  .ph-glow { background: radial-gradient(closest-side, rgba(20, 200, 80, 0.16), transparent); pointer-events: none; }
+  .ph-cross { position: relative; z-index: 1; }
+  .ph-cross canvas { display: block; width: 100%; height: 100%; }
+  .ph-bolt { position: absolute; width: calc(var(--u) / 4); height: calc(var(--u) / 4); margin: calc(var(--u) / -8); border-radius: 50%; background: #2a2a2a; box-shadow: inset 0 1px 0 #555; display: none; }
+
+  /* The plaque: black glass, gilt letters, the hours in two columns. */
+  .ph-plaque {
+    grid-row: var(--ph-below) / -2;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: var(--u) calc(2 * var(--u));
+    border: 1px solid #3a3122;
+    outline: calc(var(--u) / 4) solid #000;
+    outline-offset: calc(var(--u) / -2);
+    background: linear-gradient(160deg, #0d0d0d, #000 40%, #0a0a0a);
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: start;
+    font-family: Didot, 'Bodoni 72', 'Times New Roman', serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    overflow: hidden;
+  }
+  .ph-plaque p, .ph-plaque dl { margin: 0; }
+  .ph-name {
+    font-size: calc(32px * var(--sf));
+    line-height: calc(2 * var(--u));
+    font-style: italic;
+    background: var(--gilt);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ph-who { font-size: calc(13px * var(--sf)); font-style: italic; color: #a8956a; margin-bottom: var(--u) !important; }
+  .ph-hours div { display: grid; grid-template-columns: calc(9 * var(--u)) auto; }
+  .ph-hours dt { color: #a8956a; }
+  .ph-hours dd { margin: 0; font-variant-numeric: lining-nums; color: #efdca4; }
+  .ph-trade { margin-top: var(--u) !important; font-size: calc(12px * var(--sf)); color: #8d7c56; }
+  .ph-again {
+    all: unset;
+    justify-self: start;
+    margin-top: var(--u);
+    height: var(--u);
+    line-height: var(--u);
+    font: italic calc(13px * var(--sf)) / var(--u) Didot, 'Bodoni 72', serif;
+    color: #4fe58a;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(79, 229, 138, 0.4);
+  }
+  .ph-again:hover { border-bottom-color: #4fe58a; }
+  .ph-again:focus-visible { outline: 1px solid #4fe58a; outline-offset: calc(var(--u) / 8); }
+
+  /* A paper notice taped to the wall, in the corner. */
+  .ph-notice {
+    grid-column: 3 / span 13;
+    grid-row: -12 / span 9;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: var(--u);
+    background: #e9ebe6;
+    color: #1d1d1d;
+    font: calc(13px * var(--sf)) / var(--u) 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transform: rotate(-1.5deg);
+    box-shadow: 0 calc(var(--u) / 4) calc(var(--u) / 2) rgba(0, 0, 0, 0.6);
+  }
+  .ph-notice::before, .ph-notice::after { content: ''; position: absolute; top: calc(var(--u) / -4); width: calc(2 * var(--u)); height: calc(var(--u) / 2); background: rgba(232, 226, 190, 0.55); }
+  .ph-notice::before { left: calc(var(--u) / 2); transform: rotate(-6deg); }
+  .ph-notice::after { right: calc(var(--u) / 2); transform: rotate(5deg); }
+  .ph-notice p { margin: 0 0 var(--u); }
+  .ph-notice p:last-child { margin: 0; }
+  .ph-hand { font-family: 'Bradley Hand', 'Noteworthy', cursive; font-size: calc(15px * var(--sf)); color: #1b3d8f; }
+
+  :root[data-narrow] .ph-plaque, :root[data-narrow] .ph-notice { grid-column: 2 / -2; grid-row: var(--ph-below) / span 1; }
+  :root[data-narrow] .ph-notice { grid-row: var(--ph-note) / span 1; }
+  :root[data-narrow] .ph-plaque { margin-top: var(--u); padding: var(--u); }
+  :root[data-narrow] .ph-name { font-size: calc(24px * var(--sf)); }
+  :root[data-narrow] .ph-hours div { grid-template-columns: 1fr; }
+  :root[data-narrow] .ph-notice { margin: calc(2 * var(--u)) 0 calc(3 * var(--u)); }
+</style>

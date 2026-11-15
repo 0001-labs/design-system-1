@@ -1,0 +1,430 @@
+---
+// After a weather office's surface pressure chart: a pale map of an invented coast, isobars every
+// four hectopascals contoured from a pressure field (with the kinks where they cross the fronts),
+// warm, cold and occluded fronts with their beads and teeth, H and L, and station plots whose winds
+// blow along the isobars. The map, the field and the stations are all drawn in squares; three
+// buttons step the chart on a day at a time.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="weather-chart" theme="light">
+  <main class="stage wx" id="wx">
+    <svg class="wx-map" id="map" role="img" aria-labelledby="wx-title wx-valid"></svg>
+
+    <section class="wx-title">
+      <p class="wx-office">Coastal Weather Office</p>
+      <h1 id="wx-title">Surface pressure</h1>
+      <p class="wx-valid" id="wx-valid">Analysis, 00 UTC Saturday 14 November 2026</p>
+      <div class="wx-steps" role="group" aria-label="Chart time">
+        <button type="button" data-step="0" aria-pressed="true">Analysis</button>
+        <button type="button" data-step="1" aria-pressed="false">T+24</button>
+        <button type="button" data-step="2" aria-pressed="false">T+48</button>
+      </div>
+      <p class="wx-summary" id="wx-summary"></p>
+    </section>
+
+    <aside class="wx-key" aria-label="Key">
+      <svg class="wx-fronts" viewBox="0 0 6 3" aria-hidden="true" id="key-fronts"></svg>
+      <ul class="wx-front-names"><li>Cold front</li><li>Warm front</li><li>Occlusion</li></ul>
+      <svg class="wx-model" viewBox="0 0 12 5" aria-hidden="true" id="key-model"></svg>
+      <p class="wx-note">Isobars every 4 hPa. Wind in knots: a long feather is ten, a short one five.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Point = [number, number];
+  const $ = (id: string) => document.getElementById(id)!;
+  const map = $('map') as unknown as SVGSVGElement;
+  const f = (n: number) => +n.toFixed(2);
+
+  // A seeded value noise, so the coast is the same at every size.
+  const hash = (x: number, y: number) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  function noise(x: number, y: number) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    const u = smooth(xf), v = smooth(yf);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  const fbm = (x: number, y: number) => noise(x, y) * 0.55 + noise(x * 2.1 + 5, y * 2.1 + 9) * 0.3 + noise(x * 4.3 + 11, y * 4.3 + 3) * 0.15;
+  /** Land above zero: a continent to the east and south, islands in the west. */
+  const landAt = (u: number, v: number) => fbm(u * 5.2, v * 4.1) - 0.5 + (u - 0.62) * 1.25 + (v - 0.55) * 0.35 + Math.max(0, 0.18 - Math.hypot(u - 0.2, v - 0.62)) * 2.2;
+
+  /** Marching squares over a grid of samples: polylines at `level`, joined end to end. */
+  function contour(values: number[][], level: number, step: number): Point[][] {
+    const rows = values.length, cols = values[0].length;
+    const segments: [Point, Point][] = [];
+    const lerp = (a: number, b: number) => (level - a) / (b - a);
+    for (let j = 0; j < rows - 1; j++) {
+      for (let i = 0; i < cols - 1; i++) {
+        const tl = values[j][i], tr = values[j][i + 1], br = values[j + 1][i + 1], bl = values[j + 1][i];
+        const index = (tl > level ? 8 : 0) | (tr > level ? 4 : 0) | (br > level ? 2 : 0) | (bl > level ? 1 : 0);
+        if (index === 0 || index === 15) continue;
+        const x = i * step, y = j * step;
+        const top: Point = [x + lerp(tl, tr) * step, y], right: Point = [x + step, y + lerp(tr, br) * step];
+        const bottom: Point = [x + lerp(bl, br) * step, y + step], left: Point = [x, y + lerp(tl, bl) * step];
+        const centre = (tl + tr + br + bl) / 4 > level;
+        const table: Record<number, [Point, Point][]> = {
+          1: [[left, bottom]], 2: [[bottom, right]], 3: [[left, right]], 4: [[top, right]],
+          5: centre ? [[left, top], [bottom, right]] : [[left, bottom], [top, right]], 6: [[top, bottom]], 7: [[left, top]],
+          8: [[left, top]], 9: [[top, bottom]], 10: centre ? [[top, right], [left, bottom]] : [[left, top], [bottom, right]],
+          11: [[top, right]], 12: [[left, right]], 13: [[bottom, right]], 14: [[left, bottom]],
+        };
+        segments.push(...table[index]);
+      }
+    }
+    const key = (p: Point) => `${p[0].toFixed(4)},${p[1].toFixed(4)}`;
+    const ends = new Map<string, number[]>();
+    segments.forEach((segment, index) => segment.forEach(p => { const k = key(p); ends.set(k, [...(ends.get(k) ?? []), index]); }));
+    const used = new Set<number>();
+    const lines: Point[][] = [];
+    const walk = (line: Point[], from: Point) => {
+      let point = from;
+      for (;;) {
+        const next = (ends.get(key(point)) ?? []).find(index => !used.has(index));
+        if (next === undefined) break;
+        used.add(next);
+        const [a, b] = segments[next];
+        point = key(a) === key(point) ? b : a;
+        line.push(point);
+      }
+    };
+    segments.forEach((segment, index) => {
+      if (used.has(index)) return;
+      used.add(index);
+      const forward: Point[] = [segment[0], segment[1]];
+      walk(forward, segment[1]);
+      const backward: Point[] = [];
+      walk(backward, segment[0]);
+      lines.push([...backward.reverse(), ...forward]);
+    });
+    return lines;
+  }
+
+  /** Two rounds of corner cutting; a closed line stays closed. */
+  function chaikin(line: Point[], rounds = 2): Point[] {
+    let points = line;
+    for (let r = 0; r < rounds; r++) {
+      const closed = points.length > 3 && Math.hypot(points[0][0] - points[points.length - 1][0], points[0][1] - points[points.length - 1][1]) < 1e-6;
+      const out: Point[] = closed ? [] : [points[0]];
+      for (let i = 0; i < points.length - 1; i++) {
+        const [a, b] = [points[i], points[i + 1]];
+        out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+      }
+      if (closed) out.push(out[0]); else out.push(points[points.length - 1]);
+      points = out;
+    }
+    return points;
+  }
+  const pathOf = (line: Point[]) => 'M ' + line.map(p => `${f(p[0])} ${f(p[1])}`).join(' L ');
+
+  /** A quadratic curve as a polyline, in squares. */
+  const curve = (a: Point, c: Point, b: Point, n = 40): Point[] => Array.from({ length: n + 1 }, (_, k) => {
+    const t = k / n;
+    return [(1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1]];
+  });
+  function distanceTo(line: Point[], x: number, y: number) {
+    let best = Infinity;
+    for (let i = 0; i < line.length - 1; i++) {
+      const [a, b] = [line[i], line[i + 1]];
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy)));
+      best = Math.min(best, Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy));
+    }
+    return best;
+  }
+
+  /** Beads and teeth along a front: `kind` per symbol, on the side `side` (1 or -1) of travel. */
+  function symbols(line: Point[], kinds: ('cold' | 'warm')[], side: number, every: number) {
+    const lengths = [0];
+    for (let i = 1; i < line.length; i++) lengths.push(lengths[i - 1] + Math.hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]));
+    const total = lengths[lengths.length - 1];
+    let out = '';
+    let count = 0;
+    for (let s = every * 0.6; s < total - 0.4; s += every, count++) {
+      const i = Math.max(1, lengths.findIndex(l => l >= s));
+      const a = line[i - 1], b = line[i];
+      const t = (s - lengths[i - 1]) / (lengths[i] - lengths[i - 1] || 1);
+      const p: Point = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const tx = (b[0] - a[0]) / length, ty = (b[1] - a[1]) / length;
+      const nx = -ty * side, ny = tx * side;
+      const r = 0.36;
+      if (kinds[count % kinds.length] === 'cold') {
+        out += `<path d="M ${f(p[0] - tx * r)} ${f(p[1] - ty * r)} L ${f(p[0] + nx * 0.55)} ${f(p[1] + ny * 0.55)} L ${f(p[0] + tx * r)} ${f(p[1] + ty * r)} Z"/>`;
+      } else {
+        const arc = Array.from({ length: 9 }, (_, k) => { const angle = (k / 8) * Math.PI; return `${f(p[0] - tx * r * Math.cos(angle) + nx * r * Math.sin(angle))} ${f(p[1] - ty * r * Math.cos(angle) + ny * r * Math.sin(angle))}`; });
+        out += `<path d="M ${arc.join(' L ')} Z"/>`;
+      }
+    }
+    return out;
+  }
+
+  /** A station: cloud in oktas, wind barb, temperature, dew point, pressure and weather. */
+  function station(x: number, y: number, s: { cloud: number; from: number; knots: number; temp: number; dew: number; pressure: number; weather: string }) {
+    const r = 0.32;
+    let out = `<g class="st" transform="translate(${f(x)} ${f(y)})">`;
+    // Wind: the shaft points where the wind comes from, feathers at its end.
+    if (s.knots >= 3) {
+      const ux = Math.cos(s.from), uy = Math.sin(s.from), px = -uy, py = ux;
+      const length = 1.7;
+      out += `<path class="barb" d="M ${f(ux * r)} ${f(uy * r)} L ${f(ux * length)} ${f(uy * length)}`;
+      let knots = Math.round(s.knots / 5) * 5, at = length;
+      while (knots >= 10) { out += ` M ${f(ux * at)} ${f(uy * at)} l ${f(px * 0.65 + ux * 0.25)} ${f(py * 0.65 + uy * 0.25)}`; at -= 0.28; knots -= 10; }
+      if (knots >= 5) { if (at === length) at -= 0.28; out += ` M ${f(ux * at)} ${f(uy * at)} l ${f(px * 0.34 + ux * 0.13)} ${f(py * 0.34 + uy * 0.13)}`; }
+      out += `"/>`;
+    }
+    // Cloud: eighths of the circle filled.
+    out += `<circle r="${r}" class="sky"/>`;
+    if (s.cloud >= 8) out += `<circle r="${r}" class="cloud"/>`;
+    else if (s.cloud > 0) {
+      const angle = (s.cloud / 8) * Math.PI * 2 - Math.PI / 2;
+      out += `<path class="cloud" d="M 0 0 L 0 ${-r} A ${r} ${r} 0 ${s.cloud > 4 ? 1 : 0} 1 ${f(Math.cos(angle) * r)} ${f(Math.sin(angle) * r)} Z"/>`;
+    }
+    out += `<text x="-0.45" y="-0.12" text-anchor="end" class="t">${s.temp}</text>`;
+    out += `<text x="-0.45" y="0.62" text-anchor="end" class="d">${s.dew}</text>`;
+    out += `<text x="0.45" y="-0.12" class="p">${String(Math.round(s.pressure * 10) % 1000).padStart(3, '0')}</text>`;
+    if (s.weather === 'rain') out += `<g class="wx-rain"><circle cx="-0.95" cy="0.12" r="0.09"/><circle cx="-0.72" cy="0.12" r="0.09"/></g>`;
+    if (s.weather === 'shower') out += `<path class="wx-shower" d="M -1.05 -0.05 L -0.8 0.35 L -0.55 -0.05 Z"/><circle class="wx-shower-dot" cx="-0.8" cy="-0.22" r="0.08"/>`;
+    if (s.weather === 'fog') out += `<path class="wx-fog" d="M -1.1 -0.08 H -0.55 M -1.1 0.08 H -0.55 M -1.1 0.24 H -0.55"/>`;
+    return out + '</g>';
+  }
+
+  interface Step { low: Point; depth: number; high: Point; rise: number; young: Point; youngDepth: number; occlusion: number; valid: string; summary: string }
+  const STEPS: Step[] = [
+    { low: [0.36, 0.36], depth: -38, high: [0.8, 0.8], rise: 24, young: [0.14, 0.64], youngDepth: -9, occlusion: 0.1, valid: 'Analysis, 00 UTC Saturday 14 November 2026', summary: 'A deep low, 975 hPa, west of the Halvard Bight. Gales on the coast; the warm front brings rain to Kestermark by dawn.' },
+    { low: [0.5, 0.31], depth: -32, high: [0.74, 0.82], rise: 26, young: [0.2, 0.66], youngDepth: -14, occlusion: 0.16, valid: 'Forecast, 00 UTC Sunday 15 November 2026', summary: 'The low crosses the Bight and begins to fill. Behind the cold front, showers and a bright, cold Sunday.' },
+    { low: [0.66, 0.26], depth: -24, high: [0.62, 0.84], rise: 27, young: [0.28, 0.62], youngDepth: -22, occlusion: 0.22, valid: 'Forecast, 00 UTC Monday 16 November 2026', summary: 'The old low fills over the mountains. A new one deepens in the west and will matter by Tuesday.' },
+  ];
+  let step = 0;
+  let size = { across: 72, down: 45, narrow: false };
+
+  function draw() {
+    // A phone sees a window, its own width, onto a chart thirty squares wide, following the low.
+    const W = size.narrow ? 30 : size.across, H = size.narrow ? 26 : size.down;
+    const s = STEPS[step];
+    const scale = Math.min(W, H * 1.6);
+    const at = (p: Point): Point => [p[0] * W, p[1] * H];
+    const view = size.narrow ? Math.max(0, Math.min(W - size.across, Math.round(s.low[0] * W - size.across / 2 + 2))) : 0;
+    map.setAttribute('viewBox', `${view} 0 ${size.narrow ? size.across : W} ${H}`);
+
+    // Fronts first, since the isobars kink where they cross them.
+    const low = at(s.low);
+    const triple: Point = [low[0] + s.occlusion * scale * 0.7, low[1] + s.occlusion * scale * 0.55];
+    const occluded = curve(low, [low[0] + s.occlusion * scale * 0.5, low[1] + s.occlusion * scale * 0.08], triple);
+    const warm = curve(triple, [triple[0] + 0.1 * scale, triple[1] - 0.015 * scale], [triple[0] + 0.2 * scale, triple[1] + 0.05 * scale]);
+    const cold = curve(triple, [triple[0] + 0.02 * scale, triple[1] + 0.16 * scale], [triple[0] - 0.12 * scale, triple[1] + 0.34 * scale]);
+    const fronts = [occluded, warm, cold];
+
+    // The pressure field on half squares, with the low, the high, a young low, and troughs along the fronts.
+    const stepSize = 0.5;
+    const cols = Math.ceil(W / stepSize) + 1, rows = Math.ceil(H / stepSize) + 1;
+    const field: number[][] = [], land: number[][] = [];
+    const high = at(s.high), young = at(s.young);
+    const gauss = (x: number, y: number, c: Point, sigma: number) => Math.exp(-((x - c[0]) ** 2 + (y - c[1]) ** 2) / (2 * sigma * sigma));
+    for (let j = 0; j < rows; j++) {
+      field.push([]); land.push([]);
+      for (let i = 0; i < cols; i++) {
+        const x = i * stepSize, y = j * stepSize;
+        let p = 1012 + (y / H - 0.5) * 6 + s.depth * gauss(x, y, low, 0.2 * scale) + s.rise * gauss(x, y, high, 0.32 * scale) + s.youngDepth * gauss(x, y, young, 0.11 * scale);
+        for (const front of fronts) p -= 2.6 * Math.exp(-distanceTo(front, x, y) / (0.035 * scale));
+        field[j].push(p);
+        const edge = i === 0 || j === 0 || i === cols - 1 || j === rows - 1;
+        land[j].push(edge ? -1 : landAt(x / W, y / H));
+      }
+    }
+    const pressureAt = (x: number, y: number) => field[Math.min(rows - 1, Math.max(0, Math.round(y / stepSize)))][Math.min(cols - 1, Math.max(0, Math.round(x / stepSize)))];
+
+    let out = `<rect width="${W}" height="${H}" class="sea"/>`;
+    const coast = contour(land, 0, stepSize).filter(line => line.length > 6).map(line => chaikin(line, 2));
+    out += `<path class="land" fill-rule="evenodd" d="${coast.map(line => pathOf(line) + ' Z').join(' ')}"/>`;
+    // Graticule every ten squares, labelled at the top and the left.
+    let grid = '';
+    for (let x = 10; x < W; x += 10) grid += `M ${x} 0 V ${H} `;
+    for (let y = 10; y < H; y += 10) grid += `M 0 ${y} H ${W} `;
+    out += `<path class="graticule" d="${grid}"/>`;
+    for (let x = 10; x < W; x += 10) out += `<text class="lat" x="${x + 0.25}" y="${H - 1.4}">${Math.abs(Math.round(20 - (x / W) * 40))}°${x / W < 0.5 ? 'W' : 'E'}</text>`;
+    for (let y = 10; y < H; y += 10) out += `<text class="lat" x="${W - 0.3}" y="${y - 0.3}" text-anchor="end">${Math.round(62 - (y / H) * 20)}°N</text>`;
+    const names: [string, string, Point][] = [['sea-name', 'Sea of Orm', [W * 0.13, H * 0.36]], ['sea-name', 'Halvard Bight', [W * 0.66, H * 0.6]], ['land-name', 'Kestermark', [W * 0.85, H * 0.3]]];
+    for (const [cls, name, p] of names) out += `<text class="${cls}" x="${f(p[0])}" y="${f(p[1])}"${cls === 'sea-name' ? ' text-anchor="middle"' : ''}>${name}</text>`;
+
+    // Isobars, every 4 hPa; 1000 a little heavier; each labelled once where it is longest.
+    let isobars = '', labels = '';
+    for (let level = 948; level <= 1048; level += 4) {
+      for (const raw of contour(field, level, stepSize)) {
+        if (raw.length < 8) continue;
+        const line = chaikin(raw, 2);
+        isobars += `<path class="isobar" d="${pathOf(line)}"/>`;
+        if (raw.length > 30) {
+          const p = line[Math.floor(line.length * 0.62)];
+          if (p[0] > 1.5 && p[0] < W - 1.5 && p[1] > 1 && p[1] < H - 1.5) labels += `<text class="iso-label${landAt(p[0] / W, p[1] / H) > 0 ? ' on-land' : ''}" x="${f(p[0])}" y="${f(p[1] + 0.2)}" text-anchor="middle">${level}</text>`;
+        }
+      }
+    }
+    out += isobars + labels;
+
+    // The fronts: lines and their symbols, the teeth and beads on the side the front is moving to.
+    out += `<path class="front occluded" d="${pathOf(occluded)}"/><g class="occluded-sym">${symbols(occluded, ['cold', 'warm'], -1, 1.6)}</g>`;
+    out += `<path class="front warm" d="${pathOf(warm)}"/><g class="warm-sym">${symbols(warm, ['warm'], -1, 1.8)}</g>`;
+    out += `<path class="front cold" d="${pathOf(cold)}"/><g class="cold-sym">${symbols(cold, ['cold'], 1, 1.8)}</g>`;
+
+    // Stations on a loose grid, kept clear of the letters, the panels and the edges.
+    const letters = [low, high, young];
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('.wx-title, .wx-key')).map(panel => {
+      const box = panel.getBoundingClientRect(), stage = map.getBoundingClientRect();
+      const u = stage.width / W;
+      return { x0: (box.left - stage.left) / u - 2, y0: (box.top - stage.top) / u - 1.5, x1: (box.right - stage.left) / u + 1.5, y1: (box.bottom - stage.top) / u + 1 };
+    });
+    let stations = '';
+    const spacing = size.narrow ? 4.5 : 6.5;
+    for (let gy = 2.5; gy < H - 2; gy += spacing * 0.8) {
+      for (let gx = 2.5; gx < W - 2; gx += spacing) {
+        const x = gx + (hash(gx, gy) - 0.5) * 2.4, y = gy + (hash(gy, gx) - 0.5) * 1.6;
+        if (x < 2 || x > W - 2 || y < 1.5 || y > H - 2.5) continue;
+        if (!size.narrow && x > W - 13 && y > H - 3) continue;
+        if (letters.some(c => Math.hypot(x - c[0] + 0.9, y - c[1]) < 3.6)) continue;
+        if (names.some(([, name, c]) => Math.abs(x - c[0]) < name.length * 0.42 + 1 && Math.abs(y - c[1] + 0.3) < 1.8)) continue;
+        if (panels.some(b => !size.narrow && x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1)) continue;
+        const onLand = landAt(x / W, y / H) > 0;
+        if (!onLand && hash(x * 3, y * 7) < 0.45) continue;
+        const gx2 = (pressureAt(x + 0.5, y) - pressureAt(x - 0.5, y)), gy2 = (pressureAt(x, y + 0.5) - pressureAt(x, y - 0.5));
+        const strength = Math.hypot(gx2, gy2);
+        // Along the isobars with the low on the left, turned twenty degrees towards the low.
+        let vx = gy2, vy = -gx2;
+        const n = Math.hypot(vx, vy) || 1;
+        vx = (vx / n) * Math.cos(0.35) - (gx2 / (strength || 1)) * Math.sin(0.35);
+        vy = (vy / n) * Math.cos(0.35) - (gy2 / (strength || 1)) * Math.sin(0.35);
+        const from = Math.atan2(-vy, -vx);
+        const knots = Math.min(60, strength * 9 * (onLand ? 0.75 : 1));
+        const nearWarm = distanceTo(warm, x, y), nearCold = distanceTo(cold, x, y), nearOcc = distanceTo(occluded, x, y);
+        const warmSector = x > triple[0] - (y - triple[1]) * 0.4 && y > triple[1] - 1 && nearCold > 0.5;
+        const temp = Math.round(13 - (y / H < 0.5 ? (0.5 - y / H) * 14 : 0) - (y / H) * 3 + (warmSector ? 4 : 0) - (onLand ? 2 : 0) + (hash(x, y) - 0.5) * 2);
+        const dew = temp - Math.round(warmSector ? 1 : 2 + hash(y, x) * 3);
+        const weather = Math.min(nearWarm, nearOcc) < 3.5 && (y < triple[1] + 2 || nearOcc < 3) ? 'rain' : nearCold < 4 && x < triple[0] ? 'shower' : onLand && strength < 0.5 && hash(x + 1, y) > 0.7 ? 'fog' : '';
+        const cloud = weather ? 8 : Math.min(8, Math.max(0, Math.round(3 + (hash(x, y + 2) - 0.5) * 6 + (warmSector ? 3 : 0))));
+        stations += station(x, y, { cloud, from, knots, temp, dew, pressure: pressureAt(x, y), weather });
+      }
+    }
+    out += stations;
+
+    // H and L, with their central pressures.
+    const centre = (p: Point, letter: string, value: number, cls: string) => `<g class="centre ${cls}"><text x="${f(p[0] - 1.6)}" y="${f(p[1] - 0.4)}" text-anchor="middle" class="letter">${letter}</text><path d="M ${f(p[0] - 0.3)} ${f(p[1] - 0.3)} l 0.6 0.6 M ${f(p[0] + 0.3)} ${f(p[1] - 0.3)} l -0.6 0.6" class="cross"/><text x="${f(p[0] - 1.6)}" y="${f(p[1] + 1.1)}" text-anchor="middle" class="value">${Math.round(value)}</text></g>`;
+    out += centre(low, 'L', pressureAt(low[0], low[1]), 'low') + centre(high, 'H', pressureAt(high[0], high[1]), 'high') + centre(young, 'L', pressureAt(young[0], young[1]), 'low');
+    map.innerHTML = out;
+
+    $('wx-valid').textContent = s.valid;
+    $('wx-summary').textContent = s.summary;
+  }
+
+  function drawKey() {
+    const lines: Point[][] = [[[0.3, 0.5], [5.7, 0.5]], [[0.3, 1.5], [5.7, 1.5]], [[0.3, 2.5], [5.7, 2.5]]];
+    $('key-fronts').innerHTML =
+      `<path class="front cold" d="${pathOf(lines[0])}"/><g class="cold-sym">${symbols(lines[0], ['cold'], -1, 1.5)}</g>` +
+      `<path class="front warm" d="${pathOf(lines[1])}"/><g class="warm-sym">${symbols(lines[1], ['warm'], -1, 1.5)}</g>` +
+      `<path class="front occluded" d="${pathOf(lines[2])}"/><g class="occluded-sym">${symbols(lines[2], ['cold', 'warm'], -1, 1.2)}</g>`;
+    $('key-model').innerHTML = station(6, 2.6, { cloud: 6, from: -Math.PI * 0.75, knots: 25, temp: 11, dew: 8, pressure: 1003.2, weather: '' }) +
+      `<text class="key-label" x="4.4" y="2.45" text-anchor="end">temperature</text><text class="key-label" x="4.4" y="3.25" text-anchor="end">dew point</text>` +
+      `<text class="key-label" x="7.7" y="2.45">pressure 1003.2</text><text class="key-label" x="6.6" y="3.45">cloud 6/8</text>` +
+      `<text class="key-label" x="4.6" y="0.95" text-anchor="end">wind 25 kn, NW</text>`;
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.wx-steps button').forEach(button => button.addEventListener('click', () => {
+    step = Number(button.dataset.step);
+    document.querySelectorAll('.wx-steps button').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+    draw();
+  }));
+
+  drawKey();
+  onSquares(({ across, down, narrow }) => {
+    size = { across, down, narrow };
+    map.style.gridRow = narrow ? '1 / span 26' : '';
+    requestAnimationFrame(draw);
+  });
+</script>
+
+<style is:global>
+  html[data-study='weather-chart'] { background: #e9f0f3; }
+  .wx {
+    --ink: #20262b;
+    --cold: #1f4fd1;
+    --warm: #d62d2d;
+    --occluded: #8a3fb8;
+    font-family: 'Avenir Next', var(--typeface-regular), sans-serif;
+    color: var(--ink);
+    background: #e9f0f3;
+  }
+  .wx p, .wx h1, .wx ul { margin: 0; }
+
+  .wx-map { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; display: block; }
+  .wx-map .sea { fill: #e9f0f3; }
+  .wx-map .land { fill: #f4f1e4; stroke: #9aa39a; stroke-width: 0.06; }
+  .wx-map .graticule { stroke: #a9bcc6; stroke-width: 0.03; stroke-dasharray: 0.2 0.2; fill: none; }
+  .wx-map .lat { font-size: 0.5px; fill: #7f939e; font-family: var(--typeface-mono); }
+  .wx-map .sea-name { font-family: 'Hoefler Text', Georgia, serif; font-style: italic; font-size: 0.9px; fill: #7f9cab; letter-spacing: 0.25px; }
+  .wx-map .land-name { font-family: 'Hoefler Text', Georgia, serif; font-size: 0.8px; fill: #9e9a86; letter-spacing: 0.4px; text-anchor: middle; }
+  .wx-map .isobar { fill: none; stroke: var(--ink); stroke-width: 0.05; stroke-linejoin: round; }
+  .wx-map .iso-label.on-land { stroke: #f4f1e4; }
+  .wx-map .iso-label { font-size: 0.55px; font-family: var(--typeface-mono); fill: var(--ink); stroke: #e9f0f3; stroke-width: 0.25; paint-order: stroke; }
+  .wx .front { fill: none; stroke-width: 0.13; stroke-linejoin: round; stroke-linecap: round; }
+  .wx .front.cold { stroke: var(--cold); }
+  .wx .front.warm { stroke: var(--warm); }
+  .wx .front.occluded { stroke: var(--occluded); }
+  .wx .cold-sym { fill: var(--cold); }
+  .wx .warm-sym { fill: var(--warm); }
+  .wx .occluded-sym { fill: var(--occluded); }
+  .wx .st .sky { fill: #fff; stroke: var(--ink); stroke-width: 0.06; }
+  .wx .st .cloud { fill: var(--ink); }
+  .wx .st .barb { fill: none; stroke: var(--ink); stroke-width: 0.06; stroke-linecap: round; }
+  .wx .st text { font-size: 0.52px; font-family: var(--typeface-mono); fill: var(--ink); }
+  .wx .st .t { fill: #b0261f; }
+  .wx .st .d { fill: #2a6a3b; }
+  .wx .wx-rain circle, .wx .wx-shower-dot { fill: #2a8a3b; }
+  .wx .wx-shower { fill: none; stroke: #2a8a3b; stroke-width: 0.06; }
+  .wx .wx-fog { stroke: #c49a1a; stroke-width: 0.07; }
+  .wx-map .centre .letter { font-family: var(--typeface-medium); font-size: 2.2px; }
+  .wx-map .centre.low .letter { fill: var(--warm); }
+  .wx-map .centre.high .letter { fill: var(--cold); }
+  .wx-map .centre .cross { stroke: var(--ink); stroke-width: 0.08; }
+  .wx-map .centre .value { font-family: var(--typeface-mono); font-size: 0.7px; fill: var(--ink); stroke: #e9f0f3; stroke-width: 0.25; paint-order: stroke; }
+
+  /* The title box, as the office prints it: a ruled white panel in the top left. */
+  .wx-title, .wx-key {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    background: rgb(255 255 255 / 0.94);
+    box-shadow: inset 0 0 0 1px var(--ink);
+    padding: var(--u);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .wx-title { grid-column: 2 / span 17; grid-row: 2 / span 11; display: flex; flex-direction: column; }
+  .wx-office { font-size: calc(12px * var(--sf)); color: #5c6870; }
+  .wx-title h1 { font-family: var(--typeface-medium); font-weight: normal; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; }
+  .wx-valid { font-weight: 500; }
+  .wx-steps { display: flex; margin-block: var(--u); box-shadow: inset 0 0 0 1px var(--ink); width: max-content; }
+  .wx-steps button { all: unset; height: var(--u); padding-inline: calc(0.75 * var(--u)); cursor: pointer; font-size: calc(12px * var(--sf)); }
+  .wx-steps button + button { box-shadow: inset 1px 0 0 var(--ink); }
+  .wx-steps button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .wx-steps button:focus-visible { outline: 2px solid var(--cold); outline-offset: 2px; }
+  .wx-summary { color: #3c464d; }
+
+  .wx-key { grid-column: 2 / span 17; grid-row: -11 / span 9; display: grid; grid-template-columns: calc(6 * var(--u)) 1fr; grid-template-rows: calc(3 * var(--u)) calc(5 * var(--u)) auto; column-gap: var(--u); align-content: start; }
+  .wx-fronts { width: calc(6 * var(--u)); height: calc(3 * var(--u)); }
+  .wx-front-names { list-style: none; padding: 0; }
+  .wx-model { grid-column: 1 / -1; width: calc(12 * var(--u)); height: calc(5 * var(--u)); overflow: visible; }
+  .wx-model .key-label { font-size: 0.5px; fill: #5c6870; font-family: 'Avenir Next', sans-serif; }
+  .wx-note { grid-column: 1 / -1; font-size: calc(11px * var(--sf)); color: #5c6870; display: none; }
+
+  @media (max-height: 780px) { :root:not([data-narrow]) .wx-summary { display: none; } }
+
+  /* Narrow: the chart first, the panels under it. */
+  :root[data-narrow] .wx { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .wx-title, :root[data-narrow] .wx-key { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); }
+  :root[data-narrow] .wx-steps { width: auto; }
+  :root[data-narrow] .wx-steps button { flex: 1; text-align: center; }
+  :root[data-narrow] .wx-key { grid-template-rows: auto; row-gap: var(--u); }
+  :root[data-narrow] .wx-note { display: block; }
+</style>

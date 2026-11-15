@@ -1,0 +1,306 @@
+---
+// After a mix tape made for someone in 1997: the J-card unfolded flat, its printed boxes ticked and
+// its track list in blue ballpoint, the tape beside it with a hand-lettered label, a photo-booth
+// strip and the note that came with it. The deck's keys play it; the pen follows the song.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const SIDES = [
+  ['A', [
+    ['Paper Lanterns', 'Drive Slow, Leave Late'],
+    ['The Marigold Ferry', 'Saltwater Teeth'],
+    ['June Vasquez', 'Everything Is a Kitchen'],
+    ['Teenage Weather', 'Sandwiches in the Glovebox'],
+    ['Ottoline', 'Taped Off the Radio (sorry)'],
+    ['Holloway Kids', 'Indicator Light'],
+    ['The Long Weekends', 'Skagen'],
+  ]],
+  ['B', [
+    ['Kestrel Club', 'The Bit Where It Gets Good'],
+    ['Barbara & the Dials', 'Ferry Back'],
+    ['Static Choir', 'Hum'],
+    ['Polly Fax', 'Tuesday Is Fine', 'Wondrous'],
+    ['The Glovebox', 'Last Exit for Ice Cream'],
+    ['Mona Pell', 'You Can Keep the Jumper'],
+    ['Danny (me)', 'don’t laugh'],
+  ]],
+] as const;
+const FRAMES = [
+  ['atelier-sofie.jpg', '50% 22%'],
+  ['atelier-mikkel.jpg', '50% 20%'],
+  ['atelier-sofie.jpg', '46% 30%'],
+  ['atelier-anders.jpg', '50% 28%'],
+];
+---
+<AlignedStudy slug="cassette-card" theme="light">
+  <main class="stage tape">
+    <div class="cc-desk" id="cc-desk">
+    <article class="cc-card" aria-label="J-card, unfolded">
+      <section class="cc-front">
+        <h1>summer, the long way round</h1>
+        <p class="cc-for">for Ruth, from Danny, July ’97</p>
+        <div class="cc-sides">
+          {SIDES.map(([side, tracks]) => (
+            <ol class="cc-side" aria-label={`Side ${side}`}>
+              <li class="cc-sidehead" aria-hidden="true">side {side}</li>
+              {tracks.map(([artist, title, crossed]) => (
+                <li class="cc-track" data-track>
+                  {crossed && <s>{crossed}</s>} <span class="cc-title">{title}</span> <span class="cc-artist">{artist}</span>
+                </li>
+              ))}
+            </ol>
+          ))}
+        </div>
+      </section>
+      <section class="cc-spine" aria-label="Spine">
+        <p>summer, the long way round</p><p class="cc-spineend">D → R ’97</p>
+      </section>
+      <section class="cc-flap" aria-label="Flap">
+        <p><span class="cc-print">Noise reduction</span> <i class="cc-box cc-ticked"></i><span class="cc-print">on</span> <i class="cc-box"></i><span class="cc-print">off</span></p>
+        <p><span class="cc-print">Recorded</span> <span class="cc-pen">12.7.97, off the radio and my brother’s records</span></p>
+        <p><span class="cc-print">Position</span> <span class="cc-pen">chrome, do NOT tape over</span></p>
+      </section>
+    </article>
+
+    <figure class="cc-cassette">
+      <svg viewBox="0 0 25 16" role="img" aria-label="The cassette, side A">
+        <rect x="0.2" y="0.2" width="24.6" height="15.6" rx="0.8" fill="#2c2b33" />
+        <rect x="0.2" y="0.2" width="24.6" height="15.6" rx="0.8" fill="none" stroke="#45444e" stroke-width="0.12" />
+        <rect x="1.4" y="1.2" width="22.2" height="9.8" rx="0.4" fill="#fbfaf4" />
+        <rect x="1.4" y="8.9" width="22.2" height="0.7" fill="#f0a43a" /><rect x="1.4" y="9.6" width="22.2" height="0.5" fill="#e0443c" />
+        <path d="M 4 3.4 H 21.6" stroke="#c9d3e6" stroke-width="0.06" />
+        <text x="2.2" y="3.1" class="cc-labelside">A</text>
+        <text x="4.2" y="3.05" class="cc-labeltitle">summer, the long way round</text>
+        <rect x="6.2" y="4.2" width="12.6" height="4.2" rx="2.1" fill="#423f4a" stroke="#1d1c22" stroke-width="0.15" />
+        <circle cx="9.1" cy="6.3" r="1.9" fill="#4f3322" /><circle cx="15.9" cy="6.3" r="1.25" fill="#4f3322" />
+        <path d="M 10.6 6.3 H 14.3" stroke="#d9d4ca" stroke-width="0.05" opacity="0.5" />
+        {[9.1, 15.9].map(cx => (
+          <g class="cc-reel" style={`transform-origin: ${cx}px 6.3px`}>
+            <circle cx={cx} cy="6.3" r="0.85" fill="#f4f2ec" />
+            <circle cx={cx} cy="6.3" r="0.42" fill="#2c2b33" />
+            {[0, 60, 120, 180, 240, 300].map(a => <rect x={cx - 0.08} y="5.88" width="0.16" height="0.22" fill="#f4f2ec" transform={`rotate(${a} ${cx} 6.3)`} />)}
+          </g>
+        ))}
+        <path d="M 5 15.8 L 6.4 12.4 H 18.6 L 20 15.8 Z" fill="#232229" stroke="#45444e" stroke-width="0.1" />
+        <circle cx="7.9" cy="14.4" r="0.45" fill="#111" /><circle cx="17.1" cy="14.4" r="0.45" fill="#111" />
+        <rect x="11.6" y="13.9" width="1.8" height="1" rx="0.2" fill="#111" />
+        {[[1, 1], [24, 1], [1, 15], [24, 15], [12.5, 11.8]].map(([x, y]) => <circle cx={x} cy={y} r="0.32" fill="#77757f" />)}
+      </svg>
+    </figure>
+
+    <div class="cc-deck" role="group" aria-label="Tape deck">
+      <button type="button" id="cc-rew" aria-label="Rewind">◀◀</button>
+      <button type="button" id="cc-play" aria-label="Play" aria-pressed="false">▶</button>
+      <button type="button" id="cc-stop" aria-label="Stop">■</button>
+      <button type="button" id="cc-ff" aria-label="Fast forward">▶▶</button>
+      <output class="cc-counter" id="cc-counter" aria-label="Tape counter">000</output>
+      <p class="cc-now" id="cc-now" aria-live="polite">Press play.</p>
+    </div>
+
+    <figure class="cc-strip" aria-label="Photo-booth strip, four frames">
+      {FRAMES.map(([src, at]) => <img src={`/examples/images/${src}`} alt="" style={`object-position: ${at}`} loading="lazy" />)}
+      <figcaption>4 for £1</figcaption>
+    </figure>
+
+    <p class="cc-ticket" aria-label="Ticket stub">
+      <span class="cc-tk-place">Palace Pier, Brighton</span>
+      <span class="cc-tk-what">Admit one to the Pier</span>
+      <span class="cc-tk-date">Sat 12 Jul 1997</span>
+      <span class="cc-tk-no">No 004419</span>
+    </p>
+
+    <svg class="cc-biro" viewBox="0 0 22 2" aria-hidden="true">
+      <path d="M 0.4 1 L 1.6 0.72 L 1.6 1.28 Z" fill="#2c2b33" />
+      <rect x="1.6" y="0.6" width="2" height="0.8" fill="#d8dbe2" />
+      <rect x="3.6" y="0.45" width="13.4" height="1.1" rx="0.12" fill="rgb(235 240 248 / 0.75)" stroke="#aeb6c6" stroke-width="0.05" />
+      <rect x="3.8" y="0.86" width="13" height="0.28" fill="#1d3fae" />
+      <rect x="3.6" y="0.45" width="13.4" height="0.3" fill="rgb(255 255 255 / 0.6)" />
+      <rect x="16.4" y="0.4" width="4.6" height="1.2" rx="0.2" fill="#1d3fae" />
+      <rect x="17" y="1.45" width="3.4" height="0.32" rx="0.1" fill="#1d3fae" />
+      <rect x="21" y="0.6" width="0.5" height="0.8" rx="0.15" fill="#14307f" />
+    </svg>
+
+    <p class="cc-note">
+      Ruth, side B gets good after the third song, I promise. If the car eats it, wind it back with a pencil. The last one is me,
+      you are not allowed to laugh. Or tell Mona. D.
+    </p>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  onSquares(({ across, narrow }) => {
+    if (!narrow) document.documentElement.style.setProperty('--cc-col', String(Math.max(1, Math.floor((across - 60) / 2) + 1)));
+  });
+
+  const root = document.querySelector<HTMLElement>('.tape')!;
+  const tracks = [...document.querySelectorAll<HTMLElement>('[data-track]')];
+  const play = document.getElementById('cc-play') as HTMLButtonElement;
+  const counter = document.getElementById('cc-counter')!;
+  const now = document.getElementById('cc-now')!;
+  let current = -1, count = 0, timer = 0;
+
+  function mark(index: number) {
+    current = Math.max(0, Math.min(tracks.length - 1, index));
+    tracks.forEach((t, k) => t.classList.toggle('cc-on', k === current));
+    const side = current < 7 ? 'A' : 'B';
+    const t = tracks[current];
+    now.textContent = `Side ${side}, ${t.querySelector('.cc-title')!.textContent} by ${t.querySelector('.cc-artist')!.textContent}`;
+    count = current * 64 + (current >= 7 ? 40 : 0);
+    counter.textContent = String(count).padStart(3, '0');
+  }
+  function stop() {
+    clearInterval(timer);
+    play.setAttribute('aria-pressed', 'false');
+    root.classList.remove('cc-playing');
+  }
+  play.addEventListener('click', () => {
+    if (play.getAttribute('aria-pressed') === 'true') return stop();
+    play.setAttribute('aria-pressed', 'true');
+    if (!reducedMotion()) root.classList.add('cc-playing');
+    if (current < 0) mark(0);
+    // A song every four seconds here; the counter turns as the tape does.
+    let tick = 0;
+    timer = window.setInterval(() => {
+      count++;
+      counter.textContent = String(count % 1000).padStart(3, '0');
+      if (++tick % 16 === 0) {
+        if (current === tracks.length - 1) { stop(); now.textContent = 'The end of side B. Click.'; return; }
+        mark(current + 1);
+      }
+    }, 250);
+  });
+  document.getElementById('cc-stop')!.addEventListener('click', stop);
+  document.getElementById('cc-rew')!.addEventListener('click', () => mark(current <= 0 ? 0 : current - 1));
+  document.getElementById('cc-ff')!.addEventListener('click', () => mark(current + 1));
+</script>
+
+<style is:global>
+  html { background: #e23b8a; }
+  .tape {
+    --pink: #e23b8a;
+    --card: #fbfbf6;
+    --biro: #1d3fae;
+    --print: #8b8f9c;
+    color: var(--biro);
+    background:
+      radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.12) 0 1px, transparent 1.5px) 0 0 / calc(var(--u) * 0.7) calc(var(--u) * 0.9),
+      radial-gradient(circle at 70% 60%, rgb(120 0 60 / 0.18) 0 1px, transparent 1.5px) 0 0 / calc(var(--u) * 1.1) calc(var(--u) * 0.8),
+      var(--pink);
+    font-family: 'Bradley Hand', 'Noteworthy', 'Segoe Print', cursive;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* Everything on the desk, sixty squares wide, in the middle of the window. */
+  .cc-desk { grid-column: var(--cc-col, 2) / span 60; grid-row: 1 / -1; display: grid; grid-template-columns: repeat(60, var(--u)); grid-template-rows: repeat(var(--down), var(--u)); }
+  :root[data-narrow] .cc-desk { display: contents; }
+
+  /* The J-card: front, spine and flap, folded flat along dashed lines. */
+  .cc-card {
+    grid-column: 2 / span 25; grid-row: 3 / span 23;
+    display: grid; grid-template-rows: calc(16 * var(--u)) calc(3 * var(--u)) calc(4 * var(--u));
+    background: var(--card); box-shadow: 0 calc(6px * var(--sf)) 0 rgb(110 10 60 / 0.35);
+  }
+  .cc-front { padding: var(--u) var(--u) 0; display: grid; grid-template-rows: calc(2 * var(--u)) var(--u) 1fr; row-gap: var(--u); }
+  .cc-front h1 { margin: 0; font: calc(30px * var(--sf)) / calc(2 * var(--u)) 'Marker Felt', 'Chalkboard SE', cursive; color: #10247a; letter-spacing: -0.01em; }
+  .cc-for { margin: 0; color: var(--biro); }
+  .cc-sides { display: grid; grid-template-columns: repeat(2, calc(11 * var(--u))); column-gap: var(--u); }
+  .cc-side { margin: 0; padding: 0; list-style: none; counter-reset: track; }
+  .cc-sidehead { font: calc(18px * var(--sf)) / var(--u) 'Marker Felt', cursive; color: #e0443c; height: calc(2 * var(--u)); }
+  .cc-track { position: relative; counter-increment: track; display: grid; grid-template-columns: var(--u) 1fr; height: var(--u); white-space: nowrap; }
+  .cc-track::before { content: counter(track); grid-row: 1; color: #6e7fc2; }
+  .cc-track .cc-title { grid-column: 2; grid-row: 1; overflow: hidden; text-overflow: ellipsis; }
+  .cc-track .cc-artist, .cc-track s { display: none; }
+  .cc-track:has(s) .cc-title { padding-left: calc(4 * var(--u)); }
+  .cc-track:has(s) s { display: block; grid-column: 2; grid-row: 1; width: calc(3.5 * var(--u)); overflow: hidden; color: #6e7fc2; text-decoration-thickness: 2px; }
+  /* The pen's circle round the song that is playing. */
+  .cc-track.cc-on::after {
+    content: ''; position: absolute; left: calc(var(--u) / -4); top: calc(var(--u) / -8); width: calc(11 * var(--u)); height: calc(var(--u) * 1.25);
+    border: 1.5px solid var(--biro); border-radius: 48% 52% 46% 54% / 60% 50% 50% 40%; transform: rotate(-1deg); pointer-events: none;
+  }
+
+  .cc-spine { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--u); border-block: 1px dashed #b9bdc8; font: calc(20px * var(--sf)) / calc(3 * var(--u)) 'Marker Felt', cursive; color: #10247a; }
+  .cc-spine p { margin: 0; }
+  .cc-spineend { color: #e0443c; }
+  .cc-flap { padding: calc(var(--u) / 2) var(--u); display: grid; align-content: center; }
+  .cc-flap p { margin: 0; height: var(--u); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-print { font: calc(11px * var(--sf)) / var(--u) Futura, 'Avenir Next', sans-serif; color: var(--print); margin-right: calc(var(--u) / 4); }
+  .cc-pen { font-size: calc(14px * var(--sf)); }
+  .cc-box { display: inline-block; width: calc(var(--u) / 2); height: calc(var(--u) / 2); border: 1px solid var(--print); vertical-align: -1px; margin-right: calc(var(--u) / 4); position: relative; }
+  .cc-ticked::after { content: '✓'; position: absolute; left: -2px; top: calc(var(--u) / -2); font: calc(18px * var(--sf)) / 1 'Bradley Hand', cursive; color: var(--biro); }
+
+  /* The tape itself, a square of the drawing to a square of the page. */
+  .cc-cassette { grid-column: -27 / span 25; grid-row: 3 / span 16; margin: 0; filter: drop-shadow(0 calc(6px * var(--sf)) 0 rgb(110 10 60 / 0.35)); }
+  .cc-cassette svg { width: 100%; height: 100%; display: block; }
+  .cc-labelside { font: 1.6px 'Marker Felt', cursive; fill: #e0443c; }
+  .cc-labeltitle { font: 1.05px 'Bradley Hand', cursive; fill: var(--biro); }
+  .cc-playing .cc-reel { animation: cc-turn 2.4s linear infinite; }
+  @keyframes cc-turn { to { transform: rotate(-360deg); } }
+  @media (prefers-reduced-motion: reduce) { .cc-playing .cc-reel { animation: none; } }
+
+  /* Piano keys of a deck: chunky, silver, sunk when held. */
+  .cc-deck { grid-column: -27 / span 25; grid-row: 20 / span 3; display: grid; grid-template-columns: repeat(4, calc(3 * var(--u))) calc(4 * var(--u)) 1fr; grid-template-rows: calc(2 * var(--u)) var(--u); column-gap: 0; align-items: center; font-family: 'Avenir Next', Futura, sans-serif; }
+  .cc-deck button {
+    all: unset; box-sizing: border-box; height: calc(2 * var(--u)); text-align: center; cursor: pointer;
+    font-size: calc(13px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.12em; color: #2c2b33;
+    background: linear-gradient(#f2f2f4, #bfc0c6); box-shadow: inset 0 -3px 0 #8d8e96, inset 1px 0 0 #fff, inset -1px 0 0 #8d8e96;
+  }
+  .cc-deck button[aria-pressed='true'], .cc-deck button:active { box-shadow: inset 0 2px 0 #8d8e96; background: linear-gradient(#c9cad0, #e2e3e6); }
+  .cc-deck button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; z-index: 1; }
+  .cc-counter {
+    justify-self: center; width: calc(3 * var(--u)); height: var(--u); text-align: center; background: #1b1a1f; color: #f4f2ec;
+    font: calc(14px * var(--sf)) / var(--u) 'Andale Mono', Menlo, monospace; letter-spacing: 0.15em; font-variant-numeric: tabular-nums;
+  }
+  .cc-now { grid-column: 1 / -1; grid-row: 2; margin: 0; color: #fff; font: calc(14px * var(--sf)) / var(--u) 'Avenir Next', Futura, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* The photo-booth strip, tucked over the card's corner. */
+  .cc-strip {
+    grid-column: 29 / span 5; grid-row: 3 / span 20; z-index: 1; margin: 0; box-sizing: border-box;
+    padding: calc(var(--u) / 2) calc(var(--u) / 2) 0; background: #f6f6f2; display: grid; grid-template-rows: repeat(4, calc(4 * var(--u))) var(--u); row-gap: calc(var(--u) / 2);
+    box-shadow: 0 calc(6px * var(--sf)) 0 rgb(110 10 60 / 0.35);
+  }
+  .cc-strip img { width: calc(4 * var(--u)); height: calc(4 * var(--u)); object-fit: cover; filter: grayscale(1) contrast(1.35) brightness(1.05); display: block; }
+  .cc-strip figcaption { font: calc(11px * var(--sf)) / var(--u) Futura, 'Avenir Next', sans-serif; color: #77757f; text-align: center; white-space: nowrap; }
+  .cc-strip::before { content: ''; position: absolute; width: calc(3 * var(--u)); height: var(--u); margin: calc(var(--u) * -0.9) 0 0 var(--u); background: rgb(255 250 220 / 0.55); transform: rotate(-4deg); }
+  .cc-strip { position: relative; }
+
+  .cc-note {
+    grid-column: 2 / span 22; grid-row: -13 / span 5; margin: 0; padding: var(--u); box-sizing: border-box;
+    background: repeating-linear-gradient(to bottom, #fffdf0 0 calc(var(--u) - 1px), #b9cbe8 calc(var(--u) - 1px) var(--u)), #fffdf0;
+    color: #4a4f63; font-family: 'Noteworthy', 'Bradley Hand', cursive; font-size: calc(15px * var(--sf));
+    box-shadow: 0 calc(6px * var(--sf)) 0 rgb(110 10 60 / 0.35);
+  }
+
+  /* A ticket stub, perforated down its left edge, and the biro that wrote it all. */
+  .cc-ticket {
+    grid-column: -27 / span 12; grid-row: 25 / span 6; margin: 0; box-sizing: border-box; padding: calc(var(--u) / 2) var(--u);
+    display: grid; grid-template-columns: 1fr auto; grid-template-rows: repeat(2, var(--u)) calc(2 * var(--u)) var(--u);
+    background: radial-gradient(circle at 0 50%, var(--pink) 0 3px, transparent 3.5px) 0 0 / 8px calc(var(--u) / 2) repeat-y, #cfe7cf;
+    color: #c4302b; font-family: Futura, 'Avenir Next', sans-serif; font-size: calc(12px * var(--sf));
+    box-shadow: 0 calc(6px * var(--sf)) 0 rgb(110 10 60 / 0.35);
+  }
+  .cc-tk-place { grid-column: 1 / -1; font-weight: 700; font-size: calc(14px * var(--sf)); }
+  .cc-tk-what { grid-column: 1 / -1; }
+  .cc-tk-date { grid-column: 1; grid-row: 4; }
+  .cc-tk-no { grid-column: 2; grid-row: 4; font-family: 'Andale Mono', Menlo, monospace; color: #2c2b33; }
+  .cc-biro { grid-column: 2 / span 22; grid-row: -6 / span 2; width: 100%; height: 100%; filter: drop-shadow(0 calc(4px * var(--sf)) 0 rgb(110 10 60 / 0.35)); }
+
+  /* Narrow: the tape, its keys, then the card, the strip and the note down the page. */
+  :root[data-narrow] .tape { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .cc-desk > * { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); }
+  :root[data-narrow] .cc-cassette { order: -2; aspect-ratio: 25 / 16; }
+  :root[data-narrow] .cc-deck { order: -1; grid-template-columns: repeat(4, calc(2 * var(--u))) 1fr; }
+  :root[data-narrow] .cc-counter { justify-self: end; }
+  :root[data-narrow] .cc-card { grid-template-rows: auto calc(3 * var(--u)) auto; grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] .cc-sides { grid-template-columns: minmax(0, 1fr); row-gap: var(--u); }
+  :root[data-narrow] .cc-front { padding-bottom: var(--u); grid-template-rows: auto auto auto; }
+  :root[data-narrow] .cc-front h1 { font-size: calc(26px * var(--sf)); }
+  :root[data-narrow] .cc-track.cc-on::after { width: calc(100% + var(--u) / 2); }
+  :root[data-narrow] .cc-spine { font-size: calc(14px * var(--sf)); white-space: nowrap; gap: var(--u); }
+  :root[data-narrow] .cc-spine p:first-child { overflow: hidden; text-overflow: ellipsis; }
+  :root[data-narrow] .cc-flap p { white-space: normal; height: auto; }
+  :root[data-narrow] .cc-strip { grid-column: 2 / span 5; }
+  :root[data-narrow] .cc-biro { aspect-ratio: 11; height: auto; }
+</style>

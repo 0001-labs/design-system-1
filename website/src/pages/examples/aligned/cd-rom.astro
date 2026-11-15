@@ -1,0 +1,400 @@
+---
+// After a multimedia encyclopedia on CD-ROM, about 1996: a gradient title bar, a titanium toolbar of
+// fat bevelled buttons, a dark tree of topics, and an article with hyperlinks, fast facts and a video
+// frame. The video is drawn live at 80 by 60 pixels in the 216 web-safe colours, dithered, and shown
+// at sixteen squares by twelve. Half the topics are on the second disc.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const TREE: { label: string; key?: string; depth: number; open?: boolean; media?: string }[] = [
+  { label: 'The atmosphere', depth: 0, key: 'disc2' },
+  { label: 'Clouds', depth: 0, open: true },
+  { label: 'Cumulus', depth: 1, key: 'cumulus' },
+  { label: 'Cumulonimbus', depth: 1, key: 'cumulonimbus', media: 'video' },
+  { label: 'Stratus', depth: 1, key: 'disc2' },
+  { label: 'Cirrus', depth: 1, key: 'disc2' },
+  { label: 'Precipitation', depth: 0, open: true },
+  { label: 'Hail', depth: 1, key: 'hail' },
+  { label: 'Snow', depth: 1, key: 'disc2' },
+  { label: 'Electricity', depth: 0, open: true },
+  { label: 'Lightning', depth: 1, key: 'lightning', media: 'sound' },
+  { label: 'Wind', depth: 0, key: 'disc2' },
+  { label: 'Instruments', depth: 0, key: 'disc2' },
+  { label: 'Famous storms', depth: 0, key: 'disc2' },
+];
+---
+<AlignedStudy slug="cd-rom" theme="light">
+  <main class="stage cdr">
+    <header class="cdr-title">
+      <span class="cdr-disc" aria-hidden="true"></span>
+      <span>Meteora 96 - The Multimedia Encyclopedia of Weather</span>
+      <span class="cdr-winbtns" aria-hidden="true"><i>_</i><i>□</i><i>×</i></span>
+    </header>
+
+    <nav class="cdr-tools" aria-label="Encyclopedia">
+      <button type="button" class="cdr-btn" data-go="cumulonimbus"><span class="cdr-glyph g-home"></span>Contents</button>
+      <button type="button" class="cdr-btn" data-back><span class="cdr-glyph g-back"></span>Back</button>
+      <button type="button" class="cdr-btn" data-go="disc2"><span class="cdr-glyph g-find"></span>Find</button>
+      <button type="button" class="cdr-btn" data-go="disc2"><span class="cdr-glyph g-atlas"></span>Atlas</button>
+      <button type="button" class="cdr-btn" data-go="disc2"><span class="cdr-glyph g-time"></span>Timeline</button>
+      <span class="cdr-logo" aria-hidden="true">Meteora<b>96</b></span>
+    </nav>
+
+    <aside class="cdr-side">
+      <p class="cdr-side-head">Topics</p>
+      <ul class="cdr-tree">
+        {TREE.map(item => (
+          <li style={`--d: ${item.depth}`}>
+            {item.key
+              ? <button type="button" data-go={item.key} class:list={['cdr-topic', { disc2: item.key === 'disc2' }]}><span class="cdr-twisty" aria-hidden="true">{item.depth ? '' : '+'}</span>{item.label}{item.media && <span class={`cdr-media m-${item.media}`} aria-label={item.media === 'video' ? 'with video' : 'with sound'} />}</button>
+              : <span class="cdr-topic folder"><span class="cdr-twisty" aria-hidden="true">−</span>{item.label}</span>}
+          </li>
+        ))}
+      </ul>
+      <p class="cdr-side-foot">4,212 articles<br />38 minutes of video<br />612 sounds</p>
+    </aside>
+
+    <section class="cdr-page" aria-live="polite">
+      <header class="cdr-band">
+        <h1 id="title">Cumulonimbus</h1>
+        <p id="kicker">Clouds, low to high</p>
+      </header>
+      <article class="cdr-text" id="text"></article>
+      <figure class="cdr-video">
+        <div class="cdr-screen"><canvas id="film" width="80" height="60" aria-label="Video: a thunderstorm grows over the plains" role="img"></canvas></div>
+        <div class="cdr-controls" data-own-keys>
+          <button type="button" class="cdr-ctl" id="play" aria-label="Pause"><span class="ico-pause"></span></button>
+          <button type="button" class="cdr-ctl" id="stop" aria-label="Stop"><span class="ico-stop"></span></button>
+          <input type="range" id="scrub" min="0" max="240" value="0" aria-label="Position in the video" />
+          <output id="clock">00:00</output>
+        </div>
+        <figcaption>Video: a thunderstorm grows over the plains of Kansas in forty minutes, shown in twenty-four seconds.</figcaption>
+      </figure>
+      <div class="cdr-more">
+      <aside class="cdr-facts" id="facts"></aside>
+      <p class="cdr-sound"><button type="button" class="cdr-btn small" id="thunder"><span class="cdr-glyph g-sound"></span>Play: thunder, 3 km away</button></p>
+      </div>
+    </section>
+
+    <footer class="cdr-status"><span id="status">Cumulonimbus</span><span>Disc 1 of 2</span><span>640 × 480, 256 colours</span></footer>
+
+    <div class="cdr-dialog" id="dialog" role="alertdialog" aria-labelledby="dialog-text" hidden>
+      <p class="cdr-dialog-title">Meteora 96</p>
+      <p id="dialog-text"><span class="cdr-cd" aria-hidden="true"></span>This article is on Disc 2. Please insert Disc 2 and click OK.</p>
+      <button type="button" class="cdr-btn small" id="ok">OK</button>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  interface Article { title: string; kicker: string; body: string; facts: [string, string][]; know: string; also: string[] }
+  // Links are written [[key|words]].
+  const ARTICLES: Record<string, Article> = {
+    cumulonimbus: {
+      title: 'Cumulonimbus', kicker: 'Clouds, low to high',
+      body: '<p><b>Cumulonimbus</b>, the thundercloud, is the largest and most energetic cloud in the sky. It begins as an ordinary [[cumulus|cumulus]] on a warm afternoon, but where the air is unstable it keeps rising, and a single cell can climb from a base near 1,000 metres to the top of the troposphere, 12,000 metres or more, in under an hour.</p><p>When the rising air meets the stable layer above, it can climb no further and spreads sideways into the flat, fibrous <i>anvil</i>, often carried far downwind. Inside, updrafts of 100 kilometres an hour lift raindrops above the freezing level, where they grow into [[hail|hailstones]], and the collisions of ice and soft hail separate electric charge until it discharges as [[lightning|lightning]].</p><p>A mature cell lives for about an hour. Its own downdraft, cooled by falling rain, eventually cuts off the warm air feeding it, and the storm rains itself out, leaving the anvil drifting alone.</p>',
+      facts: [['Base', '500–2,000 m'], ['Top', 'up to 16,000 m'], ['Lifetime', 'about 1 hour'], ['Water', 'up to 500,000 tonnes'], ['Symbol', 'Cb']],
+      also: ['cumulus|Cumulus', 'lightning|Lightning', 'hail|Hail', 'disc2|Tornadoes', 'disc2|Supercells', 'disc2|Weather radar'],
+      know: 'A large thunderstorm releases as much energy in an hour as a city of a million people uses in a month.',
+    },
+    cumulus: {
+      title: 'Cumulus', kicker: 'Clouds, low to high',
+      body: '<p><b>Cumulus</b> (Latin for <i>heap</i>) is the fair-weather cloud: white, flat-based and rounded on top, like cauliflower. Each one marks a column of warm air, a thermal, rising from sun-heated ground until it cools to its dew point.</p><p>On most days cumulus stay small and drift apart by evening. Given moisture and an unstable sky they grow into towering <i>cumulus congestus</i>, and from there into [[cumulonimbus|cumulonimbus]]. Glider pilots and soaring birds use the thermals beneath them to climb.</p>',
+      facts: [['Base', '600–2,000 m'], ['Depth', 'a few hundred metres'], ['Lifetime', '5–40 minutes'], ['Symbol', 'Cu']],
+      also: ['cumulonimbus|Cumulonimbus', 'disc2|Thermals', 'disc2|Gliding', 'disc2|Dew point'],
+      know: 'A small fair-weather cumulus weighs about as much as eighty elephants, held up by rising air.',
+    },
+    hail: {
+      title: 'Hail', kicker: 'Precipitation',
+      body: '<p><b>Hail</b> is precipitation in balls or lumps of ice, grown inside the strong updrafts of a [[cumulonimbus|cumulonimbus]]. A frozen raindrop or soft pellet is lifted again and again through water that stays liquid well below freezing, adding a layer each time.</p><p>Cut in half, a hailstone shows its rings, clear and milky by turns, like an onion. The stronger the updraft, the longer a stone stays aloft and the larger it grows. Hail that falls with [[lightning|lightning]] and heavy rain is a sign of a severe storm.</p>',
+      facts: [['Size', '5 mm to 20 cm'], ['Fall speed', 'up to 160 km/h'], ['Season', 'late spring, summer'], ['Symbol', '▲']],
+      also: ['cumulonimbus|Cumulonimbus', 'lightning|Lightning', 'disc2|Graupel', 'disc2|Crop insurance'],
+      know: 'The largest hailstone on record, from South Dakota in 2010, measured 20 centimetres across and weighed nearly a kilogram.',
+    },
+    lightning: {
+      title: 'Lightning', kicker: 'Electricity in the air',
+      body: '<p><b>Lightning</b> is a giant spark between charged regions of a [[cumulonimbus|cumulonimbus]], or between the cloud and the ground. Collisions of ice crystals and soft [[hail|hail]] leave the top of the cloud positive and the lower part negative, until the air between can no longer hold the difference apart.</p><p>A flash heats its channel to about 30,000 °C, five times hotter than the surface of the Sun, in a few millionths of a second. The air expands so suddenly that it booms: thunder. Count the seconds between flash and thunder and divide by three for the distance in kilometres.</p>',
+      facts: [['Temperature', '30,000 °C'], ['Current', '30,000 amperes'], ['Flashes', '44 every second, worldwide'], ['Length', '5–15 km']],
+      also: ['cumulonimbus|Cumulonimbus', 'hail|Hail', 'disc2|Ball lightning', 'disc2|Lightning rods', 'disc2|St Elmo’s fire'],
+      know: 'Lightning does strike the same place twice: a tall tower in a city may be struck dozens of times a year.',
+    },
+  };
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const text = $('text'), title = $('title'), kicker = $('kicker'), facts = $('facts'), status = $('status'), dialog = $('dialog');
+  const history: string[] = [];
+  let current = 'cumulonimbus';
+
+  function show(key: string, remember = true) {
+    if (key === 'disc2') { dialog.hidden = false; ($('ok') as HTMLButtonElement).focus(); return; }
+    const article = ARTICLES[key];
+    if (!article) return;
+    if (remember && key !== current) history.push(current);
+    current = key;
+    title.textContent = article.title;
+    kicker.textContent = article.kicker;
+    const link = (key: string, words: string) => `<a href="#${key}" data-go="${key}">${words}</a>`;
+    text.innerHTML = article.body.replace(/\[\[(\w+)\|([^\]]+)\]\]/g, (_, key, words) => link(key, words))
+      + `<div class="cdr-also"><h2>See also</h2><ul>${article.also.map(item => `<li>${link(...(item.split('|') as [string, string]))}</li>`).join('')}</ul></div>`
+      + `<div class="cdr-know"><span class="cdr-bulb" aria-hidden="true"></span><p><b>Did you know?</b> ${article.know}</p></div>`;
+    facts.innerHTML = `<h2>Fast facts</h2><dl>${article.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+    status.textContent = article.title;
+    document.querySelectorAll<HTMLElement>('.cdr-topic[data-go]').forEach(t => t.toggleAttribute('aria-current', t.dataset.go === key));
+  }
+  document.addEventListener('click', event => {
+    const go = (event.target as Element).closest?.('[data-go]') as HTMLElement | null;
+    if (go) { event.preventDefault(); show(go.dataset.go!); }
+    if ((event.target as Element).closest?.('[data-back]') && history.length) show(history.pop()!, false);
+  });
+  $('ok').addEventListener('click', () => { dialog.hidden = true; });
+  show('cumulonimbus', false);
+
+  // The video: drawn per pixel at 80 × 60, quantized to the 216 web-safe colours with a 4 × 4 Bayer dither.
+  const film = $('film') as HTMLCanvasElement;
+  const ctx = film.getContext('2d')!;
+  const W = 80, H = 60;
+  const image = ctx.createImageData(W, H);
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const random = seeded(96);
+  // Puffs of the tower, each with the height (0 to 1) at which it appears.
+  const PUFFS = Array.from({ length: 60 }, (_, i) => ({ h: i / 59, x: (random() - 0.5) * (18 - 8 * (i / 59)), r: 4.5 + random() * 4.5 }));
+  const FLASHES = [[0.78, 0.788], [0.86, 0.866], [0.931, 0.936]];
+  const ease = (x: number) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 2;
+  const mix = (a: number, b: number, k: number) => a + (b - a) * k;
+
+  function frame(t: number) {
+    const grow = ease(t / 0.7);
+    const base = 41, top = base - 6 - 30 * grow;
+    const anvil = ease((t - 0.5) / 0.4);
+    const dark = Math.min(1, t * 1.2);
+    const flash = FLASHES.some(([a, b]) => t >= a && t <= b);
+    const boltX = 34 + Math.round(Math.sin(t * 40) * 3);
+    const data = image.data;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let r: number, g: number, b: number;
+        const k = y / 52;
+        // Sky: deep blue overhead to a pale horizon, greying as the storm grows; white for a flash.
+        r = mix(mix(40, 160, k), mix(70, 120, k), dark * 0.7); g = mix(mix(95, 196, k), mix(80, 128, k), dark * 0.7); b = mix(mix(175, 232, k), mix(100, 140, k), dark * 0.7);
+        if (flash) { r += 70; g += 70; b += 80; }
+        if (y >= 52) {
+          // Fields: strips of two greens and a brown, the furrows a pixel apart.
+          const strip = Math.floor((x + (y - 52) * 3) / 9) % 3;
+          r = [58, 82, 96][strip]; g = [84, 98, 74][strip]; b = [34, 40, 40][strip];
+          if ((x + y) % 4 === 0) { r -= 12; g -= 12; b -= 8; }
+        }
+        // Rain shaft under the base, after the storm matures.
+        if (t > 0.62 && y > base && y < 52 && Math.abs(x - 36) < 4 + (y - base) * 0.3 && (x * 7 + y * 3 + Math.floor(t * 900)) % 5 === 0) { r = mix(r, 150, 0.7); g = mix(g, 160, 0.7); b = mix(b, 175, 0.7); }
+        // The cloud: lit from the upper left, darker near the base.
+        let shade = -1;
+        for (const puff of PUFFS) {
+          if (puff.h > grow) break;
+          const cy = base - puff.h * (base - top) - 3, cx = 36 + puff.x * (0.7 + grow * 0.5) + puff.h * 3;
+          const rr = puff.r * (0.8 + 0.4 * puff.h);
+          const dx = x - cx, dy = y - cy;
+          const d = dx * dx + dy * dy;
+          if (d < rr * rr) shade = Math.max(shade, 0.72 + 0.28 * ((-dx - dy) / (rr * 1.5)) - (y > base - 6 ? 0.25 : 0));
+        }
+        if (anvil > 0) {
+          const ax = 34 + anvil * 10, ay = top + 2, aw = 6 + anvil * 30, ah = 2 + anvil * 3;
+          const dx = (x - ax) / aw, dy = (y - ay) / ah;
+          if (dx * dx + dy * dy < 1 && y >= top - 1) shade = Math.max(shade, 0.9 - (y - top) * 0.05);
+        }
+        if (shade >= 0) {
+          const v = Math.max(0.3, Math.min(1, shade - dark * 0.25));
+          r = 255 * v; g = 252 * v; b = 245 * v;
+          if (flash && y > base - 12) { r = 255; g = 255; b = 255; }
+        }
+        if (flash && y > base && y < 52 && Math.abs(x - (boltX + Math.round(Math.sin(y * 1.3) * 2))) < 1) { r = 255; g = 255; b = 210; }
+        const threshold = BAYER[(y % 4) * 4 + (x % 4)] - 0.5;
+        const i = (y * W + x) * 4;
+        data[i] = Math.max(0, Math.min(5, Math.round((r / 255) * 5 + threshold))) * 51;
+        data[i + 1] = Math.max(0, Math.min(5, Math.round((g / 255) * 5 + threshold))) * 51;
+        data[i + 2] = Math.max(0, Math.min(5, Math.round((b / 255) * 5 + threshold))) * 51;
+        data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+  }
+
+  const LENGTH = 24000;
+  const play = $('play') as HTMLButtonElement, stop = $('stop') as HTMLButtonElement, scrub = $('scrub') as HTMLInputElement, clock = $('clock');
+  let position = reducedMotion() ? 0.72 * LENGTH : 0;
+  let playing = !reducedMotion();
+  let last = performance.now();
+  const stamp = (ms: number) => `00:${String(Math.floor(ms / 1000)).padStart(2, '0')}`;
+  function paint() {
+    frame(position / LENGTH);
+    scrub.value = String(Math.round((position / LENGTH) * 240));
+    clock.textContent = `${stamp(position)} / 00:24`;
+    play.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    play.firstElementChild!.className = playing ? 'ico-pause' : 'ico-play';
+  }
+  function tick(now: number) {
+    if (playing) {
+      position = (position + (now - last)) % LENGTH;
+      paint();
+    }
+    last = now;
+    requestAnimationFrame(tick);
+  }
+  play.addEventListener('click', () => { playing = !playing; paint(); });
+  stop.addEventListener('click', () => { playing = false; position = 0; paint(); });
+  scrub.addEventListener('input', () => { position = (Number(scrub.value) / 240) * LENGTH; paint(); });
+  paint();
+  requestAnimationFrame(tick);
+
+  // Thunder: two and a half seconds of filtered noise, made when asked for.
+  let audio: AudioContext | null = null;
+  $('thunder').addEventListener('click', () => {
+    audio ??= new AudioContext();
+    const seconds = 3.2, rate = audio.sampleRate;
+    const buffer = audio.createBuffer(1, seconds * rate, rate);
+    const samples = buffer.getChannelData(0);
+    let brown = 0;
+    for (let i = 0; i < samples.length; i++) {
+      brown = (brown + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+      const at = i / rate;
+      const swell = at < 0.25 ? at / 0.25 : Math.exp(-(at - 0.25) * 1.3) * (1 + 0.5 * Math.sin(at * 9) * Math.exp(-at));
+      samples[i] = brown * 3.5 * swell;
+    }
+    const source = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 380;
+    source.buffer = buffer;
+    source.connect(filter).connect(audio.destination);
+    source.start();
+  });
+
+  onSquares(({ across, narrow }) => {
+    document.querySelector<HTMLElement>('.cdr')!.style.setProperty('--text-cols', String(narrow ? across - 4 : Math.min(34, across - 32)));
+  });
+</script>
+
+<style is:global>
+  html[data-study='cd-rom'] { background: #0a1a6b; }
+  .cdr {
+    --navy: #0a1a6b;
+    --side: #18204a;
+    --link: #00707a;
+    --violet: #4b4fbf;
+    font-family: 'Trebuchet MS', Verdana, sans-serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .cdr :is(h1, h2, p, ul, dl, dd, figure) { margin: 0; }
+  .cdr :is(ul, dl, dd) { padding: 0; }
+  .cdr ul { list-style: none; }
+
+  /* The title bar, two squares of gradient. */
+  .cdr-title { grid-column: 1 / -1; grid-row: 1 / span 2; display: flex; align-items: center; gap: calc(var(--u) / 2); padding-inline: var(--u); background: linear-gradient(90deg, var(--navy), #1084d0); color: #fff; font-weight: bold; font-size: calc(14px * var(--sf)); }
+  .cdr-disc { width: var(--u); height: var(--u); border-radius: 50%; background: conic-gradient(from 30deg, #e9e9f2, #b7f3ff, #f7d5ff, #fff6b5, #c8ffd0, #e9e9f2); box-shadow: inset 0 0 0 calc(var(--u) * 0.36) transparent; mask: radial-gradient(circle, transparent 18%, #000 20%); }
+  .cdr-winbtns { margin-left: auto; display: flex; gap: 2px; }
+  .cdr-winbtns i { display: grid; place-items: center; width: calc(var(--u) - 2px); height: calc(var(--u) - 4px); background: #c0c0c0; color: #000; font-style: normal; font-size: calc(11px * var(--sf)); line-height: 1; box-shadow: inset -1px -1px #404040, inset 1px 1px #fff; }
+
+  /* The toolbar: brushed titanium, three squares deep. */
+  .cdr-tools { grid-column: 1 / -1; grid-row: 3 / span 3; display: flex; align-items: center; gap: var(--u); padding-inline: var(--u); background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.08) 0 1px, transparent 1px 3px), linear-gradient(#f0f2f5, #c3c8d0 55%, #a9afb8); border-bottom: 2px solid #6b7280; box-sizing: border-box; }
+  .cdr-btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: calc(var(--u) / 3); height: calc(2 * var(--u)); padding-inline: calc(var(--u) / 2) var(--u); border-radius: calc(var(--u) / 2); background: linear-gradient(#7f84e8, var(--violet) 50%, #2f3290 51%, #3b3fa6); color: #fff; font-weight: bold; font-size: calc(13px * var(--sf)); text-shadow: 0 -1px 0 #1c1e5c; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 #23256e, 0 3px 3px rgb(0 0 0 / 0.3); cursor: pointer; }
+  .cdr-btn:hover { filter: brightness(1.12); }
+  .cdr-btn:active { translate: 0 2px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 0 0 #23256e; }
+  .cdr-btn:focus-visible { outline: 2px dotted #000; outline-offset: 3px; }
+  .cdr-btn.small { height: calc(2 * var(--u)); font-size: calc(12px * var(--sf)); }
+  .cdr-glyph { width: var(--u); height: var(--u); background: #fff; mask: var(--m) center / contain no-repeat; }
+  .g-home { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 5L5 1L9 5H8V9H6V6H4V9H2V5Z'/%3E%3C/svg%3E"); }
+  .g-back { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 5L5 1V3.5H9V6.5H5V9Z'/%3E%3C/svg%3E"); }
+  .g-find { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='4' cy='4' r='2.6' fill='none' stroke='%23000' stroke-width='1.4'/%3E%3Cpath d='M6 6L9 9' stroke='%23000' stroke-width='1.8'/%3E%3C/svg%3E"); }
+  .g-atlas { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='3.8' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3Cpath d='M1.2 5H8.8M5 1.2C3 3.5 3 6.5 5 8.8C7 6.5 7 3.5 5 1.2' fill='none' stroke='%23000' stroke-width='0.9'/%3E%3C/svg%3E"); }
+  .g-time { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M0.5 5H9.5M2 3V7M5 2V8M8 3V7' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E"); }
+  .g-sound { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.5H3L6 1V9L3 6.5H1Z'/%3E%3Cpath d='M7.2 3.2C8 4 8 6 7.2 6.8M8.4 2C9.8 3.5 9.8 6.5 8.4 8' fill='none' stroke='%23000' stroke-width='0.8'/%3E%3C/svg%3E"); }
+  .cdr-logo { margin-left: auto; font-family: 'Arial Black', Impact, sans-serif; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); font-style: italic; letter-spacing: -0.03em; background: linear-gradient(#fff 0%, #9aa3b5 48%, #3b4253 50%, #c5ccd9 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1px #2b3040; }
+  .cdr-logo b { color: #ffcc00; -webkit-text-stroke: 1px #7a4a00; margin-left: 0.15em; }
+
+  /* The tree of topics, dark, a square a line. */
+  .cdr-side { grid-column: 1 / span 12; grid-row: 6 / -2; display: grid; grid-template-rows: calc(2 * var(--u)) 1fr auto; background: var(--side); color: #c9cff0; box-shadow: inset -3px 0 0 #0b1030; }
+  .cdr-side-head { padding-inline: var(--u); line-height: calc(2 * var(--u)); color: #ffcc00; font-weight: bold; font-size: calc(15px * var(--sf)); }
+  .cdr-tree { overflow: hidden; }
+  .cdr-tree li { padding-left: calc(var(--d) * var(--u)); }
+  .cdr-topic { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: calc(var(--u) / 3); width: 100%; height: var(--u); padding-inline: var(--u); cursor: pointer; white-space: nowrap; }
+  .cdr-topic.folder { cursor: default; color: #fff; font-weight: bold; }
+  .cdr-topic.disc2 { color: #8088b8; }
+  .cdr-topic:hover:not(.folder) { color: #fff; background: rgb(255 255 255 / 0.08); }
+  .cdr-topic[aria-current] { background: #ffcc00; color: #18204a; font-weight: bold; }
+  .cdr-topic:focus-visible { outline: 1px dotted #ffcc00; outline-offset: -2px; }
+  .cdr-twisty { display: inline-grid; place-items: center; width: calc(var(--u) * 0.6); font-family: Verdana, sans-serif; font-size: calc(11px * var(--sf)); }
+  .cdr-media { width: calc(var(--u) * 0.6); height: calc(var(--u) * 0.6); margin-left: auto; background: currentColor; }
+  .m-video { mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 2H7V8H1ZM7 4L9.5 2.5V7.5L7 6Z'/%3E%3C/svg%3E") center / contain no-repeat; }
+  .m-sound { mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.5H3L6 1V9L3 6.5H1Z'/%3E%3C/svg%3E") center / contain no-repeat; }
+  .cdr-side-foot { padding: var(--u); font-size: calc(11px * var(--sf)); color: #7f88bf; }
+
+  /* The article. */
+  .cdr-page { grid-column: 13 / -1; grid-row: 6 / -2; display: grid; grid-template-columns: var(--u) calc(var(--text-cols, 28) * var(--u)) 1fr calc(16 * var(--u)) var(--u); grid-template-rows: var(--u) calc(4 * var(--u)) var(--u) calc(13 * var(--u)) var(--u) 1fr calc(2 * var(--u)) var(--u); position: relative; overflow: hidden; background: #fff; }
+  .cdr-band { grid-column: 2 / 4; grid-row: 2; display: grid; grid-template-rows: calc(3 * var(--u)) var(--u); padding-inline: var(--u); background: linear-gradient(100deg, #10307e, #3a6fc9 45%, #9cc7ef 80%, #fff); color: #fff; }
+  .cdr-band h1 { font-family: 'Arial Black', Impact, sans-serif; font-weight: 900; font-size: calc(38px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.02em; text-shadow: 2px 2px 0 #071a4a, 4px 4px 0 rgb(0 0 0 / 0.2); }
+  .cdr-band p { font-style: italic; color: #dbe8ff; }
+  .cdr-text { grid-column: 2 / 4; grid-row: 4 / -2; font-family: Georgia, 'Times New Roman', serif; font-size: calc(14px * var(--sf)); max-width: calc(var(--text-cols, 28) * var(--u)); padding-left: var(--u); overflow: hidden; }
+  .cdr-text p + p { margin-top: var(--u); }
+  .cdr-text a { color: var(--link); text-decoration: underline; font-weight: bold; }
+  .cdr-text a:hover { color: #c0362c; }
+  .cdr-text a:focus-visible { outline: 1px dotted var(--link); }
+
+  .cdr-video { grid-column: 4; grid-row: 2 / span 3; display: grid; grid-template-rows: calc(12 * var(--u)) calc(2 * var(--u)) calc(4 * var(--u)); }
+  .cdr-screen { background: #000; box-shadow: inset 0 0 0 2px #000, 0 0 0 2px #7a808a, 0 0 0 4px #d7dbe1; }
+  .cdr-screen canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  .cdr-controls { display: grid; grid-template-columns: calc(2 * var(--u)) calc(2 * var(--u)) 1fr calc(5 * var(--u)); align-items: center; gap: 0; background: linear-gradient(#e8ebef, #b7bdc6); border-top: 1px solid #fff; }
+  .cdr-ctl { all: unset; display: grid; place-items: center; height: calc(2 * var(--u)); cursor: pointer; }
+  .cdr-ctl:focus-visible { outline: 1px dotted #000; outline-offset: -3px; }
+  .cdr-ctl span { width: calc(var(--u) * 0.6); height: calc(var(--u) * 0.6); background: #30343c; }
+  .ico-play { clip-path: polygon(10% 0, 100% 50%, 10% 100%); }
+  .ico-pause { clip-path: polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 65% 0, 100% 0, 100% 100%, 65% 100%, 65% 0); }
+  .cdr-controls input { width: 100%; margin: 0; accent-color: var(--violet); }
+  .cdr-controls output { font-family: 'Andale Mono', Menlo, monospace; font-size: calc(11px * var(--sf)); text-align: center; color: #30343c; }
+  .cdr-video figcaption { padding-top: var(--u); font-size: calc(11px * var(--sf)); color: #555; }
+  .cdr-more { grid-column: 4; grid-row: 6 / span 2; display: flex; flex-direction: column; gap: var(--u); min-height: 0; overflow: hidden; }
+  .cdr-facts { padding: var(--u); background: #fff9d6; border: 1px solid #d8c66e; box-sizing: border-box; overflow: hidden; font-size: calc(12px * var(--sf)); }
+  .cdr-facts h2 { font-size: calc(13px * var(--sf)); color: #8a5a00; }
+  .cdr-facts { align-self: stretch; }
+  .cdr-also { margin-top: var(--u); }
+  .cdr-also h2, .cdr-know b { font-family: 'Trebuchet MS', Verdana, sans-serif; font-size: calc(13px * var(--sf)); color: #10307e; }
+  .cdr-also ul { columns: 3; column-gap: var(--u); }
+  .cdr-also a { font-weight: normal; }
+  .cdr-know { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; gap: var(--u); margin-top: var(--u); padding: var(--u); background: #eef4ff; border-left: calc(var(--u) / 4) solid #3a6fc9; font-family: 'Trebuchet MS', Verdana, sans-serif; font-size: calc(13px * var(--sf)); }
+  .cdr-know p { margin: 0 !important; }
+  .cdr-bulb { width: calc(2 * var(--u)); height: calc(2 * var(--u)); background: radial-gradient(circle at 40% 35%, #fff9c4, #ffd400 45%, #e0a000 70%, transparent 71%) 0 0 / 100% 80% no-repeat, linear-gradient(#9aa3b5, #5b6475) 50% 100% / 40% 25% no-repeat; }
+  .cdr-facts dl div { display: grid; grid-template-columns: calc(5 * var(--u)) 1fr; }
+  .cdr-facts dt { font-weight: bold; }
+  .cdr-sound { flex: none; }
+
+  .cdr-status { grid-column: 1 / -1; grid-row: -2; display: flex; gap: 2px; padding: 2px; box-sizing: border-box; background: #c0c0c0; font-family: Verdana, sans-serif; font-size: calc(10px * var(--sf)); line-height: calc(var(--u) - 4px); }
+  .cdr-status span { padding-inline: calc(var(--u) / 2); box-shadow: inset 1px 1px #808080, inset -1px -1px #fff; }
+  .cdr-status span:first-child { width: calc(12 * var(--u)); }
+
+  .cdr-dialog { position: absolute; z-index: 5; left: 50%; top: 40%; translate: -50% -50%; width: calc(18 * var(--u)); background: #c0c0c0; box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, 4px 4px 0 rgb(0 0 0 / 0.35); display: grid; grid-template-rows: var(--u) auto calc(3 * var(--u)); justify-items: center; font-family: Verdana, sans-serif; font-size: calc(12px * var(--sf)); }
+  .cdr-dialog[hidden] { display: none; }
+  .cdr-dialog-title { justify-self: stretch; margin: 2px !important; padding-inline: calc(var(--u) / 2); background: linear-gradient(90deg, var(--navy), #1084d0); color: #fff; font-weight: bold; line-height: calc(var(--u) - 4px); }
+  .cdr-dialog p:not(.cdr-dialog-title) { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; gap: var(--u); padding: var(--u); }
+  .cdr-cd { width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: 50%; background: conic-gradient(from 30deg, #e9e9f2, #b7f3ff, #f7d5ff, #fff6b5, #c8ffd0, #e9e9f2); mask: radial-gradient(circle, transparent 15%, #000 17%); }
+  .cdr-dialog .cdr-btn { align-self: start; padding-inline: calc(2 * var(--u)); }
+
+  /* Narrow: the title bar, the article and its video, then the topics. */
+  :root[data-narrow] .cdr { padding-bottom: var(--u); }
+  :root[data-narrow] .cdr > * { grid-row: auto; grid-column: 1 / -1; }
+  :root[data-narrow] .cdr-title { height: calc(2 * var(--u)); font-size: calc(11px * var(--sf)); }
+  :root[data-narrow] .cdr-title > span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :root[data-narrow] .cdr-tools { height: calc(3 * var(--u)); overflow-x: auto; gap: calc(var(--u) / 2); }
+  :root[data-narrow] .cdr-tools .cdr-btn:nth-child(n+3), :root[data-narrow] .cdr-logo { display: none; }
+  :root[data-narrow] .cdr-page { display: flex; flex-direction: column; gap: var(--u); padding: var(--u); }
+  :root[data-narrow] .cdr-text { padding: 0; max-width: none; }
+  :root[data-narrow] .cdr-video { grid-template-rows: auto calc(2 * var(--u)) auto; }
+  :root[data-narrow] .cdr-screen { aspect-ratio: 4 / 3; }
+  :root[data-narrow] .cdr-band h1 { font-size: calc(23px * var(--sf)); }
+  :root[data-narrow] .cdr-also ul { columns: 2; }
+  :root[data-narrow] .cdr-side { order: 5; grid-template-rows: auto; }
+  :root[data-narrow] .cdr-status { order: 6; height: var(--u); overflow: hidden; }
+  :root[data-narrow] .cdr-status span:not(:first-child) { display: none; }
+  :root[data-narrow] .cdr-dialog { position: fixed; width: calc(12 * var(--u)); }
+</style>

@@ -1,0 +1,241 @@
+---
+// After a page of a chess problem book: one diagram, its dark squares hatched as the old blocks
+// printed them, each square of the board a whole number of squares of the grid. The solution is
+// printed upside down at the foot, as such books do; turned the right way up, its moves play on
+// the diagram. The problem is sound: 1.Rc5! is the only key, checked by machine.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="chess-problem" theme="light">
+  <main class="stage cp" id="cp">
+    <p class="cp-runhead"><span>IV. Batteries</span><span>57</span></p>
+
+    <figure class="cp-diagram" id="diagram" aria-labelledby="cp-stip">
+      <div class="cp-board" id="board" role="img" aria-label="White: king b8, queen h6, rook c2, knight f6. Black: king a6, pawn g3."></div>
+      <div class="cp-files" aria-hidden="true"><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span></div>
+      <div class="cp-ranks" aria-hidden="true"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+    </figure>
+
+    <header class="cp-head">
+      <p class="cp-no">No. 56</p>
+      <h1 class="cp-composer">Agnete Rask</h1>
+      <p class="cp-source">First prize, Tidskrift för Problemvänner, 1931</p>
+      <p class="cp-stip" id="cp-stip">White to play and mate in two moves.</p>
+      <p class="cp-count"><span>(4 + 2)</span><span class="cp-fen">1K6/8/k4N1Q/8/8/6p1/2R5/8</span></p>
+    </header>
+
+    <p class="cp-note">The knight standing in front of the queen is a loaded battery: wherever it steps, the queen gives check along the sixth rank. The question is only where the black king may then run, and how a quiet move can take the run away.</p>
+
+    <section class="cp-solution" id="solution" data-turned="false" aria-labelledby="cp-sol-title">
+      <div class="cp-turn" id="turn">
+        <h2 id="cp-sol-title">Solution to No. 56</h2>
+        <ol class="cp-lines">
+          <li><button type="button" data-moves="c2c5" disabled>1. Rc5!</button> <span>Threat: 2. N any, mate</span></li>
+          <li><button type="button" data-moves="c2c5 a6b6 f6d7" disabled>1. … Kb6 2. Nd7 mate</button> <span>(2. Ne4 also)</span></li>
+          <li><button type="button" data-moves="c2c5 g3g2 f6d5" disabled>1. … g2 2. Nd5 mate</button> <span>or any knight move</span></li>
+          <li class="cp-tries"><button type="button" data-moves="h6h5 a6b6" disabled>1. Qh5? Kb6!</button> <button type="button" data-moves="h6g5 a6b6" disabled>1. Qg5? Kb6!</button></li>
+        </ol>
+        <p class="cp-comment">The rook cuts the fifth rank, and from c5 it is guarded by the very knight that mates. Black has two moves and both lose.</p>
+      </div>
+    </section>
+    <div class="cp-actions">
+      <button type="button" class="cp-reveal" id="reveal" aria-controls="solution">Turn the solution the right way up</button>
+      <button type="button" class="cp-reset" id="reset" hidden>Set the diagram up again</button>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // Figurines: a white piece is its outline over a white-filled silhouette, so the hatching stays outside it.
+  const GLYPH: Record<string, string> = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' };
+  const OUTLINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙' };
+  const START: Record<string, string> = { b8: 'K', h6: 'Q', c2: 'R', f6: 'N', a6: 'k', g3: 'p' };
+  const VS = '︎';
+
+  const board = document.getElementById('board')!;
+  const solution = document.getElementById('solution')!;
+  const reveal = document.getElementById('reveal') as HTMLButtonElement;
+  const reset = document.getElementById('reset') as HTMLButtonElement;
+  let pieces = new Map<string, HTMLElement>();
+  let playing = 0;
+
+  const fileOf = (sq: string) => sq.charCodeAt(0) - 97;
+  const rankOf = (sq: string) => Number(sq[1]) - 1;
+  const put = (el: HTMLElement, sq: string) => {
+    el.style.left = `calc(${fileOf(sq)} * var(--cell))`;
+    el.style.top = `calc(${7 - rankOf(sq)} * var(--cell))`;
+  };
+
+  function setUp() {
+    board.querySelectorAll('.cp-piece, .cp-mark').forEach(el => el.remove());
+    pieces = new Map();
+    for (const [sq, code] of Object.entries(START)) {
+      const white = code === code.toUpperCase();
+      const kind = code.toUpperCase();
+      const el = document.createElement('span');
+      el.className = `cp-piece ${white ? 'is-white' : 'is-black'}`;
+      el.innerHTML = white ? `<i>${GLYPH[kind]}${VS}</i><b>${OUTLINE[kind]}${VS}</b>` : `<b>${GLYPH[kind]}${VS}</b>`;
+      put(el, sq);
+      board.appendChild(el);
+      pieces.set(sq, el);
+    }
+  }
+
+  function mark(sq: string) {
+    const el = document.createElement('span');
+    el.className = 'cp-mark';
+    put(el, sq);
+    board.appendChild(el);
+  }
+
+  /** Plays a line from the diagram's setting, one move a beat. */
+  async function play(moves: string[]) {
+    const run = ++playing;
+    setUp();
+    reset.hidden = false;
+    const beat = reducedMotion() ? 0 : 520;
+    for (const move of moves) {
+      if (beat) await new Promise(r => setTimeout(r, beat));
+      if (run !== playing) return;
+      const from = move.slice(0, 2), to = move.slice(2, 4);
+      board.querySelectorAll('.cp-mark').forEach(el => el.remove());
+      pieces.get(to)?.remove();
+      const el = pieces.get(from)!;
+      pieces.delete(from);
+      put(el, to);
+      pieces.set(to, el);
+      mark(from); mark(to);
+    }
+  }
+
+  reveal.addEventListener('click', () => {
+    const turned = solution.dataset.turned === 'true';
+    solution.dataset.turned = String(!turned);
+    reveal.textContent = turned ? 'Turn the solution the right way up' : 'Turn it back over';
+    solution.querySelectorAll<HTMLButtonElement>('button').forEach(b => (b.disabled = turned));
+  });
+  solution.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-moves]');
+    if (!button) return;
+    solution.querySelectorAll('[aria-pressed]').forEach(b => b.removeAttribute('aria-pressed'));
+    button.setAttribute('aria-pressed', 'true');
+    play(button.dataset.moves!.split(' '));
+  });
+  reset.addEventListener('click', () => {
+    playing++;
+    setUp();
+    reset.hidden = true;
+    solution.querySelectorAll('[aria-pressed]').forEach(b => b.removeAttribute('aria-pressed'));
+  });
+
+  // The board takes as many grid squares to a board square as the height allows, and sits in the
+  // middle of the window's height; the text column begins four squares to its right.
+  onSquares(({ across, down, narrow }) => {
+    const stage = document.getElementById('cp')!;
+    if (narrow) {
+      stage.style.setProperty('--cell', 'calc(1.5 * var(--u))');
+      return;
+    }
+    const n = Math.max(2, Math.min(5, Math.floor((down - 8) / 8), Math.floor((across - 26) / 8)));
+    const top = Math.max(4, Math.floor((down - 8 * n) / 2));
+    stage.style.setProperty('--cell', `calc(${n} * var(--u))`);
+    stage.style.setProperty('--n8', String(8 * n));
+    const left = 5;
+    const text = left + 8 * n + 4;
+    const set = (el: Element | null, col: string, row: string) => { const s = (el as HTMLElement).style; s.gridColumn = col; s.gridRow = row; };
+    set(document.getElementById('diagram'), `${left} / span ${8 * n}`, `${top} / span ${8 * n}`);
+    set(document.querySelector('.cp-head'), `${text} / -3`, `${top} / span 13`);
+    set(document.querySelector('.cp-note'), `${text} / -3`, `${top + 14} / span 5`);
+    set(document.getElementById('solution'), `${text} / -3`, `${top + 8 * n - 10} / span 10`);
+    set(document.querySelector('.cp-actions'), `${text} / -3`, `${top + 8 * n + 1} / span 1`);
+  });
+
+  setUp();
+</script>
+
+<style is:global>
+  html { background: #eeeee8; }
+  .cp {
+    --paper: #eeeee8;
+    --ink: #161614;
+    --red: #9e1b1b;
+    --cell: calc(4 * var(--u));
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Big Caslon', 'Hoefler Text', Baskerville, var(--typeface-canon), serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .cp button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  .cp button:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+
+  .cp-runhead { grid-column: 5 / -3; grid-row: 2; display: flex; justify-content: space-between; margin: 0; font-style: italic; font-size: calc(13px * var(--sf)); border-bottom: 1px solid var(--ink); }
+
+  /* The diagram: a frame, the board of hatched and plain squares, letters and figures outside. */
+  .cp-diagram { position: relative; margin: 0; grid-column: 5 / span 32; grid-row: 6 / span 32; }
+  .cp-board {
+    position: relative; width: calc(8 * var(--cell)); height: calc(8 * var(--cell));
+    background:
+      repeating-linear-gradient(45deg, var(--ink) 0 1px, transparent 1px calc(var(--cell) / 9)),
+      #fff;
+    /* Plain squares are laid over the hatching as a chequer, so only the dark ones keep it. */
+    outline: calc(2px * var(--sf)) solid var(--ink); outline-offset: calc(3px * var(--sf));
+    box-shadow: 0 0 0 1px var(--ink);
+  }
+  .cp-board::before {
+    content: ''; position: absolute; inset: 0;
+    background: conic-gradient(transparent 0 25%, #fff 0 50%, transparent 0 75%, #fff 0) 0 0 / calc(2 * var(--cell)) calc(2 * var(--cell));
+  }
+  .cp-files, .cp-ranks { position: absolute; display: grid; font-style: italic; font-size: calc(12px * var(--sf)); color: #555; }
+  .cp-files { left: 0; top: calc(8 * var(--cell) + var(--u) / 2); width: calc(8 * var(--cell)); grid-template-columns: repeat(8, 1fr); text-align: center; line-height: var(--u); }
+  .cp-ranks { top: 0; left: calc(-1 * var(--u)); height: calc(8 * var(--cell)); grid-template-rows: repeat(8, 1fr); align-items: center; width: calc(var(--u) / 2); text-align: center; }
+  .cp-piece {
+    position: absolute; width: var(--cell); height: var(--cell); display: grid; place-items: center;
+    font-family: 'Apple Symbols', 'Segoe UI Symbol', 'DejaVu Sans', serif; font-size: calc(var(--cell) * 0.86); line-height: 1;
+    transition: left 420ms cubic-bezier(0.3, 0.7, 0.2, 1), top 420ms cubic-bezier(0.3, 0.7, 0.2, 1);
+    z-index: 1;
+  }
+  .cp-piece > * { grid-area: 1 / 1; font-style: normal; font-weight: normal; }
+  .cp-piece i { color: #fff; }
+  .cp-piece b { color: var(--ink); }
+  .cp-mark { position: absolute; width: var(--cell); height: var(--cell); box-shadow: inset 0 0 0 calc(2px * var(--sf)) var(--red); pointer-events: none; }
+
+  .cp-head p, .cp-head h1 { margin: 0; }
+  .cp-no { font-size: calc(80px * var(--sf)); line-height: calc(4 * var(--u)); letter-spacing: -0.02em; }
+  .cp-composer { font-weight: normal; font-variant: small-caps; letter-spacing: 0.06em; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); margin-top: var(--u) !important; }
+  .cp-source { font-style: italic; color: #444; }
+  .cp-stip { margin-top: var(--u) !important; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .cp-count { display: flex; gap: var(--u); color: #444; font-size: calc(13px * var(--sf)); }
+  .cp-fen { font-family: var(--typeface-mono); font-size: calc(11px * var(--sf)); letter-spacing: 0.02em; }
+  .cp-note { margin: 0; max-width: calc(28 * var(--u)); text-wrap: pretty; }
+
+  /* The solution, printed upside down until the reader turns it. */
+  .cp-solution { max-width: calc(28 * var(--u)); border-top: 1px solid var(--ink); padding-top: calc(var(--u) - 1px); }
+  .cp-turn { transform: rotate(180deg); transform-origin: 50% 50%; transition: transform 700ms cubic-bezier(0.5, 0, 0.2, 1); font-size: calc(13px * var(--sf)); }
+  .cp-solution[data-turned='true'] .cp-turn { transform: none; }
+  .cp-turn h2 { margin: 0; font-weight: normal; font-style: italic; font-size: calc(13px * var(--sf)); line-height: var(--u); }
+  .cp-lines { list-style: none; margin: var(--u) 0 0; padding: 0; }
+  .cp-lines li { display: flex; gap: var(--u); flex-wrap: wrap; min-height: var(--u); }
+  .cp-lines li span { font-style: italic; color: #555; }
+  .cp-lines button { font-weight: bold; }
+  .cp-lines button:not(:disabled):hover, .cp-lines button[aria-pressed] { color: var(--red); text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .cp-lines button:disabled { cursor: default; }
+  .cp-tries button { font-weight: normal !important; }
+  .cp-comment { margin: var(--u) 0 0; font-style: italic; text-wrap: pretty; }
+  .cp-actions { display: flex; gap: calc(2 * var(--u)); align-items: center; }
+  .cp-reveal, .cp-reset { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); font-style: italic; }
+  .cp-reset { color: var(--red); }
+  .cp-reset[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .cp-turn, .cp-piece { transition: none; } }
+
+  :root[data-narrow] .cp { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .cp > * { grid-column: 2 / -2 !important; grid-row: auto !important; }
+  :root[data-narrow] .cp-runhead { margin-top: var(--u); }
+  :root[data-narrow] .cp-diagram { margin: calc(2 * var(--u)) 0 calc(2 * var(--u)); height: calc(8 * var(--cell)); }
+  :root[data-narrow] .cp-ranks { display: none; }
+  :root[data-narrow] .cp-stip { font-size: calc(16px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .cp-no { font-size: calc(60px * var(--sf)); line-height: calc(3 * var(--u)); margin-top: var(--u); }
+  :root[data-narrow] .cp-note, :root[data-narrow] .cp-solution, :root[data-narrow] .cp-actions { margin-top: var(--u); }
+  :root[data-narrow] .cp-actions { flex-direction: column; align-items: start; }
+</style>

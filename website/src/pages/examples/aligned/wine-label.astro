@@ -1,0 +1,262 @@
+---
+// After a Bordeaux label and a merchant's vintage chart, for tap water. The window is the bottle:
+// deep burgundy glass with a highlight running down it. The label carries an engraving of the
+// château, which is a water tower; the chart beside it rates the years by their rainfall, a square
+// of gold for every hundred millimetres.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const VINTAGES = [
+  { year: 2024, rain: 812, stars: 4, note: 'Young and bright, a little chlorine on the nose. Drink now; it will not keep, and it does not need to.' },
+  { year: 2023, rain: 951, stars: 5, note: 'A wet year, and it shows: generous, soft, very nearly rain. The vintage of the decade, and there is a great deal of it.' },
+  { year: 2022, rain: 640, stars: 3, note: 'A dry summer and a hosepipe ban. Concentrated, faintly of the garden, best drunk by the plants.' },
+  { year: 2021, rain: 770, stars: 4, note: 'Classic. Cold and straight, with a clean finish. Run the tap a moment before pouring.' },
+  { year: 2020, rain: 702, stars: 3, note: 'Drunk almost entirely at home, from the same glass, by the same people. Honest, a little flat.' },
+  { year: 2019, rain: 845, stars: 4, note: 'Lively. The pipes under the street were replaced in March; some find notes of new copper.' },
+  { year: 2018, rain: 498, stars: 2, note: 'The drought. Thin and warm, with the inside of a kettle on the finish. For the collector only.' },
+  { year: 2017, rain: 880, stars: 4, note: 'Long and mineral. Limescale in every kettle in the district by May, which is a good sign.' },
+  { year: 2016, rain: 735, stars: 3, note: 'Pleasant, unremarkable, poured mainly for guests who said they didn’t want anything.' },
+  { year: 2015, rain: 910, stars: 4, note: 'Full and round. Several readers report it tasted better from a glass bottle in a restaurant.' },
+];
+---
+<AlignedStudy slug="wine-label" theme="dark">
+  <main class="stage wl" id="wl">
+    <div class="wl-glass" aria-hidden="true"></div>
+
+    <section class="wl-label" aria-labelledby="wl-name">
+      <p class="wl-grand">Grand Vin du Robinet</p>
+      <svg class="wl-engraving" viewBox="0 0 20 11" role="img" aria-label="An engraving of the château: a brick water tower with a conical roof between poplars">
+        <defs>
+          <pattern id="wl-sky" width="1" height="0.2" patternUnits="userSpaceOnUse"><path d="M0 0.1 H1" stroke="#3a1a20" stroke-width="0.035" /></pattern>
+          <pattern id="wl-ground" width="1" height="0.14" patternUnits="userSpaceOnUse"><path d="M0 0.07 H1" stroke="#3a1a20" stroke-width="0.05" /></pattern>
+          <pattern id="wl-vert" width="0.16" height="1" patternUnits="userSpaceOnUse"><path d="M0.08 0 V1" stroke="#2a1216" stroke-width="0.055" /></pattern>
+          <pattern id="wl-fine" width="0.24" height="1" patternUnits="userSpaceOnUse"><path d="M0.12 0 V1" stroke="#2a1216" stroke-width="0.03" /></pattern>
+          <pattern id="wl-cross" width="0.2" height="0.2" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0.1 H0.2 M0.1 0 V0.2" stroke="#2a1216" stroke-width="0.04" /></pattern>
+          <pattern id="wl-leaf" width="0.18" height="0.18" patternUnits="userSpaceOnUse" patternTransform="rotate(-60)"><path d="M0 0.09 H0.18" stroke="#2a1216" stroke-width="0.06" /></pattern>
+          <linearGradient id="wl-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.15" /><stop offset="0.7" stop-color="#fff" stop-opacity="1" /></linearGradient>
+          <mask id="wl-sky-mask"><rect width="20" height="9.4" fill="url(#wl-fade)" /><ellipse cx="4.6" cy="2.2" rx="3" ry="0.7" fill="#000" /><ellipse cx="6.2" cy="1.7" rx="1.8" ry="0.6" fill="#000" /><ellipse cx="15.6" cy="3.4" rx="2.6" ry="0.55" fill="#000" /></mask>
+        </defs>
+        <rect width="20" height="9.4" fill="url(#wl-sky)" mask="url(#wl-sky-mask)" />
+        <!-- The ground and a path up to the door. -->
+        <path d="M0 9.4 Q10 9 20 9.4 V11 H0 Z" fill="url(#wl-ground)" />
+        <path d="M9.3 11 L9.75 9.7 H10.25 L10.7 11 Z" fill="#f3eee2" />
+        <!-- Poplars. -->
+        <g>
+          <ellipse cx="3.4" cy="6.4" rx="0.75" ry="3.1" fill="url(#wl-leaf)" />
+          <ellipse cx="4.7" cy="7" rx="0.6" ry="2.5" fill="url(#wl-leaf)" />
+          <ellipse cx="15.4" cy="6.6" rx="0.7" ry="2.9" fill="url(#wl-leaf)" />
+          <ellipse cx="16.7" cy="7.2" rx="0.55" ry="2.3" fill="url(#wl-leaf)" />
+          <path d="M3.4 9.5 V8.8 M4.7 9.5 V9 M15.4 9.5 V8.9 M16.7 9.5 V9.1" stroke="#2a1216" stroke-width="0.08" />
+        </g>
+        <!-- The tower: shaft, the tank as a keep, the roof. -->
+        <g stroke="#2a1216" stroke-width="0.05">
+          <path d="M8.7 9.6 L8.9 4.9 H11.1 L11.3 9.6 Z" fill="#f3eee2" />
+          <path d="M10.5 4.9 H11.1 L11.3 9.6 H10.65 Z" fill="url(#wl-vert)" stroke="none" />
+          <path d="M9.6 4.9 H10.5 L10.65 9.6 H9.7 Z" fill="url(#wl-fine)" stroke="none" />
+          <path d="M8.9 6.2 H11.1 M8.85 7.4 H11.15 M8.8 8.6 H11.2" stroke-width="0.03" />
+          <path d="M9.65 9.6 V8.7 A0.35 0.35 0 0 1 10.35 8.7 V9.6 Z" fill="#2a1216" />
+          <path d="M9.85 7 V6.6 A0.15 0.15 0 0 1 10.15 6.6 V7 Z" fill="#2a1216" />
+          <path d="M8.5 4.9 H11.5 L11.8 4.5 H8.2 Z" fill="#f3eee2" />
+          <path d="M8.2 4.5 V2.6 H11.8 V4.5 Z" fill="#f3eee2" />
+          <path d="M11 2.6 H11.8 V4.5 H11 Z" fill="url(#wl-vert)" stroke="none" />
+          <path d="M8.4 3.1 V3.9 A0.18 0.18 0 0 0 8.76 3.9 V3.1 Z M9.3 3.1 V3.9 A0.18 0.18 0 0 0 9.66 3.9 V3.1 Z M10.2 3.1 V3.9 A0.18 0.18 0 0 0 10.56 3.9 V3.1 Z M11.1 3.1 V3.9 A0.18 0.18 0 0 0 11.46 3.9 V3.1 Z" fill="#2a1216" stroke="none" />
+          <path d="M8 2.6 H12 V2.35 H8 Z" fill="#f3eee2" />
+          <path d="M8 2.35 V2 H8.4 V2.35 M8.8 2.35 V2 H9.2 V2.35 M9.6 2.35 V2 H10.4 V2.35 M10.8 2.35 V2 H11.2 V2.35 M11.6 2.35 V2 H12 V2.35" fill="none" />
+          <path d="M8.5 2 L10 0.35 L11.5 2 Z" fill="url(#wl-cross)" />
+          <path d="M10 0.35 V-0.2 M9.75 0 H10.25" stroke-width="0.04" />
+          <path d="M10 -0.2 L10.6 -0.05 L10 0.1" fill="#2a1216" stroke-width="0.02" />
+        </g>
+        <!-- A bird, for scale. -->
+        <path d="M13.2 1.4 q0.2 -0.2 0.4 0 q0.2 -0.2 0.4 0 M14.4 2 q0.15 -0.15 0.3 0 q0.15 -0.15 0.3 0" stroke="#2a1216" stroke-width="0.04" fill="none" />
+      </svg>
+      <h1 id="wl-name">Château d’Eau</h1>
+      <p class="wl-aoc">Appellation Robinet Contrôlée</p>
+      <p class="wl-cru">Premier Cru de Cuisine</p>
+      <p class="wl-year">2024</p>
+      <p class="wl-bottled">Mis en bouteille au robinet<br />Réservoir de la Colline, Frederiksberg</p>
+      <p class="wl-measure"><span>100 cl</span><span>0 % vol.</span></p>
+    </section>
+
+    <section class="wl-notes" aria-labelledby="wl-notes-title">
+      <h2 id="wl-notes-title">Tasting notes</h2>
+      <dl>
+        <div><dt>Robe</dt><dd>None, of brilliant clarity. Hold it up to the window and see the window.</dd></div>
+        <div><dt>Nose</dt><dd>Cold stone, a hint of the public baths, the faint idea of a lemon.</dd></div>
+        <div><dt>Palate</dt><dd>Wet. A long finish that lasts until you are thirsty again.</dd></div>
+        <div><dt>Food</dt><dd>Everything, and especially being thirsty.</dd></div>
+        <div><dt>Serve</dt><dd>At 11 °C, from the cold tap after running it a moment. Decanting optional; a jug is fine.</dd></div>
+      </dl>
+    </section>
+
+    <section class="wl-chart" aria-labelledby="wl-chart-title">
+      <h2 id="wl-chart-title">Vintages</h2>
+      <p class="wl-key">A square for every 100 mm of rain over the reservoir</p>
+      <ol class="wl-years" data-own-keys>
+        {VINTAGES.map((v, index) => (
+          <li>
+            <button type="button" data-note={v.note} data-year={v.year} aria-pressed={index === 1 ? 'true' : 'false'} style={`--rain: ${Math.round(v.rain / 100)}`}>
+              <span class="wl-y">{v.year}</span>
+              <span class="wl-bar" aria-hidden="true"></span>
+              <span class="wl-mm">{v.rain} mm</span>
+              <span class="wl-stars" aria-label={`${v.stars} of 5`}>{'●'.repeat(v.stars)}<i>{'●'.repeat(5 - v.stars)}</i></span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <p class="wl-note" id="wl-note" aria-live="polite"><b>2023</b> {VINTAGES[1].note}</p>
+    </section>
+    <p class="wl-small">Contains no sulphites, no grapes and no alcohol. Contains water. Enjoy responsibly, several times a day.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const stage = document.getElementById('wl') as HTMLElement;
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) return;
+    const label = across >= 68 ? 22 : 20;
+    const chart = 24;
+    const notes = Math.max(8, across - 10 - label - chart);
+    const high = 28;
+    const top = Math.max(2, Math.floor((down - high) / 2) + 1);
+    const set = (name: string, value: number) => stage.style.setProperty(name, String(value));
+    set('--wl-notes', notes);
+    set('--wl-label-at', 3 + notes + 3);
+    set('--wl-label', label);
+    set('--wl-top', top);
+    set('--wl-high', Math.min(high, down - 2));
+  });
+
+  // A year in the chart pours its note beneath it; the arrow keys walk the years.
+  const note = document.getElementById('wl-note')!;
+  const years = [...document.querySelectorAll<HTMLButtonElement>('.wl-years button')];
+  const pour = (button: HTMLButtonElement) => {
+    years.forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+    note.innerHTML = `<b>${button.dataset.year}</b> ${button.dataset.note}`;
+  };
+  years.forEach((button, index) => {
+    button.addEventListener('click', () => pour(button));
+    button.addEventListener('pointerenter', () => pour(button));
+    button.addEventListener('keydown', event => {
+      const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+      if (!step) return;
+      event.preventDefault();
+      const next = years[(index + step + years.length) % years.length];
+      next.focus();
+      pour(next);
+    });
+  });
+</script>
+
+<style is:global>
+  html { background: #2a0811; }
+  .wl {
+    --gold: #cfae66;
+    --gold-pale: #e9d6a6;
+    --paper: #f3eee2;
+    --ink: #2a1216;
+    --wl-notes: 16;
+    --wl-label-at: 22;
+    --wl-label: 22;
+    --wl-top: 9;
+    --wl-high: 28;
+    color: var(--gold-pale);
+    font-family: Didot, 'Bodoni 72', var(--typeface-canon), serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+    /* The bottle: glass darkest at its edges, a red glow where the light comes through. */
+    background:
+      radial-gradient(ellipse 60% 90% at 52% 55%, #6b1426 0%, #4a0c1a 45%, #2a0610 85%),
+      #2a0811;
+  }
+  /* The highlight running down the glass. */
+  .wl-glass {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent 14%, rgba(255, 220, 225, 0.05) 16%, rgba(255, 235, 238, 0.22) 18.5%, rgba(255, 220, 225, 0.04) 21%, transparent 23%),
+      linear-gradient(90deg, transparent 88%, rgba(255, 210, 215, 0.08) 91%, transparent 93%),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent 9%, transparent 91%, rgba(0, 0, 0, 0.5));
+  }
+
+  /* The label: paper on a curve, with a gold double rule. */
+  .wl-label {
+    grid-column: var(--wl-label-at) / span var(--wl-label);
+    grid-row: var(--wl-top) / span var(--wl-high);
+    z-index: 1;
+    position: relative;
+    display: grid;
+    grid-template-rows: calc(2 * var(--u)) calc(11 * var(--u)) calc(3 * var(--u)) var(--u) var(--u) calc(3 * var(--u)) calc(2 * var(--u)) var(--u);
+    align-content: center;
+    justify-items: center;
+    padding: var(--u);
+    box-sizing: border-box;
+    background:
+      linear-gradient(90deg, rgba(60, 20, 20, 0.22), transparent 14%, transparent 70%, rgba(60, 20, 20, 0.28)),
+      var(--paper);
+    color: var(--ink);
+    outline: 2px solid var(--gold);
+    outline-offset: calc(-0.5 * var(--u));
+    box-shadow: inset 0 0 0 calc(0.5 * var(--u) + 5px) var(--paper), inset 0 0 0 calc(0.5 * var(--u) + 6px) var(--gold);
+    overflow: hidden;
+  }
+  .wl-grand { margin: 0; align-self: center; font-family: 'Snell Roundhand', 'Apple Chancery', cursive; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); color: #8a6a2a; }
+  .wl-engraving { width: calc(20 * var(--u)); height: calc(11 * var(--u)); max-width: 100%; overflow: visible; }
+  .wl-label h1 { margin: 0; font-family: Copperplate, 'Copperplate Gothic Light', serif; font-weight: normal; font-size: calc(40px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: 0.04em; white-space: nowrap; }
+  .wl-aoc { margin: 0; font-family: Copperplate, serif; font-size: calc(12px * var(--sf)); letter-spacing: 0.08em; color: #8a6a2a; }
+  .wl-cru { margin: 0; font-style: italic; font-size: calc(14px * var(--sf)); }
+  .wl-year { margin: 0; font-family: Didot, 'Bodoni 72', serif; font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); color: #7a1424; }
+  .wl-bottled { margin: 0; text-align: center; font-size: calc(11px * var(--sf)); line-height: var(--u); font-style: italic; }
+  .wl-measure { display: flex; justify-content: space-between; width: 100%; margin: 0; padding-inline: var(--u); box-sizing: border-box; font-family: Copperplate, serif; font-size: calc(12px * var(--sf)); }
+
+  /* Gold printed straight on the glass. */
+  .wl-notes, .wl-chart { z-index: 1; }
+  .wl :is(.wl-notes, .wl-chart) h2 { margin: 0 0 var(--u); font-family: Copperplate, serif; font-weight: normal; font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.06em; color: var(--gold); }
+  .wl-notes { grid-column: 3 / span var(--wl-notes); grid-row: var(--wl-top) / span var(--wl-high); align-self: center; }
+  .wl-notes dl { margin: 0; }
+  .wl-notes div { margin-bottom: var(--u); }
+  .wl-notes dt { font-family: 'Snell Roundhand', 'Apple Chancery', cursive; font-size: calc(20px * var(--sf)); color: var(--gold); }
+  .wl-notes dd { margin: 0; font-size: calc(14px * var(--sf)); color: var(--gold-pale); }
+
+  .wl-chart { grid-column: -26 / -2; grid-row: var(--wl-top) / span var(--wl-high); align-self: center; }
+  .wl-key { margin: calc(-1 * var(--u)) 0 var(--u); font-style: italic; font-size: calc(12px * var(--sf)); color: var(--gold); opacity: 0.85; }
+  .wl-years { margin: 0; padding: 0; list-style: none; border-top: 1px solid rgba(207, 174, 102, 0.4); }
+  .wl-years button {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: calc(3 * var(--u)) calc(10 * var(--u)) calc(4 * var(--u)) calc(5 * var(--u));
+    gap: 0 var(--u);
+    width: 100%;
+    height: var(--u);
+    cursor: pointer;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: calc(14px * var(--sf));
+  }
+  .wl-bar { height: var(--u); width: calc(var(--rain) * var(--u)); background: repeating-linear-gradient(90deg, var(--gold) 0 calc(var(--u) - 2px), transparent 0 var(--u)); background-clip: content-box; padding-block: 3px; box-sizing: border-box; opacity: 0.55; transition: opacity 0.2s ease; }
+  .wl-mm { text-align: right; color: var(--gold); font-size: calc(12px * var(--sf)); }
+  .wl-stars { color: var(--gold); font-size: calc(10px * var(--sf)); letter-spacing: 0.2em; }
+  .wl-stars i { font-style: normal; opacity: 0.25; }
+  .wl-years button[aria-pressed='true'] { color: #fff; }
+  .wl-years button[aria-pressed='true'] .wl-bar, .wl-years button:hover .wl-bar { opacity: 1; }
+  .wl-years button:focus-visible { outline: 1px solid var(--gold-pale); outline-offset: -1px; }
+  .wl-note { margin: var(--u) 0 0; min-height: calc(3 * var(--u)); font-size: calc(14px * var(--sf)); border-top: 1px solid rgba(207, 174, 102, 0.4); padding-top: calc(var(--u) - 1px); }
+  .wl-note b { font-weight: normal; color: var(--gold); margin-right: 0.4em; }
+
+  .wl-small { grid-column: 3 / -14; grid-row: -2; z-index: 1; margin: 0; font-style: italic; font-size: calc(12px * var(--sf)); color: var(--gold); opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Narrow: the label, then the notes, then the years with their bars alone. */
+  :root[data-narrow] .wl { padding-bottom: calc(3 * var(--u)); background: radial-gradient(ellipse 80% 60% at 50% 30%, #6b1426, #3a0915 80%), #2a0811; }
+  :root[data-narrow] .wl-glass { display: none; }
+  :root[data-narrow] .wl > section { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .wl-label { grid-template-rows: calc(2 * var(--u)) calc(6 * var(--u)) calc(2 * var(--u)) var(--u) var(--u) calc(3 * var(--u)) calc(3 * var(--u)) var(--u); padding: var(--u) calc(var(--u) / 2); }
+  :root[data-narrow] .wl-engraving { width: calc(11 * var(--u)); height: calc(6 * var(--u)); }
+  :root[data-narrow] .wl-label h1 { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .wl-grand { font-size: calc(20px * var(--sf)); }
+  :root[data-narrow] .wl-aoc { font-size: calc(10px * var(--sf)); letter-spacing: 0.02em; }
+  :root[data-narrow] .wl-years button { grid-template-columns: calc(2 * var(--u)) calc(10 * var(--u)); gap: 0; font-size: calc(12px * var(--sf)); }
+  :root[data-narrow] .wl-mm, :root[data-narrow] .wl-stars { display: none; }
+  :root[data-narrow] .wl-small { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); white-space: normal; }
+</style>

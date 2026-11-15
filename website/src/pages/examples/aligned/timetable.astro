@@ -1,0 +1,288 @@
+---
+// After a national railway's printed timetable: a blue and yellow livery band, the stations down
+// the left on a line diagram, trains across in columns of three squares, a time to a square, and the
+// footnotes that make the whole thing true. As many trains as the window has columns for.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type Kind = 'IC' | 'RE' | 'R';
+// Each station: minutes from Portwick for an all-stations train, and which kinds stop.
+const STATIONS: { name: string; at: number; stops: Kind[]; mark?: string; arr?: boolean; major?: boolean; dwell?: number }[] = [
+  { name: 'Portwick Central', at: 0, stops: ['IC', 'RE', 'R'], major: true },
+  { name: 'Portwick Docks', at: 4, stops: ['R'] },
+  { name: 'Crane Lane', at: 7, stops: ['R'], mark: 'x' },
+  { name: 'Halden Road', at: 10, stops: ['RE', 'R'] },
+  { name: 'Marrow Green', at: 14, stops: ['R'] },
+  { name: 'Fennick', at: 19, stops: ['RE', 'R'] },
+  { name: 'Fennick Junction', at: 23, stops: ['IC', 'RE', 'R'], arr: true, major: true, dwell: 2 },
+  { name: 'Stowe-on-Wend', at: 31, stops: ['RE', 'R'] },
+  { name: 'Kilby', at: 36, stops: ['R'], mark: 'x' },
+  { name: 'Brackenridge', at: 41, stops: ['R'] },
+  { name: 'Ravensby', at: 47, stops: ['RE', 'R'] },
+  { name: 'Skelmoor', at: 55, stops: ['IC', 'RE', 'R'], arr: true, major: true, dwell: 3 },
+  { name: 'Thornwick', at: 64, stops: ['RE', 'R'] },
+  { name: 'Low Ashby', at: 69, stops: ['R'], mark: 'x' },
+  { name: 'Ashby Fell', at: 75, stops: ['IC', 'RE', 'R'], major: true },
+];
+// Express trains run faster between stops.
+const PACE: Record<Kind, number> = { IC: 0.78, RE: 0.9, R: 1 };
+
+type Train = { no: number; kind: Kind; dep: string; from?: number; to?: number; notes?: string[] };
+const TRAINS: Train[] = [
+  { no: 3101, kind: 'R', dep: '05.12', notes: ['a'] },
+  { no: 3203, kind: 'R', dep: '05.40', from: 6 },
+  { no: 2301, kind: 'RE', dep: '05.48' },
+  { no: 1401, kind: 'IC', dep: '06.15', notes: ['R', 'cup'] },
+  { no: 3103, kind: 'R', dep: '06.22', to: 11 },
+  { no: 2303, kind: 'RE', dep: '06.44', notes: ['bike'] },
+  { no: 3105, kind: 'R', dep: '07.02' },
+  { no: 1403, kind: 'IC', dep: '07.15', notes: ['R', 'cup'] },
+  { no: 2305, kind: 'RE', dep: '07.32', notes: ['b'] },
+  { no: 3107, kind: 'R', dep: '07.50', to: 11 },
+  { no: 1405, kind: 'IC', dep: '08.15', notes: ['cup'] },
+  { no: 3109, kind: 'R', dep: '08.22' },
+  { no: 2307, kind: 'RE', dep: '08.44', notes: ['bike'] },
+  { no: 3111, kind: 'R', dep: '09.22', notes: ['a'] },
+  { no: 1407, kind: 'IC', dep: '09.15', notes: ['R', 'cup'] },
+  { no: 2309, kind: 'RE', dep: '09.44' },
+  { no: 3113, kind: 'R', dep: '10.22' },
+  { no: 1409, kind: 'IC', dep: '10.15', notes: ['cup'] },
+  { no: 2311, kind: 'RE', dep: '10.44', notes: ['bike', 'b'] },
+  { no: 3115, kind: 'R', dep: '11.22' },
+  { no: 1411, kind: 'IC', dep: '11.15', notes: ['R', 'cup'] },
+  { no: 2313, kind: 'RE', dep: '11.44' },
+].sort((a, b) => a.dep.localeCompare(b.dep));
+
+const minutes = (hhmm: string) => { const [h, m] = hhmm.split('.').map(Number); return h * 60 + m; };
+const clock = (time: number) => { const t = Math.round(time); return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}.${String(t % 60).padStart(2, '0')}`; };
+
+// Rows: a departure row per station, and an arrival row above it where the train waits.
+type Row = { name: string; kind: 'arr' | 'dep'; station: number; mark?: string; major?: boolean; first?: boolean };
+const ROWS: Row[] = STATIONS.flatMap((s, i) => s.arr
+  ? [{ name: s.name, kind: 'arr' as const, station: i, mark: s.mark, major: s.major, first: true }, { name: '', kind: 'dep' as const, station: i, major: s.major }]
+  : [{ name: s.name, kind: i === STATIONS.length - 1 ? 'arr' as const : 'dep' as const, station: i, mark: s.mark, major: s.major, first: true }]);
+
+// A train's time at a row: a time, a bar where it passes, a dash where it does not run.
+function cell(train: Train, row: Row) {
+  const from = train.from ?? 0;
+  const to = train.to ?? STATIONS.length - 1;
+  const s = STATIONS[row.station];
+  if (row.station < from || row.station > to) return { text: '', kind: 'none' };
+  if (row.station === from && row.kind === 'arr' && s.arr) return { text: '', kind: 'none' };
+  if (row.station === to && row.kind === 'dep' && s.arr) return { text: '', kind: 'none' };
+  if (!s.stops.includes(train.kind) && row.station !== from) return { text: '|', kind: 'pass' };
+  const origin = minutes(train.dep) - STATIONS[from].at * PACE[train.kind];
+  // Dwell: each earlier stop adds half a minute for the slower kinds; waits at the junctions.
+  const earlier = STATIONS.slice(from, row.station).filter(x => x.stops.includes(train.kind)).length;
+  const waits = STATIONS.slice(from, row.station).reduce((sum, x) => sum + (x.dwell && x.stops.includes(train.kind) ? x.dwell : 0), 0);
+  const base = origin + s.at * PACE[train.kind] + earlier * (train.kind === 'IC' ? 0 : 0.5) + waits;
+  const t = row.kind === 'dep' && s.arr && row.station !== from ? base + (s.dwell ?? 1) : base;
+  return { text: clock(t), kind: row.station === from || row.station === to ? 'end' : 'stop' };
+}
+
+const NOTE_TEXT: Record<string, string> = {
+  a: 'Not on public holidays',
+  b: 'Waits at Fennick Junction for the train from Orsby',
+  R: 'Seats must be reserved',
+};
+---
+<AlignedStudy slug="timetable" theme="light">
+  <main class="stage timetable">
+    <header class="livery">
+      <p class="mark" aria-hidden="true"><i></i><i></i></p>
+      <p class="railway">Northmarch Railways</p>
+      <h1>Portwick <span>to</span> Skelmoor <span>and</span> Ashby Fell</h1>
+      <p class="table-no"><span>Table</span> 47</p>
+    </header>
+    <p class="validity">Mondays to Fridays, from 14 December 2026 to 12 June 2027. Times in bold: trains that run through to Ashby Fell.</p>
+
+    <div class="sheet" id="sheet" role="table" aria-label="Train times, Portwick to Ashby Fell">
+      <div class="r head" role="row">
+        <span class="st" role="columnheader">Train</span>
+        {TRAINS.map((t, i) => <span class:list={['c', t.kind]} data-i={i} role="columnheader">{t.no}</span>)}
+      </div>
+      <div class="r kinds" role="row">
+        <span class="st" role="cell"></span>
+        {TRAINS.map((t, i) => <span class:list={['c', 'kind', t.kind]} data-i={i} role="cell">{t.kind}</span>)}
+      </div>
+      <div class="r notes" role="row">
+        <span class="st" role="cell">Notes</span>
+        {TRAINS.map((t, i) => (
+          <span class="c" data-i={i} role="cell">
+            {(t.notes ?? []).map(n => n === 'cup'
+              ? <svg viewBox="0 0 10 10" aria-label="Café car"><path d="M 2 3 h 5 v 3 a 2.5 2.5 0 0 1 -5 0 Z M 7 4 h 1 a 1 1 0 0 1 0 2 h -1" fill="none" stroke="currentColor" stroke-width="0.9" /></svg>
+              : n === 'bike' ? <svg viewBox="0 0 10 10" aria-label="Bicycles carried"><circle cx="2.5" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="0.8" /><circle cx="7.5" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="0.8" /><path d="M 2.5 6.5 L 4.5 3.5 L 7.5 6.5 M 4.5 3.5 h 2 M 4 2.5 h 1.5" fill="none" stroke="currentColor" stroke-width="0.8" /></svg>
+              : <b>{n}</b>)}
+          </span>
+        ))}
+      </div>
+      {ROWS.map((row, ri) => (
+        <div class:list={['r', 'time', { major: row.major, first: row.first, last: ri === ROWS.length - 1 }]} role="row">
+          <span class="st" role="rowheader">
+            <i class="line" aria-hidden="true"></i>
+            <span class="name">{row.name}</span>
+            {row.mark && <sup>{row.mark}</sup>}
+            <em>{row.kind === 'arr' ? 'arr' : row.station === 0 || (row.name === '' ) ? 'dep' : ''}</em>
+          </span>
+          {TRAINS.map((t, i) => {
+            const c = cell(t, row);
+            const through = (t.to ?? STATIONS.length - 1) === STATIONS.length - 1;
+            return <span class:list={['c', c.kind, { through }]} data-i={i} role="cell">{c.text}</span>;
+          })}
+        </div>
+      ))}
+    </div>
+
+    <section class="footnotes" aria-label="Notes">
+      <dl>
+        <div><dt>a</dt><dd>{NOTE_TEXT.a}</dd></div>
+        <div><dt>b</dt><dd>{NOTE_TEXT.b}</dd></div>
+        <div><dt>R</dt><dd>{NOTE_TEXT.R}</dd></div>
+        <div><dt>x</dt><dd>Stops on request: tell the conductor</dd></div>
+        <div><dt>|</dt><dd>Passes without stopping</dd></div>
+      </dl>
+      <dl>
+        <div><dt class="k IC">IC</dt><dd>Intercity, reserved seats in first class</dd></div>
+        <div><dt class="k RE">RE</dt><dd>Regional express</dd></div>
+        <div><dt class="k R">R</dt><dd>Regional, all stations</dd></div>
+        <div><dt><svg viewBox="0 0 10 10" aria-label="Café car"><path d="M 2 3 h 5 v 3 a 2.5 2.5 0 0 1 -5 0 Z M 7 4 h 1 a 1 1 0 0 1 0 2 h -1" fill="none" stroke="currentColor" stroke-width="0.9" /></svg></dt><dd>Café car, Portwick to Skelmoor</dd></div>
+      </dl>
+    </section>
+    <section class="connections" aria-labelledby="connections-title">
+      <h2 id="connections-title">Connections</h2>
+      <dl>
+        <div><dt>Fennick Junction</dt><dd>Wend Valley line to Orsby at 18 minutes past each hour, 06.18 to 22.18</dd></div>
+        <div><dt>Skelmoor</dt><dd>Buses 40 and 41 to the Moor villages from the station forecourt</dd></div>
+        <div><dt>Ashby Fell</dt><dd>Ferry to Tarn Isle from the pier at 08.30, 11.30, 14.30 and 17.30, May to September</dd></div>
+      </dl>
+    </section>
+    <p class="imprint">Northmarch Railways, Timetable Office, Station Square, Portwick. Printed on recycled paper. 1.40</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const sheet = document.getElementById('sheet') as HTMLElement;
+  const cells = [...sheet.querySelectorAll<HTMLElement>('.c')];
+  const total = Math.max(...cells.map(c => Number(c.dataset.i))) + 1;
+
+  // As many columns of three squares as fit after the stations; the rest wait for a wider window.
+  onSquares(({ across, narrow }) => {
+    const fit = narrow ? total : Math.max(1, Math.floor((across - 2 - 13) / 3));
+    sheet.style.setProperty('--trains', String(Math.min(fit, total)));
+    cells.forEach(c => { c.hidden = Number(c.dataset.i) >= fit; });
+  });
+
+  // Pointing at a train lights its column.
+  sheet.addEventListener('pointerover', event => {
+    const c = (event.target as HTMLElement).closest<HTMLElement>('.c');
+    const i = c?.dataset.i;
+    cells.forEach(x => x.classList.toggle('lit', i !== undefined && x.dataset.i === i));
+  });
+  sheet.addEventListener('pointerleave', () => cells.forEach(x => x.classList.remove('lit')));
+</script>
+
+<style is:global>
+  html { background: #fbfbf7; }
+  .timetable {
+    --blue: #0b3c8c;
+    --yellow: #ffc81e;
+    --ink: #10213f;
+    --paper: #fbfbf7;
+    --rule: #c8d0dc;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: 'Avenir Next', 'Avenir', var(--typeface-regular), sans-serif;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+  }
+
+  /* The livery: a blue band four squares deep with a square of yellow under it. */
+  .livery { grid-column: 1 / -1; grid-row: 1 / span 5; display: grid; grid-template-columns: var(--u) calc(4 * var(--u)) 1fr calc(9 * var(--u)) var(--u); grid-template-rows: var(--u) var(--u) calc(2 * var(--u)) var(--u); background: linear-gradient(var(--blue) 0 calc(4 * var(--u)), var(--yellow) calc(4 * var(--u))); color: #fff; }
+  .mark { grid-column: 2; grid-row: 2 / span 2; margin: 0; position: relative; }
+  .mark i { position: absolute; left: 0; width: calc(3 * var(--u)); height: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 0.25); background: var(--yellow); }
+  .mark i:first-child { top: calc(var(--u) * 0.5); }
+  .mark i:last-child { top: calc(var(--u) * 1.5); left: var(--u); background: #fff; }
+  .railway { grid-column: 3; grid-row: 2; margin: 0; font-weight: 600; font-size: calc(13px * var(--sf)); }
+  .livery h1 { grid-column: 3; grid-row: 3; margin: 0; font: 600 calc(30px * var(--sf)) / calc(2 * var(--u)) 'Avenir Next', sans-serif; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .livery h1 span { font-weight: 400; opacity: 0.75; }
+  .table-no { grid-column: 4; grid-row: 2 / span 2; margin: 0; align-self: start; justify-self: end; display: flex; gap: calc(var(--u) / 2); align-items: baseline; text-align: right; }
+  .table-no { color: var(--yellow); font: 700 calc(62px * var(--sf)) / calc(3 * var(--u)) 'Avenir Next', sans-serif; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .table-no span { font-size: calc(13px * var(--sf)); line-height: var(--u); letter-spacing: 0; font-weight: 600; color: #fff; }
+  .validity { grid-column: 2 / -2; grid-row: 6 / span 1; margin: 0; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* The sheet: stations in thirteen squares, then trains of three squares each, a row a square. */
+  .sheet { grid-column: 2 / -2; grid-row: 8 / span 22; display: grid; grid-auto-rows: var(--u); align-content: start; font-variant-numeric: tabular-nums; }
+  .r { display: grid; grid-template-columns: calc(13 * var(--u)) repeat(var(--trains, 16), calc(3 * var(--u))); }
+  .sheet [hidden] { display: none !important; }
+  .c { text-align: center; white-space: nowrap; }
+  .head { font-weight: 700; color: #fff; background: var(--blue); }
+  .head .st { padding-left: calc(var(--u) / 2); font-weight: 600; }
+  .kinds .kind { font-weight: 700; font-size: calc(10px * var(--sf)); }
+  .kind.IC { background: var(--yellow); }
+  .kind.RE { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
+  .kind.R { color: #5a6a86; }
+  .notes { border-bottom: calc(2px * var(--sf)) solid var(--blue); }
+  .notes .st { color: #5a6a86; padding-left: calc(var(--u) / 2); }
+  .notes .c { display: flex; justify-content: center; align-items: center; gap: 2px; }
+  .notes svg { width: calc(12px * var(--sf)); height: calc(12px * var(--sf)); }
+  .notes b { font-size: calc(10px * var(--sf)); }
+  .c.IC:not(.kind):not(.head *) { }
+
+  .time .st { position: relative; display: flex; align-items: baseline; gap: calc(var(--u) / 4); padding-left: calc(2 * var(--u)); white-space: nowrap; }
+  .time .st em { margin-left: auto; padding-right: calc(var(--u) / 2); font-style: normal; color: #5a6a86; font-size: calc(10px * var(--sf)); }
+  .time .st sup { font-size: calc(9px * var(--sf)); line-height: 0; }
+  .time.major .name { font-weight: 700; }
+  /* The line diagram: one blue line down the stations, a dot at each, a ring at the junctions. */
+  .time .line { position: absolute; left: calc(var(--u) * 0.75); top: 0; bottom: 0; width: calc(var(--u) / 2); }
+  .time .line::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: calc(3px * var(--sf)); transform: translateX(-50%); background: var(--blue); }
+  .time.first .line::after { content: ''; position: absolute; left: 50%; top: 50%; width: calc(8px * var(--sf)); height: calc(8px * var(--sf)); border-radius: 50%; transform: translate(-50%, -50%); background: var(--paper); border: calc(2px * var(--sf)) solid var(--blue); }
+  .time.first.major .line::after { width: calc(12px * var(--sf)); height: calc(12px * var(--sf)); background: var(--yellow); }
+  .sheet .time:nth-child(4) .line::before { top: 50%; }
+  .time.last .line::before { bottom: 50%; }
+  .time:nth-child(odd of .time) { background: color-mix(in srgb, var(--blue) 5%, transparent); }
+  .time .c.pass { color: #9aa6ba; }
+  .time .c.through { font-weight: 600; }
+  .time .c.end { color: var(--blue); }
+  .time.major.first { box-shadow: inset 0 1px 0 var(--rule); }
+  .c.lit { background: color-mix(in srgb, var(--yellow) 55%, transparent); }
+  .head .c.lit { background: var(--yellow); color: var(--blue); }
+
+  .footnotes { grid-column: 2 / span 36; grid-row: 30 / span 7; display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(2 * var(--u)); align-content: start; border-top: calc(2px * var(--sf)) solid var(--blue); padding-top: calc(var(--u) - 2px); }
+  .footnotes dl { margin: 0; }
+  .footnotes div { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; }
+  .footnotes dt { font-weight: 700; text-align: center; }
+  .footnotes dt svg { width: calc(12px * var(--sf)); height: calc(12px * var(--sf)); vertical-align: middle; }
+  .footnotes dd { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .footnotes .k { font-size: calc(10px * var(--sf)); }
+  .footnotes .k.IC { background: var(--yellow); }
+  .footnotes .k.RE { color: var(--blue); }
+  .footnotes .k.R { color: #5a6a86; }
+  .connections { grid-column: -25 / -2; grid-row: 30 / span 7; border-top: calc(2px * var(--sf)) solid var(--yellow); padding-top: calc(var(--u) - 2px); }
+  .connections h2 { margin: 0; font: 700 calc(13px * var(--sf)) / var(--u) 'Avenir Next', sans-serif; color: var(--blue); }
+  .connections dl { margin: 0; }
+  .connections dt { font-weight: 600; }
+  .connections dd { margin: 0; }
+  .imprint { grid-column: 2 / -14; grid-row: -2 / span 1; margin: 0; color: #5a6a86; font-size: calc(10px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* A narrow window: the band shorter, the sheet scrolls sideways under a fixed station column. */
+  :root[data-narrow] .timetable { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .timetable > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .livery { grid-column: 1 / -1; grid-row: 1 / span 6; grid-template-columns: var(--u) 1fr calc(5 * var(--u)) var(--u); grid-template-rows: var(--u) var(--u) auto var(--u) var(--u); background: linear-gradient(to top, var(--yellow) 0 var(--u), var(--blue) var(--u)); }
+  :root[data-narrow] .mark { display: none; }
+  :root[data-narrow] .railway { grid-column: 2; }
+  :root[data-narrow] .livery h1 { grid-column: 2 / span 2; font-size: calc(18px * var(--sf)); line-height: calc(1.5 * var(--u)); white-space: normal; overflow: visible; }
+  :root[data-narrow] .livery { grid-row: 1 / span 1; }
+  :root[data-narrow] .table-no { grid-column: 3; grid-row: 2 / span 1; font-size: calc(26px * var(--sf)); line-height: var(--u); grid-template-rows: var(--u) calc(2 * var(--u)); }
+  :root[data-narrow] .validity { white-space: normal; margin-top: var(--u); }
+  :root[data-narrow] .sheet { overflow-x: auto; margin-top: var(--u); }
+  :root[data-narrow] .r { grid-template-columns: calc(7 * var(--u)) repeat(var(--trains, 22), calc(3 * var(--u))); width: max-content; }
+  :root[data-narrow] .r > .st { position: sticky; left: 0; z-index: 1; background: var(--paper); overflow: hidden; text-overflow: ellipsis; }
+  :root[data-narrow] .head > .st { background: var(--blue); }
+  :root[data-narrow] .time .st em { display: none; }
+  :root[data-narrow] .time .st { font-size: calc(11px * var(--sf)); }
+  :root[data-narrow] .footnotes { grid-template-columns: 1fr; margin-top: var(--u); }
+  :root[data-narrow] .footnotes dd { white-space: normal; }
+  :root[data-narrow] .connections { margin-top: var(--u); }
+  :root[data-narrow] .imprint { white-space: normal; margin-top: var(--u); }
+</style>

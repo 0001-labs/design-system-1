@@ -1,0 +1,350 @@
+---
+// After a plate in a cloud atlas, printed as a cyanotype: the ten genera drawn in white line and
+// stipple on Prussian blue, each at its height. The height scale is in squares, two and a half or two
+// to the kilometre as the window allows, so the étages fall on whole lines.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+interface Genus { key: string; name: string; ab: string; etage: 'high' | 'middle' | 'low'; heights: string; note: string }
+const GENERA: Genus[] = [
+  { key: 'ci', name: 'Cirrus', ab: 'Ci', etage: 'high', heights: '6–12 km', note: 'Detached white filaments, often hooked at the end like a comma. Ice throughout; the hooks are crystals falling out of the wind that made them.' },
+  { key: 'cc', name: 'Cirrocumulus', ab: 'Cc', etage: 'high', heights: '6–12 km', note: 'Grains or ripples so small that a little finger at arm’s length covers several. Without shading, which tells it from altocumulus. Rare, and brief.' },
+  { key: 'cs', name: 'Cirrostratus', ab: 'Cs', etage: 'high', heights: '6–12 km', note: 'A transparent veil, scarcely seen except by the halo it makes: a ring of 22 degrees about the sun or moon. Often the first sign of a warm front.' },
+  { key: 'ac', name: 'Altocumulus', ab: 'Ac', etage: 'middle', heights: '2–6 km', note: 'Rolls or rounded masses in rows, partly shaded, each about a thumb’s width at arm’s length. The mackerel sky of the proverb.' },
+  { key: 'as', name: 'Altostratus', ab: 'As', etage: 'middle', heights: '2–6 km', note: 'A grey sheet through which the sun shows as if through ground glass. No halo, and no shadows on the ground.' },
+  { key: 'ns', name: 'Nimbostratus', ab: 'Ns', etage: 'middle', heights: '1–6 km', note: 'Dark, thick and shapeless, hiding the sun entirely. Rain or snow falls from it continuously and reaches the ground.' },
+  { key: 'sc', name: 'Stratocumulus', ab: 'Sc', etage: 'low', heights: '0.5–2 km', note: 'Grey and white lumps or rolls in a layer, almost always with dark parts. The commonest cloud on Earth.' },
+  { key: 'st', name: 'Stratus', ab: 'St', etage: 'low', heights: '0–0.5 km', note: 'A grey layer with a uniform base, which may give drizzle. Hills disappear into it; on the ground it is fog.' },
+  { key: 'cu', name: 'Cumulus', ab: 'Cu', etage: 'low', heights: '0.6–2 km', note: 'Detached and dense, with a flat base and sharp, sprouting tops. Brilliant white where the sun strikes it.' },
+  { key: 'cb', name: 'Cumulonimbus', ab: 'Cb', etage: 'low', heights: '0.5–12 km', note: 'Heavy and dense, of great vertical extent, its upper part smooth or fibrous and spread like an anvil. Thunder, lightning, hail.' },
+];
+const ETAGES: { key: 'high' | 'middle' | 'low'; fr: string; en: string }[] = [
+  { key: 'high', fr: 'Étage supérieur', en: 'High clouds' },
+  { key: 'middle', fr: 'Étage moyen', en: 'Middle clouds' },
+  { key: 'low', fr: 'Étage inférieur', en: 'Low clouds, and those of great height' },
+];
+---
+<AlignedStudy slug="cloud-atlas" theme="dark">
+  <main class="stage ca">
+    <header class="ca-head">
+      <p class="ca-plate">Planche IV</p>
+      <h1>The ten genera, by height</h1>
+      <p class="ca-swipe">The plate is wider than the screen: swipe along it.</p>
+    </header>
+
+    <div class="ca-scale" id="scale" aria-hidden="true"></div>
+    <div class="ca-frame" id="frame"><svg class="ca-art" id="art" role="group" aria-label="The ten genera drawn at their heights"></svg></div>
+
+    <aside class="ca-key">
+      {ETAGES.map(etage => (
+        <section>
+          <h2><span lang="fr">{etage.fr}</span></h2>
+          <ul>
+            {GENERA.filter(g => g.etage === etage.key).map(g => (
+              <li><button type="button" class="ca-row" data-key={g.key}><b>{g.ab}</b><i>{g.name}</i><span>{g.heights}</span></button></li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      <div class="ca-note" aria-live="polite"><p class="ca-note-name" id="note-name"></p><p id="note"></p></div>
+    </aside>
+
+    <p class="ca-foot">Atlas of clouds for the use of observers, Société des Nuages, Paris. Drawn from photographs; the heights are those of temperate latitudes.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const GENERA = JSON.parse(document.getElementById('ca-genera')!.textContent!) as { key: string; name: string; ab: string; heights: string; note: string }[];
+  const $ = (id: string) => document.getElementById(id)!;
+  const art = $('art') as unknown as SVGSVGElement, frame = $('frame'), scale = $('scale'), stage = document.querySelector<HTMLElement>('.ca')!;
+  const rows = [...document.querySelectorAll<HTMLButtonElement>('.ca-row')];
+  const TOP = 12;
+  let selected = 'cb';
+
+  const f = (n: number) => n.toFixed(2);
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+
+  /** Heaped cloud: the circles' outer outline only, stippled inside, cut flat at the base. */
+  function heap(circles: [number, number, number][], base: number | null, id: string) {
+    const c = (extra = '') => circles.map(([x, y, r]) => `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}"${extra}/>`).join('');
+    const minX = Math.min(...circles.map(([x, , r]) => x - r)) - 0.2, maxX = Math.max(...circles.map(([x, , r]) => x + r)) + 0.2;
+    const minY = Math.min(...circles.map(([, y, r]) => y - r)) - 0.2;
+    const cut = base ?? 999;
+    return `<clipPath id="${id}"><rect x="${f(minX)}" y="${f(minY)}" width="${f(maxX - minX)}" height="${f(cut - minY)}"/></clipPath>
+      <g clip-path="url(#${id})"><g class="line">${c()}</g><g class="ground">${c()}</g><g class="stipple">${c()}</g><g class="shade">${circles.filter(([, y, r]) => y + r * 0.2 > (base ?? 0) - 1.2).map(([x, y, r]) => `<circle cx="${f(x)}" cy="${f(y + r * 0.35)}" r="${f(r * 0.75)}"/>`).join('')}</g></g>
+      ${base !== null ? `<path d="M ${f(minX + 0.35)} ${f(base)} H ${f(maxX - 0.35)}" class="base"/>` : ''}`;
+  }
+
+  function draw(width: number, s: number) {
+    const H = TOP * s;
+    const y = (km: number) => H - km * s;
+    const random = seeded(1896);
+    art.setAttribute('viewBox', `0 0 ${width} ${H + 1}`);
+    let defs = `<defs>
+      <pattern id="dots" width="0.3" height="0.3" patternUnits="userSpaceOnUse"><circle cx="0.15" cy="0.15" r="0.035" fill="#fff"/></pattern>
+      <pattern id="fine" width="0.18" height="0.18" patternUnits="userSpaceOnUse"><circle cx="0.09" cy="0.09" r="0.04" fill="#fff"/></pattern>
+      <pattern id="hatch" width="0.22" height="0.22" patternUnits="userSpaceOnUse"><path d="M 0 0.11 H 0.22" stroke="#fff" stroke-width="0.03"/></pattern>
+      <pattern id="cross" width="0.2" height="0.2" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M 0 0.1 H 0.2 M 0.1 0 V 0.2" stroke="#fff" stroke-width="0.03"/></pattern>
+    </defs>`;
+    let out = '';
+    // The étages: dotted lines at 2 and 6 km, the band names along the right edge.
+    for (const [km, label] of [[6, 'Étage supérieur'], [2, 'Étage moyen'], [0, 'Étage inférieur']] as [number, string][]) {
+      if (km) out += `<path d="M 0 ${f(y(km))} H ${width}" class="etage"/>`;
+      out += `<text x="${width - 0.3}" y="${f(y(km) - 0.4)}" class="band" text-anchor="end">${label}</text>`;
+    }
+    const at = (fx: number) => fx * width;
+    const g: Record<string, { body: string; lx: number; ly: number; anchor?: string }> = {};
+
+    // Cirrus: hooked filaments.
+    {
+      let body = '';
+      const x0 = at(0.04), ytop = y(10.2);
+      for (let i = 0; i < 6; i++) {
+        const sx = x0 + i * 0.9 + random() * 0.4, sy = ytop + i * 0.35 * s * 0.4 + random() * 0.5;
+        body += `<path d="M ${f(sx)} ${f(sy + 1.4)} C ${f(sx + 1.2)} ${f(sy + 1.3)} ${f(sx + 2.4)} ${f(sy + 0.6)} ${f(sx + 3.2)} ${f(sy - 0.2)} q 0.4 -0.4 0.1 -0.6" class="wisp"/>`;
+        body += `<path d="M ${f(sx + 0.4)} ${f(sy + 1.6)} C ${f(sx + 1.4)} ${f(sy + 1.5)} ${f(sx + 2.2)} ${f(sy + 1)} ${f(sx + 2.9)} ${f(sy + 0.3)}" class="wisp thin"/>`;
+      }
+      g.ci = { body, lx: x0, ly: y(8.4) };
+    }
+    // Cirrocumulus: rippled grains without shading.
+    {
+      let body = '';
+      const x0 = at(0.3), y0 = y(10.4);
+      for (let row = 0; row < 6; row++) for (let col = 0; col < 12; col++) {
+        const x = x0 + col * 0.42 + (row % 2) * 0.21 + Math.sin(row + col * 0.7) * 0.05, yy = y0 + row * 0.3 + Math.sin(col * 0.9) * 0.12;
+        body += `<ellipse cx="${f(x)}" cy="${f(yy)}" rx="${f(0.14 + random() * 0.05)}" ry="0.08" class="grain"/>`;
+      }
+      g.cc = { body, lx: x0, ly: y(8.4) };
+    }
+    // Cirrostratus: a veil and the halo it makes about the sun.
+    {
+      const cx = at(0.6), cy = y(9.4);
+      let body = `<circle cx="${f(cx)}" cy="${f(cy)}" r="0.3" class="sun"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(1.1 * s * 0.6)}" class="halo"/>`;
+      for (let i = 0; i < 9; i++) body += `<path d="M ${f(cx - 4 + random())} ${f(cy - 1.4 + i * 0.32)} H ${f(cx + 3.6 - random())}" class="veil"/>`;
+      g.cs = { body, lx: cx - 3, ly: y(8.4) - 0.3 };
+    }
+    // Altocumulus: rows of shaded rolls.
+    {
+      let body = '';
+      const x0 = at(0.05), y0 = y(4.6);
+      for (let row = 0; row < 3; row++) for (let col = 0; col < 5; col++) {
+        const cx = x0 + col * 1.25 + row * 0.4, cy = y0 + row * 0.8;
+        body += heap([[cx, cy, 0.38], [cx + 0.35, cy - 0.12, 0.32], [cx - 0.3, cy + 0.05, 0.28]], cy + 0.3, `ac${row}${col}`);
+      }
+      g.ac = { body, lx: x0, ly: y(2.6) };
+    }
+    // Altostratus: a hatched grey sheet with a dim sun.
+    {
+      const x0 = at(0.34), w = Math.min(7, width * 0.18), y0 = y(4.8);
+      const body = `<rect x="${f(x0)}" y="${f(y0)}" width="${f(w)}" height="${f(1.6)}" fill="url(#hatch)" opacity="0.8"/><path d="M ${f(x0)} ${f(y0)} H ${f(x0 + w)} M ${f(x0)} ${f(y0 + 1.6)} H ${f(x0 + w)}" class="soft"/><circle cx="${f(x0 + w * 0.7)}" cy="${f(y0 + 0.8)}" r="0.35" class="dimsun"/>`;
+      g.as = { body, lx: x0, ly: y(2.6) };
+    }
+    // Nimbostratus: a shapeless cross-hatched mass from low to middle, raining to the ground.
+    {
+      const x0 = at(0.56), w = Math.min(6, width * 0.13), top = y(5.2), base = y(1);
+      let edge = `M ${f(x0)} ${f(base)}`;
+      // Up the left side, along a lumpy top, down the right, and back along a ragged base.
+      edge += ` C ${f(x0 - 0.6)} ${f(base - (base - top) * 0.4)} ${f(x0 - 0.2)} ${f(top + 0.8)} ${f(x0 + 0.5)} ${f(top + 0.4)}`;
+      const bumps = 5;
+      for (let i = 0; i < bumps; i++) {
+        const ax = x0 + 0.5 + ((i + 0.5) / bumps) * (w - 1), bx = x0 + 0.5 + ((i + 1) / bumps) * (w - 1);
+        edge += ` Q ${f(ax)} ${f(top - 0.5 - random() * 0.4)} ${f(bx)} ${f(top + 0.2 + random() * 0.3)}`;
+      }
+      edge += ` C ${f(x0 + w + 0.5)} ${f(top + 1.2)} ${f(x0 + w + 0.3)} ${f(base - 1)} ${f(x0 + w)} ${f(base)}`;
+      for (let i = 0; i < 7; i++) edge += ` L ${f(x0 + w - ((i + 0.5) / 7) * w)} ${f(base + (i % 2 ? 0.25 : -0.05))}`;
+      edge += ' Z';
+      let body = `<path d="${edge}" fill="url(#cross)" opacity="0.9"/><path d="${edge}" class="soft"/>`;
+      for (let i = 0; i < 14; i++) { const rx = x0 + 0.3 + i * (w - 0.6) / 13; body += `<path d="M ${f(rx)} ${f(base + 0.35)} l -0.25 ${f(H - base - 0.45)}" class="rain"/>`; }
+      g.ns = { body, lx: x0, ly: top - 1 };
+    }
+    // Stratocumulus: a layer of lumps, almost joined.
+    {
+      const x0 = at(0.26), y0 = y(1.4);
+      const circles: [number, number, number][] = [];
+      for (let i = 0; i < 10; i++) circles.push([x0 + i * 0.7, y0 - (i % 2) * 0.15, 0.42 + (i % 3) * 0.06]);
+      g.sc = { body: heap(circles, y0 + 0.3, 'sc'), lx: x0, ly: y0 + 1.6 };
+    }
+    // Stratus: a low grey layer hiding the top of a hill.
+    {
+      const x0 = at(0.02), w = Math.min(9, width * 0.2), y0 = y(0.45);
+      const body = `<path d="M ${f(x0 + 0.5)} ${f(H)} Q ${f(x0 + w * 0.45)} ${f(y0 - 0.6)} ${f(x0 + w - 0.5)} ${f(H)}" class="hill"/><rect x="${f(x0)}" y="${f(y0 - 0.5)}" width="${f(w)}" height="0.9" fill="url(#hatch)" opacity="0.9"/><path d="M ${f(x0)} ${f(y0 + 0.4)} H ${f(x0 + w)}" class="soft"/>`;
+      g.st = { body, lx: x0, ly: y0 - 0.8 };
+    }
+    // Cumulus: a heap with a flat base and sprouting top.
+    {
+      const cx = at(0.48), base = y(0.8);
+      const k = Math.min(1.2, s / 2.2);
+      const circles: [number, number, number][] = [[cx - 1.2 * k, base - 0.6 * k, 0.7 * k], [cx, base - 0.8 * k, 1 * k], [cx + 1.1 * k, base - 0.6 * k, 0.75 * k], [cx - 0.4 * k, base - 1.7 * k, 0.8 * k], [cx + 0.5 * k, base - 2 * k, 0.75 * k], [cx + 0.1 * k, base - 2.7 * k, 0.55 * k]];
+      g.cu = { body: heap(circles, base, 'cu'), lx: cx - 1.6, ly: base + 1.1 };
+    }
+    // Cumulonimbus: the tower from the low étage to the ceiling, its anvil blown downwind, and its rain.
+    {
+      const cx = at(0.83), base = y(0.6), top = y(11.3);
+      const aw = Math.min(width * 0.22, 10);
+      const circles: [number, number, number][] = [];
+      const steps = 10;
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        // Broad shoulders low down and halfway up, narrowing to the neck under the anvil.
+        const spread = (1.7 + 0.7 * Math.sin(t * Math.PI * 1.6)) * (1 - t * 0.45);
+        const yy = base - 1.2 - t * (base - top - 3.6);
+        const lean = t * 0.8;
+        circles.push([cx + lean - spread * 0.75 + (random() - 0.5) * 0.5, yy + 0.4, (1 + random() * 0.6) * (1 - t * 0.35)]);
+        circles.push([cx + lean + (random() - 0.5) * 0.6, yy - 0.3, (1.3 + random() * 0.5) * (1 - t * 0.35)]);
+        circles.push([cx + lean + spread * 0.75 + (random() - 0.5) * 0.5, yy + 0.5, (0.9 + random() * 0.6) * (1 - t * 0.35)]);
+      }
+      const at0 = top + 2.6, nx = cx + 0.8;
+      const anvil = `<path d="M ${f(nx - 1.4)} ${f(at0)} C ${f(nx - 1.8)} ${f(top + 1.4)} ${f(cx - aw * 0.32)} ${f(top + 0.6)} ${f(cx - aw * 0.38)} ${f(top)} L ${f(cx + aw * 0.62)} ${f(top)} C ${f(cx + aw * 0.5)} ${f(top + 0.5)} ${f(cx + aw * 0.25)} ${f(top + 0.9)} ${f(nx + 1.4)} ${f(at0)} Z" class="anvil"/>`;
+      let rain = '';
+      for (let i = 0; i < 12; i++) { const rx = cx - 1.8 + i * 0.32; rain += `<path d="M ${f(rx)} ${f(base + 0.15)} l -0.2 ${f(H - base - 0.25)}" class="rain"/>`; }
+      g.cb = { body: anvil + heap(circles, base, 'cb') + rain, lx: cx - aw * 0.4, ly: top - 0.5 };
+    }
+
+    const lookup = Object.fromEntries(GENERA.map(item => [item.key, item]));
+    for (const [key, item] of Object.entries(g)) {
+      const genus = lookup[key];
+      out += `<g class="genus" data-key="${key}" tabindex="0" role="button" aria-label="${genus.name}, ${genus.heights}">${item.body}<text x="${f(item.lx)}" y="${f(item.ly)}" class="name" text-anchor="${item.anchor ?? 'start'}"><tspan class="ab">${genus.ab}</tspan> ${genus.name}</text></g>`;
+    }
+    out += `<path d="M 0 ${H} H ${width}" class="earth"/>`;
+    art.innerHTML = defs + out;
+    choose(selected);
+
+    // The scale beside the plate: a tick on every square, a figure on each kilometre that lands on a line.
+    const every = Number.isInteger(s) ? 1 : 2;
+    let ticks = '';
+    for (let km = 0; km <= TOP; km += every) ticks += `<span style="--row: ${Math.round(H - km * s) + 1}">${km} km</span>`;
+    scale.innerHTML = ticks;
+    scale.style.setProperty('--rows', String(H));
+  }
+
+  function choose(key: string) {
+    selected = key;
+    const genus = GENERA.find(item => item.key === key)!;
+    art.querySelectorAll<SVGGElement>('.genus').forEach(el => el.classList.toggle('on', el.dataset.key === key));
+    art.classList.add('choosing');
+    rows.forEach(row => row.setAttribute('aria-pressed', String(row.dataset.key === key)));
+    $('note-name').innerHTML = `<b>${genus.ab}</b> <i>${genus.name}</i>, ${genus.heights}`;
+    $('note').textContent = genus.note;
+  }
+  rows.forEach(row => row.addEventListener('click', () => choose(row.dataset.key!)));
+  art.addEventListener('click', event => {
+    const genus = (event.target as Element).closest?.('.genus') as SVGGElement | null;
+    if (genus) choose(genus.dataset.key!);
+  });
+  art.addEventListener('keydown', event => {
+    const genus = (event.target as Element).closest?.('.genus') as SVGGElement | null;
+    if (genus && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose(genus.dataset.key!); }
+  });
+
+  onSquares(({ across, down, narrow }) => {
+    const key = narrow ? 0 : across >= 70 ? 16 : 14;
+    // On a phone the plate keeps a computer's width and scrolls along under the finger.
+    const width = narrow ? 40 : across - 7 - 2 - key - 2;
+    // Squares to the kilometre: the largest of these that leaves room for the title and the foot.
+    const s = narrow ? 2 : [3, 2.5, 2, 1.5].find(k => TOP * k <= down - 14) ?? 1;
+    const H = TOP * s;
+    stage.style.setProperty('--plate', String(width));
+    if (!narrow) {
+      frame.style.gridColumn = `7 / span ${width}`;
+      frame.style.gridRow = `7 / span ${H + 1}`;
+      scale.style.gridRow = `7 / span ${H + 1}`;
+      document.querySelector<HTMLElement>('.ca-key')!.style.gridColumn = `${7 + width + 2} / span ${key}`;
+      document.querySelector<HTMLElement>('.ca-foot')!.style.gridRow = `${7 + H + 2} / span 2`;
+    } else {
+      frame.style.gridColumn = frame.style.gridRow = scale.style.gridRow = '';
+      document.querySelector<HTMLElement>('.ca-key')!.style.gridColumn = '';
+      document.querySelector<HTMLElement>('.ca-foot')!.style.gridRow = '';
+    }
+    stage.style.setProperty('--h', String(H + 1));
+    draw(width, s);
+  });
+</script>
+
+<script type="application/json" id="ca-genera" set:html={JSON.stringify(GENERA)}></script>
+
+<style is:global>
+  html[data-study='cloud-atlas'] { background: #173f73; }
+  .ca {
+    --prussian: #173f73;
+    --ink: #f4f7fb;
+    color: var(--ink);
+    /* The cyanotype's uneven blue: a little deeper at the corners, mottled where the paper drank. */
+    background:
+      radial-gradient(ellipse at 30% 20%, rgb(255 255 255 / 0.05), transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgb(0 10 40 / 0.25), transparent 55%),
+      radial-gradient(ellipse at center, transparent 55%, rgb(0 10 40 / 0.4)),
+      var(--prussian);
+    font-family: Baskerville, 'Big Caslon', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .ca :is(h1, h2, p, ul) { margin: 0; padding: 0; }
+  .ca ul { list-style: none; }
+  /* The plate's ruled border, a square in from the edge. */
+  .ca::before { content: ''; grid-column: 2 / -2; grid-row: 2 / -2; border: 1px solid rgb(244 247 251 / 0.6); outline: 1px solid rgb(244 247 251 / 0.3); outline-offset: 4px; pointer-events: none; }
+
+  .ca-head { grid-column: 4 / -4; grid-row: 3 / span 3; display: grid; grid-template-columns: max-content 1fr; column-gap: calc(2 * var(--u)); align-items: end; }
+  .ca-swipe { display: none; }
+  .ca-plate { font-family: 'Bodoni 72', Didot, serif; font-size: calc(15px * var(--sf)); letter-spacing: 0.12em; font-variant: small-caps; line-height: calc(2 * var(--u)); }
+  .ca-head h1 { font-family: 'Bodoni 72', Didot, serif; font-weight: 400; font-size: calc(40px * var(--sf)); line-height: calc(3 * var(--u)); font-style: italic; }
+
+  .ca-scale { grid-column: 3 / span 4; grid-row: 7 / span 31; display: grid; grid-template-rows: repeat(var(--rows, 30), var(--u)) var(--u); position: relative; border-right: 1px solid var(--ink); margin-right: calc(var(--u) / 2); background: repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px var(--u)) right top / calc(var(--u) / 3) 100% no-repeat; }
+  .ca-scale span { grid-row: var(--row) / span 1; grid-column: 1; align-self: start; translate: 0 -50%; text-align: right; padding-right: calc(var(--u) / 2); font-family: 'Bodoni 72', Didot, serif; font-size: calc(12px * var(--sf)); font-variant-numeric: lining-nums; white-space: nowrap; }
+
+  .ca-frame { grid-column: 7 / span 44; grid-row: 7 / span 31; }
+  .ca-art { display: block; width: 100%; height: 100%; overflow: visible; }
+  .ca-art .line circle { fill: none; stroke: var(--ink); stroke-width: 0.12; }
+  .ca-art .ground circle { fill: var(--prussian); }
+  .ca-art .stipple circle { fill: url(#dots); opacity: 0.55; }
+  .ca-art .shade circle { fill: url(#fine); opacity: 0.35; }
+  .ca-art .base, .ca-art .soft { stroke: var(--ink); stroke-width: 0.05; fill: none; }
+  .ca-art .wisp { fill: none; stroke: var(--ink); stroke-width: 0.07; stroke-linecap: round; }
+  .ca-art .wisp.thin { stroke-width: 0.03; opacity: 0.7; }
+  .ca-art .grain { fill: var(--ink); opacity: 0.8; }
+  .ca-art .sun { fill: var(--ink); }
+  .ca-art .dimsun { fill: rgb(244 247 251 / 0.45); }
+  .ca-art .halo { fill: none; stroke: var(--ink); stroke-width: 0.04; stroke-dasharray: 0.12 0.1; }
+  .ca-art .veil { stroke: var(--ink); stroke-width: 0.025; opacity: 0.6; }
+  .ca-art .rain { stroke: var(--ink); stroke-width: 0.025; opacity: 0.7; }
+  .ca-art .anvil { fill: url(#fine); stroke: var(--ink); stroke-width: 0.06; }
+  .ca-art .hill { fill: none; stroke: var(--ink); stroke-width: 0.06; }
+  .ca-art .etage { stroke: var(--ink); stroke-width: 0.04; stroke-dasharray: 0.08 0.18; opacity: 0.75; }
+  .ca-art .earth { stroke: var(--ink); stroke-width: 0.1; }
+  .ca-art .band { font: italic 0.6px 'Bodoni 72', Didot, serif; fill: var(--ink); opacity: 0.8; }
+  .ca-art .name { font: italic 0.68px Baskerville, Georgia, serif; fill: var(--ink); }
+  .ca-art .ab { font-style: normal; font-weight: 700; font-family: 'Bodoni 72', Didot, serif; }
+  .ca-art .genus { cursor: pointer; outline: none; transition: opacity 0.2s; }
+  .ca-art.choosing .genus:not(.on) { opacity: 0.62; }
+  .ca-art .genus:hover, .ca-art .genus:focus-visible { opacity: 1 !important; }
+  .ca-art .genus.on .name, .ca-art .genus:focus-visible .name { text-decoration: underline; text-decoration-thickness: 0.04px; }
+
+  /* The key: three étages, a genus a square. */
+  .ca-key { grid-column: -18 / span 16; grid-row: 7 / -3; display: flex; flex-direction: column; gap: var(--u); min-height: 0; overflow: hidden; }
+  .ca-key h2 { font-family: 'Bodoni 72', Didot, serif; font-weight: 400; font-style: italic; font-size: calc(15px * var(--sf)); border-bottom: 1px solid rgb(244 247 251 / 0.5); }
+  .ca-row { all: unset; box-sizing: border-box; display: grid; grid-template-columns: calc(2 * var(--u)) 1fr auto; width: 100%; height: var(--u); cursor: pointer; }
+  .ca-row b { font-family: 'Bodoni 72', Didot, serif; }
+  .ca-row span { font-size: calc(12px * var(--sf)); opacity: 0.8; font-variant-numeric: lining-nums; }
+  .ca-row[aria-pressed='true'] i { text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .ca-row:hover i { text-decoration: underline; text-decoration-style: dotted; text-underline-offset: calc(3px * var(--sf)); }
+  .ca-row:focus-visible { outline: 1px dotted var(--ink); outline-offset: 1px; }
+  .ca-note { margin-top: var(--u); }
+  .ca-note-name b { font-family: 'Bodoni 72', Didot, serif; }
+  .ca-note p:last-child { font-style: italic; }
+
+  .ca-foot { grid-column: 7 / -20; grid-row: -5 / span 2; font-size: calc(12px * var(--sf)); opacity: 0.8; }
+
+  /* Narrow: the title, the plate at two squares to the kilometre, its key and the foot. */
+  :root[data-narrow] .ca { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .ca::before { grid-row: 1 / -1; display: none; }
+  :root[data-narrow] .ca > *:not(.ca-scale):not(.ca-frame) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .ca-head { grid-template-columns: 1fr; margin-top: var(--u); grid-row: 1; }
+  :root[data-narrow] .ca-swipe { display: block; font-style: italic; opacity: 0.8; margin-bottom: var(--u); }
+  :root[data-narrow] .ca-head h1 { font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); margin-bottom: var(--u); }
+  :root[data-narrow] .ca-scale { grid-column: 1 / span 3; grid-row: 2; height: calc(var(--h) * var(--u)); }
+  :root[data-narrow] .ca-frame { grid-column: 4 / -1; grid-row: 2; height: calc((var(--h) + 1) * var(--u)); overflow-x: auto; overflow-y: hidden; }
+  :root[data-narrow] .ca-art { width: calc(40 * var(--u)); height: calc(var(--h) * var(--u)); overflow: hidden; }
+  :root[data-narrow] .ca-scale span { font-size: calc(10px * var(--sf)); padding-right: calc(var(--u) / 4); }
+  :root[data-narrow] .ca-key { margin-top: var(--u); overflow: visible; grid-row: 3; }
+  :root[data-narrow] .ca-foot { margin-top: var(--u); grid-row: 4; }
+</style>

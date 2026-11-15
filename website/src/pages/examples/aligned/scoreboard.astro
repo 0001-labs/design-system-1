@@ -1,0 +1,235 @@
+---
+// After a ballpark's bulb scoreboard: the whole window is the board, a bulb in every square, lit in
+// a five-by-seven dot face for the names, scores and the scrolling message, a three-by-five face
+// for the line score, and cream sign-painter's lettering on the green where a bulb would be too much.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="scoreboard" theme="dark">
+  <main class="stage ballpark">
+    <canvas id="board" class="bulbs" role="img" aria-labelledby="score-text"></canvas>
+    <p id="score-text" class="visually-hidden">Halloran Field. Top of the seventh: Gulls 3, Owls 4. Two balls, one strike, two out. Gulls by inning: 0 1 0 0 2 0 0; Owls: 2 0 0 1 1 0. Hits 7 and 9, errors 1 and 0.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // Five-by-seven: each glyph is seven rows of five bits, the left bulb the highest bit.
+  const BIG: Record<string, number[]> = {
+    A: [14, 17, 17, 31, 17, 17, 17], B: [30, 17, 17, 30, 17, 17, 30], C: [14, 17, 16, 16, 16, 17, 14], D: [30, 17, 17, 17, 17, 17, 30],
+    E: [31, 16, 16, 30, 16, 16, 31], F: [31, 16, 16, 30, 16, 16, 16], G: [14, 17, 16, 23, 17, 17, 15], H: [17, 17, 17, 31, 17, 17, 17],
+    I: [14, 4, 4, 4, 4, 4, 14], J: [7, 2, 2, 2, 2, 18, 12], K: [17, 18, 20, 24, 20, 18, 17], L: [16, 16, 16, 16, 16, 16, 31],
+    M: [17, 27, 21, 21, 17, 17, 17], N: [17, 17, 25, 21, 19, 17, 17], O: [14, 17, 17, 17, 17, 17, 14], P: [30, 17, 17, 30, 16, 16, 16],
+    Q: [14, 17, 17, 17, 21, 18, 13], R: [30, 17, 17, 30, 20, 18, 17], S: [15, 16, 16, 14, 1, 1, 30], T: [31, 4, 4, 4, 4, 4, 4],
+    U: [17, 17, 17, 17, 17, 17, 14], V: [17, 17, 17, 17, 17, 10, 4], W: [17, 17, 17, 21, 21, 21, 10], X: [17, 17, 10, 4, 10, 17, 17],
+    Y: [17, 17, 10, 4, 4, 4, 4], Z: [31, 1, 2, 4, 8, 16, 31],
+    '0': [14, 17, 19, 21, 25, 17, 14], '1': [4, 12, 4, 4, 4, 4, 14], '2': [14, 17, 1, 2, 4, 8, 31], '3': [31, 2, 4, 2, 1, 17, 14],
+    '4': [2, 6, 10, 18, 31, 2, 2], '5': [31, 16, 30, 1, 1, 17, 14], '6': [6, 8, 16, 30, 17, 17, 14], '7': [31, 1, 2, 4, 8, 8, 8],
+    '8': [14, 17, 17, 14, 17, 17, 14], '9': [14, 17, 17, 15, 1, 2, 12],
+    ' ': [0, 0, 0, 0, 0, 0, 0], '.': [0, 0, 0, 0, 0, 12, 12], ',': [0, 0, 0, 0, 12, 4, 8], "'": [12, 4, 8, 0, 0, 0, 0],
+    '-': [0, 0, 0, 31, 0, 0, 0], '!': [4, 4, 4, 4, 4, 0, 4], ':': [0, 12, 12, 0, 12, 12, 0], '^': [0, 0, 4, 14, 31, 0, 0],
+  };
+  // Three-by-five for the line score.
+  const SMALL: Record<string, number[]> = {
+    '0': [7, 5, 5, 5, 7], '1': [2, 6, 2, 2, 7], '2': [7, 1, 7, 4, 7], '3': [7, 1, 7, 1, 7], '4': [5, 5, 7, 1, 1],
+    '5': [7, 4, 7, 1, 7], '6': [7, 4, 7, 5, 7], '7': [7, 1, 1, 2, 2], '8': [7, 5, 7, 5, 7], '9': [7, 5, 7, 1, 7],
+    G: [7, 4, 5, 5, 7], U: [5, 5, 5, 5, 7], L: [4, 4, 4, 4, 7], O: [7, 5, 5, 5, 7], W: [5, 5, 7, 7, 5],
+  };
+
+  const GAME = {
+    visitors: { name: 'GULLS', short: 'GUL', innings: ['0', '1', '0', '0', '2', '0', '0'], r: '3', h: '7', e: '1' },
+    home: { name: 'OWLS', short: 'OWL', innings: ['2', '0', '0', '1', '1', '0'], r: '4', h: '9', e: '0' },
+    inning: '7', balls: 2, strikes: 1, outs: 2,
+  };
+  const MESSAGE = "SEVENTH INNING STRETCH.   TONIGHT'S CROWD: 11,482.   HOT DOGS HALF PRICE UNTIL THE NINTH.   WELCOME, FENLAND BIRD CLUB!   ";
+
+  type Colour = 'amber' | 'red' | 'green';
+  const canvas = document.getElementById('board') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  let cols = 0, rows = 0, unit = 20, ratio = 1;
+  let lit = new Map<string, Colour>();
+  let paint: { text: string; x: number; y: number; size: number; align?: CanvasTextAlign }[] = [];
+  let rules: [number, number, number, number][] = [];
+  let band = { y: 0, x0: 0, x1: 0, offset: 0 };
+  let paintFace = 'sans-serif';
+  const sprites: Record<string, HTMLCanvasElement> = {};
+  let timer = 0;
+
+  function set(x: number, y: number, colour: Colour = 'amber') { if (x >= 0 && y >= 0 && x < cols && y < rows) lit.set(`${x},${y}`, colour); }
+  function write(text: string, x: number, y: number, face = BIG, colour: Colour = 'amber') {
+    const w = face === BIG ? 5 : 3;
+    [...text].forEach((ch, i) => {
+      const glyph = face[ch] ?? face[' '] ?? [];
+      glyph.forEach((bits, row) => { for (let b = 0; b < w; b++) if (bits & (1 << (w - 1 - b))) set(x + i * (w + 1) + b, y + row, colour); });
+    });
+  }
+  const width = (text: string, face = BIG) => text.length * ((face === BIG ? 5 : 3) + 1) - 1;
+
+  // A bulb drawn once per colour at two squares (for its glow), then stamped.
+  function makeSprites() {
+    const make = (colour: Colour | 'off') => {
+      const c = document.createElement('canvas');
+      const s = Math.ceil(unit * 2 * ratio);
+      c.width = c.height = s;
+      const g = c.getContext('2d')!;
+      const mid = s / 2, r = unit * 0.36 * ratio;
+      const tones = { amber: ['#fff7dc', '#ffc04a', '#b8640f', 'rgba(255,170,60,'], red: ['#ffe2d6', '#ff5a3a', '#9e1d0f', 'rgba(255,80,50,'], green: ['#e8ffe0', '#5ee36a', '#1e7a2a', 'rgba(90,230,110,'] };
+      if (colour === 'off') {
+        const grad = g.createRadialGradient(mid - r * 0.3, mid - r * 0.3, 0, mid, mid, r);
+        grad.addColorStop(0, '#3b4a3e'); grad.addColorStop(0.7, '#1a261d'); grad.addColorStop(1, '#0b130d');
+        g.fillStyle = grad; g.beginPath(); g.arc(mid, mid, r, 0, Math.PI * 2); g.fill();
+      } else {
+        const [hot, warm, edge, glow] = tones[colour];
+        const halo = g.createRadialGradient(mid, mid, r * 0.5, mid, mid, unit * 0.95 * ratio);
+        halo.addColorStop(0, `${glow}0.55)`); halo.addColorStop(1, `${glow}0)`);
+        g.fillStyle = halo; g.fillRect(0, 0, s, s);
+        const grad = g.createRadialGradient(mid - r * 0.25, mid - r * 0.25, 0, mid, mid, r);
+        grad.addColorStop(0, hot); grad.addColorStop(0.55, warm); grad.addColorStop(1, edge);
+        g.fillStyle = grad; g.beginPath(); g.arc(mid, mid, r, 0, Math.PI * 2); g.fill();
+      }
+      sprites[colour] = c;
+    };
+    (['off', 'amber', 'red', 'green'] as const).forEach(make);
+  }
+
+  function layout(across: number, down: number, narrow: boolean) {
+    lit = new Map(); paint = []; rules = [];
+    if (narrow) {
+      // A phone: the runs side by side in the big face, the inning, then the message.
+      cols = across; rows = 28;
+      paint.push({ text: 'Halloran Field', x: 1, y: 1, size: 18 });
+      write(GAME.visitors.r, 1, 3); write(GAME.home.r, 8, 3);
+      paint.push({ text: 'Gulls', x: 1, y: 11, size: 14 }, { text: 'Owls', x: 8, y: 11, size: 14 });
+      paint.push({ text: 'Top of the', x: 1, y: 15, size: 14 });
+      write(GAME.inning, 9, 13, SMALL);
+      rules.push([0, 12, cols, 12], [0, 19, cols, 19]);
+      band = { y: 20, x0: 0, x1: cols, offset: band.offset };
+      return;
+    }
+    cols = across; rows = down;
+    // Under forty-five rows the board closes up: no small labels over the names, the message on the foot.
+    const compact = rows < 45;
+    const scoreX = cols - 9;
+    paint.push({ text: 'Halloran Field', x: 2, y: 1, size: 20 }, { text: 'Home of the Owls since 1931', x: cols - 2, y: 1, size: 13, align: 'right' });
+    rules.push([1, 2, cols - 1, 2]);
+
+    // Names and runs.
+    const n1 = compact ? 3 : 4, n2 = compact ? 11 : 12;
+    if (!compact) paint.push({ text: 'Visitors', x: 2, y: 3.5, size: 12 }, { text: 'Home', x: 2, y: 11.5, size: 12 }, { text: 'Runs', x: scoreX + 2.5, y: 3.5, size: 12, align: 'center' });
+    write(GAME.visitors.name, 2, n1); write(GAME.visitors.r, scoreX, n1);
+    write(GAME.home.name, 2, n2); write(GAME.home.r, scoreX, n2);
+
+    // The inning and the count between them.
+    const mid = Math.round((2 + width(GAME.visitors.name) + scoreX) / 2);
+    if (!compact) paint.push({ text: 'Inning', x: mid, y: 3.5, size: 12, align: 'center' });
+    write('^', mid - 6, n1); write(GAME.inning, mid, n1);
+    const counts: [string, number, Colour][] = [['Ball', GAME.balls, 'green'], ['Strike', GAME.strikes, 'red'], ['Out', GAME.outs, 'red']];
+    counts.forEach(([label, on, colour], i) => {
+      const y = n2 + 1 + i * 2;
+      paint.push({ text: label, x: mid - 2, y: y + 0.5, size: 12, align: 'right' });
+      for (let k = 0; k < on; k++) set(mid + k * 2, y, colour);
+    });
+    const r1 = compact ? n2 + 7 : n2 + 8;
+    rules.push([1, r1, cols - 1, r1]);
+
+    // Line score: innings in slots, then runs, hits and errors.
+    const step = cols >= 72 ? 5 : 4;
+    const x0 = 8;
+    const slot = (i: number) => x0 + i * step;
+    const rx = slot(9) + 1, hx = rx + step, ex = hx + 8;
+    const head = r1 + 1.5;
+    for (let i = 0; i < 9; i++) paint.push({ text: String(i + 1), x: slot(i) + 1.5, y: head, size: 13, align: 'center' });
+    paint.push({ text: 'R', x: rx + 1.5, y: head, size: 13, align: 'center' }, { text: 'H', x: hx + 3.5, y: head, size: 13, align: 'center' }, { text: 'E', x: ex + 1.5, y: head, size: 13, align: 'center' });
+    const l1 = r1 + 2, l2 = l1 + 6;
+    ([['Gulls', GAME.visitors, l1], ['Owls', GAME.home, l2]] as const).forEach(([label, team, y]) => {
+      paint.push({ text: label, x: 2, y: y + 2.5, size: 16 });
+      team.innings.forEach((n, i) => write(n, slot(i), y, SMALL));
+      write(team.r, rx, y, SMALL); write(team.h.padStart(2, ' '), hx, y, SMALL); write(team.e, ex, y, SMALL);
+    });
+    const r2 = l2 + 6;
+    rules.push([1, r2, cols - 1, r2]);
+
+    // The message, seven bulbs high; a painted sign between it and the line score when there is room.
+    const by = compact ? rows - 8 : rows - 9;
+    if (by - r2 >= 5) paint.push({ text: 'Fenland Brewery, brewed by the river since 1911', x: cols / 2, y: Math.round((r2 + by) / 2) + 0.5, size: 18, align: 'center' });
+    if (by - 1 > r2) rules.push([1, by - 1, cols - 1, by - 1]);
+    band = { y: by, x0: 1, x1: cols - 1, offset: band.offset };
+  }
+
+  function messageAt(x: number, y: number) {
+    const text = MESSAGE;
+    const span = text.length * 6;
+    const at = ((x + band.offset) % span + span) % span;
+    const glyph = BIG[text[Math.floor(at / 6)]] ?? BIG[' '];
+    const b = at % 6;
+    return b < 5 && !!(glyph[y] & (1 << (4 - b)));
+  }
+
+  function drawCell(x: number, y: number) {
+    let colour: Colour | 'off' = lit.get(`${x},${y}`) ?? 'off';
+    if (y >= band.y && y < band.y + 7 && x >= band.x0 && x < band.x1 && messageAt(x - band.x0, y - band.y)) colour = 'amber';
+    const s = sprites[colour];
+    ctx.drawImage(s, (x + 0.5) * unit * ratio - s.width / 2, (y + 0.5) * unit * ratio - s.height / 2);
+  }
+
+  function drawAll() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#0e2a1c';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      const off = !lit.has(`${x},${y}`) && !(y >= band.y && y < band.y + 7);
+      const painted = paint.some(p => Math.abs(p.y - (y + 0.5)) < 0.6 && (p.align === 'right' ? x < p.x && x >= p.x - p.text.length * 0.55 * p.size / 14 : p.align === 'center' ? Math.abs(x + 0.5 - p.x) < p.text.length * 0.3 * p.size / 14 : x >= p.x && x < p.x + p.text.length * 0.55 * p.size / 14));
+      if (off && painted) continue;
+      drawCell(x, y);
+    }
+    // Painted rules and lettering on the green.
+    ctx.strokeStyle = 'rgba(239,230,204,0.55)';
+    ctx.lineWidth = Math.max(1, ratio);
+    rules.forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1 * unit * ratio, y1 * unit * ratio + 0.5); ctx.lineTo(x2 * unit * ratio, y2 * unit * ratio + 0.5); ctx.stroke(); });
+    ctx.fillStyle = '#efe6cc';
+    ctx.textBaseline = 'middle';
+    paint.forEach(p => {
+      ctx.font = `${p.size * (unit / 20) * ratio}px ${paintFace}`;
+      ctx.textAlign = p.align ?? 'left';
+      ctx.fillText(p.text, p.x * unit * ratio, p.y * unit * ratio);
+    });
+  }
+
+  function start() {
+    clearInterval(timer);
+    if (reducedMotion()) return;
+    timer = window.setInterval(() => { band.offset++; drawAll(); }, 90);
+  }
+
+  async function begin() {
+    const probe = document.createElement('span');
+    probe.style.fontFamily = 'var(--typeface-compressed)';
+    document.body.append(probe);
+    paintFace = getComputedStyle(probe).fontFamily || 'Impact, sans-serif';
+    probe.remove();
+    try { await document.fonts.load(`20px ${paintFace}`, 'Halloran'); } catch { /* painted in the fallback */ }
+    onSquares(squares => {
+      unit = squares.unit;
+      ratio = window.devicePixelRatio || 1;
+      band.offset = -2;
+      layout(squares.across, squares.down, squares.narrow);
+      canvas.width = Math.round(cols * unit * ratio);
+      canvas.height = Math.round(rows * unit * ratio);
+      canvas.style.width = `${cols * unit}px`;
+      canvas.style.height = `${rows * unit}px`;
+      makeSprites();
+      drawAll();
+      start();
+    });
+  }
+  begin();
+</script>
+
+<style is:global>
+  html { background: #0e2a1c; }
+  .ballpark { background: #0e2a1c; }
+  .bulbs { grid-column: 1 / -1; grid-row: 1 / -1; display: block; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :root[data-narrow] .ballpark { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .bulbs { grid-row: 1 / span 28; }
+</style>

@@ -1,0 +1,121 @@
+---
+// After a fashion magazine's cover: one portrait the height of the window, and the masthead in a
+// high-contrast didone as wide as the window, set low across the red of her sweater instead of over
+// her head. Cover lines in Didot and a condensed sans, an issue number, and a barcode drawn on
+// whole squares.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="fashion-issue" theme="light">
+  <main class="stage cover" lang="en">
+    <figure class="portrait">
+      <img src="/examples/images/atelier-sofie.jpg" alt="A woman with dark hair in a red turtleneck, laughing" />
+    </figure>
+
+    <h1 class="mast" id="mast" aria-label="Ligne"><span id="mastWord">LIGNE</span></h1>
+
+    <p class="issue">Numéro 214<br />Décembre 2026</p>
+
+    <div class="lines left">
+      <p class="kick red"><i>Rouge,</i></p>
+      <p class="sub">the only colour of the winter, from collar to heel</p>
+      <p class="story">Sofie Vang<br />laughs last</p>
+      <p class="small">Twenty years of being told to look serious. The cover story, by Agnès Moreau</p>
+    </div>
+
+    <div class="lines right">
+      <p class="kick">48 coats</p>
+      <p class="sub">worth the cold</p>
+      <p class="small">Paris, Milan, Copenhague: what walked, and what stayed</p>
+      <p class="mid"><i>The turtleneck</i> returns, and this time it means it</p>
+      <p class="small">Beauty: a red lip that survives dinner</p>
+    </div>
+
+    <div class="code" aria-label="Barcode 9 771234 214006">
+      <svg id="barcode" aria-hidden="true"></svg>
+      <p><span>9</span><span>771234</span><span>214006</span></p>
+    </div>
+    <p class="price">€ 9,50<br />£ 7.99</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The masthead as wide as the window less a square each side, standing on the third row from the foot.
+  const mast = document.getElementById('mast') as HTMLElement;
+  const fit = () => {
+    const word = document.getElementById('mastWord') as HTMLElement;
+    mast.style.fontSize = '100px';
+    const wide = mast.getBoundingClientRect().width;
+    const natural = word.getBoundingClientRect().width;
+    mast.style.fontSize = `${Math.floor((100 * wide) / natural)}px`;
+  };
+
+  // An EAN-13 barcode: the left half odd parity, the right half even, guards a little longer.
+  const L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
+  const G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111'];
+  const R = ['1110010', '1100110', '1101100', '1000010', '1011100', '1001110', '1010000', '1000100', '1001000', '1110100'];
+  const PARITY = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+  const digits = '9771234214006'.split('').map(Number);
+  let bits = '101';
+  digits.slice(1, 7).forEach((d, i) => { bits += PARITY[digits[0]][i] === 'L' ? L[d] : G[d]; });
+  bits += '01010';
+  digits.slice(7).forEach(d => { bits += R[d]; });
+  bits += '101';
+  const guards = new Set([0, 1, 2, 45, 46, 47, 48, 49, 92, 93, 94]);
+  const svg = document.getElementById('barcode') as unknown as SVGSVGElement;
+  svg.setAttribute('viewBox', `0 0 ${bits.length} 40`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = [...bits].map((b, i) => (b === '1' ? `<rect x="${i}" y="0" width="1" height="${guards.has(i) ? 40 : 35}"/>` : '')).join('');
+
+  onSquares(() => requestAnimationFrame(fit));
+  document.fonts?.ready.then(fit);
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .cover {
+    --red: #b3132b;
+    color: #000;
+    background: #fff;
+    font-family: Didot, "Bodoni 72", "Bodoni MT", serif;
+    line-height: var(--u);
+  }
+  .cover p, .cover h1, .cover figure { margin: 0; }
+
+  /* The portrait: the full height, a little wider than a third. */
+  .portrait { grid-column: 21 / -21; grid-row: 1 / -1; overflow: hidden; background: #6b5a52; }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; display: block; filter: contrast(1.12) saturate(1.08); }
+
+  /* The masthead: one word, all the way across, its foot on the third row from the bottom. */
+  .mast { grid-column: 2 / -2; grid-row: span 22 / -3; align-self: end; z-index: 1; font-family: Didot, "Bodoni 72", serif; font-weight: 400; font-size: 400px; line-height: 0.74; letter-spacing: -0.02em; white-space: nowrap; text-align: center; mix-blend-mode: multiply; margin-bottom: calc(var(--u) * -0.05); pointer-events: none; }
+
+  .issue { grid-column: 2 / span 10; grid-row: 2 / span 2; font-family: "Avenir Next Condensed", "Avenir Next", sans-serif; font-weight: 500; font-size: calc(14px * var(--sf)); }
+
+  .lines { grid-row: 5 / span 17; display: flex; flex-direction: column; }
+  .lines.left { grid-column: 2 / 20; }
+  .lines.right { grid-column: -20 / -2; grid-row: 7 / span 15; text-align: right; align-items: end; }
+  .kick { font-size: calc(76px * var(--sf)); line-height: calc(4 * var(--u)); letter-spacing: -0.02em; }
+  .kick.red { color: var(--red); }
+  .sub { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-style: italic; max-width: calc(16 * var(--u)); }
+  .story { margin-top: calc(2 * var(--u)) !important; font-size: calc(44px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; letter-spacing: -0.01em; }
+  .mid { margin-top: var(--u) !important; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); max-width: calc(16 * var(--u)); }
+  .small { margin-top: var(--u) !important; font-family: "Avenir Next Condensed", "Avenir Next", sans-serif; font-weight: 500; font-size: calc(15px * var(--sf)); max-width: calc(15 * var(--u)); }
+
+  /* The barcode: six squares by four on its white box, over the masthead's last letter. */
+  .code { grid-column: -10 / -3; grid-row: 2 / span 4; z-index: 2; background: #fff; padding: calc(var(--u) / 2) calc(var(--u) / 2) 0; display: grid; grid-template-rows: 1fr calc(var(--u) * 0.8); }
+  .code svg { width: 100%; height: 100%; fill: #000; display: block; }
+  .code p { display: flex; justify-content: space-between; font-family: "Avenir Next Condensed", sans-serif; font-size: calc(11px * var(--sf)); line-height: calc(var(--u) * 0.8); letter-spacing: 0.08em; }
+  .price { grid-column: -14 / -10; grid-row: 2 / span 2; font-family: "Avenir Next Condensed", sans-serif; font-weight: 500; font-size: calc(13px * var(--sf)); text-align: right; padding-right: calc(var(--u) / 2); }
+
+  /* A narrow window: the portrait, the masthead over its foot, then the lines. */
+  :root[data-narrow] .cover { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .portrait { grid-column: 1 / -1; grid-row: 1 / span 24; }
+  :root[data-narrow] .mast { grid-column: 2 / -2; grid-row: 18 / span 6; color: #fff; mix-blend-mode: normal; }
+  :root[data-narrow] .issue { grid-column: 2 / span 8; grid-row: 2 / span 2; z-index: 1; color: #fff; }
+  :root[data-narrow] .code { grid-column: -7 / -2; grid-row: 2 / span 3; }
+  :root[data-narrow] .code p { font-size: calc(9px * var(--sf)); letter-spacing: 0; }
+  :root[data-narrow] .price { display: none; }
+  :root[data-narrow] .lines { grid-column: 2 / -2; grid-row: auto; text-align: left; align-items: start; margin-top: var(--u); }
+  :root[data-narrow] .kick { font-size: calc(56px * var(--sf)); line-height: calc(3 * var(--u)); }
+</style>

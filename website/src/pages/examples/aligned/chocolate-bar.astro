@@ -1,0 +1,288 @@
+---
+// After a chocolate bar half out of its wrapper: the paper sleeve, the foil, and the bar's pieces on
+// the squares, each a whole number of them. Break a piece off with a click; when the uncovered
+// pieces are gone the sleeve slides along. The back of the pack stands beside it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const NUTRITION: [string, string, string][] = [
+  ['Energy', '2,318 kJ / 557 kcal', '129 kJ / 31 kcal'],
+  ['Fat', '42 g', '2.3 g'],
+  ['of which saturates', '26 g', '1.4 g'],
+  ['Carbohydrate', '33 g', '1.8 g'],
+  ['of which sugars', '28 g', '1.6 g'],
+  ['Fibre', '11 g', '0.6 g'],
+  ['Protein', '8.6 g', '0.5 g'],
+  ['Salt', '0.02 g', '0 g'],
+];
+// A barcode drawn in whole bars: widths in quarters of a square.
+const BARS = '1121312113211231213111321211312121131221'.split('').map(Number);
+---
+<AlignedStudy slug="chocolate-bar" theme="dark">
+  <main class="stage cb">
+    <header class="cb-house">
+      <h1>Maison Vauquelin</h1>
+      <p class="cb-since">Chocolatiers à Lyon depuis 1898</p>
+    </header>
+
+    <p class="cb-story">Our seventy-two comes from one cooperative at Tumaco, on Colombia’s Pacific coast, where cacao grows in the shade of banana and coconut. The beans ferment six days in cedar boxes, dry on raised beds in the sun and reach Lyon in jute. We roast them for forty minutes and conche for three days, so the bar tastes of red fruit first and of the forest last.</p>
+
+    <div class="cb-table" id="table">
+      <div class="cb-foil" aria-hidden="true"></div>
+      <div class="cb-bar" id="bar" role="group" aria-label="The bar: eighteen pieces"></div>
+      <div class="cb-sleeve" id="sleeve" aria-hidden="true">
+        <div class="cb-sleeve-face">
+          <p class="cb-sleeve-house">Vauquelin</p>
+          <p class="cb-sleeve-kind">Noir <br />72 %</p>
+          <p class="cb-sleeve-origin">Tumaco, Colombie</p>
+          <p class="cb-sleeve-weight">100 g</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="cb-count" aria-live="polite"><span id="count">Eighteen pieces, 100 g. Break one off.</span> <button type="button" id="rewrap" class="cb-rewrap" hidden>Wrap a new bar</button></p>
+
+    <section class="cb-back" aria-label="The back of the pack">
+      <p class="cb-ingredients"><b>Ingredients</b> cocoa mass, cane sugar, cocoa butter, Bourbon vanilla pod. Cocoa solids 72 % minimum. May contain traces of hazelnut and milk.</p>
+      <table class="cb-nutrition">
+        <caption>Nutrition, average values</caption>
+        <thead><tr><th scope="col"></th><th scope="col">100 g</th><th scope="col">A piece, 5.6 g</th></tr></thead>
+        <tbody>{NUTRITION.map(([what, hundred, piece]) => <tr class:list={{ sub: what.startsWith('of which') }}><th scope="row">{what}</th><td>{hundred}</td><td>{piece}</td></tr>)}</tbody>
+      </table>
+      <div class="cb-codes">
+        <div class="cb-barcode" aria-label="Barcode 3 760123 450728" role="img">
+          <span class="cb-bars">{BARS.map((w, i) => <i style={`--w: ${w}`} class:list={{ gap: i % 2 === 1 }} />)}</span>
+          <span class="cb-digits">3 760123 450728</span>
+        </div>
+        <p class="cb-dates">Best before<br /><b>03 / 2028</b><br />Lot T-1114</p>
+      </div>
+      <p class="cb-keep">Keep cool and dry, between 15 and 18 °C, away from strong smells. White bloom on the surface is cocoa butter, not age.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const COLS = 6, ROWS = 3, COVERED = 2;
+  const $ = (id: string) => document.getElementById(id)!;
+  const table = $('table'), bar = $('bar'), sleeve = $('sleeve'), count = $('count'), rewrap = $('rewrap') as HTMLButtonElement;
+  const WORDS = ['No pieces', 'One piece', 'Two pieces', 'Three pieces', 'Four pieces', 'Five pieces', 'Six pieces', 'Seven pieces', 'Eight pieces', 'Nine pieces', 'Ten pieces', 'Eleven pieces', 'Twelve pieces', 'Thirteen pieces', 'Fourteen pieces', 'Fifteen pieces', 'Sixteen pieces', 'Seventeen pieces', 'Eighteen pieces'];
+
+  let slid = false;
+  const eaten = new Set<number>();
+
+  // A piece is covered while the sleeve is over it: the last two columns, or the last two rows when
+  // the bar stands upright on a phone.
+  // Upright, the pieces flow column by column, so a piece's place along the bar is the same either way.
+  const covered = (index: number) => !slid && index % COLS >= COLS - COVERED;
+
+  const pieces: HTMLButtonElement[] = [];
+  for (let index = 0; index < COLS * ROWS; index++) {
+    const piece = document.createElement('button');
+    piece.type = 'button';
+    piece.className = 'cb-piece';
+    // Each piece leaves its own crumbs.
+    const r = (k: number) => `${Math.round(12 + ((Math.sin(index * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1 * 76)}%`;
+    piece.style.cssText = `--c1: ${r(1)} ${r(2)}; --c2: ${r(3)} ${r(4)}; --c3: ${r(5)} ${r(6)}; --c4: ${r(7)} ${r(8)}`;
+    piece.innerHTML = '<span class="cb-mark" aria-hidden="true">V</span>';
+    piece.addEventListener('click', () => breakOff(index));
+    bar.append(piece);
+    pieces.push(piece);
+  }
+
+  function tell() {
+    const left = COLS * ROWS - eaten.size;
+    const kcal = eaten.size * 31;
+    if (!eaten.size) count.textContent = 'Eighteen pieces, 100 g. Break one off.';
+    else if (!left) count.textContent = 'Il n’en reste plus. 557 kcal, every one of them worth it.';
+    else count.textContent = `${WORDS[left]} left. You have eaten ${eaten.size === 1 ? 'one' : WORDS[eaten.size].split(' ')[0].toLowerCase()}, ${kcal} kcal.`;
+    rewrap.hidden = eaten.size === 0;
+  }
+
+  function refresh() {
+    pieces.forEach((piece, index) => {
+      const gone = eaten.has(index);
+      piece.disabled = gone || covered(index);
+      piece.setAttribute('aria-label', gone ? 'Eaten' : covered(index) ? 'Still in the wrapper' : 'Break off this piece');
+    });
+  }
+
+  function breakOff(index: number) {
+    if (eaten.has(index) || covered(index)) return;
+    eaten.add(index);
+    const piece = pieces[index];
+    piece.classList.add(reducedMotion() ? 'gone' : 'breaking');
+    if (!reducedMotion()) setTimeout(() => piece.classList.replace('breaking', 'gone'), 420);
+    // Once the uncovered pieces are gone, the sleeve slides off the rest.
+    const open = pieces.every((_, i) => eaten.has(i) || covered(i));
+    if (!slid && open) { slid = true; table.classList.add('slid'); }
+    refresh();
+    tell();
+    const next = pieces.find((p, i) => !eaten.has(i) && !covered(i));
+    if (document.activeElement === piece || document.activeElement === document.body) next?.focus();
+  }
+
+  rewrap.addEventListener('click', () => {
+    eaten.clear();
+    slid = false;
+    table.classList.remove('slid');
+    pieces.forEach(piece => piece.classList.remove('gone', 'breaking'));
+    refresh();
+    tell();
+  });
+
+  onSquares(({ across, down, narrow }) => {
+    const stage = document.querySelector<HTMLElement>('.cb')!;
+    // A piece is a square of whole squares; the bar is six by three of them (three by six upright).
+    const piece = narrow ? Math.floor((across - 4) / ROWS) : Math.max(3, Math.min(8, Math.floor((across - 30) / COLS), Math.floor((down - 14) / ROWS)));
+    const cols = narrow ? ROWS : COLS, rows = narrow ? COLS : ROWS;
+    const wide = cols * piece + 2, high = rows * piece + 2;
+    stage.style.setProperty('--p', String(piece));
+    table.style.gridTemplateColumns = `repeat(${wide}, var(--u))`;
+    table.style.gridTemplateRows = `repeat(${high}, var(--u))`;
+    bar.style.gridTemplateColumns = `repeat(${cols}, calc(${piece} * var(--u)))`;
+    bar.style.gridTemplateRows = `repeat(${rows}, calc(${piece} * var(--u)))`;
+    // The order of the pieces: row by row lying down, column by column upright, so a piece keeps its place in the bar.
+    bar.style.gridAutoFlow = narrow ? 'column' : 'row';
+    const sleeveAt = 2 + (cols - (narrow ? 0 : COVERED)) * piece;
+    if (narrow) {
+      sleeve.style.gridColumn = `1 / -1`;
+      sleeve.style.gridRow = `${2 + (rows - COVERED) * piece} / -1`;
+    } else {
+      sleeve.style.gridColumn = `${sleeveAt} / -1`;
+      sleeve.style.gridRow = `1 / -1`;
+    }
+    stage.style.setProperty('--slide', String(COVERED * piece + 1));
+    if (narrow) {
+      table.style.gridColumn = '';
+      table.style.gridRow = '';
+    } else {
+      table.style.gridColumn = `3 / span ${wide}`;
+      const top = 8 + Math.max(0, Math.floor((down - 3 - 8 - high) / 2));
+      table.style.gridRow = `${top} / span ${high}`;
+      stage.style.setProperty('--right', String(3 + wide + 2));
+      const back = document.querySelector<HTMLElement>('.cb-back')!, house = document.querySelector<HTMLElement>('.cb-house')!, story = document.querySelector<HTMLElement>('.cb-story')!;
+      for (const el of [back, story]) el.style.gridColumn = `${3 + wide + 3} / -2`;
+      house.style.gridColumn = `3 / span ${wide}`;
+      document.querySelector<HTMLElement>('.cb-count')!.style.gridColumn = `3 / span ${wide}`;
+      document.querySelector<HTMLElement>('.cb-count')!.style.gridRow = `${top + high + 1} / span 1`;
+    }
+    refresh();
+  });
+  tell();
+</script>
+
+<style is:global>
+  html[data-study='chocolate-bar'] { background: #0d3f3a; }
+  .cb {
+    --paper: #0d3f3a;
+    --paper-deep: #082c29;
+    --gold: #d8b45a;
+    --cocoa: #3b1d12;
+    color: #e9dcc0;
+    background: var(--paper);
+    /* The wrapper paper's fine engraved lines. */
+    background-image: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px calc(var(--u) / 4));
+    font-family: Baskerville, 'Big Caslon', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .cb :is(h1, p, table) { margin: 0; }
+
+  .cb-house { grid-column: 50 / -2; grid-row: 3 / span 4; }
+  .cb-house h1 { font-family: Didot, 'Bodoni 72', serif; font-weight: 400; font-size: calc(44px * var(--sf)); line-height: calc(3 * var(--u)); color: var(--gold); letter-spacing: 0.01em; }
+  .cb-since { font-style: italic; }
+  .cb-story { grid-column: 50 / -2; grid-row: 3 / span 10; max-width: calc(26 * var(--u)); }
+
+  /* The table: foil a square around the bar, the sleeve a square past it. */
+  .cb-table { display: grid; position: relative; }
+  .cb-foil {
+    grid-column: 1 / -1; grid-row: 1 / -1;
+    margin-right: var(--u);
+    background:
+      repeating-linear-gradient(72deg, rgb(255 255 255 / 0.18) 0 2px, transparent 2px 13px),
+      repeating-linear-gradient(-34deg, rgb(0 0 0 / 0.12) 0 1px, transparent 1px 17px),
+      linear-gradient(118deg, #9aa0a6 0%, #eef0f2 14%, #a9afb5 27%, #f6f7f8 41%, #8e949b 55%, #dfe2e5 70%, #a2a8ae 84%, #edeff1 100%);
+    box-shadow: 0 calc(var(--u) / 2) var(--u) rgb(0 0 0 / 0.35);
+  }
+  .cb-bar { grid-column: 2 / -2; grid-row: 2 / -2; display: grid; position: relative; }
+  .cb-piece {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: linear-gradient(140deg, #5a2e1d, #3b1d12 55%, #2a130b);
+    box-shadow: inset 2px 2px 0 rgb(255 225 200 / 0.14), inset -2px -2px 0 rgb(0 0 0 / 0.45), inset 0 0 0 1px #24100a;
+    transition: transform 0.42s cubic-bezier(0.3, 0.7, 0.4, 1), opacity 0.42s ease-in, filter 0.15s;
+  }
+  /* The raised plateau of each piece, a fifth in from its edge, and its mark. */
+  .cb-piece::before {
+    content: ''; position: absolute; inset: 18%;
+    background: linear-gradient(140deg, #4f2819, #3a1c11);
+    box-shadow: -2px -2px 0 rgb(255 225 200 / 0.12), 2px 2px 0 rgb(0 0 0 / 0.4), -6px -6px 10px rgb(255 220 190 / 0.05), 6px 6px 12px rgb(0 0 0 / 0.35);
+  }
+  .cb-mark { position: absolute; inset: 0; display: grid; place-items: center; font: italic calc(var(--p) * 5.5px * var(--sf)) / 1 Didot, 'Bodoni 72', serif; color: #3a1c11; text-shadow: -1px -1px 0 rgb(0 0 0 / 0.5), 1px 1px 0 rgb(255 220 190 / 0.16); }
+  .cb-piece:hover:not(:disabled) { filter: brightness(1.12); }
+  .cb-piece:focus-visible { outline: 2px solid var(--gold); outline-offset: -4px; z-index: 1; }
+  .cb-piece:disabled { cursor: default; }
+  .cb-piece.breaking { transform: translate(calc(var(--u) * -0.6), calc(var(--u) * -0.8)) rotate(-9deg); opacity: 0; z-index: 2; box-shadow: 0 var(--u) var(--u) rgb(0 0 0 / 0.5); }
+  .cb-piece.gone { visibility: hidden; }
+  /* Where a piece was: its crumbs on the foil. */
+  .cb-piece.gone::after { content: ''; visibility: visible; position: absolute; inset: 0; background: radial-gradient(circle at var(--c1), #3b1d12 0 2px, transparent 2.5px), radial-gradient(circle at var(--c2), #3b1d12 0 1.5px, transparent 2px), radial-gradient(circle at var(--c3), #4a2518 0 1px, transparent 1.5px), radial-gradient(circle at var(--c4), #3b1d12 0 1px, transparent 1.5px); }
+
+  /* The sleeve: printed paper with a gold rule, wrapped over the end of the bar. */
+  .cb-sleeve { position: relative; z-index: 3; transition: transform 0.9s cubic-bezier(0.6, 0, 0.2, 1); }
+  .cb-sleeve-face {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 38%, #136058, var(--paper-deep));
+    border: calc(var(--u) / 4) solid var(--paper-deep);
+    outline: 1px solid var(--gold); outline-offset: calc(var(--u) / -2);
+    box-shadow: -6px 0 14px rgb(0 0 0 / 0.45), inset 8px 0 10px rgb(0 0 0 / 0.25);
+    display: grid; align-content: center; justify-items: center; text-align: center; gap: var(--u);
+    padding: var(--u);
+    overflow: hidden;
+  }
+  .cb-sleeve-house { font-family: Didot, 'Bodoni 72', serif; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); color: var(--gold); }
+  .cb-sleeve-kind { font-family: Didot, 'Bodoni 72', serif; font-style: italic; font-size: calc(30px * var(--sf)); line-height: calc(2 * var(--u)); color: #f3e8cf; }
+  .cb-sleeve-origin, .cb-sleeve-weight { font-size: calc(12px * var(--sf)); color: var(--gold); }
+  .cb-table.slid .cb-sleeve { transform: translateX(calc(var(--slide) * var(--u) + 40vw)); }
+  @media (prefers-reduced-motion: reduce) { .cb-sleeve, .cb-piece { transition: none; } }
+
+  .cb-count { font-style: italic; display: flex; gap: var(--u); white-space: nowrap; }
+  .cb-rewrap { all: unset; cursor: pointer; font-style: normal; color: var(--gold); text-decoration: underline; text-underline-offset: calc(3px * var(--sf)); }
+  .cb-rewrap[hidden] { display: none; }
+  .cb-rewrap:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
+
+  /* The back of the pack: printed white, as the law asks. */
+  .cb-back { grid-column: 50 / -2; grid-row: -22 / -3; display: grid; grid-auto-rows: min-content; align-content: start; row-gap: var(--u); padding: var(--u); background: #f7f3ea; color: #1b1612; font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; font-size: calc(12px * var(--sf)); max-width: calc(26 * var(--u)); box-sizing: border-box; overflow: hidden; }
+  .cb-ingredients b { font-weight: 600; margin-right: 0.3em; }
+  .cb-nutrition { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .cb-nutrition caption { text-align: left; font-weight: 600; height: var(--u); }
+  .cb-nutrition :is(th, td) { height: var(--u); padding: 0; text-align: right; font-weight: 400; border-top: 1px solid #1b1612; line-height: calc(var(--u) - 1px); white-space: nowrap; }
+  .cb-nutrition thead th { font-weight: 600; border-top: 3px solid #1b1612; line-height: calc(var(--u) - 3px); }
+  .cb-nutrition th[scope='row'] { text-align: left; }
+  .cb-nutrition tr.sub th { padding-left: var(--u); font-style: italic; }
+  .cb-codes { display: flex; justify-content: space-between; align-items: end; height: calc(3 * var(--u)); }
+  .cb-barcode { display: grid; grid-template-rows: calc(2 * var(--u)) var(--u); }
+  .cb-bars { display: flex; }
+  .cb-bars i { display: block; width: calc(var(--w) * var(--u) / 12); background: #1b1612; }
+  .cb-bars i.gap { background: transparent; }
+  .cb-digits { font-family: Menlo, monospace; font-size: calc(10px * var(--sf)); letter-spacing: 0.12em; }
+  .cb-dates { text-align: right; }
+  .cb-keep { font-style: italic; }
+
+  /* Narrow: the house, the story, the bar standing up, and the back of the pack. */
+  :root[data-narrow] .cb { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .cb > * { grid-column: 2 / -2 !important; grid-row: auto !important; }
+  :root[data-narrow] .cb-house { margin-top: var(--u); }
+  :root[data-narrow] .cb-house h1 { font-size: calc(34px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .cb-story { margin-block: var(--u); }
+  :root[data-narrow] .cb-table { grid-column: 1 / -1 !important; justify-content: start; margin-left: var(--u); }
+  :root[data-narrow] .cb-foil { margin-right: 0; margin-bottom: var(--u); }
+  :root[data-narrow] .cb-table.slid .cb-sleeve { transform: translateY(calc(var(--slide) * var(--u) + 60vh)); opacity: 0; transition: transform 0.9s, opacity 0.9s; }
+  :root[data-narrow] .cb-count { white-space: normal; flex-wrap: wrap; margin-block: var(--u); }
+  :root[data-narrow] .cb-back { max-width: none; }
+  :root[data-narrow] .cb-nutrition :is(th, td):nth-child(3) { display: none; }
+  :root[data-narrow] .cb-sleeve-face { gap: 0; }
+  :root[data-narrow] .cb-sleeve-kind br, :root[data-narrow] .cb-sleeve-weight { display: none; }
+</style>

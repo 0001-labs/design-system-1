@@ -1,0 +1,327 @@
+---
+// After an 80-column punch card held up to a lamp: a manila card with its corner cut, twelve rows
+// a square apart and two columns to a square, the printed digits, the keypunch's line along the top
+// edge, and a haiku punched into it in the card code. The holes let the light through, which is
+// what the haiku says. Type your own line and the card is punched again.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const HAIKU = ['Twelve rows of silence', 'light gets through where I was punched', 'do not fold me now'];
+---
+<AlignedStudy slug="punch-card" theme="dark">
+  <main class="stage pc">
+    <header class="pc-head">
+      <p class="pc-lab">Westmarch University Computing Laboratory</p>
+      <p class="pc-job">Job 4417, deck of one card<br />Submitted 14 November 2026, 02.10</p>
+    </header>
+
+    <h1 class="pc-poem" aria-label={HAIKU.join(' / ')}>
+      {HAIKU.map(line => <span>{line}</span>)}
+    </h1>
+
+    <div class="pc-card-wrap" id="wrap">
+      <svg class="pc-card" id="card" role="img" aria-labelledby="pc-card-label"><title id="pc-card-label">The haiku punched into an eighty-column card</title></svg>
+    </div>
+
+    <section class="pc-key" aria-label="How to read the card">
+      <p class="pc-read" id="read" aria-live="polite">Seventeen syllables in eighty columns, not one to spare. Point at a column to read it.</p>
+      <button type="button" class="pc-lamp" id="lamp" aria-pressed="false">Hold it up to the lamp</button>
+      <dl class="pc-zones">
+        <div><dt>A to I</dt><dd>a hole in row 12 and one in 1 to 9</dd></div>
+        <div><dt>J to R</dt><dd>a hole in row 11 and one in 1 to 9</dd></div>
+        <div><dt>S to Z</dt><dd>a hole in row 0 and one in 2 to 9</dd></div>
+        <div><dt>0 to 9</dt><dd>one hole, in its own row</dd></div>
+        <div><dt>/ . ,</dt><dd>0 and 1; 12, 3 and 8; 0, 3 and 8</dd></div>
+      </dl>
+      <form class="pc-punch" id="punch">
+        <label for="pc-line">Punch your own line, up to eighty characters</label>
+        <div class="pc-field">
+          <input id="pc-line" name="line" maxlength="80" autocomplete="off" spellcheck="false" placeholder="HELLO, OPERATOR" />
+          <button type="submit">Punch</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const HAIKU = 'TWELVE ROWS OF SILENCE/LIGHT GETS THROUGH WHERE I WAS PUNCHED/DO NOT FOLD ME NOW';
+  // Rows top to bottom: 12, 11, 0, 1 … 9. The card code of the keypunch.
+  const ROWS = ['12', '11', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const SPECIAL: Record<string, string[]> = {
+    '&': ['12'], '-': ['11'], '/': ['0', '1'], '.': ['12', '3', '8'], ',': ['0', '3', '8'], "'": ['5', '8'], '"': ['7', '8'],
+    ':': ['2', '8'], '#': ['3', '8'], '@': ['4', '8'], '=': ['6', '8'], '(': ['12', '5', '8'], ')': ['11', '5', '8'], '+': ['12', '6', '8'],
+    '$': ['11', '3', '8'], '*': ['11', '4', '8'], ';': ['11', '6', '8'], '%': ['0', '4', '8'], '?': ['0', '7', '8'], '!': ['11', '2', '8'],
+  };
+  const code = (ch: string): string[] => {
+    if (ch >= '0' && ch <= '9') return [ch];
+    const n = ch.charCodeAt(0);
+    if (ch >= 'A' && ch <= 'I') return ['12', String(n - 64)];
+    if (ch >= 'J' && ch <= 'R') return ['11', String(n - 73)];
+    if (ch >= 'S' && ch <= 'Z') return ['0', String(n - 81)];
+    return SPECIAL[ch] ?? [];
+  };
+  const clean = (text: string) => text.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').slice(0, 80).padEnd(80, ' ');
+
+  const svg = document.getElementById('card') as unknown as SVGSVGElement;
+  const wrap = document.getElementById('wrap')!;
+  const read = document.getElementById('read')!;
+  const stage = document.querySelector<HTMLElement>('.pc')!;
+  let line = clean(HAIKU);
+  let portrait = false;
+  let timer = 0;
+
+  // The card in squares: two squares of margin, eighty columns of half a square, two squares again;
+  // twelve rows a square apart, with room above for the printed line and below for the header.
+  const L = 44;
+  const draw = (animate: boolean) => {
+    const top = portrait ? 1 : 3;
+    const H = portrait ? 14 : 19;
+    svg.setAttribute('viewBox', portrait ? `0 0 ${H} ${L}` : `0 0 ${L} ${H}`);
+    wrap.style.setProperty('--card-w', String(portrait ? H : L));
+    wrap.style.setProperty('--card-h', String(portrait ? L : H));
+    const cut = 1.2;
+    const parts: string[] = [];
+    parts.push(`<path class="pc-paper" d="M${cut} 0 H${L - 0.35} Q${L} 0 ${L} 0.35 V${H - 0.35} Q${L} ${H} ${L - 0.35} ${H} H0.35 Q0 ${H} 0 ${H - 0.35} V${cut * 0.8} Z"/>`);
+    parts.push(`<rect class="pc-stripe" x="${cut + 0.4}" y="0" width="${L - cut - 0.75}" height="0.35"/>`);
+    // The printed digits in rows 0 to 9 and the column numbers under row 0 and row 9.
+    const digits: string[] = [];
+    for (let c = 0; c < 80; c++) {
+      const x = 2 + c * 0.5 + 0.25;
+      for (let r = 2; r < 12; r++) digits.push(`<text x="${x}" y="${top + r + 0.68}">${ROWS[r]}</text>`);
+    }
+    parts.push(`<g class="pc-digits">${digits.join('')}</g>`);
+    if (!portrait) {
+      const nums: string[] = [];
+      for (let c = 0; c < 80; c++) {
+        const x = 2 + c * 0.5 + 0.25;
+        nums.push(`<text x="${x}" y="${top + 2 + 1.0}">${c + 1}</text>`, `<text x="${x}" y="${top + 12 + 0.55}">${c + 1}</text>`);
+      }
+      parts.push(`<g class="pc-nums">${nums.join('')}</g>`);
+      parts.push(`<text class="pc-printed" x="2" y="${H - 1.5}">WESTMARCH UNIVERSITY COMPUTING LABORATORY</text>`);
+      parts.push(`<text class="pc-printed pc-right" x="${L - 2}" y="${H - 1.5}">FORM W-80 STATEMENT</text>`);
+      parts.push(`<text class="pc-zone" x="1" y="${top + 0.7}">12</text><text class="pc-zone" x="1" y="${top + 1.7}">11</text>`);
+    }
+    // Holes and the keypunch's line, column by column.
+    const cols: string[] = [];
+    [...line].forEach((ch, c) => {
+      const x = 2 + c * 0.5;
+      const holes = code(ch).map(row => `<rect class="pc-hole" x="${x + 0.12}" y="${top + ROWS.indexOf(row) + 0.18}" width="0.26" height="0.64" rx="0.04"/>`).join('');
+      const print = ch.trim() ? `<text class="pc-char" x="${x + 0.25}" y="${top - (portrait ? 0.3 : 0.6)}">${ch.replace('&', '&amp;').replace('<', '&lt;')}</text>` : '';
+      cols.push(`<g class="pc-col" data-c="${c}"><rect class="pc-hit" x="${x}" y="0" width="0.5" height="${H}"/>${print}${holes}</g>`);
+    });
+    parts.push(`<g id="cols">${cols.join('')}</g>`);
+    svg.querySelectorAll(':scope > :not(title)').forEach(n => n.remove());
+    svg.insertAdjacentHTML('beforeend', portrait
+      ? `<g transform="translate(${H} 0) rotate(90)">${parts.join('')}</g>`
+      : parts.join(''));
+
+    // The keypunch: a column every few hundredths of a second, as the line was typed.
+    clearInterval(timer);
+    const groups = [...svg.querySelectorAll<SVGGElement>('.pc-col')];
+    if (!animate || reducedMotion()) return;
+    groups.forEach(g => g.classList.add('pc-later'));
+    lit(false);
+    let i = 0;
+    timer = window.setInterval(() => {
+      groups[i]?.classList.remove('pc-later');
+      if (++i >= groups.length) { clearInterval(timer); setTimeout(() => lit(true), 500); }
+    }, 28);
+  };
+
+  // The lamp: held up to it, the card goes amber and every hole is light.
+  const lamp = document.getElementById('lamp')!;
+  const lit = (on: boolean) => {
+    svg.classList.toggle('pc-lit', on);
+    lamp.setAttribute('aria-pressed', String(on));
+    lamp.textContent = on ? 'Put it down' : 'Hold it up to the lamp';
+  };
+  lamp.addEventListener('click', () => lit(!svg.classList.contains('pc-lit')));
+
+  const describe = (c: number) => {
+    const ch = line[c];
+    const rows = code(ch);
+    read.textContent = ch.trim()
+      ? `Column ${c + 1}: ${ch}, ${rows.length ? `punched in ${rows.length === 1 ? 'row' : 'rows'} ${rows.join(', ')}` : 'not on this keypunch, left blank'}.`
+      : `Column ${c + 1}: a space, no holes.`;
+  };
+  svg.addEventListener('pointerover', e => {
+    const g = (e.target as Element).closest('.pc-col');
+    svg.querySelectorAll('.pc-on').forEach(n => n.classList.remove('pc-on'));
+    if (!g) return;
+    g.classList.add('pc-on');
+    describe(Number(g.getAttribute('data-c')));
+  });
+  svg.addEventListener('pointerleave', () => svg.querySelectorAll('.pc-on').forEach(n => n.classList.remove('pc-on')));
+
+  const input = document.getElementById('pc-line') as HTMLInputElement;
+  document.getElementById('punch')!.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    line = clean(text || HAIKU);
+    draw(true);
+    const unknown = [...new Set([...line].filter(ch => ch.trim() && !code(ch).length))];
+    read.textContent = unknown.length ? `Punched. This keypunch has no holes for ${unknown.join(' ')}; those columns stay blank.` : `Punched ${line.trimEnd().length} columns.`;
+  });
+
+  let first = true;
+  onSquares(({ across, down, narrow }) => {
+    portrait = narrow && across < 46;
+    if (!narrow) {
+      const top = Math.max(10, Math.floor((down - 19) / 2) + 1);
+      stage.style.setProperty('--card-top', String(top));
+      stage.style.setProperty('--poem-from', String(Math.max(4, top - 7)));
+      stage.style.setProperty('--key-from', String(top + 20));
+      stage.style.setProperty('--card-from', String(Math.floor((across - L) / 2) + 1));
+    }
+    draw(first);
+    if (first && reducedMotion()) lit(true);
+    first = false;
+  });
+</script>
+
+<style is:global>
+  html { background: #26333d; }
+  .pc {
+    --steel: #26333d;
+    --manila: #eedfb4;
+    --print: #3b3326;
+    --light: #fff4c7;
+    --stripe: #4f8a63;
+    color: #d9e1e6;
+    font-family: 'Hoefler Text', 'Iowan Old Style', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background:
+      radial-gradient(ellipse 60% 55% at 50% 52%, rgb(255 236 170 / 0.13), transparent 70%),
+      var(--steel);
+  }
+
+  .pc-head { grid-column: 3 / -3; grid-row: 2 / span 2; display: flex; justify-content: space-between; align-items: start; font-family: var(--typeface-compressed); font-size: calc(14px * var(--sf)); letter-spacing: 0.02em; }
+  .pc-head p { margin: 0; }
+  .pc-job { text-align: right; opacity: 0.75; }
+
+  /* The haiku, set as a poem above the card it is punched into. */
+  .pc-poem {
+    grid-column: var(--card-from, 15) / span 44;
+    grid-row: var(--poem-from, 7) / var(--card-top, 13);
+    align-self: end;
+    margin: 0;
+    font-weight: 400;
+    font-style: italic;
+    font-size: calc(30px * var(--sf));
+    line-height: calc(2 * var(--u));
+    color: #fff;
+  }
+  .pc-poem span { display: block; }
+  .pc-poem span:nth-child(2) { padding-left: calc(4 * var(--u)); }
+  .pc-poem span:nth-child(3) { padding-left: calc(8 * var(--u)); }
+
+  .pc-card-wrap {
+    isolation: isolate;
+    grid-column: var(--card-from, 15) / span var(--card-w, 44);
+    grid-row: var(--card-top, 13) / span var(--card-h, 19);
+    position: relative;
+  }
+  /* Two more cards of the deck behind, a quarter square apart. */
+  .pc-card-wrap::before, .pc-card-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #d9cba0;
+    clip-path: polygon(calc(var(--u) * 1.2) 0, 100% 0, 100% 100%, 0 100%, 0 calc(var(--u) * 0.96));
+    translate: calc(var(--u) / 2) calc(var(--u) / 2);
+    z-index: -1;
+  }
+  .pc-card-wrap::after { background: #c4b78e; translate: var(--u) var(--u); z-index: -2; }
+  .pc-card { display: block; width: 100%; height: 100%; overflow: visible; }
+  .pc-paper { fill: var(--manila); }
+  .pc-stripe { fill: var(--stripe); }
+  .pc-digits text { font: 0.42px var(--typeface-compressed); fill: var(--print); text-anchor: middle; opacity: 0.75; }
+  .pc-nums text { font: 0.22px var(--typeface-compressed); fill: var(--print); text-anchor: middle; opacity: 0.6; }
+  .pc-printed { font: 0.55px var(--typeface-compressed); fill: var(--print); letter-spacing: 0.08px; }
+  .pc-right { text-anchor: end; }
+  .pc-zone { font: 0.36px var(--typeface-compressed); fill: var(--print); text-anchor: middle; opacity: 0.6; }
+  .pc-char { font: 700 0.46px 'Andale Mono', Menlo, monospace; fill: #1b1712; text-anchor: middle; }
+  /* A hole is the lamp behind the card. */
+  .pc-hole { fill: var(--steel); transition: fill 0.6s; }
+  .pc-paper { transition: fill 0.6s; }
+  .pc-lit .pc-paper { fill: #b79a5e; }
+  .pc-lit .pc-hole { fill: var(--light); filter: drop-shadow(0 0 0.15px #ffd75e); }
+  .pc-lit .pc-digits text, .pc-lit .pc-nums text { fill: #3a2e18; }
+  .pc-hit { fill: transparent; }
+  .pc-col.pc-on .pc-hit { fill: rgb(79 138 99 / 0.18); }
+  .pc-col.pc-later .pc-hole, .pc-col.pc-later .pc-char { visibility: hidden; }
+
+  .pc-key {
+    grid-column: var(--card-from, 15) / span 44;
+    grid-row: var(--key-from, 34) / -2;
+    display: grid;
+    grid-template-columns: calc(22 * var(--u)) 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0 calc(2 * var(--u));
+    align-content: end;
+  }
+  .pc-lamp {
+    all: unset;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    height: var(--u);
+    font-family: var(--typeface-medium);
+    font-size: calc(13px * var(--sf));
+    color: var(--light);
+    text-decoration: underline;
+    text-underline-offset: calc(4px * var(--sf));
+    cursor: pointer;
+  }
+  .pc-lamp:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
+  .pc-read { grid-column: 1; grid-row: 1; margin: 0 0 var(--u); font-family: 'Andale Mono', Menlo, monospace; font-size: calc(12px * var(--sf)); color: var(--light); }
+  .pc-zones { margin: 0; font-size: calc(13px * var(--sf)); }
+  .pc-zones div { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; }
+  .pc-zones dt { font-family: 'Andale Mono', Menlo, monospace; font-size: calc(12px * var(--sf)); color: #fff; }
+  .pc-zones dd { margin: 0; opacity: 0.8; }
+  .pc-punch { display: grid; grid-template-rows: auto calc(2 * var(--u)); align-content: start; }
+  .pc-punch label { font-size: calc(13px * var(--sf)); opacity: 0.8; }
+  .pc-field { display: grid; grid-template-columns: 1fr calc(5 * var(--u)); height: calc(2 * var(--u)); margin-top: calc(var(--u) / 2); }
+  .pc-field input {
+    min-width: 0;
+    box-sizing: border-box;
+    height: calc(2 * var(--u));
+    padding: 0 calc(var(--u) / 2);
+    border: 0;
+    border-radius: 0;
+    background: var(--manila);
+    color: #1b1712;
+    font: 700 calc(14px * var(--sf)) / calc(2 * var(--u)) 'Andale Mono', Menlo, monospace;
+    text-transform: uppercase;
+  }
+  .pc-field input::placeholder { color: #8f8263; }
+  .pc-field input:focus-visible, .pc-field button:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
+  .pc-field button {
+    all: unset;
+    box-sizing: border-box;
+    height: calc(2 * var(--u));
+    text-align: center;
+    background: var(--stripe);
+    color: #fff;
+    font-family: var(--typeface-medium);
+    font-size: calc(14px * var(--sf));
+    line-height: calc(2 * var(--u));
+    cursor: pointer;
+  }
+  .pc-field button:hover { background: #5c9c72; }
+
+  /* Narrow: the card stands on end, twelve rows across the phone. */
+  :root[data-narrow] .pc { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pc > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .pc-head { flex-direction: column; gap: var(--u); margin-top: var(--u); }
+  :root[data-narrow] .pc-job { text-align: left; }
+  :root[data-narrow] .pc-poem { margin: var(--u) 0; font-size: calc(22px * var(--sf)); }
+  :root[data-narrow] .pc-poem span:nth-child(n) { padding-left: 0; }
+  :root[data-narrow] .pc .pc-card-wrap { grid-column: 1 / -1; height: calc(44 * var(--u)); }
+  :root[data-narrow] .pc-card-wrap::before, :root[data-narrow] .pc-card-wrap::after { display: none; }
+  :root[data-narrow] .pc-key { grid-template-columns: 1fr; margin-top: calc(2 * var(--u)); gap: var(--u); }
+  :root[data-narrow] .pc-lamp { grid-column: 1; grid-row: auto; justify-self: start; }
+</style>

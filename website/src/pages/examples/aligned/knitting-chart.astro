@@ -1,0 +1,243 @@
+---
+// After a knitting pattern's colourwork chart: every square of the window is a stitch. The yoke's
+// bands (crosses, waves, birds and an eight-petalled star) are generated to fill the window in
+// whole stitches and whole rounds, numbered up both sides, with the key and a round counter whose
+// magnetic strip keeps your place, as the knitter's board does.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const yarns = [
+  { key: '.', name: 'Ecru', shade: '101', colour: '#fbfaf6', symbol: '' },
+  { key: 'r', name: 'Madder', shade: '452', colour: '#a8322d', symbol: '×' },
+  { key: 'i', name: 'Indigo', shade: '568', colour: '#2d3f6c', symbol: '•' },
+  { key: 'p', name: 'Peat', shade: '127', colour: '#5b3f2f', symbol: '▴' },
+  { key: 'y', name: 'Mustard', shade: '214', colour: '#d49b2a', symbol: '○' },
+  { key: 'm', name: 'Moss', shade: '339', colour: '#6c7d3b', symbol: '/' },
+];
+---
+<AlignedStudy slug="knitting-chart" theme="light">
+  <main class="stage knit">
+    <div class="chart-wrap" id="wrap" data-own-keys tabindex="0" aria-label="Chart A. Up and down arrows move the round counter.">
+      <svg id="chart" aria-hidden="true"></svg>
+      <div class="magnet" id="magnet"></div>
+      <div class="current" id="current"></div>
+    </div>
+    <div class="nums left" id="numsLeft" aria-hidden="true"></div>
+    <div class="nums right" id="numsRight" aria-hidden="true"></div>
+    <div class="nums bottom" id="numsBottom" aria-hidden="true"></div>
+
+    <aside class="leaflet">
+      <p class="maker">Strikkestua Haugen, pattern 31</p>
+      <h1>Fjellstjerne</h1>
+      <p class="what">Chart A, the yoke. Worked in the round from the bottom up; read every round from right to left.</p>
+
+      <h2>Key</h2>
+      <ul class="key">
+        {yarns.map(y => <li><span class="sw" style={`--c: ${y.colour}`}>{y.symbol}</span><span>{y.name}</span><span class="shade">{y.shade}</span></li>)}
+        <li><span class="sw repeat"></span><span>Repeat of 24 stitches</span></li>
+      </ul>
+
+      <h2>Round</h2>
+      <div class="counter">
+        <button type="button" id="less" aria-label="Back one round">−</button>
+        <output id="round" aria-live="polite">1</output>
+        <button type="button" id="more" aria-label="Forward one round">+</button>
+      </div>
+      <p class="band" id="band">Border, peat</p>
+    </aside>
+    <p class="gauge">24 stitches and 28 rounds to 10 cm over colourwork on 3.5 mm needles. Carry the floats loosely; catch any longer than five stitches.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const COLOUR: Record<string, string> = { '.': '#fbfaf6', r: '#a8322d', i: '#2d3f6c', p: '#5b3f2f', y: '#d49b2a', m: '#6c7d3b' };
+  const SYMBOL: Record<string, string> = { r: '×', i: '•', p: '▴', y: '○', m: '/' };
+  const REPEAT = 24;
+
+  // The bands, each 24 stitches wide (or a divisor of it), drawn top row first.
+  // An eight-petalled rose: an octagon of madder split along its axes and diagonals, a mustard heart.
+  const star = (() => {
+    const rows: string[] = [];
+    for (let dy = -7; dy <= 7; dy++) {
+      let row = '';
+      for (let dx = -12; dx <= 11; dx++) {
+        const ax = Math.abs(dx), ay = Math.abs(dy), d = ax + ay, m = Math.max(ax, ay);
+        let c = '.';
+        if (d <= 1) c = 'y';
+        else if (d <= 9 && m <= 6 && ax !== ay && ax !== 0 && ay !== 0) c = 'r';
+        else if ((ax === 0 && ay >= 2 && ay <= 7) || (ay === 0 && ax >= 2 && ax <= 7)) c = d >= 6 ? 'r' : '.';
+        row += c;
+      }
+      rows.push(row);
+    }
+    return rows;
+  })();
+  const BANDS: { name: string; rows: string[] }[] = [
+    { name: 'Border, peat', rows: ['p'] },
+    { name: 'Crosses, madder', rows: ['.r..', 'rrr.', '.r..'] },
+    { name: 'Plain', rows: ['.'] },
+    { name: 'Waves, indigo', rows: ['i.......', '.i.....i', '..i...i.', '...i.i..', '....i...'] },
+    { name: 'Plain', rows: ['.'] },
+    { name: 'Birds, peat with mustard beaks', rows: ['............', '........pp..', '.......p.ppy', '.pp...pppp..', '..pppppppp..', '...pppppp...', '.....p.p....', '............'] },
+    { name: 'Plain', rows: ['.'] },
+    { name: 'Star, madder and mustard', rows: star },
+    { name: 'Plain', rows: ['.'] },
+    { name: 'Lice, moss', rows: ['m...', '....', '..m.', '....'] },
+    { name: 'Border, peat', rows: ['p'] },
+  ];
+
+  const svg = document.getElementById('chart') as unknown as SVGSVGElement;
+  const wrap = document.getElementById('wrap') as HTMLElement;
+  const magnet = document.getElementById('magnet') as HTMLElement;
+  const current = document.getElementById('current') as HTMLElement;
+  const out = document.getElementById('round') as HTMLOutputElement;
+  const bandLabel = document.getElementById('band') as HTMLElement;
+  const left = document.getElementById('numsLeft') as HTMLElement;
+  const right = document.getElementById('numsRight') as HTMLElement;
+  const bottom = document.getElementById('numsBottom') as HTMLElement;
+
+  let rounds = 0;
+  let names: string[] = []; // the band of each round, round 1 first
+  let round = 17;
+  try { round = Number(localStorage.getItem('knitting-chart-round')) || 17; } catch {}
+
+  const show = () => {
+    round = Math.max(1, Math.min(rounds, round));
+    out.textContent = String(round);
+    bandLabel.textContent = `${names[round - 1] ?? ''}, round ${round} of ${rounds}`;
+    // Rounds count from the foot: round r is the r-th square row from the bottom of the chart.
+    const top = rounds - round; // rows above the current round
+    current.style.top = `calc(${top} * var(--u))`;
+    magnet.style.top = `calc(${Math.max(0, top - 2)} * var(--u))`;
+    magnet.style.height = `calc(${Math.min(2, top)} * var(--u))`;
+    try { localStorage.setItem('knitting-chart-round', String(round)); } catch {}
+  };
+
+  onSquares(({ across, down, narrow }) => {
+    const wide = narrow ? across - 4 : across - 19;
+    rounds = narrow ? 44 : down - 4;
+    const root = document.documentElement.style;
+    root.setProperty('--sts', String(wide));
+    root.setProperty('--rounds', String(rounds));
+    root.setProperty('--after', String(rounds + 4));
+    root.setProperty('--after2', String(rounds + 5));
+
+    // Stack bands from the foot until the next would not fit; plain rounds take the rest at the top.
+    const rows: { row: string; name: string }[] = [];
+    let b = 0;
+    while (true) {
+      const band = BANDS[b % BANDS.length];
+      if (rows.length + band.rows.length > rounds) break;
+      [...band.rows].reverse().forEach(row => rows.push({ row, name: band.name }));
+      b++;
+    }
+    while (rows.length < rounds) rows.push({ row: rows.length === rounds - 1 ? 'p' : '.', name: rows.length === rounds - 1 ? 'Border, peat' : 'Plain' });
+    names = rows.map(r => r.name);
+
+    // Draw top round first; stitch 1 is at the right, so the repeat is anchored on the right edge.
+    let cells = '';
+    let marks = '';
+    for (let y = 0; y < rounds; y++) {
+      const { row } = rows[rounds - 1 - y];
+      for (let x = 0; x < wide; x++) {
+        const stitch = wide - 1 - x; // counted from the right
+        const k = row[(row.length - 1 - (stitch % row.length) + row.length) % row.length];
+        if (k !== '.') {
+          cells += `<rect x="${x}" y="${y}" width="1" height="1" fill="${COLOUR[k]}"/>`;
+          marks += `<text x="${x + 0.5}" y="${y + 0.72}">${SYMBOL[k]}</text>`;
+        }
+      }
+    }
+    let grid = '';
+    for (let x = 0; x <= wide; x++) grid += `<path d="M${x} 0V${rounds}" class="${(wide - x) % 10 === 0 ? 'ten' : ''}"/>`;
+    for (let y = 0; y <= rounds; y++) grid += `<path d="M0 ${y}H${wide}" class="${(rounds - y) % 10 === 0 ? 'ten' : ''}"/>`;
+    const box = Math.min(REPEAT, wide);
+    svg.setAttribute('viewBox', `0 0 ${wide} ${rounds}`);
+    svg.innerHTML = `<rect width="${wide}" height="${rounds}" fill="${COLOUR['.']}"/>${cells}<g class="marks">${marks}</g><g class="lines">${grid}</g><rect class="repeat" x="${wide - box + 0.06}" y="0.06" width="${box - 0.12}" height="${rounds - 0.12}"/>`;
+
+    // Numbers: odd rounds on the right, even on the left; stitches along the foot, from the right.
+    left.innerHTML = rows.map((_, i) => `<span>${(rounds - i) % 2 === 0 ? rounds - i : ''}</span>`).join('');
+    right.innerHTML = rows.map((_, i) => `<span>${(rounds - i) % 2 === 1 ? rounds - i : ''}</span>`).join('');
+    bottom.innerHTML = Array.from({ length: wide }, (_, x) => { const n = wide - x; return `<span>${n % 5 === 0 || n === 1 ? n : ''}</span>`; }).join('');
+    show();
+  });
+
+  const step = (by: number) => { round += by; show(); };
+  document.getElementById('less')!.addEventListener('click', () => step(-1));
+  document.getElementById('more')!.addEventListener('click', () => step(1));
+  wrap.addEventListener('keydown', event => {
+    const by = event.key === 'ArrowUp' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowDown' || event.key === 'ArrowLeft' ? -1 : 0;
+    if (!by) return;
+    event.preventDefault();
+    step(by);
+  });
+  // Pressing a round on the chart moves the strip there.
+  wrap.addEventListener('click', event => {
+    const box = wrap.getBoundingClientRect();
+    const unit = box.height / rounds;
+    round = rounds - Math.floor((event.clientY - box.top) / unit);
+    show();
+  });
+</script>
+
+<style is:global>
+  html { background: #efece4; --sts: 53; --rounds: 41; --after: 46; }
+  .knit {
+    --table: #efece4;
+    --ink: #2b2420;
+    --soft: #7a6f63;
+    --line: #cfc8bb;
+    --madder: #a8322d;
+    color: var(--ink);
+    background: var(--table);
+    font-family: "Gill Sans", "Gill Sans MT", var(--typeface-regular);
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .knit h1, .knit h2, .knit p, .knit ul { margin: 0; padding: 0; list-style: none; }
+
+  /* The chart: a stitch a square, rounds counted from the foot. */
+  .chart-wrap { grid-column: 3 / span var(--sts); grid-row: 2 / span var(--rounds); position: relative; cursor: row-resize; outline: none; box-shadow: 0 0 0 2px var(--ink); }
+  .chart-wrap:focus-visible { box-shadow: 0 0 0 2px var(--ink), 0 0 0 5px var(--madder); }
+  .chart-wrap svg { display: block; width: 100%; height: 100%; }
+  .chart-wrap .lines path { stroke: var(--line); stroke-width: 0.04; }
+  .chart-wrap .lines path.ten { stroke: #8f8678; stroke-width: 0.07; }
+  .chart-wrap .marks text { fill: #fff; fill-opacity: 0.55; font: 0.62px "Gill Sans", sans-serif; text-anchor: middle; }
+  .chart-wrap .repeat { fill: none; stroke: var(--madder); stroke-width: 0.12; }
+
+  /* The magnetic strip lies over the round above the one being knitted; rounds further up go pale. */
+  .magnet, .current { position: absolute; left: 0; right: 0; pointer-events: none; transition: top 160ms ease-out, height 160ms ease-out; }
+  .magnet { background: linear-gradient(rgb(255 255 255 / 0.12), transparent 40%), rgb(38 62 56 / 0.82); box-shadow: 0 3px 0 rgb(0 0 0 / 0.18); border-radius: 2px; }
+  .current { height: var(--u); box-shadow: inset 0 0 0 2px var(--madder); }
+  @media (prefers-reduced-motion: reduce) { .magnet, .current { transition: none; } }
+
+  .nums { display: grid; color: var(--soft); font-size: calc(11px * var(--sf)); font-variant-numeric: tabular-nums; }
+  .nums span { height: var(--u); line-height: var(--u); text-align: center; }
+  .nums.left { grid-column: 2; grid-row: 2 / span var(--rounds); grid-auto-rows: var(--u); }
+  .nums.right { grid-column: 3 / span 1; grid-row: 2 / span var(--rounds); grid-auto-rows: var(--u); margin-left: calc(var(--sts) * var(--u)); width: var(--u); }
+  .nums.bottom { grid-column: 3 / span var(--sts); grid-row: 2 / span 1; margin-top: calc(var(--rounds) * var(--u)); height: var(--u); grid-auto-flow: column; grid-auto-columns: var(--u); }
+
+  /* The leaflet beside the chart. */
+  .leaflet { grid-column: -15 / -2; grid-row: 2 / -3; display: flex; flex-direction: column; }
+  .maker { color: var(--soft); font-size: calc(13px * var(--sf)); }
+  .leaflet h1 { font-weight: 300; font-size: calc(46px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: -0.01em; margin-top: var(--u); }
+  .what { margin-top: var(--u); }
+  .leaflet h2 { margin-top: var(--u); font-weight: 600; font-size: calc(15px * var(--sf)); padding-top: var(--u); border-top: 2px solid var(--ink); }
+  .key li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr auto; align-items: center; height: var(--u); }
+  .sw { width: var(--u); height: var(--u); box-sizing: border-box; background: var(--c); color: #fff; font-size: calc(12px * var(--sf)); text-align: center; line-height: var(--u); box-shadow: inset 0 0 0 1px #0002; }
+  .sw.repeat { background: none; box-shadow: inset 0 0 0 2px var(--madder); }
+  .shade { color: var(--soft); font-variant-numeric: tabular-nums; }
+
+  .counter { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr calc(3 * var(--u)); height: calc(4 * var(--u)); align-items: center; margin-top: var(--u); }
+  .counter button { all: unset; width: calc(3 * var(--u)); height: calc(3 * var(--u)); display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--table); font-size: calc(26px * var(--sf)); cursor: pointer; }
+  .counter button:focus-visible { outline: 3px solid var(--madder); outline-offset: 2px; }
+  .counter output { text-align: center; font-weight: 300; font-size: calc(72px * var(--sf)); line-height: calc(4 * var(--u)); font-variant-numeric: tabular-nums; }
+  .band { color: var(--soft); text-align: center; margin-top: var(--u); }
+  .gauge { grid-column: -15 / -2; grid-row: span 4 / -3; align-self: end; font-size: calc(13px * var(--sf)); color: var(--soft); }
+
+  /* A narrow window: a strip of the chart, then the leaflet. */
+  :root[data-narrow] .knit { padding-bottom: calc(3 * var(--u)); grid-template-rows: repeat(47, var(--u)); grid-auto-rows: auto; }
+  :root[data-narrow] .leaflet { grid-column: 2 / -2; grid-row: var(--after); margin-top: var(--u); }
+  :root[data-narrow] .gauge { grid-column: 2 / -2; grid-row: var(--after2); margin-top: var(--u); }
+</style>

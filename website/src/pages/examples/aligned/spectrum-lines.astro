@@ -1,0 +1,225 @@
+---
+// After the coloured plate of bright-line spectra in an old physics textbook: each element a black
+// band with its emission lines at their real wavelengths, the Sun's dark lines above them, all on
+// one scale where a square is a whole number of nanometres. A prism throws its fan onto that scale.
+// Rest on the plate (or use the arrow keys) and a hairline reads the wavelength across every band.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="spectrum-lines" theme="light">
+  <main class="stage sl" id="sl">
+    <h1 class="sl-sr">Bright-line spectra of the elements</h1>
+    <svg class="sl-plate" id="sl-plate" tabindex="0" data-own-keys role="img" aria-labelledby="sl-plate-title"><title id="sl-plate-title">Plate of emission spectra</title></svg>
+    <p class="sl-sr" id="sl-read" aria-live="polite"></p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // Wavelengths in nanometres (air), with a rough strength from 1 (faint) to 3 (strong).
+  type Line = [number, number, string?];
+  interface Element { symbol: string; name: string; z?: number; note: string; lines: Line[] }
+  const SUN: Line[] = [[686.72, 2, 'B'], [656.28, 3, 'C'], [589.59, 3, 'D'], [588.99, 3], [527.04, 2, 'E'], [518.36, 2, 'b'], [517.27, 1], [486.13, 3, 'F'], [430.78, 2, 'G'], [410.17, 1, 'h'], [396.85, 3, 'H'], [393.37, 3, 'K']];
+  const ELEMENTS: Element[] = [
+    { symbol: 'H', name: 'Hydrogen', z: 1, note: 'the Balmer series', lines: [[656.28, 3, 'Hα'], [486.13, 3, 'Hβ'], [434.05, 2, 'Hγ'], [410.17, 2, 'Hδ'], [397.01, 1, 'Hε']] },
+    { symbol: 'He', name: 'Helium', z: 2, note: 'found in the Sun first', lines: [[706.52, 2], [667.82, 2], [587.56, 3, 'D₃'], [501.57, 2], [492.19, 1], [471.31, 1], [447.15, 2], [438.79, 1], [402.62, 1], [388.87, 2]] },
+    { symbol: 'Li', name: 'Lithium', z: 3, note: 'the red of fireworks', lines: [[670.78, 3], [610.36, 2], [460.29, 1], [413.26, 1]] },
+    { symbol: 'Na', name: 'Sodium', z: 11, note: 'street lamps, the D pair', lines: [[589.59, 3, 'D₁'], [588.99, 3, 'D₂'], [616.07, 1], [615.42, 1], [568.82, 1], [568.26, 1], [498.28, 1], [497.85, 1]] },
+    { symbol: 'Ne', name: 'Neon', z: 10, note: 'shop signs', lines: [[540.06, 2], [585.25, 3], [588.19, 2], [594.48, 2], [597.55, 1], [603.0, 2], [607.43, 2], [609.62, 2], [614.31, 3], [616.36, 2], [621.73, 2], [626.65, 2], [630.48, 2], [633.44, 2], [638.3, 2], [640.22, 3], [650.65, 2], [653.29, 1], [659.9, 2], [667.83, 1], [671.7, 1], [692.95, 2], [703.24, 2], [717.39, 1], [724.52, 1]] },
+    { symbol: 'Hg', name: 'Mercury', z: 80, note: 'the green of old lamps', lines: [[404.66, 2], [407.78, 1], [435.83, 3], [491.6, 1], [546.07, 3], [576.96, 2], [579.07, 2], [623.44, 1], [690.75, 1]] },
+    { symbol: 'Ar', name: 'Argon', z: 18, note: 'a lazy gas, many lines', lines: [[415.86, 2], [418.19, 1], [419.83, 2], [420.07, 2], [425.94, 2], [426.63, 1], [427.22, 1], [430.01, 1], [433.36, 1], [451.07, 1], [452.23, 1], [549.59, 1], [555.87, 1], [560.67, 1], [603.21, 1], [641.63, 1], [696.54, 3], [706.72, 3], [714.7, 2], [727.29, 2], [738.4, 3]] },
+    { symbol: 'Cd', name: 'Cadmium', z: 48, note: 'once the metre’s red line', lines: [[467.82, 2], [479.99, 3], [508.58, 3], [643.85, 3]] },
+    { symbol: 'Kr', name: 'Krypton', z: 36, note: 'the metre, 1960 to 1983', lines: [[427.4, 2], [431.96, 2], [436.26, 1], [445.39, 1], [450.24, 2], [556.22, 2], [557.03, 3], [587.09, 3], [645.63, 1]] },
+  ];
+
+  const FROM = 380;
+  const TO = 740;
+  const STEPS = [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30, 36];
+
+  // Wavelength to a display colour, after Bruton's approximation, dimmed at the ends of sight.
+  function colour(nm: number, light = 1): string {
+    let r = 0, g = 0, b = 0;
+    if (nm < 440) { r = -(nm - 440) / 60; b = 1; }
+    else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510) { g = 1; b = -(nm - 510) / 20; }
+    else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645) { r = 1; g = -(nm - 645) / 65; }
+    else { r = 1; }
+    const edge = nm < 420 ? 0.3 + (0.7 * (nm - 380)) / 40 : nm > 700 ? 0.3 + (0.7 * (750 - nm)) / 50 : 1;
+    const f = (c: number) => Math.round(255 * Math.pow(Math.max(0, Math.min(1, c * edge * light)), 0.8));
+    return `rgb(${f(r)} ${f(g)} ${f(b)})`;
+  }
+
+  const plate = document.getElementById('sl-plate') as unknown as SVGSVGElement;
+  const stage = document.getElementById('sl')!;
+  const read = document.getElementById('sl-read')!;
+  let geo = { bandX: 12, perSq: 6, top: 10, bottom: 40, readX: 12, readY: 3, narrow: false };
+  let cursor = 589.3;
+
+  onSquares(({ across: A, down: D, narrow }) => {
+    const avail = narrow ? A - 2 : A - 12;
+    const perSq = STEPS.find(s => (TO - FROM) / s <= avail) ?? 36;
+    const bandW = (TO - FROM) / perSq;
+    const bandX = narrow ? Math.floor((A - bandW) / 2) : A - 2 - bandW;
+    const x = (nm: number) => bandX + (nm - FROM) / perSq;
+    const rowH = narrow ? 4 : 3;
+    const head = 10;
+    const count = narrow ? ELEMENTS.length + 1 : Math.min(ELEMENTS.length + 1, Math.floor((D - head - 5) / rowH));
+    const rows = narrow ? head + count * rowH + 5 : D;
+    stage.style.setProperty('--plate-rows', String(rows));
+    plate.setAttribute('viewBox', `0 0 ${A} ${rows}`);
+    const out: string[] = [`<title id="sl-plate-title">Emission lines of ${ELEMENTS.slice(0, count - 1).map(e => e.name.toLowerCase()).join(', ')}, under the Sun's absorption lines, from ${FROM} to ${TO} nanometres</title>`];
+    out.push(`<defs><filter id="sl-glow" x="-2" y="-0.2" width="5" height="1.4"><feGaussianBlur stdDeviation="0.12"/></filter>
+      <linearGradient id="sl-sun">${Array.from({ length: 37 }, (_, i) => `<stop offset="${i / 36}" stop-color="${colour(FROM + i * 10, 0.95)}"/>`).join('')}</linearGradient></defs>`);
+
+    // Head: the plate's title and the prism, whose fan lands on the scale where each colour belongs.
+    const scaleY = head - 1;
+    if (narrow) {
+      out.push(`<text class="t-plate" x="1" y="1.72">Plate IV</text><text class="t-sub" x="1" y="2.72">Bright-line spectra</text>`);
+    } else {
+      out.push(`<text class="t-plate" x="1" y="1.72">Plate IV</text><text class="t-plate-sub" x="1" y="2.72">Bright-line spectra of the elements</text>`);
+      out.push(`<text class="t-sub" x="1" y="4.72">Drawn to one scale: a square is ${perSq} nm.</text><text class="t-sub" x="1" y="5.72">Rest on the plate, or use the arrow</text><text class="t-sub" x="1" y="6.72">keys, to read a wavelength across</text><text class="t-sub" x="1" y="7.72">every band.</text>`);
+    }
+    const px = narrow ? 2 : bandX + Math.round(bandW * 0.42) - 2;
+    const py = narrow ? 4 : 2;
+    const prism = `M ${px + 2} ${py} L ${px + 4} ${py + 4} L ${px} ${py + 4} Z`;
+    out.push(`<path class="beam" d="M ${narrow ? 0 : px - 14} ${py + 3.4} L ${px + 1.15} ${py + 2.3}"/>`);
+    for (let nm = 400; nm <= 700; nm += 5) {
+      out.push(`<path d="M ${px + 2.9} ${py + 2.2} L ${x(nm)} ${scaleY - 0.6}" stroke="${colour(nm)}" class="ray"/>`);
+    }
+    out.push(`<path class="prism" d="${prism}"/>`);
+
+    // The scale: a tick on every square, a figure every few, in nanometres.
+    const scale = (y: number, up: boolean) => {
+      const label = narrow ? 4 : perSq <= 6 ? 5 : perSq <= 10 ? 4 : 2;
+      for (let i = 0; i <= bandW; i++) {
+        const major = i % label === 0;
+        out.push(`<line class="tick" x1="${bandX + i}" x2="${bandX + i}" y1="${y}" y2="${y + (up ? -1 : 1) * (major ? 0.45 : 0.25)}"/>`);
+        if (major) out.push(`<text class="t-scale" x="${bandX + i}" y="${up ? y - 0.6 : y + 1.15}">${FROM + i * perSq}</text>`);
+      }
+      out.push(`<line class="tick" x1="${bandX}" x2="${bandX + bandW}" y1="${y}" y2="${y}"/>`);
+    };
+    scale(scaleY + 0.5, true);
+
+    // The bands: the Sun first, a rainbow with its dark lines lettered under it; then the elements.
+    const band = (y: number) => `<rect x="${bandX}" y="${y}" width="${bandW}" height="2" class="band"/>`;
+    const sunY = head;
+    out.push(`<rect x="${bandX}" y="${sunY}" width="${bandW}" height="2" fill="url(#sl-sun)"/>`);
+    SUN.forEach(([nm, s, letter]) => {
+      out.push(`<rect x="${x(nm) - 0.03 * s}" y="${sunY}" width="${0.06 * s}" height="2" fill="#000" opacity="${0.55 + 0.15 * s}"/>`);
+      const nudge = letter === 'D' ? 0.15 : letter === 'K' ? -0.3 : letter === 'H' ? 0.3 : 0;
+      if (letter && (!narrow || 'CDFH'.includes(letter))) out.push(`<text class="t-letter" x="${x(nm) + nudge}" y="${sunY + 2.8}">${letter}</text>`);
+    });
+    const label = (y: number, symbol: string, name: string, note: string) => narrow
+      ? `<text class="t-name-inline" x="${bandX}" y="${y - 0.3}"><tspan class="t-sym-inline">${symbol}</tspan>  ${name}</text>`
+      : `<text class="t-sym" x="1" y="${y + 1.62}">${symbol}</text><text class="t-name" x="4" y="${y + 0.85}">${name}</text><text class="t-note" x="4" y="${y + 1.72}">${note}</text>`;
+    if (!narrow) out.push(`<text class="t-name" x="1" y="${sunY + 0.85}">The Sun</text><text class="t-note" x="1" y="${sunY + 1.72}">absorption, Fraunhofer’s letters</text>`);
+
+    ELEMENTS.slice(0, count - 1).forEach((el, i) => {
+      const y = head + (i + 1) * rowH + (narrow ? 1 : 0);
+      out.push(band(y));
+      const glow: string[] = [];
+      const lines: string[] = [];
+      el.lines.forEach(([nm, s]) => {
+        if (nm < FROM || nm > TO) return;
+        const w = (narrow ? 0.04 : 0.035) * (s + 1);
+        const c = colour(nm, 0.75 + 0.12 * s);
+        lines.push(`<rect x="${x(nm) - w / 2}" y="${y}" width="${w}" height="2" fill="${c}" opacity="${0.55 + 0.15 * s}"/>`);
+        if (s >= 2) glow.push(`<rect x="${x(nm) - w}" y="${y + 0.1}" width="${w * 2}" height="1.8" fill="${c}"/>`);
+      });
+      out.push(`<g filter="url(#sl-glow)" opacity="0.8">${glow.join('')}</g>${lines.join('')}`);
+      out.push(label(y, el.symbol, el.name, el.note));
+    });
+
+    const lastY = head + (count - 1) * rowH + (narrow ? 1 : 0) + 2;
+    scale(lastY + 0.5, false);
+    if (!narrow) out.push(`<text class="t-foot" x="1" y="${rows - 0.62}">Wavelengths in air. Strength of line by width, not to measure. Violet to the left, red to the right.</text>`);
+    out.push(`<g class="cursor" id="sl-cursor"><line id="sl-hair" y1="${scaleY + 0.5}" y2="${lastY + 0.5}"/><rect id="sl-flag" height="1" rx="0.15"/><text id="sl-flag-text" class="t-flag"></text></g>`);
+    plate.innerHTML = out.join('');
+    geo = { bandX, perSq, top: scaleY + 0.5, bottom: lastY + 0.5, readX: bandX, readY: 3, narrow };
+    place();
+  });
+
+  // The hairline: its wavelength, and the nearest line of any element within two nanometres.
+  function nearest(nm: number): string {
+    let best: { d: number; text: string } | null = null;
+    const consider = (lineNm: number, who: string, tag?: string) => {
+      const d = Math.abs(lineNm - nm);
+      if (d <= 2 && (!best || d < best.d)) best = { d, text: `${who} ${lineNm.toFixed(1)}${tag ? ` (${tag})` : ''}` };
+    };
+    SUN.forEach(([l, , t]) => consider(l, 'Sun', t));
+    ELEMENTS.forEach(el => el.lines.forEach(([l, , t]) => consider(l, el.symbol, t)));
+    return best ? (best as { text: string }).text : '';
+  }
+  function place() {
+    const hair = document.getElementById('sl-hair');
+    const flag = document.getElementById('sl-flag');
+    const text = document.getElementById('sl-flag-text') as unknown as SVGTextElement | null;
+    if (!hair || !flag || !text) return;
+    const x = geo.bandX + (cursor - FROM) / geo.perSq;
+    hair.setAttribute('x1', String(x));
+    hair.setAttribute('x2', String(x));
+    const near = nearest(cursor);
+    text.textContent = `${cursor.toFixed(1)} nm${near ? `, ${near}` : ''}`;
+    const width = Math.ceil(text.getComputedTextLength() + 0.6);
+    const across = Number(getComputedStyle(document.documentElement).getPropertyValue('--across')) || 72;
+    const fx = Math.max(geo.bandX, Math.min(across - 1 - width, Math.round(x - width / 2)));
+    const fy = geo.bottom + (geo.narrow ? 1.6 : 1.6);
+    flag.setAttribute('x', String(fx));
+    flag.setAttribute('y', String(fy));
+    flag.setAttribute('width', String(width));
+    text.setAttribute('x', String(fx + width / 2));
+    text.setAttribute('y', String(fy + 0.72));
+    read.textContent = text.textContent;
+  }
+  const clampNm = (nm: number) => Math.max(FROM, Math.min(TO, nm));
+  plate.addEventListener('pointermove', event => {
+    const box = plate.getBoundingClientRect();
+    const vb = plate.viewBox.baseVal;
+    const sx = ((event.clientX - box.left) / box.width) * vb.width;
+    const sy = ((event.clientY - box.top) / box.height) * vb.height;
+    if (sy < geo.top - 1 || sy > geo.bottom + 1) return;
+    cursor = clampNm(FROM + (sx - geo.bandX) * geo.perSq);
+    place();
+  });
+  plate.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    cursor = clampNm(Math.round((cursor + (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 10 : 1)) * 10) / 10);
+    place();
+  });
+  document.fonts?.ready.then(place);
+</script>
+
+<style is:global>
+  html[data-study='spectrum-lines'] { background: #e7e8e6; }
+  .sl {
+    background: #e7e8e6;
+    color: #000;
+    font-family: Baskerville, 'Big Caslon', Georgia, serif;
+  }
+  .sl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .sl-plate { grid-column: 1 / -1; grid-row: 1 / span var(--plate-rows, 45); width: 100%; height: 100%; outline: none; cursor: crosshair; }
+  .sl-plate:focus-visible { outline: calc(2px * var(--sf)) solid #000; outline-offset: calc(-6px * var(--sf)); }
+  .sl-plate text { font-family: Baskerville, 'Big Caslon', Georgia, serif; fill: #000; }
+  .sl-plate .t-plate { font-size: 0.95px; }
+  .sl-plate .t-plate-sub { font-size: 0.66px; font-style: italic; }
+  .sl-plate .t-sub { font-size: 0.62px; font-style: italic; fill: #333; }
+  .sl-plate .t-scale { font-size: 0.55px; text-anchor: middle; font-variant-numeric: lining-nums tabular-nums; }
+  .sl-plate .t-sym { font-size: 1.5px; }
+  .sl-plate .t-name { font-size: 0.66px; }
+  .sl-plate .t-note { font-size: 0.55px; font-style: italic; fill: #444; }
+  .sl-plate .t-letter { font-size: 0.6px; font-style: italic; text-anchor: middle; }
+  .sl-plate .t-name-inline { font-size: 0.6px; font-style: italic; }
+  .sl-plate .t-sym-inline { font-style: normal; font-size: 0.75px; }
+  .sl-plate .t-foot { font-size: 0.55px; font-style: italic; fill: #333; }
+  .sl-plate .tick { stroke: #000; stroke-width: 0.04; }
+  .sl-plate .band { fill: #000; }
+  .sl-plate .prism { fill: rgba(255, 255, 255, 0.55); stroke: #000; stroke-width: 0.05; }
+  .sl-plate .beam { stroke: #fff; stroke-width: 0.16; filter: drop-shadow(0 0 0.03px #000); }
+  .sl-plate .ray { stroke-width: 0.06; opacity: 0.9; }
+  .sl-plate .cursor line { stroke: #fff; stroke-width: 0.04; mix-blend-mode: difference; }
+  .sl-plate #sl-flag { fill: #000; }
+  .sl-plate .t-flag { font-size: 0.55px; fill: #fff; text-anchor: middle; font-variant-numeric: lining-nums; }
+  :root[data-narrow] .sl { padding-bottom: calc(2 * var(--u)); }
+</style>

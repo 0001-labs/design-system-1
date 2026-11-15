@@ -1,0 +1,450 @@
+---
+// After a hardware drum machine of the early eighties: brushed aluminium between walnut cheeks, an
+// anodised control strip with knobs and a red seven-segment tempo, and sixteen steps of six voices
+// as rubber pads, each two squares with a square between. It plays: the voices are synthesised with
+// Web Audio, and nothing sounds until Start is pressed. A red light walks the steps.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const VOICES = [
+  { id: 'bd', name: 'Bass drum', note: 'sine, falling' },
+  { id: 'sd', name: 'Snare', note: 'noise and a tone' },
+  { id: 'cp', name: 'Hand clap', note: 'three bursts' },
+  { id: 'ch', name: 'Closed hat', note: 'short hiss' },
+  { id: 'oh', name: 'Open hat', note: 'long hiss' },
+  { id: 'cb', name: 'Cowbell', note: '540 and 800 Hz' },
+];
+const STEPS = Array.from({ length: 16 }, (_, i) => i);
+// Segments of a seven-segment digit on twelve by twenty-two.
+const SEG: Record<string, string> = {
+  a: '3,1 9,1 10,2 9,3 3,3 2,2', b: '9,3 10,2 11,3 11,9 10,10 9,9', c: '9,13 10,12 11,13 11,19 10,20 9,19',
+  d: '3,19 9,19 10,20 9,21 3,21 2,20', e: '1,13 2,12 3,13 3,19 2,20 1,19', f: '1,3 2,2 3,3 3,9 2,10 1,9', g: '3,10 9,10 10,11 9,12 3,12 2,11',
+};
+const knobs = [
+  { id: 'tempo', label: 'Tempo', min: 60, max: 180, value: 104, unit: 'beats a minute' },
+  { id: 'swing', label: 'Swing', min: 0, max: 60, value: 12, unit: 'percent' },
+  { id: 'level', label: 'Level', min: 0, max: 100, value: 70, unit: 'percent' },
+];
+---
+<AlignedStudy slug="drum-machine" theme="dark">
+  <main class="stage dm">
+    <div class="dm-body" aria-hidden="true"><span class="dm-cheek"></span><span class="dm-cheek"></span></div>
+    <div class="dm-band" aria-hidden="true"></div>
+
+    <section class="dm-top" aria-label="Controls">
+      <div class="dm-brand">
+        <h1>Tamamura</h1>
+        <p class="dm-model">DR-16 Rhythm Arranger</p>
+        <p class="dm-tag">Sixteen steps, six voices, no patterns you did not make.</p>
+      </div>
+
+      <div class="dm-presets" role="group" aria-label="Patterns">
+        <p>Patterns</p>
+        <button type="button" data-preset="backbeat">Backbeat</button>
+        <button type="button" data-preset="floor">Four on the floor</button>
+        <button type="button" data-preset="bossa">Bossa</button>
+      </div>
+
+      <div class="dm-display" aria-hidden="true">
+        <div class="dm-digits" id="digits">
+          {[0, 1, 2].map(() => (
+            <svg viewBox="-1 0 14 22"><g transform="skewX(-6) translate(1.2 0)">{Object.entries(SEG).map(([k, p]) => <polygon data-seg={k} points={p} />)}</g></svg>
+          ))}
+        </div>
+        <p>Tempo, beats a minute</p>
+      </div>
+
+      {knobs.map(k => (
+        <div class={`dm-knobbox dm-${k.id}`}>
+          <div class="dm-knob" id={`knob-${k.id}`} role="slider" tabindex="0" data-own-keys aria-label={k.label} aria-valuemin={k.min} aria-valuemax={k.max} aria-valuenow={k.value} aria-valuetext={`${k.value} ${k.unit}`} data-unit={k.unit}>
+            <span class="dm-ticks"></span><span class="dm-cap"><i></i></span>
+          </div>
+          <p>{k.label}</p>
+        </div>
+      ))}
+
+      <button type="button" class="dm-start" id="start" aria-pressed="false"><span class="dm-lamp"></span>Start</button>
+      <button type="button" class="dm-clear" id="clear">Clear</button>
+      <p class="dm-status" id="status" role="status">Stopped. Sound begins only when you press Start.</p>
+    </section>
+
+    <div class="dm-grille" aria-hidden="true"></div>
+
+    <section class="dm-seq" aria-label="Sequencer">
+      <div class="dm-leds" aria-hidden="true">{STEPS.map(i => <span data-step={i}></span>)}</div>
+      <div class="dm-grid" id="grid" data-own-keys role="grid" aria-label="Steps; arrow keys move, space sets a step">
+        {VOICES.map((v, r) => (
+          <div class={`dm-row dm-v-${v.id}`} role="row">
+            <p class="dm-name" role="rowheader"><b>{v.name}</b><span>{v.note}</span></p>
+            {STEPS.map(i => <button type="button" class="dm-pad" role="gridcell" tabindex={r === 0 && i === 0 ? 0 : -1} aria-pressed="false" aria-label={`${v.name}, step ${i + 1}`} data-voice={v.id} data-step={i} data-row={r}></button>)}
+          </div>
+        ))}
+      </div>
+      <div class="dm-nums" aria-hidden="true">{STEPS.map(i => <span>{i + 1}</span>)}</div>
+      <div class="dm-beats" aria-hidden="true">{[1, 2, 3, 4].map(b => <span>Beat {b}</span>)}</div>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Voice = 'bd' | 'sd' | 'cp' | 'ch' | 'oh' | 'cb';
+  const VOICES: Voice[] = ['bd', 'sd', 'cp', 'ch', 'oh', 'cb'];
+  const PRESETS: Record<string, Record<Voice, string>> = {
+    backbeat: { bd: 'x.......x.x.....', sd: '....x.......x...', cp: '............x...', ch: 'x.x.x.x.x.x.x...', oh: '..............x.', cb: '.......x........' },
+    floor: { bd: 'x...x...x...x...', sd: '................', cp: '....x.......x...', ch: 'x...x...x...x...', oh: '..x...x...x...x.', cb: '...............x' },
+    bossa: { bd: 'x..xx..xx..xx..x', sd: 'x..x..x...x.x...', cp: '................', ch: 'x.xxx.xxx.xxx.xx', oh: '................', cb: '......x.......x.' },
+  };
+  const root = document.documentElement;
+  const pads = [...document.querySelectorAll<HTMLButtonElement>('.dm-pad')];
+  const leds = [...document.querySelectorAll<HTMLElement>('.dm-leds span')];
+  const pattern: Record<Voice, boolean[]> = Object.fromEntries(VOICES.map(v => [v, Array(16).fill(false)])) as never;
+  const status = document.getElementById('status')!;
+  const startButton = document.getElementById('start') as HTMLButtonElement;
+
+  onSquares(({ across }) => root.style.setProperty('--dmx', String(Math.max(2, Math.floor((across - 55) / 2) + 1))));
+
+  // ——— The pattern
+  function paint() {
+    pads.forEach(pad => pad.setAttribute('aria-pressed', String(pattern[pad.dataset.voice as Voice][+pad.dataset.step!])));
+  }
+  function load(name: string) {
+    const preset = PRESETS[name];
+    VOICES.forEach(v => { pattern[v] = [...preset[v]].map(c => c === 'x'); });
+    paint();
+    document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach(b => b.classList.toggle('on', b.dataset.preset === name));
+  }
+  load('backbeat');
+  document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach(b => b.addEventListener('click', () => load(b.dataset.preset!)));
+  document.getElementById('clear')!.addEventListener('click', () => {
+    VOICES.forEach(v => pattern[v].fill(false));
+    paint();
+    document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('on'));
+  });
+  pads.forEach(pad => pad.addEventListener('click', () => {
+    const v = pad.dataset.voice as Voice;
+    const s = +pad.dataset.step!;
+    pattern[v][s] = !pattern[v][s];
+    paint();
+  }));
+
+  // Arrow keys move through the pads, one tab stop for the whole grid.
+  document.getElementById('grid')!.addEventListener('keydown', event => {
+    const pad = (event.target as HTMLElement).closest<HTMLButtonElement>('.dm-pad');
+    if (!pad) return;
+    let row = +pad.dataset.row!, step = +pad.dataset.step!;
+    if (event.key === 'ArrowRight') step = (step + 1) % 16;
+    else if (event.key === 'ArrowLeft') step = (step + 15) % 16;
+    else if (event.key === 'ArrowDown') row = Math.min(5, row + 1);
+    else if (event.key === 'ArrowUp') row = Math.max(0, row - 1);
+    else return;
+    event.preventDefault();
+    const next = pads[row * 16 + step];
+    pad.tabIndex = -1;
+    next.tabIndex = 0;
+    next.focus();
+  });
+
+  // ——— Sound state, made on Start, never before.
+  let ctx: AudioContext | null = null;
+  let master: GainNode | null = null;
+  let noise: AudioBuffer | null = null;
+  let openHat: GainNode | null = null;
+  let running = false;
+
+  // ——— Knobs: drag up or down, arrow keys, the wheel.
+  const values: Record<string, number> = {};
+  const digits = [...document.querySelectorAll('#digits svg')];
+  const SEGMENTS = ['abcdef', 'bc', 'abged', 'abgcd', 'fgbc', 'afgcd', 'afgedc', 'abc', 'abcdefg', 'abcdfg'];
+  function showTempo(n: number) {
+    const text = String(n).padStart(3, ' ');
+    digits.forEach((svg, i) => {
+      const lit = text[i] === ' ' ? '' : SEGMENTS[+text[i]];
+      svg.querySelectorAll<SVGElement>('[data-seg]').forEach(seg => seg.classList.toggle('on', lit.includes(seg.dataset.seg!)));
+    });
+  }
+  document.querySelectorAll<HTMLElement>('.dm-knob').forEach(knob => {
+    const id = knob.id.replace('knob-', '');
+    const min = +knob.getAttribute('aria-valuemin')!, max = +knob.getAttribute('aria-valuemax')!;
+    const set = (value: number) => {
+      const v = Math.round(Math.min(max, Math.max(min, value)));
+      values[id] = v;
+      knob.setAttribute('aria-valuenow', String(v));
+      knob.setAttribute('aria-valuetext', `${v} ${knob.dataset.unit}`);
+      knob.style.setProperty('--turn', `${-135 + ((v - min) / (max - min)) * 270}deg`);
+      if (id === 'tempo') showTempo(v);
+      if (id === 'level' && master) master.gain.value = (v / 100) ** 2;
+      if (running && id === 'tempo') status.textContent = `Running at ${v} beats a minute.`;
+    };
+    set(+knob.getAttribute('aria-valuenow')!);
+    knob.addEventListener('keydown', event => {
+      const big = event.shiftKey ? 10 : 1;
+      const keys: Record<string, number> = { ArrowUp: big, ArrowRight: big, ArrowDown: -big, ArrowLeft: -big, PageUp: 10, PageDown: -10 };
+      if (event.key in keys) { set(values[id] + keys[event.key]); event.preventDefault(); }
+      if (event.key === 'Home') { set(min); event.preventDefault(); }
+      if (event.key === 'End') { set(max); event.preventDefault(); }
+    });
+    knob.addEventListener('pointerdown', event => {
+      knob.setPointerCapture(event.pointerId);
+      const y0 = event.clientY, v0 = values[id];
+      const move = (e: PointerEvent) => set(v0 + ((y0 - e.clientY) / 160) * (max - min));
+      const up = () => { knob.removeEventListener('pointermove', move); knob.removeEventListener('pointerup', up); };
+      knob.addEventListener('pointermove', move);
+      knob.addEventListener('pointerup', up);
+    });
+    knob.addEventListener('wheel', event => { event.preventDefault(); set(values[id] - Math.sign(event.deltaY)); }, { passive: false });
+  });
+
+  // ——— Sound: made on Start, never before.
+
+  function setup() {
+    ctx = new AudioContext();
+    master = ctx.createGain();
+    master.gain.value = (values.level / 100) ** 2;
+    master.connect(ctx.destination);
+    noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const data = noise.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  }
+  function env(t: number, peak: number, decay: number) {
+    const g = ctx!.createGain();
+    g.gain.setValueAtTime(peak, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    g.connect(master!);
+    return g;
+  }
+  function hiss(t: number, decay: number, filterType: BiquadFilterType, freq: number, peak: number, q = 0.7) {
+    const src = ctx!.createBufferSource();
+    src.buffer = noise;
+    const filter = ctx!.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.value = freq;
+    filter.Q.value = q;
+    const g = env(t, peak, decay);
+    src.connect(filter).connect(g);
+    src.start(t);
+    src.stop(t + decay + 0.05);
+    return g;
+  }
+  const PLAY: Record<Voice, (t: number) => void> = {
+    bd: t => {
+      const o = ctx!.createOscillator();
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+      o.connect(env(t, 1, 0.5));
+      o.start(t); o.stop(t + 0.55);
+    },
+    sd: t => {
+      hiss(t, 0.2, 'highpass', 1200, 0.7);
+      const o = ctx!.createOscillator();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(190, t);
+      o.frequency.exponentialRampToValueAtTime(150, t + 0.1);
+      o.connect(env(t, 0.5, 0.12));
+      o.start(t); o.stop(t + 0.15);
+    },
+    cp: t => {
+      [0, 0.011, 0.022].forEach(d => hiss(t + d, 0.012, 'bandpass', 1150, 0.9, 1.2));
+      hiss(t + 0.03, 0.18, 'bandpass', 1150, 0.7, 1.2);
+    },
+    ch: t => {
+      openHat?.gain.cancelScheduledValues(t);
+      openHat?.gain.setTargetAtTime(0.0001, t, 0.005);
+      hiss(t, 0.05, 'highpass', 7500, 0.4);
+    },
+    oh: t => { openHat = hiss(t, 0.38, 'highpass', 7000, 0.35); },
+    cb: t => {
+      const filter = ctx!.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = 2400; filter.Q.value = 0.8;
+      const g = env(t, 0.35, 0.3);
+      filter.connect(g);
+      [540, 800].forEach(f => { const o = ctx!.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(filter); o.start(t); o.stop(t + 0.32); });
+    },
+  };
+
+  // A look-ahead scheduler: every 25 ms, book the steps due in the next tenth of a second.
+  let step = 0;
+  let nextTime = 0;
+  let timer = 0;
+  const queue: { step: number; time: number }[] = [];
+  function schedule() {
+    while (nextTime < ctx!.currentTime + 0.1) {
+      const sixteenth = 60 / values.tempo / 4;
+      const swing = step % 2 ? (values.swing / 100) * sixteenth * 0.66 : 0;
+      const t = nextTime + swing;
+      VOICES.forEach(v => { if (pattern[v][step]) PLAY[v](t); });
+      queue.push({ step, time: t });
+      nextTime += sixteenth;
+      step = (step + 1) % 16;
+    }
+  }
+  let shown = -1;
+  function light() {
+    if (!ctx) return;
+    while (queue.length && queue[0].time <= ctx.currentTime) shown = queue.shift()!.step;
+    leds.forEach((led, i) => led.classList.toggle('on', running && i === shown));
+    root.style.setProperty('--dm-step', running ? String(shown) : '-1');
+    pads.forEach(pad => pad.classList.toggle('now', running && +pad.dataset.step! === shown));
+    if (running) requestAnimationFrame(light);
+  }
+  startButton.addEventListener('click', async () => {
+    if (!ctx) setup();
+    if (running) {
+      running = false;
+      clearInterval(timer);
+      queue.length = 0;
+      startButton.setAttribute('aria-pressed', 'false');
+      startButton.lastChild!.textContent = 'Start';
+      status.textContent = 'Stopped on step ' + (shown + 1) + '.';
+      light();
+      return;
+    }
+    await ctx!.resume();
+    running = true;
+    step = 0;
+    nextTime = ctx!.currentTime + 0.06;
+    timer = window.setInterval(schedule, 25);
+    schedule();
+    startButton.setAttribute('aria-pressed', 'true');
+    startButton.lastChild!.textContent = 'Stop';
+    status.textContent = `Running at ${values.tempo} beats a minute.`;
+    requestAnimationFrame(light);
+  });
+</script>
+
+<style is:global>
+  html { background: #1d1a17; }
+  .dm {
+    --alu: #c9cdd0;
+    --ink: #1e2124;
+    --strip: #2a2c30;
+    --red: #ff3d2e;
+    color: var(--ink);
+    font-family: var(--typeface-compressed);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background: radial-gradient(ellipse at 50% 30%, #3a332c, #1d1a17 75%);
+  }
+
+  .dm > :not(.dm-body) { position: relative; }
+  /* The case: walnut cheeks, brushed aluminium between them. */
+  .dm-body {
+    grid-column: 2 / -2;
+    grid-row: 2 / -2;
+    position: relative;
+    border-radius: calc(var(--u) / 2);
+    background:
+      repeating-linear-gradient(0deg, rgb(255 255 255 / 0.12) 0 1px, transparent 1px 2px, rgb(0 0 0 / 0.04) 2px 3px),
+      linear-gradient(180deg, #d9dcde, var(--alu) 40%, #aeb3b7);
+    box-shadow: 0 calc(10px * var(--sf)) calc(30px * var(--sf)) rgb(0 0 0 / 0.6);
+  }
+  .dm-cheek { position: absolute; top: 0; bottom: 0; width: calc(2 * var(--u)); background: repeating-linear-gradient(88deg, rgb(0 0 0 / 0.12) 0 2px, transparent 2px 7px), linear-gradient(90deg, #5c3820, #8a5a35 50%, #5c3820); }
+  .dm-cheek:first-child { left: 0; border-radius: calc(var(--u) / 2) 0 0 calc(var(--u) / 2); }
+  .dm-cheek:last-child { right: 0; border-radius: 0 calc(var(--u) / 2) calc(var(--u) / 2) 0; }
+  .dm-band { grid-column: 4 / -4; grid-row: 3 / span 11; background: linear-gradient(180deg, #34373b, var(--strip)); border-radius: calc(var(--u) / 4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08); }
+
+  /* The control strip: fifty-five squares by nine. */
+  .dm-top { grid-column: var(--dmx, 9) / span 55; grid-row: 4 / span 9; display: grid; grid-template-columns: repeat(55, var(--u)); grid-template-rows: repeat(9, var(--u)); color: #e9e6df; }
+  .dm-top p { margin: 0; }
+  .dm-brand { grid-column: 1 / span 14; grid-row: 1 / span 4; }
+  .dm-brand h1 { margin: 0; font: italic 700 calc(30px * var(--sf)) / calc(2 * var(--u)) Futura, 'Avenir Next', sans-serif; letter-spacing: -0.01em; color: #fff; }
+  .dm-model { font-size: calc(16px * var(--sf)); color: var(--red); }
+  .dm-tag { font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); color: #a9a6a0; }
+
+  .dm-presets { grid-column: 1 / span 14; grid-row: 6 / span 4; display: grid; grid-template-columns: repeat(3, calc(4 * var(--u))); column-gap: var(--u); grid-template-rows: var(--u) calc(2 * var(--u)); }
+  .dm-presets p { grid-column: 1 / -1; font-size: calc(12px * var(--sf)); color: #a9a6a0; }
+  .dm-presets button { all: unset; cursor: pointer; box-sizing: border-box; height: calc(2 * var(--u)); border-radius: calc(var(--u) / 4); background: #45484d; color: #e9e6df; text-align: center; font: calc(12px * var(--sf)) / calc(var(--u) * 0.8) var(--typeface-compressed); display: grid; place-items: center; padding: 0 calc(var(--u) / 4); box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.35); }
+  .dm-presets button.on { background: #e9e6df; color: var(--ink); }
+  .dm-presets button:focus-visible, .dm-clear:focus-visible, .dm-start:focus-visible, .dm-knob:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+  .dm-display { grid-column: 16 / span 9; grid-row: 1 / span 7; }
+  .dm-digits { display: grid; grid-template-columns: repeat(3, calc(2 * var(--u))); column-gap: var(--u); padding: var(--u); height: calc(6 * var(--u)); box-sizing: border-box; background: #160a09; border-radius: calc(var(--u) / 4); box-shadow: inset 0 2px calc(6px * var(--sf)) #000; }
+  .dm-digits svg { width: 100%; height: 100%; }
+  .dm-digits polygon { fill: rgb(255 61 46 / 0.1); }
+  .dm-digits polygon.on { fill: var(--red); filter: drop-shadow(0 0 0.6px var(--red)); }
+  .dm-display p { font-size: calc(12px * var(--sf)); color: #a9a6a0; }
+
+  /* A knob: four squares, ticks round it, a cap with a white line. */
+  .dm-knobbox { grid-row: 2 / span 6; display: grid; grid-template-rows: calc(4 * var(--u)) var(--u); justify-items: center; }
+  .dm-tempo { grid-column: 27 / span 4; }
+  .dm-swing { grid-column: 32 / span 4; }
+  .dm-level { grid-column: 37 / span 4; }
+  .dm-knobbox p { font-size: calc(13px * var(--sf)); }
+  .dm-knob { position: relative; width: calc(4 * var(--u)); height: calc(4 * var(--u)); border-radius: 50%; cursor: ns-resize; touch-action: none; }
+  .dm-ticks { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from -135deg, #8a8d91 0 2deg, transparent 2deg 27deg); mask: radial-gradient(circle, transparent 62%, #000 63%); clip-path: polygon(50% 50%, 0 100%, 0 0, 100% 0, 100% 100%); }
+  .dm-cap { position: absolute; inset: calc(var(--u) / 2); border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f1f1ef, #b9bcbf 55%, #7d8186); box-shadow: 0 calc(3px * var(--sf)) calc(5px * var(--sf)) rgb(0 0 0 / 0.6); transform: rotate(var(--turn, 0deg)); }
+  .dm-cap i { position: absolute; left: calc(50% - 1.5px); top: calc(var(--u) / 4); width: 3px; height: calc(var(--u) * 0.8); background: var(--ink); border-radius: 2px; }
+
+  .dm-start { all: unset; grid-column: 43 / span 6; grid-row: 2 / span 4; cursor: pointer; display: grid; grid-template-rows: var(--u) 1fr; justify-items: center; padding-top: calc(var(--u) / 2); box-sizing: border-box; border-radius: calc(var(--u) / 4); background: linear-gradient(180deg, #f05b3c, #c83a22); color: #fff; font: 700 calc(18px * var(--sf)) / calc(2 * var(--u)) Futura, 'Avenir Next', sans-serif; box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.3), 0 2px 0 #000; }
+  .dm-start:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.3); }
+  .dm-lamp { width: calc(var(--u) / 2); height: calc(var(--u) / 2); align-self: center; border-radius: 50%; background: #5a1a10; box-shadow: inset 0 1px 2px #000; }
+  .dm-start[aria-pressed='true'] .dm-lamp { background: #ffe9a8; box-shadow: 0 0 calc(8px * var(--sf)) #ffd36a; }
+  .dm-clear { all: unset; grid-column: 50 / span 6; grid-row: 2 / span 2; cursor: pointer; text-align: center; border-radius: calc(var(--u) / 4); background: #45484d; color: #e9e6df; font: calc(13px * var(--sf)) / calc(2 * var(--u)) var(--typeface-compressed); box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.35); }
+  .dm-status { grid-column: 43 / span 13; grid-row: 7 / span 2; font-family: var(--typeface-regular); font-size: calc(12px * var(--sf)); color: #c9c5bd; }
+
+  /* The speaker: a hole on every square, filling what the window leaves between strip and pads. */
+  .dm-grille { grid-column: var(--dmx, 9) / span 55; grid-row: 15 / -26; background: radial-gradient(circle, #3a3e43 0 calc(var(--u) * 0.12), rgb(255 255 255 / 0.55) calc(var(--u) * 0.14), transparent calc(var(--u) * 0.18)) 0 0 / var(--u) var(--u); }
+  :root[data-narrow] .dm-grille { display: none; }
+
+  /* The sequencer: a light per step, six rows of pads, the steps counted, the beats bracketed. */
+  .dm-seq { grid-column: var(--dmx, 9) / span 55; grid-row: -25 / span 22; display: grid; grid-template-columns: repeat(55, var(--u)); grid-template-rows: var(--u) var(--u) calc(17 * var(--u)) var(--u) var(--u) var(--u); }
+  .dm-leds, .dm-nums, .dm-beats { grid-column: 9 / span 47; display: grid; grid-template-columns: repeat(16, calc(2 * var(--u))); column-gap: var(--u); }
+  .dm-leds { grid-row: 1; }
+  .dm-leds span { width: calc(var(--u) / 2); height: calc(var(--u) / 2); align-self: center; justify-self: center; border-radius: 50%; background: #5a2420; box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.6); }
+  .dm-leds span.on { background: var(--red); box-shadow: 0 0 calc(6px * var(--sf)) var(--red), 0 0 calc(14px * var(--sf)) rgb(255 61 46 / 0.6); }
+  .dm-grid { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-rows: repeat(6, calc(2 * var(--u))); row-gap: var(--u); }
+  .dm-row { display: grid; grid-template-columns: calc(7 * var(--u)) var(--u) repeat(15, calc(3 * var(--u))) calc(2 * var(--u)); }
+  .dm-name { grid-column: 1; margin: 0; display: grid; grid-template-rows: var(--u) var(--u); }
+  .dm-name b { font-weight: 400; font-size: calc(16px * var(--sf)); }
+  .dm-name span { font-family: var(--typeface-regular); font-size: calc(11px * var(--sf)); color: #555a60; }
+  .dm-row .dm-pad:first-of-type { grid-column: 3; }
+
+  .dm-pad {
+    all: unset;
+    box-sizing: border-box;
+    width: calc(2 * var(--u));
+    height: calc(2 * var(--u));
+    cursor: pointer;
+    border-radius: calc(var(--u) / 4);
+    background: linear-gradient(180deg, #4a4d52, #34373b);
+    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.35), 0 1px 0 rgb(255 255 255 / 0.5);
+  }
+  .dm-pad[aria-pressed='true'] { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 80%, #fff), var(--c)); box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.2), 0 0 calc(10px * var(--sf)) color-mix(in srgb, var(--c) 50%, transparent); }
+  .dm-pad.now { outline: 2px solid rgb(255 255 255 / 0.85); outline-offset: -2px; }
+  .dm-pad.now[aria-pressed='true'] { transform: translateY(1px); filter: brightness(1.25); }
+  .dm-pad:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .dm-v-bd { --c: #e8473a; }
+  .dm-v-sd { --c: #f2903a; }
+  .dm-v-cp { --c: #f3c94a; }
+  .dm-v-ch { --c: #8fd3c4; }
+  .dm-v-oh { --c: #67a6e0; }
+  .dm-v-cb { --c: #c79be0; }
+  .dm-row .dm-name b { box-shadow: inset calc(var(--u) / 4) 0 0 var(--c); padding-left: calc(var(--u) / 2); }
+  .dm-row .dm-name span { padding-left: calc(var(--u) / 2); }
+
+  .dm-nums { grid-row: 5; text-align: center; font-size: calc(12px * var(--sf)); color: #3d4146; font-variant-numeric: tabular-nums; }
+  .dm-beats { grid-row: 6; grid-template-columns: repeat(4, calc(11 * var(--u))); column-gap: var(--u); }
+  .dm-beats span { border-top: 2px solid #3d4146; font-size: calc(11px * var(--sf)); line-height: calc(var(--u) - 2px); color: #555a60; padding-left: calc(var(--u) / 4); }
+
+  /* Narrow: each voice in two rows of eight one-square pads. */
+  :root[data-narrow] .dm-body { grid-column: 1 / -1; grid-row: 1 / span 60; border-radius: 0; }
+  :root[data-narrow] .dm-cheek { display: none; }
+  :root[data-narrow] .dm-band { grid-column: 1 / -1; grid-row: 1 / span 21; border-radius: 0; }
+  :root[data-narrow] .dm-top { grid-column: 2 / -2; grid-row: 2 / span 19; grid-template-columns: repeat(12, var(--u)); grid-template-rows: repeat(19, var(--u)); }
+  :root[data-narrow] .dm-brand { grid-column: 1 / -1; grid-row: 1 / span 4; }
+  :root[data-narrow] .dm-display { grid-column: 1 / span 9; grid-row: 5 / span 7; }
+  :root[data-narrow] .dm-start { grid-column: 10 / span 3; grid-row: 5 / span 4; font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .dm-clear { grid-column: 10 / span 3; grid-row: 10 / span 2; }
+  :root[data-narrow] .dm-tempo { grid-column: 1 / span 4; grid-row: 12 / span 5; }
+  :root[data-narrow] .dm-swing { grid-column: 5 / span 4; grid-row: 12 / span 5; }
+  :root[data-narrow] .dm-level { grid-column: 9 / span 4; grid-row: 12 / span 5; }
+  :root[data-narrow] .dm-presets { grid-column: 1 / -1; grid-row: 17 / span 3; grid-template-columns: repeat(3, calc(4 * var(--u))); column-gap: 0; }
+  :root[data-narrow] .dm-presets p, :root[data-narrow] .dm-status, :root[data-narrow] .dm-tag { display: none; }
+  :root[data-narrow] .dm-seq { grid-column: 2 / -2; grid-row: 23 / span 36; grid-template-columns: repeat(12, var(--u)); grid-template-rows: auto; }
+  :root[data-narrow] .dm-leds, :root[data-narrow] .dm-nums, :root[data-narrow] .dm-beats { display: none; }
+  :root[data-narrow] .dm-grid { grid-row: 1; grid-template-rows: none; row-gap: var(--u); }
+  :root[data-narrow] .dm-row { grid-template-columns: repeat(8, var(--u)); grid-template-rows: calc(2 * var(--u)) var(--u) var(--u); }
+  :root[data-narrow] .dm-name { grid-column: 1 / -1; }
+  :root[data-narrow] .dm-row .dm-pad { width: var(--u); height: var(--u); margin: 0; border: calc(var(--u) / 8) solid transparent; background-clip: padding-box; border-radius: calc(var(--u) / 3); }
+  :root[data-narrow] .dm-row .dm-pad:first-of-type { grid-column: auto; }
+</style>

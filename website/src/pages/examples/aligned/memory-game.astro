@@ -1,0 +1,291 @@
+---
+// After a boxed card game for a rainy afternoon: sixteen cards dealt on the squares, eight birds of
+// hedgerow and shore under black backs printed with a footprint. Turn two at a time; a pair stays
+// face up, ticked off the spotter's checklist beside the board. Every card is a whole number of
+// squares, and so is every gap between them.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="memory-game" theme="light">
+  <main class="stage mg">
+    <header class="mg-head">
+      <p class="mg-maker">A Hedgerow Games pastime for two or more, or one patient person</p>
+      <h1>Spot the Pair</h1>
+      <p class="mg-rules">Sixteen cards, eight birds. Turn two at a time; when they match, they stay up. Fewer turns is better birding.</p>
+    </header>
+
+    <dl class="mg-score">
+      <div><dt>Turns</dt><dd id="mg-moves">0</dd></div>
+      <div><dt>Pairs</dt><dd><span id="mg-pairs">0</span>/8</dd></div>
+      <div><dt>Time</dt><dd id="mg-time">0:00</dd></div>
+    </dl>
+
+    <section class="mg-list" aria-labelledby="mg-list-title">
+      <h2 id="mg-list-title">Spotter’s checklist</h2>
+      <ol id="mg-checklist"></ol>
+    </section>
+
+    <div class="mg-end">
+      <p class="mg-status" id="mg-status" aria-live="polite">Turn any card to begin.</p>
+      <button type="button" class="mg-deal" id="mg-deal">Shuffle and deal again</button>
+    </div>
+
+    <div class="mg-board" id="mg-board" role="grid" aria-label="Sixteen face-down cards" data-own-keys></div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  interface Bird { id: string; name: string; latin: string; where: string }
+  const BIRDS: Bird[] = [
+    { id: 'puffin', name: 'Puffin', latin: 'Fratercula arctica', where: 'sea cliffs' },
+    { id: 'kingfisher', name: 'Kingfisher', latin: 'Alcedo atthis', where: 'slow rivers' },
+    { id: 'robin', name: 'Robin', latin: 'Erithacus rubecula', where: 'every garden' },
+    { id: 'jay', name: 'Jay', latin: 'Garrulus glandarius', where: 'oak woods' },
+    { id: 'wren', name: 'Wren', latin: 'Troglodytes troglodytes', where: 'low hedges' },
+    { id: 'goldfinch', name: 'Goldfinch', latin: 'Carduelis carduelis', where: 'thistle heads' },
+    { id: 'barn-owl', name: 'Barn owl', latin: 'Tyto alba', where: 'field edges at dusk' },
+    { id: 'oystercatcher', name: 'Oystercatcher', latin: 'Haematopus ostralegus', where: 'shingle and mud' },
+  ];
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const board = $('mg-board'), movesOut = $('mg-moves'), pairsOut = $('mg-pairs'), timeOut = $('mg-time');
+  const status = $('mg-status'), checklist = $('mg-checklist'), deal = $('mg-deal') as HTMLButtonElement;
+
+  // A three-toed footprint and its heel, drawn in a square of 10.
+  const FOOT = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 5.6 L5 1.4 M5 5.6 L2 2.6 M5 5.6 L8 2.6 M5 5.6 L5 8.6" /></svg>';
+
+  let order: Bird[] = [];
+  let open: HTMLButtonElement[] = [];
+  let found = new Set<string>();
+  let moves = 0, started = 0, ticking = 0, locked = false;
+
+  const shuffle = <T,>(list: T[]) => {
+    const out = list.slice();
+    for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+    return out;
+  };
+  const clock = (ms: number) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+  function renderChecklist() {
+    checklist.innerHTML = BIRDS.map(bird => `<li class="${found.has(bird.id) ? 'is-found' : ''}"><span class="mg-tick" aria-hidden="true"></span><b>${bird.name}</b><i>${bird.latin}</i><span class="sr">${found.has(bird.id) ? ', found' : ''}</span></li>`).join('');
+  }
+
+  function dealCards() {
+    window.clearInterval(ticking);
+    order = shuffle([...BIRDS, ...BIRDS]);
+    open = []; found = new Set(); moves = 0; started = 0; locked = false;
+    movesOut.textContent = '0'; pairsOut.textContent = '0'; timeOut.textContent = '0:00';
+    status.textContent = 'Turn any card to begin.';
+    document.documentElement.toggleAttribute('data-mg-won', false);
+    board.innerHTML = order.map((bird, index) => `
+      <button type="button" class="mg-card" data-bird="${bird.id}" data-index="${index}" role="gridcell" aria-label="Card ${index + 1}, face down">
+        <span class="mg-face mg-back">${FOOT}</span>
+        <span class="mg-face mg-front"><img src="/examples/images/birdie-${bird.id}.jpg" alt="" loading="lazy" /><span class="mg-name">${bird.name}</span></span>
+      </button>`).join('');
+    renderChecklist();
+  }
+
+  function turn(card: HTMLButtonElement) {
+    if (locked || card.classList.contains('is-up')) return;
+    if (!started) { started = Date.now(); ticking = window.setInterval(() => (timeOut.textContent = clock(Date.now() - started)), 1000); }
+    const bird = BIRDS.find(b => b.id === card.dataset.bird)!;
+    card.classList.add('is-up');
+    card.setAttribute('aria-label', `Card ${Number(card.dataset.index) + 1}, ${bird.name}`);
+    open.push(card);
+    if (open.length < 2) { status.textContent = `${bird.name}. Now find its pair.`; return; }
+
+    moves++;
+    movesOut.textContent = String(moves);
+    const [a, b] = open;
+    open = [];
+    if (a.dataset.bird === b.dataset.bird) {
+      found.add(bird.id);
+      a.classList.add('is-matched'); b.classList.add('is-matched');
+      pairsOut.textContent = String(found.size);
+      renderChecklist();
+      if (found.size === BIRDS.length) return win();
+      status.textContent = `A pair of ${bird.name === 'Goldfinch' ? 'goldfinches' : bird.name.toLowerCase() + 's'}, from ${bird.where}. ${BIRDS.length - found.size} to go.`;
+      return;
+    }
+    const other = BIRDS.find(x => x.id === a.dataset.bird)!;
+    status.textContent = `${other.name} and ${bird.name.toLowerCase()}: not a pair.`;
+    locked = true;
+    window.setTimeout(() => {
+      for (const card of [a, b]) {
+        card.classList.remove('is-up');
+        card.setAttribute('aria-label', `Card ${Number(card.dataset.index) + 1}, face down`);
+      }
+      locked = false;
+    }, reducedMotion() ? 700 : 950);
+  }
+
+  function win() {
+    window.clearInterval(ticking);
+    const time = clock(Date.now() - started);
+    const rank = moves <= 12 ? 'Ornithologist' : moves <= 16 ? 'Field naturalist' : moves <= 22 ? 'Keen birder' : 'Fair-weather twitcher';
+    status.textContent = `All eight in ${moves} turns and ${time}. Rank: ${rank}.`;
+    document.documentElement.toggleAttribute('data-mg-won', true);
+    deal.focus();
+  }
+
+  board.addEventListener('click', event => {
+    const card = (event.target as HTMLElement).closest<HTMLButtonElement>('.mg-card');
+    if (card) turn(card);
+  });
+
+  // Arrow keys move between the cards, four to a row.
+  board.addEventListener('keydown', event => {
+    const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -4, ArrowDown: 4 };
+    const step = steps[event.key];
+    const current = (event.target as HTMLElement).closest<HTMLButtonElement>('.mg-card');
+    if (!step || !current) return;
+    event.preventDefault();
+    const cards = [...board.querySelectorAll<HTMLButtonElement>('.mg-card')];
+    const next = cards[Number(current.dataset.index) + step];
+    next?.focus();
+  });
+
+  deal.addEventListener('click', () => { dealCards(); board.querySelector<HTMLButtonElement>('.mg-card')?.focus(); });
+
+  // The cards are as big as the window allows, in whole squares, with a square between them.
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      board.style.removeProperty('grid-column'); board.style.removeProperty('grid-row');
+      board.style.setProperty('--c', '3'); board.style.setProperty('--g', '0');
+      return;
+    }
+    const roomH = down - 4, roomW = across - 26;
+    const c = Math.max(3, Math.min(8, Math.floor((roomH - 3) / 4), Math.floor((roomW - 3) / 4)));
+    const size = 4 * c + 3;
+    const left = 24 + Math.max(0, Math.floor((across - 24 - size - 1) / 2));
+    const top = 2 + Math.max(0, Math.floor((down - 3 - size) / 2));
+    board.style.setProperty('--c', String(c)); board.style.setProperty('--g', '1');
+    board.style.gridColumn = `${left} / span ${size}`;
+    board.style.gridRow = `${top} / span ${size}`;
+  });
+
+  dealCards();
+</script>
+
+<style is:global>
+  html { background: #ffcc1f; }
+  .mg {
+    --ink: #111;
+    --sun: #ffcc1f;
+    color: var(--ink);
+    background: var(--sun);
+    font-family: 'Gill Sans', 'Gill Sans MT', Seravek, Calibri, sans-serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+  }
+  .mg h1, .mg h2, .mg p, .mg dl, .mg dd, .mg ol { margin: 0; }
+  .mg .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .mg-head { grid-column: 2 / span 20; grid-row: 2 / span 8; }
+  .mg-maker { font-size: calc(13px * var(--sf)); font-style: italic; }
+  .mg-head h1 {
+    margin-top: var(--u);
+    font-weight: 600;
+    font-size: calc(58px * var(--sf));
+    line-height: calc(3 * var(--u));
+    letter-spacing: -0.02em;
+  }
+  .mg .mg-rules { margin-top: var(--u); max-width: calc(18 * var(--u)); }
+
+  /* The score: three big figures on a black bar, each six squares wide. */
+  .mg-score { grid-column: 2 / span 20; grid-row: 11 / span 4; display: grid; grid-template-columns: repeat(3, calc(6 * var(--u))); column-gap: var(--u); }
+  .mg-score div { border-top: calc(var(--u) / 5) solid var(--ink); }
+  .mg-score dt { font-size: calc(13px * var(--sf)); line-height: calc(var(--u) * 0.8); }
+  .mg-score dd { font-weight: 600; font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+  .mg-list { grid-column: 2 / span 20; grid-row: 16 / span 10; }
+  .mg-list h2 { font-size: inherit; font-weight: 600; line-height: var(--u); padding-bottom: 0; border-bottom: 1px solid var(--ink); height: var(--u); box-sizing: border-box; }
+  .mg-list ol { list-style: none; padding: 0; }
+  .mg-list li { display: grid; grid-template-columns: var(--u) calc(7 * var(--u)) auto; height: var(--u); align-items: center; white-space: nowrap; overflow: hidden; }
+  .mg-list li b { font-weight: 400; }
+  .mg-list li i { font-size: calc(13px * var(--sf)); opacity: 0.7; overflow: hidden; text-overflow: ellipsis; }
+  .mg-tick { width: calc(var(--u) * 0.5); height: calc(var(--u) * 0.5); border: 1.5px solid var(--ink); box-sizing: border-box; }
+  .mg-list li.is-found .mg-tick { background: var(--ink); box-shadow: inset 0 0 0 2px var(--sun); }
+  .mg-list li.is-found b { font-weight: 600; }
+
+  .mg-end { grid-column: 2 / span 20; grid-row: -7 / span 5; display: grid; grid-template-rows: calc(2 * var(--u)) var(--u) calc(2 * var(--u)); }
+  .mg-status { grid-row: 1; font-style: italic; }
+  .mg-deal {
+    grid-row: 3;
+    justify-self: start;
+    height: calc(2 * var(--u));
+    padding: 0 var(--u);
+    border: 0;
+    border-radius: var(--u);
+    background: var(--ink);
+    color: var(--sun);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mg-deal:focus-visible, .mg-card:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  :root[data-mg-won] .mg-status { font-style: normal; font-weight: 600; font-size: calc(20px * var(--sf)); line-height: var(--u); }
+
+  /* The board: four by four, each card --c squares, a gap of --g squares. */
+  .mg-board {
+    --c: 6; --g: 1;
+    display: grid;
+    grid-template-columns: repeat(4, calc(var(--c) * var(--u)));
+    grid-auto-rows: calc(var(--c) * var(--u));
+    gap: calc(var(--g) * var(--u));
+    perspective: calc(60 * var(--u));
+  }
+  .mg-card {
+    position: relative;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 420ms cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+  .mg-card.is-up { transform: rotateY(180deg); cursor: default; }
+  .mg-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: calc(var(--u) / 4); overflow: hidden; }
+  /* The back: black, a white dot on every square's corner, the footprint in the middle. */
+  .mg-back {
+    background:
+      radial-gradient(circle at 0 0, #fff 0 1.5px, transparent 2px) 0 0 / var(--u) var(--u),
+      var(--ink);
+    display: grid;
+    place-items: center;
+  }
+  .mg-back svg { width: 50%; height: 50%; fill: none; stroke: var(--sun); stroke-width: 0.9; stroke-linecap: round; }
+  .mg-card:hover:not(.is-up) .mg-back svg { stroke: #fff; }
+  .mg-front { transform: rotateY(180deg); background: #fff; }
+  .mg-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mg-name {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: var(--u);
+    padding-inline: calc(var(--u) / 2);
+    background: #fff;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .mg-card.is-matched .mg-front { box-shadow: inset 0 0 0 calc(var(--u) / 5) var(--ink); }
+  .mg-card.is-matched .mg-name { background: var(--ink); color: var(--sun); font-weight: 600; }
+  :root[data-mg-won] .mg-card.is-matched .mg-front { box-shadow: inset 0 0 0 calc(var(--u) / 5) #fff; }
+  @media (prefers-reduced-motion: reduce) { .mg-card { transition: none; } }
+
+  /* Narrow: the heading, the board twelve squares wide, then the score and the list. */
+  :root[data-narrow] .mg { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .mg > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .mg-head h1 { font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .mg-head { padding-bottom: var(--u); }
+  :root[data-narrow] .mg-board { order: 1; margin-bottom: var(--u); }
+  :root[data-narrow] .mg-score { order: 2; grid-template-columns: repeat(3, calc(4 * var(--u))); column-gap: 0; margin-bottom: var(--u); }
+  :root[data-narrow] .mg-score div { margin-right: calc(var(--u) / 2); }
+  :root[data-narrow] .mg-score dd { font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .mg-end { order: 3; margin-bottom: var(--u); }
+  :root[data-narrow] .mg-list { order: 4; }
+  :root[data-narrow] .mg-list li { grid-template-columns: var(--u) calc(6 * var(--u)) auto; }
+  :root[data-narrow] .mg-face { inset: calc(var(--u) / 8); }
+  :root[data-narrow] .mg-back { background-position: calc(var(--u) / -8) calc(var(--u) / -8), 0 0; }
+  :root[data-narrow] .mg-name { font-size: calc(11px * var(--sf)); padding-inline: calc(var(--u) / 4); }
+</style>

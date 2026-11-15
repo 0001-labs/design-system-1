@@ -1,0 +1,312 @@
+---
+// After a late-nineties chat client on a grey desktop: a parent window, a channel window inside it,
+// the nick list, coloured nicknames, joins, quits and ASCII art, with the pond itself as wallpaper.
+// The regulars of #thepond talk until the dawn chorus; type into the line to join them. Every bar,
+// line and bevelled button is a whole square high.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="chat-room" theme="light">
+  <main class="stage cr" id="cr">
+    <ul class="cr-icons" aria-hidden="true">
+      <li><svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="10" fill="#c0c0c0" stroke="#000" stroke-width="0.6" /><rect x="2.5" y="3.5" width="11" height="7" fill="#1e6f8e" /><path d="M2.5 9 q3 -2 5.5 0 t5.5 0 V10.5 H2.5 Z" fill="#2e9c6a" /><rect x="5" y="12" width="6" height="1.5" fill="#808080" /><rect x="3.5" y="13.5" width="9" height="1.2" fill="#c0c0c0" stroke="#000" stroke-width="0.4" /></svg><span>My Pond</span></li>
+      <li><svg viewBox="0 0 16 16"><path d="M1 4 H6 L7.5 5.5 H15 V14 H1 Z" fill="#e8c34a" stroke="#000" stroke-width="0.6" /><path d="M1 7 H15 V14 H1 Z" fill="#f6d86a" stroke="#000" stroke-width="0.6" /></svg><span>Nest</span></li>
+      <li><svg viewBox="0 0 16 16"><path d="M3.5 4.5 H12.5 L11.5 15 H4.5 Z" fill="#d8d8d8" stroke="#000" stroke-width="0.6" /><path d="M2.5 3 H13.5 V4.5 H2.5 Z" fill="#c0c0c0" stroke="#000" stroke-width="0.6" /><path d="M6 6.5 V13.5 M8 6.5 V13.5 M10 6.5 V13.5" stroke="#6b7d3a" stroke-width="0.9" /></svg><span>Recycled Reeds</span></li>
+    </ul>
+
+    <section class="cr-win" aria-label="PondChat 32">
+      <header class="cr-title cr-title-active">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="10" rx="7" ry="4" fill="#2e9c6a" /><path d="M8 10 L13 7.5" stroke="#1d5f40" stroke-width="1.2" /><circle cx="5" cy="5" r="2.6" fill="#f2f2f2" stroke="#000" stroke-width="0.6" /></svg>
+        <h1>PondChat 32 - [#thepond on irc.wetland.net]</h1>
+        <span class="cr-buttons" aria-hidden="true"><b>_</b><b>□</b><b>×</b></span>
+      </header>
+      <nav class="cr-menu" aria-hidden="true"><span><u>F</u>ile</span><span><u>V</u>iew</span><span><u>F</u>avourites</span><span><u>T</u>ools</span><span><u>C</u>ommands</span><span><u>W</u>indow</span><span><u>H</u>elp</span></nav>
+      <div class="cr-tools" aria-hidden="true">
+        <i title="Connect"><svg viewBox="0 0 16 16"><path d="M9 1 L3 9 H7.5 L6 15 L13 6 H8.5 Z" fill="#f2c22e" stroke="#000" stroke-width="0.6" /></svg></i>
+        <i><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5" fill="#c0c0c0" stroke="#000" stroke-width="0.6" stroke-dasharray="2 1.2" /><circle cx="8" cy="8" r="1.8" fill="#fff" stroke="#000" stroke-width="0.6" /></svg></i>
+        <i class="cr-sep"></i>
+        <i><svg viewBox="0 0 16 16"><path d="M3 3 H13 M3 6 H13 M3 9 H13 M3 12 H10" stroke="#000" stroke-width="1.2" /><rect x="1" y="2.4" width="1.2" height="1.2" fill="#c00" /><rect x="1" y="5.4" width="1.2" height="1.2" fill="#00c" /><rect x="1" y="8.4" width="1.2" height="1.2" fill="#090" /></svg></i>
+        <i><svg viewBox="0 0 16 16"><circle cx="6" cy="5" r="2.5" fill="#f0c090" stroke="#000" stroke-width="0.5" /><path d="M1.5 14 q4.5 -8 9 0 Z" fill="#3060c0" stroke="#000" stroke-width="0.5" /><circle cx="11.5" cy="6" r="2" fill="#f0c090" stroke="#000" stroke-width="0.5" /><path d="M8.5 14 q3 -6.5 6.5 0 Z" fill="#c03030" stroke="#000" stroke-width="0.5" /></svg></i>
+        <i><svg viewBox="0 0 16 16"><path d="M2 3 H14 V11 H8 L4.5 14 V11 H2 Z" fill="#fff" stroke="#000" stroke-width="0.6" /><path d="M4.5 6 H11.5 M4.5 8 H9.5" stroke="#000" stroke-width="0.8" /></svg></i>
+        <i class="cr-sep"></i>
+        <i><svg viewBox="0 0 16 16"><path d="M8 2 Q12 6 8 14 Q4 6 8 2 Z" fill="#5aa65a" stroke="#000" stroke-width="0.6" /><path d="M8 4 V13" stroke="#2d6b2d" stroke-width="0.6" /></svg></i>
+      </div>
+
+      <div class="cr-mdi">
+        <section class="cr-child" aria-labelledby="cr-channel">
+          <header class="cr-title">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="#fff" stroke="#000" stroke-width="0.6" /><text x="8" y="12" font-size="10" text-anchor="middle" font-family="Tahoma, Verdana, sans-serif" font-weight="bold">#</text></svg>
+            <h2 id="cr-channel">#thepond [<span id="cr-count">10</span>] [+nt]: dawn chorus at 05:30 | no fishing, this means you pike | lily pad rota in /notice | be kind to the newts</h2>
+            <span class="cr-buttons" aria-hidden="true"><b>_</b><b>□</b><b>×</b></span>
+          </header>
+          <div class="cr-body">
+            <ol class="cr-log" id="log" aria-live="polite" aria-label="Messages in #thepond"></ol>
+            <ul class="cr-nicks" id="nicks" aria-label="People in #thepond"></ul>
+            <form class="cr-say" id="say">
+              <input id="line" type="text" autocomplete="off" spellcheck="false" aria-label="Say something in #thepond as reed" placeholder="Say something to the pond, or /me does something" />
+            </form>
+          </div>
+        </section>
+        <div class="cr-min" aria-hidden="true"><span>Status: reed [+i] on Wetland</span><span class="cr-buttons"><b>□</b><b>×</b></span></div>
+      </div>
+
+      <footer class="cr-status" aria-hidden="true"><span>Connected to irc.wetland.net:6667</span><span>Lag: 2 secs</span><span>Away: no, never</span></footer>
+    </section>
+
+    <div class="cr-bar" aria-hidden="true">
+      <span class="cr-begin"><svg viewBox="0 0 16 16"><circle cx="5" cy="6" r="3" fill="#2e9c6a" /><circle cx="11" cy="6" r="3" fill="#3060c0" /><circle cx="5" cy="11" r="3" fill="#f2c22e" /><circle cx="11" cy="11" r="3" fill="#c03030" /></svg><b>Begin</b></span>
+      <span class="cr-task">#thepond - PondChat 32</span>
+      <span class="cr-clock" id="clock">05:01</span>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  type Line = [time: string, kind: 'msg' | 'act' | 'join' | 'quit' | 'nick' | 'info', nick: string, text: string];
+  const LOG: Line[] = [
+    ['04:58', 'info', '', 'Now talking in #thepond'],
+    ['04:58', 'info', '', "Topic is 'dawn chorus at 05:30 | no fishing, this means you pike | lily pad rota in /notice | be kind to the newts'"],
+    ['04:58', 'info', '', 'Set by heron on Tue Apr 14 04:12:09'],
+    ['05:01', 'msg', 'mallard', 'morning all'],
+    ['05:01', 'msg', 'mallard', 'anyone else up or is it just me and the mist'],
+    ['05:02', 'msg', 'newt', "here. barely. it's 6 degrees"],
+    ['05:02', 'msg', 'frogspawn', 'hi!!!!'],
+    ['05:02', 'msg', 'frogspawn', 'hi'],
+    ['05:02', 'msg', 'frogspawn', 'hello'],
+    ['05:03', 'msg', 'mallard', 'frogspawn one hi is plenty'],
+    ['05:03', 'msg', 'frogspawn', 'sorry there are four thousand of us typing'],
+    ['05:04', 'act', 'heron', 'stands very still'],
+    ['05:05', 'join', 'dragonfly', '(~dfly@reeds.north) has joined #thepond'],
+    ['05:05', 'msg', 'dragonfly', 'brb'],
+    ['05:05', 'quit', 'dragonfly', 'has quit (Quit: zoom)'],
+    ['05:06', 'msg', 'PondServ', 'Duckweed cover today: 41%. Water: 9°C. Pike sightings: classified.'],
+    ['05:07', 'msg', 'waterboatman', 'does anyone know how to row backwards'],
+    ['05:07', 'msg', 'newt', 'you are already rowing backwards'],
+    ['05:07', 'msg', 'waterboatman', 'oh'],
+    ['05:08', 'msg', 'mallard', 'made you all something'],
+    ['05:08', 'msg', 'mallard', '    __'],
+    ['05:08', 'msg', 'mallard', '___( o)>'],
+    ['05:08', 'msg', 'mallard', "\\ <_. )"],
+    ['05:08', 'msg', 'mallard', " `---'"],
+    ['05:08', 'msg', 'newt', 'lol'],
+    ['05:09', 'msg', 'frogspawn', 'how do you do the pictures'],
+    ['05:09', 'msg', 'mallard', 'patience and a fixed width font'],
+    ['05:10', 'act', 'pike', 'is lurking'],
+    ['05:10', 'msg', 'newt', 'we know pike'],
+    ['05:11', 'join', 'kingfisher', '(~kf@branch.overhang) has joined #thepond'],
+    ['05:11', 'msg', 'kingfisher', 'got one'],
+    ['05:11', 'quit', 'kingfisher', 'has quit (Ping timeout: too fast)'],
+    ['05:12', 'msg', 'waterboatman', 'got what'],
+    ['05:13', 'msg', 'heron', '.'],
+    ['05:13', 'msg', 'mallard', 'heron has spoken'],
+    ['05:14', 'nick', 'frogspawn', 'is now known as tadpole'],
+    ['05:14', 'msg', 'tadpole', 'whoa'],
+    ['05:14', 'msg', 'tadpole', 'i have a tail now'],
+    ['05:15', 'msg', 'newt', 'it goes. give it a few weeks'],
+    ['05:15', 'msg', 'tadpole', '  @..@'],
+    ['05:15', 'msg', 'tadpole', ' (----)'],
+    ['05:15', 'msg', 'tadpole', '( >__< )'],
+    ['05:15', 'msg', 'tadpole', '^^ ~~ ^^'],
+    ['05:15', 'msg', 'tadpole', "that's me in june"],
+    ['05:16', 'join', 'coot', '(~coot@nest.island) has joined #thepond'],
+    ['05:16', 'msg', 'coot', 'has anyone seen my nest it was on the island'],
+    ['05:16', 'msg', 'mallard', 'it is still on the island coot'],
+    ['05:17', 'msg', 'coot', 'ok'],
+    ['05:17', 'quit', 'coot', 'has quit (Quit: going to look at the island)'],
+    ['05:18', 'act', 'heron', 'catches something and says nothing about it'],
+    ['05:19', 'msg', 'PondServ', 'Reminder: dawn chorus in 11 minutes. Blackbird has the solo.'],
+  ];
+  const COLOURS: Record<string, string> = {
+    mallard: '#007f00', newt: '#9c009c', frogspawn: '#c46a00', tadpole: '#c46a00', heron: '#00007f', PondServ: '#7f0000',
+    dragonfly: '#009393', waterboatman: '#7f7f00', pike: '#555', kingfisher: '#0050c8', coot: '#3a3a3a', reed: '#c00000', moorhen: '#b03060',
+  };
+  const RANKS: Record<string, string> = { heron: '@', PondServ: '@', mallard: '+', newt: '+' };
+  const people = new Set(['heron', 'PondServ', 'mallard', 'newt', 'frogspawn', 'waterboatman', 'pike', 'moorhen', 'lily_pad', 'reed']);
+
+  const log = document.getElementById('log')!;
+  const nicks = document.getElementById('nicks')!;
+  const count = document.getElementById('cr-count')!;
+  const clock = document.getElementById('clock')!;
+  const esc = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  function drawNicks() {
+    const order = (nick: string) => (RANKS[nick] === '@' ? 0 : RANKS[nick] === '+' ? 1 : 2);
+    const list = [...people].sort((a, b) => order(a) - order(b) || a.localeCompare(b, 'en', { sensitivity: 'base' }));
+    nicks.innerHTML = list.map(nick => `<li${nick === 'reed' ? ' class="cr-me"' : ''}>${RANKS[nick] ?? ''}${esc(nick)}</li>`).join('');
+    count.textContent = String(people.size);
+  }
+
+  function add([time, kind, nick, text]: Line) {
+    if (kind === 'join') people.add(nick);
+    if (kind === 'quit') people.delete(nick);
+    if (kind === 'nick') { const to = text.split(' ').pop()!; people.delete(nick); people.add(to); }
+    const colour = COLOURS[nick] ?? '#000';
+    const stamp = `<span class="cr-time">[${time}]</span> `;
+    const body =
+      kind === 'msg' ? `<span class="cr-nick" style="color:${colour}">&lt;${RANKS[nick] ?? ''}${esc(nick)}&gt;</span> <span class="cr-text">${esc(text)}</span>` :
+      kind === 'act' ? `<span class="cr-act">* ${esc(nick)} ${esc(text)}</span>` :
+      kind === 'join' ? `<span class="cr-join">*** ${esc(nick)} ${esc(text)}</span>` :
+      kind === 'quit' ? `<span class="cr-quit">*** ${esc(nick)} ${esc(text)}</span>` :
+      kind === 'nick' ? `<span class="cr-join">*** ${esc(nick)} ${esc(text)}</span>` :
+      `<span class="cr-info">*** ${esc(text)}</span>`;
+    const item = document.createElement('li');
+    item.innerHTML = stamp + body;
+    log.append(item);
+    while (log.children.length > 120) log.firstElementChild?.remove();
+    clock.textContent = time;
+    log.scrollTop = log.scrollHeight;
+    drawNicks();
+  }
+
+  // The backlog is there when the window opens; the rest of the morning arrives line by line.
+  const now = reducedMotion() ? LOG.length : 27;
+  LOG.slice(0, now).forEach(add);
+  drawNicks();
+  let next = now;
+  const tick = () => {
+    if (next >= LOG.length) return;
+    const line = LOG[next++];
+    add(line);
+    const following = LOG[next];
+    // Lines of one picture or one burst come together; a new speaker takes a breath.
+    const gap = following && following[2] === line[2] && following[0] === line[0] ? 140 : 520 + (next * 97) % 600;
+    window.setTimeout(tick, gap);
+  };
+  if (next < LOG.length) window.setTimeout(tick, 900);
+
+  // You are reed. The pond answers, more or less.
+  const REPLIES: Line[] = [
+    ['', 'msg', 'mallard', 'welcome reed'],
+    ['', 'msg', 'heron', '.'],
+    ['', 'act', 'pike', 'is lurking'],
+    ['', 'msg', 'tadpole', 'hi!!!!'],
+    ['', 'msg', 'newt', 'fair'],
+    ['', 'msg', 'PondServ', 'Please keep the pond tidy. Thank you.'],
+    ['', 'msg', 'waterboatman', 'which way is that'],
+  ];
+  let reply = 0;
+  const say = document.getElementById('say') as HTMLFormElement;
+  const input = document.getElementById('line') as HTMLInputElement;
+  const stamp = () => {
+    const [h, m] = (clock.textContent ?? '05:19').split(':').map(Number);
+    const total = h * 60 + m + 1;
+    return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+  };
+  say.addEventListener('submit', event => {
+    event.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    const time = stamp();
+    add(text.startsWith('/me ') ? [time, 'act', 'reed', text.slice(4)] : [time, 'msg', 'reed', text]);
+    const answer = REPLIES[reply++ % REPLIES.length];
+    window.setTimeout(() => add([clock.textContent ?? time, answer[1], answer[2], answer[3]]), reducedMotion() ? 0 : 1200);
+  });
+
+  onSquares(() => { log.scrollTop = log.scrollHeight; });
+</script>
+
+<style is:global>
+  html { background: #1c2a2e; }
+  .cr {
+    --face: #c0c0c0;
+    --light: #fff;
+    --shade: #808080;
+    --dark: #000;
+    font-family: Tahoma, Verdana, 'Geneva', sans-serif;
+    font-size: calc(11px * var(--sf));
+    line-height: var(--u);
+    color: #000;
+    background: #1c2a2e url('/examples/images/lake.jpg') center 78% / cover no-repeat;
+  }
+  .cr svg { display: block; }
+  /* Raised and sunken, drawn inside the box so nothing moves off the squares. */
+  .cr-win, .cr-child, .cr-min, .cr-bar .cr-begin, .cr-bar .cr-task, .cr-tools i:not(.cr-sep), .cr-buttons b {
+    box-shadow: inset -1px -1px 0 var(--dark), inset 1px 1px 0 var(--light), inset -2px -2px 0 var(--shade), inset 2px 2px 0 #dfdfdf;
+  }
+
+  .cr-icons { grid-column: 2 / span 4; grid-row: 2 / span 15; margin: 0; padding: 0; list-style: none; display: grid; grid-auto-rows: calc(5 * var(--u)); }
+  .cr-icons li { display: grid; justify-items: center; align-content: start; color: #fff; text-align: center; text-shadow: 1px 1px 0 #000; }
+  .cr-icons svg { width: calc(2 * var(--u)); height: calc(2 * var(--u)); margin-bottom: calc(var(--u) / 2); }
+  .cr-icons span { line-height: calc(var(--u) * 0.75); width: calc(4 * var(--u)); }
+
+  .cr-win {
+    grid-column: 8 / -3;
+    grid-row: 2 / -3;
+    display: grid;
+    grid-template-rows: var(--u) var(--u) calc(2 * var(--u)) minmax(0, 1fr) var(--u);
+    background: var(--face);
+    min-width: 0;
+  }
+  .cr-title { display: grid; grid-template-columns: var(--u) minmax(0, 1fr) auto; align-items: center; height: var(--u); padding-inline: 2px; background: linear-gradient(90deg, #808080, #b5b5b5); color: #d4d0c8; }
+  .cr-title-active, .cr-child .cr-title { background: linear-gradient(90deg, #000080, #1084d0); color: #fff; }
+  .cr-title svg { width: calc(var(--u) * 0.8); height: calc(var(--u) * 0.8); }
+  .cr-title :is(h1, h2) { margin: 0; font: bold calc(11px * var(--sf)) / var(--u) Tahoma, Verdana, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-inline: 4px; }
+  .cr-buttons { display: flex; gap: 2px; }
+  .cr-buttons b { display: grid; place-items: center; width: calc(var(--u) * 0.8); height: calc(var(--u) * 0.7); background: var(--face); color: #000; font: bold calc(9px * var(--sf)) / 1 Tahoma, Verdana, sans-serif; }
+
+  .cr-menu { display: flex; gap: calc(var(--u) * 0.6); padding-inline: calc(var(--u) / 2); white-space: nowrap; overflow: hidden; }
+  .cr-tools { display: flex; align-items: center; gap: 2px; padding-inline: calc(var(--u) / 4); border-top: 1px solid var(--shade); box-shadow: inset 0 1px 0 var(--light); }
+  .cr-tools i { display: grid; place-items: center; width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u)); background: var(--face); }
+  .cr-tools i svg { width: calc(var(--u) * 0.8); height: calc(var(--u) * 0.8); }
+  .cr-tools .cr-sep { width: 6px; height: calc(1.5 * var(--u)); background: linear-gradient(90deg, transparent 2px, var(--shade) 2px 3px, var(--light) 3px 4px, transparent 4px); }
+
+  /* The grey floor of child windows: the channel, and the status window put away below it. */
+  .cr-mdi { position: relative; display: grid; grid-template-rows: var(--u) minmax(0, 1fr) var(--u) var(--u); grid-template-columns: var(--u) minmax(0, 1fr) var(--u); background: var(--shade); box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 var(--light); min-height: 0; }
+  .cr-child { grid-row: 2; grid-column: 2; display: grid; grid-template-rows: var(--u) minmax(0, 1fr); background: var(--face); min-height: 0; min-width: 0; padding: 0; }
+  .cr-body { display: grid; grid-template-columns: minmax(0, 1fr) calc(8 * var(--u)); grid-template-rows: minmax(0, 1fr) var(--u); min-height: 0; }
+  .cr-log {
+    margin: 0;
+    padding: 0 calc(var(--u) / 4);
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: inset 1px 1px 0 var(--shade), inset 2px 2px 0 #404040;
+    font-family: Monaco, 'Andale Mono', Menlo, monospace;
+    font-size: calc(11px * var(--sf));
+    min-height: 0;
+  }
+  .cr-log li:first-child { margin-top: auto; }
+  .cr-log li { flex: none; min-height: var(--u); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .cr-time { color: #7f7f7f; }
+  .cr-text { white-space: pre; }
+  .cr-act { color: #9c009c; }
+  .cr-join { color: #009300; }
+  .cr-quit { color: #00007f; }
+  .cr-info { color: #009300; }
+  .cr-nicks { margin: 0; padding: 0 calc(var(--u) / 4); list-style: none; overflow: hidden; background: #fff; box-shadow: inset 1px 1px 0 var(--shade), inset 2px 2px 0 #404040; border-left: 2px solid var(--face); font-family: Monaco, 'Andale Mono', Menlo, monospace; font-size: calc(11px * var(--sf)); }
+  .cr-nicks .cr-me { color: #c00000; }
+  .cr-say { grid-column: 1 / -1; margin: 0; }
+  .cr-say input { box-sizing: border-box; width: 100%; height: var(--u); margin: 0; padding: 0 calc(var(--u) / 4); border: 0; background: #fff; box-shadow: inset 1px 1px 0 var(--shade), inset 2px 2px 0 #404040; font: calc(11px * var(--sf)) / var(--u) Monaco, 'Andale Mono', Menlo, monospace; color: #000; outline: none; }
+  .cr-say input::placeholder { color: #9a9a9a; }
+  .cr-say input:focus-visible { box-shadow: inset 1px 1px 0 var(--shade), inset 2px 2px 0 #404040, inset 0 0 0 3px #000080; }
+  .cr-min { grid-row: 3; grid-column: 2; justify-self: start; display: grid; grid-template-columns: auto auto; align-items: center; gap: var(--u); height: var(--u); padding: 0 2px 0 calc(var(--u) / 4); background: var(--face); font-weight: bold; color: #404040; white-space: nowrap; }
+  .cr-status { display: flex; gap: 2px; padding: 2px; }
+  .cr-status span { padding: 0 calc(var(--u) / 4); line-height: calc(var(--u) - 4px); box-shadow: inset 1px 1px 0 var(--shade), inset -1px -1px 0 var(--light); white-space: nowrap; overflow: hidden; }
+  .cr-status span:first-child { flex: 1; }
+
+  /* The taskbar along the last row; the study chip sits on its right. */
+  .cr-bar { grid-column: 1 / -1; grid-row: -2; display: flex; align-items: center; gap: calc(var(--u) / 4); padding-inline: 2px; background: var(--face); box-shadow: inset 0 1px 0 #dfdfdf, inset 0 2px 0 var(--light); }
+  .cr-begin { display: flex; align-items: center; gap: 4px; height: calc(var(--u) - 2px); padding: 0 calc(var(--u) / 4); background: var(--face); }
+  .cr-begin svg { width: calc(var(--u) * 0.7); height: calc(var(--u) * 0.7); }
+  .cr-task { height: calc(var(--u) - 2px); line-height: calc(var(--u) - 2px); width: calc(9 * var(--u)); padding: 0 calc(var(--u) / 4); background: repeating-conic-gradient(#fff 0 25%, #dcdcdc 0 50%) 0 0 / 2px 2px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--light), inset 2px 2px 0 var(--shade) !important; }
+  .cr-clock { margin-left: auto; margin-right: calc(12 * var(--u)); padding: 0 calc(var(--u) / 2); line-height: calc(var(--u) - 4px); box-shadow: inset 1px 1px 0 var(--shade), inset -1px -1px 0 var(--light); font-variant-numeric: tabular-nums; }
+
+  /* Narrow: the client fills the phone, the floor and the nick list folded away. */
+  :root[data-narrow] { background: #c0c0c0; }
+  :root[data-narrow] .cr { background: var(--face); }
+  :root[data-narrow] .cr-icons, :root[data-narrow] .cr-bar, :root[data-narrow] .cr-tools, :root[data-narrow] .cr-menu, :root[data-narrow] .cr-min { display: none; }
+  :root[data-narrow] .cr-win { grid-column: 1 / -1; grid-row: auto; grid-template-rows: var(--u) auto var(--u); padding-bottom: 0; }
+  :root[data-narrow] .cr-mdi { grid-template-rows: auto; grid-template-columns: minmax(0, 1fr); box-shadow: none; }
+  :root[data-narrow] .cr-child { grid-row: 1; grid-column: 1; }
+  :root[data-narrow] .cr-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: calc(30 * var(--u)) var(--u) auto; }
+  :root[data-narrow] .cr-nicks { grid-row: 3; border-left: 0; display: flex; flex-wrap: wrap; gap: 0 calc(var(--u) / 2); padding-block: calc(var(--u) / 2); }
+  :root[data-narrow] .cr-say { grid-row: 2; }
+  :root[data-narrow] .cr-log { font-size: calc(10px * var(--sf)); }
+  :root[data-narrow] .cr-text { white-space: pre-wrap; }
+  :root[data-narrow] .cr-status span:not(:first-child) { display: none; }
+  :root[data-narrow] .stage.cr { padding-bottom: calc(2 * var(--u)); }
+</style>

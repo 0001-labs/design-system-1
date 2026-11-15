@@ -1,0 +1,449 @@
+---
+// After a boxed board game from the sixties: a hundred numbered squares, boustrophedon from the
+// bottom left, on a green baize table. Every board square is three or four grid squares, so the
+// game's grid is the page's grid. The ladders are good deeds and the snakes are sins of office
+// life; you play against Gary from Accounts, and the counters walk the board square by square.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const LADDERS: [number, number, string][] = [
+  [4, 25, 'Watered the office plant'],
+  [13, 46, 'Refilled the printer'],
+  [33, 49, 'Remembered every name'],
+  [42, 63, 'Fixed the wifi by unplugging it'],
+  [50, 69, 'Brought in a lemon drizzle'],
+  [62, 81, 'Clear desk on a Friday'],
+  [74, 92, 'Answered within the hour'],
+];
+const SNAKES: [number, number, string][] = [
+  [27, 5, 'Replied all'],
+  [40, 3, 'Microwaved fish'],
+  [43, 18, 'Took the last coffee, made none'],
+  [54, 31, 'Talked for ten minutes on mute'],
+  [66, 45, 'Booked a meeting at 16.55'],
+  [76, 58, 'Left the stapler empty'],
+  [89, 53, 'Called it a quick sync'],
+  [99, 41, 'Deployed on a Friday'],
+];
+
+// Board square n (1–100) as a column and a row from the top, counting like the board: left to
+// right on the bottom row, back again on the next.
+const place = (n: number) => {
+  const fromFoot = Math.floor((n - 1) / 10);
+  const along = (n - 1) % 10;
+  return { col: fromFoot % 2 === 0 ? along : 9 - along, row: 9 - fromFoot };
+};
+const TINTS = ['#e8423a', '#f6b81f', '#2f7fd6', '#2fa36b'];
+// Every other square is plain; the coloured ones change colour by row and by half of the board.
+const squares = Array.from({ length: 100 }, (_, i) => ({ n: i + 1, ...place(i + 1) }))
+  .sort((a, b) => a.row - b.row || a.col - b.col)
+  .map(s => ({ ...s, tint: (s.row + s.col) % 2 === 0 ? TINTS[(9 - s.row + Math.floor(s.col / 5)) % 4] : null }));
+---
+<AlignedStudy slug="snakes-ladders" theme="dark">
+  <main class="stage sl">
+    <div class="sl-board" id="board" style="--cell: 4">
+      <div class="sl-squares" aria-hidden="true">
+        {squares.map(s => (
+          <span
+            class:list={['sl-sq', { 'sl-plain': !s.tint, 'sl-home': s.n === 100 }]}
+            style={s.tint ? `--tint: ${s.tint}` : undefined}
+          ><b>{s.n}</b></span>
+        ))}
+      </div>
+      <svg class="sl-art" viewBox="0 0 10 10" aria-hidden="true">
+        <g id="ladders"></g>
+        <g id="snakes"></g>
+      </svg>
+      <i class="sl-pawn sl-pawn-you" id="pawn-you" aria-hidden="true"></i>
+      <i class="sl-pawn sl-pawn-gary" id="pawn-gary" aria-hidden="true"></i>
+    </div>
+
+    <section class="sl-panel" id="panel" aria-label="The game">
+      <header class="sl-head">
+        <h1>Ups <span>&amp;</span> Downs</h1>
+        <p>The game of office virtue, for two colleagues aged 8 to retirement</p>
+      </header>
+
+      <div class="sl-play">
+        <button type="button" class="sl-die" id="die" aria-label="Roll the die">
+          <span class="sl-face" id="face" data-n="6" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="sl-roll">Roll</span>
+        </button>
+        <dl class="sl-scores">
+          <div><dt><i class="sl-dot sl-dot-you"></i>You</dt><dd id="at-you">Start</dd></div>
+          <div><dt><i class="sl-dot sl-dot-gary"></i>Gary from Accounts</dt><dd id="at-gary">Start</dd></div>
+        </dl>
+      </div>
+      <p class="sl-news" id="news" aria-live="polite">Roll a six or anything else; this office has no waiting rule. First to 100 goes home early.</p>
+
+      <ol class="sl-how">
+        <li>Roll the die and walk your counter that many squares, up the board and back.</li>
+        <li>Land at the foot of a ladder and climb it. Land on a snake's head and slide to its tail.</li>
+        <li>Gary rolls after you. He always rolls after you.</li>
+      </ol>
+
+      <div class="sl-rules">
+        <section>
+          <h2>Ladders</h2>
+          <ul>{LADDERS.map(([a, b, deed]) => <li><b>{a}</b><span>{deed}</span><em>{b}</em></li>)}</ul>
+        </section>
+        <section>
+          <h2>Snakes</h2>
+          <ul>{SNAKES.map(([a, b, sin]) => <li><b>{a}</b><span>{sin}</span><em>{b}</em></li>)}</ul>
+        </section>
+      </div>
+      <p class="sl-foot">No. 412. Board, two counters and one die. Contents may settle in transit.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const LADDERS: [number, number][] = [[4, 25], [13, 46], [33, 49], [42, 63], [50, 69], [62, 81], [74, 92]];
+  const SNAKES: [number, number][] = [[27, 5], [40, 3], [43, 18], [54, 31], [66, 45], [76, 58], [89, 53], [99, 41]];
+  const DEEDS: Record<number, string> = { 4: 'Watered the office plant', 13: 'Refilled the printer', 33: 'Remembered every name', 42: 'Fixed the wifi by unplugging it', 50: 'Brought in a lemon drizzle', 62: 'Clear desk on a Friday', 74: 'Answered within the hour' };
+  const SINS: Record<number, string> = { 27: 'Replied all', 40: 'Microwaved fish', 43: 'Took the last coffee, made none', 54: 'Talked for ten minutes on mute', 66: 'Booked a meeting at 16.55', 76: 'Left the stapler empty', 89: 'Called it a quick sync', 99: 'Deployed on a Friday' };
+  const jumps = new Map<number, number>([...LADDERS, ...SNAKES]);
+
+  // The centre of board square n, in board squares from the top left.
+  const centre = (n: number) => {
+    const fromFoot = Math.floor((n - 1) / 10);
+    const along = (n - 1) % 10;
+    return { x: (fromFoot % 2 === 0 ? along : 9 - along) + 0.5, y: 9 - fromFoot + 0.5 };
+  };
+
+  // Ladders: two rails a third of a square apart and a rung every third of a square.
+  const ladders = LADDERS.map(([a, b]) => {
+    const p = centre(a), q = centre(b);
+    const len = Math.hypot(q.x - p.x, q.y - p.y);
+    const nx = (-(q.y - p.y) / len) * 0.17, ny = ((q.x - p.x) / len) * 0.17;
+    const rungs: string[] = [];
+    for (let t = 0.3 / len; t < 1; t += 0.3 / len) {
+      const x = p.x + (q.x - p.x) * t, y = p.y + (q.y - p.y) * t;
+      rungs.push(`M${(x - nx).toFixed(3)} ${(y - ny).toFixed(3)}L${(x + nx).toFixed(3)} ${(y + ny).toFixed(3)}`);
+    }
+    return `<g class="ladder"><path class="rungs" d="${rungs.join('')}"/><path class="rail" d="M${p.x - nx} ${p.y - ny}L${q.x - nx} ${q.y - ny}M${p.x + nx} ${p.y + ny}L${q.x + nx} ${q.y + ny}"/></g>`;
+  }).join('');
+
+  // Snakes: a wave along the line from head to tail, thinning to the tail, with a head, two eyes
+  // and a tongue. Each has its own colour.
+  const SKINS = [['#7a3db8', '#f6b81f'], ['#151515', '#e8423a'], ['#1f8a4c', '#c6e86b'], ['#d9481f', '#ffd9a0'], ['#2f5fd6', '#9fd7ff'], ['#a3195b', '#ffb3d1'], ['#4b6b1f', '#e9e27a'], ['#111d6b', '#ff8b2e']];
+  const snakes = SNAKES.map(([a, b], i) => {
+    const h = centre(a), t = centre(b);
+    const dx = t.x - h.x, dy = t.y - h.y;
+    const len = Math.hypot(dx, dy);
+    const nx = -dy / len, ny = dx / len;
+    const waves = Math.max(1.5, Math.round(len / 1.6) + 0.5);
+    const pts: string[] = [];
+    const steps = 60;
+    for (let k = 0; k <= steps; k++) {
+      const s = k / steps;
+      const amp = 0.32 * Math.sin(Math.PI * Math.min(1, s * 1.4));
+      const w = Math.sin(s * waves * Math.PI * 2) * amp;
+      pts.push(`${(h.x + dx * s + nx * w).toFixed(3)} ${(h.y + dy * s + ny * w).toFixed(3)}`);
+    }
+    const [skin, belly] = SKINS[i % SKINS.length];
+    const ux = dx / len, uy = dy / len;
+    const tongue = `M${h.x - ux * 0.18} ${h.y - uy * 0.18}l${-ux * 0.22 + nx * 0.07} ${-uy * 0.22 + ny * 0.07}M${h.x - ux * 0.18} ${h.y - uy * 0.18}l${-ux * 0.22 - nx * 0.07} ${-uy * 0.22 - ny * 0.07}`;
+    return `<g class="snake" style="--skin:${skin};--belly:${belly}">
+      <polyline class="body" points="${pts.join(' ')}"/>
+      <polyline class="spots" points="${pts.join(' ')}"/>
+      <path class="tongue" d="${tongue}"/>
+      <ellipse class="head" cx="${h.x}" cy="${h.y}" rx="0.24" ry="0.2" transform="rotate(${(Math.atan2(uy, ux) * 180) / Math.PI} ${h.x} ${h.y})"/>
+      <circle class="eye" cx="${h.x + nx * 0.09 + ux * 0.04}" cy="${h.y + ny * 0.09 + uy * 0.04}" r="0.045"/>
+      <circle class="eye" cx="${h.x - nx * 0.09 + ux * 0.04}" cy="${h.y - ny * 0.09 + uy * 0.04}" r="0.045"/>
+    </g>`;
+  }).join('');
+  document.getElementById('ladders')!.innerHTML = ladders;
+  document.getElementById('snakes')!.innerHTML = snakes;
+
+  // Layout: the board takes as many whole squares as the height allows, three or four a board square
+  // on a computer; the panel takes what is left on the right.
+  const stage = document.querySelector<HTMLElement>('.sl')!;
+  const board = document.getElementById('board')!;
+  const panel = document.getElementById('panel')!;
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      const cell = Math.max(1, Math.min(4, Math.floor((across - 2) / 10)));
+      const from = Math.floor((across - cell * 10) / 2) + 1;
+      board.style.cssText = `--cell:${cell};grid-column:${from} / span ${cell * 10};grid-row:auto / span ${cell * 10}`;
+      panel.style.cssText = '';
+      return;
+    }
+    const cell = Math.max(2, Math.min(4, Math.floor((down - 4) / 10), Math.floor((across - 30) / 10)));
+    const size = cell * 10;
+    const top = Math.max(2, Math.floor((down - size) / 2) + 1);
+    board.style.cssText = `--cell:${cell};grid-column:4 / span ${size};grid-row:${top} / span ${size}`;
+    panel.style.cssText = `grid-column:${size + 8} / -4;grid-row:${top} / span ${size}`;
+    stage.style.setProperty('--rows', String(size));
+  });
+
+  // The game.
+  const pawns = { you: document.getElementById('pawn-you')!, gary: document.getElementById('pawn-gary')! };
+  const where = { you: 0, gary: 0 };
+  const label = { you: document.getElementById('at-you')!, gary: document.getElementById('at-gary')! };
+  const die = document.getElementById('die') as HTMLButtonElement;
+  const face = document.getElementById('face')!;
+  const news = document.getElementById('news')!;
+  const quick = reducedMotion();
+  const wait = (ms: number) => new Promise(r => setTimeout(r, quick ? 0 : ms));
+
+  const put = (who: 'you' | 'gary', n: number) => {
+    const el = pawns[who];
+    if (n === 0) { el.style.setProperty('--x', '-0.32'); el.style.setProperty('--y', who === 'you' ? '9.25' : '9.75'); return; }
+    const c = centre(n);
+    const shared = where.you === where.gary && where.you > 0;
+    const nudge = shared ? (who === 'you' ? -0.16 : 0.16) : 0;
+    el.style.setProperty('--x', String(c.x + nudge));
+    el.style.setProperty('--y', String(c.y + (who === 'you' ? -0.05 : 0.08)));
+  };
+  const show = () => { put('you', where.you); put('gary', where.gary); };
+  show();
+
+  // The news keeps your move and Gary's answer, a line each.
+  const lines = { you: '', gary: '' };
+  const say = (who: 'you' | 'gary', text: string) => {
+    lines[who] = text;
+    if (who === 'you') lines.gary = '';
+    news.textContent = [lines.you, lines.gary].filter(Boolean).join(' ');
+  };
+
+  const move = async (who: 'you' | 'gary', roll: number) => {
+    const name = who === 'you' ? 'You' : 'Gary';
+    let target = where[who] + roll;
+    if (target > 100) { say(who, `${name} rolled ${roll} and needed exactly ${100 - where[who]}. Stays on ${where[who]}.`); return false; }
+    pawns[who].classList.add('sl-walking');
+    while (where[who] < target) { where[who]++; show(); await wait(170); }
+    pawns[who].classList.remove('sl-walking');
+    const jump = jumps.get(target);
+    if (jump) {
+      await wait(250);
+      pawns[who].classList.add(jump > target ? 'sl-climb' : 'sl-slide');
+      where[who] = jump; show();
+      say(who, jump > target
+        ? `${name} ${DEEDS[target].charAt(0).toLowerCase() + DEEDS[target].slice(1)}. Up the ladder from ${target} to ${jump}.`
+        : `${name}: ${SINS[target].charAt(0).toLowerCase() + SINS[target].slice(1)}. Down the snake from ${target} to ${jump}.`);
+      await wait(700);
+      pawns[who].classList.remove('sl-climb', 'sl-slide');
+    } else {
+      say(who, `${name} rolled ${roll}. ${who === 'you' ? 'You are' : 'Gary is'} on ${target}.`);
+    }
+    label[who].textContent = String(where[who]);
+    if (where[who] === 100) {
+      say(who, who === 'you' ? 'You reached 100 and leave at three. Gary will cover the phones.' : 'Gary reached 100 first and has already put his coat on. Roll to play again.');
+      return true;
+    }
+    return false;
+  };
+
+  const roll = () => 1 + Math.floor(Math.random() * 6);
+  const showFace = async (n: number) => {
+    if (!quick) for (let k = 0; k < 6; k++) { face.dataset.n = String(roll()); await wait(50); }
+    face.dataset.n = String(n);
+  };
+
+  let busy = false;
+  let over = false;
+  die.addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    die.setAttribute('aria-disabled', 'true');
+    if (over) {
+      where.you = 0; where.gary = 0; over = false; show();
+      label.you.textContent = 'Start'; label.gary.textContent = 'Start';
+    }
+    const mine = roll();
+    await showFace(mine);
+    over = await move('you', mine);
+    if (!over) {
+      await wait(700);
+      const his = roll();
+      await showFace(his);
+      over = await move('gary', his);
+    }
+    if (over) die.querySelector('.sl-roll')!.textContent = 'Again';
+    else die.querySelector('.sl-roll')!.textContent = 'Roll';
+    die.removeAttribute('aria-disabled');
+    busy = false;
+  });
+</script>
+
+<style is:global>
+  html { background: #1d4f39; }
+  .sl {
+    --baize: #1d4f39;
+    --ink: #1a1a1a;
+    --paper: #fbfaf4;
+    --gold: #f6b81f;
+    color: var(--paper);
+    font-family: 'Avenir Next', Avenir, var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background:
+      repeating-linear-gradient(45deg, rgb(0 0 0 / 0.05) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 3px),
+      var(--baize);
+  }
+
+  /* The board: a hundred squares in a grid of board squares, each --cell grid squares. */
+  .sl-board {
+    position: relative;
+    grid-column: 4 / span 40;
+    grid-row: 3 / span 40;
+    box-shadow: 0 0 0 calc(var(--u) / 4) #f4efe0, 0 0 0 calc(var(--u) / 2) var(--ink), calc(var(--u) / 2) calc(var(--u) / 2) 0 calc(var(--u) / 2) rgb(0 0 0 / 0.35);
+  }
+  .sl-squares { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); }
+  .sl-sq {
+    position: relative;
+    background: var(--tint, var(--paper));
+    color: #fff;
+    font-family: Superclarendon, Rockwell, Georgia, serif;
+    font-size: calc(var(--cell) * 4px * var(--sf) + 2px);
+    line-height: 1;
+  }
+  .sl-sq b { position: absolute; left: 8%; top: 8%; font-weight: 700; }
+  .sl-sq:not(.sl-plain) b { text-shadow: 0 1px 0 rgb(0 0 0 / 0.25); }
+  .sl-plain { color: var(--ink); }
+  .sl-home::after {
+    content: 'Home time';
+    position: absolute;
+    inset: auto 0 10% 0;
+    text-align: center;
+    font-family: 'Avenir Next', Avenir, sans-serif;
+    font-weight: 700;
+    font-size: calc(var(--cell) * 2.5px * var(--sf) + 2px);
+  }
+  .sl-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .sl-art .rail { stroke: #7a4a1d; stroke-width: 0.075; stroke-linecap: round; }
+  .sl-art .rungs { stroke: #b07a3c; stroke-width: 0.06; stroke-linecap: round; }
+  .sl-art .ladder { filter: drop-shadow(0.04px 0.06px 0 rgb(0 0 0 / 0.35)); }
+  .sl-art .body { fill: none; stroke: var(--skin); stroke-width: 0.26; stroke-linecap: round; stroke-linejoin: round; }
+  .sl-art .spots { fill: none; stroke: var(--belly); stroke-width: 0.09; stroke-linecap: round; stroke-dasharray: 0.01 0.22; }
+  .sl-art .head { fill: var(--skin); }
+  .sl-art .eye { fill: #fff; stroke: #000; stroke-width: 0.025; }
+  .sl-art .tongue { stroke: #e8423a; stroke-width: 0.035; stroke-linecap: round; fill: none; }
+  .sl-art .snake { filter: drop-shadow(0.05px 0.07px 0 rgb(0 0 0 / 0.3)); }
+
+  /* The counters: board squares are tenths of the board, so a counter sits at its centre's tenths. */
+  .sl-pawn {
+    --x: -0.75;
+    --y: 9.5;
+    position: absolute;
+    left: calc(var(--x) * 10%);
+    top: calc(var(--y) * 10%);
+    width: 4.4%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    translate: -50% -50%;
+    z-index: 2;
+    box-shadow: inset 0 -0.25em 0 rgb(0 0 0 / 0.3), 0 0.18em 0 rgb(0 0 0 / 0.45);
+    font-size: calc(var(--cell) * 3px * var(--sf));
+    transition: left 0.15s ease-out, top 0.15s ease-out;
+  }
+  .sl-pawn-you { background: radial-gradient(circle at 35% 30%, #fff8 0 15%, transparent 16%), #ffd400; outline: 2px solid var(--ink); }
+  .sl-pawn-gary { background: radial-gradient(circle at 35% 30%, #fff8 0 15%, transparent 16%), #e4e4e4; outline: 2px solid var(--ink); }
+  .sl-pawn.sl-walking { animation: sl-hop 0.17s ease-out infinite; }
+  .sl-pawn.sl-climb { transition-duration: 0.7s; transition-timing-function: cubic-bezier(0.3, 0, 0.2, 1); }
+  .sl-pawn.sl-slide { transition-duration: 0.7s; transition-timing-function: cubic-bezier(0.6, 0, 0.9, 0.6); }
+  @keyframes sl-hop { 50% { translate: -50% -80%; } }
+  @media (prefers-reduced-motion: reduce) { .sl-pawn { transition: none !important; animation: none !important; } }
+
+  /* The panel: the lid of the box. */
+  .sl-panel {
+    grid-column: 48 / -4;
+    grid-row: 3 / span 40;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    align-content: start;
+  }
+  .sl-head h1 {
+    margin: 0;
+    font-family: Superclarendon, Rockwell, Georgia, serif;
+    font-size: calc(56px * var(--sf));
+    line-height: calc(3 * var(--u));
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    text-shadow: calc(3px * var(--sf)) calc(3px * var(--sf)) 0 #c2281f;
+  }
+  .sl-head h1 span { color: var(--paper); text-shadow: none; font-weight: 400; }
+  .sl-head p { margin: 0 0 var(--u); max-width: calc(18 * var(--u)); font-size: calc(16px * var(--sf)); }
+
+  .sl-play { display: grid; grid-template-columns: calc(6 * var(--u)) minmax(0, 1fr); gap: 0 var(--u); align-items: start; margin-top: var(--u); }
+  .sl-die {
+    all: unset;
+    display: grid;
+    grid-template-rows: calc(5 * var(--u)) var(--u);
+    justify-items: center;
+    cursor: pointer;
+  }
+  .sl-die:focus-visible .sl-face { outline: 3px solid var(--gold); outline-offset: 3px; }
+  .sl-die[aria-disabled='true'] { cursor: progress; }
+  .sl-face {
+    display: grid;
+    grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+    width: calc(4 * var(--u));
+    height: calc(4 * var(--u));
+    margin-top: calc(var(--u) / 2);
+    padding: calc(var(--u) / 2);
+    box-sizing: border-box;
+    border-radius: calc(var(--u) / 2);
+    background: var(--paper);
+    box-shadow: inset 0 calc(-3px * var(--sf)) 0 #d8d2bf, 0 calc(3px * var(--sf)) 0 rgb(0 0 0 / 0.4);
+    transition: transform 0.1s;
+  }
+  .sl-die:hover .sl-face { transform: rotate(-6deg); }
+  .sl-face i { width: 64%; aspect-ratio: 1; margin: auto; border-radius: 50%; background: var(--ink); visibility: hidden; }
+  /* Pips: cells 1–9 reading across; each face shows its own. */
+  .sl-face[data-n='1'] i:nth-child(5),
+  .sl-face[data-n='2'] i:is(:nth-child(1), :nth-child(9)),
+  .sl-face[data-n='3'] i:is(:nth-child(1), :nth-child(5), :nth-child(9)),
+  .sl-face[data-n='4'] i:is(:nth-child(1), :nth-child(3), :nth-child(7), :nth-child(9)),
+  .sl-face[data-n='5'] i:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(7), :nth-child(9)),
+  .sl-face[data-n='6'] i:is(:nth-child(1), :nth-child(3), :nth-child(4), :nth-child(6), :nth-child(7), :nth-child(9)) { visibility: visible; }
+  .sl-face[data-n='1'] i:nth-child(5) { background: #e8423a; }
+  .sl-roll { font-weight: 700; font-size: calc(16px * var(--sf)); text-decoration: underline; text-underline-offset: calc(4px * var(--sf)); text-decoration-thickness: 2px; }
+
+  .sl-scores { margin: var(--u) 0 0; }
+  .sl-scores div { display: grid; grid-template-columns: 1fr calc(4 * var(--u)); height: calc(2 * var(--u)); align-items: center; border-bottom: 1px solid rgb(255 255 255 / 0.25); }
+  .sl-scores dt { display: flex; align-items: center; gap: calc(var(--u) / 2); }
+  .sl-scores dd { margin: 0; text-align: right; font-family: Superclarendon, Rockwell, Georgia, serif; font-size: calc(20px * var(--sf)); font-variant-numeric: tabular-nums; }
+  .sl-dot { width: calc(var(--u) * 0.7); height: calc(var(--u) * 0.7); border-radius: 50%; outline: 2px solid var(--ink); }
+  .sl-dot-you { background: #ffd400; }
+  .sl-dot-gary { background: #e4e4e4; }
+
+  .sl-news {
+    margin: var(--u) 0 0;
+    min-height: calc(3 * var(--u));
+    padding: calc(var(--u) / 2) var(--u);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: calc(14px * var(--sf));
+    box-sizing: border-box;
+    box-shadow: calc(var(--u) / 4) calc(var(--u) / 4) 0 rgb(0 0 0 / 0.3);
+  }
+
+  .sl-how { margin: var(--u) 0 0; padding: 0 0 0 calc(1.5 * var(--u)); font-size: calc(12px * var(--sf)); max-width: calc(24 * var(--u)); }
+  .sl-how li::marker { font-family: Superclarendon, Rockwell, Georgia, serif; font-weight: 700; color: var(--gold); }
+  .sl-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--u); align-content: end; font-size: calc(12px * var(--sf)); }
+  .sl-rules h2 { margin: var(--u) 0 0; font-family: Superclarendon, Rockwell, Georgia, serif; font-size: calc(16px * var(--sf)); line-height: var(--u); font-weight: 700; color: var(--gold); }
+  .sl-rules section:last-child h2 { color: #ff8a7a; }
+  .sl-rules ul { margin: 0; padding: 0; list-style: none; }
+  .sl-rules li { display: grid; grid-template-columns: calc(1.5 * var(--u)) 1fr calc(1.5 * var(--u)); gap: 0 calc(var(--u) / 4); }
+  .sl-rules li b, .sl-rules li em { font-style: normal; font-variant-numeric: tabular-nums; }
+  .sl-rules li em { text-align: right; opacity: 0.7; }
+  .sl-rules li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sl-foot { align-self: end; margin: var(--u) 0 0; font-size: calc(12px * var(--sf)); opacity: 0.7; }
+
+  /* Narrow: the board on top, the lid beneath. */
+  :root[data-narrow] .sl { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .sl-board { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .sl-panel { grid-column: 2 / -2; grid-row: auto; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .sl-head h1 { font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .sl-rules { grid-template-columns: 1fr; }
+  :root[data-narrow] .sl-rules li span { white-space: normal; }
+  :root[data-narrow] .sl-pawn { width: 6%; }
+  :root[data-narrow] .sl-play { grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] .sl-die { justify-items: start; }
+</style>

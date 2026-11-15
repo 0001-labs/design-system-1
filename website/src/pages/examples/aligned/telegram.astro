@@ -1,0 +1,217 @@
+---
+// After an inland telegram as it reached the door: a buff form printed in green, the routing codes
+// typed into its boxes, and the message cut from the printer's tape and glued down a strip at a
+// time, each strip one square high and cut to whole squares. The clerk's pencil is in the margin.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const MESSAGE = 'MOTHER GONE TO AUNT VI TILL FRIDAY STOP CAT HAS TAKEN YOUR CHAIR STOP REFUSES SARDINES REFUSES CREAM REFUSES ME STOP SLEEPS ON YOUR GREEN JUMPER AND WILL NOT BE MOVED STOP PLEASE COME HOME STOP CAT SAYS NOTHING BUT MEANS IT = ROSE';
+const words = MESSAGE.replace('= ', '').split(' ').length;
+const ROUTING = [
+  ['Prefix', 'LT', 3],
+  ['Code', 'GBX', 4],
+  ['Office of origin', 'BRIDPORT', 9],
+  ['Words', String(words), 4],
+  ['Handed in at', '11.52', 6],
+  ['Received', '12.07', 5],
+  ['By', 'A.W.', 4],
+] as const;
+---
+<AlignedStudy slug="telegram" theme="light">
+  <main class="stage tg">
+    <header class="tg-head">
+      <p class="tg-co">Northern Telegraph Company</p>
+      <p class="tg-no">No. 4471 <span>Series B</span></p>
+    </header>
+    <h1 class="tg-title">Inland Telegram</h1>
+
+    <div class="tg-route" role="group" aria-label="Service instructions">
+      {ROUTING.map(([label, value, w]) => <p style={`--w:${w}`}><span>{label}</span><b>{value}</b></p>)}
+    </div>
+
+    <div class="tg-stamp" aria-label="Received stamp: Alderwick, 14 November 1926, 12.10">
+      <svg viewBox="0 0 8 8" aria-hidden="true">
+        <defs><path id="tg-arc" d="M 1.2 4 A 2.8 2.8 0 0 1 6.8 4" /><path id="tg-arc2" d="M 1.05 4 A 2.95 2.95 0 0 0 6.95 4" /></defs>
+        <circle cx="4" cy="4" r="3.6" /><circle cx="4" cy="4" r="2.3" />
+        <text class="tg-arc"><textPath href="#tg-arc" startOffset="50%">ALDERWICK</textPath></text>
+        <text class="tg-arc"><textPath href="#tg-arc2" startOffset="50%" dominant-baseline="hanging">T. O.</textPath></text>
+        <text x="4" y="3.75" class="tg-date">14 NO 26</text>
+        <text x="4" y="4.75" class="tg-date">12.10</text>
+      </svg>
+    </div>
+
+    <p class="tg-label tg-to-label">To</p>
+    <div class="tg-to" id="tg-to" aria-label="mrs h pell 14 chandlers row alderwick" role="img"></div>
+
+    <div class="tg-message" id="tg-message" aria-label={MESSAGE.toLowerCase()} role="img"></div>
+
+    <aside class="tg-pencil" aria-label="Clerk’s notes">
+      <p>{words} wds</p>
+      <p>3/5 pd</p>
+      <p class="tg-note">“cat” twice, charged twice</p>
+    </aside>
+
+    <p class="tg-small">
+      Should any word of this telegram be doubted, it will be repeated at half the charge first paid, and the half refunded if
+      it proves wrong. Any enquiry respecting it should be made at the office of delivery, and this form should accompany it.
+    </p>
+    <p class="tg-boy">Delivered by messenger 12.31. No reply paid.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const box = document.getElementById('tg-message')!;
+  const to = document.getElementById('tg-to')!;
+  let pasted = false;
+  let perChar = 0;
+
+  /** Cut the tape into strips no longer than the room on a line, and round each up to whole squares. */
+  function cut(into: HTMLElement, room: number, unit: number, tearAtStop: boolean) {
+    const text = into.getAttribute('aria-label')!.toUpperCase();
+    into.innerHTML = '';
+    if (!perChar) {
+      const probe = document.createElement('span');
+      probe.className = 'tg-strip';
+      probe.textContent = 'M'.repeat(20);
+      into.append(probe);
+      perChar = probe.getBoundingClientRect().width / 20 - unit / 20;
+      probe.remove();
+    }
+    // A strip's text has half a square of tape at either end.
+    const max = Math.max(8, Math.floor((room * unit - unit) / perChar));
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      if (line && (line + ' ' + word).length > max) { lines.push(line); line = word; }
+      else line = line ? `${line} ${word}` : word;
+      // The printer's tape tore after a STOP, more often than not.
+      if (tearAtStop && word === 'STOP' && line.length > max * 0.55) { lines.push(line); line = ''; }
+    }
+    if (line) lines.push(line);
+    lines.forEach((words, index) => {
+      const strip = document.createElement('span');
+      strip.className = 'tg-strip';
+      strip.textContent = words;
+      strip.style.setProperty('--i', String(index + (into === box ? 1 : 0)));
+      into.append(strip);
+      strip.style.width = `calc(${Math.ceil(strip.getBoundingClientRect().width / unit)} * var(--u))`;
+    });
+  }
+
+  onSquares(({ across, unit, narrow }) => {
+    const room = narrow ? across - 2 : Math.min(34, across - 32);
+    perChar = 0;
+    // A later cut, after a resize, is put down at once.
+    if (pasted) document.querySelector('.tg')!.classList.remove('tg-pasting');
+    cut(to, room, unit, false);
+    cut(box, room, unit, true);
+    // On a phone the tape is below the fold, so it is simply there.
+    if (!pasted && !narrow && !reducedMotion()) {
+      const tg = document.querySelector('.tg')!;
+      tg.classList.add('tg-pasting');
+      // Once glued, they stay glued: a later resize cuts the tape again without the show.
+      setTimeout(() => tg.classList.remove('tg-pasting'), 1000 + box.children.length * 320);
+    }
+    pasted = true;
+  });
+</script>
+
+<style is:global>
+  html { background: #e7d6a3; }
+  .tg {
+    --buff: #e7d6a3;
+    --print: #1f5a44;
+    --tape: #fbf8ee;
+    --violet: #5a3f93;
+    --pencil: #5d6470;
+    color: var(--print);
+    background:
+      radial-gradient(ellipse at 80% 10%, rgb(255 255 255 / 0.25), transparent 60%),
+      var(--buff);
+    font-family: Baskerville, 'Baskerville Old Face', Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  /* The printed border: a heavy rule and a hairline, a square in from the edge. */
+  .tg::before {
+    content: ''; grid-column: 2 / -2; grid-row: 2 / -2; pointer-events: none;
+    box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--print), inset 0 0 0 calc(6px * var(--sf)) var(--buff), inset 0 0 0 calc(7px * var(--sf)) var(--print);
+  }
+
+  .tg-head { grid-column: 4 / -4; grid-row: 3 / span 2; display: flex; justify-content: space-between; align-items: baseline; }
+  .tg-co { margin: 0; font-family: Copperplate, 'Copperplate Gothic Light', serif; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: 0.06em; }
+  .tg-no { margin: 0; font-style: italic; }
+  .tg-no span { margin-left: var(--u); }
+
+  .tg-title {
+    grid-column: 4 / -14; grid-row: 5 / span 4; margin: 0;
+    font: calc(72px * var(--sf)) / calc(4 * var(--u)) 'Big Caslon', 'Big Caslon Medium', Baskerville, serif;
+    letter-spacing: -0.01em; border-bottom: calc(3px * var(--sf)) solid var(--print);
+  }
+
+  /* The routing boxes, each a whole number of squares wide. */
+  .tg-route { grid-column: 4 / -14; grid-row: 10 / span 3; display: flex; }
+  .tg-route p { margin: 0; width: calc(var(--w) * var(--u)); display: grid; grid-template-rows: var(--u) calc(2 * var(--u)); box-shadow: inset -1px 0 var(--print), inset 0 -1px var(--print), inset 0 1px var(--print); }
+  .tg-route p:first-child { box-shadow: inset 1px 0 var(--print), inset -1px 0 var(--print), inset 0 -1px var(--print), inset 0 1px var(--print); }
+  .tg-route span { padding-inline: calc(var(--u) / 4); font-style: italic; font-size: calc(12px * var(--sf)); white-space: nowrap; overflow: hidden; box-shadow: inset 0 -1px rgb(31 90 68 / 0.5); }
+  .tg-route b { padding-inline: calc(var(--u) / 4); font: calc(16px * var(--sf)) / calc(2 * var(--u)) 'American Typewriter', 'Courier New', monospace; color: #1d1d24; }
+
+  .tg-stamp { grid-column: -13 / span 8; grid-row: 8 / span 8; z-index: 1; mix-blend-mode: multiply; pointer-events: none; overflow: hidden; }
+  .tg-stamp svg { width: 100%; height: 100%; transform: rotate(-11deg); opacity: 0.85; }
+  .tg-stamp circle { fill: none; stroke: var(--violet); stroke-width: 0.12; }
+  .tg-stamp text { fill: var(--violet); font-family: 'Andale Mono', Monaco, monospace; text-anchor: middle; }
+  .tg-stamp .tg-arc { font-size: 0.72px; letter-spacing: 0.08px; }
+  .tg-stamp .tg-date { font-size: 0.7px; }
+
+  .tg-label { margin: 0; font-style: italic; font-size: calc(16px * var(--sf)); }
+  .tg-to-label { grid-column: 4 / span 2; grid-row: 14 / span 2; line-height: calc(2 * var(--u)); }
+  .tg-to { grid-column: 6 / -14; grid-row: 14 / span 2; display: grid; grid-auto-rows: calc(2 * var(--u)); justify-items: start; align-items: center; box-shadow: inset 0 -1px var(--print); }
+
+  /* The message: ruled every two squares, a strip of tape glued on each rule. */
+  .tg-message {
+    grid-column: 4 / -14; grid-row: 17 / -8;
+    display: grid; grid-auto-rows: calc(2 * var(--u)); align-content: start; justify-items: start;
+    background: repeating-linear-gradient(to bottom, transparent 0 calc(2 * var(--u) - 1px), rgb(31 90 68 / 0.55) calc(2 * var(--u) - 1px) calc(2 * var(--u)));
+  }
+  .tg-message .tg-strip { align-self: center; }
+  .tg-strip {
+    display: inline-block; box-sizing: border-box; height: var(--u); padding-inline: calc(var(--u) / 2); white-space: nowrap;
+    background: linear-gradient(90deg, rgb(214 196 120 / 0.5), transparent calc(var(--u) / 3), transparent calc(100% - var(--u) / 3), rgb(214 196 120 / 0.5)), var(--tape);
+    box-shadow: 0 1px 0 rgb(80 60 20 / 0.25), 0 0 0 0.5px rgb(80 60 20 / 0.12);
+    font: calc(14px * var(--sf)) / var(--u) 'Andale Mono', Monaco, 'Courier New', monospace;
+    letter-spacing: 0.04em; color: #18181c;
+  }
+  /* Glued one after another, the only moment on the page. */
+  .tg-pasting .tg-strip { animation: tg-paste 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(0.35s + var(--i) * 0.32s); }
+  @keyframes tg-paste {
+    from { clip-path: inset(0 100% 0 0); transform: translateY(calc(var(--u) / -4)); }
+    to { clip-path: inset(0 0 0 0); transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tg-pasting .tg-strip { animation: none; } }
+
+  .tg-pencil { grid-column: -12 / span 8; grid-row: 17 / span 8; font-family: 'Bradley Hand', 'Noteworthy', cursive; color: var(--pencil); font-size: calc(18px * var(--sf)); }
+  .tg-pencil p { margin: 0; line-height: calc(2 * var(--u)); }
+  .tg-pencil .tg-note { font-size: calc(15px * var(--sf)); line-height: var(--u); margin-top: var(--u); }
+
+  .tg-small { grid-column: 4 / span 34; grid-row: -6 / span 3; margin: 0; font-size: calc(11px * var(--sf)); line-height: var(--u); align-self: end; }
+  .tg-boy { grid-column: -30 / -14; grid-row: -4 / span 1; margin: 0; font-family: 'American Typewriter', 'Courier New', monospace; font-size: calc(12px * var(--sf)); color: #1d1d24; text-align: right; }
+
+  /* Narrow: one column, the tape cut shorter. */
+  :root[data-narrow] .tg { padding-bottom: calc(4 * var(--u)); }
+  :root[data-narrow] .tg::before { display: none; }
+  :root[data-narrow] .tg { box-shadow: inset 0 0 0 calc(3px * var(--sf)) var(--print), inset 0 0 0 calc(6px * var(--sf)) var(--buff), inset 0 0 0 calc(7px * var(--sf)) var(--print); }
+  :root[data-narrow] .tg > :not(.tg-stamp) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .tg-head { flex-direction: column; }
+  :root[data-narrow] .tg-co { font-size: calc(14px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .tg-title { font-size: calc(40px * var(--sf)); line-height: calc(2 * var(--u)); margin-block: var(--u); padding-bottom: var(--u); }
+  :root[data-narrow] .tg-stamp { grid-column: auto; grid-row: auto; position: absolute; top: calc(6 * var(--u)); right: var(--u); width: calc(6 * var(--u)); height: calc(6 * var(--u)); }
+  :root[data-narrow] .tg-head { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .tg-route { flex-wrap: wrap; }
+  :root[data-narrow] .tg-route p, :root[data-narrow] .tg-route p:first-child { width: calc(6 * var(--u)); box-shadow: inset 0 -1px var(--print); }
+  :root[data-narrow] .tg-to-label { margin-top: var(--u); }
+  :root[data-narrow] .tg-to { background: repeating-linear-gradient(to bottom, transparent 0 calc(2 * var(--u) - 1px), rgb(31 90 68 / 0.55) calc(2 * var(--u) - 1px) calc(2 * var(--u))); box-shadow: none; }
+  :root[data-narrow] .tg-message { margin-top: var(--u); }
+  :root[data-narrow] .tg-pencil { margin-top: var(--u); }
+  :root[data-narrow] .tg-small, :root[data-narrow] .tg-boy { text-align: left; margin-top: var(--u); }
+</style>

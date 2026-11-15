@@ -1,0 +1,387 @@
+---
+// After the old desktop minesweeper, played as a foray in a beech wood: a field of leaf litter, two
+// squares a patch. Turn a patch over to see how many deadly caps grow beside it; stake the ones you
+// are sure of. Penny buns turn up under the quiet patches and go in the basket.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="minesweeper" theme="dark">
+  <main class="stage sweep">
+    <header class="sw-head">
+      <h1>Mushroom<br />sweeper</h1>
+      <p class="sw-place">Hallam Wood, the north slope under beech</p>
+    </header>
+
+    <p class="sw-intro">
+      Somewhere under these leaves grow <b id="sw-total">38</b> caps that would kill you. Turn the litter over patch by patch:
+      a number says how many deadly ones grow next to it, in all eight directions.
+    </p>
+
+    <div class="sw-mode" role="radiogroup" aria-label="What a click does">
+      <button type="button" role="radio" aria-checked="true" data-mode="pick">Turn over</button>
+      <button type="button" role="radio" aria-checked="false" data-mode="stake">Stake as deadly</button>
+    </div>
+    <p class="sw-modehint">Right-click stakes a patch too. On the field, arrows move, Enter turns over, S stakes.</p>
+
+    <dl class="sw-stats">
+      <div><dt>Deadly caps unstaked</dt><dd id="sw-left">38</dd></div>
+      <div><dt>Out in the wood</dt><dd id="sw-time">0:00</dd></div>
+      <div><dt>In the basket</dt><dd id="sw-basket">no penny buns yet</dd></div>
+    </dl>
+
+    <p class="sw-status" id="sw-status" aria-live="polite">The first patch you turn is always safe.</p>
+    <button type="button" class="sw-again" id="sw-again">Start a new foray</button>
+
+    <section class="sw-guide" aria-labelledby="sw-guide-title">
+      <h2 id="sw-guide-title">Under these leaves</h2>
+      <ul>
+        <li>Death cap <i>Amanita phalloides</i></li>
+        <li>Destroying angel <i>Amanita virosa</i></li>
+        <li>Panther cap <i>Amanita pantherina</i></li>
+        <li>Funeral bell <i>Galerina marginata</i></li>
+        <li>Deadly webcap <i>Cortinarius rubellus</i></li>
+        <li>Fool’s funnel <i>Clitocybe rivulosa</i></li>
+      </ul>
+    </section>
+
+    <div class="sw-field" id="sw-field" role="grid" aria-label="The forest floor" data-own-keys></div>
+    <p class="sw-ref" id="sw-ref">Grid ref. SK 3086 8412, 18 paces by 14</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const DEADLY = [
+    ['Death cap', 'Amanita phalloides'], ['Destroying angel', 'Amanita virosa'], ['Panther cap', 'Amanita pantherina'],
+    ['Funeral bell', 'Galerina marginata'], ['Deadly webcap', 'Cortinarius rubellus'], ['Fool’s funnel', 'Clitocybe rivulosa'],
+  ];
+  const field = document.getElementById('sw-field')!;
+  const status = document.getElementById('sw-status')!;
+  const left = document.getElementById('sw-left')!;
+  const time = document.getElementById('sw-time')!;
+  const basket = document.getElementById('sw-basket')!;
+  const total = document.getElementById('sw-total')!;
+  const ref = document.getElementById('sw-ref')!;
+  const modeButtons = [...document.querySelectorAll<HTMLButtonElement>('.sw-mode button')];
+
+  type Patch = { deadly: boolean; open: boolean; staked: boolean; near: number; bun: boolean; button: HTMLButtonElement; r: number; c: number };
+  let cols = 16, rows = 14, mines = 38;
+  let patches: Patch[] = [];
+  let laid = false, over = false, buns = 0, started = 0, ticker = 0, mode: 'pick' | 'stake' = 'pick', focus = 0;
+  const words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+
+  const at = (r: number, c: number) => (r >= 0 && c >= 0 && r < rows && c < cols ? patches[r * cols + c] : undefined);
+  const around = (p: Patch) => {
+    const out: Patch[] = [];
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (dr || dc) { const q = at(p.r + dr, p.c + dc); if (q) out.push(q); }
+    return out;
+  };
+  const clock = () => { const s = started ? Math.floor((Date.now() - started) / 1000) : 0; return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  const bunWords = (n: number) => (n === 0 ? 'no penny buns yet' : n === 1 ? 'one penny bun' : `${words[n] ?? n} penny buns`);
+
+  function label(p: Patch) {
+    const where = `Row ${p.r + 1}, patch ${p.c + 1}`;
+    if (p.staked && !p.open) return `${where}, staked as deadly`;
+    if (!p.open) return `${where}, under leaves`;
+    if (p.deadly) return `${where}, a deadly cap`;
+    return `${where}, ${p.near ? `${words[p.near]} deadly beside it` : 'nothing deadly beside it'}${p.bun ? ', a penny bun' : ''}`;
+  }
+  function paint(p: Patch) {
+    const b = p.button;
+    b.dataset.state = p.open ? (p.deadly ? 'deadly' : 'open') : p.staked ? 'staked' : 'leaves';
+    b.dataset.near = String(p.open && !p.deadly ? p.near : '');
+    b.toggleAttribute('data-bun', p.open && p.bun);
+    b.textContent = p.open && !p.deadly && p.near ? String(p.near) : '';
+    b.setAttribute('aria-label', label(p));
+  }
+  function count() {
+    const staked = patches.filter(p => p.staked && !p.open).length;
+    left.textContent = String(Math.max(0, mines - staked));
+    basket.textContent = bunWords(buns);
+  }
+
+  function build() {
+    clearInterval(ticker);
+    laid = false; over = false; buns = 0; started = 0; focus = 0;
+    time.textContent = '0:00';
+    field.style.setProperty('--cols', String(cols));
+    field.removeAttribute('data-over');
+    field.innerHTML = '';
+    patches = [];
+    for (let r = 0; r < rows; r++) {
+      const row = document.createElement('div');
+      row.setAttribute('role', 'row');
+      row.className = 'sw-row';
+      for (let c = 0; c < cols; c++) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'gridcell');
+        button.tabIndex = r === 0 && c === 0 ? 0 : -1;
+        // Each patch its own leaf, and its own turn of it.
+        button.style.setProperty('--leaf', `var(--leaf-${Math.floor(Math.random() * 4)})`);
+        button.style.setProperty('--turn', `${Math.floor(Math.random() * 4) * 90}deg`);
+        button.style.setProperty('--flip', Math.random() < 0.5 ? '-1' : '1');
+        button.style.setProperty('--b', (0.8 + Math.random() * 0.4).toFixed(2));
+        const p: Patch = { deadly: false, open: false, staked: false, near: 0, bun: false, button, r, c };
+        patches.push(p);
+        row.append(button);
+        paint(p);
+      }
+      field.append(row);
+    }
+    total.textContent = String(mines);
+    ref.textContent = `Grid ref. SK 3086 8412, ${cols} paces by ${rows}`;
+    status.textContent = 'The first patch you turn is always safe.';
+    count();
+  }
+
+  function lay(first: Patch) {
+    const keep = new Set([first, ...around(first)]);
+    const free = patches.filter(p => !keep.has(p));
+    for (let k = 0; k < mines && free.length; k++) free.splice(Math.floor(Math.random() * free.length), 1)[0].deadly = true;
+    for (const p of patches) {
+      p.near = around(p).filter(q => q.deadly).length;
+      p.bun = !p.deadly && p.near === 0 && Math.random() < 0.1;
+    }
+    laid = true;
+    started = Date.now();
+    ticker = window.setInterval(() => { time.textContent = clock(); }, 1000);
+  }
+
+  function turn(p: Patch) {
+    if (over || p.open || p.staked) return;
+    if (!laid) lay(p);
+    if (p.deadly) return lose(p);
+    const queue = [p];
+    while (queue.length) {
+      const q = queue.pop()!;
+      if (q.open || q.staked) continue;
+      q.open = true;
+      if (q.bun) buns++;
+      paint(q);
+      if (q.near === 0) queue.push(...around(q).filter(n => !n.open && !n.deadly));
+    }
+    count();
+    if (patches.every(q => q.deadly || q.open)) win();
+    else if (p.bun) status.textContent = 'A penny bun under that one. Into the basket.';
+    else status.textContent = p.near ? `${words[p.near][0].toUpperCase()}${words[p.near].slice(1)} deadly ${p.near === 1 ? 'cap grows' : 'caps grow'} beside that patch.` : 'Nothing deadly near. The leaves part on their own.';
+  }
+  function stake(p: Patch) {
+    if (over || p.open) return;
+    p.staked = !p.staked;
+    paint(p);
+    count();
+    status.textContent = p.staked ? 'A hazel stake with a red rag, so nobody picks it.' : 'Stake pulled up.';
+  }
+  function finish() { over = true; clearInterval(ticker); field.setAttribute('data-over', ''); }
+  function lose(p: Patch) {
+    finish();
+    const [name, latin] = DEADLY[(p.r * 3 + p.c) % DEADLY.length];
+    for (const q of patches) if (q.deadly) { q.open = true; paint(q); }
+    p.button.dataset.picked = '';
+    status.innerHTML = `That was a ${name}, <i>${latin}</i>. The foray is over after ${clock()}.`;
+  }
+  function win() {
+    finish();
+    for (const q of patches) if (q.deadly) { q.staked = true; paint(q); }
+    count();
+    status.textContent = `The whole floor turned in ${clock()}, and not one deadly cap picked. Home with ${bunWords(buns)}.`;
+    field.setAttribute('data-won', '');
+  }
+
+  field.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest('button');
+    const p = patches.find(q => q.button === button);
+    if (!p) return;
+    move(patches.indexOf(p), false);
+    mode === 'stake' ? stake(p) : turn(p);
+  });
+  field.addEventListener('contextmenu', event => {
+    const button = (event.target as HTMLElement).closest('button');
+    const p = patches.find(q => q.button === button);
+    if (!p) return;
+    event.preventDefault();
+    stake(p);
+  });
+  function move(index: number, focusIt = true) {
+    patches[focus]?.button.setAttribute('tabindex', '-1');
+    focus = index;
+    patches[focus].button.setAttribute('tabindex', '0');
+    if (focusIt) patches[focus].button.focus();
+  }
+  field.addEventListener('keydown', event => {
+    const p = patches[focus];
+    const steps: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+    if (steps[event.key]) {
+      event.preventDefault();
+      const [dr, dc] = steps[event.key];
+      const q = at(p.r + dr, p.c + dc);
+      if (q) move(patches.indexOf(q));
+    } else if (event.key === 's' || event.key === 'S' || event.key === 'f' || event.key === 'F') { event.preventDefault(); stake(p); }
+  });
+  modeButtons.forEach(button => button.addEventListener('click', () => {
+    mode = button.dataset.mode as 'pick' | 'stake';
+    modeButtons.forEach(b => b.setAttribute('aria-checked', String(b === button)));
+    field.dataset.mode = mode;
+  }));
+  document.getElementById('sw-again')!.addEventListener('click', build);
+
+  // The field takes what the window leaves beside the notes: two squares a patch.
+  let shape = '';
+  onSquares(({ across, down, narrow }) => {
+    const nextCols = narrow ? Math.floor((across - 2) / 2) : Math.max(8, Math.min(18, Math.floor((across - 27) / 2)));
+    const nextRows = narrow ? 9 : Math.max(8, Math.min(14, Math.floor((down - 6) / 2)));
+    if (!narrow) {
+      const start = 24 + Math.max(0, Math.floor((across - 3 - 24 - nextCols * 2) / 2));
+      const top = 2 + Math.max(0, Math.floor((down - 4 - nextRows * 2) / 2));
+      field.style.gridColumn = `${start} / span ${nextCols * 2}`;
+      field.style.gridRow = `${top} / span ${nextRows * 2}`;
+      ref.style.gridColumn = `${start} / span ${nextCols * 2}`;
+      ref.style.gridRow = `${top + nextRows * 2} / span 1`;
+    } else {
+      field.style.gridColumn = ''; field.style.gridRow = ''; ref.style.gridColumn = ''; ref.style.gridRow = '';
+    }
+    const next = `${nextCols}x${nextRows}`;
+    if (next === shape) return;
+    shape = next;
+    cols = nextCols; rows = nextRows;
+    mines = Math.round(cols * rows * 0.15);
+    build();
+  });
+</script>
+
+<style is:global>
+  html { background: #1c2416; }
+  .sweep {
+    --moss: #1c2416;
+    --lichen: #d6dcb4;
+    --dim: #94a07a;
+    --soil: #2b2219;
+    --soil-2: #33291e;
+    --agaric: #d42a1e;
+    --stake: #e8d9a8;
+    color: var(--lichen);
+    background:
+      radial-gradient(circle at 12% 88%, rgb(70 92 40 / 0.35), transparent 40%),
+      var(--moss);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    /* Four leaves of the litter, as small drawings turned different ways. */
+    --leaf-0: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%235a3a1a'/%3E%3Cpath d='M6 30 C10 14 24 6 34 8 C32 20 22 32 6 30Z' fill='%23a8692c'/%3E%3Cpath d='M6 30 L32 9' stroke='%236e4219' stroke-width='1.2'/%3E%3Cpath d='M22 40 C26 32 34 30 40 31 L40 40Z' fill='%23874f22'/%3E%3C/svg%3E");
+    --leaf-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23633f1c'/%3E%3Cpath d='M34 32 C30 18 20 6 8 6 C8 18 18 30 34 32Z' fill='%23c08a3e'/%3E%3Cpath d='M34 32 L9 7' stroke='%23855423' stroke-width='1.2'/%3E%3Cpath d='M0 26 C6 30 8 36 6 40 L0 40Z' fill='%23946028'/%3E%3C/svg%3E");
+    --leaf-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23523519'/%3E%3Cpath d='M4 12 C16 4 32 8 38 20 C26 26 12 24 4 12Z' fill='%239c5a26'/%3E%3Cpath d='M4 12 L38 20' stroke='%23683a16' stroke-width='1.2'/%3E%3Cpath d='M14 40 C16 32 24 28 30 30 C28 36 22 40 14 40Z' fill='%23b47a35'/%3E%3C/svg%3E");
+    --leaf-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%235e3c1b'/%3E%3Cpath d='M20 4 C30 10 32 26 20 36 C8 26 10 10 20 4Z' fill='%23ad7434'/%3E%3Cpath d='M20 4 L20 36' stroke='%23714418' stroke-width='1.2'/%3E%3Cpath d='M0 0 L10 0 C8 6 4 8 0 8Z' fill='%23874f22'/%3E%3C/svg%3E");
+  }
+
+  .sw-head { grid-column: 3 / span 19; grid-row: 2 / span 7; }
+  .sw-head h1 { margin: 0; font: calc(48px * var(--sf)) / calc(3 * var(--u)) var(--typeface-canon); letter-spacing: -0.01em; color: #eef0d8; }
+  .sw-place { margin: 0; color: var(--dim); font-family: var(--typeface-canon); font-style: italic; font-size: calc(16px * var(--sf)); }
+
+  .sw-intro { grid-column: 3 / span 18; grid-row: 10 / span 4; margin: 0; font-size: calc(15px * var(--sf)); }
+  .sw-intro b { font-family: Rockwell, 'Roboto Slab', serif; color: #fff; font-weight: 700; }
+
+  .sw-mode { grid-column: 3 / span 18; grid-row: 15 / span 2; display: grid; grid-template-columns: repeat(2, calc(9 * var(--u))); }
+  .sw-mode button {
+    all: unset; box-sizing: border-box; height: calc(2 * var(--u)); text-align: center; cursor: pointer;
+    font-size: calc(14px * var(--sf)); line-height: calc(2 * var(--u) - 2px);
+    border: 1px solid #4d5a37; color: var(--dim);
+  }
+  .sw-mode button + button { border-left: 0; }
+  .sw-mode button[aria-checked='true'] { background: var(--lichen); color: var(--moss); border-color: var(--lichen); }
+  .sw-mode button[data-mode='stake'][aria-checked='true'] { background: var(--agaric); border-color: var(--agaric); color: #fff; }
+  .sw-mode button:focus-visible, .sw-again:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .sw-modehint { grid-column: 3 / span 18; grid-row: 17 / span 2; margin: 0; color: var(--dim); font-size: calc(12px * var(--sf)); }
+
+  .sw-stats { grid-column: 3 / span 18; grid-row: 19 / span 6; margin: 0; }
+  .sw-stats div { display: grid; grid-template-columns: calc(9 * var(--u)) 1fr; height: calc(2 * var(--u)); align-items: baseline; box-shadow: inset 0 -1px #3a4628; }
+  .sw-stats dt { color: var(--dim); line-height: calc(2 * var(--u)); }
+  .sw-stats dd { margin: 0; font: 700 calc(22px * var(--sf)) / calc(2 * var(--u)) Rockwell, 'Roboto Slab', serif; color: #fff; font-variant-numeric: tabular-nums; }
+  .sw-stats div:last-child dd { font: calc(15px * var(--sf)) / calc(2 * var(--u)) var(--typeface-canon); font-style: italic; color: #f0c56a; }
+
+  .sw-status { grid-column: 3 / span 18; grid-row: 26 / span 3; margin: 0; font-family: var(--typeface-canon); font-size: calc(16px * var(--sf)); color: #eef0d8; }
+  .sw-again {
+    all: unset; box-sizing: border-box; grid-column: 3 / span 9; grid-row: 29 / span 2; text-align: center; cursor: pointer;
+    background: #3a4628; color: var(--lichen); line-height: calc(2 * var(--u));
+  }
+  .sw-again:hover { background: #4d5a37; }
+
+  .sw-guide { grid-column: 3 / span 18; grid-row: -9 / span 7; align-self: end; }
+  .sw-guide h2 { margin: 0; font: italic calc(16px * var(--sf)) / var(--u) var(--typeface-canon); color: var(--dim); }
+  .sw-guide ul { margin: 0; padding: 0; list-style: none; columns: 1; }
+  .sw-guide li { display: grid; grid-template-columns: calc(7 * var(--u)) 1fr; font-size: calc(13px * var(--sf)); }
+  .sw-guide i { color: var(--dim); font-family: var(--typeface-canon); }
+
+  /* The field: two squares a patch, leaves until turned. */
+  .sw-field { display: grid; grid-auto-rows: calc(2 * var(--u)); box-shadow: 0 0 0 var(--u) rgb(0 0 0 / 0.18); }
+  .sw-row { display: grid; grid-template-columns: repeat(var(--cols), calc(2 * var(--u))); }
+  .sw-field button {
+    all: unset; box-sizing: border-box; position: relative; width: calc(2 * var(--u)); height: calc(2 * var(--u));
+    display: grid; place-items: center; cursor: pointer;
+    font: 700 calc(20px * var(--sf)) / calc(2 * var(--u)) Rockwell, 'Roboto Slab', serif;
+    overflow: hidden;
+  }
+  /* The litter: one of four leaves, turned and flipped and lit its own way. */
+  .sw-field button:is([data-state='leaves'], [data-state='staked'])::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--leaf) center / cover;
+    transform: rotate(var(--turn, 0deg)) scaleX(var(--flip, 1));
+    filter: brightness(var(--b, 1));
+  }
+  .sw-field button[data-state='leaves']:hover::before { filter: brightness(calc(var(--b, 1) + 0.3)) saturate(1.1); }
+  .sw-field[data-mode='stake'] button[data-state='leaves']:hover { box-shadow: inset 0 0 0 2px var(--agaric); }
+  .sw-field button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; z-index: 1; }
+  .sw-field button[data-state='open'] {
+    background: radial-gradient(circle at 30% 30%, var(--soil-2), var(--soil) 70%);
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.5);
+    cursor: default;
+  }
+  .sw-field button[data-near='1'] { color: #b9c95a; }
+  .sw-field button[data-near='2'] { color: #e5ac40; }
+  .sw-field button[data-near='3'] { color: #ef6b4f; }
+  .sw-field button[data-near='4'] { color: #d77bd0; }
+  .sw-field button[data-near='5'], .sw-field button[data-near='6'], .sw-field button[data-near='7'], .sw-field button[data-near='8'] { color: #9cc4ff; }
+  /* A penny bun: a brown cap on a fat stem. */
+  .sw-field button[data-bun]::after {
+    content: ''; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M15 22 C14 30 15 34 20 34 C25 34 26 30 25 22Z' fill='%23e9dcb8'/%3E%3Cpath d='M8 23 C8 13 32 13 32 23 C26 25 14 25 8 23Z' fill='%238a5427'/%3E%3Cpath d='M12 18 C15 16 18 15.5 21 15.6' stroke='%23b67a3e' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100%;
+  }
+  /* A deadly cap: the red cap and white warts of the fly agaric, for all of them. */
+  .sw-field button[data-state='deadly'] {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M16.5 22 C16 29 15 32 14 34 L26 34 C25 32 24 29 23.5 22Z' fill='%23f3eee0'/%3E%3Cpath d='M15 27 L25 27' stroke='%23d8d0bb' stroke-width='1.6'/%3E%3Cpath d='M6 22 C6 10 34 10 34 22 C26 24.5 14 24.5 6 22Z' fill='%23d42a1e'/%3E%3Ccircle cx='13' cy='17' r='1.6' fill='%23fff'/%3E%3Ccircle cx='20' cy='14.5' r='1.4' fill='%23fff'/%3E%3Ccircle cx='26.5' cy='17.5' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17' cy='20.5' r='1.1' fill='%23fff'/%3E%3Ccircle cx='23.5' cy='21' r='1' fill='%23fff'/%3E%3C/svg%3E") center / 100%,
+      var(--soil);
+    cursor: default;
+  }
+  .sw-field button[data-picked] { background-color: #6b130d; box-shadow: inset 0 0 0 2px var(--agaric); }
+  /* A stake: a hazel stick with a red rag tied on. */
+  .sw-field button[data-state='staked']::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M18 8 L22 8 L21 35 L19 35Z' fill='%23e8d9a8'/%3E%3Cpath d='M21 10 C27 9 30 12 34 11 L32 15 L34 19 C30 20 27 17 21 18Z' fill='%23d42a1e'/%3E%3Cellipse cx='20' cy='35' rx='6' ry='1.6' fill='%23000' opacity='.35'/%3E%3C/svg%3E") center / 100%;
+  }
+  .sw-field[data-won] button[data-state='staked'] { filter: none; }
+  .sw-field[data-over] button { cursor: default; }
+  .sw-field[data-over] button[data-state='leaves'] { filter: saturate(0.5) brightness(0.8); }
+
+  .sw-ref { margin: 0; padding-top: 0; font-family: var(--typeface-canon); font-style: italic; font-size: calc(13px * var(--sf)); color: var(--dim); }
+
+  /* Narrow: the notes first, the field under them, the guide last. */
+  :root[data-narrow] .sweep { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .sweep > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .sw-head { margin-top: var(--u); }
+  :root[data-narrow] .sw-head h1 { font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .sw-intro { margin-top: var(--u); }
+  :root[data-narrow] .sw-mode { margin-top: var(--u); grid-template-columns: repeat(2, calc(6 * var(--u))); }
+  :root[data-narrow] .sw-mode button { font-size: calc(13px * var(--sf)); }
+  :root[data-narrow] .sw-modehint { display: none; }
+  :root[data-narrow] .sw-field { order: 1; margin-top: var(--u); box-shadow: none; }
+  :root[data-narrow] .sw-ref { order: 2; }
+  :root[data-narrow] .sw-stats { order: 3; margin-top: var(--u); }
+  :root[data-narrow] .sw-stats div { grid-template-columns: 1fr auto; }
+  :root[data-narrow] .sw-stats dd { white-space: nowrap; text-align: right; }
+  :root[data-narrow] .sw-status { order: 4; margin-top: var(--u); }
+  :root[data-narrow] .sw-again { order: 5; grid-column: 2 / span 8; margin-top: var(--u); }
+  :root[data-narrow] .sw-guide { order: 6; margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .sw-guide li { grid-template-columns: 1fr; height: calc(2 * var(--u)); }
+</style>

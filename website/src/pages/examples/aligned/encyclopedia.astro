@@ -1,0 +1,290 @@
+---
+// After a spread of a 1911 encyclopedia: two pages on the cloth of the binding, running heads and
+// guide words, and one stream of entries set in four justified columns across the fold, from
+// SQUARE to SQUIRREL, with small engravings drawn in hatched lines. The columns, the gutters, the
+// figures and the leading are all whole squares; the right guide word is whatever entry the page
+// ends on at this window's height, as a printer would set it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="encyclopedia" theme="light">
+  <main class="stage encyclopedia" lang="en">
+    <svg class="enc-defs" aria-hidden="true">
+      <defs>
+        <pattern id="enc-hatch" width="0.14" height="0.14" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="0.14" stroke="#23201a" stroke-width="0.035" /></pattern>
+        <pattern id="enc-fine" width="0.1" height="0.1" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)"><line x1="0" y1="0" x2="0" y2="0.1" stroke="#23201a" stroke-width="0.022" /></pattern>
+        <pattern id="enc-cross" width="0.12" height="0.12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V0.12M0 0H0.12" stroke="#23201a" stroke-width="0.03" /></pattern>
+        <pattern id="enc-level" width="0.13" height="0.13" patternUnits="userSpaceOnUse"><line x1="0" y1="0.06" x2="0.13" y2="0.06" stroke="#23201a" stroke-width="0.028" /></pattern>
+        <pattern id="enc-spots" width="0.36" height="0.3" patternUnits="userSpaceOnUse" patternTransform="rotate(12)"><circle cx="0.1" cy="0.1" r="0.045" fill="#23201a" /><circle cx="0.28" cy="0.24" r="0.03" fill="#23201a" /></pattern>
+      </defs>
+    </svg>
+
+    <div class="enc-page enc-left" aria-hidden="true"></div>
+    <div class="enc-page enc-right" aria-hidden="true"></div>
+    <div class="enc-fold" aria-hidden="true"></div>
+
+    <header class="enc-run enc-run-left"><span class="enc-folio">732</span><span class="enc-guide" id="guide-left">SQUARE</span></header>
+    <header class="enc-run enc-run-right"><span class="enc-guide" id="guide-right">SQUIRREL</span><span class="enc-folio">733</span></header>
+    <div class="enc-rule enc-rule-left" aria-hidden="true"></div>
+    <div class="enc-rule enc-rule-right" aria-hidden="true"></div>
+
+    <h1 class="enc-sr">The Universal Cyclopaedia, eleventh edition, volume XXV: Square to Squirrel</h1>
+
+    <article class="enc-text" id="text">
+      <p><b class="enc-head">SQUARE</b> (O. Fr. <i>esquarre</i>, from Lat. <i>ex</i> and <i>quadra</i>, a square), in geometry, a plane rectilinear figure having four equal sides and four right angles. Euclid (i. 46) shows how one is to be described upon a given straight line, and the area of any square is measured by the product of a side into itself; whence the arithmetical use of the word for the second power of a number. The squares of the natural numbers differ successively by the odd numbers 3, 5, 7&hellip;, a property known to the Pythagoreans, who figured it by the <i>gnomon</i>, a border of pebbles laid about two sides of a square to make the next. The term is extended to any arrangement of numbers in rows and columns: see <span class="enc-sc">Magic Square</span>, where the square engraved in Dürer’s <i>Melencolia</i> (1514) is examined, its rows, columns and diagonals each summing to 34 (fig. <span class="enc-ref" data-fig="1">1</span>).</p>
+      <p data-cut="7">The carpenter’s or try square consists of a stock and a blade fixed at right angles, the blade commonly divided into inches and eighths; the steel square of the American framer carries upon its two arms tables from which the length of a rafter or the board measure of a timber may be read without calculation.</p>
+      <p data-cut="3">In towns a square is an open space, rarely of that figure, surrounded by houses. The London squares, of which Covent Garden (1631) is the earliest, were laid out by ground landlords as the centres of residential estates, the gardens railed and kept for the householders, who hold keys. <span class="enc-by">(J. W. M.)</span></p>
+      <figure class="enc-fig" style="--h: 6">
+        <svg viewBox="0 0 14 6" aria-hidden="true">
+          <path d="M1 0.4H1.9V4.5H8.6V5.4H1Z" fill="url(#enc-level)" stroke="#23201a" stroke-width="0.05" />
+          <g id="enc-ticks" stroke="#23201a" stroke-width="0.03"></g>
+          <g transform="translate(9.6 0.6)" font-size="0.42" text-anchor="middle" fill="#23201a" font-family="Hoefler Text, Baskerville, serif">
+            <path d="M0 0H4V4H0ZM1 0V4M2 0V4M3 0V4M0 1H4M0 2H4M0 3H4" fill="none" stroke="#23201a" stroke-width="0.04" />
+            <text x="0.5" y="0.65">16</text><text x="1.5" y="0.65">3</text><text x="2.5" y="0.65">2</text><text x="3.5" y="0.65">13</text>
+            <text x="0.5" y="1.65">5</text><text x="1.5" y="1.65">10</text><text x="2.5" y="1.65">11</text><text x="3.5" y="1.65">8</text>
+            <text x="0.5" y="2.65">9</text><text x="1.5" y="2.65">6</text><text x="2.5" y="2.65">7</text><text x="3.5" y="2.65">12</text>
+            <text x="0.5" y="3.65">4</text><text x="1.5" y="3.65">15</text><text x="2.5" y="3.65">14</text><text x="3.5" y="3.65">1</text>
+          </g>
+        </svg>
+        <figcaption>Fig. <span class="enc-n">1</span>.—Framing square; magic square.</figcaption>
+      </figure>
+      <p><b class="enc-head">SQUARING THE CIRCLE</b>, the problem of constructing, with ruler and compasses only, a square equal in area to a given circle. It occupied the Greek geometers from Anaxagoras, who is said to have attempted it in prison, and was proposed in every age afterwards by persons whose confidence was in inverse proportion to their learning; the Academy of Sciences of Paris resolved in 1775 to examine no more solutions. The impossibility of the construction followed from the proof by F. Lindemann (1882) that π is transcendental, and therefore the root of no algebraic equation with rational coefficients. Approximations sufficient for every practical purpose are very old: the Rhind papyrus takes the side of the square as eight-ninths of the diameter, which gives π = 3·1605. See <span class="enc-sc">Circle</span>.</p>
+      <p data-cut="8"><b class="enc-head">SQUASH</b>, the name in America of several gourds, varieties of <i>Cucurbita maxima</i> and <i>C. moschata</i>, eaten as vegetables. The summer squashes are gathered young; the winter squashes ripen hard-shelled and keep until spring in a dry loft. The word is from the Narragansett <i>askútasquash</i>, “eaten raw.”</p>
+      <p data-cut="1"><b class="enc-head">SQUASH RACKETS</b>, a game played in a walled court with a soft india-rubber ball, derived from rackets by the boys of Harrow, who knocked a ball about the yards between the houses while they waited their turn at the racket court. The ball being hollow and slow, the game is less costly and less dangerous than its parent.</p>
+      <p data-cut="2"><b class="enc-head">SQUATTER</b>, one who settles upon land without a title. In Australia the word, at first a term of reproach for the stock-keepers who drove their flocks beyond the limits of location, came by 1840 to describe the holders of the great pastoral runs under licence from the Crown, many of them men of capital; “squattocracy” was the name of their party in the colonial legislatures.</p>
+      <p data-cut="6"><b class="enc-head">SQUEEZE</b>, in archaeology, an impression of an inscription taken by beating damp unsized paper into the letters with a stiff brush and letting it dry in place. Squeezes are light, may be rolled for carriage, and record the cutting more faithfully than a drawing; the epigraphist reads them by a lamp held low at one side.</p>
+      <p><b class="enc-head">SQUID</b>, a name given to the decapod cephalopods of the genus <i>Loligo</i> and their allies, distinguished from the cuttle-fish by the horny pen which takes the place of the calcareous bone. The body is long and tapering, with a pair of triangular fins at the hinder end; of the ten arms, two are long tentacles bearing suckers only at their clubbed tips (fig. <span class="enc-ref" data-fig="2">2</span>). The common squid of British seas reaches two feet in length and is taken in great numbers as bait for cod. The giant squids of the genus <i>Architeuthis</i>, of which carcases have been cast ashore in Newfoundland, measure upwards of fifty feet with the tentacles extended, and are without doubt the original of the kraken of Norwegian story.</p>
+      <figure class="enc-fig" style="--h: 6">
+        <svg viewBox="0 0 14 5" aria-hidden="true">
+          <path d="M1.4 1.1C2.2 1.6 3 2.2 3.9 2.4M1.2 4C2.2 3.4 3 2.9 3.9 2.65" fill="none" stroke="#23201a" stroke-width="0.05" />
+          <ellipse cx="1.2" cy="1.05" rx="0.32" ry="0.12" transform="rotate(30 1.2 1.05)" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.04" />
+          <ellipse cx="1.05" cy="4.05" rx="0.32" ry="0.12" transform="rotate(-30 1.05 4.05)" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.04" />
+          <g fill="none" stroke="#23201a" stroke-width="0.07" stroke-linecap="round">
+            <path d="M3.9 2.35C3.2 2 2.7 1.8 2.2 1.9" /><path d="M3.9 2.45C3.1 2.3 2.6 2.3 2 2.4" /><path d="M3.9 2.55C3.1 2.6 2.5 2.7 2.1 2.9" />
+            <path d="M3.9 2.62C3.3 2.9 2.8 3.2 2.4 3.3" /><path d="M3.9 2.3C3.4 1.9 3 1.6 2.7 1.4" /><path d="M3.9 2.7C3.4 3.1 3.1 3.4 2.8 3.6" />
+          </g>
+          <ellipse cx="4.45" cy="2.5" rx="0.65" ry="0.5" fill="url(#enc-fine)" stroke="#23201a" stroke-width="0.05" />
+          <circle cx="4.35" cy="2.38" r="0.2" fill="#e9e2cc" stroke="#23201a" stroke-width="0.05" /><circle cx="4.33" cy="2.38" r="0.09" fill="#23201a" />
+          <path d="M10.4 2.25L13.2 0.85L13.6 2.5Z M10.4 2.75L13.2 4.15L13.6 2.5Z" fill="url(#enc-fine)" stroke="#23201a" stroke-width="0.05" />
+          <path d="M4.95 2.5C4.95 1.65 6.9 1.55 12.4 2.25L13.6 2.5L12.4 2.75C6.9 3.45 4.95 3.35 4.95 2.5Z" fill="url(#enc-spots)" stroke="#23201a" stroke-width="0.06" />
+          <path d="M5.3 2.15C7.5 1.95 10 2.1 12.6 2.4" fill="none" stroke="#23201a" stroke-width="0.03" />
+        </svg>
+        <figcaption>Fig. <span class="enc-n">2</span>.—Common Squid, <i>Loligo</i>.</figcaption>
+      </figure>
+      <p data-cut="10"><b class="enc-head">SQUILL</b>, the bulb of <i>Urginea maritima</i>, a liliaceous plant of the Mediterranean shores, which sends up in autumn, before its leaves, a spike of white flowers as much as three feet high (fig. <span class="enc-ref" data-fig="3">3</span>). The bulb, as large as a man’s fist, is cut in slices and dried; it is expectorant and diuretic, and in larger doses an emetic and a poison. A red variety is used to destroy rats. <i>Scilla</i>, the garden squill, is a separate genus of small blue-flowered bulbs.</p>
+      <figure class="enc-fig" style="--h: 9" data-cut="10">
+        <svg viewBox="0 0 14 8" aria-hidden="true">
+          <g id="enc-squill"></g>
+        </svg>
+        <figcaption>Fig. <span class="enc-n">3</span>.—Sea Squill in flower.</figcaption>
+      </figure>
+      <p data-cut="4"><b class="enc-head">SQUINANCY-WORT</b>, <i>Asperula cynanchica</i>, a small plant of chalk downs with pale pink flowers, so called from its old use against the squinancy or quinsy, an inflammation of the throat.</p>
+      <p><b class="enc-head">SQUINCH</b>, in architecture, an arch or series of arches thrown across the angle of a square tower or chamber to carry an octagonal or round superstructure, such as a spire or dome (fig. <span class="enc-ref" data-fig="4">4</span>). Squinches are found in Persian buildings of the Sassanian period and passed into Byzantine and Romanesque work; the pendentive, a spherical triangle, performs the same office more smoothly.</p>
+      <figure class="enc-fig" style="--h: 6">
+        <svg viewBox="0 0 14 6" aria-hidden="true">
+          <path d="M2 0.6L7 1.4V5.8H2Z" fill="url(#enc-level)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M12 0.6L7 1.4V5.8H12Z" fill="url(#enc-hatch)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M3.6 3.6A3.4 3.4 0 0 1 10.4 3.6L10.4 5.8H3.6Z" fill="#e9e2cc" stroke="none" />
+          <path d="M4.4 3.6A2.6 2.6 0 0 1 9.6 3.6L7 4.6Z" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M3.6 3.6A3.4 3.4 0 0 1 10.4 3.6M4.4 3.6A2.6 2.6 0 0 1 9.6 3.6M3.6 3.6H4.4M9.6 3.6H10.4" fill="none" stroke="#23201a" stroke-width="0.06" />
+          <path d="M3.95 2.2L4.6 2.55M4.6 1.25L5.1 1.75M5.75 0.75L6 1.35M7 0.55V1.15M8.25 0.75L8 1.35M9.4 1.25L8.9 1.75M10.05 2.2L9.4 2.55" stroke="#23201a" stroke-width="0.04" />
+          <path d="M3.6 3.6V5.8M10.4 3.6V5.8M7 4.6V5.8" stroke="#23201a" stroke-width="0.05" />
+          <path d="M1.4 0.4H12.6" stroke="#23201a" stroke-width="0.08" />
+        </svg>
+        <figcaption>Fig. <span class="enc-n">4</span>.—Squinch, octagon on square.</figcaption>
+      </figure>
+      <p data-cut="11"><b class="enc-head">SQUINT</b>, or <b class="enc-head">HAGIOSCOPE</b>, an oblique opening cut through a wall or pier of a church to give a view of the high altar from a side chapel or aisle, so that the elevation of the Host might be seen by those who could not otherwise see it. In some churches squints are found on both sides of the chancel arch. For squint as a defect of the eyes, see <span class="enc-sc">Strabismus</span>.</p>
+      <p data-cut="9"><b class="enc-head">SQUIRE</b> (O. Fr. <i>escuyer</i>, Lat. <i>scutarius</i>, shield-bearer), originally a young man of gentle birth attending upon a knight, carrying his shield and arms and learning the use of them before he received knighthood himself. In later usage the title passed to the principal landowner of a parish, and “the squire” is still in England the name of the chief resident gentleman of a village, whether or not he holds the commission of the peace.</p>
+      <p><b class="enc-head">SQUIRREL</b>, the name of the rodents of the family <i>Sciuridae</i>, and especially of the arboreal members of the genus <i>Sciurus</i>. The common squirrel of Europe is about eight inches long in the body, with a tail nearly as long, bushy and carried over the back; the colour is a bright reddish-brown above and white beneath, and in winter the ears bear long tufts (fig. <span class="enc-ref" data-fig="5">5</span>). It builds a round nest or drey of twigs and moss in the fork of a tree, and stores nuts, acorns and beech-mast in holes against the winter, which it passes in long sleeps broken by fine days. Many of these stores are forgotten, and the squirrel is thus a planter of oaks. The grey squirrel of North America has lately been turned out in several English parks.</p>
+      <figure class="enc-fig" style="--h: 9">
+        <svg viewBox="0 0 14 8" aria-hidden="true">
+          <path d="M1 7.45C4 7.25 8 7.35 13 7.15L13 7.6C8 7.75 4 7.7 1 7.85Z" fill="url(#enc-level)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M7.6 6.9C9.6 6.8 10.4 5 9.6 3.5C9 2.4 9.4 1.2 10.4 1C11.4 0.8 11.8 1.8 11.2 2.2C12.4 2.4 12.4 0.2 10.4 0.2C8.4 0.2 7.8 2 8.4 3.4C9 4.8 8.6 6 7.4 6.2Z" fill="url(#enc-fine)" stroke="#23201a" stroke-width="0.3" stroke-dasharray="0.03 0.07" />
+          <path d="M7.6 6.9C9.6 6.8 10.4 5 9.6 3.5C9 2.4 9.4 1.2 10.4 1C11.4 0.8 11.8 1.8 11.2 2.2C12.4 2.4 12.4 0.2 10.4 0.2C8.4 0.2 7.8 2 8.4 3.4C9 4.8 8.6 6 7.4 6.2Z" fill="none" stroke="#23201a" stroke-width="0.03" />
+          <path d="M7.4 7.3C8.3 7.3 8.5 6 8.1 5C7.8 4.1 7.3 3.4 6.7 3.1C6.1 2.9 5.7 3.4 5.8 4.2C5.9 5 6.2 5.6 6.1 6.4C6 7 6.5 7.3 7.4 7.3Z" fill="url(#enc-hatch)" stroke="#23201a" stroke-width="0.05" />
+          <path d="M6.3 3.6C6 4.4 6.1 5.4 6.3 6.2C6.4 6.8 6.6 7.1 6.9 7.25C6.4 7.1 6.1 6.8 6.1 6.4C6.2 5.6 5.9 5 5.8 4.2C5.75 3.9 5.9 3.6 6.3 3.6Z" fill="#e9e2cc" stroke="none" />
+          <ellipse cx="7.5" cy="6.4" rx="0.85" ry="0.7" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.05" />
+          <path d="M6.9 7.25L5.6 7.3C5.5 7.15 5.7 7.05 6 7.05L7 7" fill="url(#enc-hatch)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M6.8 3.25C7.2 2.6 7 1.8 6.4 1.6C5.8 1.4 5.3 1.9 4.9 2.4C4.7 2.7 4.9 2.95 5.2 2.95C5.7 3 6.3 3.55 6.8 3.25Z" fill="url(#enc-hatch)" stroke="#23201a" stroke-width="0.05" />
+          <path d="M6.25 1.7L6.4 0.75L6.75 1.75Z" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.04" />
+          <path d="M6.4 0.75L6.3 0.45M6.4 0.75L6.55 0.42M6.4 0.75L6.45 0.4" stroke="#23201a" stroke-width="0.03" />
+          <circle cx="5.75" cy="2.15" r="0.13" fill="#23201a" /><circle cx="5.71" cy="2.11" r="0.035" fill="#e9e2cc" />
+          <path d="M4.95 2.55L4.6 2.45M4.95 2.6L4.62 2.68M5 2.5L4.7 2.3" stroke="#23201a" stroke-width="0.02" />
+          <path d="M6.2 3.8C5.8 3.9 5.5 3.85 5.3 3.7M6.3 4.1C5.9 4.2 5.55 4.15 5.35 4" fill="none" stroke="#23201a" stroke-width="0.06" stroke-linecap="round" />
+          <ellipse cx="5.15" cy="3.75" rx="0.24" ry="0.2" fill="url(#enc-cross)" stroke="#23201a" stroke-width="0.04" />
+        </svg>
+        <figcaption>Fig. <span class="enc-n">5</span>.—Red Squirrel, winter coat.</figcaption>
+      </figure>
+      <p data-cut="5">The flying squirrels, <i>Pteromys</i> and its allies, have a fold of skin between the fore and hind limbs, by which they glide from tree to tree over distances of sixty yards and more. The ground squirrels or chipmunks of North America live in burrows and carry their food in cheek-pouches. <span class="enc-by">(R. L.*)</span></p>
+    </article>
+
+    <p class="enc-sig" aria-hidden="true">XXV. 24 <i>a</i></p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  // The framing square's inch marks, along the inner edge of both arms.
+  const ticks = document.getElementById('enc-ticks')!;
+  let marks = '';
+  for (let i = 0; i <= 26; i++) {
+    const long = i % 4 === 0 ? 0.32 : 0.16;
+    marks += `<line x1="${2.1 + i * 0.25}" y1="4.5" x2="${2.1 + i * 0.25}" y2="${4.5 + long}" />`;
+    if (i <= 15) marks += `<line x1="1.9" y1="${4.3 - i * 0.25}" x2="${1.9 - long}" y2="${4.3 - i * 0.25}" />`;
+  }
+  ticks.innerHTML = marks;
+
+  // The squill: a hatched bulb with its roots, the stem, and a long spike of six-pointed flowers.
+  const squill = document.getElementById('enc-squill')!;
+  let s = '<path d="M7 6.95C5.6 6.95 5.2 6.2 5.6 5.6C6 5 6.7 4.9 7 4.2C7.3 4.9 8 5 8.4 5.6C8.8 6.2 8.4 6.95 7 6.95Z" fill="url(#enc-hatch)" stroke="#23201a" stroke-width="0.05"/>';
+  s += '<path d="M7 4.4C6.7 5.2 6.4 6 6.5 6.9M7 4.4C7.3 5.2 7.6 6 7.5 6.9" fill="none" stroke="#23201a" stroke-width="0.03"/>';
+  for (let i = 0; i < 9; i++) s += `<path d="M${6.1 + i * 0.22} 6.9q${(i - 4) * 0.08} 0.4 ${(i - 4) * 0.12} 0.8" fill="none" stroke="#23201a" stroke-width="0.025"/>`;
+  s += '<path d="M7 4.3V0.35" stroke="#23201a" stroke-width="0.07"/>';
+  for (let i = 0; i < 34; i++) {
+    const y = 0.45 + i * 0.1;
+    const side = i % 2 ? 1 : -1;
+    const reach = 0.25 + Math.min(i, 26) * 0.012;
+    const x = 7 + side * reach;
+    s += `<path d="M7 ${y + 0.12}L${x} ${y}" stroke="#23201a" stroke-width="0.02"/>`;
+    if (i > 28) { s += `<circle cx="${x}" cy="${y}" r="0.05" fill="#23201a"/>`; continue; }
+    let star = '';
+    for (let k = 0; k < 6; k++) { const a = (k * Math.PI) / 3 + i; star += `M${x} ${y}l${(Math.cos(a) * 0.13).toFixed(3)} ${(Math.sin(a) * 0.13).toFixed(3)}`; }
+    s += `<path d="${star}" stroke="#23201a" stroke-width="0.03" stroke-linecap="round"/>`;
+  }
+  squill.innerHTML = s;
+
+  const text = document.getElementById('text')!;
+
+  /** Numbers the figures still on the spread in order, and their mentions with them. */
+  function number() {
+    const figures = [...text.querySelectorAll<HTMLElement>('.enc-fig')].filter(figure => !figure.hidden);
+    figures.forEach((figure, index) => {
+      const n = figure.querySelector<HTMLElement>('.enc-n')!;
+      n.dataset.was ??= n.textContent!;
+      n.textContent = String(index + 1);
+      text.querySelectorAll<HTMLElement>(`.enc-ref[data-fig="${n.dataset.was}"]`).forEach(ref => (ref.textContent = String(index + 1)));
+    });
+  }
+  const right = document.getElementById('guide-right')!;
+  const root = document.documentElement;
+
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) { text.querySelectorAll<HTMLElement>('[data-cut]').forEach(passage => (passage.hidden = false)); number(); right.textContent = 'SQUIRREL'; return; }
+    // Two pages, each half the cloth less a square; four columns two squares apart, an outer
+    // margin of three and a fold of two squares between the pages.
+    const half = Math.floor((across - 4) / 2);
+    const col = Math.min(16, Math.floor((half - 6) / 2));
+    const start = 1 + Math.floor((across - 2 * half) / 2);
+    const set = (name: string, value: number) => root.style.setProperty(name, String(value));
+    set('--enc-half', half);
+    set('--enc-l', start);
+    set('--enc-r', start + half);
+    set('--enc-rr', start + half + 1);
+    set('--enc-page-w', 2 * col + 2);
+    set('--enc-text-l', start + half - 1 - 2 * col - 2);
+    set('--enc-text-w', 4 * col + 6);
+    set('--enc-rows', down - 9);
+    // Fit the stream to the spread as an editor would: drop the passages marked for cutting, the
+    // least needed first, until the last entry ends inside the fourth column, then put back any
+    // that still fit.
+    requestAnimationFrame(() => {
+      const all = [...text.querySelectorAll<HTMLElement>('[data-cut]')];
+      const groups = [...new Set(all.map(passage => +passage.dataset.cut!))].sort((a, b) => a - b).map(n => all.filter(passage => +passage.dataset.cut! === n));
+      const show = (group: HTMLElement[], shown: boolean) => group.forEach(passage => (passage.hidden = !shown));
+      all.forEach(passage => (passage.hidden = false));
+      const over = () => text.scrollWidth > text.clientWidth + 1;
+      const dropped: HTMLElement[][] = [];
+      for (const group of groups) { if (!over()) break; show(group, false); dropped.push(group); }
+      for (const group of dropped.reverse()) { show(group, true); if (over()) show(group, false); }
+      number();
+      // The right guide word is the last entry that begins on the spread.
+      const edge = text.getBoundingClientRect();
+      let last = 'SQUARE';
+      text.querySelectorAll<HTMLElement>('.enc-head').forEach(head => {
+        const box = head.getBoundingClientRect();
+        if (box.width && box.left < edge.right && box.bottom <= edge.bottom + 1) last = head.textContent!.trim();
+      });
+      right.textContent = last;
+    });
+  });
+</script>
+
+<style is:global>
+  html { background: #3d1714; --enc-half: 34; --enc-l: 3; --enc-r: 37; --enc-rr: 38; --enc-page-w: 30; --enc-text-l: 6; --enc-text-w: 62; --enc-rows: 36; }
+  .encyclopedia {
+    --ink: #23201a;
+    --paper: #e9e2cc;
+    color: var(--ink);
+    font-family: 'Hoefler Text', Baskerville, 'Iowan Old Style', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    background: radial-gradient(120% 90% at 50% 40%, #5a221d, #3d1714 70%, #2c0f0d);
+  }
+  .enc-defs { position: absolute; width: 0; height: 0; }
+  .enc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* The pages, darker toward the fold and foxed here and there. */
+  .enc-page { grid-row: 2 / -2; box-shadow: 0 calc(var(--u) / 4) calc(var(--u) / 1.5) rgba(0, 0, 0, 0.45); }
+  .enc-left {
+    grid-column: var(--enc-l) / span var(--enc-half);
+    background:
+      radial-gradient(circle at 18% 78%, rgba(150, 110, 40, 0.12) 0 calc(var(--u) * 0.6), transparent calc(var(--u) * 0.7)),
+      radial-gradient(circle at 70% 12%, rgba(150, 110, 40, 0.08) 0 calc(var(--u) * 0.3), transparent calc(var(--u) * 0.4)),
+      linear-gradient(90deg, #ddd4bb, var(--paper) 6%, var(--paper) 88%, #cfc5a8 98%, #b9ae8f);
+    border-radius: calc(var(--u) / 8) 0 0 calc(var(--u) / 8);
+  }
+  .enc-right {
+    grid-column: var(--enc-r) / span var(--enc-half);
+    background:
+      radial-gradient(circle at 82% 64%, rgba(150, 110, 40, 0.1) 0 calc(var(--u) * 0.5), transparent calc(var(--u) * 0.6)),
+      linear-gradient(270deg, #ddd4bb, var(--paper) 6%, var(--paper) 88%, #cfc5a8 98%, #b9ae8f);
+    border-radius: 0 calc(var(--u) / 8) calc(var(--u) / 8) 0;
+  }
+  .enc-fold { grid-row: 2 / -2; background: linear-gradient(90deg, transparent, rgba(60, 40, 10, 0.18) 45%, rgba(60, 40, 10, 0.28) 50%, rgba(60, 40, 10, 0.18) 55%, transparent); pointer-events: none; }
+  .enc-fold { grid-column: var(--enc-r) / span 1; transform: translateX(-50%); }
+
+  /* Running heads: folio outside, guide word centred, a rule under them. */
+  .enc-run { grid-row: 3; display: grid; grid-template-columns: calc(3 * var(--u)) 1fr calc(3 * var(--u)); font-size: calc(12px * var(--sf)); letter-spacing: 0.08em; z-index: 1; }
+  .enc-run-left { grid-column: var(--enc-text-l) / span var(--enc-page-w); }
+  .enc-run-right { grid-column: var(--enc-rr) / span var(--enc-page-w); }
+  .enc-run .enc-guide { grid-column: 2; text-align: center; }
+  .enc-run-left .enc-folio { grid-column: 1; grid-row: 1; }
+  .enc-run-right .enc-folio { grid-column: 3; grid-row: 1; text-align: right; }
+  .enc-rule { grid-row: 4; align-self: start; height: 0; border-top: 1px solid var(--ink); z-index: 1; }
+  .enc-rule-left { grid-column: var(--enc-text-l) / span var(--enc-page-w); }
+  .enc-rule-right { grid-column: var(--enc-rr) / span var(--enc-page-w); }
+
+  /* One stream in four columns across the fold. */
+  .enc-text {
+    grid-column: var(--enc-text-l) / span var(--enc-text-w);
+    grid-row: 5 / span var(--enc-rows);
+    z-index: 1;
+    columns: 4;
+    column-gap: calc(2 * var(--u));
+    column-fill: auto;
+    overflow: hidden;
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .enc-text [hidden] { display: none !important; }
+  .enc-text p { margin: 0; text-indent: 1em; }
+  .enc-text p:has(.enc-head) { text-indent: 0; }
+  .enc-head { font-weight: 700; letter-spacing: 0.03em; font-size: calc(12px * var(--sf)); }
+  .enc-sc { font-variant: small-caps; letter-spacing: 0.03em; }
+  .enc-by { white-space: nowrap; font-size: calc(11px * var(--sf)); }
+  .enc-fig { margin: 0; height: calc(var(--h) * var(--u)); display: grid; grid-template-rows: minmax(0, 1fr) var(--u); break-inside: avoid; overflow: hidden; }
+  .enc-fig svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .enc-fig figcaption { font-size: calc(11px * var(--sf)); text-align: center; text-indent: 0; }
+  .enc-sig { grid-column: var(--enc-text-l) / span 8; grid-row: -3; margin: 0; font-size: calc(11px * var(--sf)); z-index: 1; }
+
+  /* A narrow window: one page, one column. */
+  :root[data-narrow] .encyclopedia { background: var(--paper); }
+  :root[data-narrow] html, :root[data-narrow] { background: #e9e2cc; }
+  :root[data-narrow] .enc-page, :root[data-narrow] .enc-fold, :root[data-narrow] .enc-rule-right, :root[data-narrow] .enc-run-right, :root[data-narrow] .enc-sig { display: none; }
+  :root[data-narrow] .enc-run-left { grid-column: 2 / -2; grid-row: 2; }
+  :root[data-narrow] .enc-rule-left { grid-column: 2 / -2; grid-row: 3; }
+  :root[data-narrow] .enc-fig { height: auto; grid-template-rows: calc((var(--h) - 1) * var(--u)) auto; margin: var(--u) 0; }
+  :root[data-narrow] .enc-text { grid-column: 2 / -2; grid-row: 4; columns: 1; overflow: visible; padding-bottom: calc(3 * var(--u)); }
+</style>

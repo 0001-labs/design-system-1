@@ -1,0 +1,392 @@
+---
+// After a blue text-mode setup program, installing a garden. The screen is a character grid in
+// which every cell is one square, as forty-column mode drew it (half a square on a phone, as
+// eighty-column did): the letters are stretched to fill their cells, so the box lines join and the
+// progress bar is made of squares. Choose what to plant, press ENTER, swap in the bulbs disk, and
+// watch the plot fill in beside the dialog.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="dos-installer" theme="dark">
+  <main class="stage dos">
+    <h1 class="dos-sr">Garden Setup</h1>
+    <div class="dos-screen" id="screen" tabindex="0" role="application" aria-label="Garden Setup. Arrow keys up and down choose, Space selects, Enter continues, F1 help, F3 exit." aria-describedby="said"></div>
+    <p class="dos-sr" id="said" aria-live="polite"></p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The sixteen text-mode colours, by the names the programs used.
+  const COLOUR = {
+    black: '#000000', blue: '#0000aa', green: '#00aa00', cyan: '#00aaaa', red: '#aa0000', brown: '#aa5500', grey: '#aaaaaa',
+    dark: '#555555', lightgreen: '#55ff55', lightcyan: '#55ffff', yellow: '#ffff55', white: '#ffffff', lightblue: '#5555ff', magenta: '#aa00aa',
+  } as const;
+  type Colour = keyof typeof COLOUR;
+  interface Cell { ch: string; fg: Colour; bg: Colour }
+
+  interface Part { id: string; name: string; size: number; on: boolean; files: string[]; about: string; ch: string; fg: Colour; bg: Colour; at: [number, number, number, number] }
+  const PARTS: Part[] = [
+    { id: 'lawn', name: 'Lawn', size: 18, on: true, files: ['TURF.DAT', 'FESCUE.SED', 'MOWER.SYS'], about: 'Fine-leaved fescue, cut to four centimetres. Takes the football and the deckchair.', ch: '░', fg: 'lightgreen', bg: 'green', at: [0.3, 0.25, 0.75, 0.68] },
+    { id: 'veg', name: 'Vegetables', size: 8, on: true, files: ['RADISH.SED', 'LEEK.SED', 'BEANS.SED', 'CANES.CFG'], about: 'Four rows, north to south: radish, leek, runner beans on canes, and one left fallow.', ch: '≡', fg: 'lightgreen', bg: 'brown', at: [0.04, 0.12, 0.26, 0.55] },
+    { id: 'herbs', name: 'Herb bed', size: 3, on: true, files: ['THYME.SED', 'SAGE.SED', 'CHIVES.SED'], about: 'Thyme, sage and chives by the kitchen door, where you can reach them in slippers.', ch: '*', fg: 'lightgreen', bg: 'black', at: [0.3, 0.06, 0.5, 0.2] },
+    { id: 'pond', name: 'Pond & marsh', size: 6, on: false, files: ['LINER.BIN', 'MARSH.DRV', 'FROGS.TXT'], about: 'A sunny corner, a liner and a shallow edge. Frogs install themselves within two springs.', ch: '≈', fg: 'lightcyan', bg: 'blue', at: [0.78, 0.6, 0.97, 0.94] },
+    { id: 'compost', name: 'Compost heap', size: 1, on: true, files: ['WORMS.SYS', 'PEELINGS.TMP'], about: 'Turn it monthly. Everything on this list eventually passes through it.', ch: '▓', fg: 'brown', bg: 'black', at: [0.04, 0.82, 0.14, 0.95] },
+    { id: 'glass', name: 'Greenhouse', size: 5, on: false, files: ['GLASS.PAN', 'TOMATO.SED', 'STAGING.CFG'], about: 'Eight panes a side. Tomatoes by July if the slugs are kept out of the staging.', ch: '╬', fg: 'white', bg: 'cyan', at: [0.8, 0.06, 0.97, 0.38] },
+    { id: 'apple', name: 'Apple tree', size: 4, on: true, files: ['COX.EXE', 'MM106.DLL'], about: 'A Cox on MM106 rootstock. First fruit in the third year; needs a pollinator next door.', ch: '♣', fg: 'lightgreen', bg: 'black', at: [0.6, 0.72, 0.72, 0.9] },
+    { id: 'meadow', name: 'Wildflowers', size: 6, on: false, files: ['YARROW.SED', 'POPPY.SED', 'KNAPWEED.SED'], about: 'Cut once, in September. Looks like neglect for a year and then like June for ever.', ch: '"', fg: 'yellow', bg: 'green', at: [0.18, 0.74, 0.56, 0.95] },
+    { id: 'bees', name: 'Bee hotel', size: 0, on: true, files: ['BEES.DRV', 'HOTEL.INI'], about: 'Hollow stems for solitary bees, facing south-east at chest height. Occupies no ground.', ch: '#', fg: 'yellow', bg: 'black', at: [0.52, 0.06, 0.56, 0.12] },
+  ];
+  const AVAILABLE = 42;
+  const COMMON = ['SOIL.DAT', 'PATH.GRV', 'RAIN.EXE'];
+  const BULBS = ['CROCUS.BLB', 'SNOWDROP.BLB', 'TULIP.BLB'];
+
+  type State = 'select' | 'help' | 'copying' | 'disk' | 'done' | 'confirm' | 'quit';
+  let state: State = 'select';
+  let before: State = 'select';
+  let focus = 0;
+  let queue: { file: string; part?: Part }[] = [];
+  let done = 0;
+  const planted = new Set<string>();
+  let timer = 0;
+  let blink = true;
+
+  const screen = document.getElementById('screen')!;
+  const said = document.getElementById('said')!;
+  let C = 72, R = 45, narrow = false;
+  let buffer: Cell[][] = [];
+  let regions: { x: number; y: number; w: number; h: number; act: () => void }[] = [];
+
+  // Drawing in the buffer.
+  const clear = (bg: Colour) => { buffer = Array.from({ length: R }, () => Array.from({ length: C }, () => ({ ch: ' ', fg: 'grey' as Colour, bg }))); };
+  function put(x: number, y: number, text: string, fg: Colour, bg?: Colour) {
+    if (y < 0 || y >= R) return;
+    [...text].forEach((ch, i) => { const cell = buffer[y][x + i]; if (cell) { cell.ch = ch; cell.fg = fg; if (bg) cell.bg = bg; } });
+  }
+  function fill(x: number, y: number, w: number, h: number, ch: string, fg: Colour, bg: Colour) {
+    for (let j = 0; j < h; j++) put(x, y + j, ch.repeat(Math.max(0, w)), fg, bg);
+  }
+  function box(x: number, y: number, w: number, h: number, fg: Colour, bg: Colour, title = '', double = true) {
+    const [tl, tr, bl, br, hz, vt] = double ? ['╔', '╗', '╚', '╝', '═', '║'] : ['┌', '┐', '└', '┘', '─', '│'];
+    fill(x, y, w, h, ' ', fg, bg);
+    put(x, y, tl + hz.repeat(w - 2) + tr, fg, bg);
+    put(x, y + h - 1, bl + hz.repeat(w - 2) + br, fg, bg);
+    for (let j = 1; j < h - 1; j++) { put(x, y + j, vt, fg, bg); put(x + w - 1, y + j, vt, fg, bg); }
+    if (title) put(x + Math.floor((w - title.length - 2) / 2), y, ` ${title} `, fg, bg);
+  }
+  /** The shadow a dialog throws: one cell right, one down, darkening what is under it. */
+  function shadow(x: number, y: number, w: number, h: number) {
+    const dark = (cell?: Cell) => { if (cell) { cell.bg = 'black'; cell.fg = 'dark'; } };
+    for (let j = 1; j <= h; j++) dark(buffer[y + j]?.[x + w]);
+    for (let i = 1; i <= w; i++) dark(buffer[y + h]?.[x + i]);
+  }
+  function wrap(text: string, width: number) {
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      if ((line + ' ' + word).trim().length > width) { lines.push(line); line = word; } else line = (line + ' ' + word).trim();
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+  const region = (x: number, y: number, w: number, h: number, act: () => void) => regions.push({ x, y, w, h, act });
+
+  const required = () => PARTS.filter(part => part.on).reduce((sum, part) => sum + part.size, 0);
+
+  /** The plot, seen from above: bare soil, the house wall along the top, and what is planted. */
+  function plot(x: number, y: number, w: number, h: number) {
+    box(x, y, w, h, 'grey', 'black', w < 22 ? 'Plot' : 'Plot, 7 by 6 m', false);
+    const ix = x + 1, iy = y + 2, iw = w - 2, ih = h - 3;
+    put(ix, y + 1, '▀'.repeat(iw), 'grey', 'black');
+    put(ix + Math.floor(iw * 0.4), y + 1, '▄▄', 'brown', 'black');
+    fill(ix, iy, iw, ih, '·', 'brown', 'black');
+    // The path from the kitchen door to the lawn.
+    if (planted.has('path')) for (let j = 0; j < Math.floor(ih * 0.3); j++) put(ix + Math.floor(iw * 0.4), iy + j, '░', 'grey', 'black');
+    const planning = state === 'select' || state === 'help' || state === 'confirm';
+    for (const part of PARTS) {
+      const shown = planted.has(part.id);
+      if (!shown && !(planning && part.on)) continue;
+      const [a, b, c, d] = part.at;
+      const px = ix + Math.floor(a * iw), py = iy + Math.floor(b * ih);
+      const pw = Math.max(1, Math.round((c - a) * iw)), ph = Math.max(1, Math.round((d - b) * ih));
+      if (shown) fill(px, py, pw, ph, part.ch, part.fg, part.bg);
+      else fill(px, py, pw, ph, part.ch, 'dark', 'black');
+    }
+    if (planning) put(ix + 1, iy + ih - 1, ' planned ', 'grey', 'black');
+  }
+
+  function statusBar(keys: [string, () => void][]) {
+    fill(0, R - 1, C, 1, ' ', 'black', 'grey');
+    let at = 1;
+    for (const [label, act] of keys) {
+      if (at + label.length > C - (narrow ? 1 : 12)) break;
+      put(at, R - 1, label, 'black', 'grey');
+      region(at, R - 1, label.length, 1, act);
+      at += label.length + 2;
+    }
+  }
+
+  function render() {
+    regions = [];
+    if (state === 'quit') return renderQuit();
+    clear('blue');
+    put(1, 1, 'Garden Setup', 'white', 'blue');
+    if (!narrow) put(C - 15, 1, 'Version 1.11', 'grey', 'blue');
+    put(0, 2, '═'.repeat(C), 'grey', 'blue');
+
+    const dw = narrow ? C - 2 : Math.min(42, C - 26);
+    const dx = narrow ? 1 : 3;
+    const introWidth = narrow ? C - 2 : Math.min(C - 6, 70);
+    const top = 5 + wrap('Setup will plant a garden on this plot. Choose what to plant with the arrow keys and SPACE, then press ENTER.', introWidth).length + 1;
+    const intro = wrap(state === 'select' || state === 'help' || state === 'confirm'
+      ? 'Setup will plant a garden on this plot. Choose what to plant with the arrow keys and SPACE, then press ENTER.'
+      : state === 'done' ? 'Setup has finished planting.' : 'Setup is planting your garden. This may take several seasons.', introWidth);
+    intro.forEach((line, i) => put(dx, 4 + i, line, 'white', 'blue'));
+    const dh = PARTS.length + 7;
+    const px = narrow ? 1 : dx + dw + 4;
+    const pw = narrow ? C - 2 : C - px - 3;
+    const descTop = top + dh + 1;
+    const py = narrow ? descTop + 6 : top;
+    const ph = Math.max(10, Math.min(Math.round((pw - 2) * 6 / 7) + 3, R - py - 3));
+    if (pw >= 12) plot(px, py, pw, ph);
+
+    if (state === 'select' || state === 'help' || state === 'confirm') {
+      box(dx, top, dw, dh, 'black', 'grey', 'Garden components');
+      shadow(dx, top, dw, dh);
+      const inner = dw - 5;
+      const unit = narrow ? 'm²' : ' m²';
+      const pair = (label: string, value: string) => label.padEnd(inner - value.length) + value;
+      PARTS.forEach((part, i) => {
+        const y = top + 2 + i;
+        const here = i === focus;
+        const fg: Colour = here ? 'white' : 'black', bg: Colour = here ? 'black' : 'grey';
+        put(dx + 2, y, pair(`[${part.on ? 'X' : ' '}] ${part.name}`, `${String(part.size).padStart(2)}${unit}`), fg, bg);
+        region(dx + 1, y, dw - 2, 1, () => { focus = i; part.on = !part.on; render(); });
+      });
+      const need = required();
+      const over = need > AVAILABLE;
+      put(dx + 2, top + dh - 4, pair(narrow ? 'Needed:' : 'Space required:', `${String(need).padStart(2)}${unit}`), over ? 'red' : 'black', 'grey');
+      put(dx + 2, top + dh - 3, pair(narrow ? 'Free:' : 'Space available:', `${String(AVAILABLE).padStart(2)}${unit}`), 'black', 'grey');
+      const about = wrap(over ? 'Not enough room. Leave something out, or plant the strip and the lawn smaller next year.' : PARTS[focus].about, dw - 2);
+      about.forEach((line, i) => put(dx + 1, descTop + i, line, over && !i ? 'yellow' : 'grey', 'blue'));
+      statusBar([['ENTER=Continue', next], ['SPACE=Select', toggle], ['F1=Help', help], ['F3=Exit', exit]]);
+    }
+    if (!narrow && R - 3 - (descTop + 5) >= 5) {
+      const facts = [['Drive A:', 'Garden Setup, disk 1 of 2'], ['Soil', 'loam over chalk, pH 7.2'], ['Aspect', 'south-west, sun after eleven'], ['Last frost', 'around the twentieth of April']];
+      const room = R - 3 - facts.length > py + ph ? C - dx - 14 : dw - 12;
+      facts.forEach(([key, value], i) => { put(dx, R - 3 - facts.length + i, key.padEnd(12), 'lightcyan', 'blue'); put(dx + 12, R - 3 - facts.length + i, value.slice(0, room), 'grey', 'blue'); });
+    }
+
+    if (state === 'copying' || state === 'disk') {
+      box(dx, top, dw, 11, 'black', 'grey', 'Planting');
+      shadow(dx, top, dw, 11);
+      const current = queue[Math.min(done, queue.length - 1)];
+      put(dx + 3, top + 2, 'Now planting:', 'black', 'grey');
+      put(dx + 3, top + 3, `A:\\${current?.file ?? ''}`, 'blue', 'grey');
+      const barWidth = dw - 6;
+      const fraction = queue.length ? done / queue.length : 0;
+      const filled = Math.round(fraction * barWidth);
+      box(dx + 2, top + 5, barWidth + 2, 3, 'black', 'grey', '', false);
+      put(dx + 3, top + 6, ' '.repeat(filled), 'yellow', 'yellow');
+      put(dx + 3 + filled, top + 6, '▒'.repeat(barWidth - filled), 'dark', 'grey');
+      put(dx + 3, top + 8, `${Math.round(fraction * 100)}% complete`, 'black', 'grey');
+      statusBar([['F3=Exit', exit]]);
+      if (state === 'disk') {
+        const w = Math.min(narrow ? C - 4 : 40, C - 4), x = Math.floor((C - w) / 2) - (narrow ? 0 : 0), y = top + 4;
+        box(x, y, w, 7, 'white', 'red', 'Insert disk');
+        shadow(x, y, w, 7);
+        wrap('Please insert the disk labelled', w - 4).forEach((line, i) => put(x + 2, y + 2 + i, line, 'white', 'red'));
+        put(x + 2, y + 3, 'Disk 2: Bulbs (autumn)'.slice(0, w - 4), 'yellow', 'red');
+        put(x + 2, y + 4, 'into drive A: and press ENTER.'.slice(0, w - 4), 'white', 'red');
+        region(x, y, w, 8, next);
+        statusBar([['ENTER=Continue', next], ['F3=Exit', exit]]);
+      }
+    }
+
+    if (state === 'done') {
+      box(dx, top, dw, 11, 'black', 'grey', 'Setup complete');
+      shadow(dx, top, dw, 11);
+      const lines = [...wrap('Your garden has been planted. Remove any disks from drive A:.', dw - 6), '', ...wrap('Then wait for spring and restart your garden.', dw - 6)];
+      lines.forEach((line, i) => put(dx + 3, top + 2 + i, line, 'black', 'grey'));
+      put(dx + 3, top + 9, '< Plant again >', 'white', 'black');
+      region(dx + 3, top + 9, 15, 1, next);
+      statusBar([['ENTER=Plant again', next], ['F3=Exit', exit]]);
+    }
+
+    if (state === 'help') {
+      const w = Math.min(narrow ? C - 2 : 46, C - 2), x = Math.floor((C - w) / 2), y = 6;
+      const text = [
+        ...wrap('Garden Setup plants the parts you mark with X on the plot shown at the right.', w - 4), '',
+        ...wrap('UP and DOWN move the highlight. SPACE marks or clears the part. ENTER starts planting. Setup asks for Disk 2 when it reaches the bulbs.', w - 4), '',
+        ...wrap('Nothing is planted until you press ENTER.', w - 4),
+      ];
+      box(x, y, w, text.length + 4, 'black', 'cyan', 'Help');
+      shadow(x, y, w, text.length + 4);
+      text.forEach((line, i) => put(x + 2, y + 2 + i, line, 'black', 'cyan'));
+      region(x, y, w, text.length + 4, next);
+      statusBar([['ENTER=Return', next]]);
+    }
+
+    if (state === 'confirm') {
+      const w = Math.min(narrow ? C - 2 : 44, C - 2), x = Math.floor((C - w) / 2), y = 9;
+      const text = wrap('Garden Setup is not finished. If you exit now, the plot stays bare and nothing is planted.', w - 4);
+      box(x, y, w, text.length + 6, 'white', 'red', 'Exit Setup');
+      shadow(x, y, w, text.length + 6);
+      text.forEach((line, i) => put(x + 2, y + 2 + i, line, 'white', 'red'));
+      put(x + 2, y + text.length + 3, 'F3=Exit   ENTER=Continue Setup'.slice(0, w - 4), 'yellow', 'red');
+      statusBar([['F3=Exit', exit], ['ENTER=Continue', next]]);
+    }
+    paint();
+  }
+
+  function renderQuit() {
+    clear('black');
+    const lines = [...wrap('Garden Setup was not completed. Your plot is unchanged.', C - 2), '', ...wrap('To run Setup again, type SETUP and press ENTER.', C - 2), ''];
+    lines.forEach((line, i) => put(0, i, line, 'grey', 'black'));
+    put(0, lines.length, 'A:\\>' + typed + (blink ? '_' : ' '), 'grey', 'black');
+    region(0, 0, C, R, () => { typed = 'SETUP'; next(); });
+    paint();
+  }
+  let typed = '';
+
+  /** Writes the buffer into the page: a row a square high, runs of one colour in a span, the row
+   * stretched so each character fills its cell. */
+  function paint() {
+    const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    screen.innerHTML = buffer.map(row => {
+      let html = '', run = '', fg = row[0].fg, bg = row[0].bg;
+      const flush = () => { if (run) html += `<span style="color:${COLOUR[fg]};background:${COLOUR[bg]}">${escape(run)}</span>`; run = ''; };
+      for (const cell of row) {
+        if (cell.fg !== fg || cell.bg !== bg) { flush(); fg = cell.fg; bg = cell.bg; }
+        run += cell.ch;
+      }
+      flush();
+      return `<div class="dos-row" aria-hidden="true">${html}</div>`;
+    }).join('');
+    said.textContent = describe();
+  }
+
+  function describe() {
+    if (state === 'select') return `${PARTS[focus].name}, ${PARTS[focus].on ? 'selected' : 'not selected'}, ${PARTS[focus].size} square metres. ${required()} of ${AVAILABLE} square metres used.`;
+    if (state === 'copying') return done % 4 === 0 ? `Planting, ${Math.round((done / queue.length) * 100)} percent complete.` : said.textContent ?? '';
+    if (state === 'disk') return 'Please insert Disk 2: Bulbs (autumn) and press Enter.';
+    if (state === 'done') return 'Setup complete. Your garden has been planted.';
+    if (state === 'confirm') return 'Exit Setup? F3 exits, Enter continues.';
+    if (state === 'help') return 'Help. Press Enter to return.';
+    return 'Setup was not completed. Press Enter to run Setup again.';
+  }
+
+  // What the keys and clicks do.
+  function toggle() { if (state === 'select') { PARTS[focus].on = !PARTS[focus].on; render(); } }
+  function help() { if (state === 'select') { state = 'help'; render(); } }
+  function exit() {
+    if (state === 'confirm') { clearInterval(timer); planted.clear(); state = 'quit'; typed = ''; render(); return; }
+    if (state === 'quit' || state === 'done') { if (state === 'done') { state = 'quit'; typed = ''; render(); } return; }
+    before = state; state = 'confirm'; render();
+  }
+  function next() {
+    if (state === 'help') { state = 'select'; render(); return; }
+    if (state === 'confirm') { state = before; render(); if (before === 'copying') run(); return; }
+    if (state === 'select') {
+      if (required() > AVAILABLE) return;
+      queue = [...COMMON.map(file => ({ file })), ...PARTS.filter(part => part.on).flatMap(part => part.files.map(file => ({ file, part }))), ...BULBS.map(file => ({ file }))];
+      done = 0;
+      planted.clear();
+      state = 'copying';
+      render();
+      run();
+      return;
+    }
+    if (state === 'disk') { state = 'copying'; render(); run(); return; }
+    if (state === 'done' || state === 'quit') { planted.clear(); state = 'select'; render(); }
+  }
+  /** Copies the queue a file at a time; the bulbs wait for their disk. */
+  function run() {
+    clearInterval(timer);
+    const step = reducedMotion() ? 40 : 230;
+    timer = window.setInterval(() => {
+      if (state !== 'copying') { clearInterval(timer); return; }
+      const item = queue[done];
+      if (item && BULBS.includes(item.file) && !planted.has('disk2')) { planted.add('disk2'); state = 'disk'; clearInterval(timer); render(); return; }
+      done++;
+      if (item?.file === 'PATH.GRV') planted.add('path');
+      if (item?.part && item.part.files[item.part.files.length - 1] === item.file) planted.add(item.part.id);
+      if (done >= queue.length) { clearInterval(timer); state = 'done'; }
+      render();
+    }, step);
+  }
+
+  // Keys before the frame sees them: arrows up and down, SPACE, ENTER and the function keys.
+  window.addEventListener('keydown', event => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const key = event.key;
+    if (state === 'quit' && /^[a-zA-Z]$/.test(key)) { typed = (typed + key.toUpperCase()).slice(0, 12); render(); event.preventDefault(); return; }
+    if (state === 'quit' && key === 'Backspace') { typed = typed.slice(0, -1); render(); event.preventDefault(); return; }
+    const handled = key === 'Enter' || key === ' ' || key === 'ArrowUp' || key === 'ArrowDown' || key === 'F1' || key === 'F3';
+    if (!handled) return;
+    const target = event.target as HTMLElement;
+    if (target.closest?.('.study-chip')) return;
+    event.preventDefault();
+    if (key === 'ArrowUp' && state === 'select') { focus = (focus + PARTS.length - 1) % PARTS.length; render(); }
+    if (key === 'ArrowDown' && state === 'select') { focus = (focus + 1) % PARTS.length; render(); }
+    if (key === ' ') toggle();
+    if (key === 'F1') help();
+    if (key === 'F3') exit();
+    if (key === 'Enter') { if (state === 'quit' && typed !== 'SETUP' && typed !== '') { typed = ''; render(); return; } next(); }
+  }, true);
+
+  screen.addEventListener('click', event => {
+    const box = screen.getBoundingClientRect();
+    const x = Math.floor(((event.clientX - box.left) / box.width) * C);
+    const y = Math.floor(((event.clientY - box.top) / box.height) * R);
+    const hit = [...regions].reverse().find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+    hit?.act();
+  });
+
+  window.setInterval(() => { if (state === 'quit') { blink = !blink; render(); } }, 530);
+
+  /** The font's advance and height, so a row can be scaled to cells of `cell` by one square. */
+  function metrics() {
+    const probe = document.createElement('span');
+    probe.className = 'dos-probe';
+    probe.textContent = '═'.repeat(50);
+    document.body.append(probe);
+    const box = probe.getBoundingClientRect();
+    probe.remove();
+    return { advance: box.width / 50 / 100, height: box.height / 100 };
+  }
+
+  onSquares(({ unit, across, down, narrow: isNarrow }) => {
+    narrow = isNarrow;
+    C = narrow ? across * 2 : across;
+    R = narrow ? 62 : down;
+    const cell = narrow ? unit / 2 : unit;
+    const { advance, height } = metrics();
+    const size = unit / height;
+    const root = document.documentElement;
+    root.style.setProperty('--dos-size', `${size}px`);
+    root.style.setProperty('--dos-scale', String(cell / (advance * size)));
+    root.style.setProperty('--dos-rows', String(R));
+    render();
+  });
+</script>
+
+<style is:global>
+  html { background: #0000aa; --dos-size: 17px; --dos-scale: 1.9; --dos-rows: 45; }
+  .dos { background: #0000aa; }
+  .dos-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .dos-probe { position: absolute; visibility: hidden; font: 100px/normal Menlo, Monaco, 'Courier New', monospace; white-space: pre; }
+  .dos-screen { grid-column: 1 / -1; grid-row: 1 / -1; overflow: hidden; cursor: default; user-select: none; }
+  .dos-screen:focus-visible { outline: 2px solid #ffff55; outline-offset: -2px; }
+  .dos-row {
+    height: var(--u);
+    width: max-content;
+    font: var(--dos-size) / normal Menlo, Monaco, 'Courier New', monospace;
+    white-space: pre;
+    transform: scaleX(var(--dos-scale));
+    transform-origin: 0 0;
+    overflow: hidden;
+  }
+  .dos-row span { display: inline; }
+  :root[data-narrow] .dos-screen { grid-row: 1 / span var(--dos-rows); }
+</style>

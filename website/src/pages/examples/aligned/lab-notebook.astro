@@ -1,0 +1,296 @@
+---
+// After an engineer's graph-paper pad: the paper's ruling is the square grid itself, a heavier line
+// every fifth square. A Geneva drive for a bird-feeder turntable is drawn in ballpoint on the squares
+// (centres on crossings, the timing diagram fifteen degrees a square), worked out in the margin, and
+// the customer is taped in.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+// The drive, in squares (1 square = 10 mm): six slots, crank radius a = 4, centres C = 2a apart.
+const n = 6;
+const a = 4;
+const C = a / Math.sin(Math.PI / n);
+const b = Math.sqrt(C * C - a * a);
+const W = { x: 11, y: 14 };
+const D = { x: W.x + C, y: W.y };
+const w = 0.42;
+const R = 3.0;
+const f = (v: number) => v.toFixed(3);
+
+function wheelPath(): string {
+  const polar = (deg: number, d: number, off = 0) => {
+    const t = (deg * Math.PI) / 180;
+    return [W.x + d * Math.cos(t) - off * Math.sin(t), W.y + d * Math.sin(t) + off * Math.cos(t)];
+  };
+  const slotHalf = (Math.asin(w / b) * 180) / Math.PI;
+  const phi = (Math.acos((b * b + C * C - R * R) / (2 * b * C)) * 180) / Math.PI;
+  const outer = Math.sqrt(b * b - w * w);
+  const inner = C - a - w;
+  const parts: string[] = [];
+  for (let k = 0; k < n; k++) {
+    const base = k * (360 / n);
+    const [x1, y1] = polar(base, outer, -w);
+    const [x2, y2] = polar(base, inner, -w);
+    const [x3, y3] = polar(base, inner, w);
+    const [x4, y4] = polar(base, outer, w);
+    parts.push(`${k ? 'L' : 'M'} ${f(x1)} ${f(y1)} L ${f(x2)} ${f(y2)} A ${w} ${w} 0 0 0 ${f(x3)} ${f(y3)} L ${f(x4)} ${f(y4)}`);
+    const [r1x, r1y] = polar(base + 30 - phi, b);
+    parts.push(`A ${f(b)} ${f(b)} 0 0 1 ${f(r1x)} ${f(r1y)}`);
+    const [r2x, r2y] = polar(base + 30 + phi, b);
+    parts.push(`A ${R} ${R} 0 0 0 ${f(r2x)} ${f(r2y)}`);
+    const [nx, ny] = polar(base + 60 - slotHalf, b);
+    parts.push(`A ${f(b)} ${f(b)} 0 0 1 ${f(nx)} ${f(ny)}`);
+  }
+  return parts.join(' ') + ' Z';
+}
+
+// The crank: a locking disc with its clearance cut facing the pin, and the pin at radius a.
+const pinAngle = 180 + 24;
+const pin = { x: D.x + a * Math.cos((pinAngle * Math.PI) / 180), y: D.y + a * Math.sin((pinAngle * Math.PI) / 180) };
+function lockPath(): string {
+  const r = R - 0.15;
+  const at = (deg: number, d: number) => [D.x + d * Math.cos((deg * Math.PI) / 180), D.y + d * Math.sin((deg * Math.PI) / 180)];
+  const [sx, sy] = at(pinAngle - 62, r);
+  const [ex, ey] = at(pinAngle + 62, r);
+  return `M ${f(sx)} ${f(sy)} A ${f(r)} ${f(r)} 0 1 0 ${f(ex)} ${f(ey)} A ${f(r * 1.05)} ${f(r * 1.05)} 0 0 1 ${f(sx)} ${f(sy)}`;
+}
+
+const wheel = wheelPath();
+// The wheel stands turned so that the slot the pin is in points at it.
+const wheelTurn = (Math.atan2(pin.y - W.y, pin.x - W.x) * 180) / Math.PI;
+const lock = lockPath();
+// The timing diagram: crank angle along the bottom, 15° a square; the wheel turns for 120°, rests 240°.
+const T = { x: 3, y: 29, rise: 2.5 };
+---
+<AlignedStudy slug="lab-notebook" theme="light">
+  <main class="stage pad">
+    <header class="pad-head">
+      <p><span>Project</span><b>Feeder carousel</b></p>
+      <p><span>Subject</span><b>Indexing drive, rev. C</b></p>
+      <p class="pad-date"><span>Date</span><b>14 Nov 2026</b></p>
+      <p class="pad-page"><span>Page</span><b>37</b></p>
+    </header>
+
+    <h1 class="title">Geneva drive, six stations: the table must stand still while they eat</h1>
+
+    <svg class="drawing" viewBox="0 0 30 30" aria-label="Drawing of a six-slot Geneva drive with its dimensions and a timing diagram">
+      <defs>
+        <filter id="hand" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="wobble" />
+          <feDisplacementMap in="SourceGraphic" in2="wobble" scale="0.12" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <marker id="tip" viewBox="0 0 4 4" refX="3.6" refY="2" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+          <path d="M0 0.4 L3.8 2 L0 3.6" fill="none" stroke="currentColor" stroke-width="0.5" />
+        </marker>
+      </defs>
+
+      <g class="pencil" filter="url(#hand)">
+        <!-- Centre lines and the pin's path. -->
+        <path class="centre" d={`M ${W.x - 8} ${W.y} H ${D.x + 5} M ${W.x} ${W.y - 8} V ${W.y + 8} M ${D.x} ${D.y - 5} V ${D.y + 5}`} />
+        <circle class="construction" cx={D.x} cy={D.y} r={a} />
+        <circle class="construction" cx={W.x} cy={W.y} r={C - a} />
+      </g>
+
+      <g class="ink" filter="url(#hand)">
+        <path d={wheel} transform={`rotate(${wheelTurn.toFixed(2)} ${W.x} ${W.y})`} />
+        <circle cx={W.x} cy={W.y} r="0.6" />
+        <path d={lock} />
+        <circle cx={D.x} cy={D.y} r="0.6" />
+        <line x1={D.x} y1={D.y} x2={pin.x} y2={pin.y} />
+        <circle class="pin" cx={pin.x} cy={pin.y} r={w} />
+      </g>
+
+      <!-- Dimensions. -->
+      <g class="dims" filter="url(#hand)">
+        <path d={`M ${W.x} ${W.y + 7.4} V ${W.y + 8.9} M ${D.x} ${D.y + 4.6} V ${D.y + 8.9}`} />
+        <line x1={W.x} y1={W.y + 8.5} x2={D.x} y2={D.y + 8.5} marker-start="url(#tip)" marker-end="url(#tip)" />
+        <line x1={W.x} y1={W.y} x2={W.x - b * Math.cos(Math.PI / 4)} y2={W.y - b * Math.sin(Math.PI / 4)} marker-end="url(#tip)" />
+        <line x1={D.x} y1={D.y} x2={D.x + a * Math.cos(-Math.PI / 3)} y2={D.y + a * Math.sin(-Math.PI / 3)} marker-end="url(#tip)" />
+      </g>
+      <g class="notes">
+        <text x={(W.x + D.x) / 2} y={W.y + 8.1} text-anchor="middle">C = 80</text>
+        <text x={W.x - 5.6} y={W.y - 2.6}>b = 69.3</text>
+        <text x={D.x + 2.4} y={D.y - 3.6}>a = 40</text>
+        <text x={pin.x - 3.5} y={pin.y + 2.3} class="small">pin ⌀ 8</text>
+        <text x={W.x - 1} y={W.y + 4.2} class="small">wheel</text>
+        <text x={D.x + 1} y={D.y + 2.2} class="small">crank</text>
+      </g>
+
+      <!-- Side view: the table on its shaft, the drive under it, the motor at the right. -->
+      <g class="ink thin" filter="url(#hand)">
+        <rect x={W.x - 7} y="1" width="14" height="1" />
+        <rect x={W.x - 0.5} y="2" width="1" height="3" />
+        <rect x={W.x - 6.9} y="3.5" width="13.8" height="0.5" />
+        <rect x={D.x - 3} y="3.5" width="6" height="0.5" />
+        <rect x={D.x - 0.5} y="4" width="1" height="1" />
+        <rect x={D.x - 2} y="5" width="4" height="2" />
+      </g>
+      <g class="notes">
+        <text x={W.x + 8} y="1.8" class="small">seed tray, 6 cups</text>
+        <text x={D.x + 2.6} y="6.4" class="small">motor, 4 rpm</text>
+      </g>
+
+      <!-- Timing: one turn of the crank, a square for every fifteen degrees. -->
+      <g class="pencil" filter="url(#hand)">
+        <path class="axis" d={`M ${T.x} ${T.y} H ${T.x + 25} M ${T.x} ${T.y} V ${T.y - 4}`} marker-end="url(#tip)" />
+      </g>
+      <g class="ink" filter="url(#hand)">
+        <path d={`M ${T.x} ${T.y - 0.5} H ${T.x + 8} C ${T.x + 10} ${T.y - 0.5}, ${T.x + 14} ${T.y - 0.5 - T.rise}, ${T.x + 16} ${T.y - 0.5 - T.rise} H ${T.x + 24}`} />
+      </g>
+      <g class="notes">
+        <text x={T.x + 1} y={T.y - 1.2} class="small">rest 120°</text>
+        <text x={T.x + 9.2} y={T.y - 3.6} class="small">turn 120°</text>
+        <text x={T.x + 17} y={T.y - 3.6} class="small">rest 120°</text>
+        <text x={T.x + 24.4} y={T.y + 0.9} class="small">360°</text>
+      </g>
+    </svg>
+
+    <section class="sums">
+      <p>n = 6 stations</p>
+      <p>C = a / sin(180°/n) = a / sin 30° = 2a</p>
+      <p>a = 40 mm, so C = 80 mm</p>
+      <p>b = √(C² − a²) = a√3 = <u>69.3 mm</u></p>
+      <p>slot depth ≥ a + b − C = 29.3 → <u>30</u></p>
+      <p class="struck">dwell = 180/360 = ½</p>
+      <p>dwell = (180 + 360/n) / 360 = <u>⅔</u></p>
+      <p>4 rpm: one station every 15 s, still for 10 s</p>
+      <p class="pencil-note">Great tits take 3 to 4 s a seed (counted Sat., 41 visits). 10 s is plenty.</p>
+    </section>
+
+    <figure class="photo">
+      <img src="/examples/images/birdie-great-tit.jpg" alt="A great tit on a branch" />
+      <i class="tape one" aria-hidden="true"></i>
+      <i class="tape two" aria-hidden="true"></i>
+      <figcaption>The customer. 19 g, impatient.</figcaption>
+    </figure>
+
+    <table class="parts">
+      <caption>Parts</caption>
+      <thead><tr><th>No.</th><th>Part</th><th>Stock</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Wheel, 6 slots</td><td>6 mm acrylic</td></tr>
+        <tr><td>1</td><td>Crank and lock disc</td><td>6 mm acrylic</td></tr>
+        <tr><td>1</td><td>Pin, ⌀ 8 with sleeve</td><td>brass</td></tr>
+        <tr><td>2</td><td>Bearings, 608</td><td>from the old skates</td></tr>
+        <tr><td>1</td><td>Gear motor, 12 V</td><td>4 rpm</td></tr>
+        <tr><td>6</td><td>Seed cups</td><td>jam-jar lids</td></tr>
+      </tbody>
+    </table>
+
+    <section class="todo">
+      <h2>Next</h2>
+      <ul>
+        <li class="done">Cut the wheel from 6 mm acrylic</li>
+        <li>Check pin clearance at 30° off the centre line</li>
+        <li>Ask Mette for the small gear motor</li>
+        <li>Squirrel test (it will lose)</li>
+      </ul>
+    </section>
+  </main>
+</AlignedStudy>
+
+<style is:global>
+  html { background: #f1f4ec; }
+  .pad {
+    --paper: #f1f4ec;
+    --rule: #c3dbc8;
+    --major: #94c2a0;
+    --print: #3f8a57;
+    --ball: #24439a;
+    --lead: #6b6d6a;
+    color: var(--ball);
+    font-family: Noteworthy, 'Bradley Hand', 'Marker Felt', cursive;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+    /* The ruling is the grid: a line every square, a heavier one every fifth. */
+    background:
+      repeating-linear-gradient(to right, var(--major) 0 1px, transparent 1px calc(5 * var(--u))),
+      repeating-linear-gradient(to bottom, var(--major) 0 1px, transparent 1px calc(5 * var(--u))),
+      repeating-linear-gradient(to right, var(--rule) 0 1px, transparent 1px var(--u)),
+      repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px var(--u)),
+      var(--paper);
+  }
+
+  /* The pad's printed head: three squares of green type and boxes. */
+  .pad-head {
+    grid-column: 1 / -1;
+    grid-row: 1 / span 3;
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 6fr;
+    grid-auto-flow: column;
+    background: var(--paper);
+    border-bottom: calc(2px * var(--sf)) solid var(--print);
+    padding-inline: calc(2 * var(--u));
+  }
+  .pad-head p { margin: 0; display: grid; grid-template-rows: var(--u) calc(2 * var(--u)); padding-inline-end: var(--u); }
+  .pad-head span { font-family: Futura, 'Avenir Next', sans-serif; font-size: calc(10px * var(--sf)); color: var(--print); line-height: var(--u); }
+  .pad-head b { font-weight: normal; font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); white-space: nowrap; }
+  .pad-page { justify-self: end; text-align: right; }
+
+  .title { grid-column: 4 / -16; grid-row: 5 / span 2; margin: 0; font-family: 'Bradley Hand', Noteworthy, cursive; font-weight: bold; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .drawing { grid-column: 3 / span 30; grid-row: 8 / span 30; width: 100%; height: 100%; overflow: visible; }
+  .drawing .ink { fill: none; stroke: var(--ball); stroke-width: 0.09; stroke-linejoin: round; }
+  .drawing .ink.thin { stroke-width: 0.07; fill: rgb(36 67 154 / 0.06); }
+  .drawing .ink .pin { fill: var(--ball); }
+  .drawing .pencil { fill: none; stroke: var(--lead); stroke-width: 0.05; }
+  .drawing .centre { stroke-dasharray: 1.2 0.3 0.2 0.3; }
+  .drawing .construction { stroke-dasharray: 0.3 0.25; }
+  .drawing .dims { fill: none; stroke: var(--ball); stroke-width: 0.05; color: var(--ball); }
+  .drawing .notes text { fill: var(--ball); font-family: Noteworthy, 'Bradley Hand', cursive; font-size: 0.85px; }
+  .drawing .notes text.small { font-size: 0.7px; fill: var(--lead); }
+
+  /* The working, one line to a square. */
+  .sums { grid-column: 36 / span 18; grid-row: 8 / span 18; }
+  .sums p { margin: 0; height: var(--u); white-space: nowrap; }
+  .sums p:nth-child(3), .sums p:nth-child(6) { margin-top: var(--u); }
+  .sums u { text-decoration: underline double; text-underline-offset: calc(3px * var(--sf)); }
+  .sums .struck { text-decoration: line-through; text-decoration-thickness: calc(2px * var(--sf)); color: rgb(36 67 154 / 0.6); }
+  .sums .pencil-note { height: auto; white-space: normal; margin-top: var(--u); color: var(--lead); font-family: 'Bradley Hand', cursive; width: calc(14 * var(--u)); }
+
+  /* The photograph on whole squares, held by two strips of tape. */
+  .photo { grid-column: -15 / span 11; grid-row: 7 / span 14; position: relative; margin: 0; display: grid; grid-template-rows: 1fr var(--u); }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; padding: calc(var(--u) / 2); padding-bottom: var(--u); box-sizing: border-box; background: #fbfbf7; box-shadow: 0 calc(1px * var(--sf)) calc(3px * var(--sf)) rgb(40 50 40 / 0.25); }
+  .photo figcaption { color: var(--lead); font-family: 'Bradley Hand', cursive; padding-inline-start: calc(var(--u) / 2); }
+  .tape { position: absolute; width: calc(4 * var(--u)); height: var(--u); background: rgb(240 236 206 / 0.72); box-shadow: 0 0 0 calc(0.5px * var(--sf)) rgb(150 140 90 / 0.25); mix-blend-mode: multiply; }
+  .tape.one { top: calc(var(--u) / -2); left: calc(-1 * var(--u)); transform: rotate(-32deg); }
+  .tape.two { top: calc(var(--u) / -2); right: calc(-1 * var(--u)); transform: rotate(28deg); }
+
+  /* The parts list, ruled by hand along the paper's own lines. */
+  .parts { grid-column: 36 / span 20; grid-row: 22 / span 9; border-collapse: collapse; align-self: start; }
+  .parts caption { text-align: left; font-family: 'Bradley Hand', cursive; font-weight: bold; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .parts th, .parts td { height: var(--u); padding: 0 calc(var(--u) / 2) 0 0; text-align: left; font-weight: normal; white-space: nowrap; vertical-align: top; box-sizing: border-box; }
+  .parts th { color: var(--lead); border-bottom: calc(1.5px * var(--sf)) solid var(--ball); }
+  .parts td:first-child, .parts th:first-child { width: calc(2 * var(--u)); }
+  .parts td:last-child { color: var(--lead); }
+
+  .todo { grid-column: -25 / span 22; grid-row: -12 / span 8; }
+  .todo h2 { margin: 0; font-family: 'Bradley Hand', cursive; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .todo ul { margin: 0; padding: 0; list-style: none; }
+  .todo li { height: var(--u); display: grid; grid-template-columns: var(--u) auto; white-space: nowrap; }
+  .todo li::before { content: ''; width: calc(12px * var(--sf)); height: calc(12px * var(--sf)); margin: calc(4px * var(--sf)) 0 0 calc(4px * var(--sf)); border: calc(1.5px * var(--sf)) solid var(--ball); box-sizing: border-box; border-radius: 1px; }
+  .todo li.done::before { background: linear-gradient(45deg, transparent 42%, var(--ball) 42% 58%, transparent 58%); }
+  .todo li.done { text-decoration: line-through; color: rgb(36 67 154 / 0.6); }
+
+  @media (max-width: 1360px) {
+    .pad .sums { grid-column: 35 / span 16; }
+    .pad .photo { grid-column: -13 / span 10; grid-row: 7 / span 12; }
+    .pad .todo { grid-column: -24 / span 21; grid-row: -10 / span 7; }
+    .pad .parts { grid-column: 35 / span 16; grid-row: 21 / span 9; }
+    .pad .parts td:last-child, .pad .parts th:last-child { display: none; }
+    .pad .sums .pencil-note { width: calc(13 * var(--u)); }
+  }
+
+  /* Narrow: the page as a column, the drawing a square of twelve. */
+  :root[data-narrow] .pad { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .pad > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .pad-head { grid-column: 1 / -1; grid-template-columns: repeat(2, 1fr); grid-auto-flow: row; padding-inline: var(--u); }
+  :root[data-narrow] .pad-head b { font-size: calc(16px * var(--sf)); }
+  :root[data-narrow] .title { white-space: normal; margin-top: var(--u); font-size: calc(22px * var(--sf)); }
+  :root[data-narrow] .drawing { height: calc(12 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .sums p { white-space: normal; height: auto; }
+  :root[data-narrow] .sums .pencil-note { width: auto; }
+  :root[data-narrow] .photo { height: calc(14 * var(--u)); margin-block: calc(2 * var(--u)) var(--u); grid-column: 3 / -3; }
+  :root[data-narrow] .todo li { white-space: normal; height: auto; }
+  :root[data-narrow] .parts { margin-block: var(--u); }
+  :root[data-narrow] .parts th, :root[data-narrow] .parts td { white-space: normal; }
+</style>

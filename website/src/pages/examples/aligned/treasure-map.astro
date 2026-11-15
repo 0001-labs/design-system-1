@@ -1,0 +1,329 @@
+---
+// After a pirate's treasure map: torn parchment on a captain's table, an island with its names in
+// engraved italic, a compass rose, a sea serpent whose humps are half circles of whole squares, and
+// the captain's directions in her own hand. On the chart a pace is a square, so every leg of the
+// dotted path is a count of squares, and the paces add up to the X. The path is walked once on load;
+// pointing at a line of the directions picks out its leg.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type P = [number, number];
+// The coast, as points on the chart's forty by twenty-eight squares, joined by a smooth curve.
+const COAST: P[] = [
+  [11, 21], [9.5, 19.5], [8, 17], [8.6, 14], [7.4, 11], [8.5, 8], [11, 5.6], [14.5, 5], [17, 3.6], [20.5, 4.4],
+  [24, 3.2], [28, 3.8], [31.5, 5.2], [33.4, 8], [32.4, 10.6], [33.6, 13], [32.6, 16.4], [30, 18.6], [26.5, 19.2],
+  [23.5, 21.4], [19.5, 21], [16, 22], [13.6, 21.4], [12.6, 20.2],
+];
+function smooth(points: P[]) {
+  const n = points.length;
+  const at = (i: number) => points[(i + n) % n];
+  let d = `M ${at(0)[0]} ${at(0)[1]}`;
+  for (let i = 0; i < n; i++) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C ${c1[0].toFixed(2)} ${c1[1].toFixed(2)} ${c2[0].toFixed(2)} ${c2[1].toFixed(2)} ${p2[0]} ${p2[1]}`;
+  }
+  return d + ' Z';
+}
+const coast = smooth(COAST);
+
+// The directions: from the Boot Stone, paces along the squares.
+const START: P = [12, 20];
+const LEGS = [
+  { paces: 9, dir: 'north', to: 'to the drowned well', off: [0.9, 0.25] },
+  { paces: 6, dir: 'east', to: 'between the two palms', off: [0, -0.5] },
+  { paces: 4, dir: 'north', to: 'and mind the bees', off: [-0.8, 0.25] },
+  { paces: 11, dir: 'east', to: 'along the ridge', off: [0, 1.2] },
+  { paces: 5, dir: 'south', to: 'to the split rock', off: [0.9, 0.25] },
+  { paces: 3, dir: 'west', to: 'and dig under the parrot’s chair', off: [0, -0.5] },
+];
+const STEP: Record<string, P> = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] };
+const dots: { x: number; y: number; leg: number }[] = [];
+const marks: { x: number; y: number; n: number }[] = [];
+let [x, y] = START;
+LEGS.forEach((leg, i) => {
+  const [dx, dy] = STEP[leg.dir];
+  marks.push({ x: x + (dx * leg.paces) / 2 + leg.off[0], y: y + (dy * leg.paces) / 2 + leg.off[1], n: leg.paces });
+  for (let s = 0; s < leg.paces; s++) { x += dx; y += dy; dots.push({ x, y, leg: i }); }
+});
+const total = dots.length;
+const end = dots[dots.length - 1];
+
+// The compass rose: sixteen points, the cardinal ones longest.
+const rose = Array.from({ length: 16 }, (_, i) => {
+  const a = (i * Math.PI) / 8;
+  const r = i % 4 === 0 ? 3 : i % 2 === 0 ? 2.1 : 1.4;
+  const w = i % 4 === 0 ? 0.42 : 0.28;
+  const tip = [Math.sin(a) * r, -Math.cos(a) * r];
+  const l = [Math.sin(a - Math.PI / 2) * w, -Math.cos(a - Math.PI / 2) * w];
+  const rr = [-l[0], -l[1]];
+  const f = (p: number[]) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
+  return { i, left: `0,0 ${f(l)} ${f(tip)}`, right: `0,0 ${f(rr)} ${f(tip)}` };
+});
+const rhumbs = Array.from({ length: 16 }, (_, i) => {
+  const a = (i * Math.PI) / 8;
+  return `M 0 0 L ${(Math.sin(a) * 60).toFixed(1)} ${(-Math.cos(a) * 60).toFixed(1)}`;
+}).join(' ');
+const humps = [22, 25, 28, 31].map(cx => `M ${cx - 1.2} 25.5 A 1.2 1.2 0 0 1 ${cx + 1.2} 25.5`).join(' ');
+---
+<AlignedStudy slug="treasure-map" theme="light" fonts="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap">
+  <main class="stage tm">
+    <div class="tm-sheet" aria-hidden="true"><div class="tm-paper" id="paper"></div></div>
+
+    <svg class="tm-map" viewBox="0 0 40 28" role="img" aria-labelledby="tm-title">
+      <defs>
+        <pattern id="tm-waves" width="2" height="1" patternUnits="userSpaceOnUse">
+          <path d="M 0.2 0.6 q 0.3 -0.3 0.6 0 t 0.6 0" />
+        </pattern>
+        <radialGradient id="tm-fadegrad" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0.62" stop-color="#fff" /><stop offset="1" stop-color="#000" />
+        </radialGradient>
+        <clipPath id="tm-island"><path d={coast} /></clipPath>
+        <mask id="tm-fade" maskUnits="userSpaceOnUse" x="-8" y="-6" width="56" height="40"><rect x="-8" y="-6" width="56" height="40" fill="url(#tm-fadegrad)" /></mask>
+      </defs>
+      <g mask="url(#tm-fade)">
+        <rect class="tm-water" x="-8" y="-6" width="56" height="40" />
+        <rect x="-8" y="-6" width="56" height="40" fill="url(#tm-waves)" class="tm-wave" />
+        <path class="tm-squares" d={Array.from({ length: 55 }, (_, i) => `M ${i - 7} -6 V 34`).join(' ') + Array.from({ length: 39 }, (_, i) => ` M -8 ${i - 5} H 48`).join('')} />
+        <path class="tm-rhumb" transform="translate(35 5)" d={rhumbs} />
+        <path class="tm-rhumb" transform="translate(4 24)" d={rhumbs} />
+      </g>
+      <path class="tm-shore" d={coast} />
+      <path class="tm-land" d={coast} />
+      <path class="tm-squares tm-on-land" d={Array.from({ length: 39 }, (_, i) => `M ${i + 1} 0 V 28`).join(' ') + Array.from({ length: 27 }, (_, i) => ` M 0 ${i + 1} H 40`).join('')} clip-path="url(#tm-island)" />
+
+      <!-- The ridge: a row of hills, a square each. -->
+      <g class="tm-hills">
+        {[19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29].map((h, i) => <path d={`M ${h - 0.1} 6.1 L ${h + 0.5} ${i % 2 ? 5.3 : 5} L ${h + 1.1} 6.1`} />)}
+      </g>
+      <!-- Two palms, the drowned well, the bees, the split rock, the Boot Stone. -->
+      <g class="tm-ink">
+        {[[14.4, 12.6], [15.2, 9.5]].map(([px, py]) => (
+          <g transform={`translate(${px} ${py})`}>
+            <path d="M 0 1 q 0.2 -0.6 0 -1.2" />
+            <path d="M 0 -0.2 q -0.6 -0.5 -1 0 M 0 -0.2 q 0.6 -0.5 1 0 M 0 -0.2 q -0.3 -0.6 -0.7 -0.6 M 0 -0.2 q 0.3 -0.6 0.7 -0.6" />
+          </g>
+        ))}
+        <circle cx="12" cy="11" r="0.55" /><circle cx="12" cy="11" r="0.25" />
+        <path d="M 19.4 8.9 a 0.5 0.6 0 1 1 1 0 z M 19.5 8.6 h 0.8 M 19.6 8.3 h 0.6" />
+        <g class="tm-bees"><circle cx="21.1" cy="8.1" r="0.07" /><circle cx="21.5" cy="8.5" r="0.07" /><circle cx="20.9" cy="7.7" r="0.07" /><circle cx="21.7" cy="7.9" r="0.07" /></g>
+        <path d="M 29.4 12.2 l 0.5 -0.7 l 0.7 0.2 l 0.2 0.6 z M 29.5 12.5 l 1.4 -0.1 l -0.3 0.7 l -0.9 0 z" />
+        <path d="M 11.3 20.6 l 0.2 -0.7 h 0.4 l 0.1 0.4 l 0.5 0.1 v 0.2 z" />
+        <path d="M 25.5 12.9 v -0.9 h 0.9 v 0.9 M 25.5 12.4 h 0.9 M 26.4 12 v -0.8" />
+      </g>
+
+      <!-- The path: one dot a pace, a pace a square. -->
+      <g class="tm-path" id="path">
+        {dots.map(({ x: dx, y: dy, leg }, i) => <circle cx={dx} cy={dy} r="0.13" data-leg={leg} style={`--i:${i}`} />)}
+        <circle class="tm-start" cx={START[0]} cy={START[1]} r="0.28" />
+      </g>
+      <g class="tm-counts">
+        {marks.map(({ x: mx, y: my, n }, i) => <text x={mx} y={my} data-leg={i}>{n}</text>)}
+      </g>
+      <g class="tm-x" id="x" transform={`translate(${end.x} ${end.y})`}>
+        <path d="M -0.7 -0.7 L 0.7 0.7 M 0.7 -0.7 L -0.7 0.7" />
+      </g>
+
+      <!-- Names, engraved. -->
+      <g class="tm-names">
+        <text x="13.2" y="21.9">Cutlass Cove</text>
+        <text x="12.9" y="20.25" class="tm-small">the Boot Stone</text>
+        <text x="9.6" y="10.4" class="tm-small">drowned well</text>
+        <text x="17.4" y="13.2" class="tm-small">two palms</text>
+        <text x="20.7" y="9.7" class="tm-small">Bee Hill</text>
+        <text x="21" y="4.6" class="tm-small">the Ridge</text>
+        <text x="30.6" y="13.6" class="tm-small">Split Rock</text>
+        <text x="22.6" y="14.3" class="tm-small">the parrot’s chair</text>
+        <text x="17" y="16.6" class="tm-island">Mallow Cay</text>
+        <text x="2.4" y="15.6" class="tm-sea">The Unfriendly Sea</text>
+        <text x="27" y="2.2" class="tm-sea tm-small">Shoals of Regret</text>
+      </g>
+
+      <!-- A serpent in the south: four humps, each half a circle of whole squares across. -->
+      <g class="tm-serpent">
+        <path class="tm-body" d={humps} />
+        <path class="tm-body" d="M 32.2 25.5 q 0.6 -2.4 2.2 -2.6 q 1.4 -0.1 1.8 0.9 l -1.1 0.2 q -0.6 -0.2 -1 0.4 q -0.5 0.6 -0.5 1.1" />
+        <path class="tm-tongue" d="M 36.2 23.8 l 0.8 0.1 m -0.8 -0.1 l 0.7 0.4" />
+        <circle cx="34.9" cy="23.3" r="0.13" class="tm-eye" />
+        <path class="tm-body" d="M 18.6 25.5 q 0.8 -0.9 1.6 0" />
+        <path class="tm-ripple" d="M 17.6 25.9 h 19.4 M 19 26.3 h 16" />
+        <text x="22" y="27.3" class="tm-small tm-sea">here be a large eel</text>
+      </g>
+
+      <!-- The rose, its north a fleur. -->
+      <g class="tm-rose" transform="translate(35 5)">
+        <circle r="3.4" class="tm-ring" /><circle r="3.1" class="tm-ring" />
+        {rose.map(({ i, left, right }) => <g class={i % 4 === 0 ? 'tm-card' : 'tm-minor'}><polygon points={left} class="tm-dark" /><polygon points={right} class="tm-light" /></g>)}
+        <text y="-3.7" class="tm-n">N</text>
+      </g>
+
+      <!-- The scale: ten paces, ten squares. -->
+      <g class="tm-scale" transform="translate(2 2)">
+        {Array.from({ length: 10 }, (_, i) => <rect x={i} y="0" width="1" height="0.4" class={i % 2 ? 'tm-open' : 'tm-fill'} />)}
+        <text x="0" y="1.3" class="tm-small">0</text>
+        <text x="5" y="1.3" class="tm-small">5</text>
+        <text x="10" y="1.3" class="tm-small">10 paces</text>
+      </g>
+    </svg>
+
+    <section class="tm-notes" id="notes">
+      <h1 id="tm-title">Mallow Cay</h1>
+      <p class="tm-sub">A true chart, drawn by Capt. Hester Quill in the year 1714, who buried here what she would not share with her crew.</p>
+      <p class="tm-hand tm-lead">Land at Cutlass Cove at low water. From the Boot Stone:</p>
+      <ol class="tm-legs" data-own-keys>
+        {LEGS.map((leg, i) => (
+          <li><button type="button" class="tm-hand" data-leg={i}><b>{leg.paces}</b> paces {leg.dir}, {leg.to}.</button></li>
+        ))}
+      </ol>
+      <p class="tm-hand tm-sum">{total} paces in all. If the parrot is sitting in the chair, wait.</p>
+      <p class="tm-key">A pace is one square of this chart, as walked by a long-legged man. Burn after reading. Do not burn the map.</p>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const root = document.documentElement;
+  const paper = document.getElementById('paper')!;
+
+  // A deterministic tear: the edge wanders up to two-thirds of a square inside the sheet's box.
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  onSquares(({ across, down, narrow }) => {
+    const w = across - 2;
+    const h = narrow ? 60 : down - 2;
+    seed = 7;
+    const pts: string[] = [];
+    const edge = (n: number, f: (t: number, j: number) => [number, number]) => {
+      for (let i = 0; i < n; i++) pts.push(f(i / n, rand() * 0.66).map((v, k) => `${(v / (k ? h : w) * 100).toFixed(2)}%`).join(' '));
+    };
+    edge(w * 2, (t, j) => [t * w, j]);
+    edge(h * 2, (t, j) => [w - j, t * h]);
+    edge(w * 2, (t, j) => [w - t * w, h - j]);
+    edge(h * 2, (t, j) => [j, h - t * h]);
+    paper.style.clipPath = `polygon(${pts.join(',')})`;
+    // The chart in whole squares, its top centred in the sheet; the notes beside it.
+    root.style.setProperty('--tmy', String(Math.max(3, Math.floor((down - 28) / 2) + 1)));
+    root.style.setProperty('--tmn', String(Math.min(18, across - 50)));
+  });
+
+  // The path is walked once, a pace at a time; then the X.
+  if (!reducedMotion()) root.classList.add('tm-walk');
+
+  const legs = [...document.querySelectorAll<HTMLButtonElement>('.tm-legs button')];
+  const map = document.querySelector('.tm-map')!;
+  const pick = (leg: string | null) => {
+    map.toggleAttribute('data-picking', leg !== null);
+    map.querySelectorAll<SVGElement>('[data-leg]').forEach(el => el.classList.toggle('on', el.dataset.leg === leg));
+    legs.forEach(button => button.classList.toggle('on', button.dataset.leg === leg));
+  };
+  legs.forEach(button => {
+    button.addEventListener('mouseenter', () => pick(button.dataset.leg!));
+    button.addEventListener('focus', () => pick(button.dataset.leg!));
+    button.addEventListener('mouseleave', () => pick(null));
+    button.addEventListener('blur', () => pick(null));
+    button.addEventListener('keydown', event => {
+      const i = legs.indexOf(button);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') { legs[Math.min(legs.length - 1, i + 1)].focus(); event.preventDefault(); }
+      if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') { legs[Math.max(0, i - 1)].focus(); event.preventDefault(); }
+    });
+  });
+</script>
+
+<style is:global>
+  html { background: #2a1c12; }
+  .tm {
+    --parch: #e6cf9c;
+    --ink: #4a2e17;
+    --sea: #9dbaa8;
+    --red: #a8301e;
+    color: var(--ink);
+    font-family: 'IM Fell English', 'Hoefler Text', Georgia, serif;
+    font-size: calc(16px * var(--sf));
+    line-height: var(--u);
+    background:
+      repeating-linear-gradient(92deg, rgb(255 255 255 / 0.025) 0 calc(3px * var(--sf)), transparent calc(3px * var(--sf)) calc(11px * var(--sf))),
+      linear-gradient(180deg, #3a271a, #22160e);
+  }
+
+  /* The sheet: torn by the script's clip path, stained, darker at the burnt corner. */
+  .tm-sheet { grid-column: 2 / -2; grid-row: 2 / -2; filter: drop-shadow(0 calc(6px * var(--sf)) calc(10px * var(--sf)) rgb(0 0 0 / 0.5)); }
+  .tm-paper {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(circle at 0% 100%, #5b3a1b 0, rgb(120 72 30 / 0.7) calc(3 * var(--u)), transparent calc(7 * var(--u))),
+      radial-gradient(circle at 78% 22%, rgb(150 100 40 / 0.18) 0, transparent calc(5 * var(--u))),
+      radial-gradient(circle at 18% 30%, rgb(150 100 40 / 0.14) calc(2 * var(--u)), transparent calc(2.2 * var(--u))),
+      radial-gradient(ellipse at 50% 50%, #efdcae 30%, #d9b97a 100%);
+  }
+
+  .tm-map { position: relative; z-index: 1; grid-column: 4 / span 40; grid-row: var(--tmy, 4) / span 28; width: 100%; height: 100%; overflow: visible; font-family: 'IM Fell English', Georgia, serif; }
+  .tm-water { fill: var(--sea); opacity: 0.55; }
+  .tm-wave path { fill: none; stroke: var(--ink); stroke-width: 0.04; opacity: 0.35; }
+  .tm-wave { opacity: 0.6; }
+  #tm-waves path { fill: none; stroke: #4a2e17; stroke-width: 0.045; opacity: 0.45; }
+  .tm-rhumb { fill: none; stroke: var(--ink); stroke-width: 0.03; opacity: 0.35; }
+  .tm-shore { fill: none; stroke: var(--sea); stroke-width: 1.4; opacity: 0.7; }
+  .tm-land { fill: #ead39f; stroke: var(--ink); stroke-width: 0.09; }
+  .tm-squares { fill: none; stroke: var(--ink); stroke-width: 0.02; opacity: 0.2; }
+  .tm-on-land { opacity: 0.16; }
+  .tm-frame { fill: none; stroke: var(--ink); stroke-width: 0.1; }
+  .tm-hills path, .tm-ink path, .tm-ink circle { fill: none; stroke: var(--ink); stroke-width: 0.07; stroke-linecap: round; stroke-linejoin: round; }
+  .tm-bees circle { fill: var(--ink); stroke: none; }
+
+  .tm-path circle { fill: var(--ink); }
+  .tm-path .tm-start { fill: none; stroke: var(--ink); stroke-width: 0.08; }
+  .tm-counts text { font-family: 'Bradley Hand', 'Noteworthy', cursive; font-size: 0.8px; font-weight: 700; fill: var(--red); text-anchor: middle; }
+  .tm-x path { fill: none; stroke: var(--red); stroke-width: 0.28; stroke-linecap: round; }
+  .tm-map[data-picking] .tm-path circle[data-leg]:not(.on) { opacity: 0.25; }
+  .tm-map[data-picking] .tm-counts text:not(.on) { opacity: 0.25; }
+  .tm-path circle.on { fill: var(--red); r: 0.2px; }
+
+  .tm-names text { font-size: 0.75px; font-style: italic; fill: var(--ink); }
+  .tm-names .tm-small, .tm-small { font-size: 0.6px; font-style: italic; fill: var(--ink); }
+  .tm-names .tm-island { font-size: 1.6px; font-style: normal; letter-spacing: 0.12em; }
+  .tm-names .tm-sea { font-size: 0.9px; letter-spacing: 0.08em; }
+  .tm-serpent .tm-body { fill: none; stroke: #3c5a50; stroke-width: 0.38; stroke-linecap: round; }
+  .tm-serpent .tm-tongue { fill: none; stroke: var(--red); stroke-width: 0.07; }
+  .tm-serpent .tm-eye { fill: var(--parch); }
+  .tm-serpent .tm-ripple { fill: none; stroke: var(--ink); stroke-width: 0.04; stroke-dasharray: 0.5 0.3; opacity: 0.6; }
+  .tm-rose .tm-ring { fill: none; stroke: var(--ink); stroke-width: 0.05; }
+  .tm-rose .tm-dark { fill: var(--ink); }
+  .tm-rose .tm-light { fill: var(--parch); stroke: var(--ink); stroke-width: 0.04; }
+  .tm-rose .tm-minor .tm-dark { fill: #7a5530; }
+  .tm-rose .tm-n { font-size: 1px; text-anchor: middle; fill: var(--red); }
+  .tm-scale rect { stroke: var(--ink); stroke-width: 0.05; }
+  .tm-scale .tm-fill { fill: var(--ink); }
+  .tm-scale .tm-open { fill: var(--parch); }
+
+  /* The walk: one pace every 55 ms, then the X is struck. */
+  .tm-walk .tm-path circle[data-leg] { animation: tm-pace 0.01s both; animation-delay: calc(var(--i) * 55ms + 300ms); }
+  .tm-walk .tm-x { animation: tm-strike 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; animation-delay: 2.5s; transform-box: fill-box; transform-origin: center; }
+  .tm-walk .tm-counts text { animation: tm-pace 0.3s both 2.4s; }
+  @keyframes tm-pace { from { opacity: 0; } }
+  @keyframes tm-strike { from { opacity: 0; scale: 2.2; } }
+
+  /* The notes, beside the chart. */
+  .tm-notes { position: relative; z-index: 1; grid-column: 46 / span var(--tmn, 16); grid-row: var(--tmy, 4) / span 28; }
+  .tm-notes h1 { margin: 0; font-weight: 400; font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); letter-spacing: 0.02em; }
+  .tm-sub { margin: 0 0 var(--u); font-style: italic; font-size: calc(15px * var(--sf)); }
+  .tm-hand { font-family: 'Bradley Hand', 'Noteworthy', 'Marker Felt', cursive; font-size: calc(16px * var(--sf)); line-height: var(--u); color: #3b2412; }
+  .tm-lead { margin: var(--u) 0 0; }
+  .tm-legs { margin: var(--u) 0; padding: 0; list-style: none; counter-reset: leg; }
+  .tm-legs li { counter-increment: leg; display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; }
+  .tm-legs li::before { content: counter(leg) '.'; font-family: 'Bradley Hand', cursive; line-height: var(--u); color: var(--red); }
+  .tm-legs button { all: unset; cursor: pointer; display: block; padding-bottom: var(--u); font-family: 'Bradley Hand', 'Noteworthy', 'Marker Felt', cursive; font-size: calc(16px * var(--sf)); line-height: var(--u); color: #3b2412; }
+  .tm-legs button b { color: var(--red); }
+  .tm-legs button.on, .tm-legs button:hover { text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: calc(3px * var(--sf)); }
+  .tm-legs button:focus-visible { outline: 1px dashed var(--red); outline-offset: calc(2px * var(--sf)); }
+  .tm-sum { margin: 0 0 var(--u); }
+  .tm-key { margin: 0; font-style: italic; font-size: calc(13px * var(--sf)); }
+
+  /* Narrow: the chart across the sheet, the notes under it. */
+  :root[data-narrow] .tm-sheet { position: absolute; grid-area: auto; inset: calc(var(--u) / 2) calc(var(--u) / 2) var(--u); }
+  :root[data-narrow] .tm-map { grid-column: 2 / -2; grid-row: 2 / span 9; height: auto; aspect-ratio: 40 / 28; overflow: hidden; }
+  :root[data-narrow] .tm-notes { grid-column: 2 / -2; grid-row: 12 / span 40; padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .tm-notes h1 { font-size: calc(40px * var(--sf)); }
+</style>

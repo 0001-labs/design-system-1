@@ -1,0 +1,284 @@
+---
+// After a ski resort's trail board, for a bookshop: the shop is a mountain, its aisles are runs
+// marked green, blue and black, the stairs and the lift are lifts. Every bend of a run, every
+// ridge and every tower stands on a corner of the squares; hover a run on the board to find it.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const RUNS = [
+  { id: 'meadow', name: 'Picture Book Meadow', aisle: 'Children’s, aisle 1', grade: 'green', status: 'open' },
+  { id: 'cookery', name: 'Cookery Traverse', aisle: 'Food and drink, aisle 3', grade: 'green', status: 'open' },
+  { id: 'travel', name: 'Travel Bowl', aisle: 'Maps and guides, aisle 5', grade: 'blue', status: 'open' },
+  { id: 'history', name: 'History Glade', aisle: 'Reshelving until 11.00', grade: 'blue', status: 'groom' },
+  { id: 'crime', name: 'Crime Chute', aisle: 'Fiction, aisle 8', grade: 'black', status: 'open' },
+  { id: 'scifi', name: 'Science Fiction Moguls', aisle: 'Fiction, aisle 8½', grade: 'black', status: 'open' },
+  { id: 'philosophy', name: 'Philosophy Face', aisle: 'Upstairs, aisle 9; no handrail', grade: 'double', status: 'open' },
+  { id: 'poetry', name: 'Poetry Couloir', aisle: 'A reading is in progress', grade: 'double', status: 'closed' },
+];
+const STATUS: Record<string, string> = { open: 'Open', groom: 'Grooming', closed: 'Closed' };
+const GRADE: Record<string, string> = { green: 'Easy', blue: 'Intermediate', black: 'Difficult', double: 'Experts only' };
+---
+<AlignedStudy slug="ski-trails" theme="dark">
+  <main class="stage ski">
+    <header class="ski-head">
+      <h1>Altitude Books</h1>
+      <p>Trail board, Saturday 14 November. Doors open 9.00, last descent to the till 17.45.</p>
+    </header>
+
+    <ol class="ski-runs" id="runs" aria-label="Runs">
+      {RUNS.map(run => (
+        <li>
+          <button type="button" class="ski-run" data-run={run.id} data-status={run.status}>
+            <span class={`ski-plate ski-${run.grade}`} title={GRADE[run.grade]}><i></i>{run.grade === 'double' && <i></i>}</span>
+            <span class="ski-name">{run.name}</span>
+            <span class="ski-aisle">{run.aisle}</span>
+            <span class="ski-status">{STATUS[run.status]}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+
+    <section class="ski-lifts" aria-label="Lifts">
+      <h2>Lifts</h2>
+      <ul>
+        <li><b>Stairwell Gondola</b><span>Ground to First Floor, every 4 min</span></li>
+        <li><b>Poetry Chair</b><span>Two at a time, no browsing aloft</span></li>
+        <li><b>Pushchair Drag</b><span>Children’s floor, ramp at the side door</span></li>
+      </ul>
+    </section>
+
+    <section class="ski-report" aria-label="Snow report">
+      <dl>
+        <div><dt>New overnight</dt><dd>34 titles</dd></div>
+        <div><dt>Base</dt><dd>1.2 m of paperbacks</dd></div>
+        <div><dt>Stack danger</dt><dd><b>3</b> Considerable</dd></div>
+      </dl>
+      <p>Tall piles in Remainders. Walk, don’t browse, under the tables.</p>
+    </section>
+
+    <figure class="ski-map" aria-label="Trail map of the shop">
+      <svg id="map" role="img" aria-label="The shop drawn as a mountain, with its runs and lifts"></svg>
+    </figure>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type P = [number, number];
+  // Each run and lift as points on the mountain, from 0 to 1 across and down; they are rounded to
+  // whole squares at every size, so the bends stand on grid corners.
+  const RUNS: Record<string, { grade: string; points: P[]; label: number; name: string }> = {
+    meadow: { grade: 'green', name: 'Picture Book Meadow', label: 1, points: [[0.83, 0.6], [0.9, 0.72], [0.84, 0.83], [0.9, 0.94]] },
+    cookery: { grade: 'green', name: 'Cookery Traverse', label: 2, points: [[0.56, 0.15], [0.74, 0.3], [0.66, 0.45], [0.78, 0.62], [0.7, 0.8], [0.66, 0.94]] },
+    travel: { grade: 'blue', name: 'Travel Bowl', label: 2, points: [[0.55, 0.15], [0.47, 0.34], [0.52, 0.54], [0.45, 0.76], [0.5, 0.94]] },
+    history: { grade: 'blue', name: 'History Glade', label: 2, points: [[0.26, 0.32], [0.31, 0.5], [0.24, 0.7], [0.3, 0.94]] },
+    crime: { grade: 'black', name: 'Crime Chute', label: 1, points: [[0.56, 0.15], [0.61, 0.38], [0.57, 0.62], [0.6, 0.94]] },
+    scifi: { grade: 'black', name: 'Science Fiction Moguls', label: 2, points: [[0.74, 0.3], [0.86, 0.42], [0.8, 0.52]] },
+    philosophy: { grade: 'double', name: 'Philosophy Face', label: 1, points: [[0.54, 0.15], [0.39, 0.3], [0.37, 0.52], [0.4, 0.94]] },
+    poetry: { grade: 'double', name: 'Poetry Couloir', label: 1, points: [[0.25, 0.32], [0.13, 0.5], [0.16, 0.7], [0.12, 0.94]] },
+  };
+  const LIFTS: { name: string; from: P; to: P }[] = [
+    { name: 'Stairwell Gondola', from: [0.52, 0.96], to: [0.555, 0.15] },
+    { name: 'Poetry Chair', from: [0.2, 0.96], to: [0.255, 0.32] },
+    { name: 'Pushchair Drag', from: [0.95, 0.96], to: [0.84, 0.6] },
+  ];
+  const COLOUR: Record<string, string> = { green: '#1f9a4c', blue: '#1660c8', black: '#141414', double: '#141414' };
+
+  const svg = document.getElementById('map') as unknown as SVGSVGElement;
+  const runs = document.getElementById('runs')!;
+
+  onSquares(({ across, down, narrow }) => {
+    const W = narrow ? across - 2 : across - 33;
+    const H = narrow ? 18 : down - 3;
+    const snap = ([x, y]: P): P => [Math.round(x * W), Math.round(y * H)];
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.parentElement!.style.setProperty('--map-w', String(W));
+    svg.parentElement!.style.setProperty('--map-h', String(H));
+
+    // The mountain: a skyline of ridges with its peaks on corners, the shop's top shelf the highest.
+    const ridge: P[] = [[0, 0.62], [0.08, 0.5], [0.16, 0.4], [0.255, 0.3], [0.32, 0.34], [0.4, 0.24], [0.48, 0.18], [0.555, 0.12], [0.62, 0.2], [0.7, 0.24], [0.78, 0.3], [0.86, 0.36], [0.93, 0.48], [1, 0.56]];
+    const sky = ridge.map(snap);
+    const mountain = `M 0 ${H} ` + sky.map(([x, y]) => `L ${x} ${y}`).join(' ') + ` L ${W} ${H} Z`;
+    // Shade the faces that look away from the morning sun: from each peak, a fall line down to the right.
+    const FACES: P[][] = [
+      [[0.555, 0.12], [0.62, 0.2], [0.7, 0.24], [0.66, 0.36], [0.6, 0.5], [0.58, 0.3]],
+      [[0.255, 0.3], [0.32, 0.34], [0.31, 0.46], [0.28, 0.58], [0.27, 0.42]],
+      [[0.4, 0.24], [0.48, 0.18], [0.45, 0.28], [0.43, 0.4]],
+      [[0.78, 0.3], [0.86, 0.36], [0.93, 0.48], [0.9, 0.6], [0.84, 0.5]],
+      [[0.08, 0.5], [0.16, 0.4], [0.12, 0.56], [0.06, 0.68]],
+    ];
+    const shade = FACES.map(face => `<path d="M ${face.map(snap).map(p => p.join(' ')).join(' L ')} Z" fill="#c9d6e3"/>`).join('');
+    // The sky keeps its squares: a point on every corner above the snow.
+    let stars = '';
+    for (let x = 1; x < W; x++) for (let y = 1; y < Math.round(H * 0.6); y++) stars += `M ${x} ${y} h 0.001 `;
+    // Trees on the lower slopes: a stand on every second square of the tree line, skipping the pistes.
+    const near = (x: number, y: number) => Object.values(RUNS).concat(LIFTS.map(l => ({ grade: '', name: '', label: 0, points: [l.from, l.to] }))).some(run => {
+      const pts = run.points.map(snap);
+      for (let i = 1; i < pts.length; i++) {
+        const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
+        const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2 || 1)));
+        if (Math.hypot(x - (ax + t * (bx - ax)), y - (ay + t * (by - ay))) < 0.8) return true;
+      }
+      return false;
+    });
+    let trees = '';
+    const line = Math.round(H * 0.74);
+    for (let x = 1; x < W - 1; x += 2) {
+      for (let y = line + ((x * 7) % 2); y < H - 1; y += 2) {
+        if ((x * 13 + y * 5) % 4 === 0 || near(x, y) || Math.abs(x - Math.round(W * 0.52)) < 5 && y > H - 5) continue;
+        trees += `<path d="M ${x} ${y - 1} L ${x + 0.5} ${y + 0.2} L ${x - 0.5} ${y + 0.2} Z" />`;
+      }
+    }
+
+    let pistes = '';
+    let labels = '';
+    for (const [id, run] of Object.entries(RUNS)) {
+      const pts = run.points.map(snap);
+      const d = 'M ' + pts.map(p => p.join(' ')).join(' L ');
+      const dash = run.grade === 'double' ? ' stroke-dasharray="0.6 0.3"' : '';
+      pistes += `<g class="ski-piste" data-run="${id}"><path d="${d}" class="ski-halo"/><path d="${d}" stroke="${COLOUR[run.grade]}"${dash}/></g>`;
+      const [a, b] = [pts[run.label - 1], pts[run.label]];
+      const mx = Math.round((a[0] + b[0]) / 2), my = Math.round((a[1] + b[1]) / 2);
+      const right = mx > W * 0.66;
+      labels += `<text class="ski-label" data-run="${id}" x="${right ? mx - 0.7 : mx + 0.7}" y="${my + 0.25}" text-anchor="${right ? 'end' : 'start'}">${run.name}</text>`;
+    }
+
+    let lifts = '';
+    for (const lift of LIFTS) {
+      const [x1, y1] = snap(lift.from), [x2, y2] = snap(lift.to);
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const nx = (y1 - y2) / len * 0.35, ny = (x2 - x1) / len * 0.35;
+      let towers = '';
+      const count = Math.max(2, Math.floor(len / 3));
+      for (let t = 1; t < count; t++) {
+        const tx = x1 + ((x2 - x1) * t) / count, ty = y1 + ((y2 - y1) * t) / count;
+        towers += `M ${tx - nx} ${ty - ny} L ${tx + nx} ${ty + ny} `;
+      }
+      lifts += `<g class="ski-lift"><path d="M ${x1} ${y1} L ${x2} ${y2} ${towers}"/><rect x="${x1 - 0.5}" y="${y1 - 0.5}" width="1" height="1"/><rect x="${x2 - 0.5}" y="${y2 - 0.5}" width="1" height="1"/></g>`;
+    }
+    const [px, py] = sky[7];
+    const [lx] = snap([0.52, 0.96]);
+    svg.innerHTML = `
+      <path d="${stars}" stroke="#3c5a8c" stroke-width="0.12" stroke-linecap="round"/>
+      <path d="${mountain}" fill="#f4f8fb"/>${shade}
+      <g fill="#24543a">${trees}</g>
+      <g class="ski-pistes">${pistes}</g>
+      <g>${lifts}</g>
+      <g>${labels}</g>
+      <text class="ski-peak" x="${px}" y="${py - 0.8}" text-anchor="middle">Top Shelf, 2,140 m</text>
+      <rect x="${lx - 3}" y="${H - 2}" width="6" height="2" fill="#8a3b22"/>
+      <path d="M ${lx - 3.5} ${H - 2} L ${lx} ${H - 3.5} L ${lx + 3.5} ${H - 2} Z" fill="#5c2615"/>
+      <text class="ski-lodge" x="${lx}" y="${H - 0.65}" text-anchor="middle">The till</text>`;
+  });
+
+  // A run on the board finds its piste on the map, and the other way about.
+  const main = document.querySelector<HTMLElement>('.ski')!;
+  const show = (id: string | null) => {
+    main.toggleAttribute('data-picking', !!id);
+    main.querySelectorAll<Element>('[data-run]').forEach(el => el.classList.toggle('ski-on', el.getAttribute('data-run') === id));
+  };
+  runs.querySelectorAll<HTMLButtonElement>('.ski-run').forEach(button => {
+    const id = button.dataset.run!;
+    button.addEventListener('pointerenter', () => show(id));
+    button.addEventListener('pointerleave', () => show(null));
+    button.addEventListener('focus', () => show(id));
+    button.addEventListener('blur', () => show(null));
+  });
+  svg.addEventListener('pointerover', event => {
+    const g = (event.target as Element).closest('[data-run]');
+    show(g ? g.getAttribute('data-run') : null);
+  });
+  svg.addEventListener('pointerleave', () => show(null));
+</script>
+
+<style is:global>
+  html { background: #10264a; }
+  .ski {
+    --board: #10264a;
+    --rule: #2c4878;
+    --snow: #f4f8fb;
+    color: var(--snow);
+    background: var(--board);
+    font-family: Futura, 'Avenir Next', 'Trebuchet MS', sans-serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+
+  .ski-head { grid-column: 3 / span 24; grid-row: 2 / span 5; }
+  .ski-head h1 { margin: 0; font: 700 calc(46px * var(--sf)) / calc(3 * var(--u)) Futura, 'Avenir Next', sans-serif; letter-spacing: -0.01em; }
+  .ski-head p { margin: 0; width: calc(22 * var(--u)); color: #b7c6de; font-size: calc(13px * var(--sf)); }
+
+  /* The board: each run a plate two squares high, its symbol on white enamel, its status a flag. */
+  .ski-runs { grid-column: 3 / span 25; grid-row: 8 / span 17; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+  .ski-runs li { height: calc(2 * var(--u)); border-bottom: 1px solid var(--rule); box-sizing: border-box; }
+  .ski-run {
+    all: unset; box-sizing: border-box; cursor: pointer;
+    display: grid; width: 100%; height: calc(2 * var(--u));
+    grid-template-columns: calc(3 * var(--u)) 1fr calc(5 * var(--u));
+    grid-template-rows: var(--u) var(--u);
+    align-items: center;
+  }
+  .ski-run:focus-visible { outline: 2px solid #ffd23f; outline-offset: -2px; }
+  .ski-plate { grid-row: 1 / span 2; display: grid; place-items: center; grid-auto-flow: column; gap: calc(2px * var(--sf)); width: calc(2 * var(--u)); height: calc(2 * var(--u)); background: var(--snow); box-sizing: border-box; border: calc(3px * var(--sf)) solid var(--board); }
+  .ski-plate i { display: block; width: calc(14px * var(--sf)); height: calc(14px * var(--sf)); }
+  .ski-green i { background: #1f9a4c; border-radius: 50%; }
+  .ski-blue i { background: #1660c8; }
+  .ski-black i, .ski-double i { background: #141414; transform: rotate(45deg) scale(0.82); }
+  .ski-double i { width: calc(11px * var(--sf)); height: calc(11px * var(--sf)); }
+  .ski-name { grid-column: 2; grid-row: 1; font-weight: 600; font-size: calc(17px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ski-aisle { grid-column: 2; grid-row: 2; color: #a9bbd7; font-size: calc(12px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ski-status { grid-column: 3; grid-row: 1 / span 2; justify-self: end; width: calc(5 * var(--u)); height: var(--u); text-align: center; font-size: calc(12px * var(--sf)); font-weight: 600; color: #fff; background: #1f9a4c; }
+  [data-status='groom'] .ski-status { background: #e7a21b; color: #2a1a00; }
+  [data-status='closed'] .ski-status { background: #c8321f; }
+  [data-status='closed'] .ski-name { text-decoration: line-through; text-decoration-thickness: 2px; }
+  .ski-run.ski-on, .ski-run:hover { background: #18335f; }
+
+  .ski-lifts { grid-column: 3 / span 25; grid-row: 26 / span 5; }
+  .ski-lifts h2, .ski-report dt { margin: 0; font-size: calc(12px * var(--sf)); font-weight: 400; color: #8ea4c8; }
+  .ski-lifts ul { margin: 0; padding: 0; list-style: none; }
+  .ski-lifts li { display: grid; grid-template-columns: calc(9 * var(--u)) 1fr; font-size: calc(13px * var(--sf)); }
+  .ski-lifts li::before { content: ''; position: absolute; }
+  .ski-lifts span { color: #b7c6de; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .ski-report { grid-column: 3 / span 25; grid-row: -7 / span 5; border-top: 1px solid var(--rule); }
+  .ski-report dl { display: grid; grid-template-columns: calc(6 * var(--u)) calc(11 * var(--u)) 1fr; margin: 0; height: calc(3 * var(--u)); }
+  .ski-report dd { margin: 0; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 600; white-space: nowrap; }
+  .ski-report dd b { display: inline-block; width: var(--u); margin-right: calc(4px * var(--sf)); text-align: center; background: #e7a21b; color: #2a1a00; line-height: var(--u); }
+  .ski-report p { margin: 0; font-size: calc(13px * var(--sf)); color: #b7c6de; }
+
+  /* The map: the mountain on the board's blue, the sky in whole squares. */
+  .ski-map { grid-column: span var(--map-w, 39) / -2; grid-row: 2 / span var(--map-h, 42); margin: 0; }
+  .ski-map svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .ski-piste path { fill: none; stroke-width: 0.32; stroke-linejoin: round; stroke-linecap: round; transition: opacity 160ms; }
+  .ski-piste .ski-halo { stroke: var(--snow); stroke-width: 0.7; }
+  .ski-lift path { fill: none; stroke: #2b2b2b; stroke-width: 0.1; }
+  .ski-lift rect { fill: #2b2b2b; }
+  .ski-label { font: 600 0.62px Futura, 'Avenir Next', sans-serif; fill: #1b2a40; paint-order: stroke; stroke: var(--snow); stroke-width: 0.22; transition: opacity 160ms; }
+  .ski-peak { font: 600 0.7px Futura, 'Avenir Next', sans-serif; fill: var(--snow); }
+  .ski-lodge { font: 600 0.55px Futura, 'Avenir Next', sans-serif; fill: var(--snow); }
+  .ski[data-picking] .ski-piste:not(.ski-on), .ski[data-picking] .ski-label:not(.ski-on) { opacity: 0.18; }
+  .ski-piste.ski-on path:not(.ski-halo) { stroke-width: 0.5; }
+  .ski-piste { cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .ski-piste path, .ski-label { transition: none; } }
+
+  /* Narrow: the board, then the map, then the lifts and the report. */
+  :root[data-narrow] .ski { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .ski > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .ski-head { margin-top: var(--u); }
+  :root[data-narrow] .ski-head h1 { font-size: calc(32px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .ski-head p { width: auto; margin-bottom: var(--u); }
+  :root[data-narrow] .ski-map { height: calc(18 * var(--u)); margin-block: var(--u); }
+  :root[data-narrow] .ski-run { grid-template-columns: calc(3 * var(--u)) 1fr calc(4 * var(--u)); }
+  :root[data-narrow] .ski-name { grid-column: 2 / -1; font-size: calc(15px * var(--sf)); }
+  :root[data-narrow] .ski-status { grid-row: 2; width: calc(4 * var(--u)); height: calc(16px * var(--sf)); line-height: calc(16px * var(--sf)); font-size: calc(10px * var(--sf)); }
+  :root[data-narrow] .ski-map { order: 1; }
+  :root[data-narrow] .ski-lifts, :root[data-narrow] .ski-report { order: 2; }
+  :root[data-narrow] .ski-label { display: none; }
+  :root[data-narrow] .ski-lifts { margin-top: var(--u); }
+  :root[data-narrow] .ski-lifts li { grid-template-columns: 1fr; height: calc(2 * var(--u)); }
+  :root[data-narrow] .ski-report { margin-top: var(--u); }
+  :root[data-narrow] .ski-report dl { grid-template-columns: 1fr; height: auto; }
+  :root[data-narrow] .ski-report dl div { display: grid; grid-template-columns: 1fr auto; }
+  :root[data-narrow] .ski-report dd { line-height: var(--u); font-size: calc(15px * var(--sf)); }
+  :root[data-narrow] .ski-report p { margin-top: var(--u); }
+</style>

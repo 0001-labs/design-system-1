@@ -1,0 +1,207 @@
+---
+// After a metro diagram: every line runs at 0°, 45° or 90° and turns only on square corners, every
+// station sits on a corner, and the four radial lines cross at one hub like the points of a star.
+// Point at a line, or tab to it, to pick it out of the network.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="transit-map" theme="light">
+  <main class="stage merrow">
+    <header class="title">
+      <h1>Merrow Metro</h1>
+      <p>Network map, from 14 December 2026</p>
+      <p class="pan">Drag the map sideways to see all of it.</p>
+    </header>
+    <div class="map-wrap" tabindex="-1">
+      <svg class="map" id="map" role="group" aria-label="Network map of the Merrow Metro"></svg>
+    </div>
+    <aside class="key" aria-label="Lines">
+      <ul class="lines" id="legend"></ul>
+      <dl class="symbols">
+        <div><dt><svg viewBox="0 0 2 1" aria-hidden="true"><path d="M0 0.5 H2" stroke="#222" stroke-width="0.5"/><path d="M1 0.5 V0" stroke="#222" stroke-width="0.2"/></svg></dt><dd>Station</dd></div>
+        <div><dt><svg viewBox="0 0 2 1" aria-hidden="true"><circle cx="1" cy="0.5" r="0.4" fill="#fff" stroke="#222" stroke-width="0.14"/></svg></dt><dd>Change here</dd></div>
+      </dl>
+      <p class="service">Trains every 4 minutes from 05:30 to midnight; all night on Fridays and Saturdays on the Harbour and Orchard lines.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Point = [number, number];
+  interface Line { id: string; name: string; colour: string; every: string; path: Point[] }
+  // A station: where it is, its name, and where its name sits (dx, dy in squares, and the anchor).
+  type Station = [number, number, string, number, number, 'start' | 'middle' | 'end'];
+
+  const FRAME: Point = [44, 32];
+  const LINES: Line[] = [
+    { id: 'circle', name: 'Circle', colour: '#f5b800', every: 'every 6 min', path: [[16, 8], [26, 8], [30, 12], [30, 22], [26, 26], [16, 26], [12, 22], [12, 12], [16, 8]] },
+    { id: 'orchard', name: 'Orchard', colour: '#00954d', every: 'every 4 min', path: [[21, 1], [21, 28], [24, 31]] },
+    { id: 'harbour', name: 'Harbour', colour: '#0067b8', every: 'every 3 min', path: [[1, 17], [34, 17], [38, 13], [43, 13]] },
+    { id: 'foundry', name: 'Foundry', colour: '#e3262b', every: 'every 5 min', path: [[1, 2], [6, 2], [32, 28], [40, 28]] },
+    { id: 'heath', name: 'Heath', colour: '#8b2a8f', every: 'every 5 min', path: [[40, 2], [36, 2], [8, 30], [2, 30]] },
+  ];
+  const STATIONS: Record<string, Station[]> = {
+    orchard: [[21, 1, 'Orchard Park', 0.8, 0.2, 'start'], [21, 4, 'Quince Hill', 0.8, 0.2, 'start'], [24, 31, 'Ferry Stairs', 0.8, 0.2, 'start']],
+    harbour: [[1, 17, 'Gull Point', 0, 1.3, 'start'], [5, 17, 'Rope Walk', 0, -0.9, 'middle'], [8, 17, 'Chandlers', 0.4, 1.3, 'start'], [34, 17, 'Customs House', 0, 1.3, 'middle'], [38, 13, 'Lantern Row', -0.6, -0.8, 'end'], [43, 13, 'Harbour Mouth', 0, 1.3, 'end']],
+    foundry: [[1, 2, 'Ironbridge', 0, -0.8, 'start'], [6, 2, 'Smelter Lane', 0.6, -0.8, 'start'], [10, 6, 'Kiln Street', 0.7, -0.4, 'start'], [32, 28, 'Weir', -0.6, 1.2, 'end'], [40, 28, 'Foundry Wharf', 0, 1.3, 'end']],
+    heath: [[40, 2, 'Heath End', 0, -0.8, 'end'], [36, 2, 'Gorse Hill', -0.6, -0.8, 'end'], [32, 6, 'Larkrise', 0.7, 0.2, 'start'], [8, 30, 'Fen Gate', 0, 1.3, 'middle'], [2, 30, 'Marsh Lane', 0, 1.3, 'start']],
+    circle: [],
+  };
+  const CHANGES: Station[] = [
+    [21, 17, 'Market Cross', 1.2, -0.7, 'start'],
+    [21, 8, 'Northgate', 0.8, -0.6, 'start'],
+    [12, 17, 'Westbarrow', -0.8, -0.7, 'end'],
+    [30, 17, 'Eastbarrow', 0.8, -0.7, 'start'],
+    [21, 26, 'Southmoor', 0.8, 1.3, 'start'],
+    [14, 10, 'Tannery', -0.8, -0.4, 'end'],
+    [28, 24, 'Saltings', 0.9, 0.2, 'start'],
+    [28, 10, 'Belvedere', 0.9, 0.2, 'start'],
+    [14, 24, 'Copperfield', -0.9, 0.2, 'end'],
+  ];
+
+  const svg = document.getElementById('map') as unknown as SVGSVGElement;
+  const legend = document.getElementById('legend')!;
+
+  // A station's tick: half a square, square to its line, on the side its name is on.
+  function tick(line: Line, s: Station) {
+    const [x, y, , dx, dy] = s;
+    const seg = line.path.findIndex((p, i) => i > 0 && between([x, y], line.path[i - 1], p));
+    const a = line.path[Math.max(0, seg - 1)], b = line.path[Math.max(1, seg)];
+    let nx = -(b[1] - a[1]), ny = b[0] - a[0];
+    const len = Math.hypot(nx, ny) || 1;
+    nx /= len; ny /= len;
+    if (nx * dx + ny * dy < 0) { nx = -nx; ny = -ny; }
+    return `M${x} ${y} L${x + nx * 0.6} ${y + ny * 0.6}`;
+  }
+  function between(p: Point, a: Point, b: Point) {
+    const cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+    return cross === 0 && p[0] >= Math.min(a[0], b[0]) && p[0] <= Math.max(a[0], b[0]) && p[1] >= Math.min(a[1], b[1]) && p[1] <= Math.max(a[1], b[1]);
+  }
+  const label = ([x, y, name, dx, dy, anchor]: Station, cls = 'name') => `<text x="${x + dx}" y="${y + dy}" text-anchor="${anchor}" class="${cls}">${name}</text>`;
+
+  function draw(wide: number, high: number, narrow: boolean) {
+    const ox = narrow ? 0 : Math.floor((wide - FRAME[0]) / 2);
+    const oy = narrow ? 0 : Math.floor((high - FRAME[1]) / 2);
+    svg.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    const lines = LINES.map(line => {
+      const d = 'M' + line.path.map(p => p.join(' ')).join(' L');
+      const ticks = STATIONS[line.id].map(s => tick(line, s)).join(' ');
+      return `<g class="line" data-id="${line.id}" tabindex="0" role="button" aria-label="${line.name} line" style="--c:${line.colour}">
+        <path d="${d}" class="hit"/>
+        <path d="${d}" class="track"/>
+        <path d="${ticks}" class="tick"/>
+        ${STATIONS[line.id].map(s => label(s)).join('')}
+      </g>`;
+    }).join('');
+    svg.innerHTML = `
+      <g transform="translate(${ox} ${oy})">
+        <path d="M22 40 L44 18 L44 23 L27 40 Z" class="water"/>
+        <text x="40" y="26.6" class="water-name" transform="rotate(-45 40 26.6)">River Merrow</text>
+        <rect x="17" y="-1" width="8" height="4" class="park"/>
+        ${lines}
+        <g class="changes">${CHANGES.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${x === 21 && y === 17 ? 0.75 : 0.45}"/>`).join('')}</g>
+        ${CHANGES.map(s => label(s, s[2] === 'Market Cross' ? 'name hub' : 'name change')).join('')}
+      </g>`;
+    bind();
+  }
+
+  // One line at a time: the others fade while it is pointed at or focused, from the map or the key.
+  function highlight(id: string | null) {
+    svg.classList.toggle('picking', !!id);
+    svg.querySelectorAll<SVGGElement>('.line').forEach(g => g.classList.toggle('on', g.dataset.id === id));
+    legend.querySelectorAll<HTMLElement>('button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  }
+  function bind() {
+    svg.querySelectorAll<SVGGElement>('.line').forEach(g => {
+      g.addEventListener('pointerenter', () => highlight(g.dataset.id!));
+      g.addEventListener('pointerleave', () => highlight(null));
+      g.addEventListener('focus', () => highlight(g.dataset.id!));
+      g.addEventListener('blur', () => highlight(null));
+    });
+  }
+
+  legend.innerHTML = LINES.map(line => `<li><button type="button" data-id="${line.id}" style="--c:${line.colour}"><span class="swatch"></span><b>${line.name}</b><span class="every">${line.every}</span></button></li>`).join('');
+  legend.querySelectorAll<HTMLButtonElement>('button').forEach(b => {
+    b.addEventListener('pointerenter', () => highlight(b.dataset.id!));
+    b.addEventListener('pointerleave', () => highlight(null));
+    b.addEventListener('focus', () => highlight(b.dataset.id!));
+    b.addEventListener('blur', () => highlight(null));
+  });
+
+  onSquares(({ unit, across, down, narrow }) => {
+    // The map's area, columns 2 to -18 and rows 4 to -2, in squares; on a phone the whole frame, to pan.
+    const wide = narrow ? FRAME[0] : across - 19;
+    const high = narrow ? FRAME[1] : down - 5;
+    svg.style.setProperty('--map-w', String(wide));
+    svg.style.setProperty('--map-h', String(high));
+    draw(wide, high, narrow);
+    // On a phone the map pans; it opens on Market Cross.
+    const wrap = svg.parentElement!;
+    if (narrow) requestAnimationFrame(() => { wrap.scrollLeft = 21 * unit - wrap.clientWidth / 2; });
+  });
+</script>
+
+<style is:global>
+  html { background: #fff; }
+  .merrow {
+    --ink: #1f1f1f;
+    --grey: #6f6f6f;
+    background: #fff;
+    color: var(--ink);
+    font-family: 'Avenir Next', Avenir, var(--typeface-regular), sans-serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  :where(.merrow) :is(p, h1, ul, dl, dd) { margin: 0; padding: 0; }
+
+  .title { grid-column: 3 / -18; grid-row: 2 / span 2; display: flex; align-items: baseline; gap: var(--u); }
+  .title h1 { font-weight: 700; font-size: calc(28px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.01em; }
+  .title p { color: var(--grey); }
+  .title .pan { display: none; }
+  :root[data-narrow] .title .pan { display: block; }
+
+  .map-wrap { grid-column: 2 / -18; grid-row: 4 / -2; outline: none; }
+  .map { display: block; width: calc(var(--map-w, 44) * var(--u)); height: calc(var(--map-h, 32) * var(--u)); overflow: visible; }
+  .map .water { fill: #cfe5f4; }
+  .map .water-name { font: italic 500 0.6px 'Avenir Next', sans-serif; fill: #5d8fb0; letter-spacing: 0.08px; text-anchor: middle; }
+  .map .park { fill: #e3f0dc; }
+  .map .line { outline: none; cursor: pointer; transition: opacity 160ms ease; }
+  .map .hit { fill: none; stroke: transparent; stroke-width: 1.4; pointer-events: stroke; }
+  .map .track { fill: none; stroke: var(--c); stroke-width: 0.5; stroke-linejoin: round; stroke-linecap: butt; }
+  .map .tick { fill: none; stroke: var(--c); stroke-width: 0.25; }
+  .map .name { font: 500 0.6px 'Avenir Next', Avenir, sans-serif; fill: var(--ink); dominant-baseline: middle; pointer-events: none; }
+  .map .change { font-weight: 700; }
+  .map .hub { font-weight: 700; font-size: 0.8px; }
+  .map .changes circle { fill: #fff; stroke: var(--ink); stroke-width: 0.16; pointer-events: none; }
+  .map.picking .line:not(.on) { opacity: 0.12; }
+  .map .line:focus-visible .track { stroke-width: 0.7; }
+  .map .line:focus-visible .hit { stroke: var(--c); stroke-opacity: 0.18; }
+
+  .key { grid-column: -16 / -2; grid-row: 4 / -2; display: flex; flex-direction: column; gap: calc(2 * var(--u)); }
+  .lines { list-style: none; }
+  .lines button {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: calc(3 * var(--u)) calc(5 * var(--u)) 1fr;
+    align-items: center;
+    width: 100%;
+    height: calc(2 * var(--u));
+    cursor: pointer;
+  }
+  .lines .swatch { width: calc(2 * var(--u)); height: calc(var(--u) / 2); background: var(--c); }
+  .lines b { font-weight: 600; }
+  .lines .every { color: var(--grey); font-size: calc(12px * var(--sf)); }
+  .lines button.on b { text-decoration: underline; text-decoration-color: var(--c); text-decoration-thickness: calc(3px * var(--sf)); text-underline-offset: calc(4px * var(--sf)); }
+  .lines button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .symbols div { display: grid; grid-template-columns: calc(3 * var(--u)) 1fr; align-items: center; height: calc(2 * var(--u)); }
+  .symbols svg { width: calc(2 * var(--u)); height: var(--u); display: block; }
+  .service { color: var(--grey); font-size: calc(12px * var(--sf)); }
+
+  :root[data-narrow] .merrow { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .merrow > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .title { flex-direction: column; gap: 0; margin-top: var(--u); }
+  :root[data-narrow] .map-wrap { grid-column: 1 / -1; overflow-x: auto; overscroll-behavior-x: contain; margin-block: var(--u); }
+  :root[data-narrow] .key { margin-top: var(--u); }
+</style>

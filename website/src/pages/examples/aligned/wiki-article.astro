@@ -1,0 +1,375 @@
+---
+// After an encyclopedia wiki's article page: the sidebar of links, the tabs, a hatnote, an
+// infobox on the right, a numbered contents box, sections with footnotes you can hover, and the
+// categories at the foot. The article is on the square, and every line of it, every heading and
+// every box keeps to squares too; the infobox draws a square eight squares to the side.
+// The encyclopedia, Commonplace, is invented.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const REFS = [
+  'Euclid. <i>Elements</i>, Book I, Definition 22: “Of quadrilateral figures, a square is that which is both equilateral and right-angled.”',
+  'Euclid. <i>Elements</i>, Book I, Proposition 46: “On a given straight line to describe a square.”',
+  'Euclid. <i>Elements</i>, Book I, Proposition 47.',
+  'Lindemann, F. (1882). “Über die Zahl π”. <i>Mathematische Annalen</i> 20: 213–225.',
+  'Malevich, Kazimir. <i>Black Square</i>, 1915. Oil on linen. State Tretyakov Gallery, Moscow.',
+  'Albers, Josef (1963). <i>Interaction of Color</i>. New Haven: Yale University Press.',
+  'Dürer, Albrecht. <i>Melencolia I</i>, 1514. Engraving.',
+  'Swetz, Frank J. (2008). <i>Legacy of the Luoshu: The 4,000 Year Search for the Meaning of the Magic Square of Order Three</i>. A K Peters.',
+];
+const LO_SHU = [[4, 9, 2], [3, 5, 7], [8, 1, 6]];
+const DURER = [[16, 3, 2, 13], [5, 10, 11, 8], [9, 6, 7, 12], [4, 15, 14, 1]];
+const NAV = [
+  { title: null, links: ['Main page', 'Contents', 'Current events', 'Random article', 'About Commonplace', 'Contact us'] },
+  { title: 'Contribute', links: ['Help', 'Learn to edit', 'Community portal', 'Recent changes', 'Upload file'] },
+  { title: 'Tools', links: ['What links here', 'Related changes', 'Permanent link', 'Page information', 'Cite this page', 'Download as PDF'] },
+  { title: 'Languages', links: ['Dansk', 'Deutsch', 'Español', 'Français', 'Italiano', '日本語', 'Nederlands', 'Polski', 'Suomi', 'Svenska'] },
+];
+const cite = (n: number) => `<sup class="wk-ref"><a href="#cite-${n}" data-ref="${n}" aria-describedby="cite-${n}">[${n}]</a></sup>`;
+---
+<AlignedStudy slug="wiki-article" theme="light" scroll>
+  <main class="stage wk">
+    <a class="wk-logo" href="#top" aria-label="Commonplace, main page">
+      <svg viewBox="0 0 4 4" aria-hidden="true"><rect x="0.25" y="0.25" width="3.5" height="3.5" fill="none" stroke="currentColor" stroke-width="0.12" /><path d="M0.25 2H3.75M2 0.25V3.75" stroke="currentColor" stroke-width="0.06" /><rect x="0.25" y="0.25" width="1.75" height="1.75" fill="currentColor" /></svg>
+      <span><b>Commonplace</b>The Free Encyclopedia</span>
+    </a>
+
+    <form class="wk-search" role="search" onsubmit="return false">
+      <label class="wk-sr" for="wk-q">Search Commonplace</label>
+      <input id="wk-q" type="search" placeholder="Search Commonplace" />
+      <button type="submit">Search</button>
+    </form>
+
+    <nav class="wk-tabs" aria-label="Page views">
+      <ul><li class="on"><a href="#top" aria-current="page">Article</a></li><li><a href="#top">Talk</a></li></ul>
+      <ul><li class="on"><a href="#top">Read</a></li><li><a href="#top">Edit</a></li><li><a href="#top">View history</a></li></ul>
+    </nav>
+
+    <aside class="wk-side" aria-label="Site">
+      {NAV.map(group => (
+        <section>
+          {group.title && <h2>{group.title}</h2>}
+          <ul>{group.links.map(l => <li><a href="#top" lang={l === '日本語' ? 'ja' : undefined}>{l}</a></li>)}</ul>
+        </section>
+      ))}
+    </aside>
+
+    <article class="wk-article" id="top">
+      <h1>Square</h1>
+      <p class="wk-from">From Commonplace, the free encyclopedia</p>
+      <p class="wk-hat">This article is about the shape. For the open space in a town, see <a href="#top">Square (urban)</a>. For the unit of a layout grid, see <a href="#top">Square (typography)</a>.</p>
+
+      <table class="wk-infobox" aria-label="Square, in brief">
+        <caption>Square</caption>
+        <tbody>
+          <tr class="wk-pic"><td colspan="2">
+            <svg viewBox="0 0 12 10" aria-label="A square eight squares to the side, with its diagonals">
+              <defs><pattern id="wk-grid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0V1H0" fill="none" stroke="#dfe3e8" stroke-width="0.04" /></pattern></defs>
+              <rect width="12" height="10" fill="url(#wk-grid)" />
+              <rect x="2" y="1" width="8" height="8" fill="#eaf3ff" stroke="#202122" stroke-width="0.1" />
+              <path d="M2 1L10 9M10 1L2 9" stroke="#3366cc" stroke-width="0.06" stroke-dasharray="0.25 0.18" />
+              <path d="M2.5 9V8.5H2M9.5 1V1.5H10" fill="none" stroke="#202122" stroke-width="0.06" />
+              <text x="6" y="0.7" text-anchor="middle">a</text>
+              <text x="10.5" y="5.2">a</text>
+              <text x="6.4" y="4.7" fill="#3366cc">a√2</text>
+            </svg>
+            <span>A square of side <i>a</i>, drawn eight squares to the side</span>
+          </td></tr>
+          <tr><th>Type</th><td><a href="#top">Regular polygon</a></td></tr>
+          <tr><th>Edges and vertices</th><td>4</td></tr>
+          <tr><th>Schläfli symbol</th><td>{'{4}'}</td></tr>
+          <tr><th>Symmetry group</th><td><a href="#top">Dihedral</a> (D<sub>4</sub>), order 8</td></tr>
+          <tr><th>Internal angle</th><td>90°</td></tr>
+          <tr><th>Dual polygon</th><td>Self</td></tr>
+          <tr><th>Area</th><td><i>a</i>²</td></tr>
+          <tr><th>Perimeter</th><td>4<i>a</i></td></tr>
+          <tr><th>Diagonal</th><td><i>a</i>√2 ≈ 1.414<i>a</i></td></tr>
+          <tr><th>Properties</th><td>Convex, cyclic, equilateral, isogonal, isotoxal</td></tr>
+        </tbody>
+      </table>
+
+      <p>In <a href="#top">Euclidean geometry</a>, a <b>square</b> is a <a href="#top">regular</a> <a href="#top">quadrilateral</a>: it has four equal sides and four equal angles, each a <a href="#top">right angle</a> of 90 degrees.<Fragment set:html={cite(1)} /> It is the only regular polygon whose internal, external and central angles are all the same size, and the only one that <a href="#top">tiles the plane</a> by itself with four meeting at every corner.</p>
+      <p>A square with sides of length <i>a</i> has an <a href="#top">area</a> of <i>a</i>² and a <a href="#top">perimeter</a> of 4<i>a</i>. The word is the reason a number multiplied by itself is said to be <em>squared</em>: <i>a</i>² is the area of the square whose side is <i>a</i>.</p>
+
+      <nav class="wk-toc" aria-labelledby="wk-toc-title">
+        <h2 id="wk-toc-title">Contents</h2>
+        <ol>
+          <li><a href="#definitions">Definitions</a></li>
+          <li><a href="#properties">Properties</a>
+            <ol><li><a href="#diagonals">Diagonals</a></li><li><a href="#symmetry">Symmetry</a></li></ol>
+          </li>
+          <li><a href="#construction">Construction</a></li>
+          <li><a href="#circle">Squaring the circle</a></li>
+          <li><a href="#art">In art and design</a></li>
+          <li><a href="#magic">Magic squares</a></li>
+          <li><a href="#see">See also</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="definitions">Definitions</h2>
+      <p>Because it is the most regular of quadrilaterals, a square can be defined from any of its larger families. A quadrilateral is a square if and only if it is</p>
+      <ul>
+        <li>a <a href="#top">rectangle</a> with two adjacent sides equal;</li>
+        <li>a <a href="#top">rhombus</a> with one right angle;</li>
+        <li>a quadrilateral whose <a href="#top">diagonals</a> are equal, bisect each other and meet at right angles;</li>
+        <li>a quadrilateral that is both equilateral and right-angled, which is how Euclid put it.<Fragment set:html={cite(1)} /></li>
+      </ul>
+
+      <h2 id="properties">Properties</h2>
+      <h3 id="diagonals">Diagonals</h3>
+      <p>The two diagonals of a square are equal in length, cross at its centre at right angles and bisect one another, so each divides the square into two <a href="#top">isosceles right triangles</a>. A diagonal is √2 times the side, about 1.414 times as long. That √2 cannot be written as a fraction is traditionally the first <a href="#top">irrational number</a> anyone found, and it was found here.</p>
+      <h3 id="symmetry">Symmetry</h3>
+      <p>The square has the <a href="#top">dihedral symmetry</a> of order 8: four rotations, by 0, 90, 180 and 270 degrees, and four reflections, two across the diagonals and two across the lines joining the midpoints of opposite sides. No other quadrilateral has as many.</p>
+
+      <h2 id="construction">Construction</h2>
+      <p>A square can be drawn with <a href="#top">compass and straightedge</a> on any given segment. Euclid gives the method in the <i>Elements</i>, Book I, Proposition 46,<Fragment set:html={cite(2)} /> immediately before he uses three squares, one on each side of a right triangle, to prove the <a href="#top">Pythagorean theorem</a>.<Fragment set:html={cite(3)} /> On squared paper no construction is needed: count the same number of squares along and down.</p>
+
+      <h2 id="circle">Squaring the circle</h2>
+      <p>To square the circle is to construct, with compass and straightedge alone, a square with the same area as a given circle. The problem was posed in antiquity and resisted solution for more than two thousand years, until Ferdinand von Lindemann proved in 1882 that π is <a href="#top">transcendental</a>, which makes the construction impossible.<Fragment set:html={cite(4)} /> The phrase survives in English for attempting the impossible.</p>
+
+      <h2 id="art">In art and design</h2>
+      <figure class="wk-thumb">
+        <div class="wk-black" role="img" aria-label="A black square on a white ground"></div>
+        <figcaption>A black square on a white ground, the subject of a painting first shown in Petrograd in 1915</figcaption>
+      </figure>
+      <p>Kazimir Malevich’s <i>Black Square</i>, first exhibited in 1915, set a single black square on a white ground and was hung, at its first showing, across the corner of the room where an icon would usually hang.<Fragment set:html={cite(5)} /> Josef Albers painted squares nested inside squares for more than twenty-five years, until his death in 1976, to show how a colour changes with the colour around it.<Fragment set:html={cite(6)} /></p>
+      <p>In page and screen layout a grid of equal squares lets type, pictures and margins share one measure: lines of text are a square apart, and every box starts and ends on a line. This page is set that way.</p>
+
+      <h2 id="magic">Magic squares</h2>
+      <p>A <a href="#top">magic square</a> is a square array of numbers whose rows, columns and both diagonals add to the same total. The oldest known, the <a href="#top">Lo Shu</a> of ancient China, arranges the numbers 1 to 9 so that every line adds to 15.<Fragment set:html={cite(8)} /> Albrecht Dürer engraved a square of order four, with the magic constant 34, into <i>Melencolia I</i>; the middle of its bottom row gives the year, 1514.<Fragment set:html={cite(7)} /></p>
+      <div class="wk-magic">
+        <figure>
+          <table aria-label="The Lo Shu square">{LO_SHU.map(row => <tr>{row.map(n => <td>{n}</td>)}</tr>)}</table>
+          <figcaption>Lo Shu, sum 15</figcaption>
+        </figure>
+        <figure>
+          <table aria-label="Dürer's square">{DURER.map((row, r) => <tr>{row.map((n, c) => <td class={r === 3 && (c === 1 || c === 2) ? 'year' : undefined}>{n}</td>)}</tr>)}</table>
+          <figcaption>Dürer, 1514, sum 34</figcaption>
+        </figure>
+      </div>
+
+      <h2 id="see">See also</h2>
+      <ul class="wk-see">
+        <li><a href="#top">Cube</a></li><li><a href="#top">Rectangle</a></li><li><a href="#top">Square number</a></li><li><a href="#top">Square tiling</a></li><li><a href="#top">Squircle</a></li><li><a href="#top">Graph paper</a></li>
+      </ul>
+
+      <h2 id="references">References</h2>
+      <ol class="wk-refs">
+        {REFS.map((ref, i) => <li id={`cite-${i + 1}`}><Fragment set:html={ref} /></li>)}
+      </ol>
+
+      <div class="wk-cats">
+        <a href="#top">Categories</a>: <a href="#top">Quadrilaterals</a> <a href="#top">Regular polygons</a> <a href="#top">Elementary shapes</a> <a href="#top">Self-dual polytopes</a>
+      </div>
+      <p class="wk-edited">This page was last edited on 14 November 2026, at 09.41. Text is available under a free licence; additional terms may apply.</p>
+    </article>
+    <div class="wk-pop" id="pop" role="tooltip" hidden></div>
+  </main>
+</AlignedStudy>
+
+<script>
+  // Footnotes: pointing at or focusing a reference shows it in a box beside the number.
+  const pop = document.getElementById('pop')!;
+  const stage = document.querySelector<HTMLElement>('.wk')!;
+  let hideTimer = 0;
+  const show = (a: HTMLAnchorElement) => {
+    clearTimeout(hideTimer);
+    const ref = document.getElementById(`cite-${a.dataset.ref}`);
+    if (!ref) return;
+    pop.innerHTML = `<b>${a.dataset.ref}</b> ${ref.innerHTML}`;
+    pop.hidden = false;
+    const box = a.getBoundingClientRect();
+    const base = stage.getBoundingClientRect();
+    const wide = pop.offsetWidth;
+    const left = Math.min(Math.max(0, box.left - base.left - 20), stage.clientWidth - wide - 20);
+    pop.style.left = `${left}px`;
+    pop.style.top = `${box.bottom - base.top + 6}px`;
+  };
+  const hide = () => { hideTimer = window.setTimeout(() => { pop.hidden = true; }, 120); };
+  document.querySelectorAll<HTMLAnchorElement>('.wk-ref a').forEach(a => {
+    a.addEventListener('pointerenter', () => show(a));
+    a.addEventListener('pointerleave', hide);
+    a.addEventListener('focus', () => show(a));
+    a.addEventListener('blur', hide);
+  });
+  pop.addEventListener('pointerenter', () => clearTimeout(hideTimer));
+  pop.addEventListener('pointerleave', hide);
+</script>
+
+<style is:global>
+  html { background: #f6f6f6; }
+  .wk {
+    --ink: #202122;
+    --link: #3366cc;
+    --rule: #a2a9b1;
+    --faint: #eaecf0;
+    --panel: #f8f9fa;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(var(--u), auto);
+    height: auto !important;
+    min-height: var(--high);
+    padding-bottom: calc(3 * var(--u));
+    box-sizing: border-box;
+    color: var(--ink);
+    font-family: var(--typeface-regular);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background: #f6f6f6;
+  }
+  .wk a { color: var(--link); text-decoration: none; }
+  .wk a:hover { text-decoration: underline; }
+  .wk a:focus-visible, .wk button:focus-visible, .wk input:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+  .wk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  /* Header: the logo over the sidebar, the search on the right, the tabs along the article's top. */
+  .wk-logo { grid-column: 2 / span 10; grid-row: 2 / span 4; display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; gap: calc(var(--u) / 2); align-items: center; color: var(--ink) !important; }
+  .wk-logo:hover { text-decoration: none !important; }
+  .wk-logo svg { width: calc(4 * var(--u)); height: calc(4 * var(--u)); }
+  .wk-logo span { font-family: Georgia, 'Times New Roman', serif; font-size: calc(12px * var(--sf)); line-height: var(--u); }
+  .wk-logo b { display: block; font-weight: 400; font-size: calc(19px * var(--sf)); letter-spacing: 0.03em; }
+  .wk-search { grid-column: -18 / -3; grid-row: 2 / span 2; display: grid; grid-template-columns: 1fr calc(4 * var(--u)); }
+  .wk-search input {
+    min-width: 0;
+    box-sizing: border-box;
+    height: calc(2 * var(--u));
+    padding: 0 calc(var(--u) / 2);
+    border: 0;
+    border-radius: 2px 0 0 2px;
+    box-shadow: inset 0 0 0 1px var(--rule);
+    background: #fff;
+    font: inherit;
+    color: var(--ink);
+  }
+  .wk-search button {
+    all: unset;
+    box-sizing: border-box;
+    height: calc(2 * var(--u));
+    text-align: center;
+    border-radius: 0 2px 2px 0;
+    box-shadow: inset 0 0 0 1px var(--rule);
+    background: var(--panel);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .wk-tabs { grid-column: 13 / -2; grid-row: 4 / span 2; display: flex; justify-content: space-between; align-items: end; }
+  .wk-tabs ul { display: flex; margin: 0; padding: 0; list-style: none; }
+  .wk-tabs li { height: calc(2 * var(--u)); padding: 0 calc(var(--u) / 2); line-height: calc(2 * var(--u)); background: linear-gradient(#fff0, #fff); box-shadow: inset -1px 0 0 var(--faint); font-size: calc(13px * var(--sf)); }
+  .wk-tabs li.on { background: #fff; }
+  .wk-tabs li.on a { color: var(--ink); }
+
+  /* Sidebar. */
+  .wk-side { grid-column: 2 / span 10; grid-row: 6 / span 2; align-self: start; margin-top: calc(2 * var(--u)); font-size: calc(13px * var(--sf)); }
+  .wk-side section + section { margin-top: var(--u); }
+  .wk-side h2 { margin: 0; height: var(--u); font: inherit; color: #54595d; box-shadow: inset 0 -1px 0 #c8ccd1; }
+  .wk-side ul { margin: 0; padding: 0; list-style: none; }
+
+  /* The article: white, framed on three sides, its text in a measure of about seventy characters. */
+  .wk-article {
+    grid-column: 13 / -2;
+    grid-row: 6 / span 2;
+    align-self: start;
+    padding: var(--u) calc(2 * var(--u)) calc(2 * var(--u));
+    background: #fff;
+    box-shadow: -1px 0 0 var(--rule), 0 -1px 0 var(--rule);
+    box-sizing: border-box;
+    min-height: calc(var(--high) - 7 * var(--u));
+  }
+  .wk-article::after { content: ''; display: table; clear: both; }
+  .wk-article h1 {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: calc(32px * var(--sf));
+    line-height: calc(2 * var(--u));
+    box-shadow: inset 0 -1px 0 var(--rule);
+  }
+  .wk-from { margin: 0 0 var(--u); font-size: calc(12px * var(--sf)); color: #54595d; }
+  .wk-hat { margin: 0 0 var(--u); padding-left: calc(2 * var(--u)); font-style: italic; }
+  .wk-article p, .wk-article li { max-width: calc(36 * var(--u)); }
+  .wk-article > p { margin: 0 0 var(--u); }
+  .wk-article h2 {
+    clear: none;
+    margin: var(--u) 0 var(--u);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: calc(24px * var(--sf));
+    line-height: calc(2 * var(--u));
+    box-shadow: inset 0 -1px 0 var(--rule);
+    overflow: hidden;
+  }
+  .wk-article h3 { margin: 0; font-size: calc(14px * var(--sf)); font-weight: 700; line-height: var(--u); }
+  .wk-article > ul { margin: 0 0 var(--u); padding-left: calc(1.5 * var(--u)); }
+  .wk-article sub, .wk-article sup { line-height: 0; }
+  .wk-ref { font-size: 0.72em; line-height: 0; vertical-align: 0.5em; }
+  .wk-ref a { padding: 0 1px; }
+
+  /* Infobox: on the right, sixteen squares wide, a row a square. */
+  .wk-infobox {
+    float: right;
+    width: calc(16 * var(--u));
+    margin: 0 0 var(--u) var(--u);
+    border-collapse: collapse;
+    background: var(--panel);
+    outline: 1px solid var(--rule);
+    outline-offset: -1px;
+    font-size: calc(12px * var(--sf));
+  }
+  .wk-infobox caption { height: calc(2 * var(--u)); font-family: Georgia, serif; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; background: #cfe0f7; outline: 1px solid var(--rule); outline-offset: -1px; caption-side: top; }
+  .wk-infobox th, .wk-infobox td { padding: 0 calc(var(--u) / 2); vertical-align: top; text-align: left; line-height: var(--u); }
+  .wk-infobox th { width: calc(6 * var(--u)); font-weight: 700; }
+  .wk-pic td { padding: calc(var(--u) / 2) calc(var(--u) / 2) var(--u); text-align: center; }
+  .wk-pic svg { display: block; width: calc(12 * var(--u)); height: calc(10 * var(--u)); margin: 0 auto calc(var(--u) / 2); background: #fff; }
+  .wk-pic svg text { font: italic 0.6px Georgia, serif; fill: var(--ink); }
+  .wk-pic span { display: block; }
+
+  .wk-toc { display: inline-block; margin: 0 0 var(--u); padding: calc(var(--u) / 2) var(--u) calc(var(--u) / 2) calc(var(--u) / 2); background: var(--panel); outline: 1px solid var(--rule); outline-offset: -1px; font-size: calc(13px * var(--sf)); }
+  .wk-toc h2 { margin: 0 !important; text-align: center; font: 700 calc(13px * var(--sf)) / var(--u) var(--typeface-regular) !important; box-shadow: none !important; }
+  .wk-toc ol { margin: 0; padding-left: calc(1.5 * var(--u)); counter-reset: none; }
+  .wk-toc ol ol { padding-left: var(--u); list-style: decimal; }
+
+  .wk-thumb { float: right; clear: right; width: calc(12 * var(--u)); margin: 0 0 var(--u) var(--u); padding: calc(var(--u) / 2); background: var(--panel); outline: 1px solid #c8ccd1; outline-offset: -1px; box-sizing: border-box; font-size: calc(12px * var(--sf)); }
+  .wk-black { width: 100%; aspect-ratio: 1; margin-bottom: calc(var(--u) / 2); background: #fff; box-shadow: inset 0 0 0 calc(var(--u) * 1.5) #f2efe6; position: relative; }
+  .wk-black::after { content: ''; position: absolute; inset: calc(var(--u) * 1.5); background: #15120f; }
+
+  .wk-magic { display: flex; flex-wrap: wrap; gap: var(--u) calc(2 * var(--u)); margin: 0 0 var(--u); }
+  .wk-magic figure { margin: 0; font-size: calc(12px * var(--sf)); }
+  .wk-magic table { border-collapse: collapse; margin-bottom: calc(var(--u) / 2); }
+  .wk-magic td { width: calc(2 * var(--u)); height: calc(2 * var(--u)); padding: 0; text-align: center; font-family: Georgia, serif; font-size: calc(18px * var(--sf)); line-height: calc(2 * var(--u)); box-shadow: inset 0 0 0 0.5px var(--rule); background: #fff; font-variant-numeric: lining-nums tabular-nums; }
+  .wk-magic td.year { background: #fff3c4; }
+  .wk-magic figcaption { height: calc(var(--u) / 2 + var(--u)); }
+
+  .wk-see { column-count: 2; max-width: calc(24 * var(--u)); }
+  .wk-refs { margin: 0 0 var(--u); padding-left: calc(1.5 * var(--u)); font-size: calc(13px * var(--sf)); }
+  .wk-refs li:target { background: #eaf3ff; }
+  .wk-cats { clear: both; margin: calc(2 * var(--u)) 0 var(--u); padding: calc(var(--u) / 2); background: var(--panel); outline: 1px solid var(--rule); outline-offset: -1px; font-size: calc(13px * var(--sf)); }
+  .wk-cats a + a:not(:first-child) { padding-left: calc(var(--u) / 2); margin-left: calc(var(--u) / 4); box-shadow: inset 1px 0 0 var(--rule); }
+  .wk-cats a:nth-child(2) { box-shadow: none !important; padding-left: calc(var(--u) / 4) !important; }
+  .wk-edited { margin: 0 !important; font-size: calc(12px * var(--sf)); color: #54595d; }
+
+  .wk-pop {
+    position: absolute;
+    z-index: 5;
+    width: calc(18 * var(--u));
+    max-width: calc(100% - 2 * var(--u));
+    padding: calc(var(--u) / 2) var(--u);
+    box-sizing: border-box;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--rule), 0 calc(var(--u) / 5) calc(var(--u) / 2) rgb(0 0 0 / 0.12);
+    font-size: calc(13px * var(--sf));
+  }
+  .wk-pop b { color: var(--link); margin-right: calc(var(--u) / 4); }
+
+  /* Narrow: no sidebar, the infobox across the article, as the encyclopedia shows on a phone. */
+  :root[data-narrow] .wk { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .wk-logo { grid-column: 2 / -2; grid-row: 2 / span 3; }
+  :root[data-narrow] .wk-search { grid-column: 2 / -2; grid-row: 5 / span 2; }
+  :root[data-narrow] .wk-tabs { grid-column: 1 / -1; grid-row: 8 / span 2; padding: 0 calc(var(--u) / 2); }
+  :root[data-narrow] .wk-side { display: none; }
+  :root[data-narrow] .wk-article { grid-column: 1 / -1; grid-row: 10 / span 1; padding: var(--u); min-height: 0; }
+  :root[data-narrow] .wk-infobox, :root[data-narrow] .wk-thumb { float: none; width: 100%; margin: 0 0 var(--u); }
+  :root[data-narrow] .wk-tabs ul:last-child li:last-child { display: none; }
+  :root[data-narrow] .wk-see { column-count: 1; }
+  :root[data-narrow] .wk-pic svg { width: calc(10 * var(--u)); height: auto; aspect-ratio: 12 / 10; }
+  :root[data-narrow] .wk-infobox th { width: calc(5 * var(--u)); }
+  :root[data-narrow] .wk-hat { padding-left: var(--u); }
+</style>

@@ -1,0 +1,362 @@
+---
+// After a drawer pulled from a museum's mineral cabinet, seen from above: white card trays of whole
+// squares packed edge to edge, each with its specimen drawn as faceted crystals and a typed label.
+// The trays are fitted to whatever drawer the window makes, row by row, as a curator fills a drawer;
+// hover or focus a tray and its label turns over to the formula, hardness and crystal system.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="mineral-drawer" theme="light">
+  <main class="stage mineral" id="mineral">
+    <div class="mineral-cabinet" aria-hidden="true"></div>
+    <div class="mineral-floor" id="floor" aria-hidden="true"></div>
+    <h1 class="mineral-sr">Mineral cabinet C, drawer 14: minerals of the northern orefield</h1>
+    <ul class="mineral-trays" id="trays" aria-label="Specimens in the drawer"></ul>
+    <div class="mineral-front" id="front">
+      <p class="mineral-holder"><span>Cabinet C &nbsp;Drawer 14</span>Minerals of the northern orefield</p>
+      <span class="mineral-pull" aria-hidden="true"></span>
+    </div>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type Palette = [string, string, string];
+  type Specimen = { name: string; formula: string; hardness: string; system: string; places: string[]; palette: Palette; draw: string };
+  const SPECIMENS: Specimen[] = [
+    { name: 'Fluorite', formula: 'CaF₂', hardness: '4', system: 'cubic', places: ['Weardale', 'Rogerley Mine'], palette: ['#b8a2e0', '#7b5cb8', '#4a3278'], draw: 'cubes' },
+    { name: 'Quartz', formula: 'SiO₂', hardness: '7', system: 'trigonal', places: ['Alston Moor', 'Dauphiné'], palette: ['#ffffff', '#dfe3e6', '#aab2b8'], draw: 'points' },
+    { name: 'Galena', formula: 'PbS', hardness: '2½', system: 'cubic', places: ['Greenside', 'Leadhills'], palette: ['#c3c9d2', '#7c8592', '#454b55'], draw: 'cubes' },
+    { name: 'Amethyst', formula: 'SiO₂', hardness: '7', system: 'trigonal', places: ['Guanajuato', 'Thunder Bay'], palette: ['#d6b8ec', '#9a62c4', '#5e2f86'], draw: 'points' },
+    { name: 'Pyrite', formula: 'FeS₂', hardness: '6½', system: 'cubic', places: ['Navajún', 'Rio Marina'], palette: ['#f2dc8a', '#c9a53e', '#80651c'], draw: 'cubes' },
+    { name: 'Malachite', formula: 'Cu₂CO₃(OH)₂', hardness: '4', system: 'monoclinic', places: ['Katanga', 'Burra Burra'], palette: ['#6fd09a', '#1f8a55', '#0c4f30'], draw: 'grapes' },
+    { name: 'Calcite', formula: 'CaCO₃', hardness: '3', system: 'trigonal', places: ['Egremont', 'Elmwood'], palette: ['#fbe3b0', '#e2b25e', '#a87428'], draw: 'rhomb' },
+    { name: 'Garnet', formula: 'Fe₃Al₂(SiO₄)₃', hardness: '7½', system: 'cubic', places: ['Glen Clova', 'Roxbury'], palette: ['#d9566a', '#92202f', '#520c17'], draw: 'dodeca' },
+    { name: 'Beryl', formula: 'Be₃Al₂Si₆O₁₈', hardness: '8', system: 'hexagonal', places: ['Mourne Mts', 'Erongo'], palette: ['#c3ecea', '#6bbcbc', '#2d7f86'], draw: 'prism' },
+    { name: 'Sulphur', formula: 'S', hardness: '2', system: 'orthorhombic', places: ['Agrigento', 'Vulcano'], palette: ['#fff59a', '#f0d22a', '#a68b0a'], draw: 'bipyramid' },
+    { name: 'Tourmaline', formula: 'NaFe₃Al₆(BO₃)₃Si₆O₁₈', hardness: '7', system: 'trigonal', places: ['Lands End', 'Erongo'], palette: ['#5c6066', '#2c2f33', '#101214'], draw: 'needles' },
+    { name: 'Halite', formula: 'NaCl', hardness: '2½', system: 'cubic', places: ['Wieliczka', 'Searles Lake'], palette: ['#fdf1f1', '#f0cfd2', '#c99aa1'], draw: 'cubes' },
+    { name: 'Hematite', formula: 'Fe₂O₃', hardness: '6', system: 'trigonal', places: ['Florence Mine', 'Ulverston'], palette: ['#8d7c80', '#4e3c40', '#2a1c1e'], draw: 'grapes' },
+    { name: 'Stibnite', formula: 'Sb₂S₃', hardness: '2', system: 'orthorhombic', places: ['Ichinokawa', 'Baia Sprie'], palette: ['#d4d8de', '#8e959e', '#4c525a'], draw: 'needles' },
+    { name: 'Azurite', formula: 'Cu₃(CO₃)₂(OH)₂', hardness: '3½', system: 'monoclinic', places: ['Tsumeb', 'Chessy'], palette: ['#6f9cf0', '#2853b8', '#122c70'], draw: 'bipyramid' },
+    { name: 'Smoky quartz', formula: 'SiO₂', hardness: '7', system: 'trigonal', places: ['Cairngorm', 'Göscheneralp'], palette: ['#b9a493', '#7a6252', '#3d2e24'], draw: 'points' },
+    { name: 'Vanadinite', formula: 'Pb₅(VO₄)₃Cl', hardness: '3', system: 'hexagonal', places: ['Mibladen', 'Wanlockhead'], palette: ['#f08a5a', '#c4441c', '#7a220a'], draw: 'prism' },
+    { name: 'Muscovite', formula: 'KAl₂(AlSi₃O₁₀)(OH)₂', hardness: '2½', system: 'monoclinic', places: ['Minas Gerais', 'Glen Lyon'], palette: ['#f3efe4', '#cfc6b0', '#968a6e'], draw: 'plates' },
+    { name: 'Topaz', formula: 'Al₂SiO₄(F,OH)₂', hardness: '8', system: 'orthorhombic', places: ['Ouro Preto', 'Mourne Mts'], palette: ['#f9d3a3', '#df9a52', '#9a5a1c'], draw: 'prism' },
+    { name: 'Rose quartz', formula: 'SiO₂', hardness: '7', system: 'trigonal', places: ['Madagascar', 'Custer'], palette: ['#fbd8de', '#eda7b4', '#bd6f80'], draw: 'lump' },
+    { name: 'Cinnabar', formula: 'HgS', hardness: '2½', system: 'trigonal', places: ['Almadén', 'Hunan'], palette: ['#f2697a', '#c21f30', '#6e0a14'], draw: 'rhomb' },
+    { name: 'Baryte', formula: 'BaSO₄', hardness: '3', system: 'orthorhombic', places: ['Frizington', 'Dreislar'], palette: ['#f6f2e6', '#d8cfb6', '#9f9474'], draw: 'plates' },
+  ];
+  const LOANS = ['On loan to the Ludlow Museum until 2027', 'Removed for photography, 3 Nov.', 'Out with the conservator, see file'];
+
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const f = (n: number) => +n.toFixed(3);
+  const poly = (points: number[][], fill: string, extra = '') => `<path d="M${points.map(([x, y]) => `${f(x)} ${f(y)}`).join(' L')} Z" fill="${fill}" ${extra}/>`;
+  const EDGE = 'stroke="rgba(0,0,0,0.28)" stroke-width="0.04" stroke-linejoin="round"';
+
+  /** A crystal drawn in a box of w × h squares, its base at the foot; light from the upper left. */
+  const draw: Record<string, (w: number, h: number, p: Palette, r: () => number) => string> = {
+    points(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 3 + Math.floor(r() * 3);
+      for (let k = 0; k < count; k++) {
+        const t = (k + 0.5) / count;
+        const width = Math.min(w, h) * (0.18 + r() * 0.12);
+        const length = h * (0.5 + r() * 0.4);
+        const lean = (t - 0.5) * 0.9 + (r() - 0.5) * 0.3;
+        const bx = w * (0.25 + t * 0.5), by = h - 0.3;
+        const ux = Math.sin(lean), uy = -Math.cos(lean), nx = -uy, ny = ux;
+        const at = (s: number, n: number) => [bx + ux * s + nx * n, by + uy * s + ny * n];
+        const tip = length * 0.78;
+        out += poly([at(0, -width / 2), at(tip, -width / 2), at(length, 0), at(tip, 0), at(0, 0)], light, EDGE);
+        out += poly([at(0, 0), at(tip, 0), at(length, 0), at(tip, width / 2), at(0, width / 2)], mid, EDGE);
+        out += poly([at(0, width * 0.2), at(tip, width * 0.2), at(tip, width / 2), at(0, width / 2)], dark, 'opacity="0.5"');
+      }
+      return out;
+    },
+    cubes(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 2 + Math.floor(r() * 3);
+      for (let k = 0; k < count; k++) {
+        const s = Math.min(w, h) * (0.22 + r() * 0.16);
+        const cx = w * (0.3 + r() * 0.4), cy = h * (0.45 + r() * 0.3);
+        const d = s * 0.5;
+        out += poly([[cx - s / 2, cy - s / 2], [cx - s / 2 + d, cy - s / 2 - d * 0.6], [cx + s / 2 + d, cy - s / 2 - d * 0.6], [cx + s / 2, cy - s / 2]], light, EDGE);
+        out += poly([[cx - s / 2, cy - s / 2], [cx + s / 2, cy - s / 2], [cx + s / 2, cy + s / 2], [cx - s / 2, cy + s / 2]], mid, EDGE);
+        out += poly([[cx + s / 2, cy - s / 2], [cx + s / 2 + d, cy - s / 2 - d * 0.6], [cx + s / 2 + d, cy + s / 2 - d * 0.6], [cx + s / 2, cy + s / 2]], dark, EDGE);
+        // Striations across the front face, as on pyrite and fluorite's growth steps.
+        out += `<path d="M${f(cx - s / 2)} ${f(cy)} H${f(cx + s / 2)} M${f(cx - s / 2)} ${f(cy + s / 4)} H${f(cx + s / 2)}" stroke="${light}" stroke-width="0.03" opacity="0.6"/>`;
+      }
+      return out;
+    },
+    rhomb(w, h, [light, mid, dark], r) {
+      const s = Math.min(w, h) * (0.45 + r() * 0.15);
+      const cx = w / 2, cy = h * 0.55, k = s * 0.35;
+      return poly([[cx - s / 2 + k, cy - s / 2], [cx + s / 2 + k, cy - s / 2 - k * 0.3], [cx + s / 2, cy], [cx - s / 2, cy + k * 0.3]], light, EDGE)
+        + poly([[cx - s / 2, cy + k * 0.3], [cx + s / 2, cy], [cx + s / 2 - k, cy + s / 2], [cx - s / 2 - k, cy + s / 2 + k * 0.3]], mid, EDGE)
+        + poly([[cx + s / 2, cy], [cx + s / 2 + k, cy - s / 2 - k * 0.3], [cx + s / 2 + k * 0.4, cy + s / 2 - k * 0.6], [cx + s / 2 - k, cy + s / 2]], dark, EDGE);
+    },
+    dodeca(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 1 + Math.floor(r() * 3);
+      for (let k = 0; k < count; k++) {
+        const s = Math.min(w, h) * (0.16 + r() * 0.14) * (k === 0 ? 1.4 : 1);
+        const cx = w * (0.3 + r() * 0.4), cy = h * (0.4 + r() * 0.3);
+        const hex = Array.from({ length: 6 }, (_, i) => [cx + Math.cos(Math.PI / 6 + (i * Math.PI) / 3) * s, cy + Math.sin(Math.PI / 6 + (i * Math.PI) / 3) * s]);
+        const c = [cx - s * 0.1, cy - s * 0.1];
+        const tones = [mid, dark, dark, mid, light, light];
+        hex.forEach((point, i) => { out += poly([c, point, hex[(i + 1) % 6]], tones[i], EDGE); });
+      }
+      return out;
+    },
+    prism(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 1 + Math.floor(r() * 3);
+      for (let k = 0; k < count; k++) {
+        const width = Math.min(w * 0.3, h * 0.35) * (0.7 + r() * 0.4);
+        const length = h * (0.5 + r() * 0.35);
+        const x = w * (0.3 + k * 0.2 + r() * 0.1), base = h - 0.3;
+        const top = base - length;
+        const cap = width * 0.25;
+        out += poly([[x - width / 2, top + cap], [x - width / 6, top], [x + width / 3, top], [x + width / 2, top + cap], [x, top + cap * 1.6]], light, EDGE);
+        out += poly([[x - width / 2, top + cap], [x, top + cap * 1.6], [x, base], [x - width / 2, base - cap * 0.6]], mid, EDGE);
+        out += poly([[x, top + cap * 1.6], [x + width / 2, top + cap], [x + width / 2, base - cap * 0.6], [x, base]], dark, EDGE);
+      }
+      return out;
+    },
+    bipyramid(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 2 + Math.floor(r() * 2);
+      for (let k = 0; k < count; k++) {
+        const s = Math.min(w, h) * (0.2 + r() * 0.12) * (k === 0 ? 1.3 : 1);
+        const cx = w * (0.3 + r() * 0.4), cy = h * (0.4 + r() * 0.3);
+        const top = [cx, cy - s * 1.3], bottom = [cx, cy + s * 1.3], left = [cx - s, cy], right = [cx + s, cy], front = [cx + s * 0.2, cy + s * 0.15];
+        out += poly([top, left, front], light, EDGE) + poly([top, front, right], mid, EDGE) + poly([bottom, left, front], mid, EDGE) + poly([bottom, front, right], dark, EDGE);
+      }
+      return out;
+    },
+    needles(w, h, [light, mid, dark], r) {
+      let out = '';
+      const bx = w / 2, by = h - 0.4;
+      const count = 9 + Math.floor(r() * 6);
+      for (let k = 0; k < count; k++) {
+        const angle = -Math.PI / 2 + (r() - 0.5) * 1.8;
+        // Long as the tray allows in that direction, never over its walls.
+        const room = Math.min((w / 2 - 0.3) / Math.max(0.05, Math.abs(Math.cos(angle))), (by - 0.3) / Math.max(0.05, Math.abs(Math.sin(angle))));
+        const length = Math.min(room, h * (0.45 + r() * 0.45));
+        const width = 0.12 + r() * 0.16;
+        const ex = bx + Math.cos(angle) * length, ey = by + Math.sin(angle) * length;
+        const nx = -Math.sin(angle) * width, ny = Math.cos(angle) * width;
+        out += poly([[bx - nx, by - ny], [ex - nx, ey - ny], [ex, ey], [bx, by]], k % 3 ? mid : light);
+        out += poly([[bx, by], [ex, ey], [ex + nx, ey + ny], [bx + nx, by + ny]], dark);
+      }
+      return out;
+    },
+    grapes(w, h, [light, mid, dark], r) {
+      let out = '';
+      const count = 6 + Math.floor(r() * 6);
+      for (let k = 0; k < count; k++) {
+        const rad = Math.min(w, h) * (0.1 + r() * 0.12);
+        const cx = w * (0.22 + r() * 0.56), cy = h * (0.35 + r() * 0.45);
+        out += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rad)}" fill="${mid}" ${EDGE}/>`;
+        out += `<circle cx="${f(cx + rad * 0.15)}" cy="${f(cy + rad * 0.15)}" r="${f(rad * 0.62)}" fill="none" stroke="${dark}" stroke-width="0.05" opacity="0.6"/>`;
+        out += `<circle cx="${f(cx - rad * 0.35)}" cy="${f(cy - rad * 0.35)}" r="${f(rad * 0.22)}" fill="${light}" opacity="0.85"/>`;
+      }
+      return out;
+    },
+    plates(w, h, [light, mid, dark], r) {
+      let out = '';
+      const s = Math.min(w, h) * 0.38;
+      for (let k = 0; k < 5; k++) {
+        const cx = w / 2 + (r() - 0.5) * 0.4, cy = h * 0.62 - k * 0.22;
+        const hex = Array.from({ length: 6 }, (_, i) => [cx + Math.cos((i * Math.PI) / 3) * s, cy + Math.sin((i * Math.PI) / 3) * s * 0.45]);
+        out += poly(hex.map(([x, y]) => [x, y + 0.18]), dark) + poly(hex, k === 4 ? light : mid, EDGE);
+      }
+      return out;
+    },
+    lump(w, h, [light, mid, dark], r) {
+      const cx = w / 2, cy = h * 0.58, s = Math.min(w, h) * 0.36;
+      const pts = Array.from({ length: 9 }, (_, i) => { const a = (i / 9) * Math.PI * 2; const k = 0.75 + r() * 0.35; return [cx + Math.cos(a) * s * k * 1.2, cy + Math.sin(a) * s * k * 0.8]; });
+      const c = [cx - s * 0.15, cy - s * 0.2];
+      return pts.map((point, i) => poly([c, point, pts[(i + 1) % 9]], i < 3 ? mid : i < 6 ? dark : light, EDGE)).join('');
+    },
+  };
+
+  /** Rock the crystals grew on: a flat grey-brown piece at the foot of most trays. */
+  function matrix(w: number, h: number, r: () => number) {
+    const pts = [[w * 0.12, h - 0.2], [w * 0.18, h - 0.9 - r() * 0.4], [w * 0.4, h - 1.2 - r() * 0.3], [w * 0.65, h - 1 - r() * 0.4], [w * 0.88, h - 0.7], [w * 0.9, h - 0.2]];
+    return poly(pts, '#8a8279', EDGE) + poly(pts.map(([x, y]) => [x, y + 0.25]).slice(0, 4).concat([[w * 0.65, h - 0.2]]), '#6b645c', 'opacity="0.6"');
+  }
+
+  const list = document.getElementById('trays')!;
+  const front = document.getElementById('front')!;
+  const floor = document.getElementById('floor')!;
+
+  onSquares(({ across, down, narrow }) => {
+    // The drawer's floor, inside its sides; the front below it.
+    const x0 = narrow ? 2 : 3, W = narrow ? across - 2 : across - 4;
+    const y0 = 3, H = narrow ? 36 : down - 8;
+    floor.style.gridColumn = `${x0 - 1} / span ${W + 2}`;
+    floor.style.gridRow = `${y0 - 1} / span ${H + 2}`;
+    front.style.gridColumn = '1 / -1';
+    front.style.gridRow = `${y0 + H + 1} / span ${narrow ? 4 : down - (y0 + H)}`;
+
+    // Fill the floor row by row; the last tray of a row takes what is left of the row, the last
+    // row what is left of the floor, so the trays always close exactly.
+    const random = seeded(W * 31 + H);
+    const rows: number[] = [];
+    let left = H;
+    while (left > 0) {
+      let height = narrow ? 7 : 6 + Math.floor(random() * 3);
+      if (left - height < 6) height = left;
+      rows.push(height);
+      left -= height;
+    }
+    let html = '';
+    let y = y0;
+    let index = 0;
+    const order = seeded(7);
+    const shuffled = [...SPECIMENS].sort(() => order() - 0.5);
+    rows.forEach(height => {
+      let x = x0;
+      while (x < x0 + W) {
+        let width = narrow ? 6 : 5 + Math.floor(random() * 5);
+        if (x0 + W - (x + width) < 5) width = x0 + W - x;
+        const pick = shuffled[index % shuffled.length];
+        const place = pick.places[Math.floor(index / shuffled.length) % pick.places.length];
+        const number = `M.${1880 + ((index * 37) % 130)}.${String(100 + ((index * 53) % 900))}`;
+        const loan = index % 17 === 9;
+        const ch = height - 3;
+        const r = seeded(index * 101 + 3);
+        if (loan) {
+          html += `<li class="mineral-tray mineral-empty" style="grid-column:${x} / span ${width};grid-row:${y} / span ${height}" tabindex="0"><p class="mineral-slip">${LOANS[index % LOANS.length]}</p><p class="mineral-label"><span class="mineral-a"><b>${pick.name}</b></span><span class="mineral-b">${number}</span></p></li>`;
+        } else {
+          const art = (pick.draw === 'grapes' || pick.draw === 'needles' || pick.draw === 'lump' || pick.draw === 'plates' ? '' : matrix(width - 1, ch, r)) + draw[pick.draw](width - 1, ch, pick.palette, r);
+          html += `<li class="mineral-tray" style="grid-column:${x} / span ${width};grid-row:${y} / span ${height}" tabindex="0" aria-label="${pick.name}, ${number}, ${place}; ${pick.formula}, hardness ${pick.hardness}, ${pick.system}">`
+            + `<svg viewBox="0 0 ${width - 1} ${ch}" aria-hidden="true">${art}</svg>`
+            + `<p class="mineral-label" aria-hidden="true"><span class="mineral-a"><b>${pick.name}</b></span><span class="mineral-a mineral-number">${number}</span><span class="mineral-b">${pick.formula}&ensp;H ${pick.hardness}</span><span class="mineral-b mineral-place">${place}</span></p></li>`;
+        }
+        x += width;
+        index++;
+      }
+      y += height;
+    });
+    list.innerHTML = html;
+  });
+</script>
+
+<style is:global>
+  html { background: #3a2718; }
+  .mineral {
+    --oak: #b5854f;
+    --oak-dark: #8a5d31;
+    --card: #f7f5ef;
+    --ink: #2b2a28;
+    background: #3a2718;
+    color: var(--ink);
+    font-family: 'American Typewriter', 'Courier New', monospace;
+  }
+  .mineral p { margin: 0; }
+  .mineral-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+  .mineral-cabinet { grid-column: 1 / -1; grid-row: 1 / -1; background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 calc(var(--u) * 0.1), transparent 0 calc(var(--u) * 1.3)), #3a2718; }
+
+  /* The drawer: its sides a square thick, an oak floor with grain under the trays. */
+  .mineral-floor {
+    background:
+      repeating-linear-gradient(0deg, rgba(90, 55, 20, 0.12) 0 1px, transparent 1px calc(var(--u) * 0.35)),
+      repeating-linear-gradient(0deg, rgba(255, 230, 190, 0.08) 0 calc(var(--u) * 0.6), transparent 0 calc(var(--u) * 1.7)),
+      var(--oak);
+    box-shadow: inset 0 0 0 var(--u) #9a6a3a, inset 0 0 0 calc(var(--u) + 2px) #6e4622, inset 0 calc(var(--u) * 1.6) calc(var(--u) * 0.8) rgba(40, 20, 5, 0.35);
+  }
+  .mineral-trays { display: contents; }
+
+  /* A tray: white card with low walls, the specimen above its label. */
+  .mineral-tray {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: 1fr calc(2 * var(--u));
+    padding: calc(var(--u) / 2);
+    box-sizing: border-box;
+    list-style: none;
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px #c9c4b6, inset calc(var(--u) * 0.18) calc(var(--u) * 0.18) 0 #e2ddcf, inset calc(var(--u) * -0.12) calc(var(--u) * -0.12) 0 #fff, 0 0 0 1px rgba(60, 35, 10, 0.35);
+    outline: none;
+    cursor: default;
+  }
+  .mineral-tray svg { width: 100%; height: 100%; overflow: hidden; }
+  .mineral-tray:focus-visible { box-shadow: inset 0 0 0 calc(var(--u) * 0.15) #1b4fa0, 0 0 0 1px rgba(60, 35, 10, 0.35); }
+
+  /* The label: typed on a slip, two lines; it turns over to the mineral's data. */
+  .mineral-label {
+    display: grid;
+    grid-template-rows: var(--u) var(--u);
+    font-size: calc(11px * var(--sf));
+    line-height: var(--u);
+    padding: 0 calc(var(--u) * 0.25);
+    background: #fffdf7;
+    border-top: 1px solid #d9d3c3;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .mineral-a { display: flex; justify-content: space-between; gap: calc(var(--u) / 2); overflow: hidden; text-overflow: ellipsis; }
+  .mineral-a b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .mineral-number { color: #6a655c; }
+  .mineral-place { color: #4b4740; }
+  .mineral-b { display: none; overflow: hidden; text-overflow: ellipsis; }
+  .mineral-tray:is(:hover, :focus-visible) .mineral-a { display: none; }
+  .mineral-tray:is(:hover, :focus-visible) .mineral-b { display: block; }
+  .mineral-empty .mineral-b { display: block; color: #8a8478; }
+  .mineral-empty .mineral-a + .mineral-b { grid-row: 2; }
+  .mineral-tray.mineral-empty:is(:hover, :focus-visible) .mineral-a { display: flex; }
+  .mineral-slip {
+    align-self: center;
+    justify-self: center;
+    max-width: calc(5 * var(--u));
+    padding: calc(var(--u) / 4) calc(var(--u) / 2);
+    background: #f3e9b8;
+    font-size: calc(10px * var(--sf));
+    line-height: calc(var(--u) * 0.75);
+    transform: rotate(-3deg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  /* The drawer front: a brass frame holding the drawer's card, a cup pull in the middle. */
+  .mineral-front {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--u) calc(20 * var(--u)) 1fr calc(8 * var(--u)) 1fr;
+    align-items: start;
+    padding-top: var(--u);
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 1px, transparent 1px calc(var(--u) * 0.45)),
+      linear-gradient(180deg, #7b5130, #5c3b20);
+    box-shadow: inset 0 calc(var(--u) * 0.15) 0 rgba(255, 220, 170, 0.25);
+  }
+  .mineral-holder {
+    grid-column: 2;
+    display: grid;
+    height: calc(2 * var(--u));
+    padding: 0 calc(var(--u) / 2);
+    background: #f4efe1;
+    box-shadow: 0 0 0 calc(var(--u) * 0.2) #b8913f, 0 0 0 calc(var(--u) * 0.28) #6e5420;
+    font-size: calc(12px * var(--sf));
+    line-height: var(--u);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .mineral-holder span { font-family: var(--typeface-canon); font-size: calc(13px * var(--sf)); }
+  .mineral-pull {
+    grid-column: 4;
+    height: calc(2 * var(--u));
+    border-radius: 0 0 calc(4 * var(--u)) calc(4 * var(--u)) / 0 0 calc(2 * var(--u)) calc(2 * var(--u));
+    background: linear-gradient(180deg, #e2c07a, #9b7430 60%, #6e5420);
+    box-shadow: inset 0 calc(var(--u) * 0.3) 0 #5a4418, 0 calc(var(--u) * 0.2) calc(var(--u) * 0.3) rgba(0, 0, 0, 0.35);
+  }
+
+  /* Narrow: the same drawer, two trays across, the front at its foot. */
+  :root[data-narrow] .mineral { padding-bottom: calc(2 * var(--u)); }
+  :root[data-narrow] .mineral-front { grid-template-columns: var(--u) 1fr var(--u); row-gap: var(--u); }
+  :root[data-narrow] .mineral-holder { grid-column: 2; white-space: normal; height: auto; }
+  :root[data-narrow] .mineral-pull { display: none; }
+</style>

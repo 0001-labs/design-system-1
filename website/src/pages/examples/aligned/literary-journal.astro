@@ -1,0 +1,173 @@
+---
+// After the contents page of a small literary quarterly: a recto with its gutter, a running head,
+// one epigraph, and the contents set small in a book face with old-style figures, far from the
+// edges. Rest on a title and its first line is set in the empty margin, on the title's own line.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+interface Entry { title: string; by: string; page: number; first: string; also?: string }
+interface Section { name: string; entries: Entry[] }
+const SECTIONS: Section[] = [
+  { name: 'Fiction', entries: [
+    { title: 'The Ferryman’s Daughter Learns to Swim', by: 'Maren Okafor', page: 3, first: 'Nobody on the island could swim, which was why everyone owned a boat.' },
+    { title: 'Inventory', by: 'Tomás Herrera Vidal', page: 15, first: 'The house was sold with its contents, and the contents included my grandmother’s opinions.' },
+    { title: 'A Quiet Week in March', by: 'Hannah Leckie', page: 26, first: 'On Monday the heron came back, and on Tuesday so did my brother.' },
+  ] },
+  { name: 'Poems', entries: [
+    { title: 'Three Poems from the Allotment', by: 'Idris Penhallow', page: 39, first: 'The beans have climbed the string again, as if the string were going somewhere.' },
+    { title: 'Salt Marsh, November', by: 'Yuki Arai-Ford', page: 42, first: 'Grey on grey, and one white egret underlining it.' },
+    { title: 'Instructions for the Night Ferry', by: 'Corinne Blaise', page: 44, first: 'Keep your ticket. Keep your coat on. Keep the lights of the town behind you for as long as you can.' },
+  ] },
+  { name: 'Essay', entries: [
+    { title: 'On Reading the Same Book Every Winter', by: 'Ellis Marchbank', page: 49, first: 'I have read it eleven times now, and it has read me, I suspect, slightly more often.' },
+  ] },
+  { name: 'Translation', entries: [
+    { title: 'The Lighthouse Keeper’s Ledger', by: 'Liv Haugland', also: 'translated from the Norwegian by Anna Kerr', page: 63, first: 'Lamp lit at 15.42. Wind south-west. Nothing else to report, which is everything.' },
+  ] },
+];
+---
+<AlignedStudy slug="literary-journal" theme="light">
+  <main class="stage lj" id="lj">
+    <p class="lj-run lj-run-left">The Hollin Review</p>
+    <p class="lj-run lj-run-right">Number Thirty-one, Winter</p>
+
+    <blockquote class="lj-epigraph">
+      <p>We read slowly so that the book has time to find us.</p>
+      <footer>Agnes Rudd, to the first subscribers, 1961</footer>
+    </blockquote>
+
+    <p class="lj-margin" id="lj-margin" aria-hidden="true"></p>
+    <p class="lj-hint" id="lj-hint">Rest on a title to read its first line.</p>
+
+    <section class="lj-contents" aria-labelledby="lj-title">
+      <h1 id="lj-title">Contents</h1>
+      {SECTIONS.map(section => (
+        <section class="lj-section">
+          <h2>{section.name}</h2>
+          <ol>
+            {section.entries.map(entry => (
+              <li tabindex="0" data-first={entry.first} class={entry.also ? 'lj-three' : undefined}>
+                <span class="lj-entry-title">{entry.title}</span>
+                <span class="lj-page">{entry.page}</span>
+                <span class="lj-by">{entry.by}</span>
+                {entry.also && <span class="lj-also">{entry.also}</span>}
+                <span class="lj-first">{entry.first}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+      <p class="lj-notes"><span>Notes on contributors</span><span class="lj-page">76</span></p>
+    </section>
+
+    <p class="lj-colophon">Edited by Ruth Amberley and Joseph Kell. Set in a book face and printed letterpress in Hexham, four times a year, on paper with a little tooth.</p>
+    <p class="lj-folio">v</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  const stage = document.getElementById('lj')!;
+  const margin = document.getElementById('lj-margin')!;
+  const hint = document.getElementById('lj-hint')!;
+
+  // The first line takes the empty margin at the height of its title, on the same square.
+  function show(entry: HTMLElement | null) {
+    if (!entry || document.documentElement.hasAttribute('data-narrow')) { margin.classList.remove('is-shown'); return; }
+    const top = entry.getBoundingClientRect().top - stage.getBoundingClientRect().top;
+    margin.style.setProperty('--at', `${top}px`);
+    margin.textContent = entry.dataset.first ?? '';
+    margin.classList.add('is-shown');
+    hint.classList.add('is-gone');
+  }
+  stage.querySelectorAll<HTMLElement>('li[data-first]').forEach(entry => {
+    entry.addEventListener('mouseenter', () => show(entry));
+    entry.addEventListener('focus', () => show(entry));
+    entry.addEventListener('mouseleave', () => { if (document.activeElement !== entry) show(null); });
+    entry.addEventListener('blur', () => show(null));
+  });
+</script>
+
+<style is:global>
+  html[data-study='literary-journal'] { background: #fbfbf9; }
+  .lj {
+    --ink: #1f1f1d;
+    --soft: #77756f;
+    --rule: #d9d8d3;
+    background:
+      linear-gradient(90deg, rgba(60, 55, 45, 0.13), rgba(60, 55, 45, 0.04) calc(var(--u) * 0.6), transparent calc(var(--u) * 1.5)),
+      #fbfbf9;
+    color: var(--ink);
+    font-family: 'Iowan Old Style', Palatino, Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    font-variant-numeric: oldstyle-nums proportional-nums;
+  }
+  .lj p, .lj h1, .lj h2, .lj ol, .lj blockquote { margin: 0; }
+
+  .lj-run { grid-row: 3; font-size: calc(12px * var(--sf)); color: var(--soft); letter-spacing: 0.02em; font-style: italic; }
+  .lj-run-left { grid-column: 4 / span 14; }
+  .lj-run-right { grid-column: span 16 / -4; text-align: right; }
+
+  .lj-epigraph { grid-column: 9 / span 15; grid-row: 9 / span 4; }
+  .lj-epigraph p { text-wrap: balance; font-style: italic; font-size: calc(16px * var(--sf)); }
+  .lj-epigraph footer { margin-top: var(--u); font-size: calc(12px * var(--sf)); color: var(--soft); }
+  .lj-epigraph footer::before { content: ''; display: inline-block; width: var(--u); height: 1px; background: currentColor; vertical-align: 0.3em; margin-right: calc(var(--u) / 2); }
+
+  /* The margin's first line: placed by script on the title's square, rising in from nothing. */
+  .lj-margin {
+    grid-column: 9 / span 15;
+    grid-row: 1;
+    align-self: start;
+    transform: translateY(calc(var(--at, 0px) - var(--u) / 2));
+    font-style: italic;
+    font-size: calc(22px * var(--sf));
+    line-height: calc(2 * var(--u));
+    text-wrap: balance;
+    color: var(--ink);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    text-indent: calc(var(--u) * -0.5);
+    padding-left: calc(var(--u) * 0.5);
+    pointer-events: none;
+  }
+  .lj-margin::before { content: '“'; }
+  .lj-margin::after { content: '”'; }
+  .lj-margin.is-shown { opacity: 1; }
+  .lj-hint { grid-column: 9 / span 15; grid-row: -6; font-size: calc(12px * var(--sf)); color: var(--soft); font-style: italic; transition: opacity 0.6s ease; }
+  .lj-hint.is-gone { opacity: 0; }
+
+  .lj-contents { grid-column: span 22 / -9; grid-row: span 32 / -4; display: flex; flex-direction: column; justify-content: end; }
+  .lj-contents h1 { font-weight: normal; font-size: calc(26px * var(--sf)); line-height: calc(2 * var(--u)); margin-bottom: var(--u); letter-spacing: 0.01em; }
+  .lj-section { margin-bottom: var(--u); }
+  .lj-section h2 { font-weight: normal; font-style: italic; font-size: calc(12px * var(--sf)); color: var(--soft); }
+  .lj-section ol { list-style: none; padding: 0; }
+  .lj-section li { display: grid; grid-template-columns: 1fr calc(2 * var(--u)); grid-template-rows: var(--u) var(--u); cursor: default; outline: none; }
+  .lj-section li.lj-three { grid-template-rows: var(--u) var(--u) var(--u); }
+  .lj-entry-title { grid-column: 1; grid-row: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lj-page { text-align: right; color: var(--ink); }
+  .lj-section .lj-page { grid-column: 2; grid-row: 1; }
+  .lj-by { grid-column: 1; grid-row: 2; font-style: italic; color: var(--soft); }
+  .lj-also { grid-column: 1; grid-row: 3; font-style: italic; color: var(--soft); font-size: calc(12px * var(--sf)); }
+  .lj-first { display: none; }
+  .lj-section li:hover .lj-entry-title, .lj-section li:focus-visible .lj-entry-title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: calc(4px * var(--sf)); text-decoration-color: var(--soft); }
+  .lj-section li:focus-visible { box-shadow: calc(var(--u) / -2) 0 0 0 #fbfbf9, calc(var(--u) / -2 - 1px) 0 0 0 var(--ink); }
+  .lj-notes { display: grid; grid-template-columns: 1fr calc(2 * var(--u)); }
+
+  .lj-colophon { grid-column: 4 / span 18; grid-row: -4 / span 2; font-size: calc(11px * var(--sf)); color: var(--soft); line-height: var(--u); }
+  .lj-folio { grid-column: span 22 / -9; grid-row: -2; text-align: center; font-size: calc(12px * var(--sf)); font-style: italic; color: var(--soft); }
+
+  /* A narrow page: one column, and a title opens its first line beneath it. */
+  :root[data-narrow] .lj { padding-bottom: calc(2 * var(--u)); background: #fbfbf9; }
+  :root[data-narrow] .lj > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .lj-run-right { text-align: left; }
+  :root[data-narrow] .lj-run-left { margin-top: var(--u); }
+  :root[data-narrow] .lj-epigraph { margin-block: calc(2 * var(--u)); }
+  :root[data-narrow] .lj-margin, :root[data-narrow] .lj-hint { display: none; }
+  :root[data-narrow] .lj-entry-title { white-space: normal; }
+  :root[data-narrow] .lj-section li, :root[data-narrow] .lj-section li.lj-three { grid-template-rows: none; grid-auto-rows: minmax(var(--u), auto); }
+  :root[data-narrow] .lj-first { grid-column: 1 / -1; font-style: italic; padding-block: calc(var(--u) / 2); }
+  :root[data-narrow] .lj-section li:focus .lj-first { display: block; }
+  :root[data-narrow] .lj-colophon { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .lj-contents { grid-row: auto; }
+  :root[data-narrow] .lj-folio { margin-top: var(--u); }
+  @media (prefers-reduced-motion: reduce) { .lj-margin, .lj-hint { transition: none; } }
+</style>

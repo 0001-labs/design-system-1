@@ -1,0 +1,377 @@
+---
+// After motorway gantry signs and the signing manual that draws them: a three-lane road runs
+// through a library at night, under a gantry that sends readers to Reference, Fiction and, from the
+// right lane only, Exit 12 for Poetry. The road is drawn from above, as the manual's lane diagrams
+// are, its dashes two squares long and four apart; the signs hang from the truss in elevation.
+// Once, on load, a pair of headlights sweeps the reflective sheeting.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="gantry-signs" theme="dark">
+  <main class="stage gantry" id="gantry">
+    <svg class="gantry-scene" id="scene" aria-hidden="true"></svg>
+    <h1 class="gantry-sr">Gantry signs on the road through the library</h1>
+
+    <section class="gantry-sign gantry-lane" id="sign-a" aria-label="Left lane: Reference">
+      <div class="gantry-route"><svg class="gantry-shield" viewBox="0 0 3 3" aria-hidden="true"><path class="gantry-shield-body" d="M0.18 0.62 Q1.5 0.28 2.82 0.62 Q2.92 2.2 1.5 2.9 Q0.08 2.2 0.18 0.62 Z" /><path class="gantry-shield-top" d="M0.18 0.62 Q1.5 0.28 2.82 0.62 L2.8 1.04 Q1.5 0.76 0.2 1.04 Z" /><text x="1.5" y="2.18">030</text></svg><span>South</span></div>
+      <p class="gantry-name">Reference</p>
+      <p class="gantry-places">Atlases&ensp; Almanacs&ensp; Maps</p>
+      <p class="gantry-note">No books beyond this point</p>
+      <svg class="gantry-arrow" viewBox="0 0 2 2" aria-hidden="true"><path d="M0.78 0.1 H1.22 V1.2 H1.6 L1 1.9 L0.4 1.2 H0.78 Z" /></svg>
+    </section>
+
+    <section class="gantry-sign gantry-lane" id="sign-b" aria-label="Centre lane: Fiction">
+      <div class="gantry-route"><svg class="gantry-shield" viewBox="0 0 3 3" aria-hidden="true"><path class="gantry-shield-body" d="M0.18 0.62 Q1.5 0.28 2.82 0.62 Q2.92 2.2 1.5 2.9 Q0.08 2.2 0.18 0.62 Z" /><path class="gantry-shield-top" d="M0.18 0.62 Q1.5 0.28 2.82 0.62 L2.8 1.04 Q1.5 0.76 0.2 1.04 Z" /><text x="1.5" y="2.18">823</text></svg><span>North</span></div>
+      <p class="gantry-name">Fiction</p>
+      <p class="gantry-places">Novels&ensp; Novellas&ensp; Sagas</p>
+      <p class="gantry-note">Through traffic, A to Z</p>
+      <svg class="gantry-arrow" viewBox="0 0 2 2" aria-hidden="true"><path d="M0.78 0.1 H1.22 V1.2 H1.6 L1 1.9 L0.4 1.2 H0.78 Z" /></svg>
+    </section>
+
+    <section class="gantry-sign gantry-exit" id="sign-c" aria-label="Right lane: Exit 12, Poetry, exit only">
+      <p class="gantry-tab">Exit 12</p>
+      <div class="gantry-route"><svg class="gantry-shield" viewBox="0 0 3 3" aria-hidden="true"><circle cx="1.5" cy="1.5" r="1.32" class="gantry-shield-round" /><text x="1.5" y="1.9" class="gantry-shield-dark">811</text></svg><span class="gantry-half">½ mile</span></div>
+      <p class="gantry-name">Poetry</p>
+      <p class="gantry-places">Odes&ensp; Sonnets&ensp; Haiku</p>
+      <p class="gantry-only"><svg viewBox="0 0 2 2" aria-hidden="true"><path d="M0.78 0.1 H1.22 V1.2 H1.6 L1 1.9 L0.4 1.2 H0.78 Z" /></svg><span>Exit only</span><svg viewBox="0 0 2 2" aria-hidden="true"><path d="M0.78 0.1 H1.22 V1.2 H1.6 L1 1.9 L0.4 1.2 H0.78 Z" /></svg></p>
+    </section>
+
+    <svg class="gantry-road-narrow" id="road-narrow" aria-hidden="true"></svg>
+
+    <section class="gantry-distance" id="distance" aria-label="Distances">
+      <dl>
+        <div><dt>Biography</dt><dd>3</dd></div>
+        <div><dt>Philosophy</dt><dd>7</dd></div>
+        <div><dt>Periodicals</dt><dd>12</dd></div>
+      </dl>
+    </section>
+
+    <section class="gantry-limit" id="limit" aria-label="Speed limit: two pages a minute">
+      <p class="gantry-limit-head">Speed<br />limit</p>
+      <p class="gantry-limit-figure">2</p>
+      <p class="gantry-limit-plate">pages a minute</p>
+    </section>
+
+    <section class="gantry-services" id="services" aria-label="Services at the next exit">
+      <p class="gantry-services-head">Next exit</p>
+      <ul>
+        <li><span class="gantry-glyph" aria-hidden="true">i</span>Help</li>
+        <li><span class="gantry-glyph" aria-hidden="true">☕</span>Café</li>
+        <li><span class="gantry-glyph" aria-hidden="true">↺</span>Returns</li>
+      </ul>
+    </section>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  const scene = document.getElementById('scene') as unknown as SVGSVGElement;
+  const roadNarrow = document.getElementById('road-narrow') as unknown as SVGSVGElement;
+  const stage = document.getElementById('gantry')!;
+  const place = (id: string, column: number, row: number, wide: number, high: number) => {
+    const node = document.getElementById(id)!;
+    node.style.gridColumn = `${column} / span ${wide}`;
+    node.style.gridRow = `${row} / span ${high}`;
+  };
+  const clear = (...ids: string[]) => ids.forEach(id => { const node = document.getElementById(id)!; node.style.gridColumn = ''; node.style.gridRow = ''; });
+
+  /** A seeded random, so the shelves hold the same books at every size. */
+  const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const SPINES = ['#5b2a2a', '#2c3a52', '#6b5a2a', '#28453a', '#4a3a55', '#7a6a50', '#3a2f2a', '#59433a', '#2f4a52'];
+
+  /** A wall of shelves: boards every four squares, spines a square wide and two or three high. */
+  function shelves(x0: number, x1: number, y0: number, y1: number, seed: number) {
+    const random = seeded(seed);
+    let out = `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="#1c1410"/>`;
+    for (let board = y0 + 4; board <= y1; board += 4) {
+      let x = x0;
+      while (x < x1) {
+        const gap = random() < 0.07;
+        const wide = random() < 0.18 ? 2 : 1;
+        if (!gap && x + wide <= x1) {
+          const high = random() < 0.55 ? 3 : 2;
+          const colour = SPINES[Math.floor(random() * SPINES.length)];
+          out += `<rect x="${x}" y="${board - high}" width="${wide}" height="${high}" fill="${colour}"/>`;
+          // Gilt bands a quarter from the top and the foot of some spines.
+          if (random() < 0.6) out += `<rect x="${x + 0.2}" y="${board - high + 0.5}" width="${wide - 0.4}" height="0.1" fill="#b89a5a" opacity="0.55"/><rect x="${x + 0.2}" y="${board - 0.6}" width="${wide - 0.4}" height="0.1" fill="#b89a5a" opacity="0.55"/>`;
+          out += `<rect x="${x + wide - 0.06}" y="${board - high}" width="0.06" height="${high}" fill="#000" opacity="0.5"/>`;
+        }
+        x += wide;
+      }
+      out += `<rect x="${x0}" y="${board - 0.25}" width="${x1 - x0}" height="0.25" fill="#3d2a1e"/>`;
+    }
+    return out;
+  }
+
+  /** Books stacked flat along a verge, spines facing the road. */
+  function verge(x0: number, x1: number, y0: number, y1: number, seed: number, flip: boolean) {
+    const random = seeded(seed);
+    let out = `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="#1c1410"/>`;
+    for (let y = y0; y < y1; y++) {
+      const length = Math.min(x1 - x0, 2 + Math.floor(random() * 3));
+      const colour = SPINES[Math.floor(random() * SPINES.length)];
+      const x = flip ? x1 - length : x0;
+      out += `<rect x="${x}" y="${y}" width="${length}" height="1" fill="${colour}"/><rect x="${x}" y="${y + 0.94}" width="${length}" height="0.06" fill="#000" opacity="0.5"/>`;
+    }
+    return out;
+  }
+
+  /** The three lanes from above: edge lines, the wide dotted line of the exit lane, arrows, a word. */
+  function road(x0: number, lane: number, y0: number, y1: number) {
+    const x1 = x0 + lane * 3;
+    let out = `<rect x="${x0 - 1}" y="${y0}" width="${lane * 3 + 2}" height="${y1 - y0}" fill="#2a2a2c"/>`;
+    // Aggregate, square by square: a faint chequer of slightly lighter squares.
+    const random = seeded(y1 * 31 + x0);
+    for (let y = y0; y < y1; y++) for (let x = x0 - 1; x < x1 + 1; x++) if (random() < 0.12) out += `<rect x="${x}" y="${y}" width="1" height="1" fill="#fff" opacity="0.025"/>`;
+    out += `<rect x="${x0 - 0.38}" y="${y0}" width="0.25" height="${y1 - y0}" fill="#e3b437"/>`;
+    out += `<rect x="${x1 + 0.13}" y="${y0}" width="0.25" height="${y1 - y0}" fill="#e9e7df"/>`;
+    // Lane line between lanes 1 and 2: dashes two squares long, four apart.
+    for (let y = y0 + 1; y < y1; y += 6) out += `<rect x="${x0 + lane - 0.125}" y="${y}" width="0.25" height="${Math.min(2, y1 - y)}" fill="#e9e7df"/>`;
+    // The exit lane's line: wider and shorter, a square on and a square off.
+    for (let y = y0 + 1; y < y1; y += 2) out += `<rect x="${x0 + lane * 2 - 0.25}" y="${y}" width="0.5" height="${Math.min(1, y1 - y)}" fill="#e9e7df"/>`;
+    const room = y1 - y0;
+    const arrowAt = y0 + Math.max(4, room - 9);
+    const straight = (cx: number, y: number) => `<path d="M${cx - 0.2} ${y + 5} V${y + 1.6} H${cx - 0.6} L${cx} ${y} L${cx + 0.6} ${y + 1.6} H${cx + 0.2} V${y + 5} Z" fill="#e9e7df"/>`;
+    out += straight(x0 + lane / 2, arrowAt) + straight(x0 + lane * 1.5, arrowAt);
+    // The exit lane: an arrow that bears right, and its word, stretched to be read at speed.
+    const cx = x0 + lane * 2.5;
+    out += `<path d="M${cx - 0.2} ${arrowAt + 5} V${arrowAt + 2.2} Q${cx - 0.2} ${arrowAt + 1.3} ${cx + 0.5} ${arrowAt + 0.9} L${cx + 0.3} ${arrowAt + 0.4} L${cx + 1.5} ${arrowAt + 0.5} L${cx + 0.8} ${arrowAt + 1.6} L${cx + 0.7} ${arrowAt + 1.2} Q${cx + 0.2} ${arrowAt + 1.5} ${cx + 0.2} ${arrowAt + 2.3} V${arrowAt + 5} Z" fill="#e9e7df"/>`;
+    const wordAt = arrowAt - 6;
+    if (wordAt > y0 + 1) out += `<text x="${cx}" y="${wordAt + 4}" class="gantry-paint" transform="translate(${cx} ${wordAt + 4}) scale(1 3) translate(${-cx} ${-(wordAt + 4)})">EXIT</text>`;
+    if (wordAt - 5 > y0 + 1) out += `<text x="${cx}" y="${wordAt - 1}" class="gantry-paint" transform="translate(${cx} ${wordAt - 1}) scale(1 3) translate(${-cx} ${-(wordAt - 1)})">ONLY</text>`;
+    return out;
+  }
+
+  /** The truss: two chords a square apart with a lattice between, and the posts it stands on. */
+  function truss(x0: number, x1: number, y: number) {
+    let out = `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="0.25" fill="#8d949a"/><rect x="${x0}" y="${y + 1.75}" width="${x1 - x0}" height="0.25" fill="#8d949a"/>`;
+    let path = '';
+    for (let x = x0; x < x1; x++) path += `M${x} ${y + 0.12} L${x + 1} ${y + 1.88} M${x + 1} ${y + 0.12} L${x} ${y + 1.88} `;
+    out += `<path d="${path}" stroke="#6c737a" stroke-width="0.08" fill="none"/>`;
+    return out;
+  }
+
+  onSquares(({ across, down, narrow }) => {
+    const signs = ['sign-a', 'sign-b', 'sign-c', 'distance', 'limit', 'services'];
+    if (narrow) {
+      clear(...signs);
+      document.getElementById('services')!.hidden = false;
+      document.getElementById('limit')!.hidden = false;
+      const W = across;
+      scene.setAttribute('viewBox', `0 0 ${W} 6`);
+      scene.innerHTML = shelves(0, W, 0, 4, 7) + truss(0, W, 4);
+      const lane = Math.floor((W - 2) / 3);
+      const x0 = Math.floor((W - lane * 3) / 2);
+      roadNarrow.setAttribute('viewBox', `0 0 ${W} 18`);
+      roadNarrow.innerHTML = `<rect width="${W}" height="18" fill="#1c1410"/>` + road(x0, lane, 0, 18);
+      return;
+    }
+
+    // The verge on the left holds the ground signs; the road takes the rest in three whole lanes.
+    const left = 16;
+    const lane = Math.floor((across - left - 2) / 3);
+    const x0 = left;
+    const x1 = x0 + lane * 3;
+    const top = 4;            // the truss's upper chord
+    const signTop = top + 2;  // panels hang from the lower chord
+    const signHigh = 11;
+    const roadTop = signTop + signHigh + 1;
+
+    scene.setAttribute('viewBox', `0 0 ${across} ${down}`);
+    let out = shelves(0, across, 0, roadTop, 3);
+    out += verge(0, x0 - 1, roadTop, down, 11, false);
+    out += `<rect x="1" y="${roadTop}" width="${x0 - 3}" height="${down - roadTop}" fill="#4a1d24"/>`;
+    // Library carpet on the verge: a lozenge every two squares.
+    let lozenges = '';
+    for (let y = roadTop + 1; y < down; y += 2) for (let x = 2; x < x0 - 2; x += 2) lozenges += `M${x} ${y - 0.5} L${x + 0.5} ${y} L${x} ${y + 0.5} L${x - 0.5} ${y} Z `;
+    out += `<path d="${lozenges}" fill="#5c2730"/>`;
+    out += verge(x1 + 1, across, roadTop, down, 13, true);
+    out += road(x0, lane, roadTop, down);
+    // Posts on either side of the road, the truss across, a hanger above every panel.
+    out += `<rect x="${x0 - 2}" y="${top - 1}" width="1" height="${down - top + 1}" fill="#767d84"/><rect x="${x1 + 1}" y="${top - 1}" width="1" height="${down - top + 1}" fill="#767d84"/>`;
+    out += `<rect x="${x0 - 2.25}" y="${top - 1}" width="0.25" height="${down - top + 1}" fill="#4d5359"/><rect x="${x1 + 2}" y="${top - 1}" width="0.25" height="${down - top + 1}" fill="#4d5359"/>`;
+    out += truss(x0 - 2, x1 + 2, top);
+    for (let k = 0; k < 3; k++) {
+      const a = x0 + k * lane + 2, b = x0 + (k + 1) * lane - 3;
+      const hangTop = k === 2 ? top + 2 : top + 2;
+      out += `<rect x="${a}" y="${hangTop}" width="0.25" height="1" fill="#8d949a"/><rect x="${b}" y="${hangTop}" width="0.25" height="1" fill="#8d949a"/>`;
+    }
+    // Ground-sign posts on the verge.
+    const distanceRow = roadTop + 1;
+    const limitRow = distanceRow + 8;
+    const servicesRow = limitRow + 9;
+    out += `<rect x="6.5" y="${distanceRow + 5}" width="0.5" height="2" fill="#767d84"/>`;
+    out += `<rect x="4" y="${limitRow + 7}" width="0.5" height="${Math.max(0, Math.min(2, down - limitRow - 7))}" fill="#767d84"/>`;
+    out += `<rect x="11" y="${limitRow + 7}" width="0.5" height="${Math.max(0, Math.min(2, down - limitRow - 7))}" fill="#767d84"/>`;
+    scene.innerHTML = out;
+
+    // The panels: a square inside the lane on either side; the exit panel's tab rides above it.
+    place('sign-a', x0 + 2, signTop + 2, lane - 2, signHigh - 1);
+    place('sign-b', x0 + lane + 2, signTop + 2, lane - 2, signHigh - 1);
+    place('sign-c', x0 + lane * 2 + 2, signTop + 2, lane - 2, signHigh - 1);
+    place('distance', 2, distanceRow + 1, x0 - 5, 5);
+    place('limit', 2, limitRow + 1, 5, 7);
+    place('services', 8, limitRow + 1, x0 - 9, 7);
+    // On a short window the services sign would run off the foot; it waits for room.
+    document.getElementById('services')!.hidden = limitRow + 8 > down;
+    document.getElementById('limit')!.hidden = limitRow + 8 > down;
+    void servicesRow;
+  });
+
+  // Once: headlights sweep the reflective sheeting, panel by panel.
+  if (!reducedMotion()) stage.classList.add('gantry-sweep');
+</script>
+
+<style is:global>
+  html { background: #1c1410; }
+  .gantry {
+    --green: #0b6e4f;
+    --white: #f4f6f2;
+    --yellow: #f2c230;
+    --blue: #1d4f9c;
+    background: #1c1410;
+    color: var(--white);
+    font-family: var(--typeface-medium);
+  }
+  .gantry-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+  .gantry-scene { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; }
+  .gantry-paint { font: 700 1.2px var(--typeface-compressed); fill: #e9e7df; text-anchor: middle; letter-spacing: 0.05px; }
+  .gantry-road-narrow { display: none; }
+  .gantry p, .gantry dl, .gantry ul { margin: 0; }
+
+  /* A panel: highway green, a white border inset, small radius; type in squares. */
+  .gantry-sign {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: repeat(3, var(--u)) calc(2 * var(--u)) var(--u) var(--u) 1fr;
+    padding: calc(var(--u) / 2) var(--u);
+    box-sizing: border-box;
+    background: var(--green);
+    border-radius: calc(var(--u) * 0.4);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.15) var(--green), inset 0 0 0 calc(var(--u) * 0.27) var(--white);
+    line-height: var(--u);
+    overflow: visible;
+  }
+  .gantry-sign::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 240, 0.55) 46%, rgba(255, 255, 240, 0.0) 60%) no-repeat;
+    background-size: 300% 100%;
+    background-position: 130% 0;
+    opacity: 0;
+  }
+  .gantry-sweep .gantry-sign::after { animation: gantry-lights 1.6s cubic-bezier(0.3, 0, 0.2, 1) both; }
+  .gantry-sweep #sign-b::after { animation-delay: 0.18s; }
+  .gantry-sweep #sign-c::after { animation-delay: 0.36s; }
+  @keyframes gantry-lights {
+    0% { opacity: 1; background-position: 130% 0; }
+    85% { opacity: 1; }
+    100% { opacity: 0; background-position: -30% 0; }
+  }
+
+  .gantry-route { grid-row: 1 / span 3; display: flex; align-items: center; gap: calc(var(--u) / 2); font-size: calc(18px * var(--sf)); }
+  .gantry-shield { width: calc(3 * var(--u)); height: calc(3 * var(--u)); flex: none; }
+  .gantry-shield-body { fill: #1f4ea3; stroke: var(--white); stroke-width: 0.12; }
+  .gantry-shield-top { fill: #c8202f; }
+  .gantry-shield-round { fill: var(--white); stroke: #111; stroke-width: 0.1; }
+  .gantry-shield text { font: 0.82px var(--typeface-medium); fill: var(--white); text-anchor: middle; }
+  .gantry-shield .gantry-shield-dark { fill: #111; font-size: 1.05px; }
+  .gantry-name { grid-row: 4; font-size: calc(44px * var(--sf)); line-height: calc(2 * var(--u)); letter-spacing: -0.005em; white-space: nowrap; }
+  .gantry-places { grid-row: 5; font-size: calc(17px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: clip; }
+  .gantry-note { grid-row: 6; font-family: var(--typeface-regular); font-size: calc(13px * var(--sf)); opacity: 0.85; }
+  .gantry-arrow { grid-row: 7; align-self: end; justify-self: center; width: calc(2 * var(--u)); height: calc(2 * var(--u)); fill: var(--white); }
+
+  /* The exit: its tab above the panel's right end, the yellow strip across its foot. */
+  .gantry-tab {
+    position: absolute;
+    right: calc(var(--u) * 1);
+    bottom: 100%;
+    height: calc(2 * var(--u));
+    padding: 0 var(--u);
+    line-height: calc(2 * var(--u));
+    font-size: calc(20px * var(--sf));
+    background: var(--green);
+    border-radius: calc(var(--u) * 0.4) calc(var(--u) * 0.4) 0 0;
+    box-shadow: inset 0 calc(var(--u) * 0.15) 0 0 var(--green), inset calc(var(--u) * 0.27) calc(var(--u) * 0.27) 0 0 var(--white), inset calc(var(--u) * -0.27) 0 0 0 var(--white);
+  }
+  .gantry-half { margin-inline-start: auto; font-size: calc(20px * var(--sf)); }
+  .gantry-only {
+    grid-row: 7;
+    align-self: end;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: calc(2 * var(--u));
+    margin: 0 calc(var(--u) * -1) calc(var(--u) / -2) !important;
+    padding: 0 var(--u);
+    background: var(--yellow);
+    color: #111;
+    border-radius: 0 0 calc(var(--u) * 0.4) calc(var(--u) * 0.4);
+    box-shadow: inset calc(var(--u) * 0.27) 0 0 0 var(--white), inset calc(var(--u) * -0.27) calc(var(--u) * -0.27) 0 0 var(--white);
+    font-size: calc(20px * var(--sf));
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .gantry-only svg { width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u)); fill: #111; }
+
+  /* Ground signs on the carpet verge. */
+  .gantry-distance {
+    z-index: 1;
+    padding: calc(var(--u) / 2) var(--u);
+    box-sizing: border-box;
+    background: var(--green);
+    border-radius: calc(var(--u) * 0.3);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.12) var(--green), inset 0 0 0 calc(var(--u) * 0.22) var(--white);
+    font-size: calc(17px * var(--sf));
+    line-height: calc(1.33 * var(--u));
+  }
+  .gantry-distance dl div { display: flex; justify-content: space-between; gap: var(--u); }
+  .gantry-distance dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+  .gantry-limit {
+    z-index: 1;
+    display: grid;
+    grid-template-rows: calc(2 * var(--u)) calc(3 * var(--u)) var(--u);
+    padding: calc(var(--u) / 2) 0;
+    box-sizing: border-box;
+    background: var(--white);
+    color: #111;
+    border-radius: calc(var(--u) * 0.3);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.12) var(--white), inset 0 0 0 calc(var(--u) * 0.2) #111;
+    text-align: center;
+  }
+  .gantry-limit-head { font-size: calc(13px * var(--sf)); line-height: var(--u); text-transform: uppercase; }
+  .gantry-limit-figure { font-size: calc(64px * var(--sf)); line-height: calc(3 * var(--u)); }
+  .gantry-limit-plate { font-family: var(--typeface-regular); font-size: calc(10px * var(--sf)); line-height: var(--u); }
+
+  .gantry-services {
+    z-index: 1;
+    padding: calc(var(--u) / 2) var(--u);
+    box-sizing: border-box;
+    background: var(--blue);
+    border-radius: calc(var(--u) * 0.3);
+    box-shadow: inset 0 0 0 calc(var(--u) * 0.12) var(--blue), inset 0 0 0 calc(var(--u) * 0.22) var(--white);
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .gantry-services-head { font-size: calc(16px * var(--sf)); line-height: calc(2 * var(--u)); }
+  .gantry-services ul { list-style: none; padding: 0; display: grid; gap: 0; }
+  .gantry-services li { display: flex; gap: calc(var(--u) / 2); align-items: center; white-space: nowrap; }
+  .gantry-glyph { display: inline-grid; place-items: center; width: var(--u); height: var(--u); flex: none; background: var(--white); color: var(--blue); border-radius: 2px; font-size: calc(12px * var(--sf)); line-height: 1; }
+
+  /* Narrow: the shelf and truss on top, the three panels one under another, the lanes, the verge. */
+  :root[data-narrow] .gantry { padding-bottom: calc(3 * var(--u)); row-gap: var(--u); }
+  :root[data-narrow] .gantry-scene { grid-column: 1 / -1; grid-row: auto; height: calc(6 * var(--u)); }
+  :root[data-narrow] .gantry > :is(.gantry-sign, .gantry-distance, .gantry-services) { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .gantry-sign { grid-template-rows: repeat(3, var(--u)) calc(2 * var(--u)) var(--u) var(--u) calc(3 * var(--u)); }
+  :root[data-narrow] .gantry-exit { margin-top: calc(2 * var(--u)); }
+  :root[data-narrow] .gantry-name { font-size: calc(36px * var(--sf)); }
+  :root[data-narrow] .gantry-places { font-size: calc(15px * var(--sf)); white-space: normal; }
+  :root[data-narrow] .gantry-road-narrow { display: block; grid-column: 1 / -1; grid-row: auto; width: 100%; height: calc(18 * var(--u)); }
+  :root[data-narrow] .gantry-limit { grid-column: 2 / span 5; grid-row: auto; }
+  :root[data-narrow] .gantry-services { display: block; }
+</style>

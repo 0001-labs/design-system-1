@@ -1,0 +1,292 @@
+---
+// After a trading terminal, dense and amber on black, that quotes an opera instead of a market:
+// every security is a character, an aria or a prop of La gazza d'oro, the news is the stage
+// directions, and the order book is the duet, line against line. One row of the terminal is one
+// square. The prices tick gently while the second act plays.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const securities = [
+  ['GAZZA', 'La gazza, soprano', 48.1, 1.35, 412],
+  ['LIVIA', 'Contessa Livia, mezzo', 36.85, -0.4, 388],
+  ['NINO', 'Nino, gardener, tenor', 29.4, 2.1, 301],
+  ['PODST', 'Il podestà, bass', 61.2, -3.75, 97],
+  ['SOLE', 'Aria: Chi ruba il sole', 72.55, 4.8, 64],
+  ['NOTTE', 'Aria: Notte, sorella', 18.3, -0.25, 41],
+  ['TEGOL', 'Duet: Fra le tegole', 44.0, 0.9, 120],
+  ['CORO', 'Chorus: Campane', 12.65, 0.15, 210],
+  ['ANELL', 'The gold ring, prop', 88.1, 6.4, 18],
+  ['SCALA', 'The ladder, prop', 5.2, -0.6, 7],
+] as const;
+
+const asks = [
+  ['45.10', '4', 'NINO', 'Scendo, scendo, se la scala tiene.', 'I’m coming down, if the ladder holds.'],
+  ['44.80', '2', 'NINO', 'Non io, non io: la gazza l’ha preso!', 'Not me, not me: the magpie took it!'],
+  ['44.40', '6', 'NINO', 'Sul tetto, signora, fra le tegole.', 'On the roof, my lady, among the tiles.'],
+] as const;
+const bids = [
+  ['43.90', '3', 'LIVIA', 'Dove sei, ladro mio?', 'Where are you, my thief?'],
+  ['43.60', '5', 'LIVIA', 'Rendimi l’anello e ti perdono.', 'Give me back the ring and I forgive you.'],
+  ['43.20', '1', 'LIVIA', 'Chi ruba il sole ruba anche me.', 'Whoever steals the sun steals me too.'],
+] as const;
+
+const news = [
+  ['21:23', 'II/5', 'Curtain. Nino hangs from the gutter by one hand.'],
+  ['21:20', 'II/5', 'Bells. The chorus, in nightshirts, fills the square.'],
+  ['21:19', 'II/4', 'The podestà’s lantern appears at the end of the street.', true],
+  ['21:15', 'II/4', 'Duet. Nino climbs, Livia holds the ladder; the ring glints between them.'],
+  ['21:11', 'II/3', 'Nino sets a ladder against the wall. It is one rung too short.'],
+  ['21:07', 'II/2', 'Livia at her window, candle in hand. She does not see the bird.'],
+  ['21:04', 'II/1', 'The magpie lands on the bell tower with something bright in its beak.', true],
+  ['21:02', 'II/1', 'Night. The roofs of San Vito under a low moon.'],
+  ['20:31', 'I/6', 'Interval. Bar reports heavy trading in prosecco.'],
+  ['20:24', 'I/6', 'Unconfirmed: the magpie will return the ring in the third act.'],
+  ['20:12', 'I/4', 'The podestà accuses the gardener before the whole town.'],
+  ['19:58', 'I/2', 'Livia’s ring left on the sill to dry after washing.'],
+  ['19:45', 'I/1', 'Overture. Strings short, horns long.'],
+] as const;
+const fmt = (n: number) => n.toFixed(2);
+---
+<AlignedStudy slug="libretto-terminal" theme="dark">
+  <main class="stage term">
+    <nav class="keys" aria-label="Function keys">
+      {[['F1', 'HELP'], ['F2', 'LIBR'], ['F3', 'ACTS'], ['F4', 'CAST'], ['F5', 'SCORE'], ['F8', 'NEWS'], ['F9', 'BOOK'], ['F10', 'CURTAIN']].map(([k, w]) => <span><b>{k}</b>{w}</span>)}
+    </nav>
+    <p class="cmd"><span class="prompt">GAZZA &lt;OPERA&gt; GO</span><span class="where">La gazza d’oro, E. Valli 1871. Teatro Civico, second act</span><span class="clock" id="clock">21:23:07</span></p>
+
+    <section class="pane watch" aria-label="Monitor">
+      <h2><b>1</b> MONITOR <span>cast and numbers</span></h2>
+      <table>
+        <thead><tr><th>TICKER</th><th class="name">NAME</th><th>LAST</th><th>CHG</th><th>%CHG</th><th>BARS</th></tr></thead>
+        <tbody id="watch">
+          {securities.map(([t, name, last, chg, vol]) => (
+            <tr data-ticker={t} data-last={last} data-chg={chg}>
+              <td class="tk">{t}</td><td class="name">{name}</td><td class="last">{fmt(last)}</td>
+              <td class:list={['chg', chg >= 0 ? 'up' : 'dn']}>{chg >= 0 ? '+' : ''}{fmt(chg)}</td>
+              <td class:list={['pct', chg >= 0 ? 'up' : 'dn']}>{(chg / (last - chg) * 100).toFixed(1)}%</td><td class="vol">{vol}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="pane book" aria-label="Order book">
+      <h2><b>2</b> BOOK TEGOL <span>duet, act II scene 4</span></h2>
+      <div class="rows" id="book">
+        <p class="bh"><span>PRICE</span><span>SZ</span><span>VOICE</span><span>LINE</span></p>
+        {asks.map(([p, s, who, line, en]) => <p class="ask" tabindex="0" data-en={en}><span>{p}</span><span>{s}</span><span>{who}</span><span lang="it">{line}</span></p>)}
+        <p class="spread"><span>0.50</span><span></span><span>SPREAD</span><span>the ladder between them</span></p>
+        {bids.map(([p, s, who, line, en]) => <p class="bid" tabindex="0" data-en={en}><span>{p}</span><span>{s}</span><span>{who}</span><span lang="it">{line}</span></p>)}
+      </div>
+      <p class="transl" id="transl" aria-live="polite"><b>TRANSL</b> <span>point at a line for its English</span></p>
+    </section>
+
+    <section class="pane sales" aria-label="Time and sales">
+      <h2><b>5</b> TIME AND SALES <span>lines sung, act II</span></h2>
+      <ol>
+        {[
+          ['21:16:58', '43.90', '3', 'LIVIA', 'Dove sei, ladro mio?'],
+          ['21:16:41', '44.40', '6', 'NINO', 'Sul tetto, signora, fra le tegole.'],
+          ['21:16:20', '43.60', '2', 'LIVIA', 'Non ti vedo, ma ti sento.'],
+          ['21:15:52', '44.10', '4', 'NINO', 'Tenga la scala, per carità.'],
+          ['21:15:30', '42.80', '1', 'GAZZA', 'Cra! Cra!'],
+          ['21:15:02', '43.00', '8', 'CORO', 'Dormite, dormite, gente di San Vito.'],
+          ['21:14:37', '41.90', '2', 'PODST', 'Chi va là? Chi canta a quest’ora?'],
+          ['21:14:05', '42.20', '5', 'LIVIA', 'Luna, non dirlo a nessuno.'],
+        ].map(([t, p, sz, who, line]) => <li><span class="t">{t}</span><span>{p}</span><span>{sz}</span><span class="who">{who}</span><span class="l" lang="it">{line}</span></li>)}
+      </ol>
+    </section>
+
+    <section class="pane chart" aria-label="Chart of the aria by scene">
+      <h2><b>3</b> GP SOLE <span>intensity by scene, three acts</span></h2>
+      <svg id="chart" aria-hidden="true"></svg>
+    </section>
+
+    <section class="pane news" aria-label="Stage directions">
+      <h2><b>4</b> TOP STAGE DIRECTIONS <span>newest first</span></h2>
+      <ol>
+        {news.map(([time, scene, line, hot]) => <li class:list={{ hot }}><span class="t">{time}</span><span class="s">{scene}</span><span class="l">{line}</span></li>)}
+      </ol>
+    </section>
+
+    <p class="status"><b>LIVE</b> Act II ends 21:24. Interval 25 min. Act III quotes open at 21:49.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  // The aria's intensity scene by scene: open, close, high and low, out of a hundred.
+  const SCENES: [string, number, number, number, number][] = [
+    ['I/1', 22, 28, 31, 18], ['I/2', 28, 25, 33, 21], ['I/3', 25, 34, 38, 24], ['I/4', 34, 46, 51, 30], ['I/5', 46, 41, 49, 37], ['I/6', 41, 38, 44, 33],
+    ['II/1', 38, 30, 40, 26], ['II/2', 30, 44, 47, 29], ['II/3', 44, 52, 58, 42], ['II/4', 52, 71, 78, 50], ['II/5', 71, 66, 80, 61],
+    ['III/1', 66, 57, 68, 52], ['III/2', 57, 63, 70, 54], ['III/3', 63, 88, 94, 60], ['III/4', 88, 74, 96, 70],
+  ];
+  const chart = document.getElementById('chart') as unknown as SVGSVGElement;
+  onSquares(({ across, down, narrow }) => {
+    const wide = narrow ? across - 1 : across - 36 - 1;
+    const high = narrow ? 14 : Math.max(10, Math.min(18, down - 22)) - 1;
+    const plotW = wide - 4;
+    const step = narrow ? plotW / SCENES.length : Math.max(1, Math.floor((plotW * 2) / SCENES.length) / 2);
+    const plotH = high - 2;
+    const y = (v: number) => 0.5 + plotH - (v / 100) * plotH;
+    chart.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    chart.style.height = `calc(${high} * var(--u))`;
+    let out = '';
+    for (let v = 0; v <= 100; v += 25) out += `<path d="M0 ${y(v)}H${plotW}" class="grid"/><text x="${plotW + 0.4}" y="${y(v) + 0.25}" class="axis">${v}</text>`;
+    let act = '';
+    SCENES.forEach(([name, o, c, h, l], i) => {
+      const x = i * step + step / 2;
+      const up = c >= o;
+      out += `<path d="M${x} ${y(h)}V${y(l)}" class="${up ? 'up' : 'dn'}"/>`;
+      out += `<rect x="${x - 0.35}" y="${y(Math.max(o, c))}" width="0.7" height="${Math.max(0.08, Math.abs(y(o) - y(c)))}" class="${up ? 'up' : 'dn'}"/>`;
+      const a = name.split('/')[0];
+      if (a !== act) { act = a; out += `<text x="${i * step}" y="${high - 0.3}" class="axis">ACT ${a}</text><path d="M${i * step} ${0.5}V${high - 1}" class="act"/>`; }
+    });
+    chart.innerHTML = out;
+  });
+
+  // The performance clock, and one quote at a time moving a few cents.
+  const clock = document.getElementById('clock') as HTMLElement;
+  let seconds = 21 * 3600 + 23 * 60 + 7;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  setInterval(() => { seconds++; clock.textContent = `${pad(Math.floor(seconds / 3600) % 24)}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`; }, 1000);
+
+  if (!reducedMotion()) {
+    const rows = [...document.querySelectorAll<HTMLTableRowElement>('#watch tr')];
+    setInterval(() => {
+      const row = rows[Math.floor(Math.random() * rows.length)];
+      const move = Math.round((Math.random() - 0.48) * 40) / 100 || 0.05;
+      const last = Math.max(0.05, Number(row.dataset.last) + move);
+      const chg = Number(row.dataset.chg) + move;
+      row.dataset.last = String(last); row.dataset.chg = String(chg);
+      const cell = (k: string) => row.querySelector(`.${k}`) as HTMLElement;
+      cell('last').textContent = last.toFixed(2);
+      cell('chg').textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}`;
+      cell('pct').textContent = `${((chg / (last - chg)) * 100).toFixed(1)}%`;
+      for (const k of ['chg', 'pct']) { cell(k).classList.toggle('up', chg >= 0); cell(k).classList.toggle('dn', chg < 0); }
+      cell('vol').textContent = String(Number(cell('vol').textContent) + 1);
+      const flash = move >= 0 ? 'tick-up' : 'tick-dn';
+      cell('last').classList.add(flash);
+      setTimeout(() => cell('last').classList.remove(flash), 650);
+    }, 1700);
+  }
+
+  // The book's translations, on pointing or focusing a line.
+  const transl = document.querySelector('#transl span') as HTMLElement;
+  document.querySelectorAll<HTMLElement>('#book [data-en]').forEach(line => {
+    const show = () => { transl.textContent = `${line.children[2].textContent}: ${line.dataset.en}`; };
+    line.addEventListener('pointerenter', show);
+    line.addEventListener('focus', show);
+  });
+</script>
+
+<style is:global>
+  html { background: #000; }
+  .term {
+    --amber: #ffa52c;
+    --white: #e9e6dc;
+    --dim: #8a8577;
+    --green: #39d26b;
+    --red: #ff5a4e;
+    --band: #23262e;
+    color: var(--amber);
+    background: #000;
+    font-family: Menlo, var(--typeface-mono);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+    font-variant-numeric: tabular-nums;
+  }
+  .term p, .term h2, .term ol, .term table { margin: 0; padding: 0; }
+  .term ol { list-style: none; }
+
+  .keys { grid-column: 1 / -1; grid-row: 1; display: flex; gap: 1px; background: #000; overflow: hidden; }
+  .keys span { flex: 1; display: flex; gap: calc(var(--u) / 2); padding: 0 calc(var(--u) / 2); background: var(--band); color: var(--white); white-space: nowrap; }
+  .keys b { color: #000; background: var(--amber); padding: 0 calc(var(--u) / 4); font-weight: 700; }
+  .cmd { grid-column: 1 / -1; grid-row: 2; display: flex; gap: var(--u); padding: 0 calc(var(--u) / 2); white-space: nowrap; overflow: hidden; }
+  .prompt { color: #000; background: var(--amber); padding: 0 calc(var(--u) / 2); font-weight: 700; }
+  .where { color: var(--white); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .clock { color: var(--white); }
+
+  .pane { overflow: hidden; display: block; }
+  .pane h2 { display: flex; gap: calc(var(--u) / 2); height: var(--u); background: var(--band); color: var(--white); font: 700 calc(13px * var(--sf)) / var(--u) Menlo, var(--typeface-mono); white-space: nowrap; overflow: hidden; padding-right: calc(var(--u) / 2); }
+  .pane h2 b { background: #fff; color: #000; padding: 0 calc(var(--u) / 3); }
+  .pane h2 span { color: var(--dim); font-weight: 400; }
+
+  /* 1: the monitor, a row a square. */
+  .watch { grid-column: 1 / 37; grid-row: 3 / span 12; border-right: 1px solid var(--band); }
+  .watch table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  .watch th, .watch td { height: var(--u); padding: 0 calc(var(--u) / 2) 0 0; text-align: right; white-space: nowrap; overflow: hidden; }
+  .watch th { color: var(--dim); font-weight: 400; }
+  .watch th:first-child, .watch td:first-child { text-align: left; padding-left: calc(var(--u) / 2); width: calc(4 * var(--u)); }
+  .watch .name { text-align: left; width: calc(12 * var(--u)); text-overflow: ellipsis; }
+  .watch td.name { color: var(--white); }
+  .watch .tk { color: var(--amber); font-weight: 700; }
+  .watch .last { color: var(--white); }
+  .up { color: var(--green); } .dn { color: var(--red); }
+  .watch tbody tr:nth-child(odd) { background: #0d0e11; }
+  .tick-up { background: var(--green); color: #000 !important; }
+  .tick-dn { background: var(--red); color: #000 !important; }
+
+  /* 2: the book, asks above the spread, bids below, a line a square. */
+  .book { grid-column: 1 / 37; grid-row: 16 / -13; border-right: 1px solid var(--band); }
+  .book .rows p { display: grid; grid-template-columns: calc(3 * var(--u)) calc(2 * var(--u)) calc(4 * var(--u)) 1fr; padding-left: calc(var(--u) / 2); height: var(--u); white-space: nowrap; overflow: hidden; outline: none; }
+  .book .bh { color: var(--dim); }
+  .book .ask span:first-child { color: var(--red); }
+  .book .bid span:first-child { color: var(--green); }
+  .book .ask span:nth-child(n + 3), .book .bid span:nth-child(n + 3) { color: var(--white); overflow: hidden; text-overflow: ellipsis; }
+  .book .ask span:nth-child(3), .book .bid span:nth-child(3) { color: var(--amber); }
+  .book .ask:hover, .book .bid:hover, .book [data-en]:focus-visible { background: #2a2214; }
+  .book [data-en]:focus-visible { box-shadow: inset 2px 0 var(--amber); }
+  .book .spread { color: var(--dim); border-block: 1px dashed #3a3a3a; height: calc(var(--u) - 2px) !important; line-height: calc(var(--u) - 2px); }
+  .transl { margin-top: var(--u) !important; padding: 0 calc(var(--u) / 2); color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .transl b { color: #000; background: var(--amber); padding: 0 calc(var(--u) / 4); }
+
+  /* 5: time and sales, the lines already sung. */
+  .sales { grid-column: 1 / 37; grid-row: span 10 / -2; border-right: 1px solid var(--band); }
+  .sales li { display: grid; grid-template-columns: calc(5 * var(--u)) calc(3 * var(--u)) calc(2 * var(--u)) calc(4 * var(--u)) 1fr; padding-left: calc(var(--u) / 2); height: var(--u); white-space: nowrap; overflow: hidden; }
+  .sales .t { color: var(--dim); }
+  .sales .who { color: var(--amber); }
+  .sales .l { color: var(--white); overflow: hidden; text-overflow: ellipsis; }
+  .sales li:nth-child(odd) { background: #0d0e11; }
+
+  /* 3: the chart, candles a scene each. */
+  .chart { grid-column: 37 / -1; grid-row: 3 / span 18; }
+  .chart svg { width: 100%; display: block; overflow: visible; margin-left: calc(var(--u) / 2); }
+  .chart .grid { stroke: #2a2c33; stroke-width: 0.05; stroke-dasharray: 0.15 0.15; }
+  .chart .act { stroke: #3c3f49; stroke-width: 0.04; }
+  .chart .axis { fill: var(--dim); font: 0.55px Menlo, monospace; }
+  .chart path.up { stroke: var(--green); stroke-width: 0.08; } .chart rect.up { fill: var(--green); }
+  .chart path.dn { stroke: var(--red); stroke-width: 0.08; } .chart rect.dn { fill: var(--red); }
+
+  /* 4: the stage directions, newest on top. */
+  .news { grid-column: 37 / -1; grid-row: 22 / -2; }
+  .news li { display: grid; grid-template-columns: calc(3 * var(--u)) calc(3 * var(--u)) 1fr; padding-left: calc(var(--u) / 2); height: var(--u); white-space: nowrap; overflow: hidden; }
+  .news .t { color: var(--dim); }
+  .news .s { color: var(--amber); }
+  .news .l { color: var(--white); overflow: hidden; text-overflow: ellipsis; }
+  .news .hot .l { color: #000; background: var(--amber); width: max-content; max-width: 100%; padding-right: calc(var(--u) / 4); }
+
+  .status { grid-column: 1 / -12; grid-row: -2; padding-left: calc(var(--u) / 2); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status b { color: #000; background: var(--green); padding: 0 calc(var(--u) / 4); }
+
+  /* A narrow window: one pane under another, the terminal on a phone. */
+  :root[data-narrow] .term { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .term > * { grid-column: 1 / -1; grid-row: auto; }
+  :root[data-narrow] .keys { flex-wrap: wrap; height: auto; }
+  :root[data-narrow] .keys span { flex: 0 0 auto; }
+  :root[data-narrow] .where { display: none; }
+  :root[data-narrow] .pane { margin-top: var(--u); border-right: 0; }
+  :root[data-narrow] .watch .name, :root[data-narrow] .watch th:nth-child(6), :root[data-narrow] .watch td:nth-child(6) { display: none; }
+  :root[data-narrow] .chart svg { margin-left: calc(var(--u) / 2); width: calc(100% - var(--u)); }
+  :root[data-narrow] .news .hot .l { width: auto; }
+  :root[data-narrow] .book .bh span:nth-child(4) { display: none; }
+  :root[data-narrow] .book .rows p { grid-template-columns: calc(3 * var(--u)) calc(3 * var(--u)) 1fr; height: auto; white-space: normal; }
+  :root[data-narrow] .book .rows p span:nth-child(2) { display: none; }
+  :root[data-narrow] .book .rows p span:nth-child(4) { grid-column: 1 / -1; padding-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .news li { grid-template-columns: calc(3 * var(--u)) 1fr; height: auto; white-space: normal; padding-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .news .t { display: none; }
+  :root[data-narrow] .sales li { grid-template-columns: calc(3 * var(--u)) calc(4 * var(--u)) 1fr; height: auto; white-space: normal; }
+  :root[data-narrow] .sales li span:nth-child(1), :root[data-narrow] .sales li span:nth-child(3) { display: none; }
+  :root[data-narrow] .sales .l { grid-column: 1 / -1; padding-bottom: calc(var(--u) / 2); }
+  :root[data-narrow] .status { white-space: normal; margin-top: var(--u); }
+</style>

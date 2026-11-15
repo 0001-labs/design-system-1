@@ -1,0 +1,266 @@
+---
+// After a periodic table on a classroom wall: twenty-four birds as elements, each a tile of five by
+// five squares, the families in columns and colours, and the empty bay at the top filled by the
+// chosen bird, its photograph and its numbers. Wingspan stands where the atomic mass would.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type Family = 'tits' | 'thrushes' | 'songbirds' | 'corvids' | 'raptors' | 'waders' | 'water';
+const FAMILIES: { id: Family; name: string; note: string }[] = [
+  { id: 'tits', name: 'Tits', note: 'Paridae and Aegithalidae' },
+  { id: 'thrushes', name: 'Thrushes', note: 'Turdidae and the robin' },
+  { id: 'songbirds', name: 'Other songbirds', note: 'Wrens, finches, starlings, swallows' },
+  { id: 'corvids', name: 'Crows and woodpeckers', note: 'Corvidae, Picidae' },
+  { id: 'raptors', name: 'Birds of prey', note: 'Falcons, hawks and owls' },
+  { id: 'waders', name: 'Waders and auks', note: 'Shore and cliff' },
+  { id: 'water', name: 'Waterbirds', note: 'Ducks, swans, herons, cranes' },
+];
+
+// [symbol, name, family, wingspan cm, weight g, photo, habitat]; their place in the table follows.
+// [symbol, name, family, wingspan cm, weight g, photo, habitat]. Each family keeps its own column,
+// as the groups do: tits down the first, thrushes the second, waterbirds the last, and the other
+// songbirds laid along the foot like the strip under a real table.
+type Row = [string, string, Family, number, number, string | null, string];
+const COLUMNS: { col: number; rows: number[]; birds: Row[] }[] = [
+  { col: 1, rows: [1, 2, 3, 4], birds: [
+    ['Bt', 'Blue tit', 'tits', 18, 11, 'blue-tit', 'Gardens, oak woods, nest boxes'],
+    ['Gt', 'Great tit', 'tits', 24, 18, 'great-tit', 'Gardens and woods; “teacher, teacher”'],
+    ['Lt', 'Long-tailed tit', 'tits', 17, 9, 'long-tailed-tit', 'Hedges, in roving flocks'],
+    ['Ct', 'Coal tit', 'tits', 18, 9, null, 'Conifers; hoards seeds'],
+  ] },
+  { col: 2, rows: [2, 3, 4], birds: [
+    ['Rb', 'Robin', 'thrushes', 21, 18, 'robin', 'Gardens and hedges; sings all winter'],
+    ['Bb', 'Blackbird', 'thrushes', 37, 100, 'blackbird', 'Lawns at dusk, woodland edges'],
+    ['St', 'Song thrush', 'thrushes', 34, 70, null, 'Hedgerows; breaks snails on a stone'],
+  ] },
+  { col: 7, rows: [2, 3, 4], birds: [
+    ['Jy', 'Jay', 'corvids', 54, 170, 'jay', 'Oak woods; buries acorns in autumn'],
+    ['Wp', 'Great spotted woodpecker', 'corvids', 38, 85, 'woodpecker', 'Woods; drums in early spring'],
+    ['Mp', 'Magpie', 'corvids', 56, 220, null, 'Everywhere, loudly'],
+  ] },
+  { col: 8, rows: [2, 3, 4], birds: [
+    ['Ke', 'Kestrel', 'raptors', 76, 200, 'kestrel', 'Hovers over verges and rough grass'],
+    ['Bo', 'Barn owl', 'raptors', 89, 300, 'barn-owl', 'Field margins at dusk, old barns'],
+    ['Sh', 'Sparrowhawk', 'raptors', 62, 240, null, 'Gardens, in a sudden pass'],
+  ] },
+  { col: 9, rows: [2, 3, 4], birds: [
+    ['Oc', 'Oystercatcher', 'waders', 83, 540, 'oystercatcher', 'Shingle and estuary mud'],
+    ['Pf', 'Puffin', 'waders', 55, 400, 'puffin', 'Sea cliffs, burrows in turf'],
+    ['Cu', 'Curlew', 'waders', 90, 800, null, 'Moorland in spring, mudflats in winter'],
+  ] },
+  { col: 10, rows: [1, 2, 3, 4], birds: [
+    ['Ma', 'Mallard', 'water', 90, 1100, 'mallard', 'Any water at all'],
+    ['Kf', 'Kingfisher', 'water', 25, 40, 'kingfisher', 'Clear streams, a blue streak'],
+    ['He', 'Grey heron', 'water', 175, 1500, 'heron', 'Still water, waiting'],
+    ['Cr', 'Common crane', 'water', 220, 5500, 'crane', 'Wet fens; back after four centuries'],
+  ] },
+];
+const STRIP: Row[] = [
+  ['Wr', 'Wren', 'songbirds', 15, 10, 'wren', 'Low cover; loud for its size'],
+  ['Gf', 'Goldfinch', 'songbirds', 23, 16, 'goldfinch', 'Thistle and teasel heads'],
+  ['Sg', 'Starling', 'songbirds', 40, 78, 'starling', 'Rooftops; murmurations at dusk'],
+  ['Sw', 'Swallow', 'songbirds', 33, 19, 'swallow', 'Farmyards, April to September'],
+];
+const placed = [
+  ...COLUMNS.flatMap(c => c.birds.map((bird, i) => ({ bird, col: c.col, row: c.rows[i] }))),
+  ...STRIP.map((bird, i) => ({ bird, col: 3 + i, row: 4 })),
+].sort((a, b) => a.row - b.row || a.col - b.col);
+// Numbered in reading order, as the elements are.
+const tiles = placed.map(({ bird: [symbol, name, family, span, weight, photo, habitat], col, row }, i) => ({ n: i + 1, symbol, name, family, span, weight, photo, habitat, col, row }));
+const first = tiles[0];
+---
+<AlignedStudy slug="periodic-birds" theme="light">
+  <main class="stage periodic">
+    <header class="head">
+      <h1>The Periodic Table of Garden and Shore Birds</h1>
+      <p>Twenty-four common elements of the British air, arranged by family. Wingspan in centimetres stands where the atomic mass would.</p>
+    </header>
+
+    <div class="table" role="list" aria-label="Twenty-four birds">
+      {tiles.map(t => (
+        <button
+          type="button"
+          role="listitem"
+          class:list={['tile', t.family, { on: t.n === 1 }]}
+          style={`grid-column: ${t.col}; grid-row: ${t.row}`}
+          data-n={t.n}
+          data-symbol={t.symbol}
+          data-name={t.name}
+          data-family={FAMILIES.find(f => f.id === t.family)!.name}
+          data-span={t.span}
+          data-weight={t.weight}
+          data-photo={t.photo ?? ''}
+          data-habitat={t.habitat}
+          aria-label={`${t.n}, ${t.name}`}
+        >
+          <span class="n">{t.n}</span>
+          <span class="span">{t.span}</span>
+          <b class="symbol">{t.symbol}</b>
+          <span class="name">{t.name}</span>
+        </button>
+      ))}
+
+      <section class="detail" id="detail" aria-live="polite" style="grid-column: 3 / span 4; grid-row: 1 / span 3">
+        <div class="plate" id="plate">
+          <img id="photo" src={`/examples/images/birdie-${first.photo}.jpg`} alt={first.name} />
+          <b class="ghost" id="ghost" aria-hidden="true"></b>
+        </div>
+        <div class="facts">
+          <p class="big"><span id="d-n">{first.n}</span><b id="d-symbol">{first.symbol}</b></p>
+          <h2 id="d-name">{first.name}</h2>
+          <p id="d-family" class="family">{FAMILIES.find(f => f.id === first.family)!.name}</p>
+          <dl>
+            <div><dt>Wingspan</dt><dd><span id="d-span">{first.span}</span> cm</dd></div>
+            <div><dt>Weight</dt><dd><span id="d-weight">{first.weight}</span> g</dd></div>
+          </dl>
+          <p id="d-habitat" class="habitat">{first.habitat}</p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="legend" aria-label="How to read a tile">
+      <div class="tile sample songbirds" aria-hidden="true">
+        <span class="n">17</span><span class="span">15</span><b class="symbol">Wr</b><span class="name">Wren</span>
+      </div>
+      <ul>
+        <li><b>17</b> its place in the table</li>
+        <li><b>15</b> wingspan in centimetres</li>
+        <li><b>Wr</b> its symbol</li>
+      </ul>
+    </aside>
+
+    <ul class="key" aria-label="Families">
+      {FAMILIES.map(f => <li class={f.id}><i></i><span><b>{f.name}</b> {f.note}</span></li>)}
+    </ul>
+  </main>
+</AlignedStudy>
+
+<script>
+  const tiles = [...document.querySelectorAll<HTMLButtonElement>('.table .tile')];
+  const photo = document.getElementById('photo') as HTMLImageElement;
+  const ghost = document.getElementById('ghost') as HTMLElement;
+  const detail = document.getElementById('detail') as HTMLElement;
+  const set = (id: string, text: string) => { (document.getElementById(id) as HTMLElement).textContent = text; };
+
+  function choose(tile: HTMLButtonElement) {
+    tiles.forEach(t => t.classList.toggle('on', t === tile));
+    const d = tile.dataset;
+    set('d-n', d.n!); set('d-symbol', d.symbol!); set('d-name', d.name!); set('d-family', d.family!);
+    set('d-span', d.span!); set('d-weight', Number(d.weight).toLocaleString('en-GB')); set('d-habitat', d.habitat!);
+    detail.className = 'detail ' + [...tile.classList].find(c => !['tile', 'on'].includes(c));
+    // A bird without a photograph keeps an empty plate with its symbol, as an unfilled cell.
+    if (d.photo) { photo.src = `/examples/images/birdie-${d.photo}.jpg`; photo.alt = d.name!; photo.hidden = false; ghost.textContent = ''; }
+    else { photo.hidden = true; photo.removeAttribute('src'); ghost.textContent = d.symbol!; }
+  }
+  tiles.forEach(tile => {
+    tile.addEventListener('click', () => choose(tile));
+    tile.addEventListener('mouseenter', () => choose(tile));
+    tile.addEventListener('focus', () => choose(tile));
+  });
+  choose(tiles[0]);
+</script>
+
+<style is:global>
+  html { background: #f1f1ec; }
+  .periodic {
+    --ground: #f1f1ec;
+    --ink: #1f2430;
+    --tits: #9cc6ff;
+    --thrushes: #ffb49c;
+    --songbirds: #ffe27e;
+    --corvids: #cbb6ff;
+    --raptors: #f6a3c6;
+    --waders: #9fe5c8;
+    --water: #7ecfe3;
+    --tile: calc(5 * var(--u));
+    color: var(--ink);
+    background: var(--ground);
+    font-family: var(--typeface-regular);
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .tits { --c: var(--tits); }
+  .thrushes { --c: var(--thrushes); }
+  .songbirds { --c: var(--songbirds); }
+  .corvids { --c: var(--corvids); }
+  .raptors { --c: var(--raptors); }
+  .waders { --c: var(--waders); }
+  .water { --c: var(--water); }
+
+  .head { grid-column: 3 / span 50; grid-row: 3 / span 4; }
+  .head h1 { margin: 0; font: calc(30px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); letter-spacing: -0.01em; }
+  .head p { margin: 0; max-width: calc(36 * var(--u)); }
+
+  /* Ten tiles across, four down: each tile five squares by five. */
+  .table { grid-column: 3 / span 50; grid-row: 9 / span 20; display: grid; grid-template-columns: repeat(10, var(--tile)); grid-template-rows: repeat(4, var(--tile)); }
+  .tile {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: var(--u) calc(2 * var(--u)) var(--u);
+    align-content: center;
+    padding: calc(var(--u) / 2);
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px var(--ground);
+    cursor: pointer;
+    text-align: left;
+  }
+  .tile .n { font-size: calc(12px * var(--sf)); grid-row: 1; }
+  .tile .span { position: absolute; top: calc(var(--u) / 2); right: calc(var(--u) / 2); font-size: calc(11px * var(--sf)); font-variant-numeric: tabular-nums; }
+  .tile .symbol { grid-row: 2; font: calc(34px * var(--sf)) / calc(2 * var(--u)) var(--typeface-medium); letter-spacing: -0.02em; }
+  .tile .name { grid-row: 3; font-size: calc(11px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .table .tile:hover, .table .tile.on { background: var(--ink); color: var(--c); }
+  .table .tile:focus-visible { outline: calc(3px * var(--sf)) solid var(--ink); outline-offset: calc(-3px * var(--sf)); z-index: 1; }
+
+  /* The bay: the chosen bird, its plate and its numbers, on four tiles by three. */
+  .detail { display: grid; grid-template-columns: calc(10 * var(--u)) 1fr; margin: 0 calc(var(--u) / 2) var(--u) calc(var(--u) / 2); background: #fff; box-shadow: inset 0 0 0 calc(var(--u) / 4) var(--c, var(--ink)); }
+  .plate { position: relative; overflow: hidden; background: var(--c); }
+  .plate img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .plate img[hidden] { display: none; }
+  .ghost { position: absolute; inset: 0; display: grid; place-items: center; font: calc(110px * var(--sf)) / 1 var(--typeface-medium); color: color-mix(in srgb, var(--ink) 18%, transparent); }
+  .facts { padding: var(--u); display: grid; grid-auto-rows: min-content; }
+  .facts .big { margin: 0; display: flex; gap: calc(var(--u) / 2); align-items: baseline; height: calc(3 * var(--u)); }
+  .facts .big span { font-size: calc(14px * var(--sf)); }
+  .facts .big b { font: calc(56px * var(--sf)) / calc(3 * var(--u)) var(--typeface-medium); letter-spacing: -0.03em; }
+  .facts h2 { margin: 0; font: calc(17px * var(--sf)) / var(--u) var(--typeface-medium); }
+  .facts .family { margin: 0; color: color-mix(in srgb, var(--ink) 62%, transparent); }
+  .facts dl { margin: var(--u) 0 0; }
+  .facts dl div { display: grid; grid-template-columns: calc(4 * var(--u)) 1fr; }
+  .facts dt { color: color-mix(in srgb, var(--ink) 62%, transparent); }
+  .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .facts .habitat { margin: var(--u) 0 0; font-style: italic; font-family: var(--typeface-canon); }
+
+  /* How to read a tile: one tile drawn large with its parts named. */
+  .legend { grid-column: 55 / -2; grid-row: 9 / span 12; }
+  .legend .sample { --tile: calc(7 * var(--u)); width: calc(7 * var(--u)); height: calc(7 * var(--u)); grid-template-rows: calc(1.5 * var(--u)) calc(3 * var(--u)) calc(1.5 * var(--u)); cursor: default; }
+  .legend .sample .symbol { font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); }
+  .legend .sample .n, .legend .sample .span { font-size: calc(14px * var(--sf)); }
+  .legend .sample .name { font-size: calc(14px * var(--sf)); }
+  .legend ul { margin: var(--u) 0 0; padding: 0; list-style: none; }
+  .legend li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr; }
+  .legend li b { font-family: var(--typeface-medium); font-weight: normal; }
+
+  .key { grid-column: 3 / span 50; grid-row: 31 / span 4; margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); column-gap: var(--u); }
+  .key li { display: grid; grid-template-columns: calc(1.5 * var(--u)) 1fr; height: calc(2 * var(--u)); }
+  .key i { width: var(--u); height: var(--u); background: var(--c); }
+  .key span { line-height: var(--u); font-size: calc(12px * var(--sf)); }
+  .key b { display: block; font-weight: normal; font-family: var(--typeface-medium); font-size: calc(13px * var(--sf)); }
+
+  /* A narrow window: the plate first, then four tiles across, each three squares. */
+  :root[data-narrow] .periodic { --tile: calc(3 * var(--u)); padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .periodic > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .head { margin-top: var(--u); }
+  :root[data-narrow] .head h1 { font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); margin-bottom: var(--u); }
+  :root[data-narrow] .table { grid-template-columns: repeat(4, var(--tile)); grid-template-rows: auto; grid-auto-rows: var(--tile); margin-top: var(--u); }
+  :root[data-narrow] .table .tile { grid-column: auto !important; grid-row: auto !important; padding: calc(var(--u) / 4); grid-template-rows: calc(var(--u) * 0.75) calc(var(--u) * 1.5) calc(var(--u) * 0.75); }
+  :root[data-narrow] .table .tile .symbol { font-size: calc(22px * var(--sf)); line-height: calc(1.5 * var(--u)); }
+  :root[data-narrow] .table .tile .n, :root[data-narrow] .table .tile .name, :root[data-narrow] .table .tile .span { font-size: calc(8px * var(--sf)); line-height: calc(var(--u) * 0.75); }
+  :root[data-narrow] .table .tile .span { top: calc(var(--u) / 4); right: calc(var(--u) / 4); }
+  :root[data-narrow] .detail { grid-column: 1 / -1 !important; grid-row: 1 / span 1 !important; grid-template-columns: 1fr; height: auto; margin: 0 0 var(--u); }
+  :root[data-narrow] .table { grid-auto-flow: row; }
+  :root[data-narrow] .plate { height: calc(6 * var(--u)); }
+  :root[data-narrow] .facts { padding: calc(var(--u) / 2); }
+  :root[data-narrow] .legend { margin-top: var(--u); }
+  :root[data-narrow] .legend ul { margin-top: var(--u); }
+  :root[data-narrow] .key { grid-template-columns: 1fr; margin-top: var(--u); }
+</style>

@@ -1,0 +1,234 @@
+---
+// After a desk dictionary's page on thin bible paper: guide words at the head, three columns of
+// entries set solid on the square, numbered senses run in, etymologies in square brackets, a small
+// illustration, a pronunciation key at the foot and the thumb index cut into the fore-edge. The
+// back of the leaf shows through, printed in register, so its lines sit on the same squares. The
+// right guide word is whichever headword the window last has room for.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+type Entry = { head: string; html: string };
+const ENTRIES: Entry[] = [
+  { head: 'squab', html: `<b>squab</b> <span class="ipa">/skwɒb/</span> <i>n.</i> <b>1</b> a young pigeon not yet able to fly, esp. as food. <b>2</b> a short fat person. <b>3</b> a thick cushion, esp. the padded back or seat of a car seat. — <i>adj.</i> short and fat; squat. <span class="ety">[17th c.: of uncertain origin; cf. obsolete <i>quab</i> shapeless thing]</span>` },
+  { head: 'squabble', html: `<b>squabble</b> <span class="ipa">/ˈskwɒbəl/</span> <i>n.</i> a noisy quarrel about something trivial. — <i>v.intr.</i> engage in a squabble: <i>squabbling over the last biscuit.</i> <b>squabbler</b> <i>n.</i> <span class="ety">[17th c.: prob. imitative; cf. Swedish dialect <i>skvabbel</i> a dispute]</span>` },
+  { head: 'squad', html: `<b>squad</b> <span class="ipa">/skwɒd/</span> <i>n.</i> <b>1</b> a small group of soldiers assembled for drill or for a particular task. <b>2</b> a group of players from which a team is chosen. <b>3</b> a division of a police force dealing with one kind of crime: <i>the fraud squad.</i> <span class="ety">[17th c.: &lt; F <i>escouade</i> &lt; Sp. <i>escuadra</i> <span class="sc">square</span>]</span>` },
+  { head: 'squaddie', html: `<b>squaddie</b> <span class="ipa">/ˈskwɒdi/</span> <i>n.</i> (also <b>squaddy</b>) <i>Brit. informal</i> a private soldier.` },
+  { head: 'squadron', html: `<b>squadron</b> <span class="ipa">/ˈskwɒdrən/</span> <i>n.</i> <b>1</b> an operational unit in an air force of eight to twenty-four aircraft. <b>2</b> a group of warships detached on a particular duty. <b>3</b> a principal division of a cavalry or armoured regiment. <span class="ety">[16th c.: &lt; It. <i>squadrone</i>, augmentative of <i>squadra</i> <span class="sc">square</span>]</span>` },
+  { head: 'squadron leader', html: `<b>squadron leader</b> <i>n.</i> a rank in an air force, above flight lieutenant and below wing commander.` },
+  { head: 'squalid', html: `<b>squalid</b> <span class="ipa">/ˈskwɒlɪd/</span> <i>adj.</i> <b>1</b> extremely dirty and unpleasant, esp. through poverty or neglect. <b>2</b> showing a contemptible lack of moral standards: <i>a squalid little affair.</i> <b>squalidly</b> <i>adv.</i> <b>squalidness</b> <i>n.</i> <span class="ety">[16th c.: &lt; L <i>squalidus</i> &lt; <i>squalere</i> be rough or dirty]</span>` },
+  { head: 'squall', html: `<b>squall</b> <span class="ipa">/skwɔːl/</span> <i>n.</i> <b>1</b> a sudden violent gust of wind or local storm, esp. one bringing rain, snow or sleet. <b>2</b> a loud cry. — <i>v.intr.</i> <b>1</b> (of a baby) cry noisily and continuously. <b>2</b> (of wind) blow in a squall. <span class="ety">[17th c.: prob. &lt; <span class="sc">squeal</span>, influenced by <span class="sc">bawl</span>]</span>` },
+  { head: 'squally', html: `<b>squally</b> <i>adj.</i> (<b>squallier</b>, <b>squalliest</b>) marked by squalls: <i>a squally afternoon off the headland.</i>` },
+  { head: 'squalor', html: `<b>squalor</b> <span class="ipa">/ˈskwɒlə/</span> <i>n.</i> the state of being extremely dirty and unpleasant. <span class="ety">[17th c.: L, from <i>squalere</i>: see <span class="sc">squalid</span>]</span>` },
+  { head: 'squander', html: `<b>squander</b> <span class="ipa">/ˈskwɒndə/</span> <i>v.tr.</i> <b>1</b> spend (money or resources) wastefully. <b>2</b> allow (an opportunity) to pass or be lost: <i>they squandered a two-goal lead.</i> <b>squanderer</b> <i>n.</i> <span class="ety">[16th c.: of unknown origin]</span>` },
+  { head: 'square', html: `<b class="big">square</b> <span class="ipa">/skwɛː/</span> <i>n.</i>, <i>adj.</i>, <i>v.</i> &amp; <i>adv.</i> — <i>n.</i> <b>1</b> a plane figure with four equal straight sides and four right angles. <b>2</b> a thing of this shape or nearly so: <i>a square of chocolate; a square of carpet.</i> <b>3</b> an open, usually four-sided, area surrounded by buildings: <i>the market square.</i> <b>4</b> an L-shaped or T-shaped instrument for drawing or testing right angles (see illus.). <b>5</b> <i>Math.</i> the product of a number multiplied by itself: <i>16 is the square of 4.</i> <b>6</b> each of the cells of a board for chess, draughts or noughts and crosses. <b>7</b> <i>hist.</i> a body of infantry drawn up in a hollow four-sided formation. <b>8</b> <i>informal</i> a person considered dull and conventional. <b>9</b> <i>Typog.</i> one cell of a layout grid, on screens commonly twenty pixels, by which columns, rows and type are all set: <i>every row a whole square.</i> <b>10</b> <i>Brit.</i> a block of houses around a shared garden. — <i>adj.</i> <b>11</b> having four equal sides and four right angles. <b>12</b> at right angles: <i>a square corner.</i> <b>13</b> level, even or settled: <i>we’re all square now.</i> <b>14</b> fair and honest: <i>a square deal.</i> <b>15</b> (of a meal) substantial. <b>16</b> (of a unit of area) equal to a square whose side is the unit named: <i>a square metre.</i> — <i>v.</i> <b>17</b> <i>tr.</i> make square or rectangular. <b>18</b> <i>tr.</i> multiply (a number) by itself. <b>19</b> <i>tr.</i> settle (an account) or bring into agreement: <i>square it with the librarian.</i> <b>20</b> <i>tr.</i> set (one’s shoulders) upright, ready to face something. — <i>adv.</i> <b>21</b> directly; straight: <i>she looked him square in the eye.</i> □ <b>back to square one</b> back to the beginning. <b>on the square</b> honestly. <b>squareness</b> <i>n.</i> <span class="ety">[ME <i>squar(e)</i> &lt; OF <i>esquare</i> &lt; VL *<i>exquadra</i> &lt; L <i>ex-</i> + <i>quadrare</i> make square &lt; <i>quadrus</i> four-cornered]</span>` },
+  { head: 'figure', html: '' },
+  { head: 'square-bashing', html: `<b>square-bashing</b> <i>n. Brit. informal</i> military drill on a barrack square.` },
+  { head: 'square bracket', html: `<b>square bracket</b> <i>n.</i> either of a pair of marks [ ] used to enclose words or figures; in this dictionary, the history of a word.` },
+  { head: 'square dance', html: `<b>square dance</b> <i>n.</i> a country dance that starts with four couples facing inwards from four sides, its figures called out by a caller. <b>square dancer</b> <i>n.</i>` },
+  { head: 'squarely', html: `<b>squarely</b> <span class="ipa">/ˈskwɛːli/</span> <i>adv.</i> <b>1</b> without deviation or equivocation: <i>the blame rests squarely on the committee.</i> <b>2</b> so as to be parallel or at right angles to something: <i>a lamp set squarely in the window.</i>` },
+  { head: 'square meal', html: `<b>square meal</b> <i>n.</i> a substantial and balanced meal.` },
+  { head: 'square one', html: `<b>square one</b> <i>n.</i> the starting point: see <span class="sc">square</span>.` },
+  { head: 'square-rigged', html: `<b>square-rigged</b> <i>adj.</i> (of a sailing ship) having its principal sails at right angles to the length of the ship.` },
+  { head: 'square root', html: `<b>square root</b> <i>n.</i> a number which, multiplied by itself, gives a specified number: <i>3 is the square root of 9.</i>` },
+  { head: 'squarish', html: `<b>squarish</b> <i>adj.</i> approximately square.` },
+  { head: 'squash', html: `<b>squash</b><sup>1</sup> <span class="ipa">/skwɒʃ/</span> <i>v.</i> <b>1</b> <i>tr.</i> crush or squeeze (something) so that it becomes flat, soft or out of shape. <b>2</b> <i>tr.</i> squeeze (oneself or a thing) into a small space. <b>3</b> <i>tr.</i> suppress or subdue: <i>the proposal was squashed by the board.</i> — <i>n.</i> <b>1</b> a crowd pressed into a small space: <i>it was a squash in the lift.</i> <b>2</b> (in full <b>squash rackets</b>) a game played with rackets and a small rubber ball against the walls of a closed court. <b>3</b> <i>Brit.</i> a concentrated drink of fruit juice and sugar, diluted to taste. <b>squashy</b> <i>adj.</i> <span class="ety">[16th c.: alteration of <span class="sc">quash</span>]</span>` },
+  { head: 'squash', html: `<b>squash</b><sup>2</sup> <i>n.</i> (<i>pl.</i> same or <b>squashes</b>) a gourd whose flesh is cooked as a vegetable, as the butternut or the pumpkin. <span class="ety">[17th c.: &lt; Narragansett <i>asquutasquash</i>]</span>` },
+  { head: 'squat', html: `<b>squat</b> <span class="ipa">/skwɒt/</span> <i>v.</i> (<b>squatted</b>, <b>squatting</b>) <b>1</b> <i>intr.</i> crouch with the knees bent and the heels close to the buttocks. <b>2</b> <i>intr.</i> unlawfully occupy an uninhabited building or unused land. — <i>adj.</i> (<b>squatter</b>, <b>squattest</b>) short and thickset. — <i>n.</i> <b>1</b> a squatting posture. <b>2</b> a building occupied by squatters. <span class="ety">[ME: &lt; OF <i>esquatir</i> flatten]</span>` },
+  { head: 'squatter', html: `<b>squatter</b> <span class="ipa">/ˈskwɒtə/</span> <i>n.</i> a person who unlawfully occupies an uninhabited building or unused land.` },
+  { head: 'squawk', html: `<b>squawk</b> <span class="ipa">/skwɔːk/</span> <i>v.intr.</i> <b>1</b> (of a bird) make a loud, harsh noise. <b>2</b> complain loudly. — <i>n.</i> a loud, harsh noise. <b>squawker</b> <i>n.</i> <span class="ety">[19th c.: imitative]</span>` },
+  { head: 'squeak', html: `<b>squeak</b> <span class="ipa">/skwiːk/</span> <i>n.</i> <b>1</b> a short, high-pitched sound or cry. <b>2</b> a single remark: <i>not a squeak out of him all evening.</i> — <i>v.intr.</i> <b>1</b> make a squeak. <b>2</b> <i>informal</i> succeed by a very narrow margin: <i>squeaked through the exam.</i> □ <b>narrow squeak</b> a narrow escape. <span class="ety">[ME: imitative; cf. <span class="sc">squeal</span>, <span class="sc">shriek</span>]</span>` },
+];
+const THUMBS = ['A', 'B', 'C', 'D E', 'F G', 'H–K', 'L M', 'N O', 'P Q', 'R', 'S', 'T', 'U–Z'];
+---
+<AlignedStudy slug="dictionary" theme="light">
+  <main class="stage dict" id="dict">
+    <header class="dict-head">
+      <p class="dict-guide" id="guide-first">squab</p>
+      <p class="dict-folio">1382</p>
+      <p class="dict-guide dict-guide-last" id="guide-last">squeak</p>
+    </header>
+
+    <ol class="dict-thumbs" id="thumbs" aria-label="Thumb index">
+      {THUMBS.map(letter => <li class={letter === 'S' ? 'dict-here' : undefined} aria-current={letter === 'S' ? 'true' : undefined}>{letter}</li>)}
+    </ol>
+
+    <div class="dict-back" aria-hidden="true">
+      <div class="dict-cols">
+        {[...ENTRIES].reverse().filter(entry => entry.html).map(entry => <p class="dict-entry" set:html={entry.html} />)}
+      </div>
+    </div>
+
+    <article class="dict-text" id="text" aria-label="Dictionary entries from squab to squeak">
+      <div class="dict-cols" id="cols">
+        {ENTRIES.map(entry => entry.head === 'figure'
+          ? (
+            <figure class="dict-figure">
+              <svg viewBox="0 0 14 6" role="img" aria-label="A try square and a set square">
+                <g class="dict-tool">
+                  <path class="dict-blade" d="M2.6 0.6 H3.4 V4.6 H7.2 V5.4 H2.6 Z" />
+                  <path class="dict-stock" d="M1.6 0.6 H3 V5.4 H1.6 Z" />
+                  <circle cx="2.3" cy="1.4" r="0.12" /><circle cx="2.3" cy="3" r="0.12" /><circle cx="2.3" cy="4.6" r="0.12" />
+                  <path class="dict-ticks" d="M3.4 1 h0.25 M3.4 1.4 h0.15 M3.4 1.8 h0.25 M3.4 2.2 h0.15 M3.4 2.6 h0.25 M3.4 3 h0.15 M3.4 3.4 h0.25 M3.4 3.8 h0.15 M3.4 4.2 h0.25 M3.8 4.6 v-0.25 M4.2 4.6 v-0.15 M4.6 4.6 v-0.25 M5 4.6 v-0.15 M5.4 4.6 v-0.25 M5.8 4.6 v-0.15 M6.2 4.6 v-0.25 M6.6 4.6 v-0.15" />
+                  <text x="4.6" y="2.2">A</text>
+                </g>
+                <g class="dict-tool">
+                  <path class="dict-set" d="M8.6 0.6 V5.4 H13.4 Z M9.4 2.6 V4.6 H11.4 Z" fill-rule="evenodd" />
+                  <text x="12.2" y="2.2">B</text>
+                </g>
+              </svg>
+              <figcaption><b>square</b> (def. 4): <b>A</b> try square; <b>B</b> set square</figcaption>
+            </figure>
+          )
+          : <p class="dict-entry" data-head={entry.head} set:html={entry.html} />)}
+      </div>
+    </article>
+
+
+    <p class="dict-key" aria-label="Pronunciation key"><span>æ</span> cat <span>ɑː</span> arm <span>ɛ</span> bed <span>ɛː</span> hair <span>ə</span> ago <span>ɪ</span> sit <span>iː</span> see <span>ɒ</span> hot <span>ɔː</span> saw <span>ʃ</span> she <span>ˈ</span> stress follows</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  const text = document.getElementById('text')!;
+  const back = document.querySelector<HTMLElement>('.dict-back')!;
+  const cols = document.getElementById('cols')!;
+  const last = document.getElementById('guide-last')!;
+
+  onSquares(({ across, down, unit, narrow }) => {
+    const root = document.documentElement;
+    // Thirteen tabs two squares tall, spread down the fore-edge with whole squares between.
+    root.style.setProperty('--dict-gap', `calc(${Math.max(0, Math.min(2, Math.floor((down - 3 - 26) / 12)))} * var(--u))`);
+    if (narrow) {
+      root.style.removeProperty('--dict-col');
+      root.style.removeProperty('--dict-span');
+      text.style.gridColumn = back.style.gridColumn = '';
+      last.textContent = 'squeak';
+      return;
+    }
+    // Three columns of whole squares, two squares apart, between the margin and the thumb index.
+    const area = across - 9;
+    const column = Math.floor((area - 4) / 3);
+    const span = column * 3 + 4;
+    root.style.setProperty('--dict-col', `${column}`);
+    text.style.gridColumn = back.style.gridColumn = `3 / span ${span}`;
+    // The right guide word: the last headword that begins inside the page.
+    requestAnimationFrame(() => {
+      const box = cols.getBoundingClientRect();
+      let head = 'squab';
+      cols.querySelectorAll<HTMLElement>('[data-head]').forEach(entry => {
+        const first = entry.getClientRects()[0];
+        if (first && first.right <= box.right + 1 && first.bottom <= box.bottom + 1) head = entry.dataset.head!;
+      });
+      last.textContent = head;
+    });
+    void unit;
+  });
+</script>
+
+<style is:global>
+  html { background: #f6f6f1; }
+  .dict {
+    --paper: #f6f6f1;
+    --ink: #232220;
+    --rule: #b9b8ae;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Iowan Old Style', 'Palatino', Georgia, serif;
+    font-size: calc(13px * var(--sf));
+    line-height: var(--u);
+  }
+  .dict p, .dict ol, .dict figure { margin: 0; }
+
+  /* The head: guide words in bold sans at either end, the folio between, a rule under. */
+  .dict-head {
+    grid-column: 3 / -7;
+    grid-row: 2 / span 2;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--typeface-medium);
+    font-size: calc(18px * var(--sf));
+    line-height: var(--u);
+  }
+  .dict-folio { font-family: var(--typeface-regular); font-size: calc(13px * var(--sf)); font-variant-numeric: oldstyle-nums; }
+  .dict-guide-last { text-align: right; }
+
+  /* Columns set solid, every line a square, a hairline between. */
+  .dict-text, .dict-back { grid-row: 5 / -4; position: relative; overflow: hidden; }
+  .dict-cols {
+    height: 100%;
+    column-count: 3;
+    column-gap: calc(2 * var(--u));
+    column-rule: 1px solid var(--rule);
+    column-fill: auto;
+    width: calc((var(--dict-col, 20) * 3 + 4) * var(--u));
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    text-align: justify;
+  }
+  .dict-entry { padding-left: var(--u); text-indent: calc(var(--u) * -1); }
+  .dict-entry b { font-family: var(--typeface-medium); font-weight: normal; font-size: calc(12.5px * var(--sf)); letter-spacing: -0.005em; }
+  .dict-entry b.big { font-size: calc(17px * var(--sf)); }
+  .dict-entry sup { font-family: var(--typeface-medium); font-size: 0.6em; line-height: 0; }
+  .dict .ipa { font-family: 'Iowan Old Style', 'Charter', serif; letter-spacing: 0.01em; }
+  .dict .sc { font-variant-caps: all-small-caps; letter-spacing: 0.04em; font-style: normal; }
+  .dict .ety { color: #4b4a46; }
+
+  /* The back of the leaf, mirrored and faint, its lines on the same squares. */
+  .dict-back { z-index: 0; opacity: 0.075; transform: scaleX(-1); filter: blur(0.35px); pointer-events: none; user-select: none; }
+  .dict-text { z-index: 1; }
+
+  .dict-figure { break-inside: avoid; height: calc(8 * var(--u)); padding-top: var(--u); box-sizing: border-box; text-align: center; }
+  .dict-figure svg { display: block; width: calc(14 * var(--u)); max-width: 100%; height: calc(6 * var(--u)); margin: 0 auto; }
+  .dict-tool { fill: none; stroke: var(--ink); stroke-width: 0.06; stroke-linejoin: round; }
+  .dict-stock { fill: url(#none); fill: #d9d6cb; }
+  .dict-blade { fill: #fbfbf7; }
+  .dict-set { fill: #fbfbf7; }
+  .dict-tool circle { fill: var(--ink); stroke: none; }
+  .dict-ticks { stroke-width: 0.04; }
+  .dict-tool text { fill: var(--ink); stroke: none; font: 0.7px var(--typeface-medium); }
+  .dict-figure figcaption { font-size: calc(11px * var(--sf)); line-height: var(--u); }
+  .dict-figure figcaption b { font-family: var(--typeface-medium); font-weight: normal; }
+
+  /* The thumb index: notches cut into the fore-edge; this page's letter is the deep black one. */
+  .dict-thumbs {
+    grid-column: -5 / -1;
+    grid-row: 2 / -2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--dict-gap, var(--u));
+    padding: 0;
+    list-style: none;
+  }
+  .dict-thumbs li {
+    height: calc(2 * var(--u));
+    margin-left: calc(2 * var(--u));
+    border-radius: var(--u) 0 0 var(--u);
+    background: #cfcdc4;
+    color: #6f6d66;
+    font-family: var(--typeface-medium);
+    font-size: calc(11px * var(--sf));
+    line-height: calc(2 * var(--u));
+    text-align: center;
+    padding-right: calc(var(--u) / 2);
+    word-spacing: -0.1em;
+  }
+  .dict-thumbs li.dict-here { margin-left: 0; background: var(--ink); color: var(--paper); font-size: calc(22px * var(--sf)); text-align: left; padding-left: calc(var(--u) * 0.75); }
+
+  .dict-key { grid-column: 3 / -16; grid-row: -3 / span 1; border-top: 1px solid var(--rule); font-size: calc(11px * var(--sf)); color: #4b4a46; white-space: nowrap; overflow: hidden; }
+  .dict-key span { font-family: 'Iowan Old Style', serif; color: var(--ink); margin-left: 0.6em; }
+  .dict-key span:first-child { margin-left: 0; }
+
+  /* Narrow: one column, the thumb index as a strip along the head. */
+  :root[data-narrow] .dict { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .dict-head { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); font-size: calc(16px * var(--sf)); }
+  :root[data-narrow] .dict-back { display: none; }
+  :root[data-narrow] .dict-text { grid-column: 2 / -2; grid-row: auto; margin-top: var(--u); overflow: visible; }
+  :root[data-narrow] .dict-cols { column-count: 1; width: auto; height: auto; text-align: left; }
+  :root[data-narrow] .dict-thumbs { grid-column: 2 / -2; grid-row: auto; flex-direction: row; gap: 2px; margin-top: var(--u); overflow: hidden; }
+  :root[data-narrow] .dict-thumbs li { margin: 0; flex: 1; height: var(--u); line-height: var(--u); border-radius: 0 0 var(--u) var(--u); padding: 0; font-size: calc(9px * var(--sf)); }
+  :root[data-narrow] .dict-thumbs li.dict-here { font-size: calc(13px * var(--sf)); padding: 0; text-align: center; flex: 2; }
+  :root[data-narrow] .dict-key { grid-column: 2 / -2; grid-row: auto; white-space: normal; margin-top: var(--u); }
+</style>

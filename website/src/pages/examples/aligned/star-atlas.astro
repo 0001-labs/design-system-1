@@ -1,0 +1,307 @@
+---
+// After a plate from a star atlas: the winter sky around Orion on a deep blue plate, stars as dots
+// sized by magnitude, constellation lines and Latin names. The projection is equidistant and
+// cylindrical with one square to two and a half degrees, so every hour of right ascension is six
+// squares and every ten degrees of declination four: the atlas's grid is the page's grid.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="star-atlas" theme="dark">
+  <main class="stage atlas" id="atlas">
+    <svg class="atlas-plate" id="atlas-plate" role="img" aria-label="Star chart of Orion, Taurus, Gemini, Auriga, Canis Major and their neighbours"></svg>
+    <aside class="atlas-panel">
+      <p class="atlas-plate-no">Tabula IV</p>
+      <h1>Orion, Taurus, Gemini et vicinae</h1>
+      <p class="atlas-note">Equidistant cylindrical projection for the epoch 2000.0. One square of the plate is two and a half degrees; an hour of right ascension, six.</p>
+      <figure class="atlas-legend">
+        <figcaption>Magnitudines</figcaption>
+        <svg id="atlas-legend" aria-hidden="true"></svg>
+      </figure>
+      <div class="atlas-readout" id="atlas-readout" aria-live="polite">
+        <p class="atlas-starname" id="atlas-star">Sirius</p>
+        <p id="atlas-desig">α Canis Majoris, magnitude −1.5</p>
+        <p id="atlas-pos">RA 6h 45m, Dec −16° 43′</p>
+      </div>
+      <p class="atlas-foot">Stars brighter than the fifth magnitude after the catalogue; the fainter ones as the engraver saw them. Drawn for the Northfield Astronomical Society.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  type Star = [key: string, name: string | null, desig: string, ra: number, dec: number, mag: number];
+  const STARS: Star[] = [
+    ['bet', 'Betelgeuse', 'α Ori', 5.919, 7.41, 0.5], ['rig', 'Rigel', 'β Ori', 5.242, -8.2, 0.13], ['bel', 'Bellatrix', 'γ Ori', 5.419, 6.35, 1.64],
+    ['min', 'Mintaka', 'δ Ori', 5.533, -0.3, 2.23], ['aln', 'Alnilam', 'ε Ori', 5.604, -1.2, 1.69], ['alt', 'Alnitak', 'ζ Ori', 5.679, -1.94, 1.77],
+    ['sai', 'Saiph', 'κ Ori', 5.796, -9.67, 2.06], ['mei', 'Meissa', 'λ Ori', 5.585, 9.93, 3.39],
+    ['ald', 'Aldebaran', 'α Tau', 4.599, 16.51, 0.85], ['eln', 'Elnath', 'β Tau', 5.438, 28.61, 1.65], ['ztau', null, 'ζ Tau', 5.627, 21.14, 3.0],
+    ['gtau', null, 'γ Tau', 4.33, 15.63, 3.65], ['dtau', null, 'δ Tau', 4.382, 17.54, 3.76], ['etau', null, 'ε Tau', 4.477, 19.18, 3.53],
+    ['ttau', null, 'θ Tau', 4.478, 15.87, 3.4], ['ltau', null, 'λ Tau', 4.011, 12.49, 3.4], ['otau', null, 'ο Tau', 3.413, 9.03, 3.6],
+    ['alc', 'Alcyone', 'η Tau', 3.791, 24.11, 2.87], ['atl', null, '27 Tau', 3.819, 24.05, 3.62], ['ele', null, '17 Tau', 3.748, 24.11, 3.7],
+    ['mai', null, '20 Tau', 3.763, 24.37, 3.87], ['mer', null, '23 Tau', 3.772, 23.95, 4.18], ['tay', null, '19 Tau', 3.753, 24.47, 4.3],
+    ['cas', 'Castor', 'α Gem', 7.577, 31.89, 1.58], ['pol', 'Pollux', 'β Gem', 7.755, 28.03, 1.14], ['alh', 'Alhena', 'γ Gem', 6.629, 16.4, 1.92],
+    ['meb', 'Mebsuta', 'ε Gem', 6.732, 25.13, 3.06], ['tej', 'Tejat', 'μ Gem', 6.383, 22.51, 2.88], ['pro', 'Propus', 'η Gem', 6.248, 22.51, 3.3],
+    ['was', 'Wasat', 'δ Gem', 7.335, 21.98, 3.53], ['mek', 'Mekbuda', 'ζ Gem', 7.068, 20.57, 3.9], ['tgem', null, 'τ Gem', 7.186, 30.25, 4.4],
+    ['lgem', null, 'λ Gem', 7.301, 16.54, 3.58], ['xgem', 'Alzirr', 'ξ Gem', 6.755, 12.9, 3.35], ['kgem', null, 'κ Gem', 7.741, 24.4, 3.57],
+    ['cap', 'Capella', 'α Aur', 5.278, 46.0, 0.08], ['menk', 'Menkalinan', 'β Aur', 5.992, 44.95, 1.9], ['mah', 'Mahasim', 'θ Aur', 5.995, 37.21, 2.62],
+    ['has', 'Hassaleh', 'ι Aur', 4.95, 33.17, 2.69], ['alm', 'Almaaz', 'ε Aur', 5.032, 43.82, 2.99], ['zaur', null, 'ζ Aur', 5.041, 41.08, 3.75],
+    ['haed', 'Haedus', 'η Aur', 5.109, 41.23, 3.17],
+    ['sir', 'Sirius', 'α CMa', 6.752, -16.72, -1.46], ['mir', 'Mirzam', 'β CMa', 6.378, -17.96, 1.98], ['wez', 'Wezen', 'δ CMa', 7.14, -26.39, 1.84],
+    ['adh', 'Adhara', 'ε CMa', 6.977, -28.97, 1.5], ['alu', 'Aludra', 'η CMa', 7.402, -29.3, 2.45], ['mul', 'Muliphein', 'γ CMa', 7.062, -15.63, 4.1],
+    ['pcy', 'Procyon', 'α CMi', 7.655, 5.22, 0.34], ['gom', 'Gomeisa', 'β CMi', 7.453, 8.29, 2.9],
+    ['arn', 'Arneb', 'α Lep', 5.546, -17.82, 2.58], ['nih', 'Nihal', 'β Lep', 5.471, -20.76, 2.84], ['elep', null, 'ε Lep', 5.091, -22.37, 3.19],
+    ['mlep', null, 'μ Lep', 5.216, -16.21, 3.31], ['glep', null, 'γ Lep', 5.741, -22.45, 3.6], ['dlep', null, 'δ Lep', 5.855, -20.88, 3.76],
+    ['mfk', 'Mirfak', 'α Per', 3.405, 49.86, 1.79], ['alg', 'Algol', 'β Per', 3.136, 40.96, 2.1], ['zper', null, 'ζ Per', 3.902, 31.88, 2.85],
+    ['eper', null, 'ε Per', 3.964, 40.01, 2.88], ['dper', null, 'δ Per', 3.715, 47.79, 3.0], ['gper', null, 'γ Per', 3.08, 53.51, 2.93],
+    ['ham', 'Hamal', 'α Ari', 2.12, 23.46, 2.0], ['she', 'Sheratan', 'β Ari', 1.911, 20.81, 2.64], ['mes', 'Mesarthim', 'γ Ari', 1.892, 19.29, 3.88],
+    ['a41', null, '41 Ari', 2.833, 27.26, 3.63],
+    ['mnk', 'Menkar', 'α Cet', 3.038, 4.09, 2.53], ['mira', 'Mira', 'ο Cet', 2.322, -2.98, 3.0], ['gcet', null, 'γ Cet', 2.722, 3.24, 3.47],
+    ['dcet', null, 'δ Cet', 2.658, 0.33, 4.07], ['zcet', null, 'ζ Cet', 1.858, -10.34, 3.73], ['tcet', null, 'θ Cet', 1.4, -8.18, 3.6],
+    ['ecet', null, 'η Cet', 1.143, -10.18, 3.45], ['taucet', null, 'τ Cet', 1.734, -15.94, 3.5],
+    ['cur', 'Cursa', 'β Eri', 5.131, -5.09, 2.79], ['mueri', null, 'μ Eri', 4.758, -3.25, 4.0], ['nueri', null, 'ν Eri', 4.606, -3.35, 3.93],
+    ['o1eri', null, 'ο¹ Eri', 4.198, -6.84, 4.04], ['zaurak', 'Zaurak', 'γ Eri', 3.967, -13.51, 2.95], ['deri', null, 'δ Eri', 3.721, -9.76, 3.52],
+    ['eeri', null, 'ε Eri', 3.549, -9.46, 3.73], ['heri', null, 'η Eri', 2.94, -8.9, 3.89],
+    ['icnc', null, 'ι Cnc', 8.778, 28.76, 4.0], ['asb', null, 'γ Cnc', 8.721, 21.47, 4.66], ['asa', null, 'δ Cnc', 8.745, 18.15, 3.94],
+    ['acu', 'Acubens', 'α Cnc', 8.975, 11.86, 4.25], ['bcnc', 'Tarf', 'β Cnc', 8.275, 9.19, 3.5],
+    ['dhya', null, 'δ Hya', 8.627, 5.7, 4.16], ['shya', null, 'σ Hya', 8.646, 3.34, 4.44], ['ehya', null, 'ε Hya', 8.779, 6.42, 3.38],
+    ['zhya', null, 'ζ Hya', 8.923, 5.95, 3.11], ['hhya', null, 'η Hya', 8.72, 3.4, 4.3], ['thhya', null, 'θ Hya', 9.239, 2.31, 3.88],
+    ['ihya', null, 'ι Hya', 9.665, -1.14, 3.91], ['alf', 'Alphard', 'α Hya', 9.46, -8.66, 1.98],
+    ['reg', 'Regulus', 'α Leo', 10.14, 11.97, 1.35], ['hleo', null, 'η Leo', 10.122, 16.76, 3.48], ['alg2', 'Algieba', 'γ Leo', 10.333, 19.84, 2.08],
+    ['zleo', 'Adhafera', 'ζ Leo', 10.278, 23.42, 3.43], ['mleo', 'Rasalas', 'μ Leo', 9.879, 26.01, 3.88], ['eleo', 'Algenubi', 'ε Leo', 9.764, 23.77, 2.98],
+    ['amon', null, 'α Mon', 7.687, -9.55, 3.93], ['gmon', null, 'γ Mon', 6.248, -6.27, 3.98], ['bmon', null, 'β Mon', 6.48, -7.03, 3.76], ['dmon', null, 'δ Mon', 7.198, -0.49, 4.15],
+    ['alyn', null, 'α Lyn', 9.351, 34.39, 3.13], ['l38', null, '38 Lyn', 9.314, 36.8, 3.82],
+    ['tal', 'Talitha', 'ι UMa', 8.987, 48.04, 3.14], ['kuma', null, 'κ UMa', 9.061, 47.16, 3.6],
+    ['almach', 'Almach', 'γ And', 2.065, 42.33, 2.1], ['mirach', 'Mirach', 'β And', 1.162, 35.62, 2.05],
+    ['atri', null, 'α Tri', 1.885, 29.58, 3.4], ['btri', null, 'β Tri', 2.159, 34.99, 3.0], ['gtri', null, 'γ Tri', 2.289, 33.85, 4.0],
+    ['phact', 'Phact', 'α Col', 5.661, -34.07, 2.65], ['wazn', null, 'β Col', 5.849, -35.77, 3.12],
+  ];
+  const LINES: string[][] = [
+    ['mei', 'bet'], ['mei', 'bel'], ['bet', 'alt', 'aln', 'min', 'bel'], ['alt', 'sai'], ['min', 'rig'], ['bet', 'bel'],
+    ['ztau', 'ald', 'ttau', 'gtau', 'dtau', 'etau', 'eln'], ['gtau', 'ltau', 'otau'],
+    ['cas', 'pol'], ['cas', 'tgem', 'meb', 'tej', 'pro'], ['pol', 'kgem', 'was', 'mek', 'alh'], ['was', 'lgem', 'xgem'],
+    ['cap', 'menk', 'mah', 'eln', 'has', 'cap'], ['cap', 'alm', 'zaur', 'haed', 'cap'],
+    ['mir', 'sir', 'wez', 'alu'], ['wez', 'adh'], ['sir', 'mul'], ['pcy', 'gom'],
+    ['arn', 'nih', 'elep', 'mlep', 'arn'], ['nih', 'glep', 'dlep', 'arn'],
+    ['gper', 'mfk', 'dper', 'eper', 'zper'], ['mfk', 'alg'],
+    ['a41', 'ham', 'she', 'mes'],
+    ['mnk', 'gcet', 'dcet', 'mira', 'zcet', 'tcet', 'ecet'], ['zcet', 'taucet'],
+    ['cur', 'mueri', 'nueri', 'o1eri', 'zaurak', 'deri', 'eeri', 'heri'],
+    ['icnc', 'asb', 'asa', 'acu'], ['asa', 'bcnc'],
+    ['dhya', 'ehya', 'zhya', 'hhya', 'shya', 'dhya'], ['zhya', 'thhya', 'ihya', 'alf'],
+    ['reg', 'hleo', 'alg2', 'zleo', 'mleo', 'eleo'],
+    ['gmon', 'bmon', 'amon'], ['bmon', 'dmon'], ['alyn', 'l38'], ['tal', 'kuma'],
+    ['mirach', 'almach'], ['atri', 'btri', 'gtri', 'atri'], ['phact', 'wazn'],
+  ];
+  const FIGURES: [string, number, number][] = [
+    ['Orion', 5.25, 3.5], ['Taurus', 4.15, 21.5], ['Gemini', 7.0, 27.5], ['Auriga', 5.6, 39], ['Canis Maior', 6.95, -22.5],
+    ['Canis Minor', 7.55, 11.5], ['Monoceros', 6.95, -3.5], ['Lepus', 5.45, -25.5], ['Perseus', 3.45, 44], ['Aries', 2.4, 17],
+    ['Cetus', 2.1, -6.5], ['Eridanus', 3.75, -16.5], ['Cancer', 8.6, 15], ['Hydra', 9.05, 0], ['Leo', 9.95, 18.5], ['Lynx', 8.1, 42],
+    ['Columba', 5.75, -38.5], ['Triangulum', 2.05, 31], ['Andromeda', 1.6, 41], ['Ursa Maior', 9.3, 54],
+  ];
+  const GENITIVE: Record<string, string> = {
+    Ori: 'Orionis', Tau: 'Tauri', Gem: 'Geminorum', Aur: 'Aurigae', CMa: 'Canis Majoris', CMi: 'Canis Minoris', Lep: 'Leporis', Per: 'Persei',
+    Ari: 'Arietis', Cet: 'Ceti', Eri: 'Eridani', Cnc: 'Cancri', Hya: 'Hydrae', Leo: 'Leonis', Mon: 'Monocerotis', Lyn: 'Lyncis', UMa: 'Ursae Majoris',
+    And: 'Andromedae', Tri: 'Trianguli', Col: 'Columbae',
+  };
+  // The Milky Way's middle, from Perseus down through Monoceros to Puppis.
+  const GALAXY: [number, number][] = [[1.5, 62], [2.6, 58], [3.6, 52], [4.6, 45], [5.4, 36], [5.9, 26], [6.3, 15], [6.6, 5], [6.9, -5], [7.2, -15], [7.45, -25], [7.7, -35], [7.95, -45]];
+
+  /** A dot's radius in squares for a magnitude, brightest about half a square. */
+  const radius = (mag: number) => 0.06 + 0.42 * Math.pow(Math.max(0, (5.5 - mag) / 7), 1.3);
+
+  function seeded(seed: number) { return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646; }
+  function hm(ra: number) { const m = Math.round(ra * 60); return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`; }
+  function dm(dec: number) { const s = dec < 0 ? '−' : '+'; const m = Math.round(Math.abs(dec) * 60); return `${s}${Math.floor(m / 60)}° ${String(m % 60).padStart(2, '0')}′`; }
+  const magWord = (mag: number) => (mag < 0 ? '−' : '') + Math.abs(mag).toFixed(1);
+
+  const plate = document.getElementById('atlas-plate') as unknown as SVGSVGElement;
+  const legend = document.getElementById('atlas-legend') as unknown as SVGSVGElement;
+  const readout = { star: document.getElementById('atlas-star')!, desig: document.getElementById('atlas-desig')!, pos: document.getElementById('atlas-pos')! };
+
+  function read(star: Star) {
+    const [, name, desig, ra, dec, mag] = star;
+    const [letter, abbr] = desig.split(' ');
+    readout.star.textContent = name ?? desig;
+    readout.desig.textContent = `${letter} ${GENITIVE[abbr] ?? abbr}, magnitude ${magWord(mag)}`;
+    readout.pos.textContent = `RA ${hm(ra)}, Dec ${dm(dec)}`;
+  }
+
+  // The legend: magnitudes −1 to 5, a square a row.
+  legend.setAttribute('viewBox', '0 0 12 7');
+  legend.innerHTML = [-1, 0, 1, 2, 3, 4, 5].map((mag, i) =>
+    `<circle cx="0.5" cy="${i + 0.5}" r="${radius(mag).toFixed(3)}" class="atlas-dot" /><text x="2" y="${i + 0.72}">${magWord(mag).replace('.0', '')}</text>`).join('');
+
+  let first = true;
+  onSquares(({ across, down, narrow }) => {
+    const wide = narrow ? across : across - 16;
+    const high = narrow ? 22 : down;
+    const per10 = narrow ? 2 : 4; // squares per ten degrees
+    const perHour = per10 * 1.5; // squares per hour: fifteen degrees
+    const x0 = narrow ? 1 : 4, y0 = 2;
+    const pw = narrow ? across - 2 : wide - 6;
+    const ph = narrow ? 18 : down - 4;
+    const raMax = Math.round((5.75 + pw / perHour / 2) * perHour) / perHour;
+    const raMin = raMax - pw / perHour;
+    const degPer = 10 / per10;
+    const decTop = Math.round((12 + (ph * degPer) / 2) / degPer) * degPer;
+    const decBottom = decTop - ph * degPer;
+    const X = (ra: number) => x0 + (raMax - ra) * perHour;
+    const Y = (dec: number) => y0 + (decTop - dec) / degPer;
+    const on = (ra: number, dec: number) => ra >= raMin && ra <= raMax && dec <= decTop && dec >= decBottom;
+    const scale = narrow ? 0.7 : 1;
+
+    plate.setAttribute('viewBox', `0 0 ${wide} ${high}`);
+    plate.style.gridColumn = narrow ? '1 / -1' : `1 / span ${wide}`;
+    plate.style.gridRow = `1 / span ${high}`;
+
+    const grid: string[] = [], labels: string[] = [];
+    for (let h = Math.ceil(raMin); h <= Math.floor(raMax); h++) {
+      const x = X(h);
+      grid.push(`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + ph}" />`);
+      labels.push(`<text x="${x}" y="${y0 - 0.35}" class="atlas-scale">${h}h</text>`);
+      if (!narrow) labels.push(`<text x="${x}" y="${y0 + ph + 0.95}" class="atlas-scale">${h}h</text>`);
+    }
+    for (let d = Math.ceil(decBottom / 10) * 10; d <= decTop; d += 10) {
+      const y = Y(d);
+      grid.push(`<line x1="${x0}" y1="${y}" x2="${x0 + pw}" y2="${y}"${d === 0 ? ' class="atlas-equator"' : ''} />`);
+      if (!narrow) labels.push(`<text x="${x0 - 0.4}" y="${y + 0.25}" class="atlas-scale atlas-dec">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)}°</text>`);
+    }
+
+    const galaxy = GALAXY.map(([ra, dec], i) => `${i ? 'L' : 'M'} ${X(ra).toFixed(2)} ${Y(dec).toFixed(2)}`).join(' ');
+    const ecliptic: string[] = [];
+    const eps = (23.44 * Math.PI) / 180;
+    for (let l = 0; l <= 180; l += 2) {
+      const lam = (l * Math.PI) / 180;
+      const ra = ((Math.atan2(Math.sin(lam) * Math.cos(eps), Math.cos(lam)) * 180) / Math.PI / 15 + 24) % 24;
+      const dec = (Math.asin(Math.sin(eps) * Math.sin(lam)) * 180) / Math.PI;
+      if (ra >= raMin - 0.3 && ra <= raMax + 0.3) ecliptic.push(`${ecliptic.length ? 'L' : 'M'} ${X(ra).toFixed(2)} ${Y(dec).toFixed(2)}`);
+    }
+
+    const byKey = new Map(STARS.map(s => [s[0], s]));
+    const lines = LINES.map(keys => {
+      const pts = keys.map(k => byKey.get(k)!);
+      if (!pts.some(([, , , ra, dec]) => on(ra, dec))) return '';
+      return `<polyline points="${pts.map(([, , , ra, dec]) => `${X(ra).toFixed(2)},${Y(dec).toFixed(2)}`).join(' ')}" />`;
+    }).join('');
+
+    const random = seeded(45);
+    const faint: string[] = [];
+    for (let i = 0; i < pw * ph * 0.22; i++) {
+      const ra = raMin + random() * (raMax - raMin);
+      const dec = decBottom + random() * (decTop - decBottom);
+      const mag = 4.6 + random() * 1.3;
+      faint.push(`<circle cx="${X(ra).toFixed(2)}" cy="${Y(dec).toFixed(2)}" r="${(radius(mag) * scale).toFixed(3)}" />`);
+    }
+
+    const order = [...STARS].filter(([, , , ra, dec]) => on(ra, dec)).sort((a, b) => b[5] - a[5]);
+    const animate = first && !reducedMotion();
+    const dots = order.map(star => {
+      const [key, name, desig, ra, dec, mag] = star;
+      const delay = animate ? ` style="--d:${Math.round(Math.max(0, mag + 1.5) * 220)}ms"` : '';
+      const label = `${name ? name + ', ' : ''}${desig}, magnitude ${magWord(mag)}`;
+      return `<g class="atlas-star" data-key="${key}" tabindex="${name ? 0 : -1}" role="img" aria-label="${label}"${delay}><circle class="atlas-hit" cx="${X(ra).toFixed(2)}" cy="${Y(dec).toFixed(2)}" r="0.7" /><circle class="atlas-dot" cx="${X(ra).toFixed(2)}" cy="${Y(dec).toFixed(2)}" r="${(radius(mag) * scale).toFixed(3)}" /></g>`;
+    }).join('');
+    const names = order.filter(([, name, , , , mag]) => name && mag < (narrow ? 1 : 2.7)).map(([, name, , ra, dec, mag]) =>
+      `<text x="${(X(ra) + radius(mag) * scale + 0.25).toFixed(2)}" y="${(Y(dec) + 0.2).toFixed(2)}" class="atlas-name"${narrow ? ' style="font-size:0.42px"' : ''}>${name}</text>`).join('');
+    // Names keep inside the plate: one too near an edge slides in until it fits.
+    const figureSize = narrow ? 0.5 : 0.72;
+    const figures = FIGURES.filter(([, ra, dec]) => on(ra, dec)).map(([name, ra, dec]) => {
+      const half = (name.length * figureSize * 0.95) / 2;
+      const x = Math.min(Math.max(X(ra), x0 + half + 0.3), x0 + pw - half - 0.3);
+      return `<text x="${x.toFixed(2)}" y="${Y(dec).toFixed(2)}" class="atlas-figure" font-size="${figureSize}">${name.toUpperCase()}</text>`;
+    }).join('');
+    const nebulae = [[5.588, -5.39, 'M 42'], [8.67, 19.67, 'Praesepe']].filter(([ra, dec]) => on(ra as number, dec as number)).map(([ra, dec, n]) =>
+      `<ellipse cx="${X(ra as number)}" cy="${Y(dec as number)}" rx="0.45" ry="0.3" class="atlas-neb" /><text x="${X(ra as number) - 0.6}" y="${Y(dec as number) + 0.2}" class="atlas-name atlas-small" text-anchor="end">${n}</text>`).join('');
+
+    plate.innerHTML = `
+      <defs>
+        <clipPath id="atlas-clip"><rect x="${x0}" y="${y0}" width="${pw}" height="${ph}" /></clipPath>
+        <filter id="atlas-haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${narrow ? 0.8 : 1.5}" /></filter>
+      </defs>
+      <rect class="atlas-ground" x="${x0}" y="${y0}" width="${pw}" height="${ph}" />
+      <g clip-path="url(#atlas-clip)">
+        <path class="atlas-galaxy" d="${galaxy}" stroke-width="${narrow ? 3 : 7}" filter="url(#atlas-haze)" />
+        <path class="atlas-galaxy atlas-galaxy-core" d="${galaxy}" stroke-width="${narrow ? 1.2 : 2.6}" filter="url(#atlas-haze)" />
+        <g class="atlas-grid">${grid.join('')}</g>
+        <path class="atlas-ecliptic" d="${ecliptic.join(' ')}" />
+        <g class="atlas-lines">${lines}</g>
+        <g class="atlas-faint">${faint.join('')}</g>
+        ${nebulae}
+        <g class="atlas-figures">${figures}</g>
+        <g class="atlas-names">${names}</g>
+        <g class="atlas-stars${animate ? ' atlas-arrive' : ''}">${dots}</g>
+      </g>
+      <rect class="atlas-frame" x="${x0}" y="${y0}" width="${pw}" height="${ph}" />
+      <rect class="atlas-frame atlas-frame-outer" x="${x0 - 0.3}" y="${y0 - 0.3}" width="${pw + 0.6}" height="${ph + 0.6}" />
+      <g class="atlas-labels">${labels.join('')}</g>
+    `;
+    first = false;
+  });
+
+  const byKey = new Map(STARS.map(s => [s[0], s]));
+  const pick = (event: Event) => {
+    const g = (event.target as Element).closest?.('.atlas-star') as SVGGElement | null;
+    if (g) read(byKey.get(g.dataset.key!)!);
+  };
+  plate.addEventListener('pointerover', pick);
+  plate.addEventListener('focusin', pick);
+</script>
+
+<style is:global>
+  html { background: #0a1c42; }
+  .atlas {
+    --plate: #112b63;
+    --brass: #dcc791;
+    --star: #fbf8ec;
+    background: #0a1c42;
+    color: #e8e3d2;
+    font-family: 'Hoefler Text', Baskerville, Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+  }
+  .atlas :is(h1, p, figure) { margin: 0; }
+
+  .atlas-plate { display: block; width: 100%; height: 100%; }
+  .atlas-ground { fill: var(--plate); }
+  .atlas-galaxy { fill: none; stroke: #3b67b4; stroke-linejoin: round; stroke-linecap: round; opacity: 0.55; }
+  .atlas-galaxy-core { stroke: #5a86cf; opacity: 0.5; }
+  .atlas-grid { stroke: rgba(214, 226, 255, 0.24); stroke-width: 0.035; }
+  .atlas-grid .atlas-equator { stroke: rgba(214, 226, 255, 0.55); stroke-width: 0.06; }
+  .atlas-ecliptic { fill: none; stroke: #e5a983; stroke-width: 0.06; stroke-dasharray: 0.4 0.3; opacity: 0.85; }
+  .atlas-lines { fill: none; stroke: var(--brass); stroke-width: 0.055; opacity: 0.75; stroke-linejoin: round; }
+  .atlas-faint { fill: var(--star); opacity: 0.75; }
+  .atlas-neb { fill: rgba(214, 226, 255, 0.25); stroke: rgba(214, 226, 255, 0.7); stroke-width: 0.04; stroke-dasharray: 0.12 0.1; }
+  .atlas-dot { fill: var(--star); stroke: var(--plate); stroke-width: 0.05; }
+  .atlas-hit { fill: transparent; }
+  .atlas-star { cursor: crosshair; outline: none; }
+  .atlas-star:hover .atlas-dot, .atlas-star:focus-visible .atlas-dot { stroke: var(--brass); stroke-width: 0.12; }
+  .atlas-figure { font-style: italic; letter-spacing: 0.32em; fill: var(--brass); text-anchor: middle; }
+  .atlas-name { font-size: 0.55px; font-style: italic; fill: #e8e3d2; }
+  .atlas-small { font-size: 0.45px; opacity: 0.8; }
+  .atlas-frame { fill: none; stroke: var(--brass); stroke-width: 0.06; }
+  .atlas-frame-outer { stroke-width: 0.14; }
+  .atlas-scale { font-size: 0.55px; fill: var(--brass); text-anchor: middle; font-variant-numeric: oldstyle-nums; }
+  .atlas-dec { text-anchor: end; }
+
+  /* On load the stars come out brightest first, as they do at dusk. */
+  .atlas-arrive .atlas-star { animation: atlas-out 0.9s var(--d, 0ms) both; }
+  @keyframes atlas-out { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .atlas-arrive .atlas-star { animation: none; } }
+
+  .atlas-panel { grid-column: -15 / -2; grid-row: 3 / -3; display: grid; grid-template-rows: auto auto auto auto 1fr auto; align-content: start; overflow: hidden; }
+  .atlas-plate-no { font-variant: small-caps; letter-spacing: 0.06em; color: var(--brass); font-size: calc(16px * var(--sf)); }
+  .atlas .atlas-panel h1 { font: italic calc(30px * var(--sf)) / calc(2 * var(--u)) 'Hoefler Text', Didot, serif; margin-top: var(--u); }
+  .atlas .atlas-note { margin-top: var(--u); font-size: calc(13px * var(--sf)); color: #b9bfd3; }
+  .atlas .atlas-legend { margin-top: calc(2 * var(--u)); }
+  .atlas-legend figcaption { font-style: italic; color: var(--brass); }
+  .atlas-legend svg { display: block; width: calc(12 * var(--u)); height: calc(7 * var(--u)); margin-top: var(--u); }
+  .atlas-legend text { font-size: 0.62px; fill: #e8e3d2; font-family: 'Hoefler Text', Georgia, serif; }
+  .atlas-readout { margin-top: calc(2 * var(--u)); border-top: 1px solid rgba(220, 199, 145, 0.5); padding-top: calc(var(--u) - 1px); align-self: start; }
+  .atlas-readout p { font-size: calc(13px * var(--sf)); color: #b9bfd3; }
+  .atlas-readout .atlas-starname { font-size: calc(20px * var(--sf)); color: var(--star); font-style: italic; }
+  .atlas-foot { font-size: calc(11px * var(--sf)); font-style: italic; color: #8f97b3; line-height: var(--u); }
+
+  :root[data-narrow] .atlas { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .atlas-panel { grid-column: 2 / -2; grid-row: auto; display: block; margin-top: var(--u); }
+  :root[data-narrow] .atlas-panel > * + * { margin-top: var(--u); }
+</style>

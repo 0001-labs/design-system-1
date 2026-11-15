@@ -1,0 +1,417 @@
+---
+// After the route map at the back of an in-flight magazine: a pale map whose land is dots on half
+// squares, great-circle arcs fanning from one island hub, the destinations in a table of flight
+// times, and beside it the fleet in profile and the seat map of the smallest aircraft, a seat a square.
+// The airline, Lundair, is invented; its hub is Keflavík and its livery is a puffin's.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+
+const FLEET = [
+  { reg: 'TF-LUN', name: 'Lundi', kind: 'Widebody', seats: 262, range: '11,100 km', note: 'Seattle, Denver and the long way round', long: 1, tail: '#f26a21' },
+  { reg: 'TF-HRA', name: 'Hrafn', kind: 'Narrowbody', seats: 190, range: '7,400 km', note: 'Most of Europe, all of the east coast', long: 0.78, tail: '#f26a21' },
+  { reg: 'TF-KRI', name: 'Kría', kind: 'Turboprop', seats: 72, range: '1,500 km', note: 'Nuuk, Vágar and Tromsø, low and slow', long: 0.56, tail: '#f26a21', prop: true },
+];
+---
+<AlignedStudy slug="airline-routes" theme="light">
+  <main class="stage air">
+    <header class="air-head">
+      <p class="air-brand"><span class="air-puffin" aria-hidden="true"></span>Lundair</p>
+      <p class="air-issue">Áfram, the Lundair magazine<br />Winter 2026/27, take it with you</p>
+      <p class="air-folio">112</p>
+    </header>
+
+    <section class="air-map-wrap" aria-labelledby="air-map-title">
+      <h1 id="air-map-title" class="air-title">Where we fly</h1>
+      <p class="air-lede">Thirty cities, one island in the middle. Every flight leaves from or lands at Keflavík, so the shortest way between Denver and Helsinki is a stopover with a geyser in it.</p>
+      <svg class="air-map" id="map" role="img" aria-label="Route map: arcs from Keflavík to North America and Europe"></svg>
+      <p class="air-card" id="card" aria-live="polite"><b>Keflavík</b> Choose a city to see its flight.</p>
+    </section>
+
+    <section class="air-times" aria-label="Flight times from Keflavík">
+      <ol class="air-list" id="list"></ol>
+    </section>
+
+    <aside class="air-side">
+      <h2>The fleet</h2>
+      <ul class="air-fleet">
+        {FLEET.map(plane => (
+          <li>
+            <svg viewBox="0 0 24 3" class="air-plane" style={`--long:${plane.long};--tail:${plane.tail}`} aria-hidden="true">
+              <g transform={`scale(${plane.long} 1)`}>
+                <path class="air-body" d="M1.2 1.15 C1.6 0.75 2.6 0.7 3.6 0.7 L20.4 0.7 L23.2 0.05 L23.7 0.05 L22.9 1.05 C22.2 1.5 21.4 1.65 20.4 1.65 L2.6 1.65 C1.6 1.65 1.0 1.45 1.2 1.15 Z" />
+                <path class="air-tail" d="M20.4 0.7 L23.2 0.05 L23.7 0.05 L22.9 1.05 C22.6 1.25 22.2 1.4 21.6 1.5 Z" />
+                <path class="air-cheat" d="M3.6 1.3 L21 1.3" />
+                <path class="air-windows" d="M3.4 0.98 L19.6 0.98" />
+                <path class="air-wing" d="M9.5 1.4 L13.5 1.4 L11.2 2.4 L10.2 2.4 Z" />
+              </g>
+              {plane.prop
+                ? <circle class="air-engine" cx={10.6 * plane.long} cy="0.62" r="0.28" />
+                : <rect class="air-engine" x={9.4 * plane.long} y="1.65" width="2.4" height="0.5" rx="0.25" />}
+            </svg>
+            <p><b>{plane.name}</b> {plane.reg}<br /><span>{plane.kind}, {plane.seats} seats, {plane.range}. {plane.note}.</span></p>
+          </li>
+        ))}
+      </ul>
+
+      <h2>Kría, seat by seat</h2>
+      <div class="air-seats-wrap">
+        <svg class="air-seats" id="seats" role="img" aria-label="Seat map of the turboprop, seventy-two seats, two and two"></svg>
+      </div>
+      <p class="air-seat-note" id="seat-note">Rows 1 to 18. Choose a seat. A and D are windows; the propellers are outside row 6.</p>
+      <p class="air-stop"><b>Stop over</b> Break any journey in Iceland for up to seven nights at no extra fare. The lagoon is twenty minutes from the terminal; the aurora is not on the timetable.</p>
+    </aside>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares } from '../../../lib/aligned-study';
+
+  type P = [number, number];
+  // Land, roughly, as polygons of longitude and latitude; then water cut out of it.
+  const LAND: P[][] = [
+    // North America
+    [[-168, 66], [-162, 70.5], [-150, 71], [-140, 69.6], [-128, 70], [-115, 68.5], [-100, 68], [-94, 71], [-88, 68.5], [-82, 69.5], [-81, 66], [-86, 64], [-93, 61], [-94, 58.8], [-90, 57], [-85, 55.3], [-82, 52.5], [-79, 51.5], [-77, 55.5], [-77, 60], [-78, 62.5], [-72, 61.8], [-65, 60.3], [-64, 58], [-61.5, 56], [-57, 53.5], [-55.7, 52], [-60, 50.2], [-66, 50], [-64.5, 49], [-64.8, 47.5], [-60, 46], [-63.5, 44.6], [-66, 43.8], [-67.5, 44.6], [-70, 43.7], [-70.6, 42], [-70, 41.7], [-72, 41], [-74, 40.5], [-74, 39.5], [-75.5, 38.5], [-76, 37], [-75.6, 35.2], [-77, 34.5], [-79, 33.2], [-81, 31.5], [-81.3, 30], [-80.1, 27], [-80.4, 25.2], [-81.7, 25.8], [-82.7, 28], [-84, 30], [-86, 30.4], [-89, 30.2], [-90, 29.2], [-93.5, 29.7], [-97, 28], [-97.5, 25.5], [-97.7, 22], [-97, 20], [-105, 20], [-106, 23], [-109, 26], [-112, 29], [-114.7, 31.7], [-117, 32.5], [-118.5, 34], [-120.6, 34.6], [-122.5, 37.5], [-124, 40.4], [-124.5, 43], [-124, 46.3], [-124.7, 48.4], [-123, 49], [-125, 50], [-128, 51], [-130, 54.5], [-133, 57.5], [-137, 58.5], [-140, 59.8], [-147, 60.5], [-152, 59.2], [-155, 57.5], [-158, 56.5], [-162, 55], [-158, 58.5], [-162, 59.8], [-165, 61.5]],
+    // Baffin Island and the islands above it
+    [[-90, 72], [-80, 73.7], [-72, 71.5], [-67, 69.5], [-62, 66.7], [-64, 64.8], [-65.5, 62.6], [-71, 62.8], [-74.5, 64.4], [-78, 64.6], [-73, 67.2], [-80, 69.6], [-86, 70]],
+    [[-125, 72], [-118, 76.5], [-100, 78], [-90, 81], [-70, 82.5], [-62, 82], [-75, 79], [-80, 76.5], [-90, 76], [-95, 74], [-105, 73], [-110, 70.5], [-118, 69.5]],
+    // Greenland
+    [[-73, 78], [-67, 80.5], [-55, 82.3], [-40, 83.5], [-22, 82.5], [-12, 81.5], [-18, 77], [-19, 74], [-22, 71], [-25, 69], [-32, 68], [-35, 66], [-40, 65], [-42, 62.5], [-44, 60], [-48, 61], [-50.5, 63.5], [-53, 66], [-54, 69], [-52, 70.5], [-55, 72.5], [-58, 75.5], [-66, 76]],
+    // Iceland
+    [[-24, 65.5], [-22.5, 66.4], [-18, 66.2], [-14.5, 66.3], [-13.5, 65], [-15, 64.3], [-18.5, 63.4], [-21, 63.8], [-22.7, 63.8], [-22, 64.5], [-24, 64.9]],
+    // Faroes
+    [[-7.6, 62.3], [-6.4, 62.3], [-6.6, 61.4], [-7.2, 61.6]],
+    // Great Britain and Ireland
+    [[-5.7, 50], [-3, 50.6], [1.4, 51.2], [1.7, 52.7], [0.2, 53.5], [-0.5, 54.5], [-1.6, 55.6], [-2.1, 57], [-1.8, 57.6], [-3.5, 58.6], [-5, 58.6], [-6.2, 57.5], [-5.6, 56.3], [-6.2, 55.3], [-4.8, 54.8], [-3.2, 54.2], [-3, 53.4], [-4.5, 53.3], [-4.2, 52.2], [-5.2, 51.7], [-3, 51.4]],
+    [[-6, 52.2], [-6.2, 53.9], [-5.5, 54.6], [-7.3, 55.3], [-8.5, 54.5], [-10, 54.2], [-9.8, 53], [-10.4, 51.8], [-8.5, 51.6]],
+    // Europe, Asia and the top of Africa, the Baltic traced along its shore
+    [[70, 72], [55, 68.5], [44, 68.5], [41, 67], [33, 69.3], [28, 71], [24, 71], [19, 70], [15, 68.5], [12.5, 66], [10.5, 64.5], [5, 62], [5, 59.5], [6, 58.1], [8, 58], [10.5, 59.2], [11.2, 58.5], [12.5, 56.3], [12.8, 55.4], [14.3, 55.6], [16, 56.3], [16.6, 57.8], [18.5, 59.5], [17.3, 60.7], [17.5, 62.5], [21, 64.5], [22.3, 65.8], [25.4, 65], [24.5, 64], [21.4, 62.5], [21.5, 60.9], [22.8, 60], [26, 60.4], [30, 60], [28, 59.5], [23.4, 59.4], [23.5, 58.5], [21.5, 57.3], [21, 56], [19.9, 54.9], [18.5, 54.7], [14.5, 53.9], [12, 54.2], [10.9, 54], [10, 55], [10.6, 57.7], [8.2, 56.8], [8.1, 55.5], [8.6, 53.9], [7, 53.5], [4.7, 52.9], [3.5, 51.5], [1.6, 50.9], [1.3, 50], [-1.3, 49.6], [-1.9, 48.7], [-4.7, 48.4], [-2.5, 47.3], [-1.2, 46], [-1.5, 43.4], [-4, 43.4], [-8, 43.7], [-9.3, 43], [-8.9, 41], [-9.5, 38.8], [-8.8, 37], [-6.4, 36.8], [-5.6, 36], [-5.9, 35.8], [-6.5, 34], [-9.5, 32.5], [-9.8, 29.5], [-13, 27.5], [-16, 24], [-17, 21], [-17, 10], [70, 10]],
+    // Corsica, Sardinia, Sicily
+    [[9.3, 43], [9.6, 41.4], [8.4, 39], [9.7, 39.2], [9.8, 41], [8.6, 41.8]],
+    [[12.4, 38.1], [15.6, 38.3], [15.1, 36.7], [12.4, 37.8]],
+  ];
+  const WATER: P[][] = [
+    // The Mediterranean
+    [[-5.5, 36.1], [-4.4, 36.7], [-2, 36.8], [-0.3, 38.5], [0.2, 39.5], [-0.3, 39.8], [3.2, 41.9], [3, 43], [4.6, 43.4], [6.6, 43.1], [8.7, 44.4], [10.3, 43.5], [12.4, 41.9], [15.6, 40], [15.6, 38], [16.6, 38.4], [17.2, 39.4], [18.5, 40.1], [16.9, 41.2], [15.3, 41.9], [13.6, 43.6], [12.3, 44.6], [12.3, 45.4], [13.8, 45.6], [15.3, 44.3], [17.6, 43], [19.4, 41.8], [19.4, 40.3], [21, 38.5], [22.5, 36.5], [23.2, 38], [24, 38.2], [22.9, 40.5], [26, 40.8], [26.5, 40.2], [26.2, 39.3], [27, 37.5], [28, 36.7], [30.5, 36.5], [32.5, 36.1], [36, 36.7], [35.8, 34.5], [34.8, 32], [34.2, 31.3], [32, 31.2], [29.5, 31], [25, 31.8], [20, 30.8], [18, 30.8], [15.5, 31.5], [10.5, 33.6], [11, 35.4], [10.4, 36.8], [9.5, 37.3], [3, 36.8], [-2, 35.1], [-5.4, 35.9]],
+    // The Black Sea and the Caspian
+    [[28, 41.3], [31, 41.1], [35, 42], [38, 41], [41.5, 41.5], [41.7, 42.5], [39.5, 44.2], [37.5, 44.7], [38.2, 46.5], [35, 45.5], [33.5, 44.5], [32.5, 45.5], [31, 46.6], [29.7, 45.3], [28.7, 44], [28, 43]],
+    [[47, 45], [53, 47], [54, 41], [53.5, 37.5], [49, 37.5], [49, 41], [47.5, 43]],
+    // The Red Sea and the Gulf
+    [[32.5, 30], [35, 28], [43, 13], [44, 12.5], [42, 16], [36, 24], [33, 28]],
+    [[48, 30], [50, 29], [56, 26.5], [56.5, 24], [52, 24], [50, 26]],
+    // The White Sea
+    [[33, 66.5], [36, 64.5], [40, 64.5], [44, 66], [41, 66.5], [35, 67]],
+  ];
+  const inside = (pt: P, poly: P[]) => {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) hit = !hit;
+    }
+    return hit;
+  };
+  const isLand = (pt: P) => LAND.some(p => inside(pt, p)) && !WATER.some(p => inside(pt, p));
+
+  type City = { code: string; name: string; at: P; per: string; season?: string; side: 'l' | 'r' | 't' | 'b' };
+  const HUB: City = { code: 'KEF', name: 'Keflavík', at: [-22.6, 64], per: '', side: 'b' };
+  const CITIES: City[] = [
+    { code: 'SEA', name: 'Seattle', at: [-122.3, 47.4], per: '5 a week', side: 'b' },
+    { code: 'YVR', name: 'Vancouver', at: [-123.2, 49.2], per: '4 a week', side: 't' },
+    { code: 'DEN', name: 'Denver', at: [-104.7, 39.9], per: 'Daily', side: 'b' },
+    { code: 'MSP', name: 'Minneapolis', at: [-93.2, 44.9], per: '3 a week', side: 'b' },
+    { code: 'ORD', name: 'Chicago', at: [-87.9, 42], per: 'Daily', side: 'b' },
+    { code: 'YYZ', name: 'Toronto', at: [-79.6, 43.7], per: 'Daily', side: 't' },
+    { code: 'YUL', name: 'Montréal', at: [-73.7, 45.5], per: '4 a week', season: 'May to October', side: 't' },
+    { code: 'BOS', name: 'Boston', at: [-71, 42.4], per: 'Twice daily', side: 'r' },
+    { code: 'JFK', name: 'New York', at: [-73.8, 40.6], per: 'Twice daily', side: 'r' },
+    { code: 'IAD', name: 'Washington', at: [-77.5, 38.9], per: 'Daily', side: 'b' },
+    { code: 'GOH', name: 'Nuuk', at: [-51.7, 64.2], per: '3 a week', side: 'l' },
+    { code: 'FAE', name: 'Vágar', at: [-7.3, 62.1], per: '2 a week', side: 't' },
+    { code: 'TOS', name: 'Tromsø', at: [19, 69.7], per: '2 a week', season: 'December to March', side: 't' },
+    { code: 'OSL', name: 'Oslo', at: [11.1, 60.2], per: 'Daily', side: 'l' },
+    { code: 'ARN', name: 'Stockholm', at: [17.9, 59.6], per: 'Daily', side: 't' },
+    { code: 'HEL', name: 'Helsinki', at: [25, 60.3], per: '5 a week', side: 'r' },
+    { code: 'CPH', name: 'Copenhagen', at: [12.6, 55.6], per: 'Twice daily', side: 'r' },
+    { code: 'GLA', name: 'Glasgow', at: [-4.4, 55.9], per: '4 a week', side: 't' },
+    { code: 'DUB', name: 'Dublin', at: [-6.3, 53.4], per: 'Daily', side: 'l' },
+    { code: 'LHR', name: 'London', at: [-0.45, 51.5], per: 'Twice daily', side: 'l' },
+    { code: 'AMS', name: 'Amsterdam', at: [4.8, 52.3], per: 'Twice daily', side: 't' },
+    { code: 'CDG', name: 'Paris', at: [2.5, 49], per: 'Twice daily', side: 'l' },
+    { code: 'FRA', name: 'Frankfurt', at: [8.6, 50], per: 'Daily', side: 'r' },
+    { code: 'MUC', name: 'Munich', at: [11.8, 48.4], per: '5 a week', side: 'r' },
+    { code: 'ZRH', name: 'Zurich', at: [8.5, 47.5], per: '4 a week', side: 'b' },
+    { code: 'BCN', name: 'Barcelona', at: [2.1, 41.3], per: '3 a week', season: 'April to October', side: 'r' },
+    { code: 'MAD', name: 'Madrid', at: [-3.6, 40.5], per: '4 a week', side: 'b' },
+    { code: 'LIS', name: 'Lisbon', at: [-9.1, 38.8], per: '4 a week', side: 'l' },
+    { code: 'TFS', name: 'Tenerife', at: [-16.6, 28], per: '2 a week', season: 'November to April', side: 'r' },
+    { code: 'BER', name: 'Berlin', at: [13.5, 52.4], per: '5 a week', side: 'r' },
+  ];
+
+  const rad = Math.PI / 180;
+  const km = (a: P, b: P) => {
+    const [l1, p1] = [a[0] * rad, a[1] * rad], [l2, p2] = [b[0] * rad, b[1] * rad];
+    const h = Math.sin((p2 - p1) / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin((l2 - l1) / 2) ** 2;
+    return 2 * 6371 * Math.asin(Math.sqrt(h));
+  };
+  // Block time: taxi and climb, then 820 km an hour; westbound against the jet stream adds a tenth.
+  const minutes = (c: City) => Math.round((35 + (km(HUB.at, c.at) / 820) * 60 * (c.at[0] < HUB.at[0] ? 1.1 : 1)) / 5) * 5;
+  const hm = (m: number) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+  const sorted = [...CITIES].sort((a, b) => minutes(a) - minutes(b));
+
+  // Points along the great circle from the hub to a city.
+  const arc = (a: P, b: P, n = 48): P[] => {
+    const v = ([lon, lat]: P) => [Math.cos(lat * rad) * Math.cos(lon * rad), Math.cos(lat * rad) * Math.sin(lon * rad), Math.sin(lat * rad)];
+    const [A, B] = [v(a), v(b)];
+    const w = Math.acos(A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
+    return Array.from({ length: n + 1 }, (_, i) => {
+      const t = i / n;
+      const s1 = Math.sin((1 - t) * w) / Math.sin(w), s2 = Math.sin(t * w) / Math.sin(w);
+      const [x, y, z] = [A[0] * s1 + B[0] * s2, A[1] * s1 + B[1] * s2, A[2] * s1 + B[2] * s2];
+      return [Math.atan2(y, x) / rad, Math.atan2(z, Math.hypot(x, y)) / rad] as P;
+    });
+  };
+
+  const map = document.getElementById('map') as unknown as SVGSVGElement;
+  const list = document.getElementById('list')!;
+  const card = document.getElementById('card')!;
+  const seats = document.getElementById('seats') as unknown as SVGSVGElement;
+  const seatNote = document.getElementById('seat-note')!;
+  const stage = document.querySelector<HTMLElement>('.air')!;
+
+  list.innerHTML = sorted.map(c => `<li data-code="${c.code}"><b>${c.code}</b><span>${c.name}</span><em>${hm(minutes(c))}</em></li>`).join('');
+
+  const choose = (code: string | null) => {
+    map.querySelectorAll('[data-code]').forEach(el => el.classList.toggle('on', el.getAttribute('data-code') === code));
+    list.querySelectorAll('[data-code]').forEach(el => el.classList.toggle('on', el.getAttribute('data-code') === code));
+    map.classList.toggle('choosing', !!code);
+    const c = CITIES.find(x => x.code === code);
+    card.innerHTML = c
+      ? `<b>Keflavík to ${c.name}</b> ${hm(minutes(c))}, ${(Math.round(km(HUB.at, c.at) / 10) * 10).toLocaleString('en-GB')} km. ${c.per}${c.season ? `, ${c.season}` : ''}.`
+      : '<b>Keflavík</b> Choose a city to see its flight.';
+  };
+
+  // Draw the map in squares: the box's width and height, a projection that fills it, land dots every
+  // half square, the arcs and the cities.
+  const drawMap = (w: number, h: number) => {
+    map.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const k = Math.cos(52 * rad);
+    const west = -127, east = 34;
+    const s = w / ((east - west) * k);
+    let top = Math.min(80, 52 + h / s / 2 + 6);
+    const lonX = (lon: number) => (lon - west) * k * s;
+    const latY = (lat: number) => (top - lat) * s;
+    const xy = ([lon, lat]: P) => [lonX(lon), latY(lat)];
+    const dots: string[] = [];
+    for (let y = 0.25; y < h; y += 0.5) {
+      for (let x = 0.25; x < w; x += 0.5) {
+        const lon = west + x / (k * s), lat = top - y / s;
+        if (isLand([lon, lat])) dots.push(`M${x - 0.16} ${y}a0.16 0.16 0 1 0 0.32 0a0.16 0.16 0 1 0 -0.32 0`);
+      }
+    }
+    const grat: string[] = [];
+    for (let lat = 30; lat <= 80; lat += 10) grat.push(`M0 ${latY(lat)}H${w}`);
+    for (let lon = -120; lon <= 30; lon += 15) grat.push(`M${lonX(lon)} 0V${h}`);
+    const [hx, hy] = xy(HUB.at);
+    const arcs = CITIES.map(c => {
+      const pts = arc(HUB.at, c.at).map(xy).map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+      return `<polyline class="air-arc${c.season ? ' seasonal' : ''}" data-code="${c.code}" points="${pts}"/>`;
+    }).join('');
+    const cities = CITIES.map(c => {
+      const [x, y] = xy(c.at);
+      const lx = c.side === 'l' ? x - 0.45 : c.side === 'r' ? x + 0.45 : x;
+      const ly = c.side === 't' ? y - 0.5 : c.side === 'b' ? y + 0.95 : y + 0.22;
+      const anchor = c.side === 'l' ? 'end' : c.side === 'r' ? 'start' : 'middle';
+      return `<g class="air-city" data-code="${c.code}" tabindex="0" role="button" aria-label="${c.name}, ${hm(minutes(c))}"><circle cx="${x}" cy="${y}" r="0.6" class="hit"/><circle cx="${x}" cy="${y}" r="0.2" class="dot"/><text x="${lx}" y="${ly}" text-anchor="${anchor}">${c.code}</text></g>`;
+    }).join('');
+    map.innerHTML = `<path class="air-grat" d="${grat.join('')}"/><path class="air-land" d="${dots.join('')}"/>${arcs}<g class="air-hub"><circle cx="${hx}" cy="${hy}" r="0.75"/><circle cx="${hx}" cy="${hy}" r="0.35" class="inner"/><text x="${hx}" y="${hy + 1.6}" text-anchor="middle">KEF</text></g>${cities}`;
+  };
+
+  // The seat map of the turboprop: two and two, a seat a square, eighteen rows, nose first. Across on
+  // a computer, down a phone.
+  const drawSeats = (across: boolean) => {
+    const rows = 18, len = rows + 5, wide = 6;
+    const [W, H] = across ? [len, wide] : [wide, len];
+    seats.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    seats.style.setProperty('--sw', String(W));
+    seats.style.setProperty('--sh', String(H));
+    const at = (along: number, side: number) => (across ? [along, side] : [side, along]);
+    const parts: string[] = [];
+    // Hull: a capsule from nose to tail.
+    parts.push(across
+      ? `<path class="air-hull" d="M3 0.1 H${len - 1.2} Q${len - 0.1} 0.1 ${len - 0.1} 3 Q${len - 0.1} 5.9 ${len - 1.2} 5.9 H3 Q0.1 5.9 0.1 3 Q0.1 0.1 3 0.1Z"/>`
+      : `<path class="air-hull" d="M0.1 3 V${len - 1.2} Q0.1 ${len - 0.1} 3 ${len - 0.1} Q5.9 ${len - 0.1} 5.9 ${len - 1.2} V3 Q5.9 0.1 3 0.1 Q0.1 0.1 0.1 3Z"/>`);
+    const LETTERS = ['A', 'B', 'C', 'D'];
+    const SIDES = [1, 2, 4, 5];
+    for (let r = 0; r < rows; r++) {
+      const along = 3 + r;
+      LETTERS.forEach((letter, i) => {
+        const [x, y] = at(along, SIDES[i]);
+        const exit = r === 0 || r === 11;
+        parts.push(`<rect class="air-seat${exit ? ' exit' : ''}${r < 3 ? ' front' : ''}" x="${x + 0.1}" y="${y + 0.1}" width="0.8" height="0.8" rx="0.2" tabindex="0" role="button" data-seat="${r + 1}${letter}" aria-label="Seat ${r + 1}${letter}"/>`);
+      });
+      if (r % 3 === 0) {
+        const [x, y] = at(along, 3);
+        parts.push(`<text class="air-row" x="${x + 0.5}" y="${y + 0.68}" text-anchor="middle">${r + 1}</text>`);
+      }
+    }
+    // Propellers beside row 6, galley and door at the nose.
+    const [p1x, p1y] = at(8.5, -0.15), [p2x, p2y] = at(8.5, 6.15);
+    parts.push(`<circle class="air-prop" cx="${p1x}" cy="${p1y}" r="0.15"/><circle class="air-prop" cx="${p2x}" cy="${p2y}" r="0.15"/>`);
+    const [gx, gy] = at(1.6, 1.4);
+    parts.push(`<rect class="air-galley" x="${gx}" y="${gy}" width="${across ? 1.2 : 3.2}" height="${across ? 3.2 : 1.2}" rx="0.2"/>`);
+    seats.innerHTML = parts.join('');
+  };
+
+  seats.addEventListener('click', e => {
+    const el = (e.target as Element).closest('[data-seat]');
+    if (!el) return;
+    seats.querySelectorAll('.picked').forEach(s => s.classList.remove('picked'));
+    el.classList.add('picked');
+    const seat = el.getAttribute('data-seat')!;
+    const row = parseInt(seat, 10), letter = seat.slice(-1);
+    const where = letter === 'A' || letter === 'D' ? 'a window' : 'the aisle';
+    const extra = row === 1 ? ' Front row: legroom and a view of the galley curtain.' : row === 12 ? ' Over-wing exit: you agree to open it if asked.' : row >= 6 && row <= 7 ? ' Beside the propeller: loud, and you will love it.' : row === 18 ? ' Last row: first to hear the coffee.' : '';
+    seatNote.textContent = `${seat}, by ${where}.${extra}`;
+  });
+  seats.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && (e.target as Element).matches('[data-seat]')) { e.preventDefault(); (e.target as Element).dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+
+  const hoverable = (root: Element) => {
+    root.addEventListener('pointerover', e => { const el = (e.target as Element).closest('[data-code]'); if (el) choose(el.getAttribute('data-code')); });
+    root.addEventListener('focusin', e => { const el = (e.target as Element).closest('[data-code]'); if (el) choose(el.getAttribute('data-code')); });
+    root.addEventListener('pointerleave', () => choose(null));
+  };
+  hoverable(map);
+  hoverable(list);
+
+  // Layout: the side column is twenty-four squares; the map takes the width left and as much height
+  // as reads well; the table of times fills under it.
+  onSquares(({ across, down, narrow }) => {
+    if (narrow) {
+      const w = across - 2;
+      const h = Math.round(w * 0.8);
+      stage.style.setProperty('--map-w', String(w));
+      stage.style.setProperty('--map-h', String(h));
+      drawMap(w, h);
+      drawSeats(false);
+      return;
+    }
+    stage.toggleAttribute('data-short', down < 44);
+    const w = across - 2 - 27;
+    // The table: columns of eight squares and a gap; as many rows as the cities need.
+    const cols = Math.max(1, Math.floor((w + 1) / 9));
+    const rows = Math.ceil(CITIES.length / cols);
+    stage.style.setProperty('--times-cols', String(cols));
+    stage.style.setProperty('--times-from', String(-2 - rows));
+    stage.style.setProperty('--lede-w', String(Math.min(26, w - 19)));
+    const room = down - 9 - rows - 2;
+    const h = Math.max(12, Math.min(room, Math.round(w * 0.66)));
+    stage.style.setProperty('--map-w', String(w));
+    stage.style.setProperty('--map-h', String(h));
+    drawMap(w, h);
+    drawSeats(true);
+  });
+</script>
+
+<style is:global>
+  html { background: #e9f0f1; }
+  .air {
+    --sea: #e9f0f1;
+    --land: #b4c3c6;
+    --navy: #13294b;
+    --beak: #f26a21;
+    --paper: #fdfdfb;
+    color: var(--navy);
+    font-family: 'Iowan Old Style', Charter, Georgia, serif;
+    font-size: calc(14px * var(--sf));
+    line-height: var(--u);
+    background: var(--sea);
+  }
+  .air h1, .air h2, .air b, .air-head, .air-list, .air-card { font-family: Futura, 'Trebuchet MS', sans-serif; }
+
+  .air-head { grid-column: 2 / -2; grid-row: 2 / span 2; display: grid; grid-template-columns: 1fr auto calc(4 * var(--u)); align-items: start; border-bottom: 2px solid var(--navy); }
+  .air-head p { margin: 0; }
+  .air-brand { display: flex; align-items: center; gap: calc(var(--u) / 2); font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; letter-spacing: -0.01em; }
+  .air-puffin { width: var(--u); height: var(--u); border-radius: 50% 50% 50% 0; background: linear-gradient(135deg, var(--navy) 0 50%, var(--beak) 50%); }
+  .air-issue { font-size: calc(12px * var(--sf)); text-align: right; padding-right: var(--u); }
+  .air-folio { font-size: calc(24px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; text-align: right; color: var(--beak); }
+
+  /* The map: its box is set in squares by the script. */
+  .air-map-wrap { display: contents; }
+  .air-title { grid-column: 2 / span 18; white-space: nowrap; grid-row: 5 / span 3; margin: 0; font-size: calc(48px * var(--sf)); line-height: calc(3 * var(--u)); font-weight: 700; letter-spacing: -0.02em; }
+  .air-lede { grid-column: 21 / span var(--lede-w, 23); grid-row: 5 / span 3; margin: 0; align-self: end; font-size: calc(13px * var(--sf)); }
+  .air-map { grid-column: 2 / span var(--map-w, 43); grid-row: 9 / span var(--map-h, 28); width: 100%; height: 100%; background: var(--paper); overflow: hidden; }
+  .air-grat { stroke: #dbe4e6; stroke-width: 0.05; fill: none; }
+  .air-land { fill: var(--land); }
+  .air-windows { stroke: #9fb3c8; stroke-width: 0.16; stroke-dasharray: 0.1 0.3; }
+  .air-arc { fill: none; stroke: var(--beak); stroke-width: 0.1; stroke-linecap: round; transition: stroke-width 0.15s, opacity 0.15s; }
+  .air-arc.seasonal { stroke-dasharray: 0.3 0.25; }
+  .air-map.choosing .air-arc { opacity: 0.25; }
+  .air-map.choosing .air-arc.on { opacity: 1; stroke: var(--navy); stroke-width: 0.18; }
+  .air-hub circle { fill: var(--beak); }
+  .air-hub .inner { fill: var(--navy); }
+  .air-hub text, .air-city text { font: 700 0.7px Futura, 'Trebuchet MS', sans-serif; fill: var(--navy); }
+  .air-hub text { font-size: 0.9px; }
+  .air-city { cursor: pointer; outline: none; }
+  .air-city .hit { fill: transparent; }
+  .air-city .dot { fill: var(--paper); stroke: var(--navy); stroke-width: 0.1; }
+  .air-city text { paint-order: stroke; stroke: var(--paper); stroke-width: 0.18; stroke-linejoin: round; }
+  .air-city.on .dot, .air-city:focus-visible .dot { fill: var(--beak); }
+  .air-city:focus-visible .hit { stroke: var(--navy); stroke-width: 0.08; }
+
+  .air-card { grid-column: 2 / span var(--map-w, 43); grid-row: 8 / span 1; margin: 0; font-size: calc(13px * var(--sf)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .air-card b { color: var(--beak); margin-right: calc(var(--u) / 2); }
+
+  /* Flight times: as many columns of nine squares as the width takes, under the map. */
+  .air-times { grid-column: 2 / span var(--map-w, 43); grid-row: var(--times-from, -10) / -2; }
+  .air-list { margin: 0; padding: 0; list-style: none; column-count: var(--times-cols, 4); column-gap: var(--u); font-size: calc(12px * var(--sf)); }
+  .air-list li { display: grid; grid-template-columns: calc(2 * var(--u)) 1fr auto; height: var(--u); break-inside: avoid; border-bottom: 1px solid rgb(19 41 75 / 0.15); box-sizing: border-box; cursor: default; }
+  .air-list li.on { color: var(--beak); }
+  .air-list b { font-weight: 700; }
+  .air-list em { font-style: normal; font-variant-numeric: tabular-nums; }
+
+  /* The side: fleet and seats on a navy page. */
+  .air-side { display: flex; flex-direction: column; grid-column: -26 / -1; grid-row: 4 / -1; padding: var(--u) var(--u) calc(2 * var(--u)) var(--u); background: var(--navy); color: var(--paper); box-sizing: border-box; }
+  .air-side h2 { margin: 0 0 var(--u); font-size: calc(20px * var(--sf)); line-height: calc(2 * var(--u)); font-weight: 700; }
+  .air-fleet { margin: 0 0 var(--u); padding: 0; list-style: none; }
+  .air-fleet li { display: grid; grid-template-rows: calc(3 * var(--u)) auto; margin-bottom: var(--u); }
+  .air-plane { width: calc(24 * var(--u)); max-width: 100%; height: calc(3 * var(--u)); }
+  .air-body { fill: var(--paper); }
+  .air-tail { fill: var(--tail); }
+  .air-cheat { stroke: var(--beak); stroke-width: 0.12; }
+  .air-wing { fill: #c9d3dc; }
+  .air-engine { fill: #c9d3dc; }
+  .air-fleet p { margin: 0; font-size: calc(12px * var(--sf)); }
+  .air-fleet p b { font-size: calc(16px * var(--sf)); margin-right: calc(var(--u) / 4); }
+  .air-fleet p span { opacity: 0.8; }
+
+  .air-seats-wrap { width: calc(var(--sw, 23) * var(--u)); max-width: 100%; }
+  .air-seats { display: block; width: 100%; aspect-ratio: var(--sw, 23) / var(--sh, 6); }
+  .air-hull { fill: #1f3a63; stroke: #3b5b88; stroke-width: 0.05; }
+  .air-seat { fill: var(--paper); cursor: pointer; outline: none; }
+  .air-seat.front { fill: #ffd8bf; }
+  .air-seat.exit { fill: var(--beak); }
+  .air-seat:hover, .air-seat:focus-visible { stroke: #fff; stroke-width: 0.12; }
+  .air-seat.picked { fill: #ffe14d; }
+  .air-row { font: 700 0.5px Futura, sans-serif; fill: #8ea6c4; }
+  .air-prop { fill: #c9d3dc; }
+  .air-galley { fill: #2d4c78; }
+  .air-seat-note { margin: var(--u) 0 0; font-size: calc(12px * var(--sf)); max-width: calc(22 * var(--u)); min-height: calc(2 * var(--u)); }
+
+  .air-stop { margin: auto 0 0; padding-top: var(--u); border-top: 2px solid var(--beak); font-size: calc(12px * var(--sf)); max-width: calc(22 * var(--u)); }
+  .air-stop b { display: block; color: var(--beak); font-size: calc(16px * var(--sf)); }
+
+  .air[data-short] .air-stop { display: none; }
+
+  /* Narrow: one column; the seat map stands up. */
+  :root[data-narrow] .air { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .air > *, :root[data-narrow] .air-map-wrap > * { grid-column: 2 / -2; grid-row: auto; }
+  :root[data-narrow] .air-head { grid-template-columns: 1fr calc(3 * var(--u)); }
+  :root[data-narrow] .air-issue { display: none; }
+  :root[data-narrow] .air-title { margin-top: var(--u); font-size: calc(36px * var(--sf)); line-height: calc(2 * var(--u)); }
+  :root[data-narrow] .air-lede { margin-bottom: var(--u); }
+  :root[data-narrow] .air-map { height: auto; aspect-ratio: var(--map-w) / var(--map-h); }
+  :root[data-narrow] .air-city text { display: none; }
+  :root[data-narrow] .air-card { white-space: normal; margin-top: calc(var(--u) / 2); }
+  :root[data-narrow] .air-times { margin: var(--u) 0; }
+  :root[data-narrow] .air-list { columns: 1; }
+  :root[data-narrow] .air-side { grid-column: 1 / -1; padding: var(--u); }
+  :root[data-narrow] .air-seats-wrap { margin-inline: auto; }
+</style>

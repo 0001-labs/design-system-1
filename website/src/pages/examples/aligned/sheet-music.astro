@@ -1,0 +1,268 @@
+---
+// After an engraved score: the staff space is half a square, so a staff is two squares tall with
+// its outer lines on the window's lines, and every system is seven squares (voice, words, kettle).
+// The page is a lullaby for voice and kettle, printed pale on night blue; as many systems as the
+// window holds, the bars shared between them. At the end the kettle disobeys, and steam rises.
+import AlignedStudy from '../../../layouts/AlignedStudy.astro';
+---
+<AlignedStudy slug="sheet-music" theme="dark">
+  <main class="stage score">
+    <p class="sc-house">Éditions du Petit Feu</p>
+    <p class="sc-op">Op. 12, no. 3</p>
+    <h1 class="sc-title"><span lang="fr">Berceuse pour une bouilloire</span></h1>
+    <p class="sc-sub">Lullaby for a kettle, for voice and kettle on a low flame</p>
+    <p class="sc-words">Words by Jeanne Vernier</p>
+    <p class="sc-composer">Agathe Vernier-Lune</p>
+    <p class="sc-tempo"><b lang="it">Andante, quasi bollendo</b> <span>(♩ = 60)</span></p>
+    <svg class="sc-music" id="music" role="img" aria-label="Twenty bars in three-four time, F major: the voice sings the lullaby over a kettle that ticks, then rumbles, then whistles."></svg>
+    <p class="sc-foot"><span>É.P.F. 1931</span> The kettle should be filled to the one-litre line; a fuller kettle sings a third lower.</p>
+  </main>
+</AlignedStudy>
+
+<script>
+  import { onSquares, reducedMotion } from '../../../lib/aligned-study';
+
+  type Note = { s: number | null; d: 'q' | 'h' | 'h.' | 'w'; l?: string; hy?: boolean; tie?: boolean; ext?: boolean };
+  // Steps from the voice staff's bottom line (E4 = 0); F major, so B is flat in the key.
+  const VOICE: Note[][] = [
+    [{ s: 3, d: 'h', l: 'Hush' }, { s: 1, d: 'q', l: 'now,' }],
+    [{ s: 2, d: 'q', l: 'lit', hy: true }, { s: 3, d: 'q', l: 'tle' }, { s: 4, d: 'q', l: 'ket', hy: true }],
+    [{ s: 5, d: 'q', l: 'tle' }, { s: 4, d: 'q', l: 'on' }, { s: 3, d: 'q', l: 'the' }],
+    [{ s: 2, d: 'h.', l: 'hob,' }],
+    [{ s: 1, d: 'h', l: 'set', hy: true }, { s: 3, d: 'q', l: 'tle' }],
+    [{ s: 5, d: 'q', l: 'down' }, { s: 4, d: 'q', l: 'and' }, { s: 3, d: 'q', l: 'sim', hy: true }],
+    [{ s: 2, d: 'q', l: 'mer,' }, { s: 3, d: 'q', l: 'low' }, { s: 4, d: 'q', l: 'and' }],
+    [{ s: 3, d: 'h.', l: 'slow;' }],
+    [{ s: 6, d: 'h', l: 'all' }, { s: 5, d: 'q', l: 'the' }],
+    [{ s: 4, d: 'q', l: 'house' }, { s: 3, d: 'q', l: 'is' }, { s: 2, d: 'q', l: 'sleep', hy: true }],
+    [{ s: 3, d: 'q', l: 'ing,' }, { s: 4, d: 'q', l: 'so' }, { s: 6, d: 'q', l: 'are' }],
+    [{ s: 5, d: 'h.', l: 'you;' }],
+    [{ s: 6, d: 'h', l: 'no' }, { s: 5, d: 'q', l: 'one' }],
+    [{ s: 4, d: 'q', l: 'needs' }, { s: 3, d: 'q', l: 'you' }, { s: 2, d: 'q', l: 'yet,' }],
+    [{ s: 3, d: 'q', l: 'so' }, { s: 2, d: 'q', l: 'do' }, { s: 0, d: 'q', l: 'not' }],
+    [{ s: 1, d: 'h.', l: 'sing.' }],
+    [{ s: 3, d: 'h.', l: 'Ah', tie: true }],
+    [{ s: 3, d: 'h.', ext: true }],
+    [{ s: null, d: 'w' }],
+    [{ s: null, d: 'w' }],
+  ];
+  type Kettle = 'rest' | 'tick' | 'ticks' | 'trem' | 'gliss' | 'whistle';
+  const KETTLE: Kettle[] = ['rest', 'rest', 'tick', 'rest', 'rest', 'tick', 'rest', 'tick', 'ticks', 'ticks', 'ticks', 'ticks', 'trem', 'trem', 'trem', 'trem', 'trem', 'trem', 'gliss', 'whistle'];
+  // Words over and under particular bars, by bar index.
+  const ABOVE: Record<number, string> = { 0: 'pp dolce', 8: 'mp', 12: 'p', 16: 'pp' };
+  const BELOW: Record<number, string> = { 0: 'ppp sul fornello', 8: 'poco a poco cresc.', 12: 'comincia a bollire', 18: 'fff il fischio' };
+  const LETTER: Record<number, string> = { 4: 'A', 8: 'B', 12: 'C', 16: 'D' };
+
+  const svg = document.getElementById('music') as unknown as SVGSVGElement;
+  const root = document.documentElement.style;
+  let steam: Animation[] = [];
+
+  const SYS = 7; // squares a system
+  const head = (x: number, y: number, hollow: boolean) =>
+    `<ellipse cx="${x}" cy="${y}" rx="0.32" ry="0.22" transform="rotate(-22 ${x} ${y})" class="ink"/>`
+    + (hollow ? `<ellipse cx="${x}" cy="${y}" rx="0.2" ry="0.09" transform="rotate(-35 ${x} ${y})" class="paper"/>` : '');
+  const flat = (x: number, y: number) => `<path d="M ${x - 0.12} ${y - 0.85} V ${y + 0.22} C ${x + 0.2} ${y + 0.02} ${x + 0.28} ${y - 0.32} ${x - 0.12} ${y - 0.12}" class="stroke" stroke-width="0.07" fill="none"/>`;
+  const restQ = (x: number, y: number) => `<path d="M ${x - 0.1} ${y - 0.75} L ${x + 0.15} ${y - 0.45} L ${x - 0.1} ${y - 0.15} L ${x + 0.15} ${y + 0.15} C ${x - 0.15} ${y + 0.05} ${x - 0.15} ${y + 0.4} ${x + 0.05} ${y + 0.5}" class="stroke" stroke-width="0.11" fill="none" stroke-linejoin="round"/>`;
+  const fermata = (x: number, y: number) => `<path d="M ${x - 0.45} ${y} A 0.45 0.4 0 0 1 ${x + 0.45} ${y}" class="stroke" stroke-width="0.07" fill="none"/><circle cx="${x}" cy="${y - 0.1}" r="0.07" class="ink"/>`;
+  const dyn = (x: number, y: number, words: string, anchor = 'start') => {
+    // Dynamic letters in bold italic, the rest of the words in plain italic.
+    const parts = words.split(' ').map(w => (/^[pmfsz]+$/.test(w) ? `<tspan class="dyn">${w}</tspan>` : `<tspan class="expr">${w}</tspan>`));
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}">${parts.join(' ')}</text>`;
+  };
+
+  const draw = (across: number, down: number, narrow: boolean) => {
+    const MW = narrow ? across - 2 : across - 4;
+    const top = narrow ? 0 : 10;
+    const room = narrow ? 999 : down - top - 2;
+    const systems = narrow ? 10 : Math.max(2, Math.min(5, Math.floor(room / SYS)));
+    const perSystem = Math.ceil(VOICE.length / systems);
+    const pitch = narrow ? SYS : Math.min(8, Math.floor(room / systems));
+    const names = narrow ? 0.8 : 3; // instrument names at the left
+    root.setProperty('--sc-rows', String(systems * pitch));
+    root.setProperty('--sc-top-line', String(top + 1));
+    svg.setAttribute('viewBox', `0 0 ${MW} ${systems * pitch}`);
+
+    let s = '';
+    for (let sys = 0; sys < systems; sys++) {
+      const bars = VOICE.map((_, i) => i).slice(sys * perSystem, (sys + 1) * perSystem);
+      if (!bars.length) break;
+      const y0 = sys * pitch;
+      const vTop = y0 + 1, vBot = y0 + 3, kLine = y0 + 5.5;
+      const x0 = names;
+      // Staff lines, the bracket joining the two staves, the instruments named.
+      let lines = '';
+      for (let k = 0; k < 5; k++) lines += `M ${x0} ${vTop + k * 0.5} H ${MW} `;
+      lines += `M ${x0} ${kLine} H ${MW}`;
+      s += `<path d="${lines}" class="stroke" stroke-width="0.04"/>`;
+      s += `<path d="M ${x0 - 0.35} ${vTop - 0.3} q 0.15 0 0.25 -0.25 M ${x0 - 0.3} ${vTop - 0.15} V ${kLine + 0.6} M ${x0 - 0.35} ${kLine + 0.75} q 0.15 0 0.25 0.25" class="stroke" stroke-width="0.12" fill="none"/>`;
+      s += `<path d="M ${x0} ${vTop} V ${vBot} M ${x0} ${kLine - 0.5} V ${kLine + 0.5}" class="stroke" stroke-width="0.05"/>`;
+      if (!narrow) {
+        s += `<text class="name" x="${x0 - 0.7}" y="${(vTop + vBot) / 2 + 0.2}" text-anchor="end">${sys ? 'V.' : 'Voice'}</text>`;
+        s += `<text class="name" x="${x0 - 0.7}" y="${kLine + 0.2}" text-anchor="end">${sys ? 'K.' : 'Kettle'}</text>`;
+      }
+      // Clef, key and (first system only) time.
+      s += `<text class="clef" x="${x0 + 0.2}" y="${vTop + 1.5}">𝄞</text>`;
+      s += flat(x0 + 1.75, vTop + 1);
+      s += `<rect x="${x0 + 0.5}" y="${kLine - 0.5}" width="0.12" height="1" class="ink"/><rect x="${x0 + 0.8}" y="${kLine - 0.5}" width="0.12" height="1" class="ink"/>`;
+      let x = x0 + 2.3;
+      if (sys === 0) {
+        s += `<text class="time" x="${x + 0.35}" y="${vTop + 0.98}">3</text><text class="time" x="${x + 0.35}" y="${vTop + 1.98}">4</text>`;
+        s += `<text class="time" x="${x + 0.35}" y="${kLine - 0.02}">3</text><text class="time" x="${x + 0.35}" y="${kLine + 0.98}">4</text>`;
+        x += 1.2;
+      }
+      s += `<text class="barno" x="${x0}" y="${vTop - 0.45}">${bars[0] + 1}</text>`;
+      const barW = (MW - x) / bars.length;
+      bars.forEach((b, k) => {
+        const bx = x + k * barW;
+        const end = bx + barW;
+        const beat = (n: number) => narrow ? bx + 0.55 + (n * (barW - 0.7)) / 3 : bx + 0.7 + (n * (barW - 1)) / 3;
+        if (LETTER[b]) s += `<rect x="${bx - 0.35}" y="${y0 - 0.05}" width="0.7" height="0.7" class="box"/><text class="letter" x="${bx}" y="${y0 + 0.5}" text-anchor="middle">${LETTER[b]}</text>`;
+        if (ABOVE[b]) s += dyn(bx + 0.45, y0 + 0.3, ABOVE[b]);
+        if (BELOW[b]) s += dyn(bx + 0.45, kLine + 1.4, BELOW[b]);
+        // The voice.
+        let t = 0;
+        VOICE[b].forEach(n => {
+          const nx = beat(t);
+          const dur = n.d === 'q' ? 1 : n.d === 'h' ? 2 : 3;
+          if (n.s === null) {
+            s += `<rect x="${bx + barW / 2 - 0.3}" y="${vTop + 0.5}" width="0.6" height="0.25" class="ink"/>`;
+            if (b === VOICE.length - 1) s += fermata(bx + barW / 2, vTop - 0.15);
+          } else {
+            const y = vBot - n.s * 0.25;
+            const hollow = n.d !== 'q';
+            s += head(nx, y, hollow);
+            if (n.s >= 4) s += `<path d="M ${nx - 0.29} ${y + 0.05} V ${y + 1.6}" class="stroke" stroke-width="0.05"/>`;
+            else s += `<path d="M ${nx + 0.29} ${y - 0.05} V ${y - 1.6}" class="stroke" stroke-width="0.05"/>`;
+            if (n.d === 'h.') s += `<circle cx="${nx + 0.55}" cy="${n.s % 2 === 0 ? y - 0.25 : y}" r="0.07" class="ink"/>`;
+            if (n.tie) s += `<path d="M ${nx + 0.2} ${y + 0.3} Q ${(nx + end + 0.7) / 2} ${y + 0.85} ${end + 0.5} ${y + 0.3}" class="stroke" stroke-width="0.06" fill="none"/>`;
+            if (n.l) s += `<text class="lyric" x="${nx}" y="${y0 + 4.4}" text-anchor="middle">${n.l}</text>`;
+            if (n.hy) s += `<text class="lyric" x="${(nx + (t + dur < 3 ? beat(t + dur) : end + 0.7)) / 2}" y="${y0 + 4.4}" text-anchor="middle">-</text>`;
+            if (n.ext) s += `<path d="M ${bx - 0.2} ${y0 + 4.45} H ${nx + 0.4}" class="stroke" stroke-width="0.04"/>`;
+          }
+          t += dur;
+        });
+        // The kettle.
+        const k1 = beat(0);
+        const cross = (cx: number, cy: number) => `<path d="M ${cx - 0.2} ${cy - 0.2} L ${cx + 0.2} ${cy + 0.2} M ${cx + 0.2} ${cy - 0.2} L ${cx - 0.2} ${cy + 0.2}" class="stroke" stroke-width="0.07"/><path d="M ${cx - 0.2} ${cy} V ${cy + 1}" class="stroke" stroke-width="0.05"/>`;
+        const kind = KETTLE[b];
+        if (kind === 'rest') s += `<rect x="${bx + barW / 2 - 0.3}" y="${kLine}" width="0.6" height="0.25" class="ink"/>`;
+        if (kind === 'tick') { s += restQ(beat(0), kLine) + restQ(beat(1), kLine) + cross(beat(2), kLine); }
+        if (kind === 'ticks') { s += cross(beat(0), kLine) + cross(beat(1), kLine) + cross(beat(2), kLine); }
+        if (kind === 'trem') {
+          s += `<path d="M ${k1 - 0.2} ${kLine - 0.2} L ${k1 + 0.2} ${kLine + 0.2} M ${k1 + 0.2} ${kLine - 0.2} L ${k1 - 0.2} ${kLine + 0.2}" class="stroke" stroke-width="0.07"/><path d="M ${k1 - 0.2} ${kLine} V ${kLine + 1}" class="stroke" stroke-width="0.05"/>`;
+          for (let z = 0; z < 3; z++) s += `<path d="M ${k1 - 0.45} ${kLine + 0.55 + z * 0.2} L ${k1 + 0.05} ${kLine + 0.35 + z * 0.2}" class="stroke" stroke-width="0.09"/>`;
+          s += `<circle cx="${k1 + 0.45}" cy="${kLine - 0.2}" r="0.07" class="ink"/>`;
+          if (b === 16) s += `<path d="M ${bx + 1} ${kLine + 1.3} L ${bx + 2 * barW - 0.4} ${kLine + 1.05} M ${bx + 1} ${kLine + 1.3} L ${bx + 2 * barW - 0.4} ${kLine + 1.55}" class="stroke" stroke-width="0.05" fill="none"/>`;
+        }
+        if (kind === 'gliss') {
+          s += `<path d="M ${k1} ${kLine - 0.25} L ${k1 + 0.25} ${kLine} L ${k1} ${kLine + 0.25} L ${k1 - 0.25} ${kLine} Z" class="ink"/>`;
+          s += `<path d="M ${k1 + 0.35} ${kLine - 0.15} L ${end + 0.05} ${kLine - 1.5}" class="stroke" stroke-width="0.07"/><text class="expr small" x="${(k1 + end) / 2 - 0.2}" y="${kLine - 1}" text-anchor="end">gliss.</text>`;
+        }
+        if (kind === 'whistle') {
+          const wx = beat(0) + 0.3, wy = kLine - 1.5;
+          s += `<path d="M ${wx} ${wy - 0.25} L ${wx + 0.25} ${wy} L ${wx} ${wy + 0.25} L ${wx - 0.25} ${wy} Z" class="paper" stroke="currentColor" stroke-width="0.06"/>`;
+          s += `<path d="M ${wx - 0.45} ${wy} H ${wx + 0.45} M ${wx - 0.45} ${wy + 0.5} H ${wx + 0.45} M ${wx - 0.45} ${wy + 1} H ${wx + 0.45}" class="stroke" stroke-width="0.04"/>`;
+          s += `<path d="M ${wx + 0.35} ${wy} H ${end - 0.5}" class="stroke" stroke-width="0.05" stroke-dasharray="0.1 0.12"/>`;
+          s += fermata(wx, wy - 0.45);
+          // Steam, from the whistle up through the systems above.
+          s += `<g class="steam" id="steam">`;
+          for (let c = 0; c < 3; c++) {
+            const sx = wx + 1.4 + c * 0.8;
+            let d = `M ${sx} ${wy - 0.6}`;
+            for (let q = 1; q <= 4; q++) d += ` q ${q % 2 ? 0.7 : -0.7} -0.6 0 -1.2`;
+            s += `<path d="${d}" class="vapour" style="--i: ${c}"/>`;
+          }
+          s += `</g>`;
+        }
+        // Barlines; the last is the double ending.
+        const last = b === VOICE.length - 1;
+        if (last) {
+          s += `<path d="M ${end - 0.35} ${vTop} V ${vBot} M ${end - 0.35} ${kLine - 0.5} V ${kLine + 0.5}" class="stroke" stroke-width="0.05"/>`;
+          s += `<path d="M ${end - 0.1} ${vTop} V ${vBot} M ${end - 0.1} ${kLine - 0.5} V ${kLine + 0.5}" class="stroke" stroke-width="0.2"/>`;
+        } else {
+          s += `<path d="M ${end} ${vTop} V ${vBot} M ${end} ${kLine - 0.5} V ${kLine + 0.5}" class="stroke" stroke-width="0.05"/>`;
+        }
+      });
+    }
+    svg.innerHTML = s;
+
+    steam.forEach(a => a.cancel());
+    steam = [];
+    if (!reducedMotion()) {
+      svg.querySelectorAll<SVGPathElement>('.vapour').forEach((p, i) => {
+        steam.push(p.animate(
+          [{ transform: 'translateY(0)', opacity: 0 }, { opacity: 0.55, offset: 0.3 }, { transform: 'translateY(-1.6px)', opacity: 0 }],
+          { duration: 5200, delay: i * 1300, iterations: Infinity, easing: 'ease-out' },
+        ));
+      });
+    }
+  };
+
+  onSquares(({ across, down, narrow }) => draw(across, down, narrow));
+</script>
+
+<style is:global>
+  html { background: #141c33; }
+  .score {
+    --night: #141c33;
+    --ink: #e7e9f2;
+    --quiet: #8c96b3;
+    --steam: #c9d6f2;
+    background: radial-gradient(90% 60% at 80% 100%, rgba(120,140,190,.12), transparent 70%), var(--night);
+    color: var(--ink);
+    font-family: "Bodoni 72", "Didot", "Bodoni MT", serif;
+    font-size: calc(15px * var(--sf));
+    line-height: var(--u);
+  }
+  .sc-house, .sc-op { grid-row: 2; margin: 0; font-size: calc(13px * var(--sf)); color: var(--quiet); }
+  .sc-house { grid-column: 3 / span 20; font-variant: small-caps; letter-spacing: .04em; }
+  .sc-op { grid-column: -23 / -3; text-align: right; font-style: italic; }
+  .sc-title {
+    grid-column: 3 / -3;
+    grid-row: 3 / span 3;
+    margin: 0;
+    text-align: center;
+    font-family: "Bodoni 72", "Didot", serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: calc(48px * var(--sf));
+    line-height: calc(3 * var(--u));
+    letter-spacing: -.01em;
+  }
+  .sc-sub { grid-column: 3 / -3; grid-row: 6; margin: 0; text-align: center; color: var(--quiet); font-style: italic; }
+  .sc-words { grid-column: 3 / span 20; grid-row: 8; margin: 0; font-style: italic; font-size: calc(13px * var(--sf)); }
+  .sc-composer { grid-column: -26 / -3; grid-row: 7 / span 2; margin: 0; text-align: right; font-size: calc(22px * var(--sf)); line-height: calc(2 * var(--u)); font-variant: small-caps; letter-spacing: .03em; }
+  .sc-tempo { grid-column: 3 / span 30; grid-row: 9; margin: 0; }
+  .sc-tempo b { font-weight: 700; }
+  .sc-tempo span { color: var(--quiet); }
+
+  .sc-music { grid-column: 3 / -3; grid-row: var(--sc-top-line, 11) / span var(--sc-rows, 28); width: 100%; height: 100%; overflow: visible; color: var(--ink); }
+  .sc-music .stroke { stroke: currentColor; }
+  .sc-music .ink { fill: currentColor; }
+  .sc-music .paper { fill: var(--night); }
+  .sc-music .box { fill: none; stroke: currentColor; stroke-width: 0.05; }
+  .sc-music text { font-size: 0.6px; fill: currentColor; font-family: "Bodoni 72", "Didot", serif; }
+  .sc-music .clef { font-family: "Apple Symbols", "Noto Music", "Bravura", "Segoe UI Symbol", serif; font-size: 2.6px; }
+  .sc-music .time { font-size: 1.35px; font-weight: 700; text-anchor: middle; }
+  .sc-music .barno { font-size: 0.5px; font-style: italic; fill: var(--quiet); }
+  .sc-music .letter { font-size: 0.55px; font-weight: 700; }
+  .sc-music .lyric { font-size: 0.62px; }
+  .sc-music .name { font-size: 0.62px; font-style: italic; }
+  .sc-music .dyn { font-size: 0.75px; font-weight: 700; font-style: italic; }
+  .sc-music .expr { font-size: 0.55px; font-style: italic; }
+  .sc-music .expr.small { font-size: 0.45px; }
+  .sc-music .vapour { fill: none; stroke: var(--steam); stroke-width: 0.06; stroke-linecap: round; opacity: .45; transform-box: view-box; }
+
+  .sc-foot { grid-column: 3 / -15; grid-row: -2; margin: 0; font-size: calc(12px * var(--sf)); color: var(--quiet); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sc-foot span { font-style: normal; margin-right: var(--u); color: var(--ink); }
+
+  :root[data-narrow] .score { padding-bottom: calc(3 * var(--u)); }
+  :root[data-narrow] .score > * { grid-column: 2 / -2; grid-row: auto; text-align: left; }
+  :root[data-narrow] .sc-house { margin-top: var(--u); }
+  :root[data-narrow] .sc-title { font-size: calc(32px * var(--sf)); line-height: calc(2 * var(--u)); margin: var(--u) 0; }
+  :root[data-narrow] .sc-composer { font-size: calc(18px * var(--sf)); line-height: var(--u); }
+  :root[data-narrow] .sc-tempo { margin-bottom: var(--u); }
+  :root[data-narrow] .sc-music { height: calc(var(--sc-rows, 70) * var(--u)); }
+  :root[data-narrow] .sc-music .lyric { font-size: 0.48px; }
+  :root[data-narrow] .sc-foot { white-space: normal; margin-top: var(--u); }
+</style>
