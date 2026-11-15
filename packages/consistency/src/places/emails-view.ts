@@ -33,6 +33,8 @@ export const EMAIL_KIND_NAMES: Record<string, string> = {
   'booking-cancelled': 'Booking cancelled',
   'gift-card': 'Gift card',
   'gift-card-receipt': 'Gift card receipt',
+  'email-confirm': 'Signup confirmation',
+  'email-flow': 'Flow email',
 };
 
 /** A kind in words; one the app does not know yet is shown as the site engine names it. */
