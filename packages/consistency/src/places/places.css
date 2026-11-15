@@ -203,3 +203,4 @@ td[data-numeric] > .place-cell__press { justify-content: flex-end; text-align: e
 .place-peer-product__photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,calc(8 * var(--ds-unit))),1fr));gap:var(--ds-unit)}
 .place-peer-product__photos img{display:block;width:100%;aspect-ratio:1;object-fit:contain}
 .place-peer-product__description{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.place-peer-product__form label{display:flex;flex-direction:column;gap:calc(var(--ds-unit) / 2)}

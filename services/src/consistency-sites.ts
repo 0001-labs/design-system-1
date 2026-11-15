@@ -53,6 +53,8 @@ export const API_ROUTES = [
   // Flavo's own: its business operations (the platform answers them for Flavo alone). Its design route went with its
   // design chooser (26 October 2026: Gallery is its one homepage design).
   allow('business', 'POST'),
+  allow('peer-products/[a-zA-Z0-9_-]{1,120}/photos', 'POST'),
+  allow('peer-products/[a-zA-Z0-9_-]{1,120}', 'GET', 'PUT'),
   allow('peer-products(?:/[a-zA-Z0-9_-]{1,120}(?:/photos/[a-zA-Z0-9_-]{1,120})?)?', 'GET'),
 ] as const;
 
@@ -116,7 +118,7 @@ export async function sitesApi(request: Request, env: Gateway, authorize: (reque
   let body: Uint8Array | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     if (request.headers.get('Origin') !== url.origin || request.headers.get('Content-Type')?.split(';')[0]?.trim() !== 'application/json') return refuse('Forbidden', 403);
-    const read = await bounded(request, path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
+    const read = await bounded(request, /^peer-products\/[a-zA-Z0-9_-]{1,120}\/photos$/.test(path) ? 13_400_000 : path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
     if (!read) return refuse('Too large', 413);
     body = read;
   }
