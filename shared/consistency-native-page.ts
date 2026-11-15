@@ -59,8 +59,10 @@ export interface NativeLanguage { text: string; href: string; picture?: NativePi
 export interface NativeRuntimeSlot { name: string; props: NativeRuntimeProps }
 export type NativeMeasure = 'narrow' | 'reading' | 'wide' | 'full';
 export type NativeRoom = 'flush' | 'gap';
+/** What a hero changes to in turn: a kicker, a title and a picture of its own, in plain words. */
+export interface NativeTurn { kicker?: string; title: string; picture?: NativePicture }
 export interface NativeHero extends NativeBlockBase {
-  kind: 'hero'; arrangement?: 'over' | 'column'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
+  kind: 'hero'; turnEvery?: number; turnOrder?: 'shuffled' | 'in-order'; turns?: NativeTurn[]; arrangement?: 'over' | 'column'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
   picture: NativePicture; logo?: NativePicture; kicker?: NativeWords; title: NativeWords; text?: NativeWords; actions?: NativeAction[];
 }
 export interface NativeSplit extends NativeBlockBase {
@@ -244,7 +246,7 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       case 'languages':return list(value,definition,path).map((item,index)=>{const input=record(item,`${path}[${index}]: a language is { text, href, picture? }`);keys(input,['text','href','picture'],`${path}[${index}]`);const language:NativeLanguage={text:text(input.text,200,`${path}[${index}].text`),href:address(input.href,false,`${path}[${index}].href: not a safe address`)};if(input.picture!==undefined)language.picture=picture(input.picture,`${path}[${index}].picture`);return language;});
       case 'runtime':return runtimeSlot(value,path);
       case 'collection':{const binding=text(value,200,`${path}: a collection's name`);if(!context.collections.includes(binding))return invalid(`${path}: "${binding}" is not a registered collection`);return binding;}
-      case 'items':return list(value,definition,path).map((item,index)=>members(item,definition.item!,`${path}[${index}]`,depth));
+      case 'items':case 'turns':return list(value,definition,path).map((item,index)=>members(item,definition.item!,`${path}[${index}]`,depth));
       case 'heroes':return list(value,definition,path).map((item,index)=>{const block=node(item,depth+1);if(block.kind!=='hero')return invalid(`${path}[${index}]: only a hero stands in panels, not a ${block.kind}`);return block;});
     }
   };
@@ -417,7 +419,9 @@ export function nativeSectionStyles(block: NativeSection): Record<string,string>
 export function nativeSectionAttributes(block: NativeSection): Record<string,string> {
   const field=<T,>(name:string)=>sectionField<T>(block,name);
   const attrs:Record<string,string>={};
-  if(block.kind==='hero'){if(field<string>('arrangement')==='column')attrs['data-arrangement']='column';attrs['data-panel']=field<string>('panel');attrs['data-room']=field<string>('room');if(field<boolean>('translucent'))attrs['data-translucent']='';}
+  if(block.kind==='hero'){if(field<string>('arrangement')==='column')attrs['data-arrangement']='column';attrs['data-panel']=field<string>('panel');attrs['data-room']=field<string>('room');if(field<boolean>('translucent'))attrs['data-translucent']='';
+    // The turns travel as data the page's behaviours read; without them the hero stands as written.
+    if(block.turns?.length){attrs['data-turns']=JSON.stringify(block.turns.map(turn=>({...(turn.kicker===undefined?{}:{kicker:turn.kicker}),title:turn.title,...(turn.picture?{src:address(turn.picture.src,true),alt:turn.picture.alt}:{})})));attrs['data-turn-every']=String(field<number>('turnEvery'));attrs['data-turn-order']=field<string>('turnOrder');}}
   if(block.kind==='split'){if(field<boolean>('reverse'))attrs['data-reverse']='';attrs['data-heading-align']=field<string>('headingAlign');}
   if(block.kind==='statement'){attrs['data-align']=field<string>('align');attrs['data-heading-align']=field<string>('headingAlign');if(block.panel)attrs['data-tone']=block.panel;if(field<boolean>('hiddenTitle'))attrs['data-hidden-title']='';}
   if(block.kind==='panels')attrs['data-room']=field<string>('room');

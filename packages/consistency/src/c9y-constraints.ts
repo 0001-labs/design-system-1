@@ -71,6 +71,17 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
     check: { file: 'src/native-page-model.test.ts', test: 'edits a section as one block: slots, items and ranges from the vocabulary' },
   },
   {
+    code: 'behaviour.panel',
+    rule: 'What a block does on a published page is set in the behaviour panel at the work\'s right edge, opened from the block\'s menu: its rows are the members the vocabulary marks as behaviour, which the menu never lists, and every change goes through the page\'s history.',
+    why: 'A behaviour is a list and its timing, too much for a menu; the panel is the one agreed exception to editing in place (Joachim, 16 November 2026), and the vocabulary stays the one record of what a behaviour may be.',
+    check: { file: 'src/behaviour.test.ts', test: 'is what the vocabulary marks as behaviour: rows of the panel, never of the menu' },
+  },
+  {
+    code: 'behaviour.sidebar-gives-way',
+    rule: 'While the behaviour panel is open the app\'s sidebar is folded, so the page keeps its width, and when the panel closes the sidebar stands as the viewer left it; the viewer\'s stored choice is never changed by the panel.',
+    check: { file: 'src/sidebar-edge.test.ts', test: 'gives way to a panel on the other side, then stands as the viewer left it' },
+  },
+  {
     code: 'drag.one-movement',
     rule: 'While a block is carried, the blocks around it move out of the way once for each change of place, straight to where the dropped order will draw them, and nothing moves again on release.',
     why: 'Someone dragging is rearranging the layout; a page that lands and then corrects itself has guessed wrong in front of them. Drag measures each list\'s flow at lift (sizes, margins, gap, collapsing margins) so the room it makes is the layout the drop commits.',

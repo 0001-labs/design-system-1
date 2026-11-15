@@ -815,6 +815,24 @@
           ],
           "default": "cover",
           "meaning": "The picture filling the section and cropped, or whole inside it"
+        },
+        "turnEvery": {
+          "type": "integer",
+          "min": 2,
+          "max": 120,
+          "default": 8,
+          "group": "behaviour",
+          "meaning": "Seconds the hero stands before it changes to its next turn"
+        },
+        "turnOrder": {
+          "type": "choice",
+          "choices": [
+            "shuffled",
+            "in-order"
+          ],
+          "default": "shuffled",
+          "meaning": "The turns shuffled, never the same twice running, or in the order written",
+          "group": "behaviour"
         }
       },
       "slots": {
@@ -844,6 +862,29 @@
           "type": "actions",
           "max": 4,
           "meaning": "Buttons under the words, primary first; each may name its `face` and `size`"
+        },
+        "turns": {
+          "type": "turns",
+          "max": 40,
+          "group": "behaviour",
+          "meaning": "What the hero changes to in turn, after the kicker, title and picture it is written with: a published page changes to the next every `turnEvery` seconds and when the title is pressed, a kicker of digits counting to its new number; the editor and a reader without scripts see the hero as written",
+          "item": {
+            "kicker": {
+              "type": "text",
+              "max": 200,
+              "meaning": "The kicker of this turn, plain words; the kicker stays as it is when absent"
+            },
+            "title": {
+              "type": "text",
+              "max": 500,
+              "required": true,
+              "meaning": "The title of this turn, plain words"
+            },
+            "picture": {
+              "type": "picture",
+              "meaning": "The picture of this turn; the picture stays as it is when absent"
+            }
+          }
         }
       },
       "examples": [
@@ -919,6 +960,17 @@
           "mobileHeight": 12,
           "panelWidth": 20,
           "room": "gap",
+          "turnEvery": 10,
+          "turns": [
+            {
+              "kicker": "Since 2004",
+              "title": "Boats mended by hand",
+              "picture": {
+                "src": "/photos/harbour.jpg",
+                "alt": "A hull on the slip"
+              }
+            }
+          ],
           "picture": {
             "src": "/photos/harbour.jpg",
             "alt": "The workshop by the harbour"

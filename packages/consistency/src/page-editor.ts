@@ -6,6 +6,8 @@ import baseStyles from '../../../DS1/1-root/one.css?inline';
 import './site-editor.css';
 import { CANVAS_SANDBOX, protectCanvasHTML } from '../../../shared/consistency-canvas';
 import { canvasAssetAddress } from './canvas-assets';
+import { PANEL_EVENT, type BehaviourTarget, type ConsistencyBehaviourPanel } from './behaviour-panel';
+import './behaviour-panel';
 
 /**
  * A host-independent page document editor. The host supplies a
@@ -29,19 +31,37 @@ export class ConsistencyPageEditor extends LitElement {
   private ready: Promise<boolean> = Promise.resolve(false);
   private settle?: (ready: boolean) => void;
   private readonly frame = Object.assign(document.createElement('iframe'), { className: 'consistency-site-frame', title: 'Page to edit' });
+  /** The behaviour panel beside the page (`behaviour-panel.ts`), shown while a block's behaviour is open. */
+  private readonly panel: ConsistencyBehaviourPanel = Object.assign(document.createElement('consistency-behaviour-panel'), { hidden: true });
   private readonly unloading = (event: BeforeUnloadEvent) => { if (this.pending) { event.preventDefault(); event.returnValue = ''; } };
   constructor() {
     super();
     this.frame.setAttribute('sandbox', CANVAS_SANDBOX);
     this.frame.addEventListener('load', () => this.checkReady());
+    this.panel.addEventListener('behaviour-close', () => { this.closeBehaviour(); this.frame.focus(); });
+  }
+  /** Opens a block's behaviour beside the page; the app around the editor hears it and lets its sidebar give way. */
+  private openBehaviour(target: BehaviourTarget) {
+    this.panel.flush(); this.panel.target = target; this.panel.refresh();
+    if (!this.panel.hidden) return;
+    this.panel.hidden = false;
+    this.dispatchEvent(new CustomEvent(PANEL_EVENT, { detail: { open: true }, bubbles: true }));
+    void this.panel.updateComplete.then(() => this.panel.querySelector<HTMLElement>('ds-number, ds-select select, ds-input')?.focus());
+  }
+  private closeBehaviour() {
+    this.panel.flush(); this.panel.target = undefined;
+    if (this.panel.hidden) return;
+    this.panel.hidden = true;
+    this.dispatchEvent(new CustomEvent(PANEL_EVENT, { detail: { open: false }, bubbles: true }));
   }
   createRenderRoot() { return this; }
   connectedCallback() { super.connectedCallback(); addEventListener('beforeunload', this.unloading); }
   disconnectedCallback() { super.disconnectedCallback(); this.destroy(); removeEventListener('beforeunload', this.unloading); }
-  destroy() { this.generation++; clearTimeout(this.poll); this.controller?.destroy(); this.controller = undefined; this.settle?.(false); }
+  destroy() { this.closeBehaviour(); this.generation++; clearTimeout(this.poll); this.controller?.destroy(); this.controller = undefined; this.settle?.(false); }
   /** Call after flushing the previous document. A supplied URL is the authenticated, script-free site canvas. */
   open(snapshot: NativePageSnapshot, save: NativePageSave, source?: { url: string; html?: string } | { styles: string }) {
     clearTimeout(this.poll); this.expectedDocument = this.frame.contentDocument ?? undefined;
+    this.closeBehaviour();
     this.controller?.destroy(); this.controller = undefined; this.settle?.(false);
     this.snapshot = structuredClone(snapshot); this.observedDocument = JSON.stringify(snapshot.document); this.save = save; this.generation++;
     this.deadline=Date.now()+15000;
@@ -91,7 +111,10 @@ export class ConsistencyPageEditor extends LitElement {
       return accepted;
     }, () => this.dispatchEvent(new CustomEvent('page-reopen', { bubbles: true })), {
       assetURL: this.assetURL,
+      behaviour: target => this.openBehaviour(target),
       changed: () => {
+        // The open block changed or went: the panel draws it as it stands, or closes with it.
+        if (!this.panel.hidden) { if (this.panel.target?.read()) this.panel.refresh(); else this.closeBehaviour(); }
         const document = JSON.stringify(this.controller?.state.document ?? this.snapshot?.document);
         if (document === this.observedDocument) return;
         this.observedDocument = document;
@@ -107,7 +130,7 @@ export class ConsistencyPageEditor extends LitElement {
     this.dispatchEvent(new CustomEvent('page-ready', { detail: { frame: this.frame }, bubbles: true }));
   }
   get canvas(){return this.frame;}
-  set active(value:boolean){this.hidden=!value;this.frame.className=value?'consistency-site-frame':'consistency-site-frame-cached';}
+  set active(value:boolean){if(!value)this.closeBehaviour();this.hidden=!value;this.frame.className=value?'consistency-site-frame':'consistency-site-frame-cached';}
   get pending() { return this.controller?.pending ?? false; }
   readDocument(): NativePageDocument { if (!this.snapshot) throw new Error('No page is open.'); return structuredClone(this.controller?.state.document ?? this.snapshot.document); }
   async flush() {
@@ -115,6 +138,6 @@ export class ConsistencyPageEditor extends LitElement {
     // A rejected canvas has no editable controller or local changes; let the host reopen it.
     return this.controller ? this.controller.flush() : true;
   }
-  render() { return html`<div class="consistency-site-stage">${this.frame}</div>`; }
+  render() { return html`<div class="consistency-site-stage">${this.frame}${this.panel}</div>`; }
 }
 customElements.define('consistency-page-editor', ConsistencyPageEditor);

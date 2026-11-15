@@ -59,6 +59,26 @@ describe('section kinds expand to primitives', () => {
     expect(render(hero())).not.toContain('data-arrangement');
   });
 
+  test('a hero\'s turns travel as data for the page\'s behaviours, and a hero without them carries none', () => {
+    const studio = hero(2);
+    const html = render(studio);
+    const turns = JSON.parse(html.match(/data-turns="([^"]*)"/)![1]!.replaceAll('&quot;', '"'));
+    expect(turns).toEqual([{ kicker: 'Since 2004', title: 'Boats mended by hand', src: '/photos/harbour.jpg', alt: 'A hull on the slip' }]);
+    expect(html).toContain('data-turn-every="10" data-turn-order="shuffled"');
+    // The hero is drawn as written: the first turn is what a reader without scripts sees, and no script comes with it.
+    expect(html).toContain('<h1>Boats built by hand</h1>');
+    expect(html).not.toContain('<script');
+    expect(render(hero())).not.toMatch(/data-turn/);
+    expect(render({ ...studio, turns: [] })).not.toMatch(/data-turn/);
+    // A turn is plain words and one of the page's pictures.
+    expect(refusal([{ ...studio, turns: [{ kicker: '0002' }] } as never]).reason).toContain('title is required');
+    expect(refusal([{ ...studio, turns: [{ title: 'Two', picture: { src: '/elsewhere.jpg', alt: '' } }] } as never]).reason).toContain('turns[0].picture');
+    expect(refusal([{ ...studio, turnEvery: 1 } as never]).reason).toContain('turnEvery');
+    // Behaviours are set in the editor's behaviour panel, never in the block's menu.
+    const definition = sectionDefinition('hero')!;
+    expect([definition.fields.turnEvery!.group, definition.fields.turnOrder!.group, definition.slots.turns!.group]).toEqual(['behaviour', 'behaviour', 'behaviour']);
+  });
+
   test('a hero is a picture and a toned panel of logo, kicker, title, text and actions', () => {
     const top = hero();
     const html = render(top);

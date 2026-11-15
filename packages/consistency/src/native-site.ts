@@ -12,6 +12,7 @@ import { createButtonActionControls } from './button-action';
 import { createPlainEditor, parseBlocks } from '../../../website/src/vendor/aa/aa';
 import { HEIGHT_FIELDS, SPACING_FIELDS, addSectionItem, landingBlock, moveNativeBlocks, clampSectionMeasure, firstWordsId, itemLabel, itemsSlot, memberAt, moveSectionItem, nativeEntries, nativeGridSpaces, newSection, placeholderWords, readAt, removeSectionItem, sectionField, sectionItemCount, sectionItemIds, sectionKinds, sectionLabel, sectionPath, sectionValue, updateNativeBlock, updateNativeChildren, wordsAt, writeAt } from './native-page-model';
 import { appendKindChooser, appendSectionFields, appendToneList, fieldWords } from './native-section-menu';
+import { hasBehaviour, type BehaviourTarget } from './behaviour';
 import { openAsk, openDraftBar, requestAskAnswer, type AskAnswer } from './ask';
 import {registerPageAsk,isAskAvailable} from './ask-runtime';
 import { ControlEdit, editableControl, composedContains, composedParent } from './control-edit';
@@ -66,7 +67,7 @@ export class NativeSiteController {
   private controlEdit:ControlEdit; private editingControl?:HTMLElement;
   private controlSlot?:{target:HTMLElement;text:string;keys:string[]};
   private plain?:{id:string;editor:ReturnType<typeof createPlainEditor>;restore?:()=>void};
-  constructor(private frame:HTMLIFrameElement,snapshot:NativePageSnapshot,save:NativePageSave,private reopen:()=>void,private host:{changed?:()=>void;imageURL?:(source:string)=>string;assetURL?:(source:string)=>string}={}){
+  constructor(private frame:HTMLIFrameElement,snapshot:NativePageSnapshot,save:NativePageSave,private reopen:()=>void,private host:{changed?:()=>void;imageURL?:(source:string)=>string;assetURL?:(source:string)=>string;behaviour?:(target:BehaviourTarget)=>void}={}){
     this.doc=frame.contentDocument!;this.view=this.doc.defaultView!;this.root=this.doc.querySelector<HTMLElement>('[data-c9y-native-root]')!;
     if(!this.root)throw new Error('The native page could not be opened.');
     this.state=new DocumentState(snapshot,save,()=>this.changed());
@@ -304,6 +305,8 @@ export class NativeSiteController {
     if(block?.kind==='component'){const tag=componentDefinition(block.name,this.state.snapshot.components)?.tag,kind=tag==='ds-card'?'card':tag==='ds-stat'?'stat':tag==='ds-button'||tag==='button'||tag==='a'?'button':undefined;if(kind){appendSurfaceOptions(menu,kind,patch=>this.patch(id,{design:{...block.design,...patch}}));if(kind==='button'){const controls=createButtonActionControls(document,block.design?.action??(block.values?.href?{kind:'link',target:block.values.href}:undefined),()=>true,next=>this.patch(id,{design:{...block.design,action:next}}));menu.append(controls.element);this.menuDispose=controls.dispose;}}}
     if(block?.kind==='image')action('Choose image',()=>{void this.chooseImage(this.elements.get(id)!).then(image=>{if(image)this.patch(id,image);});},{keep:true});
     if(block?.kind==='link'){action('Default button',()=>this.patch(id,{appearance:'default'}));appendSurfaceOptions(menu,'button',patch=>this.patch(id,patch));const controls=createButtonActionControls(document,{kind:'link',target:block.href},()=>true,next=>{if(next)this.patch(id,{href:next.target});},{allowNone:false});menu.append(controls.element);this.menuDispose=controls.dispose;}
+    // What the block does on a published page is set in the behaviour panel beside the page, never in this menu.
+    if(section&&this.host.behaviour&&hasBehaviour(section.kind)){const open=this.host.behaviour;action('Behaviour',()=>open({read:()=>this.sectionAt(section.id),commit:update=>this.updateSection(section.id,update),images:()=>this.state.snapshot.images}));}
     if(section){appendSectionFields(menu,()=>this.sectionAt(section.id),patch=>this.updateSection(section.id,value=>({...value,...patch} as NativeSection)));const slot=itemsSlot(section.kind);if(slot&&!sealed){this.rule(menu);action(`Add ${itemLabel(section.kind).toLowerCase()}`,()=>this.state.commit(addSectionItem(this.state.document,section.id,this.state.snapshot.images,uid)),{disabled:sectionItemCount(section)>=(slot.definition.max??100)});}}
     if(block&&entries.has(id)){this.rule(menu);const parent=entries.get(id)!.parent;if(parent!=='page')action('Select parent',()=>this.select(new Set([parent]),parent));action('Move up',()=>{const entry=nativeEntries(this.state.document).get(id);if(entry)this.moveBy(id,-1);});action('Move down',()=>{const entry=nativeEntries(this.state.document).get(id);if(entry)this.moveBy(id,1);});action(block.hidden?'Show':'Hide',()=>this.patch(id,{hidden:!block.hidden}));if(section)action('Remove',()=>this.remove(id),{danger:true});}
     for(const[hidden,{block}]of entries)if(block.hidden)action(`Show ${label(block)}`,()=>this.patch(hidden,{hidden:false}));

@@ -15,7 +15,7 @@ import generated from './generated/vocabulary.json';
 
 /** The vocabulary record's shapes, as `consistency-vocabulary.ts` defines and `vocabulary.json` carries them. */
 export interface AskField { type: 'squares' | 'pixels' | 'integer' | 'boolean' | 'choice' | 'tone' | 'text' | 'date' | 'address' | 'markdown' | 'identifier' | 'map' | 'blocks' | 'props'; min?: number; max?: number; step?: number; choices?: readonly string[]; default?: string | number | boolean; required?: boolean; meaning: string }
-export interface AskSlot { type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes'; required?: boolean; min?: number; max?: number; meaning: string; item?: Record<string, AskMember> }
+export interface AskSlot { type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes' | 'turns'; required?: boolean; min?: number; max?: number; meaning: string; item?: Record<string, AskMember> }
 export type AskMember = AskField | AskSlot;
 export interface AskKind { kind: string; layer: 'primitive' | 'section'; description: string; fields: Record<string, AskField>; slots: Record<string, AskSlot>; oneOf?: readonly string[]; examples: AskBlock[] }
 export interface AskVocabulary { description: string; tones: readonly string[]; common: Record<string, AskField>; kinds: AskKind[] }
@@ -23,7 +23,7 @@ export interface AskVocabulary { description: string; tones: readonly string[]; 
 export type AskBlock = { id: string; kind: string; hidden?: boolean; width?: number; locale?: string; children?: AskBlock[]; source?: string };
 export interface AskDocument { schema: 1; kind: 'native-page'; title?: string; description?: string; lang?: string; layout: { maxWidth?: number; padding: number; gap: number }; blocks: AskBlock[] }
 export const ASK_VOCABULARY = generated as unknown as AskVocabulary;
-const isSlot = (member: AskMember): member is AskSlot => ['words', 'picture', 'action', 'actions', 'pictures', 'links', 'languages', 'runtime', 'collection', 'items', 'heroes'].includes(member.type);
+const isSlot = (member: AskMember): member is AskSlot => ['words', 'picture', 'action', 'actions', 'pictures', 'links', 'languages', 'runtime', 'collection', 'items', 'heroes', 'turns'].includes(member.type);
 
 export type AskLevel = 'section' | 'page';
 export type AskIntent = 'make' | 'replace' | 'rewrite';
@@ -366,6 +366,7 @@ export function checkAskAnswer(answer: unknown, level: AskLevel, context: AskCon
       case 'runtime': return runtime(value, at);
       case 'collection': { const name = plain(value, 200, at); if (!context.collections.includes(name)) return refuse(`${at}: "${name}" is not one of the site's collections.`); return name; }
       case 'items': return list(value, definition, at).map((item, index) => { if (item && typeof item === 'object' && typeof (item as Record<string, unknown>).kind === 'string') return refuse(`${at}[${index}]: a ${String((item as Record<string, unknown>).kind)} cannot stand inside this section.`); return members(item, definition.item!, `${at}[${index}]`, depth); });
+      case 'turns': return list(value, definition, at).map((item, index) => members(item, definition.item!, `${at}[${index}]`, depth));
       case 'heroes': return list(value, definition, at).map((item, index) => { const block = node(item, depth + 1); if (block.kind !== 'hero') return refuse(`${at}[${index}]: only a hero stands in panels, not a ${block.kind}.`); return block; });
     }
   };

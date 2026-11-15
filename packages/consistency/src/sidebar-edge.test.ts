@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { bezier, FLICK, settleTarget } from './sidebar-edge';
+import { awayTarget, bezier, FLICK, settleTarget } from './sidebar-edge';
 
 describe('the sidebar edge', () => {
   it('settles to the nearer side when released slowly', () => {
@@ -10,6 +10,12 @@ describe('the sidebar edge', () => {
   it('follows a flick, wherever the edge is', () => {
     expect(settleTarget(260, 280, -FLICK)).toBe('collapsed');
     expect(settleTarget(20, 280, FLICK)).toBe('open');
+  });
+  it('gives way to a panel on the other side, then stands as the viewer left it', () => {
+    expect(awayTarget(true, 'open')).toBe('collapsed');
+    expect(awayTarget(true, 'collapsed')).toBe('collapsed');
+    expect(awayTarget(false, 'open')).toBe('open');
+    expect(awayTarget(false, 'collapsed')).toBe('collapsed');
   });
   it('eases on the drawer curve from rest to rest', () => {
     const ease = bezier([0.32, 0.72, 0, 1]);

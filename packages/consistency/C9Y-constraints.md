@@ -128,6 +128,20 @@ The renderer expands a section to primitives, so the editor reads the same expan
 
 Held by `src/native-page-model.test.ts`: “edits a section as one block: slots, items and ranges from the vocabulary”.
 
+### `behaviour.panel`
+
+What a block does on a published page is set in the behaviour panel at the work's right edge, opened from the block's menu: its rows are the members the vocabulary marks as behaviour, which the menu never lists, and every change goes through the page's history.
+
+A behaviour is a list and its timing, too much for a menu; the panel is the one agreed exception to editing in place (Joachim, 16 November 2026), and the vocabulary stays the one record of what a behaviour may be.
+
+Held by `src/behaviour.test.ts`: “is what the vocabulary marks as behaviour: rows of the panel, never of the menu”.
+
+### `behaviour.sidebar-gives-way`
+
+While the behaviour panel is open the app's sidebar is folded, so the page keeps its width, and when the panel closes the sidebar stands as the viewer left it; the viewer's stored choice is never changed by the panel.
+
+Held by `src/sidebar-edge.test.ts`: “gives way to a panel on the other side, then stands as the viewer left it”.
+
 ### `drag.one-movement`
 
 While a block is carried, the blocks around it move out of the way once for each change of place, straight to where the dropped order will draw them, and nothing moves again on release.

@@ -1,0 +1,23 @@
+/* The behaviour panel: an inspector twelve squares wide at the work's right edge, in the room the folded sidebar gives up. */
+consistency-page-editor > .consistency-site-stage { position: relative; min-width: 0; }
+consistency-page-editor > .consistency-site-stage > .consistency-site-frame { flex: 1; min-width: 0; }
+consistency-behaviour-panel { flex: 0 0 calc(12 * var(--ds-unit)); min-width: 0; min-height: 0; display: flex; flex-direction: column; box-sizing: border-box; border-left: 1px solid var(--ds-border-color); background: var(--ds-paper); }
+consistency-behaviour-panel[hidden] { display: none; }
+.consistency-behaviour-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--ds-unit); padding: var(--ds-unit) var(--ds-unit) 0; }
+.consistency-behaviour-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--ds-unit); padding: var(--ds-unit); }
+/* A choice as a field: its label on a one-square line, as the text field's, then the Select hugging its words. */
+.consistency-behaviour-field { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.consistency-behaviour-label { display: block; line-height: var(--ds-unit); }
+.consistency-behaviour-body ds-input { width: 100%; min-width: 0; }
+.consistency-behaviour-field > ds-select { max-width: 100%; }
+.consistency-behaviour-switch { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--ds-unit); }
+.consistency-behaviour-turns { display: flex; flex-direction: column; gap: var(--ds-unit); }
+.consistency-behaviour-turns > ds-button { align-self: flex-start; }
+/* A turn: its number and what moves or removes it on one row, then a field for each of its members. */
+.consistency-behaviour-turn { display: flex; flex-direction: column; gap: calc(var(--ds-unit) / 2); margin: 0; padding: var(--ds-unit) 0 0; border: 0; border-top: 1px solid var(--ds-border-color); min-width: 0; }
+.consistency-behaviour-turn-head { display: flex; align-items: flex-end; justify-content: space-between; min-height: var(--ds-unit); }
+.consistency-behaviour-turn-moves { display: flex; gap: calc(4px * var(--sf, 1)); }
+/* A phone has no room beside the page: the panel stands over it until it is closed. */
+@media (max-width: 767px) {
+  consistency-behaviour-panel { position: absolute; inset: 0; z-index: 3; border-left: 0; }
+}

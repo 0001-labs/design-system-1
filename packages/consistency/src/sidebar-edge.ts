@@ -46,6 +46,9 @@ export function settleTarget(x: number, travel: number, velocity: number): Sideb
   return x >= travel / 2 ? 'open' : 'collapsed';
 }
 
+/** Where the sidebar stands while a panel on the other side has its room, and after: folded, then as the viewer left it. */
+export const awayTarget = (away: boolean, stored: SidebarState): SidebarState => away ? 'collapsed' : stored;
+
 /** A CSS cubic-bezier as a function of progress, solved for x by Newton's method with bisection behind it. */
 export function bezier([x1, y1, x2, y2]: [number, number, number, number]): (t: number) => number {
   const at = (a: number, b: number, t: number) => 3 * a * (1 - t) ** 2 * t + 3 * b * (1 - t) * t ** 2 + t ** 3;
@@ -84,6 +87,8 @@ export class SidebarEdge {
   private quiet = false;
   private keyboard = false;
   private unbind: (() => void) | null = null;
+  /** A panel on the other side of the work has the sidebar's room. */
+  private away = false;
 
   constructor(private readonly host: HTMLElement) {
     this.state = storedSidebar();
@@ -159,6 +164,18 @@ export class SidebarEdge {
     this.draw();
   }
 
+  /**
+   * A panel on the other side of the work takes the sidebar's room (Joachim, 16 November 2026): the sidebar folds
+   * while it is open and comes back as the viewer left it when it closes. Nothing is stored, so the viewer's own
+   * choice stays theirs; folded this way the sidebar still shows at the window's edge and opens by hand.
+   */
+  giveWay(on: boolean) {
+    if (this.away === on) return;
+    this.away = on;
+    const target = awayTarget(on, storedSidebar());
+    if (target !== this.state) this.settle(target, false, false);
+  }
+
   /** A place was chosen: a sidebar shown over the work goes. */
   chosen() { if (this.shown) this.show(false); }
 
@@ -231,12 +248,12 @@ export class SidebarEdge {
     this.settle(target, target === 'collapsed' && gesture.held);
   }
 
-  /** Commits the layout once, then moves what stood where it was to its place in it. */
-  private settle(target: SidebarState, shown: boolean) {
+  /** Commits the layout once, then moves what stood where it was to its place in it; `keep` false leaves the viewer's stored choice alone. */
+  private settle(target: SidebarState, shown: boolean, keep = true) {
     this.stop();
     const from = { ...this.pose };
     this.state = target;
-    storeSidebar(target);
+    if (keep) storeSidebar(target);
     this.host.setAttribute('data-sidebar', target);
     this.host.toggleAttribute('data-sidebar-peek', target === 'collapsed' && shown);
     this.handle.setAttribute('aria-valuenow', target === 'open' ? '100' : '0');

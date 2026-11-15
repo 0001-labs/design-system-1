@@ -28,6 +28,7 @@ import { ConsistencyDocsEditor } from './docs-site';
 import type { SiteSummary } from './site-editing';
 import { PLACES, shownPlaces, sitePlaces, type SitePlace } from './places/index';
 import { OPEN_PAGE } from './places/pages';
+import { PANEL_EVENT } from './behaviour';
 import { SidebarEdge } from './sidebar-edge';
 import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
 import './home.css';
@@ -193,12 +194,14 @@ export class ConsistencyHome extends LitElement {
   };
 
   /** The people panel or Members read the people again or changed them: the cards follow. */
+  /** A panel open beside the page has the sidebar's room: the sidebar gives way while one is drawn, and comes back after. */
+  private readonly syncPanel = () => this.edge.giveWay(Array.from(this.querySelectorAll<HTMLElement>('consistency-behaviour-panel')).some(panel => !panel.hidden && panel.getClientRects().length > 0));
   private readonly onMembers = (event: Event) => {
     const { workspace, members } = (event as CustomEvent<{ workspace: string; members: Member[] }>).detail;
     if (workspace === this.workspace) this.keepPeople(members);
   };
 
-  connectedCallback() { this.stopAsk=registerAskNavigation(this,()=>this.askChoices()); this.edge.connect(); super.connectedCallback(); addEventListener('popstate', this.onPop); addEventListener('hashchange', this.onHash); this.addEventListener(OPEN_PAGE, this.onOpenPage); this.addEventListener(MEMBERS_CHANGE, this.onMembers); void this.readWorkspaces(); }
+  connectedCallback() { this.stopAsk=registerAskNavigation(this,()=>this.askChoices()); this.edge.connect(); super.connectedCallback(); addEventListener('popstate', this.onPop); addEventListener('hashchange', this.onHash); this.addEventListener(OPEN_PAGE, this.onOpenPage); this.addEventListener(PANEL_EVENT, this.syncPanel); this.addEventListener(MEMBERS_CHANGE, this.onMembers); void this.readWorkspaces(); }
 
   /** Goes to a place inside the app, the address unchanged. */
   go(next: Place) { return this.move(next, 'push'); }
@@ -351,6 +354,8 @@ export class ConsistencyHome extends LitElement {
 
   /** Shows the site's canvas or the place being shown in the stage and hides the others, never taking them out of the page. */
   protected updated() {
+    // The page with an open panel may have been left or put away without a word: the sidebar follows what is drawn.
+    this.syncPanel();
     const stage = this.querySelector<HTMLElement>('.home-stage');
     if (!stage) return;
     const current = this.place.page === 'site' ? this.sites.find(site => site.code === (this.place as { code: string }).code) : undefined;
@@ -389,7 +394,7 @@ export class ConsistencyHome extends LitElement {
     void this.readSites();
   }
 
-  disconnectedCallback() { this.stopAsk?.(); super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
+  disconnectedCallback() { this.stopAsk?.(); super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(PANEL_EVENT, this.syncPanel); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
 
   /** The workspace the app is in, as last read. */
   private get current(): WorkspaceSummary | undefined { return this.workspaces.find(each => each.code === this.workspace); }

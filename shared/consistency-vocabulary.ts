@@ -24,6 +24,8 @@ export interface FieldDefinition {
   type: 'squares' | 'pixels' | 'integer' | 'boolean' | 'choice' | 'tone' | 'tones' | 'text' | 'date' | 'address' | 'markdown' | 'identifier' | 'map' | 'blocks' | 'props';
   min?: number; max?: number; step?: number; choices?: readonly string[];
   default?: string | number | boolean | readonly string[]; required?: boolean; meaning: string;
+  /** A behaviour is what a block does on a published page, set in the editor's behaviour panel instead of the block's menu. */
+  group?: 'behaviour';
 }
 /**
  * A slot holds content: `words` is Aa Markdown as a `content` block carries it; `picture` an image
@@ -34,15 +36,17 @@ export interface FieldDefinition {
  * `actions`, `pictures`, `links` (`{ text, href? }`) and `languages` (`{ text, href, picture? }`) are
  * arrays of those; `runtime` `{ name, props }` as a `runtime` block; `collection` the name of a
  * registered collection; `items` an array of records whose members are described by `item`; `heroes`
- * an array of complete `hero` blocks.
+ * an array of complete `hero` blocks; `turns` an array of records described by `item`, which the block
+ * changes to one after another on a published page.
  */
 export interface SlotDefinition {
-  type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes';
+  type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes' | 'turns';
   required?: boolean; min?: number; max?: number; meaning: string;
+  group?: 'behaviour';
   item?: Record<string, MemberDefinition>;
 }
 export type MemberDefinition = FieldDefinition | SlotDefinition;
-export const isSlot = (member: MemberDefinition): member is SlotDefinition => ['words', 'picture', 'action', 'actions', 'pictures', 'links', 'languages', 'runtime', 'collection', 'items', 'heroes'].includes(member.type);
+export const isSlot = (member: MemberDefinition): member is SlotDefinition => ['words', 'picture', 'action', 'actions', 'pictures', 'links', 'languages', 'runtime', 'collection', 'items', 'heroes', 'turns'].includes(member.type);
 
 export interface KindDefinition {
   kind: string;
@@ -224,6 +228,8 @@ export const SECTIONS: KindDefinition[] = [
       room: choice(['flush', 'gap'], 'flush', 'Under a header: flush against it, or the page\'s gap above it'),
       level: { type: 'integer', min: 1, max: 2, default: 1, meaning: 'The heading level the title is drawn at when it carries no # of its own' },
       fit: choice(['cover', 'contain'], 'cover', 'The picture filling the section and cropped, or whole inside it'),
+      turnEvery: { type: 'integer', min: 2, max: 120, default: 8, group: 'behaviour', meaning: 'Seconds the hero stands before it changes to its next turn' },
+      turnOrder: { ...choice(['shuffled', 'in-order'], 'shuffled', 'The turns shuffled, never the same twice running, or in the order written'), group: 'behaviour' },
     },
     slots: {
       picture: picture('The photo behind the panel; its `focus` keeps the subject in view when it is cropped', true),
@@ -232,11 +238,16 @@ export const SECTIONS: KindDefinition[] = [
       title: words('The title; one line of Markdown, a heading of `level` unless it carries its own #', true),
       text: words('A line or two under the title'),
       actions: actions('Buttons under the words, primary first; each may name its `face` and `size`'),
+      turns: { type: 'turns', max: 40, group: 'behaviour', meaning: 'What the hero changes to in turn, after the kicker, title and picture it is written with: a published page changes to the next every `turnEvery` seconds and when the title is pressed, a kicker of digits counting to its new number; the editor and a reader without scripts see the hero as written', item: {
+        kicker: { type: 'text', max: 200, meaning: 'The kicker of this turn, plain words; the kicker stays as it is when absent' },
+        title: { type: 'text', max: 500, required: true, meaning: 'The title of this turn, plain words' },
+        picture: picture('The picture of this turn; the picture stays as it is when absent'),
+      } },
     },
     examples: [
       { id: 'top', kind: 'hero', height: 24, fill: 'window', panel: 'centre', panelTone: 'cream', panelWidth: 24, translucent: true, room: 'flush', level: 1, fit: 'cover', picture: { ...PICTURE, focus: { x: 50, y: 30 } }, logo: { src: '/photos/logo.svg', alt: 'Green raft' }, title: 'The cosiest boat hire in town', text: 'Sail the canals on a raft for eight, with a barbecue in the middle.', actions: [{ text: 'Book', href: '/book/', appearance: 'primary', face: 'outlined', size: 'medium' }, { text: 'Prices', href: '/prices/', appearance: 'secondary' }] },
       { id: 'cabin', kind: 'hero', height: 30, mobileHeight: 20, panel: 'left', panelTone: 'dark', room: 'gap', picture: { src: '/photos/harbour.jpg', alt: 'A floating cabin at dusk', fit: 'cover' }, kicker: 'Blue raft', title: 'Floating glamping', actions: [{ text: 'Stay a night', href: '/stay/', appearance: 'primary' }] },
-      { id: 'studio', kind: 'hero', arrangement: 'column', height: 15, mobileHeight: 12, panelWidth: 20, room: 'gap', picture: { src: '/photos/harbour.jpg', alt: 'The workshop by the harbour' }, kicker: 'Since 1998', title: 'Boats built by hand', text: 'A small yard on the harbour, building and mending wooden boats.', actions: [{ text: 'Visit the yard', href: '/yard/', appearance: 'primary' }] },
+      { id: 'studio', kind: 'hero', arrangement: 'column', height: 15, mobileHeight: 12, panelWidth: 20, room: 'gap', turnEvery: 10, turns: [{ kicker: 'Since 2004', title: 'Boats mended by hand', picture: { src: '/photos/harbour.jpg', alt: 'A hull on the slip' } }], picture: { src: '/photos/harbour.jpg', alt: 'The workshop by the harbour' }, kicker: 'Since 1998', title: 'Boats built by hand', text: 'A small yard on the harbour, building and mending wooden boats.', actions: [{ text: 'Visit the yard', href: '/yard/', appearance: 'primary' }] },
     ],
   },
   {

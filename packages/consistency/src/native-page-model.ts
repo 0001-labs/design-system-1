@@ -149,7 +149,7 @@ function freshMember(value: unknown, definition: FieldDefinition | SlotDefinitio
     case 'links': return (value as unknown[]).map(item => freshAction(item, 'lines'));
     case 'items': return (value as Record<string, unknown>[]).map(item => freshMembers(item, (definition as SlotDefinition).item ?? {}, images, newId));
     case 'heroes': return (value as NativeSection[]).map(item => freshSection(item, images, newId));
-    case 'languages': case 'runtime': case 'collection': return undefined;
+    case 'languages': case 'runtime': case 'collection': case 'turns': return undefined;
     default: return value;
   }
 }

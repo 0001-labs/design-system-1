@@ -37,10 +37,11 @@ function numberRow(menu: HTMLElement, name: string, field: FieldDefinition, valu
  * A section's fields from the vocabulary, as rows of its menu: a choice as one row a value, the
  * current one checked; a boolean as a row that turns it on or off; a tone as the tone list; a
  * measure in squares or a count as the Number control. Nothing here is a table of the editor's own.
+ * A behaviour (`group: 'behaviour'`) is not a row here: the behaviour panel holds it (`behaviour-panel.ts`).
  */
 export function appendSectionFields(menu: HTMLElement, read: () => NativeSection | undefined, commit: (patch: Record<string, unknown>) => void) {
   const block = read(); const definition = block && kindDefinition(block.kind); if (!block || !definition) return;
-  const fields = Object.entries(definition.fields); if (!fields.length) return;
+  const fields = Object.entries(definition.fields).filter(([, field]) => field.group !== 'behaviour'); if (!fields.length) return;
   separator(menu);
   const paints: Array<() => void> = [], repaint = () => paints.forEach(paint => paint());
   const current = (name: string) => { const value = read(); return value ? sectionValue<unknown>(value, name) : undefined; };
