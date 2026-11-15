@@ -341,7 +341,11 @@ export class ConsistencyHome extends LitElement {
 
   /** The place of a site being shown, when it is one the site has and the app can show; the canvas otherwise. */
   private placeOf(place: Place): string | undefined {
-    if (place.page !== 'site' || !place.place || !PLACES.has(place.place)) return undefined;
+    if (place.page !== 'site') return undefined;
+    const site = this.sites.find(site => site.code === place.code);
+    if (site?.deleting && site.canDelete) return 'settings';
+    if (!place.place || !PLACES.has(place.place)) return undefined;
+    if (place.place === 'settings' && site?.canDelete && !site.docs) return 'settings';
     return (this.places.get(place.code) ?? storedPlaces(place.code))?.some(each => each.id === place.place) ? place.place : undefined;
   }
 
@@ -353,7 +357,11 @@ export class ConsistencyHome extends LitElement {
     const at = current ? this.placeOf(this.place) : undefined;
     const key = current && at ? `${current.code}:${at}` : '';
     if (current) { const editor = this.editorFor(current); if (editor.parentElement !== stage) stage.append(editor); }
-    if (current && at && !this.placeElements.has(key)) this.placeElements.set(key, PLACES.get(at)!(current));
+    if (current && at && !this.placeElements.has(key)) {
+      const element = PLACES.get(at)!(current);
+      if (at === 'settings') element.addEventListener('consistency-site-deleted', () => this.siteDeleted(current.code));
+      this.placeElements.set(key, element);
+    }
     const shown = key ? this.placeElements.get(key) : undefined;
     if (shown && shown.parentElement !== stage) stage.append(shown);
     const draft = this.place.page === 'draft-site' ? this.draftEditor(this.place.id) : undefined;
@@ -362,6 +370,25 @@ export class ConsistencyHome extends LitElement {
     for (const [code, editor] of this.editors) editor.hidden = code !== current?.code || Boolean(at);
     for (const [each, element] of this.placeElements) element.hidden = each !== key;
   }
+  private siteDeleted(code: string) {
+    this.sites = this.sites.filter(site => site.code !== code);
+    this.editors.get(code)?.remove();
+    this.editors.delete(code);
+    this.places.delete(code);
+    this.placesAsked.delete(code);
+    for (const [key, element] of this.placeElements) {
+      if (!key.startsWith(`${code}:`)) continue;
+      element.remove();
+      this.placeElements.delete(key);
+    }
+    try {
+      localStorage.removeItem(PLACES_KEY(code));
+      localStorage.setItem(SITES_KEY(this.workspace), JSON.stringify(this.sites));
+    } catch { /* the next workspace read refreshes the list */ }
+    if (this.place.page === 'site' && this.place.code === code) this.go({ page: 'sites' });
+    void this.readSites();
+  }
+
   disconnectedCallback() { this.stopAsk?.(); super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
 
   /** The workspace the app is in, as last read. */
@@ -460,8 +487,9 @@ export class ConsistencyHome extends LitElement {
     const published = 'code' in site;
     const current = published ? this.placeOf(this.place) : undefined;
     const items = [
-      { id: SITE_ROW, label: 'Site', current: !current },
-      ...(published ? shownPlaces(this.placesFor(site.code)).map(place => ({ id: place.id, label: place.label, current: place.id === current })) : []),
+      ...(published && site.deleting ? [] : [{ id: SITE_ROW, label: 'Site', current: !current }]),
+      ...(published && !site.deleting ? shownPlaces(this.placesFor(site.code)).map(place => ({ id: place.id, label: place.label, current: place.id === current })) : []),
+      ...(published && site.canDelete && !site.docs ? [{ id: 'settings', label: 'Site settings', current: current === 'settings' }] : []),
     ];
     const home: Place = published ? { page: 'site', code: site.code } : { page: 'draft-site', id: site.id, workspace: this.workspace };
     return html`<nav slot="nav" id="home-nav" class="home-nav" aria-label=${site.name}>

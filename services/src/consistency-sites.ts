@@ -20,8 +20,8 @@ import { CANVAS_POLICY, CANVAS_SANDBOX, FACE_HOSTS } from '../../shared/consiste
 export { FACE_HOSTS } from '../../shared/consistency-canvas';
 
 // A site by its IDv1 code, a list's shape (`12ABCD`); the platform alone knows its id.
-export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
-const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], files: ['GET', 'HEAD'] };
+export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|delete|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
+const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], delete: ['DELETE'], files: ['GET', 'HEAD'] };
 /** A write to the site engine (its own limit is 32,000 characters); the JSON around a 10,000-character field fits. */
 export const EDIT_BYTES = 64 * 1024;
 /** A whole native page, including its bounded Markdown blocks and layout. */
@@ -108,6 +108,7 @@ export async function sitesApi(request: Request, env: Gateway, authorize: (reque
   const allowed = route === 'api' ? apiRoute(path) : null;
   if (route === 'api' && !allowed) return refuse('Not found', 404);
   const person = await authorize(new Request(request.url, { headers: request.headers })); if (person instanceof Response) return person;
+  if (route === 'delete' && !person.owner) return refuse('Not found', 404);
   // Email flows are new: anyone but the owner, or the owner while their flag is off, meets them as not there.
   if (path === 'emails/flows' && !(person.owner && await emailFlows())) return refuse('Not found', 404);
   const methods = allowed ? [...allowed.methods] : METHODS[route]!;
@@ -118,7 +119,7 @@ export async function sitesApi(request: Request, env: Gateway, authorize: (reque
   let body: Uint8Array | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     if (request.headers.get('Origin') !== url.origin || request.headers.get('Content-Type')?.split(';')[0]?.trim() !== 'application/json') return refuse('Forbidden', 403);
-    const read = await bounded(request, /^peer-products\/[a-zA-Z0-9_-]{1,120}\/photos$/.test(path) ? 13_400_000 : path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
+    const read = await bounded(request, route === 'delete' ? 256 : /^peer-products\/[a-zA-Z0-9_-]{1,120}\/photos$/.test(path) ? 13_400_000 : path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
     if (!read) return refuse('Too large', 413);
     body = read;
   }

@@ -14,6 +14,7 @@ import { ConsistencyPlaceEmails } from './emails';
 import { ConsistencyPlaceDesign } from './design';
 import { ConsistencyPlaceOrders } from './orders';
 import { ConsistencyPlacePeerProducts } from './peer-products';
+import { ConsistencySiteSettings } from './site-settings';
 import { flavoPlaces } from './flavo';
 
 export { SiteApiError, siteApi, sitePlaces, type SitePlace } from './api';
@@ -25,6 +26,7 @@ export type PlaceFactory = (site: SiteSummary) => HTMLElement;
 export const PLACES = new Map<string, PlaceFactory>();
 PLACES.set('pages', site => new ConsistencyPlacePages(site));
 PLACES.set('emails', site => new ConsistencyPlaceEmails(site));
+PLACES.set('settings', site => new ConsistencySiteSettings(site));
 PLACES.set('design', site => new ConsistencyPlaceDesign(site));
 PLACES.set('peer-products', site => new ConsistencyPlacePeerProducts(site));
 

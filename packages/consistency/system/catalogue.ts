@@ -297,6 +297,17 @@ const components: C9yComponent[] = [
     source: [APP('places/flavo.ts'), APP('sites/flavo/products.ts'), FLAVO('src/consistency/products.ts')],
   },
   {
+    id: 'c9y-site-settings',
+    label: 'Site settings',
+    layer: 'place',
+    summary: 'The owner can permanently delete a site after confirming its exact code.',
+    presents: ['ds-button', 'ds-input', 'ds-message'],
+    adds: ['site deletion through the workspace with the same storage cleanup as the CLI'],
+    systems: ['Consistency workspace'],
+    realisedAs: [{ as: 'place', id: 'settings' }],
+    source: [APP('places/site-settings.ts'), PLATFORM('worker/workspaces.ts'), PLATFORM('worker/admin.ts')],
+  },
+  {
     id: 'c9y-peer-products',
     label: 'Peer products',
     layer: 'place',
