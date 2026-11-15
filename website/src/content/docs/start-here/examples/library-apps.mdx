@@ -1,0 +1,66 @@
+---
+title: Library apps
+description: Apps and tools drawn by different libraries on the same components.
+tableOfContents: false
+---
+
+import LayoutExample from "../../../../components/LayoutExample.astro";
+import ExamplesDeviceSwitch from "../../../../components/ExamplesDeviceSwitch.astro";
+
+The same components, each drawn by a different [library](/libraries/): its own paper, accent, corners and type. Each page loads Design system 1, then its library stylesheet. The Slate issue tracker uses a 10px unit for finer spacing, with full-size text and controls. Signal draws both the Deploy console here and the Developer platform in [Library sites](/start-here/examples/library-sites/). Switch between Computer, Mobile and Tablet, or open an example full size. Changes stay in the preview.
+
+<ExamplesDeviceSwitch />
+
+<div className="examples-grid">
+
+<section className="examples-card" data-doc-example="issues">
+
+## Issue tracker · Slate
+
+A quarterly roadmap and working issue list, drawn with Slate: a dark library on a finer 10px unit.
+
+<LayoutExample layout="issues" />
+
+</section>
+
+<section className="examples-card" data-doc-example="canvas">
+
+## Design tool · Studio
+
+A design tool’s home page in the Studio library: black on white, menus in the bar, outlined and ink buttons in three sizes and a strip held at the foot.
+
+<LayoutExample layout="canvas" />
+
+</section>
+
+<section className="examples-card" data-doc-example="nook">
+
+## Private workspace · Nook
+
+A product home page for a private, local-first workspace: white paper, light display type, hairline page rules, soft blooms, black bands and a floating pill of places.
+
+<LayoutExample layout="nook" />
+
+</section>
+
+<section className="examples-card" data-doc-example="console">
+
+## Deploy console · Signal
+
+A service dashboard in the Signal library: code type throughout, Egg paper and Drip yellow.
+
+<LayoutExample layout="console" />
+
+</section>
+
+<section className="examples-card" data-doc-example="trails">
+
+## Walking log · Grove
+
+A walker's week in the Grove library: Comfortable green paper, Metal green and square corners.
+
+<LayoutExample layout="trails" />
+
+</section>
+
+</div>

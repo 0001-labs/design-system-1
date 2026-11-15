@@ -3,7 +3,7 @@ title: Installation
 description: Start with HTML and CSS, then add interactive components when needed.
 ---
 
-For ordinary HTML, follow [Use with HTML](/start-here/quick-start/). It uses the current public stylesheet and fonts, with no framework or build step. [Download a complete example](/start-here/examples/) to begin.
+For ordinary HTML, follow [Use with HTML](/start-here/quick-start/). It uses the current public stylesheet and fonts, with no framework or build step. [Download a complete example](/start-here/examples/html/) to begin.
 
 Install the package for a project with a build step, or to host a pinned copy of the files yourself.
 

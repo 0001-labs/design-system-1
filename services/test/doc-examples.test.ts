@@ -39,6 +39,9 @@ describe('documentation example visibility', () => {
       expect(after).not.toContain('Shop specimen');
       expect(after).toContain('Financial specimen');
       expect(after).toContain('Other content');
+      const group = await (await worker.fetch('/start-here/examples/apps/')).text();
+      expect(group).not.toContain('Shop specimen');
+      expect(group).toContain('Financial specimen');
       expect((await worker.fetch('/api/examples', { method: 'PUT', body: '{}' })).status).toBe(404);
     } finally { await worker.dispose(); }
   });

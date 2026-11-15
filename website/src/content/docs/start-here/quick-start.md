@@ -57,7 +57,7 @@ The component module starts the shared device scale. Phones and tablets follow t
 
 ## Examples and libraries
 
-The [HTML downloads](/start-here/examples/#html-examples) use this same component library. [My libraries](/libraries/) customizes the component tokens; load your library stylesheet after the base stylesheet.
+The [HTML downloads](/start-here/examples/html/) use this same component library. [My libraries](/libraries/) customizes the component tokens; load your library stylesheet after the base stylesheet.
 
 ## Hosting the files yourself
 

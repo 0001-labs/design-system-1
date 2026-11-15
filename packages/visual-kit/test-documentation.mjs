@@ -9,7 +9,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({headless:true});
 try{
  const page=await browser.newPage({viewport:{width:1200,height:1000}});
- await page.goto(`http://127.0.0.1:${server.address().port}/start-here/examples/`);
+ await page.goto(`http://127.0.0.1:${server.address().port}/start-here/examples/apps/`);
  await page.waitForFunction(()=>!!document.querySelector('.example-device ds-device-bezel')?.shadowRoot);
  const example=page.locator('[data-layout-example]').first();
  const before=await example.locator('iframe').getAttribute('src');

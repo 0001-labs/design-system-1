@@ -1,0 +1,78 @@
+---
+title: Apps and sites
+description: Full pages built from Design system 1’s own components and look.
+tableOfContents: false
+---
+
+import LayoutExample from "../../../../components/LayoutExample.astro";
+import ExamplesDeviceSwitch from "../../../../components/ExamplesDeviceSwitch.astro";
+
+Full pages built with Design system 1 as it comes, with no library.
+
+Each one uses only the components and the default look: [Page](/4-page/page/) lays out the screen, and units such as cards, tables, fields and buttons fill it. Turn on Show layers to mark what every part is made of, and point at any part to read its name. The code view holds the whole page to copy. Switch between Computer, Mobile and Tablet, or open an example full size. Changes stay in the preview.
+
+<ExamplesDeviceSwitch />
+
+<div className="examples-grid">
+
+<section className="examples-card" data-doc-example="settings">
+
+## General settings
+
+A complete settings page with a profile, regional preferences and notification choices.
+
+<LayoutExample layout="settings" />
+
+</section>
+
+<section className="examples-card" data-doc-example="shop">
+
+## Shop
+
+An editorial furniture catalogue, with a full collection and an itemised shopping bag.
+
+<LayoutExample layout="shop" />
+
+</section>
+
+<section className="examples-card" data-doc-example="planner">
+
+## Planning app
+
+A studio launch week, with assignments, progress and an expanding visual brief.
+
+<LayoutExample layout="planner" />
+
+</section>
+
+<section className="examples-card" data-doc-example="finance">
+
+## Finance app
+
+An open ledger whose balances, cash flow and spending follow the selected account.
+
+<LayoutExample layout="finance" />
+
+</section>
+
+<section className="examples-card" data-doc-example="product">
+
+## Product showcase
+
+A colourful headphone launch, with product details and a working package choice.
+
+<LayoutExample layout="product" />
+
+</section>
+
+<section className="examples-card" data-doc-example="financial">
+
+## Financial services
+
+A financial-services marketing site with an interactive product preview, modular products and developer documentation.
+
+<LayoutExample layout="financial" />
+
+</section>
+
+</div>

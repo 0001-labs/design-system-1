@@ -1,0 +1,80 @@
+---
+title: Page layouts
+description: The six layouts of Page, each as a full page.
+tableOfContents: false
+---
+
+import LayoutExample from "../../../../components/LayoutExample.astro";
+import ExamplesDeviceSwitch from "../../../../components/ExamplesDeviceSwitch.astro";
+
+The six layouts of [Page](/4-page/page/), each as a full page.
+
+Pick a layout for what the page is for, not how it looks: each card says when to reach for it. The layout is one attribute on Page, `layout`, and the grid places the navigation, the content and any supporting areas for you. Switch to Phone to see each one on a small screen.
+
+Switch between Computer, Mobile and Tablet, or open an example full size. Changes stay in the preview.
+
+<ExamplesDeviceSwitch />
+
+<div className="examples-grid">
+
+<section className="examples-card" data-doc-example="sidebar">
+
+## Sidebar
+
+An app with places to go: navigation stays on the left while the work changes on the right.
+
+<LayoutExample layout="sidebar" />
+
+</section>
+
+<section className="examples-card" data-doc-example="split">
+
+## List and detail
+
+Many things of one kind: pick one from the list and read it in full beside it.
+
+<LayoutExample layout="split" />
+
+</section>
+
+<section className="examples-card" data-doc-example="inspector">
+
+## Inspector
+
+Making something: pages on the left, the work in the middle, its settings on the right.
+
+<LayoutExample layout="inspector" />
+
+</section>
+
+<section className="examples-card" data-doc-example="column">
+
+## Column
+
+Something read or filled in from top to bottom: settings, an article, a long form.
+
+<LayoutExample layout="column" />
+
+</section>
+
+<section className="examples-card" data-doc-example="centered">
+
+## Centred
+
+One task and nothing else on the screen: signing in, confirming, a single question.
+
+<LayoutExample layout="centered" />
+
+</section>
+
+<section className="examples-card" data-doc-example="tiles">
+
+## Tiles
+
+An overview of many numbers at once: each tile is twelve squares wide and the row fills up.
+
+<LayoutExample layout="tiles" />
+
+</section>
+
+</div>

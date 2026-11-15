@@ -5,7 +5,7 @@ import LibraryWorkspace from '../components/LibraryWorkspace.astro';
 
 const pathname = Astro.url.pathname.replace(/\/$/, '');
 const isTool = ['/2-core/icon/collection', '/components'].includes(pathname);
-const isExamples = pathname === '/start-here/examples';
+const isExamples = pathname === '/start-here/examples' || pathname.startsWith('/start-here/examples/');
 const libraryMode = pathname === '/libraries/playground' ? 'editor'
   : pathname === '/libraries/workspace' ? 'libraries'
   : pathname === '/libraries/design-system-1' ? 'base'

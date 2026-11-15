@@ -22,11 +22,11 @@ export default defineConfig({
     // The two installation pages were one page twice (5 November 2026).
     "/start-here/installation/": "/getting-started/installation/",
     "/examples/": "/start-here/examples/",
-    "/examples/settings/": "/start-here/examples/#general-settings",
-    "/examples/shop/": "/start-here/examples/#shop",
-    "/examples/planner/": "/start-here/examples/#planning-app",
-    "/examples/finance/": "/start-here/examples/#finance-app",
-    "/examples/product/": "/start-here/examples/#product-showcase",
+    "/examples/settings/": "/start-here/examples/apps/#general-settings",
+    "/examples/shop/": "/start-here/examples/apps/#shop",
+    "/examples/planner/": "/start-here/examples/apps/#planning-app",
+    "/examples/finance/": "/start-here/examples/apps/#finance-app",
+    "/examples/product/": "/start-here/examples/apps/#product-showcase",
   },
   devToolbar: { enabled: false },
   // Pairs each block's Markdown with the HTML it drew (scripts/docs-pages.mjs).
@@ -200,7 +200,19 @@ export default defineConfig({
             { label: "Product guides", slug: "4-page/product-guides" },
           ],
         },
-        { label: "Examples", slug: "start-here/examples" },
+        {
+          label: "Examples",
+          items: [
+            { label: "Overview", slug: "start-here/examples" },
+            { label: "Apps and sites", slug: "start-here/examples/apps" },
+            { label: "Workbenches", slug: "start-here/examples/workbenches" },
+            { label: "Library sites", slug: "start-here/examples/library-sites" },
+            { label: "Library apps", slug: "start-here/examples/library-apps" },
+            { label: "Bird guide", slug: "start-here/examples/bird-guide" },
+            { label: "Page layouts", slug: "start-here/examples/layouts" },
+            { label: "HTML examples", slug: "start-here/examples/html" },
+          ],
+        },
         {
           label: "Advanced",
           items: [

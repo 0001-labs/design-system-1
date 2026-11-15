@@ -431,7 +431,7 @@ const WORKER_REDIRECTS = {
   "/classless/library-api": "/libraries/api/",
   "/1-root/native-controls": "/start-here/quick-start/",
   "/components": "/2-core/overview/",
-  "/4-page/layouts": "/start-here/examples/",
+  "/4-page/layouts": "/start-here/examples/layouts/",
   "/icons": "/2-core/icon/",
   "/2-core/icon/collection": "/2-core/icon/",
   "/1-root/styling": "/1-root/overview/",
@@ -448,11 +448,11 @@ const SITE_REDIRECTS = {
   "/1-root/pricing/": "/1-root/formatting/#prices",
   "/start-here/overview/": "/",
   "/examples/": "/start-here/examples/",
-  "/examples/settings/": "/start-here/examples/#general-settings",
-  "/examples/shop/": "/start-here/examples/#shop",
-  "/examples/planner/": "/start-here/examples/#planning-app",
-  "/examples/finance/": "/start-here/examples/#finance-app",
-  "/examples/product/": "/start-here/examples/#product-showcase",
+  "/examples/settings/": "/start-here/examples/apps/#general-settings",
+  "/examples/shop/": "/start-here/examples/apps/#shop",
+  "/examples/planner/": "/start-here/examples/apps/#planning-app",
+  "/examples/finance/": "/start-here/examples/apps/#finance-app",
+  "/examples/product/": "/start-here/examples/apps/#product-showcase",
 };
 
 await step("Redirects", [

@@ -115,7 +115,7 @@ export default {
       '/classless/library-api': '/libraries/api/',
       '/1-root/native-controls': '/start-here/quick-start/',
       '/components': '/2-core/overview/',
-      '/4-page/layouts': '/start-here/examples/',
+      '/4-page/layouts': '/start-here/examples/layouts/',
       '/icons': '/2-core/icon/',
       '/2-core/icon/collection': '/2-core/icon/',
       '/1-root/styling': '/1-root/overview/',
@@ -186,7 +186,7 @@ export default {
       shell.headers.set('X-Robots-Tag', 'noindex, nofollow');
       return shell;
     }
-    if (url.pathname.replace(/\/$/, '') === '/start-here/examples') return filterDocExamples(response, env);
+    if (/^\/start-here\/examples(\/|$)/.test(url.pathname)) return filterDocExamples(response, env);
     // A page saved in Consistency, drawn over the build's page. No other host serves the documentation's words.
     if (url.hostname === 'designsystem1.com' && request.method === 'GET') return reportPage(await applyDocEdit(response, url.pathname, env), url.pathname);
     return reportPage(response, url.pathname);

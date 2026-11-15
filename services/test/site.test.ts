@@ -132,7 +132,7 @@ describe("combined website routes", () => {
       '/components/': '/2-core/overview/',
       '/icons/': '/2-core/icon/',
       '/2-core/icon/collection/': '/2-core/icon/',
-      '/4-page/layouts/': '/start-here/examples/',
+      '/4-page/layouts/': '/start-here/examples/layouts/',
       '/1-root/styling/': '/1-root/overview/',
       '/built-ins/languages/': '/1-root/languages/',
       '/advanced/theming/': '/1-root/theming/',
