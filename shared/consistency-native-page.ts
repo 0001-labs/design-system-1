@@ -19,10 +19,12 @@ export interface NativeGrid extends NativeBlockBase {
 export interface NativeContent extends NativeBlockBase {
   kind: 'content'; source: string; wrap?:boolean; gaps?: Record<string, number>; binding?: string;
 }
+/** What a picture of a screen stands in: a browser window, a bar with its three dots over it, or a phone, a bezel with its island. */
+export type NativeFrame = 'window' | 'phone';
 /** Where a picture's subject is, as whole percentages from the left and the top; 50 and 50 when absent. */
 export interface NativeFocus { x: number; y: number }
 export interface NativeImage extends NativeBlockBase {
-  kind: 'image'; src: string; alt: string; height?: number; mobileHeight?: number; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string;
+  kind: 'image'; src: string; alt: string; height?: number; mobileHeight?: number; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string; frame?: NativeFrame;
 }
 export type NativeButtonFace = 'filled' | 'outlined';
 export type NativeButtonSize = 'medium' | 'large';
@@ -49,7 +51,7 @@ export type NativePrimitive = NativeText | NativeComponent | NativeFlow | Native
  */
 export type { Tone } from './consistency-vocabulary';
 export type NativeWords = string;
-export interface NativePicture { src: string; alt: string; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string }
+export interface NativePicture { src: string; alt: string; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string; frame?: NativeFrame }
 /** `icon` names one of the library's icons, drawn where the section draws marks (a footer's `follow`). */
 export interface NativeAction { text: string; href: string; appearance?: 'plain' | 'default' | 'primary' | 'secondary'; face?: NativeButtonFace; size?: NativeButtonSize; icon?: string }
 export interface NativeLine { text: string; href?: string }
@@ -171,12 +173,13 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
     return{x:integer(input.x,100,0,`${path}.x: a whole percentage from 0 to 100`),y:integer(input.y,100,0,`${path}.y: a whole percentage from 0 to 100`)};
   };
   const picture=(value:unknown,path:string):NativePicture=>{
-    const input=record(value,`${path}: a picture is { src, alt, fit?, focus?, href? }`);keys(input,['src','alt','fit','focus','href'],path);
+    const input=record(value,`${path}: a picture is { src, alt, fit?, focus?, href?, frame? }`);keys(input,['src','alt','fit','focus','href','frame'],path);
     const src=address(input.src,true,`${path}.src: not an image address`);if(src.startsWith('/')&&!context.images.includes(src))return invalid(`${path}.src: "${src}" is not one of the page's images`);
     const result:NativePicture={src,alt:text(input.alt,1000,`${path}.alt: words of at most 1000 characters`)};
     if(input.fit!==undefined)result.fit=choice(input.fit,['contain','cover'] as const,`${path}.fit: cover or contain`);
     if(input.focus!==undefined)result.focus=focus(input.focus,`${path}.focus`);
     if(input.href!==undefined)result.href=address(input.href,false,`${path}.href: not a safe address`);
+    if(input.frame!==undefined)result.frame=choice(input.frame,['window','phone'] as const,`${path}.frame: window or phone`);
     return result;
   };
   const face=(value:unknown,path:string)=>choice(value,['filled','outlined'] as const,`${path}: filled or outlined`);
@@ -299,7 +302,7 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       if(input.wrap!==undefined&&(block.kind==='content'))block.wrap=boolean(input.wrap);
       if(input.binding!==undefined){const binding=text(input.binding,200);if(!context.bindings?.includes(binding))return invalid();block.binding=binding;}
     }else if(kind==='image'){
-      keys(input,[...common,'src','alt','height','mobileHeight','fit','focus','href']);
+      keys(input,[...common,'src','alt','height','mobileHeight','fit','focus','href','frame']);
       const src=address(input.src,true);if(src.startsWith('/')&&!context.images.includes(src))return invalid();
       block={...base,kind,src,alt:text(input.alt,1000)};
       if(input.height!==undefined)block.height=integer(input.height,2000,20);
@@ -307,6 +310,7 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       if(input.fit!==undefined)block.fit=choice(input.fit,['contain','cover'] as const);
       if(input.focus!==undefined)block.focus=focus(input.focus,`image ${id}.focus`);
       if(input.href!==undefined)block.href=address(input.href);
+      if(input.frame!==undefined)block.frame=choice(input.frame,['window','phone'] as const);
     }else if(kind==='link'){
       keys(input,[...common,'text','href','appearance','face','size','binding']);block={...base,kind,text:text(input.text,1000),href:address(input.href)};
       if(input.appearance!==undefined)block.appearance=choice(input.appearance,['plain','default','primary','secondary'] as const);
@@ -452,7 +456,7 @@ function render(block: NativeBlock, options: NativePageRenderOptions, mark?: Nat
   if(block.kind==='content')return`<div ${attrs}${block.wrap===false?' data-native-nowrap':''}><div class="c9y-native-region">${renderNativeRegion(block.source,{images:options.images,id:block.id,gaps:block.gaps})}</div></div>`;
   if(block.kind==='image'){
     const image=`<img src="${escape(address(block.src,true))}" alt="${escape(block.alt)}" loading="lazy">`;
-    return`<figure ${attrs}>${block.href?`<a href="${escape(address(block.href))}"${current(options,block.href)}>${image}</a>`:image}</figure>`;
+    return`<figure ${attrs}${block.frame?` data-frame="${block.frame}"`:''}>${block.href?`<a href="${escape(address(block.href))}"${current(options,block.href)}>${image}</a>`:image}</figure>`;
   }
   // A button's face and size travel as the library's `data-face` and `data-size`, written only when the link names them.
   if(block.kind==='link')return`<div ${attrs}><a class="${block.appearance&&block.appearance!=='plain'?`ds-button${block.appearance==='default'?'':` ds-button--${block.appearance}`}`:'ds-link c9y-native-link'}"${block.face?` data-face="${block.face}"`:''}${block.size?` data-size="${block.size}"`:''} href="${escape(address(block.href))}"${current(options,block.href)}>${escape(block.text)}</a></div>`;
@@ -474,7 +478,7 @@ function render(block: NativeBlock, options: NativePageRenderOptions, mark?: Nat
 const sub=(id:string,...parts:(string|number)[])=>[id,...parts].join('.');
 const heading=(source:string,level:number)=>/^\s*#{1,6}\s/.test(source)?source:`${'#'.repeat(level)} ${source}`;
 const wordsBlock=(id:string,source:string):NativeContent=>({id,kind:'content',source});
-const pictureBlock=(id:string,picture:NativePicture,extra:Partial<NativeImage>={}):NativeImage=>({id,kind:'image',src:picture.src,alt:picture.alt,...(picture.fit?{fit:picture.fit}:{}),...(picture.focus?{focus:picture.focus}:{}),...(picture.href?{href:picture.href}:{}),...extra});
+const pictureBlock=(id:string,picture:NativePicture,extra:Partial<NativeImage>={}):NativeImage=>({id,kind:'image',src:picture.src,alt:picture.alt,...(picture.fit?{fit:picture.fit}:{}),...(picture.focus?{focus:picture.focus}:{}),...(picture.href?{href:picture.href}:{}),...(picture.frame?{frame:picture.frame}:{}),...extra});
 const actionBlock=(id:string,action:NativeAction,appearance?:NativeLink['appearance']):NativeLink=>({id,kind:'link',text:action.text,href:action.href,...(action.appearance??appearance?{appearance:action.appearance??appearance}:{}),...(action.face?{face:action.face}:{}),...(action.size?{size:action.size}:{})});
 /** A title as a strong line rather than a heading, unless it is already a heading of its own. */
 const strongLine=(source:string)=>/^\s*#{1,6}\s/.test(source)?source:`**${source}**`;

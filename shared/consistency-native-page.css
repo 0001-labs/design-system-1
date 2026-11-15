@@ -11,6 +11,15 @@ details.c9y-native-flow{display:block}
 .c9y-native-content>aa-editor{display:block;min-width:0}
 .c9y-native-image{display:block}
 .c9y-native-image img{display:block;width:100%;max-width:100%;height:var(--c9y-image-height,auto);object-fit:var(--c9y-image-fit,contain);object-position:var(--c9y-image-focus,50% 50%)}
+/* A picture of a screen in a frame, drawn here and by no script: a browser window, a bar with its three dots over the
+   picture, or a phone, a bezel with its island. A cropped screen keeps its top in view. */
+.c9y-native-image[data-frame]{position:relative;overflow:hidden;--c9y-frame-ink:var(--c9y-ink,#1e1e1e);--c9y-frame-paper:var(--c9y-paper,#fff)}
+.c9y-native-image[data-frame] img{object-position:var(--c9y-image-focus,50% 0)}
+.c9y-native-image[data-frame="window"]{padding-top:calc(1.5 * var(--c9y-unit));border-radius:calc(var(--c9y-unit) / 2);background:var(--c9y-frame-paper);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c9y-frame-ink) 16%,transparent)}
+.c9y-native-image[data-frame="window"]::before{content:"";position:absolute;inset:0 0 auto;height:calc(1.5 * var(--c9y-unit));border-bottom:1px solid color-mix(in srgb,var(--c9y-frame-ink) 16%,transparent);background:radial-gradient(circle at calc(.75 * var(--c9y-unit)) 50%,color-mix(in srgb,var(--c9y-frame-ink) 30%,transparent) 0 calc(.2 * var(--c9y-unit)),transparent calc(.2 * var(--c9y-unit) + .5px)),radial-gradient(circle at calc(1.45 * var(--c9y-unit)) 50%,color-mix(in srgb,var(--c9y-frame-ink) 30%,transparent) 0 calc(.2 * var(--c9y-unit)),transparent calc(.2 * var(--c9y-unit) + .5px)),radial-gradient(circle at calc(2.15 * var(--c9y-unit)) 50%,color-mix(in srgb,var(--c9y-frame-ink) 30%,transparent) 0 calc(.2 * var(--c9y-unit)),transparent calc(.2 * var(--c9y-unit) + .5px))}
+.c9y-native-image[data-frame="phone"]{padding:calc(.4 * var(--c9y-unit));border-radius:calc(2 * var(--c9y-unit));background:var(--c9y-frame-ink)}
+.c9y-native-image[data-frame="phone"] img{border-radius:calc(1.6 * var(--c9y-unit));background:var(--c9y-frame-paper)}
+.c9y-native-image[data-frame="phone"]::before{content:"";position:absolute;inset:calc(.9 * var(--c9y-unit)) 0 auto;margin-inline:auto;width:min(36%,calc(5 * var(--c9y-unit)));height:calc(.9 * var(--c9y-unit));border-radius:calc(var(--c9y-unit));background:var(--c9y-frame-ink)}
 .c9y-native-collection-item{min-width:0;margin:0;grid-column:span var(--c9y-item-span,1);display:flex;flex-direction:column;gap:var(--c9y-unit)}
 .c9y-native-collection-item[data-featured]{grid-column:span var(--c9y-featured-span,1)}
 .c9y-native-collection-media{display:block;min-width:0;height:var(--c9y-image-height);color:inherit}
@@ -101,6 +110,11 @@ details.c9y-native-flow{display:block}
 .c9y-native-card>[data-slot="label"]{color:var(--ds-text-color-muted)}
 .c9y-native-card>[data-slot="picture"]{margin:auto calc(-1 * var(--c9y-unit)) calc(-1 * var(--c9y-unit));padding-top:calc(var(--c9y-unit) / 2)}
 .c9y-native-card>[data-slot="picture"] img{aspect-ratio:3 / 2;height:auto}
+/* A framed picture stands on the card's foot inside the card's own padding, its frame running off the foot. */
+.c9y-native-card>[data-slot="picture"][data-frame]{margin-inline:0;border-end-start-radius:0;border-end-end-radius:0}
+.c9y-native-card>[data-slot="picture"][data-frame="window"]{padding-top:calc(1.5 * var(--c9y-unit))}
+.c9y-native-card>[data-slot="picture"][data-frame="phone"]{width:min(100%,calc(12 * var(--c9y-unit)));margin-inline:auto;padding:calc(.4 * var(--c9y-unit)) calc(.4 * var(--c9y-unit)) 0}
+.c9y-native-card>[data-slot="picture"][data-frame="phone"] img{aspect-ratio:3 / 4;border-end-start-radius:0;border-end-end-radius:0}
 /* Gallery: photos in a grid with a card's corners, or a strip that snaps one photo at a time. */
 .c9y-native-section[data-section="gallery"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));gap:var(--c9y-unit)}
 [data-section="gallery"] img{height:var(--c9y-gallery-height);border-radius:var(--c9y-radius-card)}

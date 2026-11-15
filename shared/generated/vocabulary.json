@@ -481,6 +481,14 @@
         "href": {
           "type": "address",
           "meaning": "Where the picture leads when pressed"
+        },
+        "frame": {
+          "type": "choice",
+          "choices": [
+            "window",
+            "phone"
+          ],
+          "meaning": "A picture of a screen in a frame: a browser window, a bar with its three dots over the picture, or a phone, a bezel with its island; no frame when absent"
         }
       },
       "slots": {},

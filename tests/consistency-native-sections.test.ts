@@ -17,6 +17,18 @@ const sq = (squares: number) => `calc(${squares * 20}px * var(--sf,1))`;
 const sheet = readFileSync(join(import.meta.dirname, '../shared/consistency-native-page.css'), 'utf8');
 
 describe('section kinds expand to primitives', () => {
+  test('a picture of a screen stands in a frame, a window or a phone, drawn by the stylesheet alone', () => {
+    const framed = (frame: string) => render({ id: 'shot', kind: 'cards', items: [{ title: 'App', picture: { src: '/photos/harbour.jpg', alt: 'The app', frame } }] } as never);
+    expect(framed('window')).toMatch(/<figure [^>]*data-slot="picture"[^>]*data-frame="window">/);
+    expect(framed('phone')).toContain('data-frame="phone"');
+    expect(render(example('cards'))).not.toContain('data-frame');
+    expect(refusal([{ id: 'shot', kind: 'cards', items: [{ title: 'App', picture: { src: '/photos/harbour.jpg', alt: 'The app', frame: 'tablet' } }] } as never]).reason).toContain('frame: window or phone');
+    expect(sheet).toContain('.c9y-native-image[data-frame="window"]::before{content:""');
+    expect(sheet).toContain('.c9y-native-image[data-frame="phone"]{padding:calc(.4 * var(--c9y-unit))');
+    // The frame is the stylesheet's: no element or script of a library draws it.
+    expect(framed('phone')).not.toMatch(/<ds-|<script/);
+  });
+
   test('cards stand as a strip that scrolls sideways, each with a tone and a width of its own', () => {
     const html = render(example('cards', 2));
     expect(html).toContain('data-section="cards" data-variant="filled" data-tone="cream" data-strip');

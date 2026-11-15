@@ -27,7 +27,7 @@ export interface FieldDefinition {
 }
 /**
  * A slot holds content: `words` is Aa Markdown as a `content` block carries it; `picture` an image
- * reference `{ src, alt, fit?, href?, focus? }` with `src` from the page's images and `focus` `{ x, y }`
+ * reference `{ src, alt, fit?, href?, focus?, frame? }` with `src` from the page's images, `frame` `window` or `phone` for a picture of a screen, and `focus` `{ x, y }`
  * where its subject is, as percentages from the left and the top (50 and 50 when absent); `action`
  * `{ text, href, appearance?, face?, size?, icon? }` as a `link` block, `face` `filled` or `outlined`,
  * `size` `medium` or `large`, `icon` a name from the library's icons where the section draws one;
@@ -147,6 +147,7 @@ export const PRIMITIVES: KindDefinition[] = [
       fit: { type: 'choice', choices: ['contain', 'cover'], default: 'contain', meaning: 'Whole inside its box, or filling it and cropped' },
       focus: { type: 'map', meaning: '`{ x, y }`: where the picture\'s subject is, as whole percentages from 0 to 100 from the left and the top, kept in view when the picture is cropped; 50 and 50 when absent' },
       href: { type: 'address', meaning: 'Where the picture leads when pressed' },
+      frame: { type: 'choice', choices: ['window', 'phone'], meaning: 'A picture of a screen in a frame: a browser window, a bar with its three dots over the picture, or a phone, a bezel with its island; no frame when absent' },
     },
     slots: {},
     examples: [
