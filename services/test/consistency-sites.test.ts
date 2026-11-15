@@ -201,3 +201,21 @@ it('takes a write to the API as same-origin JSON within its bound: the engine\'s
   expect(await workspace.fetch.mock.calls[4]![0].text()).toBe('{"who":"owner"}');
   expect(put.headers.get('x-content-type-options')).toBe('nosniff');
 });
+
+it('answers email flows to the owner alone, and only while their flag is on', async () => {
+  const { call, workspace } = setup();
+  expect(apiRoute('emails/flows')?.methods).toEqual(['GET', 'PUT']);
+  // The flag store is missing here, which reads as Off.
+  expect((await call('10VNDG/api/emails/flows', { headers })).status).toBe(404);
+  expect(workspace.fetch).not.toHaveBeenCalled();
+  const other = setup('other');
+  expect((await other.call('10VNDG/api/emails/flows', { headers })).status).toBe(403);
+  const { sitesApi } = await import('../src/consistency-sites');
+  const env = { CONSISTENCY_WORKSPACE: { fetch: vi.fn(async (request: Request) => Response.json({ path: new URL(request.url).pathname, method: request.method })) } } as never;
+  const owner = async () => ({ owner: true }) as const, member = async () => ({ owner: false, email: 'm@example.com' }) as const;
+  const ask = (person: typeof owner | typeof member, on: boolean, init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/emails/flows`, init), env, person, async () => on);
+  expect((await ask(member, true)).status).toBe(404);
+  expect((await ask(owner, false)).status).toBe(404);
+  expect(await (await ask(owner, true)).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/emails/flows', method: 'GET' });
+  expect((await ask(owner, true, { method: 'PUT', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(200);
+});

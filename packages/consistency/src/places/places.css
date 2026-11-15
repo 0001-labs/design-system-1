@@ -71,6 +71,13 @@
 .place-email__to{flex:0 1 calc(8 * var(--ds-unit));min-width:0}
 .place-email__kind,.place-email__kind-name{flex:none}
 .place-email__kind-name{width:calc(10 * var(--ds-unit))}
+/* The email flow designer (email-flows.ts): a group a flow, its emails in order, the timing on one line in the drawer. */
+.place-flows{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0}
+.place-flows__add{align-self:flex-start;min-width:calc(10 * var(--ds-unit))}
+.place-flows__removed,.place-flow__actions,.place-flow__timing{display:flex;flex-wrap:wrap;align-items:center;gap:calc(var(--ds-unit) / 2)}
+.place-flow{display:flex;flex-direction:column;gap:calc(var(--ds-unit) / 2);min-width:0}
+.place-flow__when{flex:0 0 calc(8 * var(--ds-unit));white-space:nowrap;overflow:hidden;color:var(--ds-text-color-muted)}
+.place-flow__timing>ds-input{flex:0 0 calc(4 * var(--ds-unit));width:auto}
 .place-email__subject{flex:1 1 auto}
 .place-email[data-failed]{color:var(--ds-danger-color)}
 ds-tag[data-tone="danger"]{--ds-tag-accent:var(--ds-danger-color)}

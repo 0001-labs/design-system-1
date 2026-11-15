@@ -10,6 +10,9 @@
  * and its status, what it was about, and its attachments by name and size, a gift card's PDF opened through the
  * site's API. Nothing here sends anything. The list is read on entry, on coming back and when the window has the
  * focus again, drawn first from the last read.
+ *
+ * Flows, the third tab, is the email flow designer (`email-flows.ts`): shown only when the site answers its flows,
+ * which it does for the owner while `consistency-email-flows` is on.
  */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
@@ -25,6 +28,8 @@ import '../../../../DS1/2-core/ds-message';
 import '../../../../DS1/2-core/ds-empty';
 import type { SiteSummary } from '../site-editing';
 import { EmailTemplateEditor } from './email-template-editor';
+import { ConsistencyEmailFlows } from './email-flows';
+import type { FlowsAnswer } from './email-flows-view';
 import { siteApi } from './api';
 import { kept, readWhenShown } from './fresh';
 import { emailDocument, emailsQuery, emailStatusName, kindName, relatedOf, sentAt, sizeName, type EmailDetail, type EmailsView, type EmailSummary, type EmailTemplate } from './emails-view';
@@ -36,12 +41,12 @@ interface TemplatesAnswer { lang?: string; from?: string | null; templates?: Ema
 /** What the drawer shows: a sent email (read whole once opened), or a kind drawn with made up people. */
 type Shown = { kind: 'sent'; summary: EmailSummary; email?: EmailDetail; problem?: string } | { kind: 'look'; template: EmailTemplate; from: string | null };
 
-const TABS: { view: EmailsView; label: string }[] = [{ view: 'sent', label: 'Sent' }, { view: 'look', label: 'How they look' }];
+const TABS: { view: EmailsView; label: string }[] = [{ view: 'sent', label: 'Sent' }, { view: 'look', label: 'How they look' }, { view: 'flows', label: 'Flows' }];
 
 export class ConsistencyPlaceEmails extends LitElement {
   static properties = {
     kinds: { state: true }, view: { state: true }, emails: { state: true }, next: { state: true }, problem: { state: true }, kind: { state: true }, words: { state: true },
-    languages: { state: true }, chosenLang: { state: true }, templates: { state: true }, from: { state: true }, lookProblem: { state: true }, shown: { state: true },
+    languages: { state: true }, chosenLang: { state: true }, templates: { state: true }, from: { state: true }, lookProblem: { state: true }, shown: { state: true }, flows: { state: true },
   };
   declare kinds: string[];
   declare view: EmailsView;
@@ -56,6 +61,9 @@ export class ConsistencyPlaceEmails extends LitElement {
   declare from: string | null;
   declare lookProblem: string;
   declare shown: Shown | null;
+  /** The site's flows, when it answers them: the owner's, while their flag is on. */
+  declare flows: FlowsAnswer | null;
+  private readonly flowsEditor = new ConsistencyEmailFlows();
   site!: SiteSummary;
   private stop: (() => void) | null = null;
   private turn = 0;
@@ -66,7 +74,8 @@ export class ConsistencyPlaceEmails extends LitElement {
     super();
     if (site) this.site = site;
     this.kinds = []; this.view = 'sent'; this.emails = null; this.next = null; this.problem = ''; this.kind = ''; this.words = '';
-    this.languages = []; this.chosenLang = null; this.templates = null; this.from = null; this.lookProblem = ''; this.shown = null;
+    this.languages = []; this.chosenLang = null; this.templates = null; this.from = null; this.lookProblem = ''; this.shown = null; this.flows = null;
+    this.flowsEditor.addEventListener('email-flows-changed', () => this.requestUpdate());
   }
   protected createRenderRoot() { return this; }
 
@@ -81,7 +90,26 @@ export class ConsistencyPlaceEmails extends LitElement {
   disconnectedCallback() { super.disconnectedCallback(); this.stop?.(); this.stop = null; window.clearTimeout(this.typing); }
 
   /** What the tab shows, again: the first page of what was sent, or every kind in the language chosen. */
-  read() { return this.view === 'sent' ? this.load(null) : this.look(); }
+  read() {
+    if (this.view === 'flows') return this.readFlows();
+    void this.readFlows();
+    return this.view === 'sent' ? this.load(null) : this.look();
+  }
+
+  /** The site's flows, and its languages for their words; a site that does not answer them has no Flows tab. */
+  private async readFlows() {
+    try {
+      const answer = await siteApi<FlowsAnswer>(this.site.code, 'emails/flows');
+      this.flowsEditor.site = this.site.code;
+      this.flowsEditor.use(answer);
+      this.flows = answer;
+      await this.ensureLanguages();
+      this.flowsEditor.lang = this.chosenLang ?? this.languages[0]?.code ?? 'en';
+    } catch {
+      this.flows = null;
+      if (this.view === 'flows') this.view = 'sent';
+    }
+  }
 
   /** A page of the emails sent; from the first, it takes the place of what was shown. */
   private async load(after: string | null) {
@@ -101,11 +129,15 @@ export class ConsistencyPlaceEmails extends LitElement {
   }
 
   /** Every kind the site sends, drawn in the language chosen; the site's languages are read from its pages. */
+  /** The site's languages, read once from its pages. */
+  private async ensureLanguages() {
+    if (this.languages.length) return;
+    const pages = await siteApi<{ pages?: PageSummary[] }>(this.site.code, 'pages').then(answer => answer.pages ?? [], () => [] as PageSummary[]);
+    this.languages = languagesOf(pages);
+  }
+
   private async look() {
-    if (!this.languages.length) {
-      const pages = await siteApi<{ pages?: PageSummary[] }>(this.site.code, 'pages').then(answer => answer.pages ?? [], () => [] as PageSummary[]);
-      this.languages = languagesOf(pages);
-    }
+    await this.ensureLanguages();
     const lang = this.chosenLang ?? this.languages[0]?.code ?? 'en';
     try {
       const answer = await siteApi<TemplatesAnswer>(this.site.code, `emails/templates?lang=${encodeURIComponent(lang)}`);
@@ -124,6 +156,7 @@ export class ConsistencyPlaceEmails extends LitElement {
     if (!await this.flush()) return;
     this.view = view;
     this.shown = null;
+    this.flowsEditor.open(null);
     void this.read();
   }
 
@@ -149,9 +182,9 @@ export class ConsistencyPlaceEmails extends LitElement {
   render() {
     return html`<div class="place place-column place-emails">
       <ds-text class="place-title" role="heading" aria-level="1" literal size="display" text="Emails"></ds-text>
-      <ds-tabs text aria-label="Emails">${TABS.map(tab => html`<ds-button control="host" role="tab" ?active=${tab.view === this.view} aria-selected=${String(tab.view === this.view)}
+      <ds-tabs text aria-label="Emails">${TABS.filter(tab => tab.view !== 'flows' || this.flows).map(tab => html`<ds-button control="host" role="tab" ?active=${tab.view === this.view} aria-selected=${String(tab.view === this.view)}
         tabindex=${tab.view === this.view ? 0 : -1} @click=${() => this.choose(tab.view)}>${tab.label}</ds-button>`)}</ds-tabs>
-      ${this.view === 'sent' ? this.sent() : this.looks()}
+      ${this.view === 'sent' ? this.sent() : this.view === 'look' ? this.looks() : this.flowsView()}
       ${this.drawer()}
     </div>`;
   }
@@ -181,11 +214,20 @@ export class ConsistencyPlaceEmails extends LitElement {
         ${this.next ? html`<div class="place-emails__more"><ds-button secondary @click=${() => void this.load(this.next)}>Show more</ds-button></div>` : nothing}`}`;
   }
 
-  private looks() {
+  private flowsView() {
+    return html`${this.languageTabs()}${this.flowsEditor}`;
+  }
+
+  /** The site's languages as tabs, when it has more than one: what How they look and Flows show their words in. */
+  private languageTabs() {
     const lang = this.chosenLang ?? this.languages[0]?.code;
-    return html`${this.languages.length > 1 ? html`<ds-tabs text class="place-languages" aria-label="Language">${this.languages.map(each => html`<ds-button control="host" role="tab" lang=${each.code}
+    return this.languages.length > 1 ? html`<ds-tabs text class="place-languages" aria-label="Language">${this.languages.map(each => html`<ds-button control="host" role="tab" lang=${each.code}
         ?active=${each.code === lang} aria-selected=${String(each.code === lang)} tabindex=${each.code === lang ? 0 : -1}
-        @click=${async () => { if (!await this.flush()) return; this.chosenLang = each.code; this.shown = null; void this.look(); }}>${each.name}</ds-button>`)}</ds-tabs>` : nothing}
+        @click=${async () => { if (!await this.flush()) return; this.chosenLang = each.code; this.shown = null; this.flowsEditor.lang = each.code; this.flowsEditor.requestUpdate(); if (this.view === 'look') void this.look(); }}>${each.name}</ds-button>`)}</ds-tabs>` : nothing;
+  }
+
+  private looks() {
+    return html`${this.languageTabs()}
       ${this.lookProblem ? html`<ds-message role="alert" tone="danger" literal heading="The emails could not be drawn" text=${this.lookProblem}></ds-message>` : nothing}
       ${this.templates ? html`<ds-list class="place-emails__list" aria-label="How they look">${this.templates.map(template => html`<ds-row interactive class="place-email" label=${kindName(template.kind)}
         ?current=${this.shown?.kind === 'look' && this.shown.template.kind === template.kind} @click=${async () => { if (!await this.flush()) return; this.shown = { kind: 'look', template, from: template.from ?? this.from }; }}>
@@ -195,10 +237,10 @@ export class ConsistencyPlaceEmails extends LitElement {
   }
 
   async flush(): Promise<boolean> {
-    const answers = await Promise.all([...this.templateEditors.values()].map(editor => editor.flush()));
+    const answers = await Promise.all([...[...this.templateEditors.values()].map(editor => editor.flush()), this.flowsEditor.flush()]);
     return answers.every(Boolean);
   }
-  private async close() { if (await this.flush()) this.shown = null; }
+  private async close() { if (await this.flush()) { this.shown = null; this.flowsEditor.open(null); } }
   private editTemplate(template: EmailTemplate) {
     const lang = this.chosenLang ?? this.languages[0]?.code ?? 'en', key = `${template.kind}:${lang}`;
     let editor = this.templateEditors.get(key);
@@ -240,12 +282,16 @@ export class ConsistencyPlaceEmails extends LitElement {
           ${email.error ? html`<ds-message role="alert" tone="danger" literal text=${email.error}></ds-message>` : nothing}
           ${attachments(email.attachments, related?.pdf)}`;
       }
+    } else if (this.view === 'flows' && this.flowsEditor.shown) {
+      const head = this.flowsEditor.drawerHead();
+      title = head?.title ?? ''; description = head?.description ?? '';
+      body = this.flowsEditor.drawerBody();
     } else if (shown?.kind === 'look') {
       const template = shown.template;
       title = template.subject; description = `${kindName(template.kind)}, drawn with made up people. Nothing is sent.`;
       body = html`${template.editing ? this.editTemplate(template) : drawn(template)}${group('Sent', html`${line('To', template.to)}${line('From', shown.from || html`<span class="place-muted">The site's address</span>`)}`)}${attachments(template.attachments)}`;
     }
-    return html`<ds-overlay type="drawer" .nonModal=${true} .holdScroll=${false} .blockOutside=${false} .open=${!!shown}
+    return html`<ds-overlay type="drawer" .nonModal=${true} .holdScroll=${false} .blockOutside=${false} .open=${!!shown || (this.view === 'flows' && !!this.flowsEditor.shown)}
       @ds-close-request=${(event: Event) => { if (event.target === event.currentTarget) { event.preventDefault(); void this.close(); } }}>
       <dialog class="place-drawer place-email-drawer" aria-labelledby="place-email-title">
         <div data-ds-overlay="header"><h2 data-ds-overlay="title" id="place-email-title">${title}</h2><p data-ds-overlay="description">${description}</p></div>

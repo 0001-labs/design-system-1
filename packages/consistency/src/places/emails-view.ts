@@ -5,7 +5,7 @@
  * (`worker/emails.ts`); a sign-in code was written out of them before they were kept.
  */
 
-export type EmailsView = 'sent' | 'look';
+export type EmailsView = 'sent' | 'look' | 'flows';
 
 /** An attachment as it was kept: its name, type and size, never its bytes. */
 export interface EmailAttachment { filename: string; contentType: string; size: number }

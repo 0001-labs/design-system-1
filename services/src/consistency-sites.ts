@@ -42,6 +42,8 @@ export const API_ROUTES = [
   // A site's Design system 1 library as its theme: read, pinned or changed, taken away.
   allow('library', 'GET', 'PUT', 'DELETE'),
   allow('emails/templates/[a-z][a-z0-9-]{0,63}', 'GET', 'PUT'),
+  // A site's email flows: the owner's alone, and only while `consistency-email-flows` is on (`sitesApi`).
+  allow('emails/flows', 'GET', 'PUT'),
   allow('emails', 'GET'), allow('emails/templates', 'GET'), allow('emails/[\\w-]{1,64}', 'GET'),
   allow('bookings', 'GET'), allow(`bookings/${UUID}`, 'GET'), allow(`bookings/${UUID}/cancel`, 'POST'),
   allow('booking-offers', 'GET', 'PUT'), allow('booking-settings', 'GET', 'PUT'),
@@ -93,7 +95,7 @@ async function bounded(request: Request, limit: number): Promise<Uint8Array | nu
   return body;
 }
 
-export async function sitesApi(request: Request, env: Gateway, authorize: (request: Request) => Promise<Response | Person>): Promise<Response> {
+export async function sitesApi(request: Request, env: Gateway, authorize: (request: Request) => Promise<Response | Person>, emailFlows: () => Promise<boolean> = async () => false): Promise<Response> {
   const url = new URL(request.url);
   const match = SITE_ROUTE.exec(url.pathname);
   if (!match) return refuse('Not found', 404);
@@ -103,6 +105,8 @@ export async function sitesApi(request: Request, env: Gateway, authorize: (reque
   const allowed = route === 'api' ? apiRoute(path) : null;
   if (route === 'api' && !allowed) return refuse('Not found', 404);
   const person = await authorize(new Request(request.url, { headers: request.headers })); if (person instanceof Response) return person;
+  // Email flows are new: anyone but the owner, or the owner while their flag is off, meets them as not there.
+  if (path === 'emails/flows' && !(person.owner && await emailFlows())) return refuse('Not found', 404);
   const methods = allowed ? [...allowed.methods] : METHODS[route]!;
   if (!methods.includes(request.method)) return refuse('Method not allowed', 405, { Allow: methods.join(', ') });
   if (url.search.length > QUERY_LIMIT) return refuse('Bad query', 400);

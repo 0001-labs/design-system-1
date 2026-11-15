@@ -52,7 +52,17 @@ const browser = await (process.env.PLACES_BROWSER === 'webkit' ? webkit : chromi
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const edits = [], asked = [], sourced = [];
-  let failNext = false, editableEmail = false, failEmailSave = false, delayEmailSave = 0;
+  let failNext = false, editableEmail = false, failEmailSave = false, delayEmailSave = 0, flowsOn = false;
+  const flowWrites = [];
+  let flowsSnapshot = { build: 'flows', base: 'flows-1', revision: 0, document: { flows: [] } };
+  const flowKinds = [
+    { kind: 'welcome', name: 'Welcome', trigger: 'Someone signs up for the site’s emails', events: [{ id: 'signup', name: 'signing up' }], fields: ['name', 'site', 'offer', 'link'], steps: [
+      { event: 'signup', delay: { amount: 0, unit: 'days' }, subject: 'Welcome to {{site}}', text: 'Hi {{name}}, here is {{offer}}.' },
+      { event: 'signup', delay: { amount: 2, unit: 'days' }, subject: 'What people love', text: 'These.' },
+      { event: 'signup', delay: { amount: 5, unit: 'days' }, subject: 'Your offer ends soon', text: 'Soon.' }] },
+    { kind: 'cart', name: 'Cart left', trigger: 'Someone adds to the cart and does not buy', events: [{ id: 'cart', name: 'adding to the cart' }], fields: ['name', 'items', 'link'], steps: [{ event: 'cart', delay: { amount: 1, unit: 'hours' }, subject: 'You left something', text: '{{items}}' }] },
+  ];
+  const flowsAnswer = () => ({ flows: flowsSnapshot, kinds: flowKinds, languages: [{ code: 'da', name: 'Dansk' }, { code: 'en', name: 'English' }], values: { name: 'Alex', site: 'CPH Raft', offer: '10% off', link: 'https://example.com/', items: 'A raft' } });
   const emailWrites = [];
   let emailRevision = 0, emailSource = { subject: 'Enquiry from {{name}}', text: 'From {{email}}\n\n{{message}}' };
   const emailTemplate = () => ({ kind: 'form-inquiry', from: 'Forms <forms@example.com>', to: 'owner@example.com', subject: emailSource.subject.replace('{{name}}', 'Alex'), text: emailSource.text.replace('{{email}}', 'alex@example.com').replace('{{message}}', 'A new website'), html: '<pre>A new website</pre>', attachments: [], editing: { build: 'email-build', base: 'email-base', revision: emailRevision, document: { ...emailSource }, values: { name: 'Alex', email: 'alex@example.com', message: 'A new website' } } });
@@ -101,6 +111,14 @@ try {
       if (input.revision !== emailRevision || input.base !== 'email-base') return route.fulfill({ status: 409, json: { error: 'stale-email-template' } });
       emailSource = input.document; emailRevision++;
       return route.fulfill({ json: { template: emailTemplate() } });
+    }
+    if (what === 'api/emails/flows') {
+      if (!flowsOn) return route.fulfill({ status: 404, json: { error: 'Not found' } });
+      if (request.method() === 'GET') return route.fulfill({ json: flowsAnswer() });
+      const input = request.postDataJSON(); flowWrites.push(input);
+      if (input.revision !== flowsSnapshot.revision) return route.fulfill({ status: 409, json: { error: 'stale-email-flows' } });
+      flowsSnapshot = { ...flowsSnapshot, revision: flowsSnapshot.revision + 1, document: input.document };
+      return route.fulfill({ json: flowsAnswer() });
     }
     if (what.startsWith('api/emails/')) {
       const email = emails.find(each => each.id === what.split('/')[2]);
@@ -311,6 +329,55 @@ try {
   if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) fail('The enquiry editor overflows on a phone');
   await page.setViewportSize({ width: 1440, height: 1000 });
   console.log('Enquiry templates save automatically, preserve newer typing and failed drafts, preview fields and reopen');
+
+  // Flows: no tab until the site answers its flows; then the designer, its flows saved whole without a button.
+  await page.keyboard.press('Escape');
+  await sidebar.getByText('Emails', { exact: true }).click();
+  if (await mail.getByRole('tab', { name: 'Flows' }).count()) fail('Flows were offered before the site answered them');
+  flowsOn = true;
+  await page.evaluate(() => dispatchEvent(new Event('focus')));
+  await mail.getByRole('tab', { name: 'Flows' }).waitFor();
+  await mail.getByRole('tab', { name: 'Flows' }).click();
+  const flowsPlace = mail.locator('consistency-email-flows');
+  await flowsPlace.locator('ds-empty').waitFor();
+  if (!(await said(flowsPlace)).includes('not sent yet')) fail('The designer does not say nothing is sent');
+  await flowsPlace.locator('select[aria-label="Add a flow"]').selectOption('welcome');
+  for (let i = 0; i < 60 && !flowWrites.length; i++) await page.waitForTimeout(50);
+  if (flowsSnapshot.document.flows[0]?.kind !== 'welcome' || flowsSnapshot.document.flows[0].steps.length !== 3) fail('Adding a flow did not save it with its first emails');
+  if (flowsSnapshot.document.flows[0].steps[0].emails.en?.subject !== 'Welcome to {{site}}') fail('A new flow’s first words are not kept in English');
+  const flowRows = flowsPlace.locator('ds-list[heading="Welcome"] > ds-row.place-email');
+  if (await flowRows.count() !== 3) fail('The flow does not list its three emails');
+  await mail.getByRole('tab', { name: 'Dansk' }).click();
+  await page.waitForFunction(() => document.querySelector('consistency-email-flows ds-list[heading="Welcome"] > ds-row.place-email ds-tag')?.textContent.trim() === 'Not written');
+  if (!(await flowRows.nth(1).innerText()).includes('2 days after signing up')) fail('An email does not say when it goes');
+  const flowDrawer = mail.locator('ds-overlay dialog[open]');
+  await flowDrawer.waitFor();
+  await mail.getByRole('tab', { name: 'English' }).click();
+  await page.waitForFunction(() => document.querySelector('consistency-place-emails #place-email-title')?.textContent === 'Welcome to CPH Raft');
+  const flowSubject = flowDrawer.getByRole('textbox', { name: 'Email subject' });
+  await flowSubject.fill('Welcome, {{name}}');
+  for (let i = 0; i < 60 && flowsSnapshot.document.flows[0].steps[0].emails.en.subject !== 'Welcome, {{name}}'; i++) await page.waitForTimeout(50);
+  if (flowsSnapshot.document.flows[0].steps[0].emails.en.subject !== 'Welcome, {{name}}') fail('The subject did not save by itself');
+  const flowPreview = await flowDrawer.locator('iframe.place-email__frame').contentFrame().locator('body').innerText();
+  if (!flowPreview.includes('Hi Alex, here is 10% off.')) fail('The preview does not fill the fields with made up values');
+  await flowDrawer.getByRole('spinbutton', { name: 'How long after' }).fill('3');
+  const amounts = () => flowsSnapshot.document.flows[0].steps.map(step => step.delay.amount).join();
+  for (let i = 0; i < 60 && amounts() !== '2,3,5'; i++) await page.waitForTimeout(50);
+  if (amounts() !== '2,3,5' || flowsSnapshot.document.flows[0].steps[1].emails.en.subject !== 'Welcome, {{name}}') fail('The timing did not save in order: ' + amounts());
+  if (await page.evaluate(() => document.querySelector('consistency-place-emails #place-email-title')?.textContent) !== 'Welcome, Alex') fail('The moved email did not stay open');
+  if (process.env.PLACES_SHOT) await page.screenshot({ path: `${process.env.PLACES_SHOT}/flows.png` });
+  await flowDrawer.getByRole('button', { name: 'Close', exact: true }).click();
+  await flowsPlace.getByRole('button', { name: 'Take the flow away' }).click();
+  for (let i = 0; i < 60 && flowsSnapshot.document.flows.length; i++) await page.waitForTimeout(50);
+  if (flowsSnapshot.document.flows.length) fail('Taking a flow away did not save');
+  await flowsPlace.getByRole('button', { name: 'Undo' }).click();
+  for (let i = 0; i < 60 && !flowsSnapshot.document.flows.length; i++) await page.waitForTimeout(50);
+  if (flowsSnapshot.document.flows[0]?.steps[1].emails.en.subject !== 'Welcome, {{name}}') fail('Undo did not bring the flow back as it was');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(150);
+  if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) fail('The flow designer overflows on a phone');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  console.log('Flows: hidden until answered, add a flow with its first emails, timing and words save by themselves, preview, take away and undo');
 
   // Design: each page read in turn through the sandboxed document route, its colours counted with their tokens.
   const read = asked.length;
