@@ -31,6 +31,8 @@ const layers = JSON.stringify(Object.fromEntries(Object.entries(TAG_LAYERS).map(
 <style is:global>
   :root { color-scheme: light; --sf: 1; }
   html, body { height: 100%; margin: 0; background: var(--background); color: var(--text-color); font-family: var(--typeface-regular); font-size: 14px; line-height: 20px; }
+  /* Desktop aligned puts the height's leftover above the sample, inside the window. */
+  body { box-sizing: border-box; }
   #sample { height: 100%; }
   #sample section { min-width: 0; }
   #layers { position: absolute; inset: 0; pointer-events: none; }

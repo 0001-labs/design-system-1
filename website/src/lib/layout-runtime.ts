@@ -16,6 +16,10 @@ Object.defineProperty(window, 'localStorage', {
 window.DS_ONE_I18N = { autoLoad: false, persist: false };
 await import('../../../DS1/index');
 const { startScaling } = await import('../../../DS1/0-face/scaling');
+const { setScalingConfig } = await import('../../../DS1/0-face/device');
+// On a computer the example is Desktop aligned, opened full size or in the documentation's frame: the
+// window is a whole number of squares wide and the height's leftover goes to the top.
+setScalingConfig({ desktop: 'aligned' });
 document.documentElement.style.setProperty('--ds-sf', 'var(--sf)');
 const { configureI18n, setLanguage } = await import('../../../DS1/0-face/i18n');
 // A page written in a language of its own keeps its `lang`, which search engines read.
@@ -109,7 +113,12 @@ window.addEventListener('message', event => {
   }
   if (event.data?.type === 'ds1-layout-layers') {
     stopScaling?.();
-    stopScaling = startScaling({ surface: sample, mode: event.data.phone ? 'fluid' : 'fixed' });
+    stopScaling = undefined;
+    // The phone preview is a narrow frame on a computer, so it takes a phone's scale on the sample
+    // instead; the computer preview is the frame's own window, Desktop aligned.
+    setScalingConfig({ desktop: event.data.phone ? undefined : 'aligned' });
+    if (event.data.phone) stopScaling = startScaling({ surface: sample, mode: 'fluid' });
+    else for (const property of ['--sf', '--ds-sf']) sample.style.removeProperty(property);
     showing = Boolean(event.data.on);
     page?.toggleAttribute('view', showing);
     redraw();

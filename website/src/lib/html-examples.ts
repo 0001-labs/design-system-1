@@ -6,6 +6,7 @@ export const HTML_EXAMPLES = [
 ] as const;
 
 export function exampleDocument(example: typeof HTML_EXAMPLES[number]): string {
-  const script = 'script' in example ? `<script type="module">import 'https://designsystem1.com/resources/design-system-1.js';\n${example.script}</script>` : '';
+  // Desktop aligned: on a computer the page is a whole number of squares wide.
+  const script = `<script type="module">import { setScalingConfig } from 'https://designsystem1.com/resources/design-system-1.js';\nsetScalingConfig({ desktop: 'aligned' });${'script' in example ? `\n${example.script}` : ''}</script>`;
   return `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>${example.title} — Design system 1</title>\n<link rel="stylesheet" href="https://designsystem1.com/resources/design-system-1.css">\n<script>window.DS_ONE_I18N = { autoLoad: false };</script>\n<script type="module" src="https://designsystem1.com/resources/design-system-1.js"></script>\n<style>body { background: var(--ds-paper, #f4f4f4); } form { display: grid; gap: var(--ds-unit); }</style>\n</head>\n<body>\n${example.body}\n${script}\n</body>\n</html>\n`;
 }
