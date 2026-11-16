@@ -450,7 +450,6 @@ export class ConsistencyHome extends LitElement {
              Workspaces moves to another, as Link's Settings does. -->
         <ds-sidebar class="home-foot" label="Workspace" .items=${[{ id: 'settings', label: 'Settings', current: settings }]}
           @sidebar-activate=${() => this.go({ page: 'settings', tab: 'domains' })}></ds-sidebar>
-        <consistency-ask-launcher></consistency-ask-launcher>
       </nav>`}
       <div class=${open || drafting ? 'home-main home-main--site' : 'home-main'}>
         ${open || drafting || creating ? '' : html`<ds-text class="home-title" role="heading" aria-level="1" literal size="display" text=${settings ? 'Settings' : 'Sites'}></ds-text>`}
@@ -458,6 +457,7 @@ export class ConsistencyHome extends LitElement {
         ${!open && !drafting && !creating && !settings ? this.readProblem() : ''}
         ${creating ? this.newSiteFlow() : drafting ? '' : this.place.page === 'settings' ? this.settings(this.place.tab, current) : open ? (this.sites.some(site => site.code === open) ? '' : html`<ds-empty literal heading="This site is not in your workspace"></ds-empty>`) : this.unread ? html`<ds-empty literal heading="You are not in a workspace yet" text="Ask whoever invited you to Consistency to invite this address."></ds-empty>` : this.siteCards()}
         <div class="home-stage" ?hidden=${!open && !drafting}></div>
+        <consistency-ask-launcher class="home-ask" hint></consistency-ask-launcher>
       </div>
     </ds-page>
     ${this.peoplePanel(current)}`;
@@ -503,7 +503,6 @@ export class ConsistencyHome extends LitElement {
       </div>
       <ds-sidebar class="home-places" label=${site.name} .items=${items}
         @sidebar-activate=${(event: CustomEvent<{ id: string }>) => this.go(published && event.detail.id !== SITE_ROW ? { page: 'site', code: site.code, place: event.detail.id } : home)}></ds-sidebar>
-      <consistency-ask-launcher></consistency-ask-launcher>
     </nav>`;
   }
 

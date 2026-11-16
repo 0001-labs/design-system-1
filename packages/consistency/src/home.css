@@ -2,7 +2,7 @@ consistency-home{display:block;height:100dvh}
 consistency-home>ds-page{height:100%}
 .home-nav{display:flex;flex-direction:column;gap:var(--ds-unit);height:100%}
 /* Each page opens with its title at display size, as Money's pages do, a square above what it holds. */
-.home-main{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0}
+.home-main{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0;min-height:100%}
 /* Settings, as Money's: the text tabs a square under the title, the tab's content a square under them, in a settings column of 32 squares. */
 .home-settings{display:flex;flex-direction:column;gap:var(--ds-unit);max-width:calc(32 * var(--ds-unit))}
 .home-account{display:flex;flex-direction:column;gap:var(--ds-unit)}
@@ -33,6 +33,9 @@ consistency-domains{display:block;max-width:calc(32 * var(--ds-unit))}
 .home-stage[hidden]{display:none}
 .home-stage>*{flex:1;min-height:0}
 .home-stage>[hidden]{display:none}
+.home-ask:not([hidden]){display:flex;flex:none;justify-content:center;margin-block-start:auto}
+.home-ask button{background:none;border:0;padding:calc(var(--ds-unit) - var(--ds-type-lineheight-default)) 0 0;line-height:var(--ds-type-lineheight-default);cursor:pointer}
+.home-ask button:is(:hover,:focus-visible){color:var(--ds-text-color)}
 /* An open site's places fill the sidebar under its name and scroll on their own. */
 /* Under the site's name, a square apart, its menus on whole squares: the sidebar's own half square of room is taken back,
    and each row is drawn 4px back so its words start on the column's edge, under the name's. */

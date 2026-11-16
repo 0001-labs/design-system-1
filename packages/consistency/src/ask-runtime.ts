@@ -49,6 +49,12 @@ export class AskLauncher extends LitElement {
  private change=()=>{this.available=enabled;this.hidden=!enabled;};
  connectedCallback(){super.connectedCallback();this.hidden=!enabled;installGlobalAsk();addEventListener(AVAILABILITY,this.change);void allowed().then(this.change);}
  disconnectedCallback(){removeEventListener(AVAILABILITY,this.change);super.disconnectedCallback();}
- render(){return this.available?html`<ds-button label="Ask" @click=${()=>void openGlobalAsk()}>Ask</ds-button>`:nothing;}
+ render() {
+  if (!this.available) return nothing;
+  if (this.hasAttribute('hint')) {
+   return html`<button type="button" class="ds-text ds-text--muted" aria-keyshortcuts="Space" @click=${() => void openGlobalAsk()}>Space to Ask</button>`;
+  }
+  return html`<ds-button label="Ask" @click=${() => void openGlobalAsk()}>Ask</ds-button>`;
+ }
 }
 if(!customElements.get('consistency-ask-launcher'))customElements.define('consistency-ask-launcher',AskLauncher);
