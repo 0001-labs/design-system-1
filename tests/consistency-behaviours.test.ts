@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test';
-import { countingText, otherTheme, readTurns, turnQueue } from '../shared/consistency-behaviours';
+import { countingText, otherTheme, readTurns, restartTurnLine, turnQueue } from '../shared/consistency-behaviours';
 
 describe('a hero takes turns', () => {
   test('the turns to come are every other one: as written from the next, or shuffled', () => {
@@ -23,6 +23,12 @@ describe('a hero takes turns', () => {
     expect(readTurns('{"title":"One"}')).toEqual([]);
     expect(readTurns('not json')).toEqual([]);
     expect(readTurns(undefined)).toEqual([]);
+  });
+
+  test('a turn starts the theme\'s line to the next turn again, and no other animation', () => {
+    const line = { animationName: 'c9y-turn', currentTime: 2400 }, other = { animationName: 'fade', currentTime: 2400 }, script = { currentTime: 2400 };
+    restartTurnLine({ getAnimations: () => [line, other, script] as unknown as Animation[] });
+    expect([line.currentTime, other.currentTime, script.currentTime]).toEqual([0, 2400, 2400]);
   });
 
   test('the theme control goes to the other theme', () => {

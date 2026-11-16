@@ -6,7 +6,9 @@
  * A hero with turns (`data-turns`, written by the renderer) changes to the next one every `data-turn-every` seconds
  * and when its title is pressed: the kicker and the title take the turn's words, a kicker of digits counting to its
  * new number, and the picture follows once it has loaded. The hero as written is the first turn. Nothing changes
- * while the page is hidden, and reduced motion changes the words at once.
+ * while the page is hidden, and reduced motion changes the words at once. A theme can draw the time left to the next
+ * turn with an animation named `c9y-turn` anywhere in a hero that behaves (`[data-c9y-behaving]`), lasting
+ * `var(--c9y-turn-every)` and filling forwards: it starts again with every turn, a press of the title included.
  *
  * A footer's theme control (`data-c9y-theme`) switches the page between light and dark through Design system 1's
  * theme runtime (`window.DS_ONE_THEME`, which the platform starts in the page's head before the first paint) and
@@ -46,6 +48,11 @@ function leaf(slot: Element | null): HTMLElement | null {
 
 const COUNT_MS = 600;
 
+/** Starts the theme's line to the next turn again: every `c9y-turn` animation in the hero, its pseudo-elements included. */
+export function restartTurnLine(hero: Pick<Element, 'getAnimations'>) {
+  for (const animation of hero.getAnimations({ subtree: true })) if ((animation as CSSAnimation).animationName === 'c9y-turn') animation.currentTime = 0;
+}
+
 function bindHero(hero: HTMLElement) {
   const kicker = leaf(hero.querySelector('[data-slot="kicker"]')), title = leaf(hero.querySelector('[data-slot="title"]'));
   const picture = hero.querySelector<HTMLImageElement>('[data-slot="picture"] img');
@@ -54,6 +61,7 @@ function bindHero(hero: HTMLElement) {
   if (turns.length < 2) return;
   const every = Math.max(2, Number(hero.dataset.turnEvery) || 8) * 1000, order: TurnOrder = hero.dataset.turnOrder === 'in-order' ? 'in-order' : 'shuffled';
   let current = 0, queue: number[] = [], timer = 0, counting = 0, shown = 0;
+  hero.style.setProperty('--c9y-turn-every', `${every}ms`);
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const count = (to: string) => {
     cancelAnimationFrame(counting);
@@ -80,7 +88,7 @@ function bindHero(hero: HTMLElement) {
     }
   };
   const next = () => { if (!queue.length) queue = turnQueue(turns.length, current, order); show(queue.shift()!); };
-  const wait = () => { clearTimeout(timer); if (!document.hidden) timer = window.setTimeout(() => { next(); wait(); }, every); };
+  const wait = () => { clearTimeout(timer); restartTurnLine(hero); if (!document.hidden) timer = window.setTimeout(() => { next(); wait(); }, every); };
   const press = () => { next(); wait(); };
   title.tabIndex = 0;
   title.style.cursor = 'pointer';
