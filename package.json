@@ -42,6 +42,7 @@
       "default": "./dist/design-system-1.bundle.js"
     },
     "./DS1/*": "./DS1/*",
+    "./app/*": "./packages/app/src/*",
     "./styles": "./DS1/1-root/one.css",
     "./dist/*": "./dist/*"
   },
