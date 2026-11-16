@@ -21,6 +21,7 @@ afterEach(() => {
   for (const property of ["--sf", "--ds-grid-columns", "--ds-grid-rows", "--ds-grid-top"]) root.style.removeProperty(property);
   root.removeAttribute("data-mobile");
   root.removeAttribute("data-desktop-aligned");
+  root.removeAttribute("data-ds-scaling-managed");
 });
 
 test("a phone scales by its width over 280, between 0.75 and 2", () => {
@@ -176,6 +177,18 @@ test("the device module applies the same rule and reports it", async () => {
   expect(root.style.getPropertyValue("--sf")).toBe("1.5");
   expect(root.hasAttribute("data-mobile")).toBe(true);
   expect(changed.mock.calls.at(-1)?.[0].detail.scalingFactor).toBe(1.5);
+});
+
+test("the device module preserves an aligned grid managed by the page", async () => {
+  screen(COMPUTER, 1715);
+  tall(945);
+  root.setAttribute("data-ds-scaling-managed", "");
+  const factor = applyScaling({ desktop: "aligned" });
+  const device = await import("../DS1/0-face/device");
+  device.initDeviceDetection();
+  expect(root.hasAttribute("data-desktop-aligned")).toBe(true);
+  expect(device.getScalingFactor()).toBe(factor);
+  expect(Number(root.style.getPropertyValue("--ds-grid-columns")) * factor * 20).toBeCloseTo(1715);
 });
 
 function tall(height: number) {
