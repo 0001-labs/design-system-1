@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 
 const read = (path: string) => readFileSync(join(import.meta.dirname, '../DS1', path), 'utf8');
-const controls = read('1-root/controls.css');
+const controls = read('1-root/native-controls.css');
 /** The body of the rule whose selector list is exactly this one. */
 const rule = (css: string, selector: string) => {
   const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)];

@@ -1,12 +1,20 @@
 import { LitElement, html, nothing, unsafeCSS } from "lit";
 import { define } from "../0-face/define";
 import { getText } from "../0-face/i18n";
-import controls from "../1-root/controls.css?inline";
+import metrics from "../1-root/component-metrics.css?inline";
+import overlay from "../1-root/overlay.css?inline";
+import native from "../1-root/native-controls.css?inline";
 import "../2-core/ds-icon";
 import { startAppScale } from "./app-scale";
 import type { PageLayout } from "./ds-page";
 import "./ds-page";
 import styles from "./styles/ds-app.css?inline";
+
+/** An app the name's menu leads to: its name as written, and its address. */
+export interface AppLink {
+  name: string;
+  href: string;
+}
 
 /**
  * The app frame: one window every 0001 app stands in, edge to edge on the
@@ -95,7 +103,7 @@ export class App extends LitElement {
   private declare hasActions: boolean;
   private declare narrow: boolean;
 
-  static styles = [unsafeCSS(controls), unsafeCSS(styles)];
+  static styles = [unsafeCSS(metrics), unsafeCSS(overlay), unsafeCSS(native), unsafeCSS(styles)];
 
   constructor() {
     super();
@@ -263,12 +271,6 @@ export class App extends LitElement {
       </ds-page>
     `;
   }
-}
-
-/** An app the name's menu leads to: its name as written, and its address. */
-export interface AppLink {
-  name: string;
-  href: string;
 }
 
 function sameOrigin(href: string, origin: string): boolean {

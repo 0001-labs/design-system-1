@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 
-const css = readFileSync(join(import.meta.dirname, '../DS1/1-root/controls.css'), 'utf8');
+const css = readFileSync(join(import.meta.dirname, '../DS1/1-root/native-controls.css'), 'utf8');
 const rule = (selector: string) => {
   const start = css.indexOf(`${selector} {`);
   expect(start, selector).toBeGreaterThanOrEqual(0);

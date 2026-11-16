@@ -97,7 +97,7 @@ test("ButtonLink matches the element: a safe new tab, and a disabled link stays 
 });
 
 test("a native link drawn as a button keeps every face and state of the button", () => {
-  const css = read("DS1/1-root/controls.css");
+  const css = read("DS1/1-root/native-controls.css");
   const rule = (selector: string) => {
     const start = css.indexOf(`${selector} {`);
     expect(start, selector).toBeGreaterThanOrEqual(0);
@@ -115,7 +115,7 @@ test("a native link drawn as a button keeps every face and state of the button",
 });
 
 test("a text link has tokens, a hover line, a visited ink and a focus ring, and no capitals", () => {
-  const css = read("DS1/1-root/controls.css");
+  const css = read("DS1/1-root/native-controls.css");
   const rule = (selector: string) => {
     const start = css.indexOf(`${selector} {`);
     expect(start, selector).toBeGreaterThanOrEqual(0);

@@ -27,7 +27,7 @@ test("a floating menu takes whole squares: its width rounds up, the height it ma
 
 test("the menu box is half a square inside its line, with no shadow, the element and the native class alike", () => {
   const element = rule(readFileSync("DS1/3-unit/styles/ds-menu.css", "utf8"), ".frame");
-  const native = rule(readFileSync("DS1/1-root/controls.css", "utf8"), ".ds-menu");
+  const native = rule(readFileSync("DS1/1-root/native-controls.css", "utf8"), ".ds-menu");
   for (const block of [element, native]) {
     expect(block).toContain("padding: calc(var(--ds-unit) / 2 - 1px);");
     expect(block).toContain("border: 1px solid");
@@ -38,7 +38,7 @@ test("the menu box is half a square inside its line, with no shadow, the element
 
 test("entries are one row whatever button styles surround them", () => {
   const element = readFileSync("DS1/3-unit/styles/ds-menu.css", "utf8");
-  const native = readFileSync("DS1/1-root/controls.css", "utf8");
+  const native = readFileSync("DS1/1-root/native-controls.css", "utf8");
   const button = readFileSync("DS1/2-core/styles/ds-button.css", "utf8");
   expect(element).toMatch(/::slotted\(:is\(button, a, \[role="option"\], \[role\^="menuitem"\]\):not\(ds-button, ds-file-picker\)\) \{[^}]*height: var\(--ds-menu-row\) !important;/);
   expect(native).toMatch(/\.ds-menu > :is\(button, a, \[role="option"\], \[role\^="menuitem"\]\),[^{]*\{[^}]*height: var\(--ds-row-height\) !important;/);
@@ -48,5 +48,5 @@ test("entries are one row whatever button styles surround them", () => {
 test("danger reads in the danger colour on every face of the button", () => {
   expect(readFileSync("DS1/2-core/styles/ds-button.css", "utf8")).toMatch(/:host\(\[danger\]\) :is\(button, a\) \{\s*color: var\(--ds-danger-color/);
   expect(readFileSync("DS1/2-core/styles/ds-button-host.css", "utf8")).toContain('[danger]) {\n  --ds-button-color: var(--ds-danger-color');
-  expect(readFileSync("DS1/1-root/controls.css", "utf8")).toMatch(/\.ds-button--danger \{\s*--ds-button-color: var\(--ds-danger-color/);
+  expect(readFileSync("DS1/1-root/native-controls.css", "utf8")).toMatch(/\.ds-button--danger \{\s*--ds-button-color: var\(--ds-danger-color/);
 });

@@ -138,10 +138,10 @@ const kinds: { name: string; property: RegExp; allows: (px: number) => boolean }
  * chevron) keeps its own geometry. Take an entry out when its value moves onto the measures.
  */
 const offMeasures: Record<string, string> = {
-  "1-root/controls.css height 2": "an indeterminate checkbox's dash",
+  "1-root/native-controls.css height 2": "an indeterminate checkbox's dash",
   "1-root/guide.css type 12": "a guide figure's caption, kept readable under the picture",
-  "1-root/controls.css width 12": "a menu entry's check and chevron marks",
-  "1-root/controls.css height 12": "a menu entry's check and chevron marks",
+  "1-root/native-controls.css width 12": "a menu entry's check and chevron marks",
+  "1-root/native-controls.css height 12": "a menu entry's check and chevron marks",
   "1-root/one.css height 9": "the move grip on a column header",
   "1-root/progress.css width 4": "a progress dot, a fifth of the square",
   "1-root/progress.css height 4": "a progress dot, a fifth of the square",

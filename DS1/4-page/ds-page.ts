@@ -4,7 +4,9 @@ import { define } from "../0-face/define";
 import type { Drawer } from "../0-face/attach-overlay";
 import { getText } from "../0-face/i18n";
 import "../2-core/ds-icon";
-import controls from "../1-root/controls.css?inline";
+import metrics from "../1-root/component-metrics.css?inline";
+import overlay from "../1-root/overlay.css?inline";
+import native from "../1-root/native-controls.css?inline";
 import styles from "./styles/ds-page.css?inline";
 
 const MAIN = "main, [role='main']";
@@ -99,7 +101,7 @@ export class Page extends LitElement {
   declare drawerToggle: HTMLElement | null;
   private declare landmark: boolean;
 
-  static styles = [unsafeCSS(controls), unsafeCSS(styles)];
+  static styles = [unsafeCSS(metrics), unsafeCSS(overlay), unsafeCSS(native), unsafeCSS(styles)];
 
   private navigationDrawer: Drawer | null = null;
   private drawerAttempt = 0;

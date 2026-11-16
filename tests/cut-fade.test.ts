@@ -43,7 +43,7 @@ test("no DS1 stylesheet ends cut words with an ellipsis", () => {
 
 test("every fade is the one rule: a mask over the last square, only where marked cut", () => {
   const fade = "mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent)";
-  for (const path of ["1-root/controls.css", "1-root/row.css", "2-core/styles/ds-text.css", "3-unit/styles/ds-calendar.css", "3-unit/styles/ds-sidebar.css"]) {
+  for (const path of ["1-root/native-controls.css", "1-root/row.css", "2-core/styles/ds-text.css", "3-unit/styles/ds-calendar.css", "3-unit/styles/ds-sidebar.css"]) {
     const css = readFileSync(join(DS1, path), "utf8");
     expect(css, path).toContain(fade);
     expect(css, path).toContain("mask-image: linear-gradient(to left, #000 calc(100% - var(--ds-unit)), transparent)");

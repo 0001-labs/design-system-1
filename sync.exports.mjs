@@ -24,8 +24,8 @@ const rootStyles = ['one.css', 'grid.css', 'text.css', 'component-tokens.css', '
 const importsText = ['one.css', 'controls.css'];
 /** one.css also imports the faces with their typeface tokens, and the palette. */
 const oneImports = ['fonts.css', 'palette.css'];
-/** The sheets controls.css imports besides the text classes: tables, empty states, notices, shortcut hints, the dialog's placements, the site chrome (header with its drawer, footer, document), carousels, cards, stats, progress, and rows. */
-const controlSheets = ['table.css', 'empty.css', 'notice.css', 'overlay.css', 'header.css', 'footer.css', 'document.css', 'bento.css', 'carousel.css', 'card.css', 'figures.css', 'progress.css', 'row.css', 'context.css'];
+/** The sheets controls.css imports besides the text classes: tables, empty states, notices, shortcut hints, the dialog's placements, the site chrome (header with its drawer, footer, document), carousels, cards, stats, progress, rows, and last its own native controls. */
+const controlSheets = ['table.css', 'empty.css', 'notice.css', 'overlay.css', 'header.css', 'footer.css', 'document.css', 'bento.css', 'carousel.css', 'card.css', 'figures.css', 'progress.css', 'row.css', 'context.css', 'native-controls.css'];
 /** Sheets for writing that a product asks for by name, as a flag or in `styles`. */
 const writingSheets = { prose: 'prose.css', cjk: 'cjk.css', material: 'material.css' };
 const askedSheets = options => Object.entries(writingSheets).filter(([flag]) => options[flag]).map(([, file]) => file);

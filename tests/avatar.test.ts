@@ -122,12 +122,12 @@ test("a square avatar takes a picture's corners, in the element and the native c
     return css.slice(start, css.indexOf("}", start));
   };
   const element = rule(read("../DS1/2-core/styles/ds-avatar.css"), ':host([shape="square"]) .frame');
-  const native = rule(read("../DS1/1-root/controls.css"), ".ds-avatar--square");
+  const native = rule(read("../DS1/1-root/native-controls.css"), ".ds-avatar--square");
   for (const square of [element, native]) {
     expect(square).toContain("border-radius: var(--ds-avatar-radius, var(--ds-radius))");
     expect(square).toContain("corner-shape: var(--ds-corner-shape, round)");
   }
-  expect(rule(read("../DS1/1-root/controls.css"), ".ds-avatar")).toContain("border-radius: 50%");
+  expect(rule(read("../DS1/1-root/native-controls.css"), ".ds-avatar")).toContain("border-radius: 50%");
   expect(read("../DS1/react/avatar.ts")).toMatch(/\| "shape"/);
 });
 
