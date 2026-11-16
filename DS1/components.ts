@@ -13,6 +13,8 @@ export * from "./3-unit/ds-context";
 export * from "./3-unit/ds-tabs";
 export * from "./4-page/ds-panel";
 export * from "./4-page/ds-page";
+export * from "./4-page/ds-app";
+export * from "./4-page/app-scale";
 
 export * from "./3-unit/ds-sidebar";
 
