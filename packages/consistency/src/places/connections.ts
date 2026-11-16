@@ -32,7 +32,7 @@ function iconOf(group: GroupId, id: string): string {
   const icons: Record<string, string> = {
     pages: 'page', emails: 'email', analytics: 'eye', bookings: 'calendar', giftcards: 'gift', orders: 'bag',
     stripe: 'card', mail: 'email', notion_token: 'app-notion', c9y_identity: 'sign-in', images: 'image', changes: 'history',
-    flags: 'bolt', 'flag-secrets': 'bolt', 'service-link': 'link', database: 'table', build: 'block-text', snapshots: 'cloud',
+    flags: 'bolt', 'flag-secrets': 'bolt', 'service-link': 'link', database: 'table', build: 'cloud', snapshots: 'dot-transfer',
   };
   return icons[id] ?? (id.startsWith('place-') ? 'store' : 'key');
 }
@@ -122,7 +122,7 @@ export class ConsistencyPlaceConnections extends LitElement {
         ${answer ? html`<ds-tag>${answer.site.runtime}</ds-tag>` : nothing}
         ${waiting ? html`<ds-tag style=${toneStyle('warning')}>${waiting} waiting</ds-tag>` : nothing}
       </div>
-      <ds-text tone="muted" literal text=${answer ? `${answer.site.detail}. Worked out from the code that runs ${answer.site.name}.` : 'How the site is connected, worked out from the code that runs it.'}></ds-text>
+      <ds-text tone="muted" wrap literal text=${answer ? `${answer.site.detail}. Worked out from the code that runs ${answer.site.name}.` : 'How the site is connected, worked out from the code that runs it.'}></ds-text>
       ${this.error ? html`<ds-text tone="danger" literal text=${this.error}></ds-text>` : nothing}
       ${answer ? html`
         <div class="connections-stage" data-step=${this.step}>

@@ -9,11 +9,11 @@
   grid-template-columns:auto minmax(calc(5 * var(--ds-unit)),calc(8 * var(--ds-unit))) auto minmax(calc(5 * var(--ds-unit)),calc(8 * var(--ds-unit))) auto;
   grid-template-rows:auto calc(4 * var(--ds-unit)) auto calc(4 * var(--ds-unit)) auto;
   grid-template-areas:
-    ".        .               features .               ."
+    ".        features        features features        ."
     ".        line-features   line-features line-features ."
     "visitors line-visitors   site     line-services   services"
     ".        line-storage    line-storage line-storage ."
-    ".        .               storage  .               .";
+    ".        storage         storage  storage         .";
   padding:calc(2 * var(--ds-unit));
   border-radius:var(--ds-radius-card,var(--ds-radius));
   background-color:var(--c-ground);
@@ -28,7 +28,7 @@
 .connections-group--storage{grid-area:storage}
 .connections-line--visitors{grid-area:line-visitors}
 .connections-line--services{grid-area:line-services}
-/* The vertical lines stand in the middle column alone; the row spans the three so its pill may be wider than the site. */
+/* The vertical lines and the groups above and below span the three middle columns, so a row of nodes is not held to the site's width. */
 .connections-line--features{grid-area:line-features}
 .connections-line--storage{grid-area:line-storage}
 
