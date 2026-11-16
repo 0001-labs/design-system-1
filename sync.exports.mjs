@@ -112,6 +112,7 @@ export default {
 
         // What a page's blocks do by themselves: a module with no imports, apart from the block client so a page with a behaviour alone stays light.
         const behaviours = await bundleNativeClient({absWorkingDir:import.meta.dirname,entryPoints:[resolveNativeClient(import.meta.dirname,'shared/consistency-behaviours.ts')],bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true,write:false});
+        const scaling = await bundleNativeClient({absWorkingDir:import.meta.dirname,entryPoints:[resolveNativeClient(import.meta.dirname,'shared/consistency-scaling.ts')],bundle:true,format:'iife',platform:'browser',target:'es2022',minify:true,write:false});
         const importer = await bundleNativeClient({absWorkingDir:import.meta.dirname,entryPoints:[resolveNativeClient(import.meta.dirname,'shared/consistency-import.ts')],bundle:true,format:'esm',platform:'node',write:false});
         let source = String(read('shared/consistency-native-content.ts'))
           .replace('../website/src/vendor/aa/parse.js', './aa/parse.js')
@@ -127,6 +128,7 @@ export default {
           'native-client.js.txt': client.outputFiles.find(file=>file.path.endsWith('.js'))?.text??'',
           'native-client.css.txt': client.outputFiles.find(file=>file.path.endsWith('.css'))?.text??'',
           'native-behaviours.js.txt': behaviours.outputFiles[0].text,
+          'native-scaling.js.txt': scaling.outputFiles[0].text,
           'components.ts': String(read('shared/consistency-components.ts')).replace('./consistency-site-design','./site-design'),
           'template-pages.json': read('shared/consistency-template-pages.json'),
           'native-page.ts': String(read('shared/consistency-native-page.ts'))
