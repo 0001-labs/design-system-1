@@ -1,27 +1,12 @@
 import assert from 'node:assert/strict';
 import puppeteer from 'puppeteer-core';
+import { readFileSync } from 'node:fs';
 import { nativePageFixture } from './native-page-fixture.mjs';
 
-const component = (id, name, children, values = {}) => ({ id, kind: 'component', name, children, values });
-const slide = (id, text) => component(id, 'Slide', [
-  component(id + '-link', 'CardLink', [{ id: id + '-words', kind: 'text', text }], { href: '/about/' }),
-]);
-const fixture = await nativePageFixture({
-  definition: {
-    document: {
-      schema: 1, kind: 'native-page', title: 'Showcase', lang: 'en',
-      layout: { mode: 'document', padding: 0, gap: 0 },
-      blocks: [component('showcase', 'Track', [slide('ezo', 'Lists on one grid'), slide('woodstock', 'Japan’s leading fintech platform')])],
-    },
-    bindings: {},
-    components: {
-      Track: { tag: 'div', attributes: { class: 'ds-carousel__track' }, fields: [] },
-      Slide: { tag: 'div', attributes: {}, fields: [] },
-      CardLink: { tag: 'a', attributes: {}, fields: ['href'] },
-    },
-  },
-  styles: '.ds-carousel__track{display:flex;gap:40px;overflow:auto}.ds-carousel__track>div{flex:0 0 240px}.ds-carousel__track a{display:block;padding:20px;height:120px}',
-});
+const website = JSON.parse(readFileSync(new URL('../../../../../Consistency/sites/website/c9y/pages.native.json', import.meta.url)));
+const definition = website.pages['/'];
+const styles = [...definition.shell.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(match => match[1]).join('\n');
+const fixture = await nativePageFixture({definition, styles});
 let browser;
 try {
   browser = await puppeteer.launch({ channel: 'chrome', headless: true });
@@ -49,33 +34,52 @@ try {
   await page.goto(fixture.url);
   const iframe = await page.waitForSelector('iframe.consistency-site-frame', { timeout: 10000 });
   const frame = await iframe.contentFrame();
-  const title = await frame.waitForSelector('[data-c9y-block="woodstock-words"] .aa-block', { timeout: 10000 });
+  const track = '.showcase .ds-carousel__track';
+  const woodstockLink = track + ' a[href="/projects/woodstock"]';
+  const linkCard = track + ' a[href="https://using.link"]';
+  const titleSelector = woodstockLink + ' .ds-card__title .aa-block';
+  const title = await frame.waitForSelector(titleSelector, { timeout: 10000 });
+  const orderIn = frame => frame.$$eval(track + ' > div > a', cards => cards.map(card => card.getAttribute('href')));
+  const initialOrder = await orderIn(frame);
+  const expectedOrder = initialOrder.filter(href => href !== '/projects/woodstock');
+  expectedOrder.splice(expectedOrder.indexOf('https://using.link'), 0, '/projects/woodstock');
+
+  await frame.$eval(linkCard, card => {
+    const slide = card.parentElement;
+    const track = slide.parentElement;
+    track.scrollLeft = slide.offsetLeft - track.firstElementChild.offsetLeft + slide.offsetWidth * 0.57;
+    track.scrollIntoView({ block: 'center' });
+  });
   const source = await title.boundingBox();
-  const first = await frame.waitForSelector('[data-c9y-block="ezo"]');
-  const destination = await first.boundingBox();
-  await page.mouse.move(source.x + 12, source.y + source.height / 2);
+  const target = await (await frame.waitForSelector(linkCard)).boundingBox();
+  const viewport = await (await frame.waitForSelector(track)).boundingBox();
+  const visibleLeft = Math.max(target.x, viewport.x);
+  const visibleRight = Math.min(target.x + target.width, viewport.x + viewport.width);
+  const dropX = visibleLeft + (visibleRight - visibleLeft) / 4;
+  assert.ok(target.x + target.width / 2 < viewport.x && visibleRight > visibleLeft,
+    'The Link card is visible but its full midpoint is clipped');
+
+  const startX = source.x + 12, startY = source.y + source.height / 2;
+  await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(source.x + 4, source.y + source.height / 2 + 8);
+  await page.mouse.move(startX - 8, startY + 8);
   await Promise.all([
     page.waitForResponse(response => response.request().method() === 'PUT' && response.url().includes('/api/native-page') && response.ok(), { timeout: 4000 }),
     (async () => {
-      await page.mouse.move(destination.x + 24, source.y + source.height / 2, { steps: 12 });
+      await page.mouse.move(dropX, startY, { steps: 12 });
       await page.mouse.up();
     })(),
   ]);
-  assert.equal(await frame.$eval('.ds-carousel__track > [data-c9y-block]', slide => slide.getAttribute('data-c9y-block')), 'woodstock');
-
-  const stored = await fixture.read();
-  assert.deepEqual(stored.document.blocks[0].children.map(block => block.id), ['woodstock', 'ezo']);
-  assert.equal(stored.document.blocks[0].children[0].children[0].values.href, '/about/');
-  assert.equal(stored.document.blocks[0].children[0].children[0].children[0].text, 'Japan’s leading fintech platform');
+  assert.deepEqual(await orderIn(frame), expectedOrder, 'The editor shows the reordered slides');
   const published = await fixture.html();
-  assert.ok(published.indexOf('Japan’s leading fintech platform') < published.indexOf('Lists on one grid'));
+  const publishedOrder = [...published.matchAll(/<a class="ds-card showcase__card[^"]*"[^>]*href="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(publishedOrder, expectedOrder, 'Public rendering uses the saved slide order');
+
   await page.reload();
   const reopened = await page.waitForSelector('iframe.consistency-site-frame');
   const reopenedFrame = await reopened.contentFrame();
-  await reopenedFrame.waitForSelector('[data-c9y-block="woodstock-words"] .aa-block');
-  assert.equal(await reopenedFrame.$eval('.ds-carousel__track > [data-c9y-block]', slide => slide.getAttribute('data-c9y-block')), 'woodstock');
+  await reopenedFrame.waitForSelector(titleSelector);
+  assert.deepEqual(await orderIn(reopenedFrame), expectedOrder, 'The slide order survives reopening');
 } finally {
   await browser?.close();
   await fixture.close();

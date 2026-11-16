@@ -50,7 +50,7 @@ Manual check: “Device frames load through site files and carousel insertion st
 
 ### `carousel.imported-row`
 
-Dragging from the linked text or picture of an imported slide carries the whole slide along its own row, while text in active editing remains selectable.
+Dragging from the linked text or picture of an imported slide carries the whole slide along its own row, including when the destination slide is partly clipped, while text in active editing remains selectable.
 
 Manual check: “node packages/consistency/tests/carousel-reorder.mjs”.
 

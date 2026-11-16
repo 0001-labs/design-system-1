@@ -304,6 +304,9 @@ export class NativeDrag {
     page.release();
     let landed = result.draggableId;
     try {
+      if (destination?.droppableId === result.source.droppableId
+        && destination.index === result.source.index
+        && isCarouselTrack(page.element(destination.droppableId))) return page.element(landed) ?? null;
       const group = this.unfold();
       if (group) {
         if (destination) page.moveBlocks(group, destination.droppableId, this.before(destination.droppableId, destination.index, group));
