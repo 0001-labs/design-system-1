@@ -7,6 +7,8 @@
  *   object as the owner and checks the same list again. `pages`, `page?path=` and `edit` are the older addresses
  *   of `api/pages`, `api/page` and `api/edit`.
  * - `GET places`: the menus the app shows for the site, from its current build's config.
+ * - `PUT badge { show }`: Site settings' badge, whether the site shows "Built with Consistency" on its own domain;
+ *   the platform lets the owner or an admin of the site's workspace decide.
  * - `GET document?path=`: the site's page for the editor's frame, and `GET files/<path>` the styles, fonts,
  *   pictures and video it loads. Both are served on this origin, so this answer carries the sandbox: the page is
  *   `sandbox allow-same-origin allow-scripts` with `script-src 'none'`, so nothing of the site's runs here with the
@@ -20,8 +22,8 @@ import { CANVAS_POLICY, CANVAS_SANDBOX, FACE_HOSTS } from '../../shared/consiste
 export { FACE_HOSTS } from '../../shared/consistency-canvas';
 
 // A site by its IDv1 code, a list's shape (`12ABCD`); the platform alone knows its id.
-export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|delete|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
-const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], delete: ['DELETE'], files: ['GET', 'HEAD'] };
+export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|badge|delete|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
+const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], badge: ['PUT'], delete: ['DELETE'], files: ['GET', 'HEAD'] };
 /** A write to the site engine (its own limit is 32,000 characters); the JSON around a 10,000-character field fits. */
 export const EDIT_BYTES = 64 * 1024;
 /** A whole native page, including its bounded Markdown blocks and layout. */
@@ -119,7 +121,7 @@ export async function sitesApi(request: Request, env: Gateway, authorize: (reque
   let body: Uint8Array | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     if (request.headers.get('Origin') !== url.origin || request.headers.get('Content-Type')?.split(';')[0]?.trim() !== 'application/json') return refuse('Forbidden', 403);
-    const read = await bounded(request, route === 'delete' ? 256 : /^peer-products\/[a-zA-Z0-9_-]{1,120}\/photos$/.test(path) ? 13_400_000 : path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
+    const read = await bounded(request, route === 'delete' || route === 'badge' ? 256 : /^peer-products\/[a-zA-Z0-9_-]{1,120}\/photos$/.test(path) ? 13_400_000 : path === 'business' ? BUSINESS_BYTES : path === 'native-page' ? NATIVE_PAGE_BYTES : EDIT_BYTES);
     if (!read) return refuse('Too large', 413);
     body = read;
   }

@@ -10,7 +10,7 @@
  * address its pages are opened on, `address` its built-in colour address under c9y.site, `domain` a domain of its
  * own connected.
  */
-export interface SiteSummary { code: string; name: string; url: string; address?: string; domain?: string; canDelete?: boolean; deleting?: boolean; /** The documentation, this app's own site: it opens in Aa from its Markdown (`docs-site.ts`). */ docs?: boolean }
+export interface SiteSummary { code: string; name: string; url: string; address?: string; domain?: string; /** Whether the site shows the Consistency badge on its own domain (Site settings). */ badge?: boolean; canDelete?: boolean; deleting?: boolean; /** The documentation, this app's own site: it opens in Aa from its Markdown (`docs-site.ts`). */ docs?: boolean }
 export interface SitePage { path: string; lang: string; title: string; fields: number; edited: number }
 export interface SiteField { key: string; tag: string; kind: 'text' | 'meta' | 'image'; label: string; markdown: string; built?: string; edited?: boolean }
 export interface PageDetail { path: string; lang: string; title: string; fields: SiteField[] }

@@ -219,3 +219,17 @@ it('answers email flows to the owner alone, and only while their flag is on', as
   expect(await (await ask(owner, true)).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/emails/flows', method: 'GET' });
   expect((await ask(owner, true, { method: 'PUT', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(200);
 });
+
+it('Site settings\' badge is a same-origin JSON write passed to the platform, and nothing but PUT', async () => {
+  const { call, workspace } = setup();
+  const route = '10VNDG/badge';
+  expect((await call(route)).status).toBe(401);
+  expect((await call(route, { headers })).status).toBe(405);
+  expect((await call(route, write('PUT', '{"show":true}', { origin: 'https://evil.test' }))).status).toBe(403);
+  expect((await call(route, write('PUT', '{"show":true}', { type: 'text/plain' }))).status).toBe(403);
+  expect((await call(route, write('PUT', JSON.stringify({ show: true, pad: 'x'.repeat(300) })))).status).toBe(413);
+  expect(workspace.fetch).not.toHaveBeenCalled();
+  await call(route, write('PUT', '{"show":true}'));
+  const passed = workspace.fetch.mock.calls.at(-1)![0] as Request;
+  expect([passed.method, new URL(passed.url).pathname, await passed.text()]).toEqual(['PUT', '/api/consistency/sites/10VNDG/badge', '{"show":true}']);
+});
