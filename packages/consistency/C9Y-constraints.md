@@ -50,9 +50,9 @@ Manual check: “Device frames load through site files and carousel insertion st
 
 ### `carousel.imported-row`
 
-Imported carousel tracks keep each authored slide whole and only reorder horizontally, both while carrying and after release.
+Dragging from the linked text or picture of an imported slide carries the whole slide along its own row, while text in active editing remains selectable.
 
-Manual check: “Imported showcase cards stay in one horizontal row”.
+Manual check: “node packages/consistency/tests/carousel-reorder.mjs”.
 
 ### `emails.templates`
 

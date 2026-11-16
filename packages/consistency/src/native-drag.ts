@@ -178,7 +178,6 @@ export class NativeDrag {
     for (const [id, entry] of entries) {
       if (!draggable(id) || this.sorts.has(id)) continue;
       const element = page.element(id)!, sole = soleColumnBlock(entries, id), lead = sole ?? entry, inCarousel = carousel(entry.parent);
-      // Words, links and components are written in: they lift after a held press, or at once along the list's own line.
       const writing = lead.block.kind === 'component' || lead.block.kind === 'link' || lead.block.kind === 'content';
       const manyBlocks = () => lead.block.kind === 'content' && parseBlocks((page.entries().get(lead.block.id)?.block as NativeContent | undefined)?.source ?? '').length > 1;
       this.sorts.set(id, { parent: entry.parent, element, lead: sole?.block.id, dispose: this.sort.item({
@@ -186,14 +185,14 @@ export class NativeDrag {
         canDrag: by => {
           const mine = canDrag(by)
             && (!inCarousel || !by.target?.closest(WRITING))
-            && (writing || page.selection().has(id) || !by.target?.closest('aa-editor,[contenteditable],button,a'))
+            && (inCarousel || writing || page.selection().has(id) || !by.target?.closest('aa-editor,[contenteditable],button,a'))
             // Writing of several blocks reorders its own blocks: Aa carries those.
             && !(manyBlocks() && by.target?.closest('aa-editor'));
           // One press, one carrier: writing the page carries is not carried by Aa as well.
           if (mine && lead.block.kind === 'content' && by.input !== 'keyboard') { this.giveWritingBack(); this.releaseWriting = page.holdWriting(lead.block.id); }
           return mine;
         },
-        ...(writing ? { text: { hold: () => 400, axis: inCarousel ? 'x' as const : 'y' as const } } : {}),
+        ...(writing && !inCarousel ? { text: { hold: () => 400, axis: 'y' as const } } : {}),
       }) });
     }
     for (const [id, item] of items) {
