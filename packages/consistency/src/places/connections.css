@@ -1,0 +1,125 @@
+/* Connections (connections.ts): the site in the middle of a dotted square grid, its four arms on whole squares.
+   Every node one square high with its words on the lower sixteen, every line 1px and dashed, every gap a square. */
+.place-connections{gap:var(--ds-unit)}
+.connections-stage{
+  --c-accent:var(--ds-accent-color);
+  --c-ground:color-mix(in srgb,var(--c-accent) 9%,var(--ds-paper));
+  --c-line:color-mix(in srgb,var(--c-accent) 55%,transparent);
+  display:grid;justify-content:center;align-items:center;
+  grid-template-columns:auto minmax(calc(5 * var(--ds-unit)),calc(8 * var(--ds-unit))) auto minmax(calc(5 * var(--ds-unit)),calc(8 * var(--ds-unit))) auto;
+  grid-template-rows:auto calc(4 * var(--ds-unit)) auto calc(4 * var(--ds-unit)) auto;
+  grid-template-areas:
+    ".        .               features .               ."
+    ".        line-features   line-features line-features ."
+    "visitors line-visitors   site     line-services   services"
+    ".        line-storage    line-storage line-storage ."
+    ".        .               storage  .               .";
+  padding:calc(2 * var(--ds-unit));
+  border-radius:var(--ds-radius-card,var(--ds-radius));
+  background-color:var(--c-ground);
+  background-image:radial-gradient(circle,var(--c-line) 1px,transparent 1.5px);
+  background-size:var(--ds-unit) var(--ds-unit);
+  background-position:calc(var(--ds-unit) / -2) calc(var(--ds-unit) / -2);
+  overflow:auto;
+}
+.connections-group--visitors{grid-area:visitors}
+.connections-group--features{grid-area:features}
+.connections-group--services{grid-area:services}
+.connections-group--storage{grid-area:storage}
+.connections-line--visitors{grid-area:line-visitors}
+.connections-line--services{grid-area:line-services}
+/* The vertical lines stand in the middle column alone; the row spans the three so its pill may be wider than the site. */
+.connections-line--features{grid-area:line-features}
+.connections-line--storage{grid-area:line-storage}
+
+/* The site: four squares by four on the accent, its name and runtime on squares of their own. */
+.connections-site{
+  grid-area:site;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  min-width:calc(5 * var(--ds-unit));min-height:calc(4 * var(--ds-unit));padding:0 calc(var(--ds-unit) / 2) calc(var(--ds-unit) / 2);
+  border-radius:var(--ds-radius-card,var(--ds-radius));background:var(--c-accent);color:var(--ds-button-text-color-on-accent);
+  line-height:calc(16px * var(--ds-sf,1));text-align:center;
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--c-accent) 40%,transparent);
+}
+.connections-site>ds-icon{color:inherit;margin-bottom:calc(4px * var(--ds-sf,1))}
+.connections-site__name{display:block;min-height:var(--ds-unit);padding-top:calc(4px * var(--ds-sf,1));box-sizing:border-box;white-space:nowrap}
+.connections-site__runtime{display:block;font-size:calc(10px * var(--ds-sf,1));line-height:1;opacity:.85;white-space:nowrap}
+.connections-stage[data-step="0"] .connections-site{animation:connections-arrive 520ms cubic-bezier(.2,0,0,1)}
+
+/* A group: its nodes on the paper inside a 1px line, half a square in. Above and below they run across; at the
+   sides they stand in a column. */
+.connections-group{
+  display:flex;flex-wrap:wrap;gap:calc(var(--ds-unit) / 2);box-sizing:border-box;padding:calc(var(--ds-unit) / 2);
+  max-width:calc(36 * var(--ds-unit));border:1px dashed var(--c-line);border-radius:var(--ds-radius-card,var(--ds-radius));
+  background:color-mix(in srgb,var(--ds-paper) 70%,transparent);
+  transition:opacity 320ms cubic-bezier(.2,0,0,1),transform 320ms cubic-bezier(.2,0,0,1);
+}
+.connections-group--features,.connections-group--storage{justify-content:center;justify-self:center}
+.connections-group--visitors,.connections-group--services{flex-direction:column;flex-wrap:nowrap}
+.connections-group--visitors{justify-self:end}
+.connections-group--services{justify-self:start}
+.connections-group:not([data-drawn]){opacity:.15;transform:scale(.97)}
+
+/* A node, one square high: its icon and words on the lower sixteen, padded 4px; a waiting one dashed in the warning colour. */
+.connections-node{
+  display:inline-flex;align-items:flex-end;gap:calc(4px * var(--ds-sf,1));box-sizing:border-box;height:var(--ds-unit);
+  padding:0 calc(4px * var(--ds-sf,1)) calc(2px * var(--ds-sf,1));margin:0;border:1px solid var(--ds-border-color);border-radius:var(--ds-radius);
+  background:var(--ds-paper);color:var(--ds-text-color);font:inherit;line-height:calc(16px * var(--ds-sf,1));white-space:nowrap;cursor:pointer;
+}
+.connections-node>ds-icon{flex:none}
+.connections-node:hover{background:var(--ds-fill-hover,var(--ds-fill))}
+.connections-node:focus-visible{outline:2px solid var(--ds-focus-ring);outline-offset:-2px}
+.connections-node[aria-pressed="true"]{border-color:var(--c-accent);box-shadow:inset 0 0 0 1px var(--c-accent)}
+.connections-node[data-state="waiting"]{border-style:dashed;border-color:var(--ds-warning-color,var(--ds-border-color));color:var(--ds-text-color-muted)}
+.connections-empty{color:var(--ds-text-color-muted);line-height:calc(16px * var(--ds-sf,1))}
+
+/* A line: 1px dashed through the middle of its cell, its label a pill on the accent in the middle, and while it is
+   being drawn a dot travelling it from the site out. */
+.connections-line{position:relative;display:flex;align-items:center;justify-content:center;align-self:stretch;justify-self:stretch;min-height:var(--ds-unit)}
+.connections-line::before{content:"";position:absolute;inset:50% 0 auto 0;border-top:1px dashed var(--c-line)}
+.connections-line--features::before,.connections-line--storage::before{inset:0 auto 0 50%;border-top:0;border-left:1px dashed var(--c-line)}
+.connections-line::after{
+  content:"";position:absolute;width:calc(6px * var(--ds-sf,1));height:calc(6px * var(--ds-sf,1));border-radius:50%;
+  background:var(--c-accent);opacity:0;top:calc(50% - 3px * var(--ds-sf,1));left:calc(50% - 3px * var(--ds-sf,1));
+}
+.connections-line[data-drawing]::after{opacity:1;animation:var(--c-travel) 520ms cubic-bezier(.4,0,.2,1) forwards}
+.connections-line--visitors{--c-travel:connections-to-start}
+.connections-line--services{--c-travel:connections-to-end}
+.connections-line--features{--c-travel:connections-to-top}
+.connections-line--storage{--c-travel:connections-to-bottom}
+.connections-line__pill{
+  position:relative;z-index:1;box-sizing:border-box;height:calc(16px * var(--ds-sf,1));padding:0 calc(4px * var(--ds-sf,1));
+  border-radius:var(--ds-radius);background:var(--c-accent);color:var(--ds-button-text-color-on-accent);
+  line-height:calc(16px * var(--ds-sf,1));white-space:nowrap;transition:opacity 320ms cubic-bezier(.2,0,0,1);
+}
+.connections-line:not([data-drawn]):not([data-drawing]) .connections-line__pill{opacity:.25}
+.connections-line:not([data-drawn]):not([data-drawing])::before{opacity:.35}
+
+@keyframes connections-to-start{from{transform:translateX(calc(4 * var(--ds-unit)))}to{transform:translateX(calc(-4 * var(--ds-unit)));opacity:0}}
+@keyframes connections-to-end{from{transform:translateX(calc(-4 * var(--ds-unit)))}to{transform:translateX(calc(4 * var(--ds-unit)));opacity:0}}
+@keyframes connections-to-top{from{transform:translateY(calc(2 * var(--ds-unit)))}to{transform:translateY(calc(-2 * var(--ds-unit)));opacity:0}}
+@keyframes connections-to-bottom{from{transform:translateY(calc(-2 * var(--ds-unit)))}to{transform:translateY(calc(2 * var(--ds-unit)));opacity:0}}
+@keyframes connections-arrive{from{transform:scale(.92);opacity:.4}to{transform:none;opacity:1}}
+
+/* Play and Loop under the chart, a square high, then what the pressed node does. */
+.connections-controls{display:flex;align-items:flex-end;justify-content:space-between;min-height:var(--ds-unit);line-height:calc(16px * var(--ds-sf,1))}
+.connections-loop{display:inline-flex;align-items:flex-end;gap:calc(var(--ds-unit) / 2)}
+.connections-detail{display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 var(--ds-unit);min-height:var(--ds-unit);line-height:calc(16px * var(--ds-sf,1))}
+
+@media (prefers-reduced-motion:reduce){
+  .connections-group,.connections-line__pill{transition:none}
+  .connections-line::after,.connections-stage .connections-site{animation:none !important}
+}
+/* On a phone the arms stand one under another, each line running down. */
+@media (max-width:768px){
+  .connections-stage{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:none;
+    grid-template-areas:"visitors" "line-visitors" "site" "line-features" "features" "line-services" "services" "line-storage" "storage";
+    padding:var(--ds-unit);
+  }
+  .connections-line{min-height:calc(3 * var(--ds-unit))}
+  .connections-line::before{inset:0 auto 0 50%;border-top:0;border-left:1px dashed var(--c-line)}
+  .connections-line::after{animation-name:connections-to-bottom !important}
+  .connections-group{justify-self:center !important;flex-direction:row !important;flex-wrap:wrap !important;justify-content:center}
+  .connections-site{justify-self:center}
+}

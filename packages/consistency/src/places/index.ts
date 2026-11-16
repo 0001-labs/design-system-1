@@ -1,6 +1,6 @@
 /**
  * The places of an open site in Consistency's app: the menus under the site's name in the sidebar (Pages, Emails,
- * Design, Bookings, Gift cards, Orders, a site's own), each a Lit element mounted in the work area beside the site's canvas.
+ * Design, Bookings, Gift cards, Orders, a site's own, Connections), each a Lit element mounted in the work area beside the site's canvas.
  *
  * The platform says which menus a site has (`sitePlaces`); the app shows only those it has an element for, from
  * this registry by place id. A place's element is made once per site and kept, hidden while another is shown.
@@ -15,6 +15,7 @@ import { ConsistencyPlaceDesign } from './design';
 import { ConsistencyPlaceOrders } from './orders';
 import { ConsistencyPlacePeerProducts } from './peer-products';
 import { ConsistencySiteSettings } from './site-settings';
+import { ConsistencyPlaceConnections } from './connections';
 import { flavoPlaces } from './flavo';
 
 export { SiteApiError, siteApi, sitePlaces, type SitePlace } from './api';
@@ -29,6 +30,8 @@ PLACES.set('emails', site => new ConsistencyPlaceEmails(site));
 PLACES.set('settings', site => new ConsistencySiteSettings(site));
 PLACES.set('design', site => new ConsistencyPlaceDesign(site));
 PLACES.set('peer-products', site => new ConsistencyPlacePeerProducts(site));
+// Every site's, worked out by the platform from the code that runs it.
+PLACES.set('connections', site => new ConsistencyPlaceConnections(site));
 
 /** The site's places the app can show, in the site's order. */
 export const shownPlaces = (places: readonly SitePlace[]) => places.filter(place => PLACES.has(place.id));

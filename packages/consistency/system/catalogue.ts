@@ -308,6 +308,17 @@ const components: C9yComponent[] = [
     source: [APP('places/site-settings.ts'), PLATFORM('worker/workspaces.ts'), PLATFORM('worker/admin.ts')],
   },
   {
+    id: 'c9y-connections',
+    label: 'Connections',
+    layer: 'place',
+    summary: 'Every site’s connections as one animated chart: its visitors, features, outside services and storage around it.',
+    presents: ['ds-icon', 'ds-tag', 'ds-button', 'ds-switch'],
+    adds: ['the chart worked out by the platform from the runtime, site.json, extension bindings and secret names that run the site'],
+    systems: ['Consistency workspace'],
+    realisedAs: [{ as: 'place', id: 'connections' }],
+    source: [APP('places/connections.ts'), PLATFORM('worker/connections.ts'), PLATFORM('worker/runtimes.ts')],
+  },
+  {
     id: 'c9y-peer-products',
     label: 'Peer products',
     layer: 'place',

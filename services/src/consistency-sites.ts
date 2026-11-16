@@ -7,6 +7,7 @@
  *   object as the owner and checks the same list again. `pages`, `page?path=` and `edit` are the older addresses
  *   of `api/pages`, `api/page` and `api/edit`.
  * - `GET places`: the menus the app shows for the site, from its current build's config.
+ * - `GET connections`: how the site is connected, worked out by the platform from the code that runs it.
  * - `PUT badge { show }`: Site settings' badge, whether the site shows "Built with Consistency" on its own domain;
  *   the platform lets the owner or an admin of the site's workspace decide.
  * - `GET document?path=`: the site's page for the editor's frame, and `GET files/<path>` the styles, fonts,
@@ -22,8 +23,8 @@ import { CANVAS_POLICY, CANVAS_SANDBOX, FACE_HOSTS } from '../../shared/consiste
 export { FACE_HOSTS } from '../../shared/consistency-canvas';
 
 // A site by its IDv1 code, a list's shape (`12ABCD`); the platform alone knows its id.
-export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|badge|delete|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
-const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], badge: ['PUT'], delete: ['DELETE'], files: ['GET', 'HEAD'] };
+export const SITE_ROUTE = /^\/api\/consistency\/sites\/(\d{2}[A-Za-z]{4})\/(pages|page|edit|document|places|connections|badge|delete|api\/[\w/-]{1,160}|files\/[^?#]{1,512})$/;
+const METHODS: Record<string, string[]> = { document: ['GET'], places: ['GET'], connections: ['GET'], badge: ['PUT'], delete: ['DELETE'], files: ['GET', 'HEAD'] };
 /** A write to the site engine (its own limit is 32,000 characters); the JSON around a 10,000-character field fits. */
 export const EDIT_BYTES = 64 * 1024;
 /** A whole native page, including its bounded Markdown blocks and layout. */

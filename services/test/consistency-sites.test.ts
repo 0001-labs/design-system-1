@@ -159,6 +159,7 @@ it('passes on exactly the platform\'s allowlist of a site\'s API, each route by 
   expect((await call('10VNDG/api/design', write('PUT', '{}'))).status).toBe(404);
   expect((await call('10VNDG/api/library', write('POST', '{}'))).status).toBe(405);
   expect((await call('10VNDG/places', write('POST', '{}'))).status).toBe(405);
+  expect((await call('10VNDG/connections', write('POST', '{}'))).status).toBe(405);
   expect(workspace.fetch).not.toHaveBeenCalled();
 });
 
@@ -166,6 +167,7 @@ it('asks the owner first for the API and the places too', async () => {
   const { call, workspace } = setup();
   expect((await call('10VNDG/api/bookings')).status).toBe(401);
   expect((await call('10VNDG/places')).status).toBe(401);
+  expect((await call('10VNDG/connections')).status).toBe(401);
   expect((await call('10VNDG/api/business', { ...write('POST', '{}'), headers: { origin, 'Content-Type': 'application/json' } })).status).toBe(401);
   expect((await setup('other').call('10VNDG/places', { headers })).status).toBe(403);
   expect(workspace.fetch).not.toHaveBeenCalled();
@@ -179,6 +181,7 @@ it('passes a route\'s query string on, and the places, to the platform', async (
   expect((await call('10VNDG/api/page', { headers })).status).toBe(400);
   expect((await call(`10VNDG/api/pages?${'q=x&'.repeat(600)}`, { headers })).status).toBe(400);
   expect(await (await call('10VNDG/places', { headers })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/places', method: 'GET' });
+  expect(await (await call('10VNDG/connections', { headers })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/connections', method: 'GET' });
 });
 
 it('takes a write to the API as same-origin JSON within its bound: the engine\'s 64 KiB, Flavo\'s business 1 MB', async () => {

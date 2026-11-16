@@ -49,3 +49,13 @@ export async function sitePlaces(code: string): Promise<SitePlace[]> {
   return Array.isArray(places) ? places.filter((place): place is SitePlace => !!place && typeof place.id === 'string' && typeof place.label === 'string')
     .map(place => (Array.isArray(place.sources) ? { ...place, sources: place.sources.filter((name: unknown) => typeof name === 'string') } : { id: place.id, label: place.label })) : [];
 }
+
+/** One of a site's connections, as the platform works them out from the code that runs it (`platform/worker/connections.ts`). */
+export interface SiteConnection { id: string; label: string; detail: string; state: 'on' | 'waiting' }
+export interface SiteConnections {
+  site: { name: string; runtime: string; detail: string };
+  groups: { id: 'visitors' | 'features' | 'services' | 'storage'; label: string; nodes: SiteConnection[] }[];
+}
+
+/** How the site is connected: who reaches it, what it does, the services it talks to and where its data is kept. */
+export const siteConnections = (code: string) => answer<SiteConnections>(`${base(code)}/connections`);
