@@ -50,7 +50,7 @@ export class ConsistencySiteSettings extends LitElement {
 
   protected createRenderRoot() { return this; }
 
-  private async remove() {
+  private async deleteSite() {
     if (this.busy || this.code !== this.site.code) return;
     this.busy = true;
     this.error = '';
@@ -97,7 +97,7 @@ export class ConsistencySiteSettings extends LitElement {
         ${this.error ? html`<ds-message danger role="alert">${this.error}</ds-message>` : nothing}
         <div>
           <ds-button secondary ?disabled=${this.busy} @click=${() => { this.confirming = false; this.code = ''; this.error = ''; }}>Cancel</ds-button>
-          <ds-button danger ?disabled=${this.busy || this.code !== this.site.code} @click=${() => void this.remove()}>${this.busy ? 'Deleting…' : 'Delete site'}</ds-button>
+          <ds-button danger ?disabled=${this.busy || this.code !== this.site.code} @click=${() => void this.deleteSite()}>${this.busy ? 'Deleting…' : 'Delete site'}</ds-button>
         </div>
       </div>` : html`<div><ds-button secondary danger @click=${() => { this.confirming = true; }}>Delete site</ds-button></div>`}
     </section>`;
