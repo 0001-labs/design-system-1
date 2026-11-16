@@ -98,7 +98,7 @@ export interface NativeFooterColumn { heading?: string; href?: string; width?: n
 export interface NativeFooter extends NativeBlockBase {
   kind: 'footer'; columnWidth?: number; line?: boolean;
   brand?: NativePicture; tagline?: NativeWords; columns: NativeFooterColumn[]; legal?: NativeWords;
-  policies?: NativeAction[]; languages?: NativeLanguage[]; follow?: NativeAction[]; preferences?: NativeRuntimeSlot;
+  policies?: NativeAction[]; languages?: NativeLanguage[]; follow?: NativeAction[]; preferences?: NativeRuntimeSlot; theme?: boolean;
 }
 export type NativeSection = NativeHero | NativeSplit | NativeStatement | NativePanels | NativeCards | NativeGallery | NativeBento | NativeQuestions | NativeFacts | NativeList | NativeCallToAction | NativeHeader | NativeFooter;
 export type NativeBlock = NativePrimitive | NativeSection;
@@ -561,7 +561,9 @@ function renderNativeSection(block: NativeSection, options: NativePageRenderOpti
     const brand=children.filter(child=>marks.get(child.id)?.slot==='brand').map(draw).join('');
     const base=children.filter(child=>['legal','policies'].includes(marks.get(child.id)?.slot??'')).map(draw).join('');
     const preferences=children.filter(child=>['languages','preferences'].includes(marks.get(child.id)?.slot??'')).map(draw).join('');
-    return open(`${brand}<nav class="ds-footer__columns" data-native-block="${escape(sub(id,'columns'))}" data-slot="columns">${columns}${follow}</nav><div class="ds-footer__base" data-native-block="${escape(sub(id,'base'))}">${base}${preferences?`<div class="ds-footer__preferences" data-native-block="${escape(sub(id,'preferences-row'))}">${preferences}</div>`:''}</div>`);
+    // The theme control names the theme the page is in; the page's behaviours run it, so a published page hides it until they can.
+    const theme=field<boolean>('theme')?`<button type="button" class="c9y-native-theme" data-c9y-theme data-light="Light" data-dark="Dark" aria-description="Switch between light and dark"${options.editor?'':' hidden'}>Light</button>`:'';
+    return open(`${brand}<nav class="ds-footer__columns" data-native-block="${escape(sub(id,'columns'))}" data-slot="columns">${columns}${follow}</nav><div class="ds-footer__base" data-native-block="${escape(sub(id,'base'))}">${base}${preferences||theme?`<div class="ds-footer__preferences" data-native-block="${escape(sub(id,'preferences-row'))}">${preferences}${theme}</div>`:''}</div>`);
   }
   return open(children.map(draw).join(''));
 }

@@ -79,6 +79,18 @@ describe('section kinds expand to primitives', () => {
     expect([definition.fields.turnEvery!.group, definition.fields.turnOrder!.group, definition.slots.turns!.group]).toEqual(['behaviour', 'behaviour', 'behaviour']);
   });
 
+  test('a footer may carry a theme control: hidden on a published page until its behaviours run it, drawn in the editor', () => {
+    const footer = { ...example('footer'), theme: true } as never;
+    const published = render(footer), edited = render(footer, { editor: true });
+    expect(published).toMatch(/<div class="ds-footer__preferences"[^>]*>.*<button type="button" class="c9y-native-theme" data-c9y-theme data-light="Light" data-dark="Dark" aria-description="Switch between light and dark" hidden>Light<\/button><\/div>/);
+    expect(edited).toContain('aria-description="Switch between light and dark">Light</button>');
+    // No script comes with the block, and a footer that does not ask has no control.
+    expect(published).not.toContain('<script');
+    expect(render(example('footer'))).not.toContain('data-c9y-theme');
+    expect(sectionDefinition('footer')!.fields.theme!.group).toBe('behaviour');
+    expect(sheet).toContain('.c9y-native-theme[hidden]{display:none}');
+  });
+
   test('a hero is a picture and a toned panel of logo, kicker, title, text and actions', () => {
     const top = hero();
     const html = render(top);

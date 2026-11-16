@@ -535,6 +535,7 @@ export const SECTIONS: KindDefinition[] = [
     fields: {
       columnWidth: squares(6, 16, 8, 'A column\'s width unless it names its own'),
       line: boolean(true, 'A hairline along the top'),
+      theme: { ...boolean(false, 'A control at the base\'s end that switches the page between light and dark and names the one it is in; the page follows the device until the reader chooses, the choice is kept in the reader\'s browser for the whole site, and the control is hidden where scripts do not run'), group: 'behaviour' },
     },
     slots: {
       brand: picture('The mark, one square high, leading home with `href`'),

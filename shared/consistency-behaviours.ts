@@ -7,6 +7,10 @@
  * and when its title is pressed: the kicker and the title take the turn's words, a kicker of digits counting to its
  * new number, and the picture follows once it has loaded. The hero as written is the first turn. Nothing changes
  * while the page is hidden, and reduced motion changes the words at once.
+ *
+ * A footer's theme control (`data-c9y-theme`) switches the page between light and dark through Design system 1's
+ * theme runtime (`window.DS_ONE_THEME`, which the platform starts in the page's head before the first paint) and
+ * names the theme the page is in. Without that runtime the control stays hidden.
  */
 export interface Turn { kicker?: string; title: string; src?: string; alt?: string }
 export type TurnOrder = 'shuffled' | 'in-order';
@@ -86,8 +90,28 @@ function bindHero(hero: HTMLElement) {
   wait();
 }
 
+/** Design system 1's theme runtime, as much of it as the control uses (`DS1/0-face/theme-bootstrap.js`). */
+interface ThemeRuntime { theme(): 'light' | 'dark'; set(mode: 'light' | 'dark' | 'system'): void }
+/** The theme a press goes to. */
+export const otherTheme = (theme: 'light' | 'dark'): 'light' | 'dark' => theme === 'dark' ? 'light' : 'dark';
+
+function bindTheme(button: HTMLElement) {
+  const runtime = (window as unknown as { DS_ONE_THEME?: ThemeRuntime }).DS_ONE_THEME;
+  if (!runtime) return;
+  const paint = () => { const theme = runtime.theme(); button.textContent = (theme === 'dark' ? button.dataset.dark : button.dataset.light) ?? theme; button.setAttribute('aria-pressed', String(theme === 'dark')); };
+  button.addEventListener('click', () => runtime.set(otherTheme(runtime.theme())));
+  window.addEventListener('theme-changed', paint);
+  paint();
+  button.hidden = false;
+}
+
 /** Starts every behaviour the page holds; a block already started is left alone. */
 export function startBehaviours(root: ParentNode = document) {
+  for (const button of root.querySelectorAll<HTMLElement>('[data-c9y-theme]')) {
+    if (button.dataset.c9yBehaving !== undefined) continue;
+    button.dataset.c9yBehaving = '';
+    bindTheme(button);
+  }
   for (const hero of root.querySelectorAll<HTMLElement>('[data-section="hero"][data-turns]')) {
     if (hero.dataset.c9yBehaving !== undefined) continue;
     hero.dataset.c9yBehaving = '';

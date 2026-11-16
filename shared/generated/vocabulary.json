@@ -2375,6 +2375,12 @@
           "type": "boolean",
           "default": true,
           "meaning": "A hairline along the top"
+        },
+        "theme": {
+          "type": "boolean",
+          "default": false,
+          "meaning": "A control at the base's end that switches the page between light and dark and names the one it is in; the page follows the device until the reader chooses, the choice is kept in the reader's browser for the whole site, and the control is hidden where scripts do not run",
+          "group": "behaviour"
         }
       },
       "slots": {

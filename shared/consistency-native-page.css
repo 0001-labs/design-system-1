@@ -168,6 +168,10 @@ details.c9y-native-flow{display:block}
 .ds-header[data-links="line"] .ds-header__nav a{display:flex;align-items:flex-end;height:calc(2 * var(--c9y-unit));padding:0 calc(8px * var(--sf,1));text-decoration:none;box-shadow:inset 0 1px currentColor}
 .ds-header[data-links="line"] .ds-header__nav a:hover{box-shadow:inset 0 calc(2px * var(--sf,1)) currentColor}
 .ds-header[data-links="line"] .ds-header__nav a[aria-current]:not([aria-current="false"]){color:var(--ds-accent-color,var(--c9y-accent));box-shadow:inset 0 calc(4px * var(--sf,1)) currentColor}
+/* The footer's theme control: a quiet button one control high that names the theme the page is in, hidden until the page's behaviours can run it. */
+.c9y-native-theme{appearance:none;border:0;margin:0;padding:0 calc(4px * var(--sf,1));height:var(--ds-control-height,calc(16px * var(--sf,1)));border-radius:calc(4px * var(--sf,1));background:var(--ds-fill,color-mix(in srgb,currentColor 8%,transparent));color:inherit;font:inherit;line-height:var(--ds-control-height,calc(16px * var(--sf,1)));cursor:pointer}
+.c9y-native-theme[hidden]{display:none}
+.c9y-native-theme:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 /* The footer's follow marks (ds-footer__column--stack): the library's icon in the paper's colour on the round mark; the language being read is on the full line. */
 .ds-footer .c9y-native-follow:not(.ds-footer__column--stack){margin-inline-start:auto}
 .ds-footer .c9y-native-follow .c9y-native-icon{display:flex;width:calc(14px * var(--sf,1));height:calc(14px * var(--sf,1))}
