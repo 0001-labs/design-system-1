@@ -33,7 +33,11 @@ consistency-domains{display:block;max-width:calc(32 * var(--ds-unit))}
 .home-stage[hidden]{display:none}
 .home-stage>*{flex:1;min-height:0}
 .home-stage>[hidden]{display:none}
+/* On a computer the hint stands in the window's last square, the square of room the page keeps under its work,
+   centred on the work and taking no row of its own: fixed, as the work's own area clips what leaves it. A phone's
+   page, which scrolls whole, keeps it as its last row. */
 .home-ask:not([hidden]){display:flex;flex:none;justify-content:center;margin-block-start:auto}
+@container (min-width:600px){.home-ask:not([hidden]){position:fixed;inset-block-end:0;align-self:center;margin:0}}
 .home-ask button{background:none;border:0;padding:calc(var(--ds-unit) - var(--ds-type-lineheight-default)) 0 0;line-height:var(--ds-type-lineheight-default);cursor:pointer}
 .home-ask button:is(:hover,:focus-visible){color:var(--ds-text-color)}
 /* An open site's places fill the sidebar under its name and scroll on their own. */
