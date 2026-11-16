@@ -102,7 +102,7 @@ export function setScalingConfig(config: Partial<ScalingConfig>): void {
 
 /**
  * Update the scaling factor based on current viewport
- * Desktop always uses factor 1; mobile uses computed factor (see scaling.ts)
+ * Reuse the current scale when the page manages it before the component bundle loads.
  */
 export function updateScalingFactor(): void {
   if (typeof window === "undefined" || typeof document === "undefined") {
@@ -110,7 +110,10 @@ export function updateScalingFactor(): void {
   }
 
   const config = scalingConfig.get();
-  const factor = applyScaling(config);
+  const root = document.documentElement;
+  const factor = root.hasAttribute("data-ds-scaling-managed")
+    ? Number(root.style.getPropertyValue("--sf")) || 1
+    : applyScaling(config);
   scalingFactor.set(factor);
   window.dispatchEvent(
     new CustomEvent("scaling-changed", {
