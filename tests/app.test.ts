@@ -108,3 +108,15 @@ test("updateComplete waits for the page under the bar, so what is slotted alread
   expect(app.page!.hasUpdated).toBe(true);
   expect(app.page!.shadowRoot!.querySelector('[data-area="nav"] slot')).not.toBeNull();
 });
+
+test("a flowing frame is the document: its page takes no height of its own, and the window scrolls back to the start", async () => {
+  const app = await setup(`<ds-app name="Site" fixed-scale flow><section id="work"></section></ds-app>`);
+  expect(app.hasAttribute("flow")).toBe(true);
+  expect(app.page!.hasAttribute("fill")).toBe(false);
+  expect(reached(app, "main")).toEqual(["work"]);
+  const calls: unknown[] = [];
+  const scroll = window.scrollTo;
+  window.scrollTo = ((options: unknown) => { calls.push(options); }) as typeof window.scrollTo;
+  try { app.scrollToStart(); } finally { window.scrollTo = scroll; }
+  expect(calls).toEqual([{ top: 0, left: 0 }]);
+});

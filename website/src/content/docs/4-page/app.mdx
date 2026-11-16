@@ -89,6 +89,10 @@ Below thirty squares of width the frame is one document scrolling under the bar.
 
 With `flush`, the work leaves out the square of room around it and runs to the hairlines beside it, the bar above and the window's bottom edge (or to the window's sides where there is no pane). The navigation and the inspector keep their square of room and their widths, and a header or footer keeps its distance from the work.
 
+## Pages that scroll with the window
+
+With `flow`, the page is the document: the window scrolls it, and the bar stays at the top with its hairline on the grid. Use it for a site, or for an app whose pages already scroll with the window, where the scroll position, the browser's scroll restoration and anything that reads `window.scrollY` must keep working. The panes then take their content's height instead of the window's, and `scrollToStart()` scrolls the window. Before its script runs, a flowing frame draws its page at once under the bar's room, so the first paint is the content and nothing jumps.
+
 ## Moving between places
 
 An app that changes its work in place, as a router does, calls `scrollToStart()` when a new place opens: the work goes back to its top, its own pane on a computer and the page on a phone.
@@ -119,6 +123,7 @@ document.querySelector('ds-app').apps = [
 | `drawer-label` | `Menu` | The menu button's and drawer's name, a translation key. |
 | `fixed-scale` | false | Leaves the scale to the page: the frame starts no scale of its own. |
 | `flush` | false | The work runs to its pane's edges, for a wall of pictures or a canvas; the navigation and the inspector keep their room. |
+| `flow` | false | The page is the document: the window scrolls it under a bar that stays at the top. |
 | `apps` | none | The apps the name leads to, `{ name, href }[]`; see Between apps. |
 
 ## Parts
