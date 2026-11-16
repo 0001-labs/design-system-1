@@ -16,10 +16,11 @@ describe('the booking block', () => {
     expect(written).toBe('```c9y-meetings\n{"button":"Book \\u0060now\\u0060"}\n```');
     expect(readMeetings(written)?.button).toBe('Book `now`');
   });
-  it('publishes a button that leads to the site’s booking page, with its words escaped', () => {
+  it('publishes the button alone, opening the booking under it, with the booking page for a reader without scripts', () => {
     const html = renderNativeRegion('Let us talk.\n\n```c9y-meetings\n{"button":"<b>Book</b>"}\n```');
-    expect(html).toContain(`<a class="ds-button ds-button--primary c9y-native-button" href="${MEETINGS_PAGE}">&lt;b&gt;Book&lt;/b&gt;</a>`);
-    expect(html).toContain('<p class="c9y-native-meetings-note">Pick a time that suits you. You get a calendar invitation by email.</p>');
+    expect(html).toContain('<details class="c9y-native-meetings" data-c9y-meetings-inline><summary class="ds-button ds-button--primary c9y-native-button">&lt;b&gt;Book&lt;/b&gt;</summary>');
+    expect(html).toContain('<div class="c9y-native-meetings-panel" data-c9y-meetings-panel><p class="c9y-native-meetings-note">Pick a time that suits you. You get a calendar invitation by email.</p>');
+    expect(html).toContain(`<noscript><p><a href="${MEETINGS_PAGE}">Choose a time on the booking page</a></p></noscript>`);
     expect(html).not.toContain('<b>Book</b>');
     expect(MEETINGS_PAGE).toBe('/_c9y/meetings');
   });
@@ -27,6 +28,7 @@ describe('the booking block', () => {
     const html = meetingsMarkup(readMeetings(EMPTY_MEETINGS_SOURCE)!, { editor: true });
     expect(html).not.toContain('href=');
     expect(html).not.toContain('<a ');
+    expect(html).not.toContain('<details');
     expect(html.match(/data-meetings-field="(\w+)"/g)).toEqual(['data-meetings-field="button"', 'data-meetings-field="note"']);
   });
 });
