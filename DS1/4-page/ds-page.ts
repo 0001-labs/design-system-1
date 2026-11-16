@@ -1,4 +1,4 @@
-import { LitElement, html, unsafeCSS, type PropertyValues } from "lit";
+import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { define } from "../0-face/define";
 import type { Drawer } from "../0-face/attach-overlay";
@@ -318,7 +318,7 @@ export class Page extends LitElement {
       <div class="page" part="page" ?data-toggle-outside=${!!this.drawerToggle} style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout !== "split" ? `--ds-page-nav: var(--ds-page-resize-width, calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable && this.layout === "inspector" ? `--ds-page-aside: var(--ds-page-resize-aside, calc(${Math.max(4, Math.min(24, Math.round(this.asideWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
         <div class="bar" part="bar" ?hidden=${!this.drawer || !!this.drawerToggle}>
           <button class="ds-button ds-button--icon ds-overlay__toggle" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer" aria-expanded="false">
-            <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
+            ${this.drawer && !this.drawerToggle ? html`<ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>` : nothing}
           </button>
         </div>
         <dialog class="ds-overlay ds-overlay--screen" part="drawer" id="drawer" aria-label=${label}>

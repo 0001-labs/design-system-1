@@ -239,13 +239,15 @@ export class App extends LitElement {
 
   render() {
     const menu = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
+    /* The menu's icons are drawn only with the menu, so a frame without one never asks for the deferred icon set. */
+    const menuShown = this.hasNav || (this.narrow && this.hasActions);
     return html`
       <header class="bar" part="bar">
         <slot name="brand">${this.apps.length ? this.switcher() : html`<a class="ds-button brand" part="brand" href=${this.home}>${this.name}</a>`}</slot>
         <div class="bar-content"><slot name="bar"></slot></div>
         ${this.narrow ? nothing : html`<div class="actions" part="actions"><slot name="actions" @slotchange=${this.syncSlots}></slot></div>`}
-        <button class="ds-button ds-button--icon ds-overlay__toggle menu" part="menu" type="button" aria-label=${menu} aria-expanded="false" ?hidden=${!this.hasNav && !(this.narrow && this.hasActions)}>
-          <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
+        <button class="ds-button ds-button--icon ds-overlay__toggle menu" part="menu" type="button" aria-label=${menu} aria-expanded="false" ?hidden=${!menuShown}>
+          ${menuShown ? html`<ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>` : nothing}
         </button>
       </header>
       <ds-page
