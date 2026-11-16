@@ -61,14 +61,22 @@ export class ConsistencyBehaviourPanel extends LitElement {
       case 'choice':
         return html`<label class="consistency-behaviour-field"><span class="consistency-behaviour-label">${label}</span><ds-select><select aria-label=${label} .value=${String(value)} @change=${(event: Event) => this.set(name, (event.target as HTMLSelectElement).value)}>
           ${(definition.choices ?? []).map(choice => html`<option value=${choice} ?selected=${choice === value}>${choiceWords(choice)}</option>`)}</select></ds-select></label>`;
+      case 'text': case 'address':
+        return html`<ds-input label=${label} aria-label=${label} maxlength=${definition.max ?? 1000} .value=${String(value ?? '')}
+          @input=${(event: Event) => { const next = (event.target as HTMLElement & { value: string }).value; if (definition.required && !next.trim()) return; this.later(() => this.set(name, next)); }} @change=${() => this.flush()}></ds-input>`;
       case 'boolean':
         return html`<div class="consistency-behaviour-switch"><span class="consistency-behaviour-label">${label}</span><ds-switch compact monochrome><button type="button" role="switch" aria-checked=${String(value === true)} aria-label=${label} @click=${() => this.set(name, value !== true)}></button></ds-switch></div>`;
       default: return nothing;
     }
   }
 
+  /**
+   * A list of records: a hero's turns (the block as written is the first, so they count from 2) or a form's fields
+   * (from 1). Each record's members are fields of their kind; records move, go and are added here.
+   */
   private turns(section: NativeSection, slot: string, definition: SlotDefinition): TemplateResult {
     const turns = turnsOf(section, slot), members = Object.entries(definition.item ?? {}), images = this.target?.images() ?? [];
+    const first = definition.type === 'turns' ? 2 : 1, noun = definition.type === 'turns' ? 'turn' : 'field';
     const write = (index: number, name: string, value: unknown, required?: boolean) => this.commit(current => writeTurn(current, slot, index, name, value, required));
     const picture = (index: number, name: string, member: MemberDefinition, current: NativePicture | undefined) => {
       const label = fieldWords(name), listed = current && !images.includes(current.src) ? [current.src, ...images] : images;
@@ -82,20 +90,23 @@ export class ConsistencyBehaviourPanel extends LitElement {
     const max = definition.max ?? 100;
     return html`<section class="consistency-behaviour-turns" aria-label=${fieldWords(slot)}>
       <ds-text literal strong text=${fieldWords(slot)}></ds-text>
-      <ds-text literal tone="muted" wrap text="The block as written on the page is the first."></ds-text>
-      ${turns.map((turn, index) => html`<fieldset class="consistency-behaviour-turn" aria-label=${`Turn ${index + 2}`}>
-        <div class="consistency-behaviour-turn-head"><ds-text literal tone="muted" text=${String(index + 2)}></ds-text>
+      ${definition.type === 'turns' ? html`<ds-text literal tone="muted" wrap text="The block as written on the page is the first."></ds-text>` : nothing}
+      ${turns.map((turn, index) => html`<fieldset class="consistency-behaviour-turn" aria-label=${`${fieldWords(noun)} ${index + first}`}>
+        <div class="consistency-behaviour-turn-head"><ds-text literal tone="muted" text=${String(index + first)}></ds-text>
           <span class="consistency-behaviour-turn-moves">
-            <ds-button icon secondary label=${`Move turn ${index + 2} up`} ?disabled=${index === 0} @click=${() => this.commit(current => moveTurn(current, slot, index, index - 1))}><ds-icon type="chevron-up"></ds-icon></ds-button>
-            <ds-button icon secondary label=${`Move turn ${index + 2} down`} ?disabled=${index >= turns.length - 1} @click=${() => this.commit(current => moveTurn(current, slot, index, index + 1))}><ds-icon type="chevron-down"></ds-icon></ds-button>
-            <ds-button icon secondary label=${`Remove turn ${index + 2}`} @click=${() => { this.flush(); this.commit(current => removeTurn(current, slot, index)); }}><ds-icon type="delete"></ds-icon></ds-button>
+            <ds-button icon secondary label=${`Move ${noun} ${index + first} up`} ?disabled=${index === 0} @click=${() => this.commit(current => moveTurn(current, slot, index, index - 1))}><ds-icon type="chevron-up"></ds-icon></ds-button>
+            <ds-button icon secondary label=${`Move ${noun} ${index + first} down`} ?disabled=${index >= turns.length - 1} @click=${() => this.commit(current => moveTurn(current, slot, index, index + 1))}><ds-icon type="chevron-down"></ds-icon></ds-button>
+            <ds-button icon secondary label=${`Remove ${noun} ${index + first}`} ?disabled=${turns.length <= (definition.min ?? 0)} @click=${() => { this.flush(); this.commit(current => removeTurn(current, slot, index)); }}><ds-icon type="delete"></ds-icon></ds-button>
           </span></div>
         ${members.map(([name, member]) => isSlot(member)
           ? member.type === 'picture' ? picture(index, name, member, turn[name] as NativePicture | undefined) : nothing
-          : html`<ds-input label=${fieldWords(name)} aria-label=${`${fieldWords(name)} of turn ${index + 2}`} maxlength=${(member as FieldDefinition).max ?? 1000} .value=${String(turn[name] ?? '')}
+          : member.type === 'choice' ? html`<label class="consistency-behaviour-field"><span class="consistency-behaviour-label">${fieldWords(name)}</span><ds-select><select aria-label=${`${fieldWords(name)} of ${noun} ${index + first}`} @change=${(event: Event) => { const value = (event.target as HTMLSelectElement).value; write(index, name, value === member.default ? undefined : value, member.required); }}>
+              ${(member.choices ?? []).map(choice => html`<option value=${choice} ?selected=${choice === (turn[name] ?? member.default)}>${choiceWords(choice)}</option>`)}</select></ds-select></label>`
+          : member.type === 'boolean' ? html`<div class="consistency-behaviour-switch"><span class="consistency-behaviour-label">${fieldWords(name)}</span><ds-switch compact monochrome><button type="button" role="switch" aria-checked=${String(turn[name] === true)} aria-label=${`${fieldWords(name)} of ${noun} ${index + first}`} @click=${() => write(index, name, turn[name] === true ? undefined : true)}></button></ds-switch></div>`
+          : html`<ds-input ?multiline=${((member as FieldDefinition).max ?? 0) >= 2000} auto-grow label=${fieldWords(name)} aria-label=${`${fieldWords(name)} of ${noun} ${index + first}`} maxlength=${(member as FieldDefinition).max ?? 1000} .value=${String(turn[name] ?? '')}
               @input=${(event: Event) => { const value = (event.target as HTMLElement & { value: string }).value; if (member.required && !value.trim()) return; this.later(() => write(index, name, value, member.required)); }} @change=${() => this.flush()}></ds-input>`)}
       </fieldset>`)}
-      <ds-button secondary ?disabled=${turns.length >= max} @click=${() => { this.flush(); this.commit(current => addTurn(current, slot, definition)); }}>Add turn</ds-button>
+      <ds-button secondary ?disabled=${turns.length >= max} @click=${() => { this.flush(); this.commit(current => addTurn(current, slot, definition)); }}>Add ${noun}</ds-button>
     </section>`;
   }
 
@@ -107,7 +118,7 @@ export class ConsistencyBehaviourPanel extends LitElement {
     return html`<header class="consistency-behaviour-head"><ds-text literal strong text=${heading}></ds-text>
         <ds-button icon label="Close" @click=${() => this.close()}><ds-icon type="close"></ds-icon></ds-button></header>
       <div class="consistency-behaviour-body">
-        ${behaviourMembers(section.kind).map(([name, member]) => isSlot(member) ? member.type === 'turns' ? this.turns(section, name, member) : nothing : this.field(section, name, member))}
+        ${behaviourMembers(section.kind).map(([name, member]) => isSlot(member) ? member.type === 'turns' || member.type === 'items' ? this.turns(section, name, member) : nothing : this.field(section, name, member))}
       </div>`;
   }
 }

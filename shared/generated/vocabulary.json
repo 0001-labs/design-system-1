@@ -2153,12 +2153,14 @@
         "action": {
           "type": "address",
           "required": true,
+          "group": "behaviour",
           "meaning": "Where the form posts: a path on the site itself, starting with /, answered by the site's enquiry receiver"
         },
         "button": {
           "type": "text",
           "max": 80,
           "default": "Send",
+          "group": "behaviour",
           "meaning": "The words on the button"
         },
         "measure": {
@@ -2187,6 +2189,7 @@
           "required": true,
           "min": 1,
           "max": 24,
+          "group": "behaviour",
           "meaning": "The fields, in order",
           "item": {
             "name": {

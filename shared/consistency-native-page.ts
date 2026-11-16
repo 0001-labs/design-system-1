@@ -597,7 +597,7 @@ function renderForm(block: NativeForm, options: NativePageRenderOptions): string
     return`<label class="ds-field" ${at}><span class="ds-field__label">${escape(item.label)}</span>${control}</label>`;
   };
   const button=escape(sectionField<string>(block,'button'));
-  return`<form class="c9y-native-form"${editor?'':` method="post" action="${escape(address(block.action))}"`} data-native-block="${escape(sub(id,'form'))}">${block.inputs.map(input).join('')}<span class="c9y-native-signup-trap" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><input name="website" tabindex="-1" autocomplete="off"></span>${editor?`<span class="ds-button ds-button--primary c9y-native-button">${button}</span>`:`<button type="submit" class="ds-button ds-button--primary c9y-native-button">${button}</button>`}</form>`;
+  return`<form class="c9y-native-form"${editor?'':` method="post" action="${escape(address(block.action))}"`} data-native-block="${escape(sub(id,'form'))}">${block.inputs.map(input).join('')}<span class="c9y-native-signup-trap" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><input name="website" tabindex="-1" autocomplete="off"${editor?' disabled':''}></span>${editor?`<span class="ds-button ds-button--primary c9y-native-button">${button}</span>`:`<button type="submit" class="ds-button ds-button--primary c9y-native-button">${button}</button>`}</form>`;
 }
 function renderList(block: NativeList, options: NativePageRenderOptions): string {
   const id=block.id,dated=sectionField<boolean>(block,'dated'),grouped=sectionField<boolean>(block,'grouped'),slot=block.collection?'collection':'items';

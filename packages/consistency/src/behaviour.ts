@@ -43,8 +43,12 @@ export function writeTurn(section: NativeSection, slot: string, index: number, n
 }
 /** A new turn after the others, its required words filled with their names so the page never shows an empty line. */
 export function addTurn(section: NativeSection, slot: string, definition: SlotDefinition): NativeSection {
-  const turn: Turn = {};
-  for (const [name, member] of Object.entries(definition.item ?? {})) if (member.required && (member.type === 'text' || member.type === 'words')) turn[name] = placeholderWords(name);
+  const turn: Turn = {}, others = turnsOf(section, slot);
+  for (const [name, member] of Object.entries(definition.item ?? {})) {
+    if (member.required && (member.type === 'text' || member.type === 'words')) turn[name] = placeholderWords(name);
+    // A name a record is known by (a form field's) is new among the others: field2, field3 and so on.
+    if (member.required && member.type === 'identifier') { let n = others.length + 1; while (others.some(other => other[name] === `${slot === 'inputs' ? 'field' : name}${n}`)) n++; turn[name] = `${slot === 'inputs' ? 'field' : name}${n}`; }
+  }
   return withTurns(section, slot, [...turnsOf(section, slot), turn]);
 }
 export const removeTurn = (section: NativeSection, slot: string, index: number): NativeSection => withTurns(section, slot, turnsOf(section, slot).filter((_, at) => at !== index));

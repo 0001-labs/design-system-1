@@ -495,14 +495,14 @@ export const SECTIONS: KindDefinition[] = [
     kind: 'form', layer: 'section',
     description: 'A form a visitor fills in and sends: a heading and a line, then its fields one under another and the button. It posts as an ordinary form, with no script, to an address on the site itself, which answers with the page to show next.',
     fields: {
-      action: { type: 'address', required: true, meaning: 'Where the form posts: a path on the site itself, starting with /, answered by the site\'s enquiry receiver' },
-      button: { type: 'text', max: 80, default: 'Send', meaning: 'The words on the button' },
+      action: { type: 'address', required: true, group: 'behaviour', meaning: 'Where the form posts: a path on the site itself, starting with /, answered by the site\'s enquiry receiver' },
+      button: { type: 'text', max: 80, default: 'Send', group: 'behaviour', meaning: 'The words on the button' },
       measure: { ...MEASURE, default: 'narrow' },
     },
     slots: {
       heading: words('A heading above the form'),
       text: words('A line or two under the heading'),
-      inputs: { type: 'items', required: true, min: 1, max: 24, meaning: 'The fields, in order', item: {
+      inputs: { type: 'items', required: true, min: 1, max: 24, group: 'behaviour', meaning: 'The fields, in order', item: {
         name: { type: 'identifier', max: 40, required: true, meaning: 'The name the value is sent under: a letter, then letters, digits, _ or -, at most 40; never website, which is the form\'s trap for robots' },
         label: { type: 'text', max: 200, required: true, meaning: 'The words over the field' },
         type: choice(['text', 'email', 'tel', 'textarea', 'choices', 'hidden'], 'text', 'One line of words, an email address, a phone number, several lines, a group of choices of which any may be ticked (`options`), or a value sent without being shown (`value`)'),

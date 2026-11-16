@@ -13,6 +13,8 @@ describe('a block\'s behaviour', () => {
     expect(behaviourMembers('hero').map(([name]) => name)).toEqual(['turnEvery', 'turnOrder', 'turns']);
     expect(hasBehaviour('hero')).toBe(true);
     expect(hasBehaviour('statement')).toBe(false);
+    // A form's address, button and fields are set in the panel too: its labels are not words written in place.
+    expect(behaviourMembers('form').map(([name]) => name)).toEqual(['action', 'button', 'inputs']);
     expect(hasBehaviour('nothing')).toBe(false);
   });
 
@@ -43,5 +45,13 @@ describe('a block\'s behaviour', () => {
     next = removeTurn(next, 'turns', 0);
     expect('turns' in next).toBe(false);
     expect(next).toEqual(hero());
+  });
+
+  it('adds a form field with a name of its own, which the page accepts', () => {
+    const inputs = kindDefinition('form')!.slots.inputs!;
+    const form = { id: 'write', kind: 'form', action: '/api/contact', inputs: [{ name: 'email', label: 'Email', type: 'email' }, { name: 'field2', label: 'Two' }] } as unknown as NativeSection;
+    const next = addTurn(form, 'inputs', inputs) as unknown as { inputs: { name: string; label: string }[] };
+    expect(next.inputs.at(-1)).toEqual({ name: 'field3', label: 'Label' });
+    expect(accepted(next as unknown as NativeSection)).toEqual(next);
   });
 });

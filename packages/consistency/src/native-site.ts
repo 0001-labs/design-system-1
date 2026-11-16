@@ -42,7 +42,8 @@ const label=(block:NativeBlock)=>block.kind==='component'?'Component':block.kind
 const MEASURE_PROPERTIES=['width','flex','--c9y-direction','--c9y-mobile-direction','--c9y-gap','--c9y-mobile-gap','--c9y-padding','--c9y-side-padding','--c9y-columns','--c9y-mobile-columns','--c9y-column-gap','--c9y-row-gap','--c9y-item-span','--c9y-featured-span','--c9y-image-height','--c9y-featured-image-height','--c9y-mobile-image-height','--c9y-image-fit','--c9y-hero-height','--c9y-split-columns','--c9y-split-image-height','--c9y-statement-width','--c9y-card-height','--c9y-gallery-height','--c9y-bento-height','--ds-footer-column-width','--ds-footer-line'];
 /** The members edited in place, so a change to one keeps the section's drawing; any other change draws the section again. */
 const WORD_MEMBERS=new Set(['title','text','kicker','heading','label','line','legal','tagline','answer','term','value','question','name']);
-const structureKey=(block:NativeBlock)=>JSON.stringify(block,(key,value)=>typeof value==='string'&&WORD_MEMBERS.has(key)?'':value);
+// A form's fields are set in the side panel and drawn by the renderer, never written in place: a change to any of them draws the form again.
+const structureKey=(block:NativeBlock)=>JSON.stringify(block,(key,value)=>typeof value==='string'&&WORD_MEMBERS.has(key)?'':value)+(block.kind==='form'?JSON.stringify((block as {inputs?:unknown}).inputs):'');
 /** Where a press landed: a block of the page, or a place in a section named by its derived id. */
 interface Hit { id:string; section?:string; path?:string[] }
 

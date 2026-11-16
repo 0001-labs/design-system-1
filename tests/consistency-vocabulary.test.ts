@@ -51,8 +51,8 @@ describe('the vocabulary record', () => {
       if (definition.layer === 'section') {
         expect(html, label).toContain(`class="c9y-native-node c9y-native-section`);
         expect(html, label).toContain(`data-section="${definition.kind}"`);
-        // A slot is drawn in its place; a behaviour is not drawn, it travels as data on the block for the page's behaviours.
-        for (const [name, slot] of Object.entries(definition.slots)) if ((example as unknown as Record<string, unknown>)[name] !== undefined) expect(html, `${label} slot ${name}`).toContain(slot.group === 'behaviour' ? ` data-${name}="` : `data-slot="${name}"`);
+        // A slot is drawn in its place; turns are not drawn, they travel as data on the block for the page's behaviours.
+        for (const [name, slot] of Object.entries(definition.slots)) if ((example as unknown as Record<string, unknown>)[name] !== undefined) expect(html, `${label} slot ${name}`).toContain(slot.type === 'turns' ? ` data-${name}="` : `data-slot="${name}"`);
       }
       expect(html, label).not.toMatch(/<script|javascript:/);
     });
