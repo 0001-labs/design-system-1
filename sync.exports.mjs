@@ -128,7 +128,7 @@ export default {
           'native-client.js.txt': client.outputFiles.find(file=>file.path.endsWith('.js'))?.text??'',
           'native-client.css.txt': client.outputFiles.find(file=>file.path.endsWith('.css'))?.text??'',
           'native-behaviours.js.txt': behaviours.outputFiles[0].text,
-          'native-scaling.js.txt': scaling.outputFiles[0].text,
+          'native-scaling.ts': `export default ${JSON.stringify(scaling.outputFiles[0].text)};\n`,
           'components.ts': String(read('shared/consistency-components.ts')).replace('./consistency-site-design','./site-design'),
           'template-pages.json': read('shared/consistency-template-pages.json'),
           'native-page.ts': String(read('shared/consistency-native-page.ts'))
