@@ -6,6 +6,7 @@ import { ColumnSpacingLayer } from './column-spacing';
 import { CardSpacingLayer } from './card-spacing';
 import { ResizingLayer } from './resize';
 import type { EditorMedia } from './media';
+import { applyProseLook, createProseProbe } from './prose-look';
 defineAaEditor();
 
 export interface NativeContentValue { source: string; gaps?: Record<string, number> }
@@ -20,6 +21,9 @@ export class NativeContentSurface {
   private resizing: ResizingLayer;
   private observer: MutationObserver;
   private dirtyField = false;
+  private probe: HTMLElement;
+  private stage: HTMLElement;
+  private lookDue = true;
   get pending() { return this.dirtyField; }
   constructor(private element: HTMLElement, readonly id: string, private options: {
     read(): NativeContentValue; commit(value: NativeContentValue): void;
@@ -34,8 +38,10 @@ export class NativeContentSurface {
     host.options = { ...optionsAa, atoms: optionsAa.atoms, comments: undefined, value: options.read().source, reordering: parseBlocks(options.read().source).length>1, placing: true };
     host.value = options.read().source;
     host.addEventListener('input', this.input);
-    const stage = element.ownerDocument.createElement('div'); stage.className = 'c9y-native-region consistency-sheet consistency-text-bounds';
-    element.replaceChildren(stage); stage.append(host);
+    const stage = this.stage = element.ownerDocument.createElement('div'); stage.className = 'c9y-native-region consistency-sheet consistency-text-bounds';
+    this.probe = createProseProbe(element.ownerDocument);
+    element.replaceChildren(stage); stage.append(host, this.probe); this.look();
+    element.ownerDocument.defaultView?.addEventListener('resize', this.relook);
     const controls = { enabled: options.enabled, value: (key: string, fallback: number) => this.preview[key] ?? options.read().gaps?.[key] ?? fallback,
       select: options.select, preview: (key: string, value: number) => { this.preview[key] = value; this.refresh(); },
       commit: (key: string, value: number) => { this.preview = {}; options.commit({ ...options.read(), gaps: { ...options.read().gaps, [key]: value } }); },
@@ -53,16 +59,20 @@ export class NativeContentSurface {
     else if (target.closest?.('.consistency-content-element')) this.dirtyField = true;
     this.options.commit({ ...this.options.read(), source: this.host.value });
   };
+  /** The words wear the page's look for them (prose-look.ts): read once the region stands in the page, and again when the page's width changes what its rules give. */
+  private look() { if (this.lookDue && applyProseLook(this.probe, this.stage)) this.lookDue = false; }
+  private relook = () => { this.lookDue = true; this.look(); };
   private mapImages = () => {
     for (const image of this.host.querySelectorAll<HTMLImageElement>('img')) { const source = image.getAttribute('src') ?? '', resolved = this.options.imageURL(source); if (resolved !== source) image.src = resolved; }
     for (const [index, block] of [...this.host.querySelectorAll<HTMLElement>(':scope > .aa-block')].entries()) block.dataset.selectable = `text:${this.id}:${index}`;
   };
   refresh() {
+    this.look();
     if (this.host.editor && this.host.editor !== this.historyEditor) { this.historyEditor = this.host.editor; this.host.editor.setHistoryProvider({ undo: this.options.undo, redo: this.options.redo }); }
     const source = this.options.read().source; if (this.host.value !== source) this.host.value = source;
     if(this.host.editor)this.host.editor.reordering=parseBlocks(source).length>1;
     this.spacing.refresh(); this.columns.refresh(); this.cards.refresh(); this.resizing.refresh(); this.mapImages();
   }
   focus() { this.host.focus(); }
-  destroy() { this.observer.disconnect(); this.spacing.destroy(); this.columns.destroy(); this.cards.destroy(); this.resizing.destroy(); this.host.removeEventListener('input', this.input); this.host.remove(); }
+  destroy() { this.element.ownerDocument.defaultView?.removeEventListener('resize', this.relook); this.observer.disconnect(); this.spacing.destroy(); this.columns.destroy(); this.cards.destroy(); this.resizing.destroy(); this.host.removeEventListener('input', this.input); this.host.remove(); }
 }

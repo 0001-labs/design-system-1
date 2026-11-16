@@ -42,6 +42,14 @@ Site-owned device artwork and chrome load through the authenticated file gateway
 
 Manual check: “Device frames load through site files and carousel insertion stays unavailable”.
 
+### `canvas.page-words`
+
+Headings and paragraphs written in the canvas wear what the page gives its own h1 to h3 and p where they stand: typeface, weight, size, line, spacing, alignment, measure and colour.
+
+Aa draws each as a div, which a site's heading and paragraph rules never reach.
+
+Held by `src/prose-look.test.ts`: “gives the words Aa draws the look the page gives its own headings and paragraphs”.
+
 ### `carousel.existing-content`
 
 Carousel slides keep their existing editable words, while menus and insertion commands cannot add writing, groups, sections or generated blocks inside them.
