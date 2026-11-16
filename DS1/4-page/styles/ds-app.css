@@ -38,7 +38,10 @@
   height: calc(var(--ds-app-bar) + var(--ds-app-top));
   padding: var(--ds-app-top) var(--ds-unit) 0;
   background: var(--ds-app-paper);
-  box-shadow: inset 0 -1px var(--ds-app-line);
+  /* The hairline is the grid's line under the bar's last square: the pixel below its edge, as the overlay draws it. */
+  position: relative;
+  z-index: 3;
+  box-shadow: 0 1px var(--ds-app-line);
 }
 
 .brand {

@@ -59,6 +59,7 @@ const frame = page => page.evaluate(() => {
     managed: document.documentElement.hasAttribute('data-ds-scaling-managed'),
     componentScale: Number(getComputedStyle(app).getPropertyValue('--ds-sf')),
     app: box(app), bar: box(shadow.querySelector('.bar')), page: box(app.page),
+    barLine: getComputedStyle(shadow.querySelector('.bar')).boxShadow,
     areas: Object.fromEntries(['nav', 'header', 'main', 'aside', 'footer'].map(name => [name, shown(name) ? box(area(name)) : null])),
     toggle: getComputedStyle(inner.querySelector('[part="drawer-toggle"]')).display !== 'none' && inner.querySelector('.bar').checkVisibility(),
     menu: !!shadow.querySelector('[part="menu"]') && shadow.querySelector('[part="menu"]').checkVisibility(),
@@ -78,6 +79,8 @@ for (const [width, height] of [[1280, 800], [1366, 768], [1440, 900], [1447, 900
     assert.ok(m.managed, 'the app scale tells the device module it manages --sf');
     assert.ok(Math.abs(m.componentScale * 20 - m.unit) < 1e-6, 'the components follow the scale');
     assert.ok(near(m.bar.height, 2 * m.unit + m.top), `bar ${m.bar.height} is 2 × ${m.unit} + ${m.top}`);
+    assert.match(m.barLine, / 0px 1px 0px/, `the bar's hairline is the pixel under its edge, where the grid's line is (${m.barLine})`);
+    assert.ok(!m.barLine.includes('inset'), 'the hairline is not inside the bar');
     for (const edge of ['left', 'top']) assert.ok(near(m.app[edge], 0), `the frame's ${edge} edge is the window's`);
     assert.ok(near(m.app.right, m.width) && near(m.app.bottom, m.height), "the frame's right and bottom edges are the window's");
     assert.ok(near(m.page.bottom, m.height), 'the panes reach the bottom edge');
@@ -107,6 +110,18 @@ await check('the dividers drag and step in whole squares and the widths are reme
   const dragged = await frame(page);
   assert.equal(dragged.navWidth, 15, 'the drag snaps to fifteen squares');
   assert.ok(near(dragged.sidebar.width, 15 * dragged.unit), `the navigation stands on whole squares after the drag (${dragged.sidebar.width / dragged.unit})`);
+  await page.mouse.move(x + 20 * before.unit, y + 10 * before.unit);
+  const line = await page.evaluate(divider => {
+    const color = getComputedStyle(divider, '::before').backgroundColor;
+    const probe = document.createElement('i');
+    probe.style.color = 'var(--ds-text-color)';
+    divider.getRootNode().host.shadowRoot.append(probe);
+    const ink = getComputedStyle(probe).color;
+    probe.remove();
+    return { color, ink, focused: divider.getRootNode().activeElement === divider };
+  }, handle);
+  assert.equal(line.focused, false, 'a released divider keeps no focus');
+  assert.notEqual(line.color, line.ink, `the divider goes back to its light line once the pointer leaves (${line.color})`);
   await handle.focus();
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.down('Shift'); await page.keyboard.press('ArrowLeft'); await page.keyboard.up('Shift');

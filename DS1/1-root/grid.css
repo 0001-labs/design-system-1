@@ -56,7 +56,7 @@ ds-app:not(:defined) {
   overflow: hidden;
   background:
     linear-gradient(var(--ds-header-line, var(--ds-border-color, #e6e6e6)), var(--ds-header-line, var(--ds-border-color, #e6e6e6)))
-    0 calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px) - 1px) / 100% 1px no-repeat,
+    0 calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px)) / 100% 1px no-repeat,
     var(--ds-header-paper, var(--background, Canvas));
 }
 ds-app:not(:defined) > * { visibility: hidden; }

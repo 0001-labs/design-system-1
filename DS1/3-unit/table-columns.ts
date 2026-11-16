@@ -78,7 +78,7 @@ export class TableColumns implements ReactiveController {
     const handle = e.currentTarget as HTMLElement, metrics = this.metrics(handle, label, index);
     this.widths = this.initial(metrics.unit);
     this.drag = { pointer: e.pointerId, index, start: e.clientX, before: [...this.widths], ...metrics };
-    handle.focus(); handle.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
+    handle.focus({ preventScroll: true, focusVisible: false } as FocusOptions); handle.setPointerCapture(e.pointerId); handle.dataset.resizing = '';
   }
   private move = (e: PointerEvent) => {
     const d = this.drag; if (!d || e.pointerId !== d.pointer) return;
@@ -94,6 +94,7 @@ export class TableColumns implements ReactiveController {
     cancelAnimationFrame(this.resizeFrame); this.resizeFrame = 0;
     this.widths = cancelled ? d.before : this.widths.map((w, i) => snapColumn(w, d.unit, i === d.index ? d.minimum : 2 * d.unit));
     delete handle.dataset.resizing;
+    handle.blur();
     if (handle.hasPointerCapture?.(d.pointer)) handle.releasePointerCapture(d.pointer);
     this.options.apply(this.widths); this.host.requestUpdate(); this.measure();
     if (!cancelled) this.emit(d.unit);

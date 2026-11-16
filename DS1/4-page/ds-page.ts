@@ -264,7 +264,8 @@ export class Page extends LitElement {
     if (event.button !== 0 || this.drag) return;
     event.preventDefault();
     const handle = event.currentTarget as HTMLElement;
-    handle.focus();
+    // Focused for Escape while dragging, never shown as focused: only a keyboard's focus darkens the line.
+    handle.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     handle.setPointerCapture(event.pointerId);
     const area = handle.dataset.resize === "aside" ? "aside" : "nav";
     const { available, unit } = this.splitMetrics(area);
@@ -277,6 +278,7 @@ export class Page extends LitElement {
     if (!drag || drag.id !== event.pointerId) return;
     if (event.type === 'pointerup') this.resizePointer(event);
     this.cancelResize();
+    drag.handle.blur();
     if (event.type === 'pointerup') this.resizeTo(drag.width / drag.available, drag.area);
   }
   private resizeKeyboard(event: KeyboardEvent) {
