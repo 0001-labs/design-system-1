@@ -5,6 +5,7 @@ import { renderNativeRegion } from '../shared/consistency-native-content';
 describe('the booking block', () => {
   it('reads its words, with defaults for those left out, and refuses anything else', () => {
     expect(readMeetings(EMPTY_MEETINGS_SOURCE)).toEqual({ kind: 'meetings', ...MEETINGS_DEFAULTS });
+    expect(readMeetings('```c9y-meetings\n{"message":"Send a message"}\n```')?.message).toBe('Send a message');
     expect(readMeetings('```c9y-meetings\n{"button":"Talk to us"}\n```')?.button).toBe('Talk to us');
     // A page can only say what the labels read: never where the button leads.
     for (const bad of ['```c9y-meetings\n{"href":"https://evil.example"}\n```', '```c9y-meetings\n{"button":"Two\\nlines"}\n```', '```c9y-meetings\n[]\n```', '```c9y-meetings\nnot json\n```', `\`\`\`c9y-meetings\n{"note":"${'x'.repeat(301)}"}\n\`\`\``, '```c9y-signup\n{}\n```'])
@@ -18,11 +19,18 @@ describe('the booking block', () => {
   });
   it('publishes the button alone, opening the booking under it, with the booking page for a reader without scripts', () => {
     const html = renderNativeRegion('Let us talk.\n\n```c9y-meetings\n{"button":"<b>Book</b>"}\n```');
-    expect(html).toContain('<details class="c9y-native-meetings" data-c9y-meetings-inline><summary class="ds-button ds-button--primary c9y-native-button">&lt;b&gt;Book&lt;/b&gt;</summary>');
+    expect(html).toContain('<div class="c9y-native-meetings-choices"><details class="c9y-native-meetings" name="c9y-meetings" data-c9y-meetings-inline><summary class="ds-button ds-button--secondary c9y-native-button">&lt;b&gt;Book&lt;/b&gt;</summary>');
     expect(html).toContain('<div class="c9y-native-meetings-panel" data-c9y-meetings-panel><p class="c9y-native-meetings-note">Pick a time that suits you. You get a calendar invitation by email.</p>');
     expect(html).toContain(`<noscript><p><a href="${MEETINGS_PAGE}">Choose a time on the booking page</a></p></noscript>`);
     expect(html).not.toContain('<b>Book</b>');
+    expect(html).not.toContain('data-c9y-meetings-message');
     expect(MEETINGS_PAGE).toBe('/_c9y/meetings');
+  });
+  it('with a message, a second button of the same name beside it, hidden until the script gives it the page\'s form', () => {
+    const html = renderNativeRegion('```c9y-meetings\n{"message":"Send a message"}\n```');
+    expect(html).toContain('<details class="c9y-native-meetings" name="c9y-meetings" data-c9y-meetings-message hidden><summary class="ds-button ds-button--secondary c9y-native-button">Send a message</summary><div class="c9y-native-meetings-panel" data-c9y-message-panel></div></details></div>');
+    expect(html.match(/name="c9y-meetings"/g)?.length).toBe(2);
+    expect(writeMeetings({ ...MEETINGS_DEFAULTS, message: 'Send a message' })).toBe('```c9y-meetings\n{"message":"Send a message"}\n```');
   });
   it('draws a button that leads nowhere in the editor, its words marked to be written in place', () => {
     const html = meetingsMarkup(readMeetings(EMPTY_MEETINGS_SOURCE)!, { editor: true });
