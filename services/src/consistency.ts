@@ -2,8 +2,9 @@
 import { dashboard, ownerSessionCookie, sessionRequest } from './dashboard';
 import { authorizeReport, isStudioOwner, signedIn, type ReportsEnv } from './reports';
 import { hasOwnerSignIn, ownerRoutes, ownerSignOut, systemOwner, type OwnerEnv } from './consistency-owner';
-import { personHeaders, sitesApi, type Person } from './consistency-sites';
+import { googleReturn, personHeaders, sitesApi, type Person } from './consistency-sites';
 import { consistencyEmailFlowsEnabled } from './consistency-email-flows-access';
+import { CONSISTENCY_MEETINGS_FLAG, consistencyOwnerFlag } from './consistency-owner-flag';
 import { docsSiteApi, isDocsSiteRoute, withDocsSite } from './doc-pages';
 import { isLegalPath, legalPage } from './consistency-legal';
 import { consistencySocialAuth, isSocialAuthPath } from './consistency-social-auth';
@@ -152,6 +153,8 @@ export async function consistencyPreview(request: Request, env: ReportsEnv & Wor
   // c9y.site is where customers' sites live; its home is the app at consistency.site now.
   if (url.hostname === CONSISTENCY_HOST && url.pathname === '/' && ['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 302, headers: { ...security, Location: `https://${APP_HOST}/` } });
   if (url.hostname === APP_HOST && url.pathname !== '/' && !isAppPath(url.pathname)) return consistencySite(request, send);
+  // Google returns here after a site's calendar consent, from its own site and so without the app's session.
+  if (url.hostname === APP_HOST && url.pathname === '/api/consistency/google/callback') return ['GET', 'HEAD'].includes(request.method) ? googleReturn(url, security) : new Response(null, { status: 405, headers: security });
   const signingIn = await ownerRoutes(request, env);
   if (signingIn) return protect(signingIn);
   // Signing out ends the System session behind the owner's token too, on every Consistency site.
@@ -176,7 +179,7 @@ export async function consistencyPreview(request: Request, env: ReportsEnv & Wor
   // The documentation is this Worker's own site, answered here and never by the platform.
   if (isDocsSiteRoute(url.pathname)) return protect(await docsSiteApi(request, env, asking => authorizePerson(asking, env, send)));
   // A site's words, edited in the editor as the person asking; its page and files for the editor's sandboxed frame.
-  if (url.pathname.startsWith('/api/consistency/sites/')) return protect(await sitesApi(request, env, asking => authorizePerson(asking, env, send), () => consistencyEmailFlowsEnabled(env)), /\/files\//.test(url.pathname) ? 'private, no-cache' : undefined);
+  if (url.pathname.startsWith('/api/consistency/sites/')) return protect(await sitesApi(request, env, asking => authorizePerson(asking, env, send), () => consistencyEmailFlowsEnabled(env), () => consistencyOwnerFlag(env, CONSISTENCY_MEETINGS_FLAG)), /\/files\//.test(url.pathname) ? 'private, no-cache' : undefined);
   if (url.pathname === '/api/consistency/domains' || url.pathname.startsWith('/api/consistency/domains/')) return protect(await domainsApi(request, env, send));
   if (url.pathname === '/api/consistency/profile') return protect(await profileApi(request, env, send));
   if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 404, headers: security });

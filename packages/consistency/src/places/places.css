@@ -204,3 +204,6 @@ td[data-numeric] > .place-cell__press { justify-content: flex-end; text-align: e
 .place-peer-product__photos img{display:block;width:100%;aspect-ratio:1;object-fit:contain}
 .place-peer-product__description{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .place-peer-product__form label{display:flex;flex-direction:column;gap:calc(var(--ds-unit) / 2)}
+/* A site's meetings (site-meetings.ts): the days half a square apart, each box with its own name, and the meeting's name in a field of eight squares. */
+.place-meetings__days { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 calc(var(--ds-unit) / 2); }
+.place-meetings__name { width: calc(8 * var(--ds-unit)); }

@@ -27,6 +27,7 @@ import { ConsistencySiteEditor } from './site-editor';
 import { ConsistencyDocsEditor } from './docs-site';
 import type { SiteSummary } from './site-editing';
 import { PLACES, shownPlaces, sitePlaces, type SitePlace } from './places/index';
+import { keepGoogleReturn } from './places/google-return';
 import { OPEN_PAGE } from './places/pages';
 import { PANEL_EVENT } from './behaviour';
 import { SidebarEdge } from './sidebar-edge';
@@ -73,7 +74,8 @@ export function placeFrom(state: unknown): Place {
  */
 export function openingPlace(search: string, hash: string, state: unknown): Place {
   const open = new URLSearchParams(search).get('open');
-  if (open && SITE_CODE.test(open)) return { page: 'site', code: open };
+  // Back from Google's consent for a site's calendar: its settings finish the connection (`places/google-return.ts`).
+  if (open && SITE_CODE.test(open)) return keepGoogleReturn(search) ? { page: 'site', code: open, place: 'settings' } : { page: 'site', code: open };
   if (hash === '#domains' || hash === '#settings' || hash === '#settings/domains') return { page: 'settings', tab: 'domains' };
   if (hash === '#settings/account') return { page: 'settings', tab: 'account' };
   if (hash === '#settings/workspaces') return { page: 'settings', tab: 'workspaces' };

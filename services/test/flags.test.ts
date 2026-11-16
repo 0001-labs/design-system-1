@@ -20,7 +20,7 @@ describe('owner flag management',()=>{
     const {env,send}=setup();
     const response=await featureFlags(request(),env,send);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual([expect.objectContaining({key:'consistency-ask',enabled:false,inherited:true}),expect.objectContaining({key:'consistency-email-flows',enabled:false,inherited:true}),expect.objectContaining({key:'base-live-editing',enabled:false,inherited:true}),expect.objectContaining({key:'consistency-component-routing',enabled:false,inherited:true})]);
+    expect(await response.json()).toEqual([expect.objectContaining({key:'consistency-ask',enabled:false,inherited:true}),expect.objectContaining({key:'consistency-email-flows',enabled:false,inherited:true}),expect.objectContaining({key:'consistency-meetings',enabled:false,inherited:true}),expect.objectContaining({key:'base-live-editing',enabled:false,inherited:true}),expect.objectContaining({key:'consistency-component-routing',enabled:false,inherited:true})]);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
   it('rejects undeclared flags without writing a rule',async()=>{

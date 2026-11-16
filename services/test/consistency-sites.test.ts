@@ -236,3 +236,39 @@ it('Site settings\' badge is a same-origin JSON write passed to the platform, an
   const passed = workspace.fetch.mock.calls.at(-1)![0] as Request;
   expect([passed.method, new URL(passed.url).pathname, await passed.text()]).toEqual(['PUT', '/api/consistency/sites/10VNDG/badge', '{"show":true}']);
 });
+
+it('answers a site\'s meetings to the owner alone, and only while their flag is on', async () => {
+  const { call, workspace } = setup();
+  expect(apiRoute('meetings')?.methods).toEqual(['GET', 'PUT']);
+  expect(apiRoute('meetings/google')?.methods).toEqual(['POST', 'DELETE']);
+  expect(apiRoute('meetings/google/callback')?.methods).toEqual(['POST']);
+  expect(apiRoute('meetings/tokens')).toBeNull();
+  // The flag store is missing here, which reads as Off.
+  expect((await call('10VNDG/api/meetings', { headers })).status).toBe(404);
+  expect(workspace.fetch).not.toHaveBeenCalled();
+  const { sitesApi } = await import('../src/consistency-sites');
+  const env = { CONSISTENCY_WORKSPACE: { fetch: vi.fn(async (request: Request) => Response.json({ path: new URL(request.url).pathname, method: request.method })) } } as never;
+  const owner = async () => ({ owner: true }) as const, member = async () => ({ owner: false, email: 'm@example.com' }) as const;
+  const ask = (person: typeof owner | typeof member, on: boolean, route = 'meetings', init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/${route}`, init), env, person, async () => false, async () => on);
+  expect((await ask(member, true)).status).toBe(404);
+  expect((await ask(owner, false)).status).toBe(404);
+  expect((await ask(owner, false, 'meetings/google/callback', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(404);
+  expect(await (await ask(owner, true)).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings', method: 'GET' });
+  expect(await (await ask(owner, true, 'meetings/google', { method: 'DELETE', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings/google', method: 'DELETE' });
+  // A write from another origin never reaches the platform.
+  expect((await ask(owner, true, 'meetings/google', { method: 'POST', headers: { origin: 'https://elsewhere.example', 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(403);
+});
+
+it('hands Google\'s return on to the app, naming the site its state opens with', async () => {
+  const { googleReturn } = await import('../src/consistency-sites');
+  const page = (query: string) => googleReturn(new URL(`https://consistency.site/api/consistency/google/callback${query}`), {});
+  const state = `60BVFI.${'a'.repeat(43)}`;
+  const returned = page(`?state=${state}&code=4/0Ab-c_d&scope=x`);
+  expect(returned.headers.get('Cache-Control')).toBe('no-store');
+  expect(returned.headers.get('Referrer-Policy')).toBe('no-referrer');
+  expect(await returned.text()).toContain(`<meta http-equiv="refresh" content="0;url=/?open=60BVFI&amp;google_code=4%2F0Ab-c_d&amp;google_state=${state}">`);
+  expect(await page(`?state=${state}&error=access_denied`).text()).toContain('url=/?open=60BVFI&amp;google_error=access_denied"');
+  expect(await page(`?state=${state}&error=<script>`).text()).toContain('google_error=failed"');
+  // A state that names no site goes to the app's front with nothing.
+  expect(await page('?state=nonsense&code="><script>').text()).toContain('content="0;url=/"');
+});

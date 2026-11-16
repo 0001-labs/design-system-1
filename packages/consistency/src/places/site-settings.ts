@@ -6,6 +6,7 @@ import '../../../../DS1/2-core/ds-switch';
 import '../../../../DS1/3-unit/ds-row';
 import '../../../../DS1/2-core/ds-text';
 import type { SiteSummary } from '../site-editing';
+import './site-meetings';
 import './places.css';
 
 export class ConsistencySiteSettings extends LitElement {
@@ -88,6 +89,7 @@ export class ConsistencySiteSettings extends LitElement {
         <ds-text literal tone="muted" wrap text=${this.site.domain ? 'Built with Consistency, in the bottom left corner of every page.' : 'A site on its colour address always shows Built with Consistency, in the bottom left corner of every page.'}></ds-text>
         ${this.badgeError ? html`<ds-message danger role="alert">${this.badgeError}</ds-message>` : nothing}
       </div>
+      <consistency-site-meetings .site=${this.site}></consistency-site-meetings>
       ${this.confirming ? html`<div class="place-section">
         <p>Delete <strong>${this.site.name}</strong> and its pages, builds and site data permanently.</p>
         <label>Type <code class="place-code">${this.site.code}</code> to confirm.
