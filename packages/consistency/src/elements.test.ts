@@ -9,7 +9,8 @@ it('round-trips component Markdown with quotes, newlines and closing fences', ()
   expect(readContentElement('```c9y-card\n{"label":"x","title":3}\n```')).toBeNull();
 });
 it('offers slash insertions with real DS1 faces and read-only permissions', () => {
-  for (const atom of contentElementAtoms(() => false).filter(each => each.fence !== 'c9y-signup')) {
+  // Signup and Booking hold only their words (words-atom.ts) and have tests of their own below.
+  for (const atom of contentElementAtoms(() => false).filter(each => each.fence !== 'c9y-signup' && each.fence !== 'c9y-meetings')) {
     expect(atom.insert?.label).toMatch(/Button|Card|Carousel/);
     expect(readContentElement(atom.insert!.source)?.kind).toBe(atom.fence!.slice(4));
     const host = document.createElement('span'); document.body.append(host);
@@ -110,4 +111,20 @@ it('draws the signup block as its published form, its words written in place and
   readOnly.draw!(other, atom.insert!.source);
   other.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
   expect(other.querySelector('[data-signup-field="note"] [contenteditable="true"]')).toBeNull();
+});
+
+it('draws the booking block as its published button, its words written in place and kept on leaving a field', () => {
+  const atom = contentElementAtoms(() => true).find(each => each.fence === 'c9y-meetings')!;
+  expect(atom.insert?.label).toBe('Booking');
+  const host = document.createElement('div'); document.body.append(host);
+  const sources: string[] = [];
+  host.addEventListener('aa-atom-source', event => sources.push((event as CustomEvent<{ source: string }>).detail.source));
+  atom.draw!(host, atom.insert!.source);
+  expect(host.classList.contains('consistency-content-meetings')).toBe(true);
+  expect(host.querySelector('a')).toBeNull();
+  const button = host.querySelector<HTMLElement>('[data-meetings-field="button"]')!;
+  expect(button.getAttribute('aria-label')).toBe('Booking button words');
+  button.querySelector<HTMLElement>('[contenteditable]')!.textContent = 'Talk to us';
+  host.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  expect(sources).toEqual(['```c9y-meetings\n{"button":"Talk to us"}\n```']);
 });

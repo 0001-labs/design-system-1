@@ -313,10 +313,10 @@ const components: C9yComponent[] = [
     layer: 'runtime',
     summary: 'A site takes meeting bookings: its owner connects a Google calendar under Site settings and sets the hours, and a visitor picks an open time on the site’s own booking page.',
     presents: ['ds-button', 'ds-switch', 'ds-select', 'ds-checkbox', 'ds-input', 'ds-row', 'ds-message'],
-    adds: ['a Google calendar connected by consent, its tokens sealed in the site’s own object', 'open times from the owner’s hours less the calendar’s busy times', 'a time held before the calendar is written, so it is given once', 'the meeting written to the calendar with a call link, the invitation sent by Google', 'limits by address and network on the public page', 'disconnecting takes the consent back at Google'],
+    adds: ['a Google calendar connected by consent, its tokens sealed in the site’s own object', 'open times from the owner’s hours less the calendar’s busy times', 'a time held before the calendar is written, so it is given once', 'the meeting written to the calendar with a call link, the invitation sent by Google', 'limits by address and network on the public page', 'disconnecting takes the consent back at Google', 'the Booking block: a button on a page that leads to the site’s booking page, its words written in place'],
     systems: ['Google Calendar', 'Consistency platform'],
-    realisedAs: [{ as: 'place', id: 'settings' }],
-    source: [APP('places/site-meetings.ts'), APP('places/meetings-view.ts'), APP('places/google-return.ts'), DS1('services/src/consistency-sites.ts'), PLATFORM('worker/meetings.ts'), PLATFORM('worker/meetings-shared.ts'), PLATFORM('worker/google-calendar.ts'), PLATFORM('worker/meeting-pages.ts')],
+    realisedAs: [{ as: 'place', id: 'settings' }, { as: 'atom', tag: 'c9y-meetings' }],
+    source: [APP('meetings-block.ts'), DS1('shared/consistency-meetings.ts'), APP('places/site-meetings.ts'), APP('places/meetings-view.ts'), APP('places/google-return.ts'), DS1('services/src/consistency-sites.ts'), PLATFORM('worker/meetings.ts'), PLATFORM('worker/meetings-shared.ts'), PLATFORM('worker/google-calendar.ts'), PLATFORM('worker/meeting-pages.ts')],
   },
   {
     id: 'c9y-connections',

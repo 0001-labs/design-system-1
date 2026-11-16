@@ -4,6 +4,7 @@ import { parseBlocks, blockRuns, readColumns, readTabs, tableRows, tableAlignmen
 import { readBasicContentElement } from './consistency-content';
 import { readCarousel } from './consistency-carousel';
 import { readSignup, signupMarkup } from './consistency-signup';
+import { meetingsMarkup, readMeetings } from './consistency-meetings';
 import { icons } from '../DS1/2-core/generated/icons-immediate';
 import { icons as extraIcons } from '../DS1/2-core/generated/icons-extra';
 import metrics from '../DS1/1-root/component-metrics.css?raw';
@@ -144,6 +145,8 @@ export function renderNativeRegion(source: string, options: { images?: readonly 
         }
         const signup = readSignup(block.source);
         if (signup) return signupMarkup(signup);
+        const meetings = readMeetings(block.source);
+        if (meetings) return meetingsMarkup(meetings);
         const carousel = readCarousel(block.source);
         if (carousel) {
           const name = `${prefix}-carousel-${++serial}`;

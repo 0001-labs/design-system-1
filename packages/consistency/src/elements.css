@@ -32,3 +32,6 @@
 .consistency-content-signup .c9y-native-signup-note { margin:0; color:var(--ds-text-color-muted); }
 .consistency-content-signup .c9y-native-signup-trap { display:none; }
 .consistency-content-signup .c9y-native-signup input { pointer-events:none; }
+/* The booking block (meetings-block.ts): the published button and its line, both written in place. */
+.consistency-content-meetings .c9y-native-meetings { display:grid; gap:calc(var(--ds-unit) / 2); justify-items:start; margin:0; }
+.consistency-content-meetings .c9y-native-meetings-note { margin:0; color:var(--ds-text-color-muted); }

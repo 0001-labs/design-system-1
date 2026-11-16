@@ -3,6 +3,7 @@ import { createSurfaceElement } from './editor-surface';
 import { createButtonActionControls } from './button-action';
 import { carouselAtom, readCarousel, type CarouselContent } from './carousel';
 import { signupAtom } from './signup';
+import { meetingsAtom } from './meetings-block';
 import { applyLibraryTokens } from './libraries';
 import type { Atom } from '../../../website/src/vendor/aa/aa';
 import '../../../DS1/2-core/ds-button';
@@ -194,5 +195,5 @@ export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTML
       return () => { actionControls?.dispose(); doc.removeEventListener('pointerdown', dismissAction, true); clearTimeout(leaveTimer); element.removeEventListener('pointerenter', enter); element.removeEventListener('pointermove', enter); element.removeEventListener('pointerleave', pointerLeave); observer.disconnect(); element.removeEventListener('consistency-resize', resize); element.removeEventListener('consistency-card-gap', gap); element.removeEventListener('focusin', focus); element.removeEventListener('focusout', leave); editors.forEach(editor => editor.destroy()); menu.remove(); element.removeEventListener('focusout', blur); element.removeEventListener('contextmenu', context); element.removeEventListener('keydown', key); };
     },
   }));
-  return [...atoms, carouselAtom(canWrite, getHost, media), signupAtom(canWrite, getHost)];
+  return [...atoms, carouselAtom(canWrite, getHost, media), signupAtom(canWrite, getHost), meetingsAtom(canWrite, getHost)];
 }
