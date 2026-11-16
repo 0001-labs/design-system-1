@@ -61,13 +61,20 @@ try {
 
   const startX = source.x + 12, startY = source.y + source.height / 2;
   await page.mouse.move(startX, startY);
+  const edit = '.consistency-control-edit:not([hidden])';
+  await page.waitForSelector(edit);
   await page.mouse.down();
   await page.mouse.move(startX - 8, startY + 8);
+  await frame.waitForSelector('html[data-drag-active]');
+  assert.equal(await page.$(edit), null, 'Edit is hidden during the drag');
+  assert.equal(await frame.evaluate(() => getSelection().isCollapsed), true, 'Dragging does not select text');
   await Promise.all([
     page.waitForResponse(response => response.request().method() === 'PUT' && response.url().includes('/api/native-page') && response.ok(), { timeout: 4000 }),
     (async () => {
       await page.mouse.move(dropX, startY, { steps: 12 });
       await page.mouse.up();
+      await frame.waitForSelector('[data-drag-overlay][style*="clip-path"]');
+
     })(),
   ]);
   assert.deepEqual(await orderIn(frame), expectedOrder, 'The editor shows the reordered slides');
@@ -80,6 +87,29 @@ try {
   const reopenedFrame = await reopened.contentFrame();
   await reopenedFrame.waitForSelector(titleSelector);
   assert.deepEqual(await orderIn(reopenedFrame), expectedOrder, 'The slide order survives reopening');
+
+  const previousScroll = await reopenedFrame.$eval(woodstockLink, card => {
+    const slide = card.parentElement;
+    const track = slide.parentElement;
+    track.scrollLeft = slide.offsetLeft - track.firstElementChild.offsetLeft;
+    track.scrollIntoView({ block: 'center' });
+    return track.scrollLeft;
+  });
+  const cardTitle = await (await reopenedFrame.waitForSelector(titleSelector)).boundingBox();
+  const row = await (await reopenedFrame.waitForSelector(track)).boundingBox();
+  const y = cardTitle.y + cardTitle.height / 2;
+  await page.mouse.move(cardTitle.x + 12, y);
+  await page.mouse.down();
+  await page.mouse.move(row.x + row.width - 8, y, { steps: 12 });
+  await reopenedFrame.waitForFunction((selector, previous) => document.querySelector(selector).scrollLeft > previous + 360,
+    { timeout: 4000 }, track, previousScroll);
+  await Promise.all([
+    page.waitForResponse(response => response.request().method() === 'PUT' && response.url().includes('/api/native-page') && response.ok(), { timeout: 4000 }),
+    page.mouse.up(),
+  ]);
+  const scrolledOrder = await orderIn(reopenedFrame);
+  assert.ok(scrolledOrder.indexOf('/projects/woodstock') > scrolledOrder.indexOf('https://using.link'),
+    'The slide lands beyond its old neighbour after the row scrolls');
 } finally {
   await browser?.close();
   await fixture.close();

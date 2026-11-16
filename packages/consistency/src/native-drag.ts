@@ -288,8 +288,6 @@ export class NativeDrag {
 
   private lifted(id: string) {
     const { page } = this;
-    (page.doc.activeElement as HTMLElement | null)?.blur?.();
-    page.doc.getSelection()?.removeAllRanges();
     page.hold();
     if (!this.group) page.select(new Set([id]));
     const entries = page.entries(), entry = entries.get(id);

@@ -50,7 +50,7 @@ Manual check: “Device frames load through site files and carousel insertion st
 
 ### `carousel.imported-row`
 
-Dragging from the linked text or picture of an imported slide carries the whole slide along its own row, including when the destination slide is partly clipped, while text in active editing remains selectable.
+Dragging from the linked text or picture of an imported slide carries the whole slide along its own row, including when the destination slide is partly clipped or revealed by scrolling at the edge, and the landing stays inside the track.
 
 Manual check: “node packages/consistency/tests/carousel-reorder.mjs”.
 
@@ -68,7 +68,7 @@ Manual check: “Carousel cards drag horizontally, save and reopen in their new 
 
 ### `selection.writing-only`
 
-Browser text selection stays inside active writing; canvas dragging, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.
+Browser text selection stays inside active writing; canvas dragging ends active text editing and hides Edit, Select All and browser-created ranges never select the page, and native context menus stay suppressed while editor menus remain available.
 
 Manual check: “Canvas selection stays within active writing”.
 

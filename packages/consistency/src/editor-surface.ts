@@ -25,6 +25,7 @@ export class EditorSurface {
     marquee: () => boolean;
     reorder: () => boolean;
     beforeMarquee?: () => void;
+    beforeDrag?: () => void;
     contextChanged?: (active: boolean) => void;
     contextRoot?: HTMLElement;
     /** A C9Y constraint broke as it was drawn: show it, so whoever edits sees what moved. */
@@ -53,7 +54,17 @@ export class EditorSurface {
   }
   private nativeDrag = (event: DragEvent) => { if (this.onCanvas(event)) event.preventDefault(); };
   get contextActive() { return this.paused; }
+  get dragging() { return this.root.ownerDocument.documentElement.hasAttribute('data-drag-active'); }
+  private clearWriting() {
+    for (const {doc} of this.boundaries) {
+      let active = doc.activeElement as HTMLElement | null;
+      while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement as HTMLElement;
+      if (active?.isContentEditable || active?.matches('input,textarea')) active.blur();
+      doc.getSelection()?.removeAllRanges();
+    }
+  }
   private textInput(event: Event) {
+    if (this.dragging) return false;
     let element = event.composedPath().find(node => (node as Node).nodeType === 1) as HTMLElement | undefined;
     // Selection events can be retargeted to a component's host rather than its editable label.
     while (element?.shadowRoot?.activeElement) element = element.shadowRoot.activeElement as HTMLElement;
@@ -72,7 +83,7 @@ export class EditorSurface {
     if (!selection?.rangeCount || selection.isCollapsed) return;
     let active = doc.activeElement as HTMLElement | null;
     while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement as HTMLElement;
-    if (active?.isContentEditable || active?.matches('input,textarea')) return;
+    if (!this.dragging && (active?.isContentEditable || active?.matches('input,textarea'))) return;
     for (let index = 0; index < selection.rangeCount; index++) {
       if (selection.getRangeAt(index).intersectsNode(scope.root)) { selection.removeAllRanges(); break; }
     }
@@ -118,7 +129,12 @@ export class EditorSurface {
       outOfTheWay: { duration: 180, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
       drop: { minDuration: 150, maxDuration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
       ...options,
-      onDragStart: start => { this.cancelMarquee(); options.onDragStart?.(start); },
+      onDragStart: start => {
+        this.cancelMarquee();
+        options.onDragStart?.(start);
+        this.options.beforeDrag?.();
+        this.clearWriting();
+      },
       onMovement: movement => { this.ledger.record(movement); options.onMovement?.(movement); },
     });
   }
