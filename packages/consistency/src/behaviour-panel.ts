@@ -36,7 +36,9 @@ export class ConsistencyBehaviourPanel extends LitElement {
   private pending?: { timer: number; write: () => void };
 
   createRenderRoot() { return this; }
-  connectedCallback() { super.connectedCallback(); this.setAttribute('role', 'complementary'); this.addEventListener('keydown', this.onKey); }
+  // The panel takes the focus when it opens, so Escape closes it at once and Tab goes to its first control; a control
+  // that keeps Escape for itself (the Number's own cancel) is left to it.
+  connectedCallback() { super.connectedCallback(); this.setAttribute('role', 'complementary'); this.tabIndex = -1; this.addEventListener('keydown', this.onKey); }
   disconnectedCallback() { super.disconnectedCallback(); this.flush(); this.removeEventListener('keydown', this.onKey); }
 
   /** The page changed (an edit here, an undo, another hand): draw the block as it stands. */

@@ -46,7 +46,7 @@ export class ConsistencyPageEditor extends LitElement {
     if (!this.panel.hidden) return;
     this.panel.hidden = false;
     this.dispatchEvent(new CustomEvent(PANEL_EVENT, { detail: { open: true }, bubbles: true }));
-    void this.panel.updateComplete.then(() => this.panel.querySelector<HTMLElement>('ds-number, ds-select select, ds-input')?.focus());
+    void this.panel.updateComplete.then(() => this.panel.focus());
   }
   private closeBehaviour() {
     this.panel.flush(); this.panel.target = undefined;

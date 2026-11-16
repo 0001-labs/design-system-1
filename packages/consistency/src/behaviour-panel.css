@@ -3,6 +3,8 @@ consistency-page-editor > .consistency-site-stage { position: relative; min-widt
 consistency-page-editor > .consistency-site-stage > .consistency-site-frame { flex: 1; min-width: 0; }
 consistency-behaviour-panel { flex: 0 0 calc(12 * var(--ds-unit)); min-width: 0; min-height: 0; display: flex; flex-direction: column; box-sizing: border-box; border-left: 1px solid var(--ds-border-color); background: var(--ds-paper); }
 consistency-behaviour-panel[hidden] { display: none; }
+/* Focused as a region when it opens: its controls show the focus, never the panel's own edge. */
+consistency-behaviour-panel:focus { outline: none; }
 .consistency-behaviour-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--ds-unit); padding: var(--ds-unit) var(--ds-unit) 0; }
 .consistency-behaviour-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--ds-unit); padding: var(--ds-unit); }
 /* A choice as a field: its label on a one-square line, as the text field's, then the Select hugging its words. */
