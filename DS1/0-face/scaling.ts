@@ -54,6 +54,12 @@ export interface ScalingConfig {
    * height's leftover goes to the top (see `alignedGrid`).
    */
   desktop?: "aligned";
+  /**
+   * With Desktop aligned, `"even"` takes an even number of squares across, so
+   * a page centred in the window has its middle on a line and a centred column
+   * an even number of squares wide stands on whole squares.
+   */
+  columns?: "even";
 }
 
 /** A computer's page under Desktop aligned. */
@@ -130,19 +136,20 @@ export function calculateScalingFactor(viewportWidth: number, config: ScalingCon
  * is rounded as elsewhere, for sharper lines and a fit that is no longer exact.
  * The rows are the whole squares that fit the height, and `top` is the rest.
  */
-export function alignedGrid(width: number, height: number, snap: ScalingSnap = false, pixelRatio = 1): AlignedGrid {
+export function alignedGrid(width: number, height: number, snap: ScalingSnap = false, pixelRatio = 1, columns?: "even"): AlignedGrid {
   if (!(width > 0)) return { factor: 1, columns: 0, rows: 0, top: 0 };
   const across = width / SQUARE;
-  const fewer = Math.max(1, Math.floor(across));
-  const more = Math.ceil(across);
-  const columns = across / fewer - 1 <= 1 - across / more ? fewer : more;
-  const exact = width / (columns * SQUARE);
+  const step = columns === "even" ? 2 : 1;
+  const fewer = Math.max(step, Math.floor(across / step) * step);
+  const more = Math.max(step, Math.ceil(across / step) * step);
+  const count = across / fewer - 1 <= 1 - across / more ? fewer : more;
+  const exact = width / (count * SQUARE);
   const factor = snap === "layout" ? toLayoutStep(exact) : snap === "pixel" ? toDevicePixel(exact, pixelRatio) : exact;
   const unit = SQUARE * factor;
   // A height that is whole squares must not lose one to a float's last digit.
   const rows = height > 0 ? Math.floor(height / unit + 1e-9) : 0;
   const top = height > 0 ? Math.max(0, Number((height - rows * unit).toFixed(4))) : 0;
-  return { factor, columns, rows, top };
+  return { factor, columns: count, rows, top };
 }
 
 // ============================================================================
@@ -222,7 +229,7 @@ function applyPage(root: HTMLElement, config: Partial<ScalingConfig>): number {
   const settings = { ...defaultScalingConfig, ...config };
   const pixelRatio = window.devicePixelRatio || 1;
   const aligned = !mobile && settings.desktop === "aligned" && settings.mode !== "fixed"
-    ? alignedGrid(width, document.documentElement.clientHeight || window.innerHeight || 0, settings.snap, pixelRatio)
+    ? alignedGrid(width, document.documentElement.clientHeight || window.innerHeight || 0, settings.snap, pixelRatio, settings.columns)
     : null;
   const factor = mobile ? calculateScalingFactor(width, settings, pixelRatio) : aligned?.factor ?? 1;
   root.style.setProperty("--sf", String(factor));

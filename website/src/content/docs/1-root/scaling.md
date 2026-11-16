@@ -64,6 +64,7 @@ It sets `--sf` on the root element, and `data-mobile` on a phone or tablet, and 
 | `baseWidth`, `minScale`, `maxScale` | 280, 0.75, 2 | The rule above. |
 | `mode` | `"auto"` | `"fixed"` keeps the scale at 1. |
 | `desktop` | none | `"aligned"` puts a computer's window on whole squares; see [Desktop aligned](#desktop-aligned). |
+| `columns` | none | With Desktop aligned, `"even"` takes an even number of squares across, so a centred column stands on whole squares. |
 | `root` | the document's root | The element that receives `--sf` and `data-mobile`. With an element `surface`, the element that receives that surface's `--sf`. |
 | `surface` | none | Scale a surface to its own width instead; see below. |
 
@@ -136,7 +137,9 @@ On a computer the root gets `data-desktop-aligned` and four values:
 - **The scroll bar's room is kept.** `grid.css` sets `scrollbar-gutter: stable` on the root, so a scroll bar that comes and goes never changes the width the scale is worked out from.
 - **Phones and tablets keep their own rule.** There the option does nothing: fourteen squares across, and none of the values above.
 
-`alignedGrid(width, height, snap, pixelRatio)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare. The [field grids example](/examples/desktop-aligned-grids/) lays pictures out on field grids of whole squares, after the Swiss grid systems: each picture fills whole fields with its caption on the square below, and a picture can run to the window's edge. The [Multitrack workbench](/start-here/examples/workbenches/) is a whole tool on it: its panes, tracks and beat grid are whole squares under the leftover.
+A page centred in the window, with its column in the middle, asks for an even count: `startScaling({ desktop: 'aligned', columns: 'even' })`, or `setScalingConfig({ desktop: 'aligned', columns: 'even' })` where the device module scales the page. The window's middle is then a line, so a centred column an even number of squares wide starts and ends on lines at every width. The scale moves a little further for it, at most two squares across the window.
+
+`alignedGrid(width, height, snap, pixelRatio, columns)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare. The [field grids example](/examples/desktop-aligned-grids/) lays pictures out on field grids of whole squares, after the Swiss grid systems: each picture fills whole fields with its caption on the square below, and a picture can run to the window's edge. The [Multitrack workbench](/start-here/examples/workbenches/) is a whole tool on it: its panes, tracks and beat grid are whole squares under the leftover.
 
 **Every application stands on it in the [App frame](/4-page/app/).** `ds-app` starts Desktop aligned through `startAppScale()` (`4-page/app-scale.ts`), which also has the shared components follow the scale (`--ds-sf` takes `--sf`) and marks the root `data-ds-scaling-managed`, so the device module reads that scale instead of putting its own. Its bar is two squares and the leftover, and its panes end on the window's bottom edge. Call `startAppScale()` first in an app's entry module, and never a second `startScaling()` beside it: two scales on one page fight.
 

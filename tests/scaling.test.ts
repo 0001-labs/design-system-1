@@ -296,3 +296,14 @@ test("startScaling keeps a computer aligned through resizes", () => {
   width = 1280; window.dispatchEvent(new Event("resize"));
   expect(root.style.getPropertyValue("--ds-grid-columns")).toBe("73");
 });
+
+test("even columns put a centred page's middle on a line", () => {
+  expect(alignedGrid(1440, 900, false, 1, "even").columns).toBe(72);
+  expect(alignedGrid(1450, 900).columns).toBe(73);
+  const even = alignedGrid(1450, 900, false, 1, "even");
+  expect(even.columns % 2).toBe(0);
+  expect([72, 74]).toContain(even.columns);
+  expect(even.factor * 20 * even.columns).toBeCloseTo(1450, 6);
+  for (let width = 300; width <= 2600; width += 7) expect(alignedGrid(width, 900, false, 1, "even").columns % 2, `${width}`).toBe(0);
+  expect(alignedGrid(25, 900, false, 1, "even").columns).toBe(2);
+});
