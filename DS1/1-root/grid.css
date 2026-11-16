@@ -45,3 +45,18 @@
 :root[data-desktop-aligned] body {
   padding-block-start: var(--ds-grid-top, 0px);
 }
+
+/* The app frame (4-page/ds-app.ts) before its script has run: already the
+   window, its bar's paper and hairline drawn, and what it holds out of sight,
+   so the first paint is the frame and nothing jumps into place. */
+ds-app:not(:defined) {
+  position: fixed;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--ds-header-line, var(--ds-border-color, #e6e6e6)), var(--ds-header-line, var(--ds-border-color, #e6e6e6)))
+    0 calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px) - 1px) / 100% 1px no-repeat,
+    var(--ds-header-paper, var(--background, Canvas));
+}
+ds-app:not(:defined) > * { visibility: hidden; }

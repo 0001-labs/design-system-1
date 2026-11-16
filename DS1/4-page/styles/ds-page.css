@@ -192,6 +192,12 @@
     margin-block-end: var(--ds-unit);
   }
   :host([drawer]) .page > .nav { display: none; }
+  /* The menu button stands in the frame's bar, or there is no navigation to fold: the header takes the whole width. */
+  :host([drawer]) .page:is([data-toggle-outside], :has(.nav[data-empty])) {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    grid-template-areas: "header" "main" "aside" "footer";
+  }
 }
 /* Important, as the layouts' own margins and hairlines for the navigation
  * reach it by more specific selectors. */
@@ -200,6 +206,16 @@
   padding: 0 !important;
   border: 0 !important;
   overflow: visible !important;
+}
+
+/* Flush: the work reaches over the square of room around it, to the page's edge
+ * or the hairline beside it, while its grid area (and every width) stays put. A
+ * header, a footer or an inspector under the work keeps its distance. */
+:host([flush]) .main { margin: calc(-1 * var(--ds-unit)); margin-inline: calc(var(--ds-page-bleed) - var(--ds-unit)); }
+:host([flush]) .page:not(:has(.header[data-empty])) .main { margin-block-start: 0; }
+:host([flush]) .page:not(:has(.footer[data-empty])) .main { margin-block-end: 0; }
+@container (max-width: 959px) {
+  :host([flush][layout="inspector"]) .page:not(:has(.aside[data-empty])) .main { margin-block-end: 0; }
 }
 
 /* Inspection: each area outlined and named by its slot, in the corner its
@@ -250,6 +266,8 @@
 @container (max-width: 959px) { .resize-aside { display: none; } }
 
 .page:has(.nav[data-empty]) .resize-nav, .page:has(.aside[data-empty]) .resize-aside { display: none; }
+/* No navigation, nothing for a drawer to hold: no menu button. */
+.page:has(.nav[data-empty]) > .bar { display: none; }
 
 /* An inspector without navigation is a document with properties, without an empty leading track. */
 :host([layout="inspector"]) .page:has(.nav[data-empty]) {

@@ -248,6 +248,8 @@ test("ds-page with drawer folds its navigation into the same drawer", async () =
   const toggle = root.querySelector<HTMLButtonElement>('[part="drawer-toggle"]')!;
   expect(toggle.getAttribute("aria-label")).toBe("Menu");
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  // The drawer's script loads after the first paint.
+  await vi.waitFor(() => expect(toggle.getAttribute("aria-haspopup")).toBe("dialog"));
   const nav = root.querySelector('[part="nav"]')!;
   const told: boolean[] = [];
   page.addEventListener("ds-page-drawer", event => told.push((event as CustomEvent<{ open: boolean }>).detail.open));

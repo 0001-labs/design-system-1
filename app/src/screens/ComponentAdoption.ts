@@ -4,6 +4,7 @@ import { AppElement, defineElement } from "../lib/element";
 import { button, loading, notice } from "../lib/ui";
 import type { AdoptionReport } from "../../../shared/component-adoption";
 import "./ComponentMatrix";
+import "../../../DS1/4-page/ds-app";
 export { ComponentMatrix } from "./ComponentMatrix";
 
 /** The private report: the component matrix and the icon matrix from the last published source snapshot. */
@@ -50,14 +51,14 @@ export class ComponentAdoption extends AppElement {
   }
 
   override render() {
-    return html`<main class="adoption" data-testid="component-adoption">
-      <header class="adoption-heading">
-        <div><p class="adoption-eyebrow">Reports · Private · <a href="/private-app/">App</a> · <a href="#glossary">Glossary</a></p><h1>Component adoption</h1></div>
-        <ds-button @click=${() => void (this.signOut ? this.signOut() : signOut())}>Sign out</ds-button>
-      </header>
+    return html`<ds-app name="Component adoption" home="/app/adoption" class="adoption-frame">
+      <p slot="bar" class="adoption-eyebrow">Reports · Private · <a href="/private-app/">App</a> · <a href="#glossary">Glossary</a></p>
+      <div slot="actions"><ds-button @click=${() => void (this.signOut ? this.signOut() : signOut())}>Sign out</ds-button></div>
+      <main class="adoption" data-testid="component-adoption">
       ${this.error ? notice(this.error, { tone: "danger", actions: button("Try again", () => { this.retry += 1; }) })
         : this.report ? html`<ds1-component-matrix .report=${this.report}></ds1-component-matrix><ds1-icon-matrix .report=${this.report}></ds1-icon-matrix>` : loading("Reading the source snapshot")}
-    </main>`;
+      </main>
+    </ds-app>`;
   }
 }
 defineElement("ds1-component-adoption", ComponentAdoption);

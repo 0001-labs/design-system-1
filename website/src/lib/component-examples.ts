@@ -746,6 +746,11 @@ document.querySelectorAll('[data-grid-option]').forEach(control => {
     html: '<ds-radio choice preview label="Green"><input type="radio" name="ink" value="green" aria-label="Green" checked><ds-swatch slot="preview" value="#99ff73" aria-hidden="true"></ds-swatch></ds-radio>\n<ds-radio choice preview label="Blue"><input type="radio" name="ink" value="blue" aria-label="Blue"><ds-swatch slot="preview" value="#ccccff" aria-hidden="true"></ds-swatch></ds-radio>\n<ds-radio choice preview label="Pink"><input type="radio" name="ink" value="pink" aria-label="Pink"><ds-swatch slot="preview" value="#f5aad1" aria-hidden="true"></ds-swatch></ds-radio>',
     height: 140,
   },
+  'app': {
+    title: 'An application in its frame', hint: 'The bar, the navigation, the work and an inspector. Drag a line beside a pane, or focus it and use the arrow keys: the pane moves in whole squares.',
+    html: '<ds-app name="Field notes" home="#" resize-key="example-app" nav-width="8" aside-width="8" fixed-scale>\n  <span slot="bar">Workspace / Spring survey</span>\n  <div slot="actions"><ds-button secondary>Share</ds-button></div>\n  <ds-sidebar slot="nav" label="Notebooks"></ds-sidebar>\n  <ds-row slot="header" fill><ds-text literal strong>Spring survey</ds-text><ds-button primary>New note</ds-button></ds-row>\n  <ds-list>\n    <ds-row fill><ds-text literal>Heron by the north pond</ds-text><ds-text literal tone="muted">Today</ds-text></ds-row>\n    <ds-row fill><ds-text literal>Willows coming into leaf</ds-text><ds-text literal tone="muted">Monday</ds-text></ds-row>\n    <ds-row fill><ds-text literal>Frogspawn in the ditch</ds-text><ds-text literal tone="muted">Sunday</ds-text></ds-row>\n  </ds-list>\n  <ds-list slot="aside" aria-label="Properties">\n    <ds-row fill><ds-text literal tone="muted">Notes</ds-text><ds-text literal>3</ds-text></ds-row>\n    <ds-row fill><ds-text literal tone="muted">Started</ds-text><ds-text literal>12 April</ds-text></ds-row>\n  </ds-list>\n</ds-app>',
+    height: 400,
+  },
   'page': {
     title: 'A standard page', hint: 'The sidebar layout: navigation on the left, a header and the work on the right. Every area is named.',
     html: '<ds-page layout="sidebar" divided view>\n  <ds-list slot="nav">\n    <ds-row><ds-text>Inbox</ds-text></ds-row>\n    <ds-row><ds-text>Projects</ds-text></ds-row>\n  </ds-list>\n  <ds-row slot="header" fill>\n    <ds-text literal strong>Projects</ds-text>\n    <ds-button primary>New item</ds-button>\n  </ds-row>\n  <ds-list>\n    <ds-row fill><ds-text>Write the brief</ds-text><ds-badge>Done</ds-badge></ds-row>\n    <ds-row fill><ds-text>Sketch the home page</ds-text><ds-badge>Next</ds-badge></ds-row>\n  </ds-list>\n</ds-page>',
@@ -774,7 +779,7 @@ export const PAGE_EXAMPLES: Record<string, string[]> = {
   '3-unit/calendar': ['calendar', 'calendar-compact', 'calendar-heat', 'calendar-range', 'calendar-picker', 'calendar-swimlane', 'calendar-activity'], '3-unit/matrix': ['matrix'],
   '3-unit/table': ['table'],
   '4-page/container': ['container'], '4-page/grid': ['grid'],
-  '4-page/page': ['page'],
+  '4-page/page': ['page'], '4-page/app': ['app'],
   '2-core/swatch': ['swatch'], '2-core/token': ['token'], '2-core/activity': ['activity'], '2-core/radio': ['radio-choice'],
   '3-unit/menu': ['menu', 'menu-floating'], '3-unit/avatar-group': ['avatar-group'],
   '4-page/header': ['header'], '4-page/footer': ['footer', 'footer-contact'], '4-page/document': ['document'],

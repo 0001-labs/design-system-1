@@ -1,0 +1,64 @@
+---
+// The app frame on a whole window: the bar, the navigation, the work and an inspector, Desktop
+// aligned. Resize the window and every pane still ends on a square; drag a divider and the pane
+// moves in whole squares and is remembered. On a phone the navigation is a drawer from the bar.
+import '../../../../DS1/1-root/one.css';
+---
+<!doctype html>
+<html lang="en" class="light-theme">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>App frame — example</title>
+    <meta name="description" content="An application in Design system 1's app frame: a bar two squares high over its navigation, its work and an inspector, resizable in whole squares." />
+    <script>
+      import { startAppScale } from '../../../../DS1/4-page/app-scale';
+      startAppScale();
+    </script>
+  </head>
+  <body>
+    <link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
+    <ds-app name="Field notes" home="/examples/app-frame/" resize-key="example-app-frame">
+      <nav slot="bar" class="crumbs" aria-label="Breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><span id="crumb" aria-current="page">Spring survey</span></nav>
+      <div slot="actions"><ds-button secondary>Share</ds-button></div>
+      <ds-sidebar slot="nav" id="notebooks" label="Notebooks"></ds-sidebar>
+      <ds-row slot="header" fill><ds-text literal strong id="title">Spring survey</ds-text><ds-button primary>New note</ds-button></ds-row>
+      <ds-list id="notes"></ds-list>
+      <ds-list slot="aside" aria-label="Properties" id="properties"></ds-list>
+    </ds-app>
+    <script>
+      import '../../../../DS1/4-page/ds-app';
+      import '../../../../DS1/3-unit/ds-sidebar';
+      import '../../../../DS1/3-unit/ds-list';
+      import '../../../../DS1/3-unit/ds-row';
+      import '../../../../DS1/2-core/ds-text';
+      import '../../../../DS1/2-core/ds-button';
+      import type { Sidebar } from '../../../../DS1/3-unit/ds-sidebar';
+
+      const notebooks: Record<string, { name: string; started: string; notes: [string, string][] }> = {
+        spring: { name: 'Spring survey', started: '12 April', notes: [['Heron by the north pond', 'Today'], ['Willows coming into leaf', 'Monday'], ['Frogspawn in the ditch', 'Sunday'], ['First swallows over the field', 'Saturday'], ['Wood anemones under the beeches', 'Friday']] },
+        garden: { name: 'Garden birds', started: '3 January', notes: [['Two goldfinches on the teasel', 'Today'], ['A wren in the hedge', 'Tuesday'], ['Blackbird singing at dusk', 'Sunday']] },
+        coast: { name: 'Coast walk', started: '28 March', notes: [['Oystercatchers at low tide', 'Wednesday'], ['Sea kale on the shingle', 'Wednesday']] },
+      };
+      const row = (words: string, end: string, muted = false) => `<ds-row fill><ds-text literal${muted ? ' tone="muted"' : ''}>${words}</ds-text>${end}</ds-row>`;
+      const sidebar = document.getElementById('notebooks') as Sidebar;
+      let open = 'spring';
+      function render() {
+        const notebook = notebooks[open]!;
+        sidebar.items = Object.entries(notebooks).map(([id, { name }]) => ({ id, label: name, href: `#${id}`, current: id === open }));
+        document.getElementById('crumb')!.textContent = notebook.name;
+        document.getElementById('title')!.textContent = notebook.name;
+        document.getElementById('notes')!.innerHTML = notebook.notes.map(([note, day]) => row(note, `<ds-text literal tone="muted">${day}</ds-text>`)).join('');
+        document.getElementById('properties')!.innerHTML = row('Notes', `<ds-text literal>${notebook.notes.length}</ds-text>`, true) + row('Started', `<ds-text literal>${notebook.started}</ds-text>`, true);
+      }
+      sidebar.addEventListener('sidebar-activate', event => {
+        event.preventDefault();
+        open = (event as CustomEvent).detail.id;
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>
+<style is:global>
+  html, body { margin: 0; background: var(--background); color: var(--text-color); }
+  .crumbs { display: flex; gap: calc(var(--ds-unit) / 2); min-width: 0; white-space: nowrap; }
+  .crumbs span:not([aria-current]) { color: var(--ds-text-color-muted); }
+</style>

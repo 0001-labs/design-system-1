@@ -271,6 +271,6 @@
   justify-content: var(--ds-button-align, center) !important;
 }
 :host([control="slotted"]) ::slotted(:is(button, a)) {
-  min-width: max-content !important;
+  min-width: var(--ds-button-min-width, max-content) !important;
   overflow: visible !important;
 }

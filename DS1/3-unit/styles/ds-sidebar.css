@@ -45,6 +45,8 @@ ds-button { --ds-corner-size: 0px; --ds-button-padding: 0; }
 ds-icon { transform: rotate(0deg); }
 ds-icon[data-open] { transform: rotate(90deg); }
 .choice { flex: 0 1 auto; min-width: 0; }
+/* A long label is cut inside its row, before the meta: the press target never reaches past the column. */
+.row > .choice { --ds-button-min-width: 0px; }
 .name:has(ds-icon) { display: flex; align-items: center; gap: calc(4px * var(--ds-sf)); }
 .name { overflow: hidden; white-space: nowrap; text-overflow: clip; }
 /* Cut words fade over their last square, never an ellipsis (0-face/cut-fade.ts marks them). */

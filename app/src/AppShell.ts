@@ -2,6 +2,7 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { siteNavigation, isNavigationCurrent } from "../../shared/site-navigation";
 import "../../shared/site-navigation.css";
+import "../../DS1/4-page/ds-app";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { editorSearch, type EditorNavigation, type EditorView } from "../../shared/editor-navigation";
@@ -11,7 +12,10 @@ import { authState, LiveQuery } from "./lib/backend";
 import { AppElement, defineElement } from "./lib/element";
 import { currentLocation, follow, href, matchRoute, navigate } from "./router";
 
-/** The site's navigation over the page it holds (`content`). */
+/**
+ * The page it holds (`content`) in Design system 1's app frame, the site's navigation in its bar.
+ * Framed in the documentation, whose own frame stands around it, the page alone.
+ */
 export class AppShell extends AppElement {
   static properties = { content: { attribute: false } };
   declare content: unknown;
@@ -96,20 +100,18 @@ export class AppShell extends AppElement {
     this.#current = !isLoading && isAuthenticated && editor && library
       ? { id: editor.id!, name: library.name, publishedVersion: library.publishedVersion, component: libraryComponent(search.get("component")), ...(search.get("view") === "overview" ? { view: "overview" as const } : {}) } : null;
     const account = isAuthenticated ? "/profile" : signInPath;
-    return html`<div class="app-shell">
-      <header class="ds-header ds-header--app site-navigation" data-ds-area="Navigation">
-        <div class="system-breadcrumb" aria-label="System breadcrumb">
-          <a class="site-brand" href="/" target=${ifDefined(embedded ? "_top" : undefined)}>Design system 1</a>
-        </div>
+    if (embedded) return html`<div class="app-shell"><div class="app-content">${this.content}</div></div>`;
+    return html`<ds-app class="app-shell" name="Design system 1" home="/" resize-key="ds1-app" flush data-ds-area="Navigation">
+      <div slot="bar" class="site-navigation app-bar">
         <nav aria-label="Main navigation" class="site-links">
           ${siteNavigation.filter(item => item.href !== "/app/libraries" || (!isLoading && isAuthenticated)).map(item => item.href.startsWith("/app/")
             ? html`<a href=${href(item.href.slice(4))} @click=${follow(item.href.slice(4))} aria-current=${ifDefined(isNavigationCurrent(item.href, `/app${path}`) ? "page" : undefined)}>${item.label}</a>`
-            : html`<a href=${item.href} target=${ifDefined(embedded ? "_top" : undefined)}>${item.label}</a>`)}
+            : html`<a href=${item.href}>${item.label}</a>`)}
         </nav>
-        <a class="site-account" href=${href(account)} @click=${follow(account)} aria-current=${ifDefined(path === "/signin" ? "page" : undefined)}>${isLoading ? "Account" : isAuthenticated ? "Account" : "Sign in"}</a>
-      </header>
+      </div>
+      <div slot="actions" class="site-navigation"><a class="site-account" href=${href(account)} @click=${follow(account)} aria-current=${ifDefined(path === "/signin" ? "page" : undefined)}>${isLoading ? "Account" : isAuthenticated ? "Account" : "Sign in"}</a></div>
       <div class="app-content">${this.content}</div>
-    </div>`;
+    </ds-app>`;
   }
 }
 defineElement("ds1-shell", AppShell);

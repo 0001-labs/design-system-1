@@ -94,6 +94,7 @@ export const ALL_LAYERS: DirectoryLayer[] = [
     color: 'pink',
     summary: 'Where units stand on the grid.',
     entries: [
+      { name: 'App frame', href: '/4-page/app/', tag: 'ds-app' },
       { name: 'Container', href: '/4-page/container/', tag: 'ds-container' },
       { name: 'Document', href: '/4-page/document/', tag: 'ds-document' },
       { name: 'Grid', href: '/4-page/grid/', tag: 'ds-grid' },

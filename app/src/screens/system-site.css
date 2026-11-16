@@ -1,6 +1,5 @@
-.system-site { min-height: 100dvh; }
-.system-navigation { display: flex; flex-direction: column; align-items: flex-start; gap: var(--ds-unit); }
-.system-navigation ds-sidebar { width: 100%; }
+.system-crumb { color: var(--ds-text-color-muted); white-space: nowrap; }
+.system-actions { display: flex; align-items: center; gap: var(--ds-unit); }
 .system-content { display: flex; flex-direction: column; gap: var(--ds-unit); min-width: 0; }
 .system-line { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--ds-unit) / 2); }
 .system-line code { font-family: var(--typeface-mono); font-size: calc(13px * var(--sf, 1)); }

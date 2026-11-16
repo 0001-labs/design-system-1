@@ -71,6 +71,7 @@
     "build:vite:min": "MINIFY=true vp build --config vite.config.lib.ts",
     "build:vite:feedback": "FEEDBACK=true MINIFY=true vp build --config vite.config.lib.ts",
     "build:types": "vp exec tsc --noEmit",
+    "e2e:app-frame": "node e2e/app-frame.mjs",
     "build:components": "vp run build:core && vp run build:units",
     "build:core": "vp run build:component -- DS1/2-core",
     "build:units": "vp run build:component -- DS1/3-unit",

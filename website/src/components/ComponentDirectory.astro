@@ -43,7 +43,8 @@ import { LAYERS } from '../lib/component-directory';
 
   .directory-layer-head {
     position: sticky;
-    top: calc(var(--site-header-height, 0px) + var(--directory-unit));
+    /* The work scrolls in its own pane, under the frame's bar. */
+    top: var(--directory-unit);
     align-self: start;
   }
   /* One square a line, the swatch and words on its lower sixteen. */

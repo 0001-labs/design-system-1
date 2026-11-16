@@ -5,7 +5,7 @@ import "../../../DS1/1-root/controls.css";
 import "../../../DS1/2-core/ds-cycle";
 import "../../../DS1/3-unit/ds-sidebar";
 import "../../../DS1/3-unit/ds-tabs";
-import "../../../DS1/4-page/ds-page";
+import "../../../DS1/4-page/ds-app";
 import type { SidebarItem } from "../../../DS1/3-unit/ds-sidebar";
 import { authState, authToken, signOut } from "../lib/backend";
 import { AppElement, defineElement } from "../lib/element";
@@ -251,10 +251,10 @@ export class PrivateFonts extends AppElement {
     const items: SidebarItem[] = fonts.map(font => ({ id: font.id, label: font.name, current: this.selected === font.id, disabled: busy }));
     const tab = (label: string, view: typeof mode, choose: () => void) => button(label, choose, { secondary: false, active: mode === view, pressed: mode === view });
 
-    return html`<main class=${`font-workspace${dark ? " font-workspace-dark" : ""}`} data-ds-surface>
-      <header class="ds-header ds-header--app fonts-header"><h1 class="ds-header__brand">Fonts</h1><span>Private workspace</span><div class="ds-header__actions">${control("Sign out", leave)}</div></header>
-      <ds-page layout="sidebar" nav-width="8" resizable resize-key="ds1-font-sidebar" divided fill drawer class="fonts-body">
-        <ds-sidebar slot="nav" label="Fonts" .items=${items} @sidebar-activate=${(event: CustomEvent<{ id: string }>) => { (event.currentTarget as HTMLElement).closest("ds-page")?.closeDrawer(); void this.#choose(event.detail.id); }}></ds-sidebar>
+    return html`<ds-app name="Fonts" home="/" layout="sidebar" nav-width="8" resize-key="ds1-font-sidebar" class=${`font-workspace${dark ? " font-workspace-dark" : ""}`}>
+        <span slot="bar" class="fonts-place">Private workspace</span>
+        <div slot="actions">${control("Sign out", leave)}</div>
+        <ds-sidebar slot="nav" label="Fonts" .items=${items} @sidebar-activate=${(event: CustomEvent<{ id: string }>) => { (event.currentTarget as HTMLElement).closest("ds-app")?.closeDrawer(); void this.#choose(event.detail.id); }}></ds-sidebar>
         <header slot="header" class="font-heading"><h2>${active?.name}</h2><span>${active?.detail}</span></header>
         <section class="font-desk" aria-label=${active?.name ?? ""}>
           <div class="font-toolbar">
@@ -270,8 +270,7 @@ export class PrivateFonts extends AppElement {
           </div>
         </section>
         <footer slot="footer" class="font-footer"><p role=${error ? "alert" : "status"}>${error || message || (mode === "draw" ? "Drag points and handles; double-click the outline to add a point. References are drawn behind, never copied." : this.family ? active?.development ? "Development study. Missing characters use a fallback." : mode === "glyphs" ? "Unsupported characters use a fallback." : "Edit the specimen text. Size changes stay inside the specimen." : "No substitute handwriting font is shown.")}</p>${error ? control("Try again", retry) : nothing}</footer>
-      </ds-page>
-    </main>`;
+    </ds-app>`;
   }
 }
 defineElement("ds1-private-fonts", PrivateFonts);

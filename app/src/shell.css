@@ -5,6 +5,8 @@
   --workbench-canvas: #fff;
   --workbench-line: #deded8;
   --workbench-muted: #64645e;
+  /* The app frame's bar above the work: two squares and Desktop aligned's leftover. */
+  --app-bar: calc(2 * var(--app-cell) + var(--ds-grid-top, 0px));
 }
 body { min-width: 0; overflow: auto; background: var(--workbench-panel); }
 .app-shell {
@@ -14,8 +16,8 @@ body { min-width: 0; overflow: auto; background: var(--workbench-panel); }
   line-height: var(--app-cell);
 }
 .app-shell .workbench {
-  height: calc(100dvh - var(--site-header-height));
-  height: round(down, calc(100dvh - var(--site-header-height)), var(--app-cell));
+  height: calc(100dvh - var(--app-bar));
+  height: round(down, calc(100dvh - var(--app-bar)), var(--app-cell));
   min-height: calc(30 * var(--app-cell));
   grid-template: 'header header' auto 'design code' minmax(0, 1fr) / minmax(0, 1fr) calc(22 * var(--app-cell));
 }
@@ -53,7 +55,7 @@ body { min-width: 0; overflow: auto; background: var(--workbench-panel); }
 .app-shell .auth-screen form { gap: var(--app-cell); }
 .app-shell .auth-screen label { font-size: calc(.65 * var(--app-cell)); line-height: var(--app-cell); }
 .app-shell .auth-screen input[type="email"] { min-height: calc(2 * var(--app-cell)); border-radius: 0; font-size: calc(.75 * var(--app-cell)); }
-.app-shell .dashboard { height: auto; min-height: calc(100dvh - var(--site-header-height)); padding-bottom: calc(3 * var(--app-cell)); }
+.app-shell .dashboard { height: auto; min-height: calc(100dvh - var(--app-bar)); padding-bottom: calc(3 * var(--app-cell)); }
 .app-shell .dashboard > section, .app-shell .dashboard > p, .app-shell .dashboard > .library-grid { max-width: none; margin: calc(2 * var(--app-cell)) calc(3 * var(--app-cell)); padding: 0; }
 .app-shell .library-grid { grid-template-columns: repeat(auto-fill, minmax(calc(14 * var(--app-cell)), 1fr)); gap: var(--app-cell); }
 .app-shell .library-card { border-radius: 0; min-height: calc(10 * var(--app-cell)); padding: var(--app-cell); gap: var(--app-cell); }

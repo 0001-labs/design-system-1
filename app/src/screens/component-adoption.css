@@ -12,6 +12,8 @@
 }
 .adoption h1, .adoption h2, .adoption p { margin: 0; font-size: inherit; line-height: var(--report-unit); font-weight: 400; }
 .adoption h1 { font-size: var(--report-unit); }
+.adoption-frame .adoption-eyebrow { margin: 0; white-space: nowrap; overflow: hidden; }
+.adoption-frame .adoption { padding: 0; }
 .adoption-heading, .adoption-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--report-unit); }
 .adoption-heading { margin-bottom: var(--report-unit); }
 .adoption-eyebrow, .adoption-meta { color: var(--base-darker-grey); }

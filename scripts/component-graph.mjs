@@ -87,6 +87,7 @@ export function componentGraph(ds1, names, { react = true } = {}) {
   if (['checkbox', 'radio', 'switch', 'color'].some(name => components.includes(name))) adapter('react/choice.ts');
   if (components.includes('overlay')) adapter('react/overlay.ts');
   if (components.includes('page')) adapter('react/page.ts');
+  if (components.includes('app')) adapter('react/app.ts');
   if (components.includes('header')) adapter('react/header.ts');
   if (components.includes('footer')) adapter('react/footer.ts');
   if (components.includes('document')) adapter('react/document.ts');

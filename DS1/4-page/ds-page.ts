@@ -1,7 +1,7 @@
 import { LitElement, html, unsafeCSS, type PropertyValues } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { define } from "../0-face/define";
-import { attachOverlay, type Drawer } from "../0-face/attach-overlay";
+import type { Drawer } from "../0-face/attach-overlay";
 import { getText } from "../0-face/i18n";
 import "../2-core/ds-icon";
 import controls from "../1-root/controls.css?inline";
@@ -36,7 +36,10 @@ export const PAGE_LAYOUTS: readonly PageLayout[] = ["sidebar", "split", "inspect
  * standing above the work: a menu button one square wide stands before the
  * header and opens it in a drawer over the page (0-face/attach-overlay.ts, the
  * header's), with focus kept inside, closed by Escape, its close button, a
- * link or the page widening, and the page's scroll held behind it.
+ * link or the page widening, and the page's scroll held behind it. A frame
+ * that has a bar of its own gives the page its menu button instead
+ * (`drawerToggle`): the page then draws no row for one, and the header takes
+ * the whole width.
  *
  * @element ds-page
  * @attr layout - `sidebar`, `split`, `inspector`, `column`, `centered` or `tiles`.
@@ -47,6 +50,7 @@ export const PAGE_LAYOUTS: readonly PageLayout[] = ["sidebar", "split", "inspect
  * @attr divided - Draws a hairline between the columns.
  * @attr measure - Width of the `column` or `centered` column in whole squares.
  * @attr fill - Takes its container's height; each column scrolls on its own.
+ * @attr flush - The work runs to its pane's edges (a wall of pictures, a canvas): the square of room around it goes, the navigation and the inspector keep theirs.
  * @attr view - Labels each area with its slot name, for inspection.
  * @attr drawer - Folds the navigation into a drawer on a narrow page.
  * @attr drawer-label - The menu button's and drawer's name: a translation key, the shared word "Menu" by default.
@@ -70,9 +74,11 @@ export class Page extends LitElement {
     divided: { type: Boolean, reflect: true },
     measure: { type: Number, reflect: true },
     fill: { type: Boolean, reflect: true },
+    flush: { type: Boolean, reflect: true },
     view: { type: Boolean, reflect: true },
     drawer: { type: Boolean, reflect: true },
     drawerLabel: { type: String, attribute: "drawer-label" },
+    drawerToggle: { attribute: false },
     landmark: { state: true },
   };
 
@@ -85,14 +91,22 @@ export class Page extends LitElement {
   declare divided: boolean;
   declare measure: number | undefined;
   declare fill: boolean;
+  declare flush: boolean;
   declare view: boolean;
   declare drawer: boolean;
   declare drawerLabel: string | undefined;
+  /** A menu button outside the page (an app's bar) that opens the drawer in place of the page's own. */
+  declare drawerToggle: HTMLElement | null;
   private declare landmark: boolean;
 
   static styles = [unsafeCSS(controls), unsafeCSS(styles)];
 
   private navigationDrawer: Drawer | null = null;
+  private drawerAttempt = 0;
+  /** The widths the page was given, before any remembered ones: what Enter and a double press go back to. */
+  private givenWidths = { nav: 12, aside: 12 };
+  /** Watches what the areas hold for `hidden`, so an area whose content is all hidden takes no room. */
+  private readonly hiding = typeof MutationObserver === "function" ? new MutationObserver(() => this.syncAreas()) : null;
   private readonly relabel = () => this.requestUpdate();
 
   constructor() {
@@ -104,8 +118,10 @@ export class Page extends LitElement {
     this.layout = "sidebar";
     this.divided = false;
     this.fill = false;
+    this.flush = false;
     this.view = false;
     this.drawer = false;
+    this.drawerToggle = null;
     this.landmark = true;
   }
 
@@ -123,6 +139,7 @@ export class Page extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.syncLandmark();
+    this.givenWidths = { nav: this.navWidth, aside: this.asideWidth };
     if (this.resizeKey) {
       try {
         const saved = JSON.parse(localStorage.getItem(this.resizeKey) || "null");
@@ -133,12 +150,16 @@ export class Page extends LitElement {
     }
     window.addEventListener("language-changed", this.relabel);
     window.addEventListener("translations-loaded", this.relabel);
+    if (this.hasUpdated && this.drawer) void this.attachDrawer();
+    if (this.hasUpdated) this.syncAreas();
   }
 
   disconnectedCallback() {
     window.removeEventListener("language-changed", this.relabel);
     window.removeEventListener("translations-loaded", this.relabel);
     this.cancelResize();
+    this.drawerAttempt++;
+    this.hiding?.disconnect();
     this.navigationDrawer?.destroy();
     this.navigationDrawer = null;
     super.disconnectedCallback();
@@ -157,21 +178,29 @@ export class Page extends LitElement {
 
   protected updated(changed: PropertyValues<this>) {
     super.updated(changed);
-    if (!changed.has("drawer")) return;
-    if (!this.drawer) {
-      this.navigationDrawer?.destroy();
-      this.navigationDrawer = null;
-      return;
-    }
+    if (!changed.has("drawer") && !changed.has("drawerToggle")) return;
+    void this.attachDrawer();
+  }
+
+  /** The drawer's script comes after the first paint: the toggle is drawn closed until it does. */
+  private async attachDrawer() {
+    const attempt = ++this.drawerAttempt;
+    this.navigationDrawer?.destroy();
+    this.navigationDrawer = null;
+    if (!this.drawer) return;
+    const { attachOverlay } = await import("../0-face/attach-overlay");
+    if (attempt !== this.drawerAttempt || !this.isConnected || !this.drawer) return;
     const root = this.renderRoot;
-    const toggle = root.querySelector<HTMLElement>('[part="drawer-toggle"]');
+    const toggle = this.drawerToggle ?? root.querySelector<HTMLElement>('[part="drawer-toggle"]');
     const panel = root.querySelector<HTMLDialogElement>('[part="drawer"]');
     const nav = root.querySelector('[part="nav"]');
-    if (!toggle || !panel || !nav || this.navigationDrawer) return;
+    if (!toggle || !panel || !nav) return;
     this.navigationDrawer = attachOverlay({
       toggle, panel, content: [nav],
       onToggle: open => this.dispatchEvent(new CustomEvent("ds-page-drawer", { bubbles: true, composed: true, detail: { open } })),
     });
+    // An id names an element in its own root only: a button outside the page cannot point at the panel.
+    if (toggle.getRootNode() !== panel.getRootNode()) toggle.removeAttribute("aria-controls");
   }
 
   private drag: { area: "nav" | "aside"; id: number; handle: HTMLElement; startX: number; startWidth: number; width: number; available: number; unit: number; rtl: boolean } | null = null;
@@ -265,7 +294,7 @@ export class Page extends LitElement {
   }
 
   private resetResize(area: "nav" | "aside" = "nav") {
-    if (this.layout !== "split") { const {available, unit} = this.splitMetrics(area); this.resizeTo((area === "aside" ? 12 : 8) * unit / available, area); }
+    if (this.layout !== "split") { const {available, unit} = this.splitMetrics(area); this.resizeTo(this.givenWidths[area] * unit / available, area); }
     else this.resizeTo(0.5);
   }
 
@@ -282,9 +311,9 @@ export class Page extends LitElement {
     const label = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     const close = getText("Close") || "Close";
     return html`
-      <div class="page" part="page" style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout !== "split" ? `--ds-page-nav: var(--ds-page-resize-width, calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable && this.layout === "inspector" ? `--ds-page-aside: var(--ds-page-resize-aside, calc(${Math.max(4, Math.min(24, Math.round(this.asideWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
-        <div class="bar" part="bar" ?hidden=${!this.drawer}>
-          <button class="ds-button ds-button--icon" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer">
+      <div class="page" part="page" ?data-toggle-outside=${!!this.drawerToggle} style=${ifDefined([measureStyle(this.measure), this.resizable && this.layout !== "split" ? `--ds-page-nav: var(--ds-page-resize-width, calc(${Math.max(4, Math.min(24, Math.round(this.navWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable && this.layout === "inspector" ? `--ds-page-aside: var(--ds-page-resize-aside, calc(${Math.max(4, Math.min(24, Math.round(this.asideWidth || 12)))} * var(--ds-unit)))` : undefined, this.resizable ? `--ds-page-split: ${Math.max(0.1, Math.min(0.9, Number.isFinite(this.split) ? this.split : 0.5))}` : undefined].filter(Boolean).join("; ") || undefined)}>
+        <div class="bar" part="bar" ?hidden=${!this.drawer || !!this.drawerToggle}>
+          <button class="ds-button ds-button--icon ds-overlay__toggle" part="drawer-toggle" type="button" aria-label=${label} aria-controls="drawer" aria-expanded="false">
             <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
           </button>
         </div>
@@ -302,13 +331,19 @@ export class Page extends LitElement {
     `;
   }
 
+  /** An area with nothing in it, or only hidden things, takes no room, so a header, a footer or an inspector is optional. */
+  private syncAreas() {
+    this.hiding?.disconnect();
+    for (const slot of this.renderRoot.querySelectorAll("slot")) {
+      const nodes = slot.assignedNodes({ flatten: true });
+      slot.parentElement?.toggleAttribute("data-empty", nodes.every(empty));
+      for (const node of nodes) if (node instanceof Element) this.hiding?.observe(node, { attributes: true, attributeFilter: ["hidden"] });
+    }
+  }
+
   firstUpdated() {
-    // An area with nothing in it takes no room, so a header or footer is optional.
-    this.renderRoot.querySelectorAll("slot").forEach(slot => {
-      const sync = () => slot.parentElement?.toggleAttribute("data-empty", slot.assignedNodes({ flatten: true }).every(empty));
-      slot.addEventListener("slotchange", sync);
-      sync();
-    });
+    this.renderRoot.querySelectorAll("slot").forEach(slot => slot.addEventListener("slotchange", () => this.syncAreas()));
+    this.syncAreas();
     this.syncLandmark();
   }
 }
@@ -324,7 +359,8 @@ export function measureStyle(measure: number | null | undefined): string | undef
 }
 
 function empty(node: Node): boolean {
-  return node.nodeType === Node.TEXT_NODE ? !node.textContent?.trim() : node.nodeType !== Node.ELEMENT_NODE;
+  if (node.nodeType === Node.TEXT_NODE) return !node.textContent?.trim();
+  return node.nodeType !== Node.ELEMENT_NODE || (node as Element).hasAttribute("hidden");
 }
 
 define("ds-page", Page);

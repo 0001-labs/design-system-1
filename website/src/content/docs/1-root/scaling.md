@@ -138,6 +138,8 @@ On a computer the root gets `data-desktop-aligned` and four values:
 
 `alignedGrid(width, height, snap, pixelRatio)` is the calculation alone, returning the scale, the columns, the rows and the leftover. See it at work on the [Desktop aligned example](/examples/desktop-aligned/): resize the window, and turn the mode off to compare. The [field grids example](/examples/desktop-aligned-grids/) lays pictures out on field grids of whole squares, after the Swiss grid systems: each picture fills whole fields with its caption on the square below, and a picture can run to the window's edge. The [Multitrack workbench](/start-here/examples/workbenches/) is a whole tool on it: its panes, tracks and beat grid are whole squares under the leftover.
 
+**Every application stands on it in the [App frame](/4-page/app/).** `ds-app` starts Desktop aligned through `startAppScale()` (`4-page/app-scale.ts`), which also has the shared components follow the scale (`--ds-sf` takes `--sf`) and marks the root `data-ds-scaling-managed`, so the device module reads that scale instead of putting its own. Its bar is two squares and the leftover, and its panes end on the window's bottom edge. Call `startAppScale()` first in an app's entry module, and never a second `startScaling()` beside it: two scales on one page fight.
+
 ## In the styles
 
 Write lengths as squares or `calc(Npx * var(--sf))`, never bare pixels, except hairlines. `[data-mobile]` on the root marks a phone or tablet for the few rules that differ there.

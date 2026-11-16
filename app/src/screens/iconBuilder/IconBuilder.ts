@@ -8,6 +8,7 @@ import "../../../../DS1/2-core/ds-input";
 import "../../../../DS1/2-core/ds-swatch";
 import "../../../../DS1/3-unit/ds-select";
 import "../../../../DS1/3-unit/ds-tabs";
+import "../../../../DS1/4-page/ds-app";
 import { authState } from "../../lib/backend";
 import { AppElement, defineElement } from "../../lib/element";
 import { button, loading, notice } from "../../lib/ui";
@@ -49,10 +50,10 @@ export class IconStudio extends AppElement {
   }
 
   override render() {
-    return html`<main class="icon-builder">
-      <header class="icon-builder-bar"><h1 class="ds-text ds-text--heading">Icon builder</h1>${button("Sign out", () => void this.signOut(), { secondary: false })}</header>
-      <div data-builder></div>
-    </main>`;
+    return html`<ds-app name="Icon builder" home="/" class="icon-builder">
+      <div slot="actions">${button("Sign out", () => void this.signOut(), { secondary: false })}</div>
+      <main data-builder></main>
+    </ds-app>`;
   }
 }
 defineElement("ds1-icon-studio", IconStudio);

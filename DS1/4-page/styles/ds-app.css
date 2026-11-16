@@ -13,6 +13,7 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  container-type: inline-size;
   display: grid;
   grid-template-rows: calc(var(--ds-app-bar) + var(--ds-app-top)) minmax(0, 1fr);
   min-width: 0;
@@ -64,6 +65,31 @@
   align-items: center;
   gap: 0;
   margin-inline-start: auto;
+}
+
+/* A sidebar takes its pane's width, so a divider resizes the navigation itself. */
+::slotted(ds-sidebar) { width: 100%; }
+
+/* The phone's menu button, in the bar's last square as the drawer's close
+   button stands in the drawer's, so one takes the other's place. */
+.menu { display: none; flex: none; margin-inline-end: calc((var(--ds-unit) - var(--ds-control-height)) / 2); }
+@container (max-width: 599px) {
+  .menu:not([hidden]) { display: inline-flex; }
+}
+/* On a phone the actions stand in the drawer, under the navigation, a square below it. */
+:host([data-narrow]) ::slotted([slot="nav"]) { margin-block-end: var(--ds-unit); }
+:host([data-narrow]) ::slotted([slot="actions"]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ds-unit);
+}
+
+/* The drawer's first row stands where the bar's does, its close button on the
+   menu button, and the navigation starts on the square under the bar. */
+ds-page::part(drawer) {
+  padding-block-start: calc(var(--ds-app-top) + (var(--ds-app-bar) - var(--ds-row-height)) / 2);
+  row-gap: calc((var(--ds-app-bar) - var(--ds-row-height)) / 2);
 }
 
 /* On a computer each pane scrolls on its own; on a phone the page is one

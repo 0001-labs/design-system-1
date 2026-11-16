@@ -5,7 +5,7 @@ import { authState } from '../lib/backend';
 import { OwnerSession } from './AdoptionDashboard';
 import { CONSTRAINT_CATALOGUE, FOUNDATION_CONSTRAINTS, exampleScore, type ExampleReport, type ExampleResult } from '../../../shared/constraint-catalogue';
 import { DOC_EXAMPLES } from '../../../shared/doc-examples';
-import '../../../DS1/4-page/ds-page';
+import '../../../DS1/4-page/ds-app';
 import '../../../DS1/3-unit/ds-sidebar';
 import '../../../DS1/3-unit/ds-bento';
 import '../../../DS1/2-core/ds-card';
@@ -119,15 +119,14 @@ export class SystemSite extends AppElement {
     if (!isAuthenticated) return html`<div class="app-shell"><ds1-sign-in private-title="System · Design system 1" .redirectTo=${'/signin'}></ds1-sign-in></div>`;
     if (this.#session.error) return html`<div class="system-site"><ds-text literal tone="danger" role="alert">${this.#session.error}</ds-text><ds-button @click=${this.#session.leave}>Sign out</ds-button></div>`;
     if (!this.#session.ready) return html`<ds-text literal>Checking access…</ds-text>`;
-    return html`<ds-page layout="sidebar" nav-width="8" resizable resize-key="ds1-system-sidebar" divided drawer class="system-site">
-      <div slot="nav" class="system-navigation"><ds-text literal strong>Design system 1</ds-text><ds-text literal tone="muted">System</ds-text>
-        <ds-sidebar label="System" .items=${sections.map(name => ({ id: name, label: name, href: `/${name.toLowerCase()}`, current: name === this.section }))}></ds-sidebar>
-        <ds-button href="https://designsystem1.com/">Documentation</ds-button><ds-cycle type="theme"></ds-cycle><ds-button @click=${this.#session.leave}>Sign out</ds-button>
-      </div>
+    return html`<ds-app name="System" home="/" layout="sidebar" nav-width="8" resize-key="ds1-system-sidebar" class="system-site">
+      <span slot="bar" class="system-crumb">${this.section}</span>
+      <div slot="actions" class="system-actions"><ds-button href="https://designsystem1.com/">Documentation</ds-button><ds-cycle type="theme"></ds-cycle><ds-button @click=${this.#session.leave}>Sign out</ds-button></div>
+      <ds-sidebar slot="nav" label="System" narrow .items=${sections.map(name => ({ id: name, label: name, href: `/${name.toLowerCase()}`, current: name === this.section }))}></ds-sidebar>
       <div class="system-content"><ds-text literal size="display" role="heading" aria-level="1">${this.section}</ds-text>
         ${this.section === 'Examples' ? this.catalogue() : this.section === 'Constraints' ? this.constraints() : this.section === 'Architecture' ? html`<ds1-architecture-document></ds1-architecture-document>` : html`<ds1-adoption-document></ds1-adoption-document>`}
       </div>
-    </ds-page>`;
+    </ds-app>`;
   }
 }
 defineElement('ds1-system-site', SystemSite);

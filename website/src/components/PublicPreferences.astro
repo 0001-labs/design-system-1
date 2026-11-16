@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import { transformSync } from 'esbuild';
 import themeBootstrapSource from '../../../DS1/0-face/theme-bootstrap.js?raw';
 // Inlined without its comments, as the scaling bootstrap is: the page carries the script, not its notes.
+// The scale is the app frame's (DS1/4-page/app-scale.ts), Desktop aligned, from the first paint.
 const themeBootstrap = transformSync(themeBootstrapSource, { minify: true }).code;
-const scalingBootstrap = transformSync(readFileSync(new URL('../../../DS1/0-face/scaling.ts', import.meta.url), 'utf8') + '\napplyScaling(); document.documentElement.style.setProperty("--ds-sf", "var(--sf)"); document.documentElement.toggleAttribute("data-docs-compact", document.documentElement.clientWidth / (parseFloat(document.documentElement.style.getPropertyValue("--sf")) || 1) <= 768);', { loader: 'ts', format: 'iife', minify: true }).code;
+const scalingBootstrap = transformSync(readFileSync(new URL('../../../DS1/0-face/scaling.ts', import.meta.url), 'utf8') + '\napplyScaling({ desktop: "aligned" }); document.documentElement.setAttribute("data-ds-scaling-managed", ""); document.documentElement.style.setProperty("--ds-sf", "var(--sf, 1)"); document.documentElement.toggleAttribute("data-docs-compact", document.documentElement.clientWidth / (parseFloat(document.documentElement.style.getPropertyValue("--sf")) || 1) <= 768);', { loader: 'ts', format: 'iife', minify: true }).code;
 const languages = [...new Set(['en', ...Object.keys(translations)])];
 ---
 <script is:inline define:vars={{ languages }}>

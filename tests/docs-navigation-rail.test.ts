@@ -7,8 +7,10 @@ it('uses the same navigation on desktop and in the phone drawer', () => {
   expect(existsSync('website/src/components/NavigationRail.astro')).toBe(false);
   expect(layout).not.toContain('NavigationRail');
   expect(layout).not.toContain('data-sidebar-collapsed');
-  expect(layout).toContain('resize-key="ds1-sidebar-width"');
-  expect(layout).toMatch(/<ds-page[^>]*resizable[^>]*drawer>/);
+  // The app frame: resizable panes, and the navigation in a drawer on a phone.
+  expect(layout).toMatch(/<ds-app[^>]*resize-key="ds1-sidebar-width"/);
+  expect(layout).toMatch(/<aside slot="nav"[^>]*><MySidebar \/><\/aside>/);
+  expect(layout).not.toContain('<ds-page');
   expect(sidebar.match(/<ds-sidebar\b/g)).toHaveLength(1);
   expect(sidebar).toContain('narrow');
 });

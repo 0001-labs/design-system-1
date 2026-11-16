@@ -11,8 +11,8 @@
 }
 .component-editor {
   display: block;
-  height: calc(100dvh - var(--site-header-height, 0px));
-  height: round(down, calc(100dvh - var(--site-header-height, 0px)), var(--editor-unit));
+  height: calc(100dvh - var(--app-bar));
+  height: round(down, calc(100dvh - var(--app-bar)), var(--editor-unit));
   min-height: calc(20 * var(--editor-unit));
   background: var(--ds-background, var(--workbench-panel));
   color: var(--ds-text-color);

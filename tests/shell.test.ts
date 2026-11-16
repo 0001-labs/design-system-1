@@ -9,7 +9,9 @@ import {
 } from '../website/src/lib/shell';
 
 const header = readFileSync('website/src/components/MyHeader.astro', 'utf8');
-const markup = header.slice(header.indexOf('<header'), header.indexOf('</header>') + '</header>'.length).replace(/\{[^{}]*\}/g, match => match === '{WORKSPACE_HREF}' ? '"/libraries/workspace/"' : '""');
+// The bar's pieces, slotted into the app frame: the brand, the breadcrumb and the account.
+const barEnd = header.indexOf('</a>', header.indexOf('id="shell-account"')) + '</a>'.length;
+const markup = header.slice(header.indexOf('<a slot="brand"'), barEnd).replace(/\{[^{}]*\}/g, match => match === '{WORKSPACE_HREF}' ? '"/libraries/workspace/"' : '""');
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
 afterEach(() => {
@@ -227,9 +229,10 @@ test('signed out is confirmed only once the browser holds no session token', () 
   expect(holdsSessionToken()).toBe(true);
 });
 
-test('the boot script runs first in the head, the crumb script right after the header', () => {
+test('the boot script runs first in the head, the crumb script right after the bar', () => {
   const head = readFileSync('website/src/components/MyHead.astro', 'utf8');
   expect(head.indexOf('set:html={bootScript()}')).toBeGreaterThan(-1);
   expect(head.indexOf('set:html={bootScript()}')).toBeLessThan(head.indexOf('<Default>'));
-  expect(header.indexOf('set:html={crumbScript()}')).toBeGreaterThan(header.indexOf('</header>'));
+  expect(header.indexOf('set:html={crumbScript()}')).toBeGreaterThan(barEnd);
+  expect(header.indexOf('set:html={crumbScript()}')).toBeLessThan(header.indexOf('<script>'));
 });

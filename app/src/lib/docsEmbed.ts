@@ -24,3 +24,20 @@ export function initializeDocsEmbed() {
   });
   window.parent.postMessage({ type: 'ds1:docs-ready' }, window.location.origin);
 }
+
+/**
+ * Inside the documentation's app frame the editor stands on the frame's scale: the parent's `--sf`
+ * (Desktop aligned on a computer), so its squares are the documentation's squares.
+ */
+export function followDocsScale() {
+  const root = document.documentElement;
+  const follow = () => {
+    const scale = getComputedStyle(window.parent.document.documentElement).getPropertyValue('--sf').trim() || '1';
+    root.style.setProperty('--sf', scale);
+    root.toggleAttribute('data-mobile', window.parent.document.documentElement.hasAttribute('data-mobile'));
+  };
+  root.setAttribute('data-ds-scaling-managed', '');
+  root.style.setProperty('--ds-sf', 'var(--sf, 1)');
+  follow();
+  window.addEventListener('resize', () => requestAnimationFrame(follow));
+}

@@ -73,6 +73,7 @@ Below 30 squares of width every layout becomes one column, navigation first. The
 | `divided` | false | Draws a hairline between the columns. |
 | `measure` | — | The width of the `column` or `centered` column, in whole squares. |
 | `fill` | false | Takes its container's full height; each column scrolls on its own, and a `resizable` divider stays whole beside them. |
+| `flush` | false | The work runs to its pane's edges, over the square of room around it; the other areas keep theirs. |
 | `view` | false | Outlines each area and names it, for inspection. |
 | `drawer` | false | Folds the navigation into a drawer on a narrow page. |
 | `drawer-label` | `Menu` | The menu button's and drawer's name, a translation key. |
@@ -120,9 +121,13 @@ The adapter does not register the element: import `4-page/ds-page` once in the b
 
 [Grid](/4-page/grid/) · [Container](/4-page/container/) · [Sidebar](/3-unit/sidebar/) · [List](/3-unit/list/) · [Row](/3-unit/row/)
 
-Sidebar pages also accept `resizable`. Their navigation and content resize continuously during the drag, then snap on release. Set `nav-width` to a width in squares (4–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press resets to eight squares. The divider stays hidden in the phone drawer.
+Sidebar pages also accept `resizable`. Their navigation and content resize continuously during the drag, then snap on release. Set `nav-width` to a width in squares (4–24); `ds-page-resize` reports `detail.navWidth`. Arrow keys move one square, Shift five, and Enter or a double press goes back to the given width. The divider stays hidden in the phone drawer.
 
 
 Inspector pages accept `resizable` too: both navigation and properties have independent full-height boundaries. `aside-width` sets the inspector width in squares; `ds-page-resize` reports `detail.asideWidth` alongside `detail.navWidth`. The inspector edge hides when its area stacks below the work. Escape cancels an active drag, restoring the previous layout without saving.
+
+A width is the column's content: a sidebar column of twelve squares holds twelve squares. With `divided`, the column's own box reaches half the gap to draw the hairline in its middle, so measured from the outside it is one square wider.
+
+An area whose content is all `hidden` is empty and takes no room, and the page watches `hidden`, so an inspector opens and closes by toggling it. Enter or a double press on a divider goes back to the width the page was given in `nav-width` or `aside-width` (twelve squares without one), not to a remembered width.
 
 Set `resize-key="my-app-columns"` to remember widths in this browser across navigation and visits. Each independent pane uses its own key. Storage is optional: resizing still works if the browser refuses it. Sidebar and inspector widths stay between four and twenty-four squares and reserve ten squares for the work.

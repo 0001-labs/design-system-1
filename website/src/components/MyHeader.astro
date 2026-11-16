@@ -9,24 +9,19 @@ const pageTitle = Astro.locals.starlightRoute?.entry?.data?.title ?? '';
 const account = Astro.url.pathname.replace(/\/$/, '') === '/account';
 ---
 
-{/* The live base: token values saved on this site. In the body, so it comes after every stylesheet the
-    build gathers into the head and its tokens win; before the content, so nothing draws without it. */}
-<link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
-<header id="shell-header" class="ds-header ds-header--app site-navigation docs-header" data-page-title={pageTitle}>
-  <nav class="system-breadcrumb" aria-label="Breadcrumb">
-    <a class="site-brand" href="/">Design system 1</a>
-    <ol class="shell-crumbs">
-      <li class="shell-crumb shell-crumb--workspace"><a id="shell-workspace" href={WORKSPACE_HREF} aria-label="My company"><ds-avatar id="shell-avatar" initial="M" aria-hidden="true"></ds-avatar><span id="shell-company" class="shell-words">My company</span></a></li>
-      <li class="shell-crumb shell-crumb--space"><span class="shell-separator" aria-hidden="true">/</span><a id="shell-space" class="shell-words" href="/">Documentation</a></li>
-      <li class="shell-crumb shell-crumb--page" hidden={!pageTitle}><span class="shell-separator" aria-hidden="true">/</span><span id="shell-page" class="shell-words" aria-current="page">{pageTitle}</span></li>
-    </ol>
-    <span id="private-component-context" hidden>App</span>
-  </nav>
-  <a id="shell-account" class="shell-account" href="/account/" aria-label="Account" aria-current={account ? 'page' : undefined}><ds-avatar icon="avatar" aria-hidden="true"></ds-avatar></a>
-</header>
+{/* The bar of the app frame (Layout.astro): signed out the brand, signed in the breadcrumb and the account. */}
+<a slot="brand" class="ds-button site-brand" href="/">Design system 1</a>
+<nav slot="bar" id="shell-header" class="system-breadcrumb" aria-label="Breadcrumb" data-page-title={pageTitle}>
+  <ol class="shell-crumbs">
+    <li class="shell-crumb shell-crumb--workspace"><a id="shell-workspace" href={WORKSPACE_HREF} aria-label="My company"><ds-avatar id="shell-avatar" initial="M" aria-hidden="true"></ds-avatar><span id="shell-company" class="shell-words">My company</span></a></li>
+    <li class="shell-crumb shell-crumb--space"><span class="shell-separator" aria-hidden="true">/</span><a id="shell-space" class="shell-words" href="/">Documentation</a></li>
+    <li class="shell-crumb shell-crumb--page" hidden={!pageTitle}><span class="shell-separator" aria-hidden="true">/</span><span id="shell-page" class="shell-words" aria-current="page">{pageTitle}</span></li>
+  </ol>
+  <span id="private-component-context" hidden>App</span>
+</nav>
+<a slot="actions" id="shell-account" class="shell-account" href="/account/" aria-label="Account" aria-current={account ? 'page' : undefined}><ds-avatar icon="avatar" aria-hidden="true"></ds-avatar></a>
 {/* Right after the crumbs' markup, before first paint: fill them from this browser's snapshot. */}
-<script is:inline set:html={crumbScript()} />
-<iframe id="navigation-auth" title="Account status" hidden aria-hidden="true" tabindex="-1"></iframe>
+<script is:inline slot="bar" set:html={crumbScript()} />
 
 <script>
   import '../lib/public-preferences';
@@ -108,8 +103,7 @@ const account = Astro.url.pathname.replace(/\/$/, '') === '/account';
 </script>
 
 <style>
-  .docs-header { display: flex; align-items: center; justify-content: space-between; gap: var(--site-unit); }
-  .docs-header .system-breadcrumb .site-brand { text-decoration: none; }
+  .site-brand { color: inherit; text-decoration: none; }
   #private-component-context { flex: none; color: var(--ds-text-color-muted); }
   #private-component-context[hidden] { display: none; }
 

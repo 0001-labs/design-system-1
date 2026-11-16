@@ -10,24 +10,26 @@ const libraryMode = pathname === '/libraries/playground' ? 'editor'
   : pathname === '/libraries/workspace' ? 'libraries'
   : pathname === '/libraries/design-system-1' ? 'base'
   : pathname === '/account' ? 'account' : null;
-// Starlight's PageFrame: drawn inside Starlight's own body, whose head is MyHead.
+// Starlight's PageFrame: drawn inside Starlight's own body, whose head is MyHead. Every page, the
+// documentation and the design system alike, stands in Design system 1's app frame.
 ---
 
-<MyHeader />
-<ds-page id="docs-page" class="docs-page" layout="sidebar" nav-width="8" resizable resize-key="ds1-sidebar-width" divided fill drawer>
+{/* The live base: token values saved on this site. In the body, so it comes after every stylesheet the
+    build gathers into the head and its tokens win; before the content, so nothing draws without it. */}
+<link rel="stylesheet" href="/ds1/base/latest.css" data-ds1-base />
+<iframe id="navigation-auth" title="Account status" hidden aria-hidden="true" tabindex="-1"></iframe>
+<ds-app id="docs-app" class="docs-app" name="Design system 1" layout="sidebar" nav-width="8" resize-key="ds1-sidebar-width" flush>
+  <MyHeader />
   <aside slot="nav" id="sidebar" class="sidebar" aria-label="Documentation navigation"><MySidebar /></aside>
   <main aria-label="Documentation content" class:list={['main-content', { 'main-content--app': libraryMode, 'main-content--tools': isTool || isExamples }]}>
     {libraryMode ? <LibraryWorkspace mode={libraryMode} /> : <slot />}
   </main>
-</ds-page>
+</ds-app>
 <style is:global>
   html, body { margin: 0; padding: 0; background: var(--ds-paper, var(--background)); color: var(--ds-text-color); }
-  .docs-page { height: calc(100dvh - var(--site-header-height)); }
-  .docs-page::part(page) { padding: 0 var(--site-unit); padding-inline-end: 0; }
-  .docs-page::part(nav) { padding-block: var(--site-unit); }
-  .docs-page::part(main) { margin-inline-start: calc(-1 * var(--site-unit)); }
+  .docs-app { --ds-app-paper: var(--ds-paper, var(--background)); }
   .sidebar { height: 100%; min-width: 0; }
-  .docs-page .docs-sidebar-shell { padding: 0; }
+  .docs-app .docs-sidebar-shell { padding: 0; }
   .main-content { height: 100%; min-width: 0; overflow-y: auto; }
   .main-content--app { padding: 0; overflow: hidden; }
   html[data-private-app-document] .main-content--app { overflow-y: auto; }
@@ -42,30 +44,29 @@ const libraryMode = pathname === '/libraries/playground' ? 'editor'
     --shell-paper: light-dark(color-mix(in srgb, var(--zenith-blue) 22%, var(--ds-paper, var(--background))), color-mix(in srgb, var(--zenith-blue) 7%, var(--ds-paper, var(--background))));
     --shell-ink: color-mix(in srgb, var(--ds-text-color) 8%, transparent);
   }
-  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(nav),
-  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(drawer) {
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-app::part(nav),
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-app::part(drawer) {
     background-color: var(--shell-paper);
     background-image: linear-gradient(to right, var(--shell-ink) 1px, transparent 1px), linear-gradient(to bottom, var(--shell-ink) 1px, transparent 1px);
-    background-size: var(--site-unit) var(--site-unit);
+    background-size: var(--ds-unit) var(--ds-unit);
     background-position: -0.5px -0.5px;
     background-attachment: local;
   }
-  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-page::part(nav) { display: flex; flex-direction: column; margin-inline-start: calc(-1 * var(--site-unit)); padding-inline-start: var(--site-unit); }
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-app::part(nav) { display: flex; flex-direction: column; margin-block: calc(-1 * var(--ds-unit)); margin-inline-start: calc(-1 * var(--ds-unit)); padding-block: var(--ds-unit); padding-inline-start: var(--ds-unit); }
+  html[data-signed-in]:not([data-shell-space="documentation"]) .sidebar { display: flex; flex: 1 0 auto; height: auto; }
   /* The sidebar grows with its rows instead of scrolling inside itself, and fills the pane when they are few. */
-  html[data-signed-in]:not([data-shell-space="documentation"]) :is(.sidebar, .docs-sidebar-shell) { display: flex; flex: 1 0 auto; height: auto; overflow: visible; }
+  html[data-signed-in]:not([data-shell-space="documentation"]) .docs-sidebar-shell { display: flex; flex: 1 0 auto; height: auto; overflow: visible; }
   /* The current and hovered rows' fills, drawn from the ink, so they read over the lines in both themes. */
   html[data-signed-in]:not([data-shell-space="documentation"]) #docs-navigation {
     height: auto;
     --ds-row-fill-current: color-mix(in srgb, var(--ds-text-color) 14%, transparent);
     --ds-row-fill-hover: color-mix(in srgb, var(--ds-text-color) 8%, transparent);
   }
-  @media (max-width: 599px) {
-    .docs-page::part(page) { padding: var(--site-unit); }
-    .docs-page::part(main) { margin: 0; }
-  }
 </style>
 <script>
-  import '../../../DS1/4-page/ds-page';
-  const page = document.querySelector('ds-page#docs-page')!;
-  document.getElementById('sidebar')?.addEventListener('sidebar-activate', () => page.closeDrawer());
+  import { startAppScale } from '../../../DS1/4-page/app-scale';
+  startAppScale();
+  import '../../../DS1/4-page/ds-app';
+  const app = document.querySelector('ds-app#docs-app')!;
+  document.getElementById('sidebar')?.addEventListener('sidebar-activate', () => app.closeDrawer());
 </script>

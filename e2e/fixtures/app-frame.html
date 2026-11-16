@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>App frame</title>
+<script type="module">
+  import { startAppScale } from '/DS1/4-page/app-scale.ts';
+  startAppScale();
+  import '/DS1/1-root/one.css';
+  import '/DS1/index.ts';
+  import { toast } from '/DS1/0-face/toaster.ts';
+  const query = new URLSearchParams(location.search);
+  const app = document.querySelector('ds-app');
+  for (const area of ['nav', 'aside', 'header', 'footer', 'bar', 'actions']) if (query.get(area) === '0') app.querySelector(`[slot="${area}"]`)?.remove();
+  app.toggleAttribute('flush', query.has('flush'));
+  const sidebar = app.querySelector('ds-sidebar');
+  if (sidebar) sidebar.items = [{ id: 'long', label: 'A place whose name is far longer than the column it stands in', href: '#long', meta: 'Nov 14' }, ...Array.from({ length: 60 }, (_, index) => ({ id: `place-${index}`, label: `Place ${index + 1}`, href: `#place-${index}` }))];
+  document.getElementById('work').append(...Array.from({ length: 120 }, (_, index) => Object.assign(document.createElement('p'), { textContent: `Line ${index + 1} of the work.` })));
+  window.toast = toast;
+  window.ready = customElements.whenDefined('ds-app').then(() => app.updateComplete);
+</script></head>
+<body>
+<ds-app name="Fixture" resize-key="fixture-app">
+  <nav slot="bar" aria-label="Breadcrumb"><span>Workspace</span> / <span>Page</span></nav>
+  <div slot="actions"><ds-button id="action">Share</ds-button></div>
+  <ds-sidebar slot="nav" label="Places"></ds-sidebar>
+  <div slot="header" style="height: calc(2 * var(--ds-unit))">Title</div>
+  <section id="work"></section>
+  <section slot="aside" aria-label="Properties"><p>Width</p><p>Height</p></section>
+  <div slot="footer" style="height: var(--ds-unit)"><ds-button>Save</ds-button></div>
+</ds-app>
+<ds-overlay id="dialog"><dialog aria-label="Dialog"><p>Above the frame.</p></dialog></ds-overlay>
+</body></html>

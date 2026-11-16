@@ -6,14 +6,9 @@
  */
 .icon-builder {
   --u: var(--ds-unit);
-  box-sizing: border-box;
-  min-height: 100vh;
-  padding: var(--u);
-  background: var(--ds-paper);
+  --ds-app-paper: var(--ds-paper);
   color: var(--ds-text-color);
 }
-.icon-builder-bar { display: flex; justify-content: space-between; align-items: center; height: var(--u); margin-bottom: var(--u); }
-.icon-builder-bar h1 { margin: 0; }
 .icon-builder-status { --u: var(--ds-unit); padding: var(--u); }
 
 .docs-tool { container: tool / inline-size; min-width: 0; }

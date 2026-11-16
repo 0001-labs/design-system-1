@@ -1,0 +1,153 @@
+---
+title: App frame
+description: "The window an application stands in: a bar two squares high over its navigation, its work and an inspector, resizable in whole squares, on the Desktop aligned scale."
+---
+
+import ComponentExample from "../../../components/ComponentExample.astro";
+
+An application stands in one frame, edge to edge in the window. A bar two squares high runs along the top with the app's name, what the app puts after it (a breadcrumb, tabs, a search) and its actions at the end. Under it the navigation, the work and an inspector stand side by side, each scrolling on its own, with a hairline between them. The navigation and the inspector are resized by dragging the line between them and the work, in whole squares, and the widths are remembered for the app. Open the [full-window example](/examples/app-frame/) and resize the window to see it hold.
+
+## Try it
+
+<ComponentExample example="app" />
+
+## Use it
+
+```html
+<ds-app name="Notes" home="/" resize-key="notes">
+  <nav slot="bar" aria-label="Breadcrumb">Workspace / Meeting notes</nav>
+  <div slot="actions"><ds-button>Share</ds-button></div>
+  <ds-sidebar slot="nav" label="Notebooks"></ds-sidebar>
+  <article>…the work…</article>
+  <section slot="aside" aria-label="Properties">…</section>
+</ds-app>
+```
+
+Start the scale first, in the page's first module, before anything else draws, so the first paint is already on whole squares. `ds-app` starts it too, but an app that starts it itself never draws a frame at another scale first:
+
+```ts
+import { startAppScale } from "@0001-labs/design-system-1/DS1/4-page/app-scale";
+startAppScale();
+```
+
+### From the package
+
+The package exports its source, `DS1/*`, as written: modules are imported without their `.ts` ending, so a Vite app resolves the folder itself and TypeScript finds it the same way, and the package stays out of Vite's prebundling so the frame's styles load as the components ask for them:
+
+```ts
+// vite.config.ts
+import { fileURLToPath } from "node:url";
+export default {
+  resolve: { alias: [{ find: "@0001-labs/design-system-1/DS1", replacement: fileURLToPath(new URL("./node_modules/@0001-labs/design-system-1/DS1", import.meta.url)) }] },
+  optimizeDeps: { exclude: ["@0001-labs/design-system-1"] },
+};
+```
+
+```json
+// tsconfig.json, under compilerOptions
+"paths": { "@0001-labs/design-system-1/DS1/*": ["./node_modules/@0001-labs/design-system-1/DS1/*"] }
+```
+
+### Before it is ready
+
+`one.css` (through `grid.css`) draws the frame before its script has run: the window, the bar's paper and hairline, and what it holds out of sight, so the first paint is already the frame. `await app.updateComplete` settles once the frame and the page under its bar have both drawn, when everything slotted stands in its place and can be measured.
+
+## Areas
+
+The frame is a [Page](/4-page/page/) in the `inspector` layout under a bar, so its areas are the page's five and the bar's three. An area with nothing in it takes no room: an app without navigation or an inspector gives the work the window.
+
+| Area | Put it there with | Holds |
+| --- | --- | --- |
+| Brand | `slot="brand"` | The app's mark or name, a link home. Without it, `name` is drawn as a link to `home`. |
+| Bar | `slot="bar"` | What follows the name: a breadcrumb, tabs or a search. |
+| Actions | `slot="actions"` | Buttons and the account, at the bar's end; on a phone, in the drawer under the navigation. |
+| Navigation | `slot="nav"` | The app's places, usually one [Sidebar](/3-unit/sidebar/), which takes the pane's width. |
+| Header | `slot="header"` | The work's title and its own actions, above it. |
+| Work | No slot | The work itself, the document's main landmark unless it is given a `<main>`. |
+| Inspector | `slot="aside"` | Properties or settings of what is selected. |
+| Footer | `slot="footer"` | Closing actions, below the work. |
+
+## On the scaled desktop
+
+The frame stands on [Desktop aligned](/1-root/scaling/#desktop-aligned): on a computer the scale moves slightly so the window is a whole number of squares wide, and what the height has left over goes to the top. The bar takes that leftover above its two squares, so every pane under it ends on the window's bottom edge, on a square. The shared components follow the same scale (`--ds-sf` takes `--sf`), so controls, panes and type grow and shrink together. A phone keeps its fourteen squares across.
+
+Two scales must not run at once. Remove a page's own `startScaling()` when it moves into the frame, and any pin such as `--ds-sf: 1` that holds the components at another scale. The root carries `data-ds-scaling-managed`, so the device module reads the frame's scale instead of putting its own. `fixed-scale` leaves the scale to the page altogether, for a frame drawn inside something that sets its own.
+
+## Resizable panes
+
+The navigation and the inspector are twelve squares wide by default, and four to twenty-four squares as they are resized, always leaving ten squares for the work. Drag the line beside a pane: the pane follows the pointer and snaps to a whole square on release. Each divider is a slider for the keyboard: the arrow keys move it one square, five with Shift, Home and End to either limit, and Enter or a double press goes back to the default. Escape cancels a drag. `ds-page-resize` reports the new widths in `detail.navWidth` and `detail.asideWidth`.
+
+A width is what stands in the pane: a twelve-square navigation holds a sidebar exactly twelve squares wide. The pane's own box reaches half the gap further, to the hairline in the middle of the two squares between it and the work, so measured from the outside it is one square wider than its width.
+
+Widths are remembered in this browser under `resize-key`, or `ds-app:` and the app's name when there is none, so every page of an app opens with the panes as they were left. Storage is optional: resizing works without it.
+
+## On a phone
+
+Below thirty squares of width the frame is one document scrolling under the bar. The navigation and the actions fold away, so the bar keeps only the name, what follows it and a menu button in its last square, and nothing in it is ever cut off. The menu button opens them over the screen, the actions under the navigation, the [screen overlay](/4-page/overlay/#the-screen) with its close button where the menu button stood and the navigation from the square under the bar. Focus stays inside it, and Escape, the close button, a link or the window widening close it. The inspector stands under the work. `openDrawer()` and `closeDrawer()` work the drawer from code, and `ds-page-drawer` reports it opening and closing in `detail.open`.
+
+## Work edge to edge
+
+With `flush`, the work leaves out the square of room around it and runs to the hairlines beside it, the bar above and the window's bottom edge (or to the window's sides where there is no pane). The navigation and the inspector keep their square of room and their widths, and a header or footer keeps its distance from the work.
+
+## Moving between places
+
+An app that changes its work in place, as a router does, calls `scrollToStart()` when a new place opens: the work goes back to its top, its own pane on a computer and the page on a phone.
+
+Overlays, menus and toasts open in the browser's top layer, above the frame, as they do on any page.
+
+## Attributes
+
+| Attribute | Default | What it does |
+| --- | --- | --- |
+| `name` | — | The app's name, drawn at the bar's start when there is no `brand`. |
+| `home` | `/` | Where the name leads. |
+| `layout` | `inspector` | The page's layout under the bar; `inspector` holds navigation, work and inspector, each optional. |
+| `nav-width` | `12` | The navigation's width in whole squares, 4 to 24. |
+| `aside-width` | `12` | The inspector's width in whole squares, 4 to 24. |
+| `resize-key` | `ds-app:` and the name | Where the widths are remembered. |
+| `drawer-label` | `Menu` | The menu button's and drawer's name, a translation key. |
+| `fixed-scale` | false | Leaves the scale to the page: the frame starts no scale of its own. |
+| `flush` | false | The work runs to its pane's edges, for a wall of pictures or a canvas; the navigation and the inspector keep their room. |
+
+## Parts
+
+| Part | What it is |
+| --- | --- |
+| `bar` | The top bar. |
+| `brand` | The name's link. |
+| `actions` | The actions' place at the bar's end, on a computer. |
+| `menu` | The phone's menu button at the bar's end. |
+| `page` | The page under the bar, a `ds-page`. |
+
+The page's own parts are passed on under the same names: `nav`, `header`, `main`, `aside`, `footer`, `drawer`, `resize` and `resize-aside`, so `ds-app::part(main)` reaches the work's pane.
+
+`page` on the element is that `ds-page`, for its widths and its drawer.
+
+## Methods and events
+
+| Name | What it does |
+| --- | --- |
+| `openDrawer()`, `closeDrawer()` | Open or close the navigation's drawer on a phone. |
+| `scrollToStart()` | Takes the work back to its top. |
+| `updateComplete` | Settles when the frame and its page have drawn. |
+| `ds-page-resize` | A divider moved: `detail.navWidth`, `detail.asideWidth`. |
+| `ds-page-drawer` | The drawer opened or closed: `detail.open`. |
+
+An area whose content is all `hidden` takes no room, so an inspector opens and closes by toggling `hidden` on it. Enter or a double press on a divider goes back to the width the frame was given (`nav-width`, `aside-width`), not to a remembered one.
+
+## In React
+
+Import the typed adapter. It renders `<ds-app>` with `name`, `home`, `layout`, `navWidth`, `asideWidth`, `resizeKey`, `drawerLabel` and `fixedScale` typed:
+
+```tsx
+import { App } from "@0001-labs/design-system-1/DS1/react/app";
+
+<App name="Notes" resizeKey="notes">
+  <Sidebar slot="nav" label="Notebooks" items={notebooks} />
+  <Editor />
+</App>
+```
+
+The adapter does not register the element: import `4-page/ds-app` once in the browser entry.
+
+[Page](/4-page/page/) · [Scaling](/1-root/scaling/#desktop-aligned) · [Sidebar](/3-unit/sidebar/) · [Overlay](/4-page/overlay/#the-screen) · [Header](/4-page/header/)

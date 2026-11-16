@@ -1,8 +1,9 @@
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { live } from "lit/directives/live.js";
 import { repeat } from "lit/directives/repeat.js";
 import "../../../DS1/1-root/controls.css";
 import "../../../DS1/3-unit/ds-tabs";
+import "../../../DS1/4-page/ds-app";
 import codes from "../../../shared/component-codes.json";
 import { ALL_LAYERS } from "../../../shared/component-directory";
 import { AppElement, defineElement } from "../lib/element";
@@ -29,11 +30,7 @@ export class ComponentGlossary extends AppElement {
     const selected = ALL_LAYERS.find(entry => entry.number === this.layer)!;
     const layerCodes = codes.filter(code => selected.entries.some(entry => code.url === `https://designsystem1.com${entry.href}`));
     const matches = layerCodes.filter(entry => `${entry.code} ${entry.label} ${entry.version}`.toLowerCase().includes(this.query.trim().toLowerCase())).sort((a, b) => a.code.localeCompare(b.code));
-    return html`<section class=${this.document ? "adoption-glossary" : "adoption"}>
-      ${this.document ? nothing : html`<header class="adoption-heading">
-        <div><p class="adoption-eyebrow"><a href="#adoption">Component adoption</a> · Private</p><h1>Component glossary</h1></div>
-        ${button("Sign out", () => void this.signOut(), { secondary: false })}
-      </header>`}
+    const glossary = html`<section class=${this.document ? "adoption-glossary" : "adoption"}>
       <ds-tabs aria-label="Component layers">
         ${ALL_LAYERS.map(entry => html`<ds-button control="slotted" ?active=${this.layer === entry.number}><button type="button" id=${`glossary-layer-${entry.number}`} role="tab"
           aria-selected=${String(this.layer === entry.number)} aria-controls="glossary-layer-panel" tabindex=${this.layer === entry.number ? 0 : -1}
@@ -49,6 +46,12 @@ export class ComponentGlossary extends AppElement {
         </table>
       </section>
     </section>`;
+    // Inside a document it is a section of that document; on its own, a page in the app frame.
+    return this.document ? glossary : html`<ds-app name="Component glossary" home="#glossary" class="adoption-frame">
+      <p slot="bar" class="adoption-eyebrow"><a href="#adoption">Component adoption</a> · Private</p>
+      <div slot="actions">${button("Sign out", () => void this.signOut(), { secondary: false })}</div>
+      <main>${glossary}</main>
+    </ds-app>`;
   }
 }
 defineElement("ds1-component-glossary", ComponentGlossary);

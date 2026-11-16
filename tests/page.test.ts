@@ -174,3 +174,11 @@ test('a cancelled drag restores layout and never persists a preview', async () =
   pointer('pointerup', 217);
   expect(page.navWidth).toBe(8);
 });
+
+test("an area whose content is hidden is empty, and fills again when it shows", async () => {
+  const page = await setup(`<ds-page layout="inspector"><p>Work</p><aside slot="aside" hidden>Properties</aside></ds-page>`);
+  expect(area(page, "aside").hasAttribute("data-empty")).toBe(true);
+  page.querySelector("aside")!.hidden = false;
+  await new Promise(resolve => setTimeout(resolve));
+  expect(area(page, "aside").hasAttribute("data-empty")).toBe(false);
+});

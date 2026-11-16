@@ -189,6 +189,7 @@ export default defineConfig({
         {
           label: "Page",
           items: [
+            { label: "App frame", slug: "4-page/app" },
             { label: "Container", slug: "4-page/container" },
             { label: "Document", slug: "4-page/document" },
             { label: "Footer", slug: "4-page/footer" },

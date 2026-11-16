@@ -64,8 +64,9 @@ const tiles = rows.flatMap((row) => {
     --hero-title-size: min(12.5dvh, 45 * var(--hero-scale));
     --hero-edge: clamp(16px, 2.5vw, 40px);
     position: relative;
-    height: calc(100vh - var(--site-header-height));
-    height: calc(100dvh - var(--site-header-height));
+    /* The window under the app frame's bar: two squares and the leftover. */
+    height: calc(100vh - var(--site-header-height) - var(--ds-grid-top, 0px));
+    height: calc(100dvh - var(--site-header-height) - var(--ds-grid-top, 0px));
     min-height: 480px;
     overflow: hidden;
     background: #594dff;

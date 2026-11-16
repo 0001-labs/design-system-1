@@ -51,7 +51,7 @@ test('only the authenticated route library supplies its name and real published 
     mocks.library.mockReturnValue({ name: 'Example library', publishedVersion: 7 });
     const shell = mount();
     await settle();
-    expect(shell.querySelector('.site-brand')?.textContent).toBe('Design system 1');
+    expect(shell.querySelector('ds-app')).toBeNull();
     expect(report).toHaveBeenLastCalledWith({ type: 'ds1:library-navigation', libraryId: 'library-one', library: { id: 'library-one', name: 'Example library', publishedVersion: 7, component: '/2-core/input/' } }, window.location.origin);
     mocks.library.mockReturnValue({ name: 'Renamed library', publishedVersion: null });
     shell.requestUpdate();
@@ -61,7 +61,7 @@ test('only the authenticated route library supplies its name and real published 
       navigate(state.path);
       session.set({ isAuthenticated: state.authenticated, isLoading: state.loading });
       await settle();
-      expect(shell.querySelector('.site-brand')?.textContent).toBe('Design system 1');
+      expect(shell.querySelector('ds-app')).toBeNull();
       expect(mocks.library.mock.calls.at(-1)?.[1]).toBe('skip');
       expect(report).toHaveBeenLastCalledWith({ type: 'ds1:library-navigation', libraryId: state.path === '/libraries' ? null : 'library-one', library: null }, window.location.origin);
     }

@@ -30,9 +30,11 @@ describe('font workspace', () => {
     await render();
     expect(host.textContent).toContain('Supernatural starts with your handwriting.');
     expect(host.querySelector('textarea')).toBeNull();
-    const list = host.querySelector('ds-page[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
+    const list = host.querySelector('ds-app[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
     expect(list).not.toBeNull();
-    expect(['divided', 'fill'].every(name => list.parentElement!.hasAttribute(name))).toBe(true);
+    const frame = list.parentElement as HTMLElement & { page: HTMLElement | null; updateComplete: Promise<unknown> };
+    await frame.updateComplete;
+    expect(['divided', 'fill', 'resizable', 'drawer'].every(name => frame.page!.hasAttribute(name))).toBe(true);
     const rows = () => [...list.shadowRoot!.querySelectorAll<HTMLButtonElement>('button[data-item]')];
     expect(rows().map(row => row.textContent?.trim())).toEqual(['Supernatural', '0001 Sans', 'Olivetti Dot']);
     expect(rows()[0]!.getAttribute('aria-current')).toBe('page');
@@ -55,7 +57,7 @@ describe('font workspace', () => {
   });
   it('offers Open font for every face in development, each with its own empty state, and never for a reference', async () => {
     await render();
-    const list = host.querySelector('ds-page[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
+    const list = host.querySelector('ds-app[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
     const rows = () => [...list.shadowRoot!.querySelectorAll<HTMLButtonElement>('button[data-item]')];
     const open = () => [...host.querySelectorAll('button')].some(button => button.textContent === 'Open font');
     expect(open()).toBe(true);
@@ -68,7 +70,7 @@ describe('font workspace', () => {
   });
   it('offers Draw only for a face drawn here, and keeps the drawing open behind the other views', async () => {
     await render();
-    const list = host.querySelector('ds-page[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
+    const list = host.querySelector('ds-app[layout="sidebar"] > ds-sidebar[slot="nav"]')!;
     const rows = () => [...list.shadowRoot!.querySelectorAll<HTMLButtonElement>('button[data-item]')];
     const tab = (label: string) => [...host.querySelectorAll<HTMLButtonElement>('ds-tabs button')].find(button => button.textContent === label);
     expect(tab('Draw')).toBeUndefined();

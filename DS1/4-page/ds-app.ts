@@ -1,6 +1,8 @@
-import { LitElement, html, unsafeCSS } from "lit";
+import { LitElement, html, nothing, unsafeCSS } from "lit";
 import { define } from "../0-face/define";
+import { getText } from "../0-face/i18n";
 import controls from "../1-root/controls.css?inline";
+import "../2-core/ds-icon";
 import { startAppScale } from "./app-scale";
 import type { PageLayout } from "./ds-page";
 import "./ds-page";
@@ -14,15 +16,18 @@ import styles from "./styles/ds-app.css?inline";
  * Under it a `ds-page` fills the rest: navigation, the work and an inspector,
  * each scrolling on its own, with hairlines between them and dividers that
  * resize the navigation and the inspector in whole squares (4–24), remembered
- * per app. On a phone the navigation folds into the page's drawer and the
- * inspector stands under the work.
+ * per app. On a phone (under 30 squares) the navigation and the actions fold
+ * into the page's drawer, opened by a menu button at the bar's end, and the
+ * inspector stands under the work; the page is one document scrolling under
+ * the bar.
  *
  * It starts the app scale (`app-scale.ts`): Desktop aligned on a computer,
  * fourteen squares on a phone, with the shared components following `--sf`.
  *
  * - `slot="brand"` replaces the name, a link home
  * - `slot="bar"` stands after the name: a breadcrumb, tabs, a search
- * - `slot="actions"` stands at the bar's end: buttons, the account
+ * - `slot="actions"` stands at the bar's end: buttons, the account; in the
+ *   drawer, under the navigation, on a phone
  * - `slot="nav"` is the navigation, usually one `ds-sidebar`
  * - the default slot is the work, the main landmark unless it is a `<main>`
  * - `slot="aside"` is the inspector beside the work
@@ -40,9 +45,15 @@ import styles from "./styles/ds-app.css?inline";
  * @attr resize-key - Where the widths are remembered; `ds-app:<name>` by default.
  * @attr drawer-label - The drawer's name, the shared word "Menu" by default.
  * @attr fixed-scale - Leaves the page's scale to the app (no app scale).
+ * @attr flush - The work runs to its pane's edges; the navigation and the inspector keep their room.
  * @csspart bar - The top bar.
  * @csspart brand - The name's link.
+ * @csspart actions - The actions' place at the bar's end, on a computer.
+ * @csspart menu - The phone's menu button, at the bar's end; it opens the navigation's drawer.
  * @csspart page - The `ds-page` under the bar.
+ * @csspart nav - The page's navigation pane (and `header`, `main`, `aside`, `footer`, `drawer`, `resize`, `resize-aside`: the page's own parts, passed on).
+ * @fires ds-page-drawer - From the page: the drawer opened or closed (`detail.open`).
+ * @fires ds-page-resize - From the page: a divider moved (`detail.navWidth`, `detail.asideWidth`).
  */
 export class App extends LitElement {
   static properties = {
@@ -54,6 +65,10 @@ export class App extends LitElement {
     resizeKey: { type: String, attribute: "resize-key" },
     drawerLabel: { type: String, attribute: "drawer-label" },
     fixedScale: { type: Boolean, attribute: "fixed-scale" },
+    flush: { type: Boolean, reflect: true },
+    hasNav: { state: true },
+    hasActions: { state: true },
+    narrow: { state: true },
   };
 
   declare name: string;
@@ -64,6 +79,10 @@ export class App extends LitElement {
   declare resizeKey: string | undefined;
   declare drawerLabel: string | undefined;
   declare fixedScale: boolean;
+  declare flush: boolean;
+  private declare hasNav: boolean;
+  private declare hasActions: boolean;
+  private declare narrow: boolean;
 
   static styles = [unsafeCSS(controls), unsafeCSS(styles)];
 
@@ -75,11 +94,40 @@ export class App extends LitElement {
     this.navWidth = 12;
     this.asideWidth = 12;
     this.fixedScale = false;
+    this.flush = false;
+    this.hasNav = false;
+    this.hasActions = false;
+    this.narrow = false;
   }
+
+  private readonly relabel = () => this.requestUpdate();
+  /** Where the page folds its navigation away (its container under 600px), the actions go with it. */
+  private readonly measure = () => {
+    const width = this.getBoundingClientRect().width;
+    if (!width) return;
+    this.narrow = width < 600;
+    this.toggleAttribute("data-narrow", this.narrow);
+  };
+  private resizing: ResizeObserver | null = null;
 
   connectedCallback() {
     super.connectedCallback();
     if (!this.fixedScale) startAppScale();
+    window.addEventListener("language-changed", this.relabel);
+    window.addEventListener("translations-loaded", this.relabel);
+    this.resizing = typeof ResizeObserver === "function" ? new ResizeObserver(this.measure) : null;
+    this.resizing?.observe(this);
+    this.slotted?.observe(this, { childList: true, attributes: true, subtree: true, attributeFilter: ["hidden", "slot"] });
+    if (this.hasUpdated) this.syncSlots();
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("language-changed", this.relabel);
+    window.removeEventListener("translations-loaded", this.relabel);
+    this.resizing?.disconnect();
+    this.resizing = null;
+    this.slotted?.disconnect();
+    super.disconnectedCallback();
   }
 
   /** The page under the bar, for its drawer (`openDrawer`, `closeDrawer`). */
@@ -87,26 +135,63 @@ export class App extends LitElement {
     return this.renderRoot?.querySelector("ds-page") ?? null;
   }
 
+  /** Settles once the frame and the page under its bar have both drawn: what is slotted then stands in its place. */
+  protected async getUpdateComplete(): Promise<boolean> {
+    const done = await super.getUpdateComplete();
+    await this.page?.updateComplete;
+    return done;
+  }
+
+  /** The navigation's drawer, on a phone. */
+  openDrawer(): void { this.page?.openDrawer(); }
+  closeDrawer(): void { this.page?.closeDrawer(); }
+
+  /** Back to the top of the work, as a new place opens: its pane on a computer, the page on a phone. */
+  scrollToStart(): void {
+    const page = this.page;
+    page?.scrollTo({ top: 0, left: 0 });
+    page?.shadowRoot?.querySelector('[part="main"]')?.scrollTo({ top: 0, left: 0 });
+  }
+
+  private readonly syncSlots = () => {
+    this.hasNav = !!this.querySelector(':scope > [slot="nav"]:not([hidden])');
+    this.hasActions = !!this.querySelector(':scope > [slot="actions"]:not([hidden])');
+  };
+  private readonly slotted = typeof MutationObserver === "function" ? new MutationObserver(this.syncSlots) : null;
+
+  protected firstUpdated() {
+    this.syncSlots();
+    const page = this.page;
+    if (page) page.drawerToggle = this.renderRoot.querySelector<HTMLElement>('[part="menu"]');
+  }
+
   render() {
+    const menu = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     return html`
       <header class="bar" part="bar">
         <slot name="brand"><a class="ds-button brand" part="brand" href=${this.home}>${this.name}</a></slot>
         <div class="bar-content"><slot name="bar"></slot></div>
-        <div class="actions"><slot name="actions"></slot></div>
+        ${this.narrow ? nothing : html`<div class="actions" part="actions"><slot name="actions" @slotchange=${this.syncSlots}></slot></div>`}
+        <button class="ds-button ds-button--icon ds-overlay__toggle menu" part="menu" type="button" aria-label=${menu} aria-expanded="false" ?hidden=${!this.hasNav && !(this.narrow && this.hasActions)}>
+          <ds-icon type="menu" size="large" aria-hidden="true"></ds-icon><ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
+        </button>
       </header>
       <ds-page
         part="page"
+        exportparts="nav, header, main, aside, footer, drawer, resize, resize-aside"
         layout=${this.layout}
         nav-width=${this.navWidth}
         aside-width=${this.asideWidth}
         resize-key=${this.resizeKey || `ds-app:${this.name || "app"}`}
         drawer-label=${this.drawerLabel || "Menu"}
+        ?flush=${this.flush}
         fill
         resizable
         divided
         drawer
       >
-        <slot name="nav" slot="nav"></slot>
+        <slot name="nav" slot="nav" @slotchange=${this.syncSlots}></slot>
+        ${this.narrow ? html`<slot name="actions" slot="nav" @slotchange=${this.syncSlots}></slot>` : nothing}
         <slot name="header" slot="header"></slot>
         <slot></slot>
         <slot name="aside" slot="aside"></slot>
