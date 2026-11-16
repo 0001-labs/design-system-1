@@ -273,6 +273,41 @@ await check('a long label is cut inside its row, before its meta', async page =>
   assert.equal(row.cut, 'end', 'the words fade where they are cut');
 });
 
+await check('apps: hovering the name lists the apps under the bar, the open one marked; leaving and Escape close it', async page => {
+  await open(page, 1447, 900);
+  await page.evaluate(() => {
+    const app = document.querySelector('ds-app');
+    app.apps = [{ name: 'Here', href: location.origin + '/' }, { name: 'Elsewhere', href: 'https://example.com/' }];
+    return app.updateComplete;
+  });
+  const state = () => page.evaluate(() => {
+    const root = document.querySelector('ds-app').shadowRoot;
+    const menu = root.querySelector('[part="apps"]'), bar = root.querySelector('.bar').getBoundingClientRect();
+    const box = menu.getBoundingClientRect();
+    return { open: !menu.hidden && box.height > 0, top: box.top, barBottom: bar.bottom, links: [...menu.querySelectorAll('a')].map(a => [a.textContent, a.getAttribute('aria-current')]), expanded: root.querySelector('[part="brand"]').getAttribute('aria-expanded') };
+  });
+  assert.equal((await state()).open, false, 'closed at first');
+  const brand = await page.evaluateHandle(() => document.querySelector('ds-app').shadowRoot.querySelector('[part="brand"]'));
+  const b = await brand.boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  let m = await state();
+  assert.ok(m.open, 'a hover opens it');
+  assert.equal(m.expanded, 'true');
+  assert.ok(Math.abs(m.top - m.barBottom) < 0.5, `it hangs from the bar's edge (${m.top} / ${m.barBottom})`);
+  assert.deepEqual(m.links, [['Here', 'page'], ['Elsewhere', null]], 'every app, the open one marked');
+  const menu = await page.evaluateHandle(() => document.querySelector('ds-app').shadowRoot.querySelector('[part="apps"] a:last-child'));
+  const l = await menu.boundingBox();
+  await page.mouse.move(l.x + l.width / 2, l.y + l.height / 2, { steps: 6 });
+  assert.ok((await state()).open, 'it stays open on the way into the menu');
+  await page.mouse.move(b.x + 40 * 20, b.y + 20 * 20);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.equal((await state()).open, false, 'leaving closes it');
+  await brand.focus();
+  assert.ok((await state()).open, 'a keyboard focus opens it');
+  await page.keyboard.press('Escape');
+  assert.equal((await state()).open, false, 'Escape closes it');
+});
+
 await check('an overlay and a toast stand above the frame', async page => {
   await open(page, 1447, 900);
   await page.evaluate(() => document.getElementById('dialog').show());

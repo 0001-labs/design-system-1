@@ -25,6 +25,8 @@ import styles from "./styles/ds-app.css?inline";
  * fourteen squares on a phone, with the shared components following `--sf`.
  *
  * - `slot="brand"` replaces the name, a link home
+ * - `apps` (`{ name, href }[]`, a property or a JSON attribute) lists the apps the name leads to: hovering,
+ *   focusing or tapping the name opens them under the bar, the open one marked
  * - `slot="bar"` stands after the name: a breadcrumb, tabs, a search
  * - `slot="actions"` stands at the bar's end: buttons, the account; in the
  *   drawer, under the navigation, on a phone
@@ -48,6 +50,8 @@ import styles from "./styles/ds-app.css?inline";
  * @attr flush - The work runs to its pane's edges; the navigation and the inspector keep their room.
  * @csspart bar - The top bar.
  * @csspart brand - The name's link.
+ * @csspart switch - The name and its apps, with `apps`.
+ * @csspart apps - The apps under the name.
  * @csspart actions - The actions' place at the bar's end, on a computer.
  * @csspart menu - The phone's menu button, at the bar's end; it opens the navigation's drawer.
  * @csspart page - The `ds-page` under the bar.
@@ -66,6 +70,8 @@ export class App extends LitElement {
     drawerLabel: { type: String, attribute: "drawer-label" },
     fixedScale: { type: Boolean, attribute: "fixed-scale" },
     flush: { type: Boolean, reflect: true },
+    apps: { type: Array },
+    appsOpen: { state: true },
     hasNav: { state: true },
     hasActions: { state: true },
     narrow: { state: true },
@@ -80,6 +86,8 @@ export class App extends LitElement {
   declare drawerLabel: string | undefined;
   declare fixedScale: boolean;
   declare flush: boolean;
+  declare apps: AppLink[];
+  private declare appsOpen: boolean;
   private declare hasNav: boolean;
   private declare hasActions: boolean;
   private declare narrow: boolean;
@@ -95,6 +103,8 @@ export class App extends LitElement {
     this.asideWidth = 12;
     this.fixedScale = false;
     this.flush = false;
+    this.apps = [];
+    this.appsOpen = false;
     this.hasNav = false;
     this.hasActions = false;
     this.narrow = false;
@@ -165,11 +175,60 @@ export class App extends LitElement {
     if (page) page.drawerToggle = this.renderRoot.querySelector<HTMLElement>('[part="menu"]');
   }
 
+  private appsTimer = 0;
+  private touched = false;
+  private openApps = () => { clearTimeout(this.appsTimer); this.appsOpen = true; };
+  private closeApps = (later = false) => {
+    clearTimeout(this.appsTimer);
+    if (later) this.appsTimer = window.setTimeout(() => { this.appsOpen = false; }, 150);
+    else this.appsOpen = false;
+  };
+
+  /** The name, and the apps beside it on a hover, a focus or a tap: each a link, the one open marked. */
+  private switcher() {
+    const here = typeof location === "undefined" ? "" : location.origin;
+    const label = getText("Apps") || "Apps";
+    return html`<div
+      class="switch"
+      part="switch"
+      @pointerenter=${(event: PointerEvent) => { if (event.pointerType !== "touch") this.openApps(); }}
+      @pointerleave=${(event: PointerEvent) => { if (event.pointerType !== "touch") this.closeApps(true); }}
+      @focusin=${this.openApps}
+      @focusout=${(event: FocusEvent) => { if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) this.closeApps(); }}
+      @keydown=${(event: KeyboardEvent) => {
+        if (event.key !== "Escape" || !this.appsOpen) return;
+        event.preventDefault();
+        this.closeApps();
+        this.renderRoot.querySelector<HTMLElement>('[part="brand"]')?.focus();
+      }}
+    >
+      <a
+        class="ds-button brand"
+        part="brand"
+        href=${this.home}
+        aria-expanded=${this.appsOpen ? "true" : "false"}
+        aria-controls="apps"
+        @pointerdown=${(event: PointerEvent) => { this.touched = event.pointerType === "touch"; }}
+        @click=${(event: MouseEvent) => {
+          if (!this.touched || this.appsOpen) return;
+          event.preventDefault();
+          this.openApps();
+        }}
+      >${this.name}</a>
+      <nav class="ds-menu apps" part="apps" id="apps" aria-label=${label} ?hidden=${!this.appsOpen}>
+        ${this.apps.map(app => {
+          const current = sameOrigin(app.href, here);
+          return html`<a class="ds-menu__item" href=${app.href} aria-current=${current ? "page" : nothing}>${app.name}</a>`;
+        })}
+      </nav>
+    </div>`;
+  }
+
   render() {
     const menu = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
     return html`
       <header class="bar" part="bar">
-        <slot name="brand"><a class="ds-button brand" part="brand" href=${this.home}>${this.name}</a></slot>
+        <slot name="brand">${this.apps.length ? this.switcher() : html`<a class="ds-button brand" part="brand" href=${this.home}>${this.name}</a>`}</slot>
         <div class="bar-content"><slot name="bar"></slot></div>
         ${this.narrow ? nothing : html`<div class="actions" part="actions"><slot name="actions" @slotchange=${this.syncSlots}></slot></div>`}
         <button class="ds-button ds-button--icon ds-overlay__toggle menu" part="menu" type="button" aria-label=${menu} aria-expanded="false" ?hidden=${!this.hasNav && !(this.narrow && this.hasActions)}>
@@ -199,6 +258,16 @@ export class App extends LitElement {
       </ds-page>
     `;
   }
+}
+
+/** An app the name's menu leads to: its name as written, and its address. */
+export interface AppLink {
+  name: string;
+  href: string;
+}
+
+function sameOrigin(href: string, origin: string): boolean {
+  try { return new URL(href, origin || undefined).origin === origin; } catch { return false; }
 }
 
 define("ds-app", App);

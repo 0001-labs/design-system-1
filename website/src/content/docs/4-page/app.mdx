@@ -95,6 +95,17 @@ An app that changes its work in place, as a router does, calls `scrollToStart()`
 
 Overlays, menus and toasts open in the browser's top layer, above the frame, as they do on any page.
 
+## Between apps
+
+A family of apps that should lead to one another gives each frame the same `apps`: a list of `{ name, href }`, as a property or a JSON attribute. Hovering the name, focusing it with the keyboard or tapping it on a phone opens the list under the bar, hanging from its hairline, with the app that is open marked; leaving it or pressing Escape closes it. The name still leads home with a click. The list is the family's own, kept in one place they all import; the frame holds no names of its own.
+
+```js
+document.querySelector('ds-app').apps = [
+  { name: 'Notes', href: 'https://notes.example.com/' },
+  { name: 'Photos', href: 'https://photos.example.com/' },
+];
+```
+
 ## Attributes
 
 | Attribute | Default | What it does |
@@ -108,6 +119,7 @@ Overlays, menus and toasts open in the browser's top layer, above the frame, as 
 | `drawer-label` | `Menu` | The menu button's and drawer's name, a translation key. |
 | `fixed-scale` | false | Leaves the scale to the page: the frame starts no scale of its own. |
 | `flush` | false | The work runs to its pane's edges, for a wall of pictures or a canvas; the navigation and the inspector keep their room. |
+| `apps` | none | The apps the name leads to, `{ name, href }[]`; see Between apps. |
 
 ## Parts
 
@@ -115,6 +127,8 @@ Overlays, menus and toasts open in the browser's top layer, above the frame, as 
 | --- | --- |
 | `bar` | The top bar. |
 | `brand` | The name's link. |
+| `switch` | The name and its apps, with `apps`. |
+| `apps` | The list of apps under the name. |
 | `actions` | The actions' place at the bar's end, on a computer. |
 | `menu` | The phone's menu button at the bar's end. |
 | `page` | The page under the bar, a `ds-page`. |
