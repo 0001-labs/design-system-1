@@ -28,7 +28,8 @@ describe('the booking block', () => {
   });
   it('with a message, a second button of the same name beside it, hidden until the script gives it the page\'s form', () => {
     const html = renderNativeRegion('```c9y-meetings\n{"message":"Send a message"}\n```');
-    expect(html).toContain('<details class="c9y-native-meetings" name="c9y-meetings" data-c9y-meetings-message hidden><summary class="ds-button ds-button--secondary c9y-native-button">Send a message</summary><div class="c9y-native-meetings-panel" data-c9y-message-panel></div></details></div>');
+    // One line, the message first: "Send a message or book a meeting".
+    expect(html).toContain('<div class="c9y-native-meetings-choices"><details class="c9y-native-meetings" name="c9y-meetings" data-c9y-meetings-message hidden><summary class="ds-button ds-button--secondary c9y-native-button">Send a message</summary><div class="c9y-native-meetings-panel" data-c9y-message-panel></div></details><span class="c9y-native-meetings-or" hidden>or</span><details class="c9y-native-meetings" name="c9y-meetings" data-c9y-meetings-inline>');
     expect(html.match(/name="c9y-meetings"/g)?.length).toBe(2);
     expect(writeMeetings({ ...MEETINGS_DEFAULTS, message: 'Send a message' })).toBe('```c9y-meetings\n{"message":"Send a message"}\n```');
   });
