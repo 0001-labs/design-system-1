@@ -10,6 +10,7 @@
   const app = document.querySelector('ds-app');
   for (const area of ['nav', 'aside', 'header', 'footer', 'bar', 'actions']) if (query.get(area) === '0') app.querySelector(`[slot="${area}"]`)?.remove();
   app.toggleAttribute('flush', query.has('flush'));
+  app.toggleAttribute('flow', query.has('flow'));
   const sidebar = app.querySelector('ds-sidebar');
   if (sidebar) sidebar.items = [{ id: 'long', label: 'A place whose name is far longer than the column it stands in', href: '#long', meta: 'Nov 14' }, ...Array.from({ length: 60 }, (_, index) => ({ id: `place-${index}`, label: `Place ${index + 1}`, href: `#place-${index}` }))];
   document.getElementById('work').append(...Array.from({ length: 120 }, (_, index) => Object.assign(document.createElement('p'), { textContent: `Line ${index + 1} of the work.` })));

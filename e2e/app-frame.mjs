@@ -224,6 +224,30 @@ await check('flush: the work runs to the hairlines, the bar and the bottom edge;
   assert.ok(near(alone.areas.main.left, 0) && near(alone.areas.main.right, alone.width), 'alone, edge to edge');
 });
 
+await check('flow: the window scrolls the page, the bar stays at the top with its hairline, and scrollToStart is the window\'s', async page => {
+  await open(page, 1447, 900, '?flow&nav=0&aside=0&header=0&footer=0');
+  const result = await page.evaluate(async () => {
+    const app = document.querySelector('ds-app');
+    const main = app.page.shadowRoot.querySelector('[part="main"]');
+    main.style.minHeight = '3000px';
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    const bar = () => app.shadowRoot.querySelector('[part="bar"]').getBoundingClientRect();
+    const tall = document.documentElement.scrollHeight > window.innerHeight;
+    window.scrollTo(0, 800);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    const scrolled = window.scrollY;
+    const stuck = bar().top;
+    const line = getComputedStyle(app.shadowRoot.querySelector('[part="bar"]')).boxShadow;
+    app.scrollToStart();
+    return { tall, scrolled, stuck, line, after: window.scrollY, position: getComputedStyle(app).position };
+  });
+  assert.ok(result.tall && result.scrolled > 0, 'the document is what scrolls');
+  assert.equal(result.position, 'relative');
+  assert.ok(near(result.stuck, 0), `the bar stays at the top (${result.stuck})`);
+  assert.match(result.line, /0px 1px 0px/);
+  assert.equal(result.after, 0);
+});
+
 await check('scrollToStart takes the work back to its top, on a computer and on a phone', async page => {
   await open(page, 1447, 900);
   const desktop = await page.evaluate(() => {

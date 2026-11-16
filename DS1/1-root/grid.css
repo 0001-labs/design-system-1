@@ -60,3 +60,14 @@ ds-app:not(:defined) {
     var(--ds-header-paper, var(--background, Canvas));
 }
 ds-app:not(:defined) > * { visibility: hidden; }
+/* A flowing frame is the document: its page is drawn at once, under the bar's room. */
+ds-app[flow]:not(:defined) {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  padding-block-start: calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px));
+  background:
+    linear-gradient(var(--ds-header-line, var(--ds-border-color, #e6e6e6)), var(--ds-header-line, var(--ds-border-color, #e6e6e6)))
+    0 calc(2 * var(--ds-grid-unit) + var(--ds-grid-top, 0px)) / 100% 1px no-repeat;
+}
+ds-app[flow]:not(:defined) > :not([slot]) { visibility: visible; }

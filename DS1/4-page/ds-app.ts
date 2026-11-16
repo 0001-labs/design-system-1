@@ -48,6 +48,7 @@ import styles from "./styles/ds-app.css?inline";
  * @attr drawer-label - The drawer's name, the shared word "Menu" by default.
  * @attr fixed-scale - Leaves the page's scale to the app (no app scale).
  * @attr flush - The work runs to its pane's edges; the navigation and the inspector keep their room.
+ * @attr flow - The page is the document: the window scrolls it under a bar that stays at the top, for a site or an app whose pages scroll with the window.
  * @csspart bar - The top bar.
  * @csspart brand - The name's link.
  * @csspart switch - The name and its apps, with `apps`.
@@ -70,6 +71,7 @@ export class App extends LitElement {
     drawerLabel: { type: String, attribute: "drawer-label" },
     fixedScale: { type: Boolean, attribute: "fixed-scale" },
     flush: { type: Boolean, reflect: true },
+    flow: { type: Boolean, reflect: true },
     apps: { type: Array },
     appsOpen: { state: true },
     hasNav: { state: true },
@@ -86,6 +88,7 @@ export class App extends LitElement {
   declare drawerLabel: string | undefined;
   declare fixedScale: boolean;
   declare flush: boolean;
+  declare flow: boolean;
   declare apps: AppLink[];
   private declare appsOpen: boolean;
   private declare hasNav: boolean;
@@ -103,6 +106,7 @@ export class App extends LitElement {
     this.asideWidth = 12;
     this.fixedScale = false;
     this.flush = false;
+    this.flow = false;
     this.apps = [];
     this.appsOpen = false;
     this.hasNav = false;
@@ -158,6 +162,7 @@ export class App extends LitElement {
 
   /** Back to the top of the work, as a new place opens: its pane on a computer, the page on a phone. */
   scrollToStart(): void {
+    if (this.flow) { window.scrollTo({ top: 0, left: 0 }); return; }
     const page = this.page;
     page?.scrollTo({ top: 0, left: 0 });
     page?.shadowRoot?.querySelector('[part="main"]')?.scrollTo({ top: 0, left: 0 });
@@ -244,7 +249,7 @@ export class App extends LitElement {
         resize-key=${this.resizeKey || `ds-app:${this.name || "app"}`}
         drawer-label=${this.drawerLabel || "Menu"}
         ?flush=${this.flush}
-        fill
+        ?fill=${!this.flow}
         resizable
         divided
         drawer

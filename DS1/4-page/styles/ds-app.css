@@ -123,3 +123,21 @@ ds-page {
   height: 100%;
   overflow: auto;
 }
+
+/* Flow: the page is the document. The window scrolls it, the bar stays at the
+   top, and the paper under the page is the document's own. */
+:host([flow]) {
+  position: relative;
+  inset: auto;
+  display: block;
+  overflow: visible;
+  background: none;
+}
+:host([flow]) .bar {
+  position: sticky;
+  inset-block-start: 0;
+}
+:host([flow]) ds-page {
+  height: auto;
+  overflow: visible;
+}
