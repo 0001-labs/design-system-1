@@ -168,6 +168,15 @@ details.c9y-native-flow{display:block}
 .ds-header[data-links="line"] .ds-header__nav a{display:flex;align-items:flex-end;height:calc(2 * var(--c9y-unit));padding:0 calc(8px * var(--sf,1));text-decoration:none;box-shadow:inset 0 1px currentColor}
 .ds-header[data-links="line"] .ds-header__nav a:hover{box-shadow:inset 0 calc(2px * var(--sf,1)) currentColor}
 .ds-header[data-links="line"] .ds-header__nav a[aria-current]:not([aria-current="false"]){color:var(--ds-accent-color,var(--c9y-accent));box-shadow:inset 0 calc(4px * var(--sf,1)) currentColor}
+/* A form: its fields one under another, each a label over its control; a group of choices wraps as it needs. */
+.c9y-native-section[data-section="form"]{align-items:stretch}
+.c9y-native-form{position:relative;display:grid;gap:calc(var(--c9y-unit) / 2);justify-items:start;width:100%;margin:0}
+.c9y-native-form>.ds-field{width:100%}
+.c9y-native-form .ds-input{box-sizing:border-box;width:100%}
+.c9y-native-form textarea.ds-input{height:auto;min-height:calc(6 * var(--c9y-unit));padding-block:calc(4px * var(--sf,1));resize:vertical;font:inherit}
+.c9y-native-choices{display:flex;flex-wrap:wrap;gap:0 var(--c9y-unit);width:100%;min-width:0;margin:0;padding:0;border:0}
+.c9y-native-choices>legend{width:100%;padding:0}
+.c9y-native-choice{display:inline-flex;align-items:center;gap:calc(4px * var(--sf,1));line-height:var(--c9y-unit)}
 /* The footer's theme control: a quiet button one control high that names the theme the page is in, hidden until the page's behaviours can run it. */
 .c9y-native-theme{appearance:none;border:0;margin:0;padding:0 calc(4px * var(--sf,1));height:var(--ds-control-height,calc(16px * var(--sf,1)));border-radius:calc(4px * var(--sf,1));background:var(--ds-fill,color-mix(in srgb,currentColor 8%,transparent));color:inherit;font:inherit;line-height:var(--ds-control-height,calc(16px * var(--sf,1)));cursor:pointer}
 .c9y-native-theme[hidden]{display:none}

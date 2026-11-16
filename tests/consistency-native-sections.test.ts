@@ -91,6 +91,30 @@ describe('section kinds expand to primitives', () => {
     expect(sheet).toContain('.c9y-native-theme[hidden]{display:none}');
   });
 
+  test('a form posts as the browser\'s own to an address on its site: labelled controls, choices, a hidden value, a trap and a button', () => {
+    const form = example('form');
+    const published = render(form), edited = render(form, { editor: true });
+    expect(published).toMatch(/<form class="c9y-native-form" method="post" action="\/enquiries" data-native-block="write\.form">/);
+    expect(published).toContain('<label class="ds-field" data-native-block="write.inputs.0" data-slot="inputs" data-item="0"><span class="ds-field__label">Name</span><input class="ds-input" name="name" maxlength="200" required></label>');
+    expect(published).toContain('<input class="ds-input" name="email" type="email" autocomplete="email" maxlength="254" required>');
+    expect(published).toContain('<label class="c9y-native-choice"><input type="checkbox" name="topics" value="A gift card"><span>A gift card</span></label>');
+    expect(published).toContain('<textarea class="ds-input" name="message" rows="6" maxlength="5000"></textarea>');
+    expect(published).toContain('<input type="hidden" name="source" value="contact page">');
+    expect(published).toContain('<input name="website" tabindex="-1" autocomplete="off">');
+    expect(published).toContain('<button type="submit" class="ds-button ds-button--primary c9y-native-button">Send</button>');
+    expect(published).toContain('data-measure="narrow"');
+    expect(published).not.toContain('<script');
+    // In the editor it neither posts nor takes input, and shows no hidden value.
+    expect(edited).not.toMatch(/method="post"|type="hidden"|<button type="submit"/);
+    expect(edited).toContain('<input class="ds-input" name="name" maxlength="200" required disabled tabindex="-1">');
+    // It posts to its own site only, and names each field once; website is the trap.
+    expect(refusal([{ ...form, action: 'https://elsewhere.example/collect' } as never]).reason).toContain('a path on the site itself');
+    expect(refusal([{ ...form, action: '//elsewhere.example/collect' } as never]).reason).toContain('action');
+    expect(refusal([{ ...form, inputs: [{ name: 'website', label: 'Site' }] } as never]).reason).toContain('never website');
+    expect(refusal([{ ...form, inputs: [{ name: 'email', label: 'Email' }, { name: 'email', label: 'Again' }] } as never]).reason).toContain('already a field');
+    expect(refusal([{ ...form, inputs: [{ name: 'when', label: 'When', type: 'date' }] } as never]).reason).toContain('type');
+  });
+
   test('a hero is a picture and a toned panel of logo, kicker, title, text and actions', () => {
     const top = hero();
     const html = render(top);

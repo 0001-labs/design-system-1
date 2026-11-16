@@ -100,7 +100,10 @@ export interface NativeFooter extends NativeBlockBase {
   brand?: NativePicture; tagline?: NativeWords; columns: NativeFooterColumn[]; legal?: NativeWords;
   policies?: NativeAction[]; languages?: NativeLanguage[]; follow?: NativeAction[]; preferences?: NativeRuntimeSlot; theme?: boolean;
 }
-export type NativeSection = NativeHero | NativeSplit | NativeStatement | NativePanels | NativeCards | NativeGallery | NativeBento | NativeQuestions | NativeFacts | NativeList | NativeCallToAction | NativeHeader | NativeFooter;
+/** A field of a form: the name its value is sent under, its label, and what kind of control it is. */
+export interface NativeFormInput { name: string; label: string; type?: 'text' | 'email' | 'tel' | 'textarea' | 'choices' | 'hidden'; required?: boolean; options?: string; value?: string }
+export interface NativeForm extends NativeBlockBase { kind: 'form'; action: string; button?: string; measure?: NativeMeasure; heading?: NativeWords; text?: NativeWords; inputs: NativeFormInput[] }
+export type NativeSection = NativeHero | NativeSplit | NativeStatement | NativePanels | NativeCards | NativeGallery | NativeBento | NativeQuestions | NativeFacts | NativeList | NativeCallToAction | NativeForm | NativeHeader | NativeFooter;
 export type NativeBlock = NativePrimitive | NativeSection;
 export const isNativeSection = (block: NativeBlock): block is NativeSection => (SECTION_KINDS as readonly string[]).includes(block.kind);
 
@@ -217,6 +220,7 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       case 'text':return text(value,definition.max??1000,`${path}: words of at most ${definition.max??1000} characters`);
       case 'date':{const day=text(value,10,`${path}: a day as YYYY-MM-DD`);if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(day)||Number.isNaN(Date.parse(day)))return invalid(`${path}: "${day}" is not a day as YYYY-MM-DD`);return day;}
       case 'address':return address(value,false,`${path}: not a safe address`);
+      case 'identifier':{const name=text(value,definition.max??80,`${path}: a name`);if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(name))return invalid(`${path}: a letter, then letters, digits, _ or -`);return name;}
       default:return invalid(`${path}: this field cannot be set on a section`);
     }
   };
@@ -260,6 +264,16 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       block[name]=slot(input[name],slotDefinition,`${path}.${name}`,depth);
     }
     if(definition.oneOf&&definition.oneOf.filter(name=>input[name]!==undefined).length!==1)return invalid(`${path}: exactly one of ${definition.oneOf.join(' or ')}`);
+    // A form posts to its own site and names each field once; `website` is the trap robots fill in.
+    if(definition.kind==='form'){
+      const form=block as unknown as NativeForm,names=new Set<string>();
+      if(!/^\/(?!\/)/.test(form.action))return invalid(`${path}.action: a path on the site itself, starting with /`);
+      for(const[index,item]of form.inputs.entries()){
+        if(!/^[A-Za-z][A-Za-z0-9_-]{0,39}$/.test(item.name)||item.name==='website')return invalid(`${path}.inputs[${index}].name: a letter, then letters, digits, _ or -, and never website`);
+        if(names.has(item.name))return invalid(`${path}.inputs[${index}].name: "${item.name}" is already a field`);
+        names.add(item.name);
+      }
+    }
     return block as unknown as NativeSection;
   };
   const node=(value:unknown,depth:number):NativeBlock=>{
@@ -387,7 +401,7 @@ export function nativeBlockStyles(block: NativeBlock): Record<string,string> {
   return styles;
 }
 /** The sections whose items stand in a column of a chosen measure: narrow 20 squares, reading 32, wide 62, full the page. */
-const MEASURED_KINDS: readonly string[] = ['cards','gallery','bento','questions','facts','list','action'];
+const MEASURED_KINDS: readonly string[] = ['cards','gallery','bento','questions','facts','list','action','form'];
 const measureWidth=(value:NativeMeasure)=>value==='narrow'?squares(20):value==='reading'?squares(32):value==='wide'?squares(62):'none';
 /** A section's fields as custom properties, read by consistency-native-page.css; tones travel as `data-tone` names. */
 export function nativeSectionStyles(block: NativeSection): Record<string,string> {
@@ -526,6 +540,7 @@ export function expandNativeSection(block: NativeSection): { children: NativeBlo
     case 'questions':return{marks,children:[...words('heading',block.heading,2),...block.items.map((item,index)=>put(flowBlock(sub(id,'items',index),'column',20,words('answer',item.answer,undefined,index),{disclosure:{label:item.question,open:field<string>('open')==='first'&&index===0}}),{slot:'items',item:index}))]};
     case 'facts':return{marks,children:block.items.map((item,index)=>put(flowBlock(sub(id,'items',index),'row',20,[...words('term',item.term,undefined,index),...words('value',item.value,undefined,index)],{mobileDirection:'column'}),{slot:'items',item:index}))};
     case 'list':return{marks,children:[]};
+    case 'form':return{marks,children:[...words('heading',block.heading,2),...words('text',block.text)]};
     case 'action':return{marks,children:action('button',{...block.button,size:block.button.size??field<NativeButtonSize>('size')},'primary')};
     case 'header':return{marks,children:[
       put(flowBlock(sub(id,'brand'),'row',4,[...picture('logo',block.logo,{fit:'contain'}),...words('name',block.name)],{mobileDirection:'row'}),{slot:'brand',classes:'ds-header__brand'}),
@@ -551,6 +566,7 @@ function renderNativeSection(block: NativeSection, options: NativePageRenderOpti
   const attrs=`class="${classes}" data-native-block="${escape(id)}" data-section="${block.kind}"${options.editor?` data-c9y-block="${escape(id)}" data-c9y-kind="${block.kind}"`:''}${block.hidden?' hidden':''}${block.locale?` data-native-locale="${block.locale}" lang="${block.locale}"`:''}${attrText(nativeSectionAttributes(block))}${markText(mark)} style="${escape(styleText(nativeBlockStyles(block)))}"`;
   const open=(inner:string)=>`<${tag} ${attrs}>${inner}</${tag}>`;
   if(block.kind==='list')return open(renderList(block,options));
+  if(block.kind==='form')return open(children.map(draw).join('')+renderForm(block,options));
   if(block.kind==='footer'){
     const line=(column:number,item:NativeLine,index:number)=>`<li>${item.href?`<a href="${escape(address(item.href))}"${current(options,item.href)} data-native-block="${escape(sub(id,'columns',column,'lines',index))}" data-slot="lines" data-item="${index}">${escape(item.text)}</a>`:`<span data-native-block="${escape(sub(id,'columns',column,'lines',index))}" data-slot="lines" data-item="${index}">${escape(item.text)}</span>`}</li>`;
     const columns=block.columns.map((column,index)=>`<div class="ds-footer__column" data-native-block="${escape(sub(id,'columns',index))}" data-slot="columns" data-item="${index}"${column.width?` style="--ds-footer-column-width:${column.width}"`:''}>${column.heading!==undefined?`<p class="ds-footer__heading" data-native-block="${escape(sub(id,'columns',index,'heading'))}" data-slot="heading" data-item="${index}">${column.href?`<a href="${escape(address(column.href))}">${escape(column.heading)}</a>`:escape(column.heading)}</p>`:''}<ul class="ds-footer__links" data-native-block="${escape(sub(id,'columns',index,'lines'))}" data-slot="lines" data-item="${index}">${column.lines.map((item,lineIndex)=>line(index,item,lineIndex)).join('')}</ul></div>`).join('');
@@ -566,6 +582,22 @@ function renderNativeSection(block: NativeSection, options: NativePageRenderOpti
     return open(`${brand}<nav class="ds-footer__columns" data-native-block="${escape(sub(id,'columns'))}" data-slot="columns">${columns}${follow}</nav><div class="ds-footer__base" data-native-block="${escape(sub(id,'base'))}">${base}${preferences||theme?`<div class="ds-footer__preferences" data-native-block="${escape(sub(id,'preferences-row'))}">${preferences}${theme}</div>`:''}</div>`);
   }
   return open(children.map(draw).join(''));
+}
+/**
+ * A form as the browser's own: a label over each control, a group of choices as checkboxes, a hidden value, the trap
+ * for robots and the button. Published it posts to its action; in the editor it neither posts nor takes input.
+ */
+function renderForm(block: NativeForm, options: NativePageRenderOptions): string {
+  const id=block.id,editor=options.editor===true,inert=editor?' disabled tabindex="-1"':'';
+  const input=(item:NativeFormInput,index:number)=>{
+    const at=`data-native-block="${escape(sub(id,'inputs',index))}" data-slot="inputs" data-item="${index}"`,name=escape(item.name),required=item.required?' required':'';
+    if(item.type==='hidden')return editor?'':`<input type="hidden" name="${name}" value="${escape(item.value??'')}">`;
+    if(item.type==='choices')return`<fieldset class="c9y-native-choices" ${at}><legend class="ds-field__label">${escape(item.label)}</legend>${(item.options??'').split('\n').map(option=>option.trim()).filter(Boolean).map(option=>`<label class="c9y-native-choice"><input type="checkbox" name="${name}" value="${escape(option)}"${inert}><span>${escape(option)}</span></label>`).join('')}</fieldset>`;
+    const control=item.type==='textarea'?`<textarea class="ds-input" name="${name}" rows="6" maxlength="5000"${required}${inert}></textarea>`:`<input class="ds-input" name="${name}"${item.type==='email'?' type="email" autocomplete="email" maxlength="254"':item.type==='tel'?' type="tel" autocomplete="tel" maxlength="40"':' maxlength="200"'}${required}${inert}>`;
+    return`<label class="ds-field" ${at}><span class="ds-field__label">${escape(item.label)}</span>${control}</label>`;
+  };
+  const button=escape(sectionField<string>(block,'button'));
+  return`<form class="c9y-native-form"${editor?'':` method="post" action="${escape(address(block.action))}"`} data-native-block="${escape(sub(id,'form'))}">${block.inputs.map(input).join('')}<span class="c9y-native-signup-trap" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><input name="website" tabindex="-1" autocomplete="off"></span>${editor?`<span class="ds-button ds-button--primary c9y-native-button">${button}</span>`:`<button type="submit" class="ds-button ds-button--primary c9y-native-button">${button}</button>`}</form>`;
 }
 function renderList(block: NativeList, options: NativePageRenderOptions): string {
   const id=block.id,dated=sectionField<boolean>(block,'dated'),grouped=sectionField<boolean>(block,'grouped'),slot=block.collection?'collection':'items';

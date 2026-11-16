@@ -11,7 +11,7 @@ import type { NativeBlock } from './consistency-native-page';
 export const TONES = ['paper', 'cream', 'dark', 'accent', 'highlight', 'band', 'pastel-1', 'pastel-2', 'pastel-3', 'pastel-4', 'pastel-5', 'pastel-6'] as const;
 export type Tone = (typeof TONES)[number];
 export const PRIMITIVE_KINDS = ['text', 'component', 'flow', 'grid', 'content', 'image', 'link', 'collection', 'runtime'] as const;
-export const SECTION_KINDS = ['hero', 'split', 'statement', 'panels', 'cards', 'gallery', 'bento', 'questions', 'facts', 'list', 'action', 'header', 'footer'] as const;
+export const SECTION_KINDS = ['hero', 'split', 'statement', 'panels', 'cards', 'gallery', 'bento', 'questions', 'facts', 'list', 'form', 'action', 'header', 'footer'] as const;
 export type SectionKind = (typeof SECTION_KINDS)[number];
 
 /**
@@ -489,6 +489,31 @@ export const SECTIONS: KindDefinition[] = [
         { name: 'Board meeting', date: '2026-01-14', href: '/minutes/2026-01/' },
       ] },
       { id: 'shop', kind: 'list', collection: 'storefront' },
+    ],
+  },
+  {
+    kind: 'form', layer: 'section',
+    description: 'A form a visitor fills in and sends: a heading and a line, then its fields one under another and the button. It posts as an ordinary form, with no script, to an address on the site itself, which answers with the page to show next.',
+    fields: {
+      action: { type: 'address', required: true, meaning: 'Where the form posts: a path on the site itself, starting with /, answered by the site\'s enquiry receiver' },
+      button: { type: 'text', max: 80, default: 'Send', meaning: 'The words on the button' },
+      measure: { ...MEASURE, default: 'narrow' },
+    },
+    slots: {
+      heading: words('A heading above the form'),
+      text: words('A line or two under the heading'),
+      inputs: { type: 'items', required: true, min: 1, max: 24, meaning: 'The fields, in order', item: {
+        name: { type: 'identifier', max: 40, required: true, meaning: 'The name the value is sent under: a letter, then letters, digits, _ or -, at most 40; never website, which is the form\'s trap for robots' },
+        label: { type: 'text', max: 200, required: true, meaning: 'The words over the field' },
+        type: choice(['text', 'email', 'tel', 'textarea', 'choices', 'hidden'], 'text', 'One line of words, an email address, a phone number, several lines, a group of choices of which any may be ticked (`options`), or a value sent without being shown (`value`)'),
+        required: boolean(false, 'The form is not sent without it'),
+        options: { type: 'text', max: 4000, meaning: 'The choices, one a line' },
+        value: { type: 'text', max: 1000, meaning: 'What a hidden field sends' },
+      } },
+    },
+    examples: [
+      { id: 'write', kind: 'form', action: '/enquiries', button: 'Send', heading: 'Write to us', text: 'We answer within a day.', inputs: [{ name: 'name', label: 'Name', required: true }, { name: 'email', label: 'Email', type: 'email', required: true }, { name: 'topics', label: 'What is it about?', type: 'choices', options: 'A booking\nA gift card\nSomething else' }, { name: 'message', label: 'Message', type: 'textarea' }, { name: 'source', label: 'Source', type: 'hidden', value: 'contact page' }] },
+      { id: 'list', kind: 'form', action: '/enquiries', button: 'Tell me', measure: 'reading', heading: 'Hear when we open', inputs: [{ name: 'email', label: 'Email', type: 'email', required: true }, { name: 'phone', label: 'Phone, if you would rather we call', type: 'tel' }] },
     ],
   },
   {
