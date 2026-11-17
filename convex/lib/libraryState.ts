@@ -9,17 +9,6 @@ export type LibraryState =
   | "unpublished-changes"
   | "published";
 
-/**
- * The dashboard state of a library, derived rather than stored.
- *
- * One function, used by both `libraries.list` and `libraries.get`, so a card
- * and the editor it opens can never disagree about what state something is in.
- *
- * `failed-validation` deliberately takes precedence over `published`: a library
- * can be serving v6 while its most recent publish attempt failed, and the spec
- * requires that be visible. The flag is sticky until the next publish attempt,
- * so it survives a reload.
- */
 export function libraryState(library: Doc<"libraries">): LibraryState {
   if (library.purgedAt !== undefined) return "purged";
   if (library.archivedAt !== undefined) return "archived";

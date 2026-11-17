@@ -3,7 +3,6 @@ import { LitElement, html, unsafeCSS } from "lit";
 import { define } from "../0-face/define";
 import styles from "./styles/ds-avatar-group.css?inline";
 
-/** Overlapping identity marks. The app chooses people, overflow and actions. */
 export class AvatarGroup extends LitElement {
   static properties = {
     size: { type: String, reflect: true },
@@ -11,7 +10,6 @@ export class AvatarGroup extends LitElement {
     hasLead: { state: true },
     hasMembers: { state: true },
   };
-  /** Avatars have one size; `compact` is kept for products that still name it. */
   declare size: "default" | "compact";
   declare vertical: boolean;
   declare private hasLead: boolean;

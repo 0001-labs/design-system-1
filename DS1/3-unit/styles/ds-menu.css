@@ -1,9 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* On whole squares: the line and the padding inside it make half a square on
- * each side, and every entry is one square high, so a menu of n entries is
- * n + 1 squares high. Placed half a square from its anchor, its entries
- * stand on the anchor's grid lines. No shadow: words on paper. */
 :host {
   --ds-menu-row: var(--ds-row-height);
   box-sizing: border-box;
@@ -16,7 +12,6 @@
 }
 :host([hidden]) { display: none !important; }
 
-/* Keep the shared face inside the boundary: product resets can reach a host. */
 .frame {
   box-sizing: border-box;
   display: flex;
@@ -39,9 +34,6 @@
 }
 slot { display: contents; }
 
-/* Every entry is one row, whatever button styles a product or library gives
- * it: shared buttons through their height, a native button or link through
- * its box, which the menu's !important holds against outside styles. */
 ::slotted(:is(ds-button, ds-file-picker)) { flex: 0 0 auto; width: 100%; --ds-button-height: var(--ds-menu-row); }
 ::slotted(:is(button, a, [role="option"], [role^="menuitem"]):not(ds-button, ds-file-picker)) {
   box-sizing: border-box !important;
@@ -61,8 +53,6 @@ slot { display: contents; }
 :host([data-grid]) .frame { display: grid; grid-template-columns: repeat(var(--ds-menu-columns), var(--ds-row-height)); width: max-content; max-width: 100%; }
 :host([data-grid]) ::slotted(:is(ds-button, ds-file-picker)) { --ds-button-height: var(--ds-menu-row); --ds-button-min-width: 0px; --ds-button-padding: 0; --ds-button-align: center; }
 
-/* Compact entries are filled rows edge to edge, 19px with the 1px between
- * them, a square's pitch: n entries are n squares less the last line. */
 :host([compact]) {
   --ds-menu-row: calc(var(--ds-row-height) - 1px);
   width: var(--ds-menu-width, calc(8 * var(--ds-unit)));
@@ -117,6 +107,5 @@ slot { display: contents; }
   box-sizing: border-box;
   border: 0;
   border-top: 1px solid var(--ds-border-color);
-  /* One square with its line: half a square above it, less the line, and half below. */
   margin: calc(var(--ds-unit) / 2 - 1px) 0 calc(var(--ds-unit) / 2);
 }

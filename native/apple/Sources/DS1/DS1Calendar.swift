@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// One date of the shared compact calendar. A caller supplies dates from its calendar model;
-/// this view owns only the square layout, marks, selection and accessibility.
 public struct DS1CalendarDay: Identifiable {
     public var id: String
     public var label: String
@@ -14,9 +12,6 @@ public struct DS1CalendarDay: Identifiable {
     }
 }
 
-/// A compact month: seven one-square days across, weekday headings on one square.
-/// The selected date takes the shared blue rounded square; today the red disc, nine tenths
-/// of a square. Activity colours sit side by side under a date. The agenda belongs to the caller.
 public struct DS1Calendar: View {
     @Environment(\.ds1Scale) private var scale
     let weekdays: [String]

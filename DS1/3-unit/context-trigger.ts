@@ -1,21 +1,16 @@
 import "./styles/context-trigger.css";
 
-/** A touch held this long opens a context menu: half a second, as tooltips and iOS wait. */
 export const LONG_PRESS = 500;
 
 export type ContextGesture = MouseEvent | PointerEvent | KeyboardEvent;
 export type ContextPoint = { x: number; y: number };
 type Options = {
-  /** Return the actual row when one container delegates many controls. */
   resolve?: (event: ContextGesture) => HTMLElement | null;
   touch?: boolean;
-  /** Titles can suppress native text selection/callout while keeping scrolling. */
   selection?: boolean;
   aria?: boolean;
 };
 
-/** The same native context gesture for Menu and other shared action surfaces.
- * Returning false leaves the gesture to the browser or an enclosing control. */
 export function bindContextMenuTrigger(
   trigger: HTMLElement,
   open: (point: ContextPoint, control: HTMLElement, event: ContextGesture) => void | false,
@@ -58,13 +53,9 @@ export function bindContextMenuTrigger(
   };
   const context = (event: MouseEvent) => {
     if (event.defaultPrevented) return;
-    // Settling a transform on pointerdown can move another row beneath the
-    // pointer before Chromium hit-tests contextmenu. Keep the initiating row.
     const pressed = mousePress;
     mousePress = undefined;
     const followsPress = pressed && event.button === 2 && Math.hypot(event.clientX - pressed.event.clientX, event.clientY - pressed.event.clientY) <= 10;
-    // Native events lose their composed path after dispatch. Delegated and
-    // shadow-root controls still need the original path and unretargeted target.
     const gesture = followsPress ? new Proxy(pressed.event, {
       get(target, key) {
         if (key === "composedPath") return () => pressed.path;
@@ -73,8 +64,6 @@ export function bindContextMenuTrigger(
         return typeof value === "function" ? value.bind(target) : value;
       },
     }) : event;
-    // Adopted controls retain their creating realm’s prototype; ownerDocument
-    // alone cannot choose an instanceof constructor. Containment stays authoritative.
     if (gesture !== event && (typeof (gesture.target as Node | null)?.nodeType !== "number" || !trigger.contains(gesture.target as Node))) return;
     const control = resolve(gesture); if (!control || !enabled(control)) return;
     cancel();

@@ -1,4 +1,3 @@
-/** Approved page content only. Aa owns the native writing structures and their editing. */
 export const PAGE_INSERTIONS = [
   { id: 'list', label: 'List', icon: 'bullet', source: '- List item' },
   { id: 'tabs', label: 'Tabs', icon: 'tabs', source: '<tabs>\n<tab name="Tab 1">\n</tab>\n<tab name="Tab 2">\n</tab>\n</tabs>' },

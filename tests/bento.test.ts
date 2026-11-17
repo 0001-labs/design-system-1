@@ -14,7 +14,6 @@ test("a tile's place is four whole numbers with a size", () => {
 });
 
 test("a tile reaches towards each tile a square away that it overlaps along that side", () => {
-  // Ezo's first rows: archive and home on the left, ezo in the middle, stats on the right.
   const reach = bentoReach([[0, 0, 15, 7], [16, 0, 16, 20], [33, 0, 15, 12], [0, 8, 15, 12]]);
   expect(reach[0]).toEqual({ start: false, top: false, end: true, bottom: true });
   expect(reach[1]).toEqual({ start: true, top: false, end: true, bottom: false });

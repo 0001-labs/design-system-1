@@ -8,8 +8,6 @@ test('a native page asks for no words file of its own', async () => {
     requests.push(input);
     return new Response('', { status: 404 });
   }));
-  // The published client is one bundle, so all of it runs before the language module's next task. Vitest
-  // loads each module in a task of its own, so the timer waits here until the whole client has run.
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   await import('../shared/consistency-block-client');
   await vi.advanceTimersByTimeAsync(200);

@@ -1,8 +1,3 @@
-// ds-stat.ts
-// A figure with its label and a line for its change or caption, written in
-// the current language through 0-face/format.ts. Drawn by 1-root/figures.css,
-// the same classes a page without scripts writes.
-
 import { LitElement, html, nothing, unsafeCSS } from "lit";
 import { getText } from "../0-face/i18n";
 import { define } from "../0-face/define";
@@ -16,33 +11,6 @@ import styles from "./styles/ds-stat.css?inline";
 export type StatTone = "danger" | "warning";
 const TONES: readonly StatTone[] = ["danger", "warning"];
 
-/**
- * @element ds-stat
- * @prop {string} label - What the figure is: a translation key, or literal words.
- * @prop {number} value - The figure, written as `format` says in the current language.
- * @prop {string} figure - Words in place of the value ("Incomplete"): a key, or literal words.
- * @prop {"number" | "compact" | "percent" | "money"} format - How the value is written. Number by default.
- * @prop {string} currency - The ISO 4217 code for money.
- * @prop {boolean} minor - The money is counted in the currency's minor unit (cents).
- * @prop {boolean} whole - Money in whole units only.
- * @prop {number} digits - Decimals, at least and at most.
- * @prop {number} change - A change, written with its sign and an up or down icon before the caption.
- * @prop {"number" | "compact" | "percent" | "money"} changeFormat - How the change is written (`change-format`). The value's format by default; `percent` reads a fraction.
- * @prop {"danger" | "warning"} changeTone - The change in that colour (`change-tone`), where the page knows which way is bad.
- * @prop {string} caption - A line under the figure: a key, or literal words.
- * @prop {string} icon - An icon from the library on its own square before the label.
- * @prop {"danger" | "warning"} tone - The figure in that colour.
- * @prop {boolean} cells - Draw each digit in a cell of one width, for a face whose digits differ in width.
- * @prop {boolean} literal - Show `label`, `figure` and `caption` as written, never looked up.
- *
- * @slot label - The label, as inline content.
- * @slot figure - The figure, when the page writes it itself.
- * @slot - Anything that belongs between the figure and the caption, such as a `ds-meter`.
- * @slot caption - The caption, as inline content.
- *
- * @example
- * <ds-stat label="Revenue" value="1234.5" format="money" currency="EUR" change="0.12" change-format="percent" caption="Since last month"></ds-stat>
- */
 export class Stat extends LitElement {
   static properties = {
     label: { type: String },
@@ -64,7 +32,6 @@ export class Stat extends LitElement {
   };
 
   static styles = [unsafeCSS(metrics), unsafeCSS(figures), unsafeCSS(styles)];
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".ds-stat__figure" });
 
   declare label: string | undefined;
@@ -118,13 +85,11 @@ export class Stat extends LitElement {
     return { format: figureFormat(format), currency: this.currency, minor: this.minor, whole: this.whole, digits: this.digits };
   }
 
-  /** The figure's text as it is drawn: the words given, or the value written in the current language. */
   get text(): string {
     if (this.figure) return this.words(this.figure);
     return typeof this.value === "number" ? formatFigure(this.value, this.options(this.format)) : "";
   }
 
-  /** The change's text with its sign, or empty without a change. */
   get changeText(): string {
     if (typeof this.change !== "number" || !Number.isFinite(this.change)) return "";
     const format = this.changeFormat ?? this.format;

@@ -6,7 +6,6 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { sourceSites, scanApp, checkSnapshots, checkLockedControls, checkLockedText, liveBaseLinks } from "../scripts/component-adoption";
 
-// Git-backed fixtures spawn many processes; budget for loaded unattended hosts.
 vi.setConfig({ testTimeout: 120_000 });
 const temporary: string[] = [];
 afterEach(() => { for (const dir of temporary.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -73,7 +72,6 @@ describe("source adoption evidence", () => {
     expect(checkSnapshots(app, "design/components-manifest.json", ds).cells.button).toMatchObject({ snapshot: "verified", current: false });
     write(app, "design/2-core/ds-button.ts", "export const tag = 'local-button';");
     expect(checkSnapshots(app, "design/components-manifest.json", ds).cells.button?.snapshot).toBe("modified");
-    // Editing a manifest to bless a local change must not make it shared DS1.
     const path = join(app, "design/components-manifest.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     manifest.files["2-core/ds-button.ts"] = createHash("sha256").update(readFileSync(join(app, "design/2-core/ds-button.ts"))).digest("hex");
@@ -195,7 +193,7 @@ describe("source adoption evidence", () => {
     manifest.files['react/input.ts'] = createHash('sha256').update(readFileSync(join(app, 'design/react/input.ts'))).digest('hex');
     writeFileSync(manifestPath, JSON.stringify(manifest));
     expect(scan().cells.input).toMatchObject({ shared: 0, unverified: 2 });
-  }, 120_000); // This integration fixture repeatedly reads Git across every adapter graph; a full parallel run can take over 20 seconds.
+  }, 120_000);
 });
 
 it("counts a shared dialog frame once across HTML, Lit, JSX and direct DOM composition", () => {
@@ -425,7 +423,6 @@ describe("text on the grid: .ds-text classes and prose", () => {
   it("counts .ds-text and prose sites as DS1 styles when the lock verifies text.css and prose.css", () => {
     const { scan } = textFixture({ "text.css": ".ds-text { line-height: 20px; }", "prose.css": "[data-ds-prose] { line-height: 20px; }" });
     const report = scan();
-    // The example inside data-ds-not-prose and the paragraph outside stay local.
     expect(report.cells.text).toMatchObject({ styled: 4, local: 2, unverified: 0 });
     expect(report.cells.list).toMatchObject({ styled: 1, local: 0 });
     expect(report.cells.table).toMatchObject({ styled: 1, local: 0 });
@@ -514,7 +511,6 @@ describe("empty states and notices", () => {
     const sheets = { "notice.css": ".ds-notice { display: grid; }", "empty.css": ".ds-empty { display: flex; }", "component-tokens.css": ":root { --t: 1; }", "component-metrics.css": ":root { --m: 1; }", "component-appearance.css": ":root { --a: 1; }" };
     for (const [file, body] of Object.entries(sheets)) write(ds, `DS1/1-root/${file}`, body);
     commit(ds, "Sheets");
-    // The product copied the notice sheet and the tokens, not the empty-state sheet.
     const copied = Object.fromEntries(Object.entries(sheets).filter(([file]) => file !== "empty.css"));
     for (const [file, body] of Object.entries(copied)) write(app, `web/ds1/${file}`, body);
     write(app, "sync.lock.json", JSON.stringify({ "Design system 1": { commit: git(ds, "rev-parse", "HEAD"), files: Object.fromEntries(Object.entries(copied).map(([file, body]) => [`web/ds1/${file}`, sha(body)])) } }));
@@ -539,7 +535,6 @@ describe("empty states and notices", () => {
     const sheets = { "header.css": ".ds-header { display: flex; }", "footer.css": ".ds-footer { display: flex; }", "document.css": ".ds-document { display: flex; }", "component-tokens.css": ":root { --t: 1; }", "component-metrics.css": ":root { --m: 1; }", "component-appearance.css": ":root { --a: 1; }" };
     for (const [file, body] of Object.entries(sheets)) write(ds, `DS1/1-root/${file}`, body);
     commit(ds, "Sheets");
-    // The product copied every sheet but the footer's.
     const copied = Object.fromEntries(Object.entries(sheets).filter(([file]) => file !== "footer.css"));
     for (const [file, body] of Object.entries(copied)) write(app, `web/ds1/${file}`, body);
     write(app, "sync.lock.json", JSON.stringify({ "Design system 1": { commit: git(ds, "rev-parse", "HEAD"), files: Object.fromEntries(Object.entries(copied).map(([file, body]) => [`web/ds1/${file}`, sha(body)])) } }));
@@ -639,7 +634,6 @@ describe("keyboard shortcut hints", () => {
   });
 });
 
-/** Tags the scanner places in a column: custom elements and the recognized native elements. */
 const counted = (tag: string) => tag.includes("-") || ["button", "input", "select", "textarea", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "table", "form", "dialog", "details", "kbd"].includes(tag);
 
 describe("classes written in code and local DOM builders", () => {

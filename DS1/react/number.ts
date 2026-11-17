@@ -1,4 +1,3 @@
-/** React binding only. ds-number owns the field and all of its behaviour. */
 import { createElement, forwardRef, useEffect, useImperativeHandle, useRef, type HTMLAttributes } from "react";
 import type { NumberField as NumberElement } from "../2-core/ds-number";
 export type { NumberElement };
@@ -9,21 +8,16 @@ export type NumberFieldProps = Omit<HTMLAttributes<NumberElement>, "onChange" | 
   step?: number;
   bigStep?: number;
   places?: number;
-  /** What a double-click on the lead puts back. */
   defaultValue?: number;
   label?: string;
   icon?: string;
   unit?: string;
-  /** Width in squares, four by default. */
   width?: number;
-  /** `value` makes the whole field the handle, dragged up and down. */
   drag?: "lead" | "value";
   name?: string;
   disabled?: boolean;
   readOnly?: boolean;
-  /** While a drag moves the value. */
   onInput?: (value: number) => void;
-  /** When a value is taken: a drag's end, Enter, leaving the field, an arrow. */
   onChange?: (value: number) => void;
 };
 

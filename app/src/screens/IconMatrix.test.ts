@@ -19,7 +19,6 @@ const report: AdoptionReport = {
           { file: 'src/a.css', line: 2, name: 'close.svg', kind: 'mask', status: 'shared', drawing: 'src/icons/close.svg' },
           { file: 'src/b.ts', line: 4, name: '×', kind: 'glyph', status: 'differs' },
         ] },
-        // A site from a snapshot made before kinds were recorded.
         star: { uses: 1, status: 'shared', copy: 'none', sites: [{ file: 'src/a.tsx', line: 5, name: 'star' }] },
         Trash2: { uses: 1, status: 'local', copy: 'none', ds1: 'close', sites: [{ file: 'src/a.tsx', line: 7, name: 'Trash2', kind: 'component', status: 'local' }] },
       },

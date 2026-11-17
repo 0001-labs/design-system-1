@@ -1,55 +1,28 @@
 import { bindSpacingHandle } from '../../app/src/2-core/spacing-handle';
 import './sidebar-edge.css';
 
-/**
- * The edge of Consistency's sidebar (Joachim, 26 October 2026): the boundary between the sidebar and the work is the
- * handle. Dragged towards the left it folds the sidebar away and the work takes the whole window inside a one-square
- * margin, as 0001.dev's page stands; dragged back it opens again. Folded, a strip 12px wide at the window's edge, lit by
- * a faint gradient, shows the sidebar over the work while the pointer (or focus) is on it, without a backdrop, so the
- * next place can be chosen; it goes away when the pointer leaves or a place is chosen. The strip stops short of the
- * frame's edge, so grabbing that edge to drag the sidebar open never shows it (Joachim, 26 October 2026). A finger's
- * press on the strip or the edge shows it too.
- *
- * Folding never pushes the sidebar out (Joachim, 26 October 2026): it stays where it stands and the work slides over
- * it, the sidebar blurring and fading as it is covered; opening uncovers it the same way. During a drag nothing is
- * laid out again: the work moves by transform alone, the edge under the hand.
- * On release the layout is committed once, open or folded by where the edge is and how fast it was going, and the
- * transforms settle from where they stood to nothing (short and interruptible: a new press takes it from there). The
- * keyboard is immediate. The choice is the viewer's, kept in `localStorage` and drawn on first paint.
- *
- * The pointer, Escape and keyboard lifecycle is the editor's own edge handle's (`bindSpacingHandle`), so this edge
- * behaves as the canvas's spacing and size edges do. Phones keep the page's own drawer; the edge is for wider windows.
- */
 export type SidebarState = 'open' | 'collapsed';
 export const SIDEBAR_KEY = 'consistency-sidebar';
-/** A release faster than this (px per ms) goes the way the hand was going, wherever the edge is. */
 export const FLICK = 0.4;
-/** The settle after a release or a press, in ms; nothing with reduced motion. */
 export const SETTLE_MS = 240;
-/** DS1's drawer curve: quick to leave, long to rest. */
 const CURVE: [number, number, number, number] = [0.32, 0.72, 0, 1];
-/** How far the covered sidebar blurs, in px at a square of 20px. */
 const BLUR = 6;
-/** How long the shown sidebar waits after the pointer leaves before it goes, in ms. */
 const LEAVE_MS = 200;
 
 export function storedSidebar(): SidebarState {
   try { return localStorage.getItem(SIDEBAR_KEY) === 'collapsed' ? 'collapsed' : 'open'; } catch { return 'open'; }
 }
 function storeSidebar(state: SidebarState) {
-  try { localStorage.setItem(SIDEBAR_KEY, state); } catch { /* the choice lasts this visit */ }
+  try { localStorage.setItem(SIDEBAR_KEY, state); } catch {}
 }
 
-/** Where a release settles: a flick goes its way; otherwise the nearer side, `x` being how far open the edge stands of `travel`. */
 export function settleTarget(x: number, travel: number, velocity: number): SidebarState {
   if (Math.abs(velocity) >= FLICK) return velocity > 0 ? 'open' : 'collapsed';
   return x >= travel / 2 ? 'open' : 'collapsed';
 }
 
-/** Where the sidebar stands while a panel on the other side has its room, and after: folded, then as the viewer left it. */
 export const awayTarget = (away: boolean, stored: SidebarState): SidebarState => away ? 'collapsed' : stored;
 
-/** A CSS cubic-bezier as a function of progress, solved for x by Newton's method with bisection behind it. */
 export function bezier([x1, y1, x2, y2]: [number, number, number, number]): (t: number) => number {
   const at = (a: number, b: number, t: number) => 3 * a * (1 - t) ** 2 * t + 3 * b * (1 - t) * t ** 2 + t ** 3;
   const slope = (a: number, b: number, t: number) => 3 * a * (1 - t) ** 2 + 6 * (b - a) * (1 - t) * t + 3 * (1 - b) * t ** 2;
@@ -67,27 +40,20 @@ export function bezier([x1, y1, x2, y2]: [number, number, number, number]): (t: 
 }
 const ease = bezier(CURVE);
 
-/** What stands where: how far open the work is (`x`, 0 to the travel); the sidebar stays and is covered as `x` falls. */
 type Pose = { x: number };
 
 export class SidebarEdge {
-  /** The separator on the sidebar's edge, rendered by the home before its page. */
   readonly handle: HTMLDivElement;
-  /** Folded, the strip at the window's edge whose hover shows the sidebar; rendered by the home before the handle. */
   readonly reveal: HTMLDivElement;
   private state: SidebarState;
   private pose: Pose = { x: 0 };
-  /** The folded sidebar shown over the work stays clear while the work moves (a drag or settle that keeps it shown). */
   private clear = false;
-  /** The layout and pose a pointer gesture started from, and whether the shown sidebar stays while the work follows the hand. */
   private gesture: { from: SidebarState; held: boolean; samples: { t: number; x: number }[] } | null = null;
   private frame = 0;
   private leaving = 0;
-  /** After a fold by the pointer, the edge shows nothing until the pointer has left it once. */
   private quiet = false;
   private keyboard = false;
   private unbind: (() => void) | null = null;
-  /** A panel on the other side of the work has the sidebar's room. */
   private away = false;
 
   constructor(private readonly host: HTMLElement) {
@@ -108,12 +74,9 @@ export class SidebarEdge {
     this.reveal = reveal;
   }
 
-  /** Open or folded, as the viewer left it. */
   get value(): SidebarState { return this.state; }
-  /** Whether the folded sidebar is being shown over the work. */
   get shown(): boolean { return this.host.hasAttribute('data-sidebar-peek'); }
 
-  /** Draws the kept state before the home's first render, and listens. */
   connect() {
     this.draw();
     this.unbind = bindSpacingHandle(this.handle, () => ({
@@ -121,7 +84,6 @@ export class SidebarEdge {
       onPointerStart: () => { this.stop(); this.keyboard = false; },
       onStart: kind => { if (kind === 'pointer') this.begin(); },
       onPreview: x => { if (this.gesture) this.follow(x); },
-      // The keyboard's arrows, Home and End: at once.
       onCommit: x => { if (!this.gesture) this.set(x > 0 ? 'open' : 'collapsed'); },
       onEnd: cancelled => { if (this.gesture) this.release(cancelled); },
       onTap: event => this.tap(event),
@@ -155,7 +117,6 @@ export class SidebarEdge {
     removeEventListener('keydown', this.onAnyKey, true);
   }
 
-  /** Opens or folds the sidebar at once (the keyboard, or a caller). */
   set(state: SidebarState) {
     this.stop();
     this.state = state;
@@ -164,11 +125,6 @@ export class SidebarEdge {
     this.draw();
   }
 
-  /**
-   * A panel on the other side of the work takes the sidebar's room (Joachim, 16 November 2026): the sidebar folds
-   * while it is open and comes back as the viewer left it when it closes. Nothing is stored, so the viewer's own
-   * choice stays theirs; folded this way the sidebar still shows at the window's edge and opens by hand.
-   */
   giveWay(on: boolean) {
     if (this.away === on) return;
     this.away = on;
@@ -176,17 +132,14 @@ export class SidebarEdge {
     if (target !== this.state) this.settle(target, false, false);
   }
 
-  /** A place was chosen: a sidebar shown over the work goes. */
   chosen() { if (this.shown) this.show(false); }
 
-  // The geometry, in px: a square, the sidebar's width (eleven squares) and the gap after it (one), which is how far the work moves.
   private unit() { return this.handle.offsetWidth || 20; }
   private travel() { return 12 * this.unit(); }
   private page() { return this.host.querySelector<HTMLElement>(':scope > ds-page'); }
   private nav() { return this.host.querySelector<HTMLElement>(':scope > ds-page > nav.home-nav'); }
   private rest(state: SidebarState): Pose { return { x: state === 'open' ? this.travel() : 0 }; }
 
-  /** The state as attributes, and every transform taken off: the layout alone says where things stand. */
   private draw() {
     this.host.setAttribute('data-sidebar', this.state);
     this.host.removeAttribute('data-sidebar-moving');
@@ -199,11 +152,6 @@ export class SidebarEdge {
     this.pose = this.rest(this.state);
   }
 
-  /**
-   * Places everything for a pose against the layout committed now: the page moves by how far the work stands from
-   * the layout's own place, the sidebar is held where it stands and covered (blurred and faded by how far the work
-   * has come over it), and the edge stays where the work begins.
-   */
   private place(pose: Pose) {
     this.pose = pose;
     const base = this.state === 'open' ? this.travel() : 0;
@@ -216,14 +164,12 @@ export class SidebarEdge {
       nav.style.opacity = this.clear ? '1' : String(1 - covered);
       nav.style.filter = this.clear || !covered ? '' : `blur(${(covered * BLUR * this.unit() / 20).toFixed(2)}px)`;
     }
-    // The edge's line is the frame's own edge, so it moves exactly as the work does.
     this.handle.style.transform = `translateX(${shift}px)`;
   }
 
   private begin() {
     clearTimeout(this.leaving);
     const from = this.state;
-    // Folded with the sidebar shown, the sidebar stays and the work follows the hand; otherwise the sidebar comes with it.
     this.gesture = { from, held: from === 'collapsed' && this.shown, samples: [] };
     this.clear = this.gesture.held;
     this.host.setAttribute('data-sidebar-moving', '');
@@ -243,12 +189,10 @@ export class SidebarEdge {
     const first = gesture.samples[0], last = gesture.samples.at(-1);
     const velocity = first && last && last.t > first.t ? (last.x - first.x) / (last.t - first.t) : 0;
     const target = cancelled ? gesture.from : settleTarget(this.pose.x, this.travel(), velocity);
-    // A fold by the hand leaves the pointer on the edge: it shows nothing until the pointer has left.
     if (target === 'collapsed' && gesture.from === 'open') this.quiet = true;
     this.settle(target, target === 'collapsed' && gesture.held);
   }
 
-  /** Commits the layout once, then moves what stood where it was to its place in it; `keep` false leaves the viewer's stored choice alone. */
   private settle(target: SidebarState, shown: boolean, keep = true) {
     this.stop();
     const from = { ...this.pose };
@@ -273,10 +217,8 @@ export class SidebarEdge {
     this.frame = requestAnimationFrame(step);
   }
 
-  /** Stops a settle where it stands, so a new press takes it from there. */
   private stop() { if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } }
 
-  /** A press without a drag: a finger shows the folded sidebar; a mouse or pen opens or folds it. */
   private tap(event: PointerEvent) {
     if (event.pointerType === 'touch' && this.state === 'collapsed') { this.settle('collapsed', true); return; }
     const target = this.state === 'open' ? 'collapsed' : 'open';
@@ -284,7 +226,6 @@ export class SidebarEdge {
     this.settle(target, false);
   }
 
-  /** Shows or hides the folded sidebar over the work, by its own transition. */
   private show(on: boolean) {
     clearTimeout(this.leaving);
     if (on && (this.state !== 'collapsed' || this.gesture || this.frame)) return;
@@ -292,7 +233,6 @@ export class SidebarEdge {
     if (this.state === 'collapsed') this.pose = this.rest('collapsed');
   }
 
-  /** The shown sidebar goes a moment after the pointer leaves, unless the pointer, a menu of its or the keyboard is still in it. */
   private leaveSoon() {
     clearTimeout(this.leaving);
     if (!this.shown) return;
@@ -316,13 +256,11 @@ export class SidebarEdge {
     this.show(true);
   };
   private readonly onHandleLeave = () => { this.quiet = false; this.leaveSoon(); };
-  /** A finger on the strip shows the folded sidebar. */
   private readonly onRevealDown = (event: PointerEvent) => { if (event.pointerType === 'touch') this.show(true); };
   private readonly onFocus = () => { if (this.keyboard) this.show(true); };
   private readonly onOver = (event: PointerEvent) => { if (this.shown && this.inside(event.target)) clearTimeout(this.leaving); };
   private readonly onOut = (event: PointerEvent) => { if (this.shown && this.inside(event.target) && !this.inside(event.relatedTarget)) this.leaveSoon(); };
   private readonly onFocusOut = (event: FocusEvent) => { if (this.shown && this.keyboard && !this.inside(event.relatedTarget)) this.leaveSoon(); };
-  /** A press anywhere but the sidebar and its edge puts the shown sidebar away. */
   private readonly onDown = (event: PointerEvent) => {
     this.keyboard = false;
     if (this.shown && !event.composedPath().some(node => node === this.handle || node === this.reveal || node === this.nav())) this.show(false);

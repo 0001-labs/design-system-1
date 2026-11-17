@@ -1,6 +1,5 @@
 import { constraints } from '../DS1/0-face/constraints';
 
-/** Permanent catalogue identities. Never renumber or reuse an ID when a rule is retired. */
 export const CONSTRAINT_IDENTITIES: Record<string, { id: string; tag: string }> = {
   'select.arrow-room': { id: 'C015', tag: 'Arrow room' },
   'window.shape': { id: 'C014', tag: 'Window shape' },
@@ -21,7 +20,6 @@ export const CONSTRAINT_IDENTITIES: Record<string, { id: string; tag: string }> 
 export const CONSTRAINT_CATALOGUE = constraints.map(({ code, rule, why, components, check }) => ({
   ...CONSTRAINT_IDENTITIES[code], code, rule, why, components, check,
 }));
-/** Foundation rules documented separately from the measurable component checks. */
 export const FOUNDATION_CONSTRAINTS = [
   { id: 'F001', tag: 'Grid', code: 'foundation.squares', rule: 'Use 20px squares multiplied by the device scale. Widths and heights use whole squares; gaps use whole or half squares. Lines stay one pixel.', anchor: 'on-the-squares' },
   { id: 'F002', tag: 'Separation', code: 'foundation.collisions', rule: 'Pieces never overlap. Rows meet edge to edge; movable pieces follow the pointer and settle on free whole squares.', anchor: 'nothing-collides' },
@@ -32,7 +30,6 @@ export const FOUNDATION_CONSTRAINTS = [
 export type ExampleCheck = { code: string; width: number; theme: string; measured: number; status: 'pass' | 'fail' | 'review' | 'absent'; findings: { message: string; element: string; review: boolean }[] };
 export type ExampleResult = { id: string; checks: ExampleCheck[]; errors: string[]; preview?: string };
 export type ExampleReport = { schema: 1; generatedAt: string; revision: string; sourceDirty?: boolean; widths: number[]; themes: string[]; examples: ExampleResult[] };
-/** A check is one applicable rule at one width/theme. Review and absent are never called passes. */
 export function exampleScore(result: ExampleResult) {
   const applicable = result.checks.filter(check => check.status !== 'absent');
   return { passed: applicable.filter(check => check.status === 'pass').length, total: applicable.length,

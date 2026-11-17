@@ -25,7 +25,6 @@ describe('section kinds expand to primitives', () => {
     expect(refusal([{ id: 'shot', kind: 'cards', items: [{ title: 'App', picture: { src: '/photos/harbour.jpg', alt: 'The app', frame: 'tablet' } }] } as never]).reason).toContain('frame: window or phone');
     expect(sheet).toContain('.c9y-native-image[data-frame="window"]::before{content:""');
     expect(sheet).toContain('.c9y-native-image[data-frame="phone"]{padding:calc(.4 * var(--c9y-unit))');
-    // The frame is the stylesheet's: no element or script of a library draws it.
     expect(framed('phone')).not.toMatch(/<ds-|<script/);
   });
 
@@ -36,7 +35,6 @@ describe('section kinds expand to primitives', () => {
     expect(html).toMatch(/data-native-block="work\.items\.1"[^>]*data-tone="pastel-1"/);
     expect(html).not.toMatch(/data-native-block="work\.items\.1"[^>]*data-wide/);
     expect(sheet).toContain('[data-section="cards"][data-strip]{display:flex;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}');
-    // Cards in rows carry neither mark, so every page drawn before reads the same.
     expect(render(example('cards'))).not.toContain('data-strip'); expect(render(example('cards'))).not.toContain('data-wide');
   });
 
@@ -55,7 +53,6 @@ describe('section kinds expand to primitives', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(html).toContain('<h1>Boats built by hand</h1>');
     expect(nativeBlockStyles(studio)).toEqual({ '--c9y-hero-height': sq(15), '--c9y-hero-mobile-height': sq(12), '--c9y-panel-width': sq(20) });
-    // The arrangement over the picture carries no mark of it, so every page drawn before reads the same.
     expect(render(hero())).not.toContain('data-arrangement');
   });
 
@@ -65,16 +62,13 @@ describe('section kinds expand to primitives', () => {
     const turns = JSON.parse(html.match(/data-turns="([^"]*)"/)![1]!.replaceAll('&quot;', '"'));
     expect(turns).toEqual([{ kicker: 'Since 2004', title: 'Boats mended by hand', src: '/photos/harbour.jpg', alt: 'A hull on the slip' }]);
     expect(html).toContain('data-turn-every="10" data-turn-order="shuffled"');
-    // The hero is drawn as written: the first turn is what a reader without scripts sees, and no script comes with it.
     expect(html).toContain('<h1>Boats built by hand</h1>');
     expect(html).not.toContain('<script');
     expect(render(hero())).not.toMatch(/data-turn/);
     expect(render({ ...studio, turns: [] })).not.toMatch(/data-turn/);
-    // A turn is plain words and one of the page's pictures.
     expect(refusal([{ ...studio, turns: [{ kicker: '0002' }] } as never]).reason).toContain('title is required');
     expect(refusal([{ ...studio, turns: [{ title: 'Two', picture: { src: '/elsewhere.jpg', alt: '' } }] } as never]).reason).toContain('turns[0].picture');
     expect(refusal([{ ...studio, turnEvery: 1 } as never]).reason).toContain('turnEvery');
-    // Behaviours are set in the editor's behaviour panel, never in the block's menu.
     const definition = sectionDefinition('hero')!;
     expect([definition.fields.turnEvery!.group, definition.fields.turnOrder!.group, definition.slots.turns!.group]).toEqual(['behaviour', 'behaviour', 'behaviour']);
   });
@@ -84,7 +78,6 @@ describe('section kinds expand to primitives', () => {
     const published = render(footer), edited = render(footer, { editor: true });
     expect(published).toMatch(/<div class="ds-footer__preferences"[^>]*>.*<button type="button" class="c9y-native-theme" data-c9y-theme data-light="Light" data-dark="Dark" aria-description="Switch between light and dark" hidden>Light<\/button><\/div>/);
     expect(edited).toContain('aria-description="Switch between light and dark">Light</button>');
-    // No script comes with the block, and a footer that does not ask has no control.
     expect(published).not.toContain('<script');
     expect(render(example('footer'))).not.toContain('data-c9y-theme');
     expect(sectionDefinition('footer')!.fields.theme!.group).toBe('behaviour');
@@ -104,10 +97,8 @@ describe('section kinds expand to primitives', () => {
     expect(published).toContain('<button type="submit" class="ds-button ds-button--primary c9y-native-button">Send</button>');
     expect(published).toContain('data-measure="narrow"');
     expect(published).not.toContain('<script');
-    // In the editor it neither posts nor takes input, and shows no hidden value.
     expect(edited).not.toMatch(/method="post"|type="hidden"|<button type="submit"/);
     expect(edited).toContain('<input class="ds-input" name="name" maxlength="200" required disabled tabindex="-1">');
-    // It posts to its own site only, and names each field once; website is the trap.
     expect(refusal([{ ...form, action: 'https://elsewhere.example/collect' } as never]).reason).toContain('a path on the site itself');
     expect(refusal([{ ...form, action: '//elsewhere.example/collect' } as never]).reason).toContain('action');
     expect(refusal([{ ...form, inputs: [{ name: 'website', label: 'Site' }] } as never]).reason).toContain('never website');
@@ -199,16 +190,13 @@ describe('section kinds expand to primitives', () => {
     expect(footer).toContain('<div class="ds-footer__base" data-native-block="site-footer.base">'); expect(footer).toContain('ds-footer__legal" data-native-block="site-footer.legal" data-slot="legal"');
     expect(footer).toContain('ds-footer__policies" data-native-block="site-footer.policies" data-slot="policies"'); expect(footer).toContain('class="ds-button ds-button--secondary" href="/privacy/"');
     expect(footer).toContain('<div class="ds-footer__preferences"'); expect(footer).toContain('data-native-block="site-footer.languages.1" data-slot="languages" data-item="1"');
-    // The language being read is marked from the address, as the header's links are.
     expect(footer).toContain('href="/en/" aria-current="page">English</a>'); expect(footer).not.toContain('href="/" aria-current');
-    // Follow links with an icon are the footer's stacked column of round marks, each named by its words.
     expect(footer).toContain('class="ds-footer__column c9y-native-follow ds-footer__column--stack" data-native-block="site-footer.follow" data-slot="follow"><ul class="ds-footer__icons">');
     expect(footer).toMatch(/<a href="https:\/\/www\.instagram\.com\/example" aria-label="Instagram" data-native-block="site-footer\.follow\.0" data-slot="follow" data-item="0"><span class="c9y-native-icon" aria-hidden="true"><svg/);
     const words = render({ ...example('footer'), follow: [{ text: 'Instagram', href: 'https://www.instagram.com/example' }] } as NativeBlock, { runtime: () => '' });
     expect(words).toContain('class="ds-footer__column c9y-native-follow" data-native-block="site-footer.follow" data-slot="follow"><ul class="ds-footer__links"><li><a href="https://www.instagram.com/example" data-native-block="site-footer.follow.0" data-slot="follow" data-item="0">Instagram</a>');
     const small2 = render(example('footer', 1), { runtime: block => `<button data-runtime="${block.name}"></button>` });
     expect(small2).toContain('--ds-footer-column-width:8'); expect(small2).not.toContain('ds-footer__brand'); expect(small2).toContain('data-native-block="small-footer.preferences" data-slot="preferences"'); expect(small2).toContain('data-runtime="Theme"');
-    // The test runner gives every ?raw stylesheet an empty string, so the sheet is read from disk here; Vite and the Sync 1 export inline it.
     expect(nativePageStyles).toContain('@scope (.c9y-native-region)');
     for (const tone of TONES) { expect(sheet).toContain(`[data-tone="${tone}"]{--c9y-tone:var(--c9y-tone-${tone},`); expect(sheet).toContain(`--c9y-tone-glass:var(--c9y-tone-${tone}-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))`); }
     expect(sheet).toContain('--c9y-tone-ink:var(--c9y-tone-dark-ink,'); expect(sheet).not.toMatch(/#[0-9a-f]{3,8}\b(?![^"]*")/i);
@@ -323,9 +311,7 @@ describe('the measures the old sites needed, as fields with defaults', () => {
     expect(sheet).toContain('.ds-header [data-slot="logo"] img{width:auto;max-width:100%;height:var(--c9y-logo-height,var(--c9y-unit))}');
     expect(sheet).toContain('.ds-header[data-links="line"] .ds-header__nav a{display:flex;align-items:flex-end;height:calc(2 * var(--c9y-unit));padding:0 calc(8px * var(--sf,1));text-decoration:none;box-shadow:inset 0 1px currentColor}');
     expect(sheet).toContain('.ds-header[data-links="line"] .ds-header__nav a[aria-current]:not([aria-current="false"]){color:var(--ds-accent-color,var(--c9y-accent));box-shadow:inset 0 calc(4px * var(--sf,1)) currentColor}');
-    // A language's flag is the design system's: one control high, 3:2, corners a quarter of its height, the fill's hairline on its edge.
     expect(sheet).toContain('.ds-header [data-slot="languages"] img{--c9y-flag:var(--ds-control-height,calc(16px * var(--sf,1)));width:calc(1.5 * var(--c9y-flag));height:var(--c9y-flag);object-fit:cover;border-radius:calc(var(--c9y-flag) / 4);outline:1px solid var(--ds-fill,var(--c9y-fill));outline-offset:-0.5px}');
-    // The sticky header stands above a hero's panel (z-index 1), so it is never covered as the page scrolls.
     const headerSheet = readFileSync(join(import.meta.dirname, '../DS1/1-root/header.css'), 'utf8');
     expect(headerSheet).toMatch(/\.ds-header--sticky \{[^}]*z-index: 2;/);
   });
@@ -372,8 +358,6 @@ describe('section refusals name what was refused', () => {
   });
 });
 
-/* The sites built on the vocabulary stay valid, unchanged, through every field added with a default: Søndergården on the
-   primitives alone, CPH Raft on the sections. Each site's build is read where it was written; a missing build skips its case. */
 type Build = { pages: Record<string, { document: NativePageDocument; images: string[]; collections: Record<string, unknown>; allowedRuntimes: Record<string, string[]> }> };
 const site = (path: string) => {
   const build = JSON.parse(readFileSync(path, 'utf8')) as Build;
@@ -386,7 +370,6 @@ const site = (path: string) => {
   });
 };
 describe('the sites built on the vocabulary stay valid, unchanged', () => {
-  // The client sites beside Design system 1's main checkout in the studio, also from a worktree (the folder holding the shared .git).
   const studio = dirname(dirname(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: fileURLToPath(new URL('.', import.meta.url)), encoding: 'utf8' }).trim()));
   const primitives = join(studio, 'Clients/Soendergaarden/dist/native/pages.json'), sections = join(studio, 'Clients/CPH Raft/dist/native/pages.json');
   test.skipIf(!existsSync(primitives))('Søndergården, on the primitives alone', () => {

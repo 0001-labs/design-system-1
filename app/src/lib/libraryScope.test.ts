@@ -37,7 +37,6 @@ it("keeps other at-rules as they are", () => {
 });
 
 it("scopes a new library's template with no import left and every :root a :host", () => {
-  // The app's tests read stylesheets as empty modules, so the template is put together from its files here.
   const template = `${templateStamp}\n${["component-metrics", "component-tokens"].map(name => readFileSync(new URL(`../../../DS1/1-root/${name}.css`, import.meta.url), "utf8")).join("\n")}`;
   const { rules, faces } = scopeLibrary(template);
   expect(rules).not.toMatch(/@import|@font-face|:root\b/);

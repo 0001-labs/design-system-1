@@ -6,7 +6,6 @@ import { renderToString } from "react-dom/server";
 import { Composer } from "../DS1/react/composer";
 import "../DS1/2-core/ds-composer";
 afterEach(() => document.body.replaceChildren());
-// The native value setter, as a browser sets the value, so React sees the change.
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!;
 const setValue = (element: HTMLTextAreaElement, value: string) => nativeValue.set!.call(element, value);
 
@@ -101,7 +100,6 @@ test("a filled highlight keeps the words readable over every palette colour, on 
   const over = (colour: string, paper: string, share: number) => rgb(colour).map((c, i) => c * share + rgb(paper)[i]! * (1 - share));
   for (const [name, hex] of named) {
     if (isInk(toHsl(hex))) continue;
-    // The field's fill and the paper, under the light and dark text colours.
     for (const paper of ["#e6e6e6", "#f4f4f4"]) expect(contrast(rgb("#2a2a2a"), over(hex, paper, light!)), `${name} on ${paper}`).toBeGreaterThanOrEqual(4.5);
     for (const paper of ["#3c3c3c", "#2c2c2c"]) expect(contrast(rgb("#ffffff"), over(hex, paper, dark!)), `${name} on ${paper}`).toBeGreaterThanOrEqual(4.5);
   }

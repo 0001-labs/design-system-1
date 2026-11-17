@@ -3,17 +3,14 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 import { composeRegionStyles, nativeIcon, renderNativeRegion, validateNativeRegion, nativeRegionStyles } from '../shared/consistency-native-content';
 
-// The test runner gives every ?raw import an empty string, so the region sheet is composed here from the same files Vite inlines.
 const read = (path: string) => readFileSync(join(import.meta.dirname, '..', path), 'utf8');
 const regionStyles = () => composeRegionStyles({ tokens: read('DS1/1-root/component-tokens.css'), palette: read('DS1/1-root/palette.css'), metrics: read('DS1/1-root/component-metrics.css'), appearance: read('DS1/1-root/component-appearance.css'), controls: read('DS1/1-root/controls.css'), card: read('DS1/1-root/card.css'), prose: read('DS1/1-root/prose.css'), native: read('shared/consistency-native-content.css') });
-/** A site's library as the libraries app publishes one: its tokens on the root, a display face on the prose headings. */
 const library = `:root {\n  --ds-typeface-medium: "Poppins", sans-serif;\n  --ds-text-color: light-dark(#141414, #f2f2ef);\n  --ds-paper: light-dark(#ffffff, #151715);\n  --ds-accent-color: #17672b;\n  --ds-font-features: normal;\n  --c9y-tone-cream: #faf7e8;\n}\n[data-ds-prose] :where(h1, h2):not(:where([data-ds-not-prose] *)) {\n  font-family: var(--brand-display);\n  font-weight: 200;\n}\n`;
 const declared = (css: string) => [...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(match => match[1]!);
 
 describe('a library sheet above the page reaches the words in every region', () => {
   const styles = regionStyles();
   const [defaults, rest] = styles.split('@scope (.c9y-native-region) {') as [string, string];
-  // What the region draws for itself ends where the native sheet begins, after the scope.
   const scoped = rest.slice(0, rest.indexOf(read('shared/consistency-native-content.css').slice(0, 80)));
   const base = declared(read('DS1/1-root/component-tokens.css'));
   it('declares the design system\'s tokens as the page\'s defaults with no specificity, so a library\'s :root tokens win', () => {

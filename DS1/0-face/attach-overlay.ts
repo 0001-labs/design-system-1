@@ -1,48 +1,11 @@
-/**
- * A drawer: parts of a page folded away on a narrow screen and opened over it
- * from a menu button. Plain TypeScript with no Lit and no framework, so a page
- * of native HTML uses it as the elements do.
- *
- * `attachOverlay()` ties a toggle button to the parts it folds away (a
- * header's navigation and actions, a page's navigation). Opening moves them
- * into a native `<dialog class="ds-overlay ds-overlay--screen">` laid over the screen
- * (1-root/overlay.css draws it), shown modally so the rest of the page is
- * inert, with a close button where the toggle stood. While it is open:
- *
- * - Tab and Shift+Tab go round the panel's controls and never leave it;
- * - Escape, the close button, a link in the panel and the toggle going out of
- *   sight (the screen widened) close it;
- * - the page behind holds its scroll, and gets it back as it was.
- *
- * Closing puts every part back where it was and returns focus to the toggle.
- * The toggle carries `aria-expanded` and `aria-controls`; its accessible name
- * stays the same (Menu) open or closed.
- *
- * @example
- * const drawer = attachOverlay({ toggle, content: [nav, actions], closeLabel: "Close" });
- * drawer.open();
- */
-
 export interface DrawerOptions {
-  /** The button that opens the drawer, and stands for it while it is closed. */
   toggle: HTMLElement;
-  /** What the drawer holds while it is open: moved into the panel in this order and back on closing. */
   content: readonly Element[] | (() => readonly Element[]);
-  /**
-   * The panel to open, with its close button marked `.ds-overlay__close`. A
-   * `<dialog class="ds-overlay ds-overlay--screen">` is made beside the toggle when none
-   * is given, its close button a copy of the toggle.
-   */
   panel?: HTMLDialogElement;
-  /** Where a new panel goes: after the toggle by default. */
   container?: Element | ShadowRoot;
-  /** The panel's accessible name: the toggle's own name by default. */
   label?: string;
-  /** The close button's accessible name. "Close" by default. */
   closeLabel?: string;
-  /** Close when a link in the panel is followed. On by default. */
   closeOnLink?: boolean;
-  /** Called after the drawer opens or closes. */
   onToggle?: (open: boolean) => void;
 }
 
@@ -52,16 +15,13 @@ export interface Drawer {
   open(): void;
   close(): void;
   toggle(): void;
-  /** Close it, take the panel away if it was made here, and stop listening. */
   destroy(): void;
 }
 
 const FOCUSABLE = 'a[href], area[href], button, input:not([type="hidden"]), select, textarea, iframe, summary, [contenteditable=""], [contenteditable="true"], [tabindex]';
 
-/** The drawers open on each document, the last opened last: only it answers the keys. */
 const openDrawers = new WeakMap<Document, object[]>();
 
-/** The drawer that holds each document's scroll, so two drawers never fight over it. */
 const scrollHolders = new WeakMap<Document, { owners: Set<object>; overflow: string; overscroll: string; x: number; y: number }>();
 
 function holdScroll(document: Document, owner: object): void {
@@ -87,7 +47,6 @@ function releaseScroll(document: Document, owner: object): void {
   if (view && (view.scrollX !== held.x || view.scrollY !== held.y)) view.scrollTo(held.x, held.y);
 }
 
-/** The element that has focus, inside open shadow roots too. */
 export function deepActiveElement(document: Document): Element | null {
   let active = document.activeElement;
   while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
@@ -100,10 +59,6 @@ function shown(element: Element): boolean {
   return typeof check === "function" ? check.call(element, { visibilityProperty: true }) : true;
 }
 
-/**
- * The controls Tab reaches inside a root, in order: through open shadow roots
- * and the elements a slot shows.
- */
 export function tabbables(root: Element): HTMLElement[] {
   const found: HTMLElement[] = [];
   const visit = (node: Element) => {
@@ -123,15 +78,12 @@ export function attachOverlay(options: DrawerOptions): Drawer {
   const panel = options.panel ?? document.createElement("dialog");
   let placeholders: [Element, Comment][] = [];
   let open = false;
-  /** The button in the panel that closes it: made here, or the panel's own `.ds-overlay__close`. */
   let closeButton: HTMLElement | null = options.panel?.querySelector<HTMLElement>(".ds-overlay__close") ?? null;
 
   if (made) {
     panel.className = "ds-overlay ds-overlay--screen";
     const bar = document.createElement("div");
     bar.className = "ds-overlay__bar";
-    // The close button is a copy of the toggle, so it shows the same icons
-    // (the second one, close) in the same place.
     closeButton = toggle.cloneNode(true) as HTMLElement;
     closeButton.removeAttribute("id");
     closeButton.removeAttribute("aria-controls");
@@ -174,10 +126,8 @@ export function attachOverlay(options: DrawerOptions): Drawer {
     if (typeof panel.showModal === "function" && panel.isConnected) {
       try { panel.showModal(); } catch { panel.setAttribute("open", ""); }
     } else panel.setAttribute("open", "");
-    // The panel's first control takes focus: the close button.
     (closeButton ?? tabbables(panel)[0])?.focus({ preventScroll: true });
     view?.addEventListener("resize", onResize);
-    // Bubbling, so a menu or dialog inside the panel takes its own Escape first.
     document.addEventListener("keydown", onKey);
     options.onToggle?.(true);
   }
@@ -220,15 +170,12 @@ export function attachOverlay(options: DrawerOptions): Drawer {
     if (event.shiftKey && index <= 0) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && (index === -1 || active === last)) { event.preventDefault(); first.focus(); }
   };
-  // Escape on a modal dialog is its cancel: close through the drawer so the parts go back.
   const onCancel = (event: Event) => { event.preventDefault(); hide(); };
   const onNativeClose = () => { if (open) hide(); };
   const onPanelClick = (event: MouseEvent) => {
     const path = event.composedPath();
     if (closeButton && path.includes(closeButton)) { hide(); return; }
-    // A link closes it even when a router takes the click (and prevents its default).
     if (options.closeOnLink === false) return;
-    // Only what stands inside the panel: the path up to it.
     if (path.slice(0, path.indexOf(panel)).some(node => node instanceof Element && node.matches("a[href]"))) hide();
   };
 

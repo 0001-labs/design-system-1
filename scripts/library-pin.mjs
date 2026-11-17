@@ -1,32 +1,16 @@
-/**
- * A published library version, pinned: what Sync 1's `library` export copies when a product names
- * a library and a version. Versions are immutable (`designsystem1.com/ds1/<id>/v/<n>.css` is
- * written once), so a fetched version is kept in a cache outside every repository and a check
- * reads it from there; only a version not seen before is fetched.
- *
- * A pin is verified before it is copied: the address answers with the version asked for, the bytes
- * hash to the sha256 the publish recorded (the `ds1-content-hash` header) and to the product's own
- * `sha256` when it names one, and the first line is the stamp publishing writes, which names the
- * DS1 library revision that prepared it. A version published before stamping cannot be pinned:
- * publish the library again and pin the new version.
- */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 export const LIBRARY_ORIGIN = 'https://designsystem1.com/ds1';
-/** A library's public ID: 20 characters of lowercase Crockford base32, as services/src/shared/keys.ts has it. */
 const PUBLIC_ID = /^[0-9a-hjkmnp-tv-z]{20}$/;
-/** The stamp publishing writes first (DS1/1-root/library-tokens.ts, libraryStamp). */
 const STAMP = /^(?:@charset "[^"]*";\s*)?\/\* Design system 1 library, revision (sha256:[0-9a-f]{12}) \*\//;
 
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
 
-/** Where fetched versions are kept: DS1_LIBRARY_CACHE, else ~/.cache/design-system-1/libraries. */
 export const libraryCache = () => process.env.DS1_LIBRARY_CACHE ?? join(homedir(), '.cache', 'design-system-1', 'libraries');
 
-/** The pin a product's options name, or undefined when they name none. */
 export function libraryPin(options) {
   const { id, version, sha256: hash } = options;
   if (id === undefined && version === undefined) return undefined;
@@ -36,7 +20,6 @@ export function libraryPin(options) {
   return { id, version, sha256: hash, url: `${LIBRARY_ORIGIN}/${id}/v/${version}.css`, file: `${id}/v/${version}.css` };
 }
 
-/** The pinned version's bytes, verified, from the cache or else from its address. */
 export async function pinnedLibrary(pin, { fetch = globalThis.fetch, cache = libraryCache() } = {}) {
   const cached = join(cache, pin.file);
   let css;
@@ -65,7 +48,6 @@ function verify(pin, css) {
   return { css, sha256: hash, revision };
 }
 
-/** The files a pin adds to the export: the version's stylesheet and the manifest the adoption report reads. */
 export function pinnedFiles(pin, library) {
   const manifest = { source: 'Design system 1', library: pin.id, version: pin.version, url: pin.url, file: pin.file, revision: library.revision, sha256: library.sha256 };
   return {

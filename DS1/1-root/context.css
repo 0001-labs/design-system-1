@@ -1,41 +1,7 @@
 @import "./component-metrics.css";
 
-/*
- * `.ds-context` is the `ds-context` element's look on a native menu, for a page
- * without Lit or a menu a library draws: the gap face. The rows carry the
- * colour and the menu only cuts the outer silhouette, so the page shows
- * through a pixel between rows and two between groups. The rows are black
- * with white words in both themes, as a menu always is (the slate in
- * dark, darker than the page). Every row is 19px with the pixel under it, a square's pitch, its words
- * on the sixteen and an icon at its end. A Select's menu is the light face,
- * `.ds-menu`; a Context's is this dark one.
- *
- *   ds-context                 the menu (`role="menu"`); its rows are its buttons,
- *                              links and menu items, or `ds-context__item`
- *   ds-context__item           a row; `--danger` (or `data-danger`) in red
- *   ds-context__label          a heading row, muted
- *   ds-context__shortcut       a shortcut at the row's end, muted
- *   ds-context__separator      a group gap (or an `hr`, or `role="separator"`):
- *                              never a line; first, last or doubled it is quiet
- *   [data-ds-refused]          a refused change: the row turns red
- *   ds-context--bar            the context bar over what is selected: the rows
- *                              side by side, one row high; `ds-context__item--icon`
- *                              a cell holding only an icon, one square
- *
- * The page places and opens it (a popover at the pointer, say) and owns its
- * keys; the faces of hover, focus, disabled and the wait of a pending menu
- * (`aria-busy="true"`) are here. Tokens as the element's: --ds-context-fill,
- * --ds-context-ink, --ds-context-hover, --ds-context-danger,
- * --ds-context-refused, --ds-context-radius.
- *
- * It draws the same on a page without the root stylesheet: the measures come
- * from component-metrics.css, imported above, and every colour and the scale
- * fall back to their values; the type is the page's.
- */
-
 .ds-context {
   --ds-context-row: calc(var(--ds-row-height) - 1px);
-  /* Black in both themes, as a menu always is: in dark the slate, darker than the page. */
   --ds-context-fill: light-dark(var(--ds-black, #2a2a2a), var(--ds-slate, #1e1e1e));
   --ds-context-ink: var(--ds-white, #ffffff);
   --ds-context-hover: color-mix(in srgb, var(--ds-context-fill) 78%, var(--ds-context-ink));
@@ -69,7 +35,6 @@
   display: contents;
 }
 
-/* A row: whatever the page or library styles its buttons with, one row on the sixteen. */
 .ds-context :is(.ds-context__item, :is(.ds-context, .ds-context > [role="group"]) > :is(button, a, li, [role^="menuitem"]):not(.ds-context__label, .ds-context__separator, [role="separator"])) {
   box-sizing: border-box !important;
   display: flex !important;
@@ -116,17 +81,14 @@
   cursor: wait !important;
 }
 
-/* Danger is red, on either fill. */
 .ds-context :is(.ds-context__item, :is(.ds-context, .ds-context > [role="group"]) > :is(button, a, li, [role^="menuitem"])):is(.ds-context__item--danger, [data-danger], [data-variant="destructive"]) {
   color: var(--ds-context-danger) !important;
 }
 
-/* A refused change: its row turns red a moment. */
 .ds-context :is(.ds-context__item, :is(.ds-context, .ds-context > [role="group"]) > :is(button, a, li, [role^="menuitem"]))[data-ds-refused] {
   background: var(--ds-context-refused) !important;
 }
 
-/* Groups are a gap, never a line: the separator takes nothing but the gap after it. */
 .ds-context > :is(hr, .ds-context__separator, [role="separator"]) {
   flex: 0 0 0 !important;
   height: 0 !important;
@@ -136,7 +98,6 @@
   background: none !important;
 }
 
-/* A group left empty leaves no gap. */
 .ds-context > :is(hr, .ds-context__separator, [role="separator"]):is(:first-child, :last-child),
 .ds-context > :is(hr, .ds-context__separator, [role="separator"]) + :is(hr, .ds-context__separator, [role="separator"]) {
   display: none !important;
@@ -145,7 +106,6 @@
 .ds-context :is(.ds-context__label, [data-ds-menu-label]) {
   box-sizing: border-box;
   height: var(--ds-context-row);
-  /* The spare three above the sixteen. */
   padding: calc(var(--ds-context-row) - var(--ds-type-lineheight-default)) calc(4px * var(--ds-sf, 1)) 0;
   background: var(--ds-context-fill);
   color: color-mix(in srgb, var(--ds-context-ink) 60%, var(--ds-context-fill));
@@ -158,11 +118,6 @@
   color: color-mix(in srgb, var(--ds-context-ink) 60%, var(--ds-context-fill));
 }
 
-/* The bar: the same rows side by side, the context bar over what is selected.
-   One row high, the cells a pixel apart and groups two, the page showing
-   through; a cell with words is 4px in on the sixteen, a cell holding only an
-   icon (`ds-context__item--icon`) one square, the icon in its middle. As long
-   as its cells. The page stands it half a square above the selection. */
 .ds-context.ds-context--bar {
   flex-direction: row;
   width: var(--ds-menu-width, max-content);

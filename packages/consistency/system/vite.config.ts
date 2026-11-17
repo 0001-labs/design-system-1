@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite-plus';
 import { resolve } from 'node:path';
 
-// C9Y System's page, served privately at system.consistency.site from the site's build.
 export default defineConfig({
   root: import.meta.dirname,
   base: '/private-c9y-system/',

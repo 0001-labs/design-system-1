@@ -33,7 +33,6 @@ test("a button with href is a real link the browser navigates", async () => {
   const reached = vi.fn();
   document.addEventListener("click", reached);
   try {
-    // The component neither cancels nor redirects a plain or a modified click: the browser does what links do.
     for (const init of [{}, { metaKey: true }, { ctrlKey: true }, { button: 1 }]) {
       const click = new MouseEvent("click", { bubbles: true, composed: true, cancelable: true, ...init });
       link.dispatchEvent(click);
@@ -109,7 +108,6 @@ test("a native link drawn as a button keeps every face and state of the button",
   expect(rule("a.ds-button.ds-button--icon:is(:link, :visited)")).toContain("var(--ds-text-color-muted)");
   expect(rule('a.ds-button[aria-disabled="true"]')).toContain("pointer-events: none");
   expect(css).toContain('.ds-button[aria-disabled="true"]');
-  // Hover fills never light up a disabled link.
   expect(css).not.toMatch(/\.ds-button[^{]*:hover:not\(:disabled\)/);
   for (const hover of ['.ds-button--icon:hover:not(:disabled, [aria-disabled="true"])', '.ds-button--secondary:hover:not(:disabled, [aria-disabled="true"])', '.ds-tabs[role="group"] > .ds-button:hover:not(:disabled, [aria-disabled="true"])']) expect(css).toContain(hover);
 });

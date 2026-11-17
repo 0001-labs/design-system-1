@@ -10,11 +10,6 @@ import {
 } from "./hosts";
 import type { Issue } from "./types";
 
-/**
- * At-rules a published library may use. Anything outside this list is rejected
- * rather than passed through, so a future CSS feature has to be reviewed before
- * it can reach a customer's page.
- */
 export const ALLOWED_AT_RULES: readonly string[] = [
   "charset",
   "import",
@@ -31,7 +26,6 @@ export const ALLOWED_AT_RULES: readonly string[] = [
   "property",
 ];
 
-/** Properties whose historical behaviour is script execution, not styling. */
 const DISALLOWED_PROPERTIES: readonly string[] = ["-moz-binding", "behavior"];
 
 export interface RuleContext {
@@ -61,14 +55,6 @@ function byteLength(value: string): number {
   return new TextEncoder().encode(value).length;
 }
 
-/**
- * Read the literal URL out of a `Url` or `String` node.
- *
- * css-tree has carried two shapes for `Url.value` across major versions — a
- * plain string (v2+) and a nested `{ type: 'String' | 'Raw', value }` node (v1).
- * Both are handled so a dependency bump cannot silently disable the host checks.
- * `dynamic` marks a value the parser could not resolve to a literal.
- */
 export function readUrlLiteral(node: AnyNode): { value: string; dynamic: boolean } | null {
   if (node.type === "Url") {
     const raw = (node as unknown as { value: unknown }).value;
@@ -99,15 +85,7 @@ function stripQuotes(value: string): string {
   return trimmed;
 }
 
-/**
- * Walk the parsed stylesheet and report every rule violation.
- *
- * Selectors are deliberately not policed: a custom stylesheet is allowed
- * to restyle `html`, `body`, and every bare element, so any broad-selector rule
- * would fire on the stock DS1 sheet itself.
- */
 export function collectAstIssues(ast: csstree.CssNode, ctx: RuleContext): void {
-  /** Url/String nodes already validated as an `@import` target. */
   const importTargets = new Set<csstree.CssNode>();
   let importCount = 0;
   let importLimitReported = false;
@@ -239,11 +217,6 @@ function checkUrlNode(
 
   if (!literal) return;
 
-  // Dynamic URL construction defeats the allowlist, so it is rejected outright
-  // rather than guessed at. Note that css-tree already reports `url(var(--x))`
-  // and unquoted URLs containing parentheses as parse errors and exposes them
-  // as Raw rather than Url, so this is a second line of defence — it must not
-  // reject parentheses in general, which are legal inside a quoted url().
   if (literal.dynamic || /\bvar\s*\(/i.test(literal.value)) {
     ctx.push({
       code: "unresolvable_url",
@@ -268,8 +241,6 @@ function checkUrlNode(
   const classified = classifyUrl(literal.value);
 
   switch (classified.kind) {
-    // Fragment references (fill: url(#gradient), filter: url(#blur)) resolve
-    // against the customer's own document and make no network request.
     case "fragment":
       return;
 
@@ -406,8 +377,6 @@ function handleDeclaration(node: AnyNode, ctx: RuleContext): void {
     return;
   }
 
-  // Custom property values are a raw token stream, so url()/expression() inside
-  // them never reach the Url/Function visitors. Scan the generated text instead.
   if (property.startsWith("--")) {
     const text = safeGenerate(declaration.value);
     const foundationIssue = foundationTokenIssue(declaration.property, text);
@@ -424,7 +393,6 @@ function handleDeclaration(node: AnyNode, ctx: RuleContext): void {
   }
 }
 
-/** Last-resort literal scan for url(...) in text css-tree exposed as Raw. */
 function scanRawUrls(text: string, ctx: RuleContext, pos: Pick<Issue, "line" | "column" | "offset">): void {
   const pattern = /\burl\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s][^)]*?))\s*\)/gi;
   let match: RegExpExecArray | null;

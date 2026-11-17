@@ -1,4 +1,3 @@
-/** The email that carries a sign-in code: plain, named after the product, readable without pictures. */
 export function signInCodeEmail({ product, code, minutes = 10 }: { product: string; code: string; minutes?: number }) {
   if (!/^\d{6}$/.test(code)) throw new Error('Invalid sign-in code')
   const subject = `Your ${product} sign-in code`

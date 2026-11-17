@@ -1,15 +1,11 @@
 import { paintedParent } from './text-contrast';
 
-/** Authored in source, never built from DOM attributes, paths, content or server data. */
 export type ContrastSelector = {
-  /** Stable semantic name, at most 40 characters. Renaming it creates a new issue identity. */
   key: string;
   selector: string;
-  /** Optional authored ancestor selector, including across a shadow boundary. */
   within?: string;
 };
 
-/** Component-owned semantic parts; products can name more specific surfaces before these. */
 export const DS1_CONTRAST_SELECTORS: readonly ContrastSelector[] = [
   { key: 'ds1.input.error', selector: '.error-message', within: 'ds-input' },
   { key: 'ds1.input.value', selector: '[part~="input"]', within: 'ds-input' },
@@ -18,13 +14,10 @@ export const DS1_CONTRAST_SELECTORS: readonly ContrastSelector[] = [
   { key: 'ds1.badge.label', selector: 'ds-badge' },
 ];
 
-// A finite fallback vocabulary. Unknown/custom tags deliberately share one bucket; neither a
-// generated class nor an unregistered custom tag can introduce a new issue identity.
 const FALLBACK_TAGS = new Set('a b button caption code dd del details div dt em figcaption h1 h2 h3 h4 h5 h6 input label legend li option p pre select small span strong summary td textarea th time'.split(' '));
 const MAX_SELECTORS = 128;
 const MAX_ANCESTORS = 32;
 
-/** Compile once per watch. Invalid/excess definitions fail closed to the coarse fallback. */
 export function contrastSelectorRegistry(document: Document, authored: readonly ContrastSelector[] = []): readonly ContrastSelector[] {
   const entries: ContrastSelector[] = [];
   const keys = new Set<string>();
@@ -37,7 +30,6 @@ export function contrastSelectorRegistry(document: Document, authored: readonly 
       document.documentElement.matches(entry.selector);
       if (entry.within) document.documentElement.matches(entry.within);
     } catch { continue; }
-    // Copy the source configuration; later mutations cannot rename a running watch's findings.
     entries.push({ key: entry.key, selector: entry.selector, ...(entry.within ? { within: entry.within } : {}) });
     keys.add(entry.key);
   }
@@ -52,7 +44,6 @@ function within(element: Element, selector: string): boolean {
   return false;
 }
 
-/** Nearest authored selector wins; source order breaks ties. No DOM identifiers enter the result. */
 export function contrastIdentity(element: Element, registry: readonly ContrastSelector[]): { key: string; label: string } {
   let depth = 0;
   for (let p: Element | null = element; p && depth++ < MAX_ANCESTORS; p = paintedParent(p)) {

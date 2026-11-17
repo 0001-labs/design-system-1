@@ -1,8 +1,6 @@
 import CoreText
 import SwiftUI
 
-/// The text styles of `ds-text` and text.css: 14 text, 10 small, 13 heading and a 20 display
-/// title on two squares, each on lines one square tall.
 public enum DS1TextStyle: Sendable {
     case text, small, heading, display
 
@@ -15,11 +13,9 @@ public enum DS1TextStyle: Sendable {
         }
     }
     func tracking(_ scale: DS1Scale) -> CGFloat { self == .display ? scale.displayTracking : scale.tracking }
-    /// The line the text stands on: one square, two for a display title.
     func line(_ scale: DS1Scale) -> CGFloat { self == .display ? 2 * scale.unit : scale.unit }
 }
 
-/// The colours of `ds-text`'s `tone`.
 public enum DS1Tone: Sendable {
     case text, muted, title, danger
 
@@ -34,19 +30,13 @@ public enum DS1Tone: Sendable {
 }
 
 extension DS1Font {
-    /// Text drawn as Design system 1 draws it: in `face` with the style's size and tracking,
-    /// arrows in Inter, and with `figures`, digits and the signs of numbers in Olivetti Dot,
-    /// each digit centred in a cell of the same width (the face's 1 is narrower than its 0).
-    /// `cells: false` sets the figures in Olivetti Dot at their own widths, as a date reads.
     public static func attributed(_ string: String, style: DS1TextStyle = .text, scale: DS1Scale, face: Face = .regular, figures: Bool = false, cells: Bool = true) -> AttributedString {
         attributed(string, size: style.size(scale), tracking: style.tracking(scale), face: face, figures: figures, cells: cells)
     }
 
-    /// The same at a size of the product's own, already scaled, such as a figure set large.
     public static func attributed(_ string: String, size: CGFloat, tracking: CGFloat, face: Face = .regular, figures: Bool = false, cells: Bool = true) -> AttributedString {
         let text = font(face, size: size)
         let arrow = font(.arrows, size: size)
-        // Olivetti Dot's digits stand as tall as GT America's capitals on the same baseline.
         let figureSize = size * figureScale
         let figure = font(.figures, size: figureSize)
         let figureFont = ctFont(.figures, size: figureSize)
@@ -61,8 +51,6 @@ extension DS1Font {
             }
             return (character, .text, tracking)
         }
-        // Centre each digit in its cell: half the spare width after the character before it,
-        // half after the digit itself.
         for i in pieces.indices where pieces[i].1 == .digit {
             let spare = max(0, cell - advance(of: pieces[i].0, in: figureFont)) / 2
             pieces[i].2 = spare
@@ -78,8 +66,6 @@ extension DS1Font {
         return result
     }
 
-    /// How much smaller Olivetti Dot is set than the text beside it, so a digit is exactly as
-    /// tall as GT America's capital: the regular face's cap height over the dotted zero's.
     public static var figureScale: CGFloat {
         guard isAvailable(.figures), isAvailable(.regular) else { return 1 }
         let gt = ctFont(.regular, size: 100), dots = ctFont(.figures, size: 100)
@@ -91,25 +77,16 @@ extension DS1Font {
         return box.maxY > 0 ? CTFontGetCapHeight(gt) / box.maxY : 1
     }
 
-    /// Where the baseline of a line box `line` tall stands, measured from its top, as the web sets
-    /// GT America in a line of that height (CSS half-leading): the spare height split above
-    /// and below the regular face's ascent and descent. A row's text takes a 16-point box at
-    /// the foot of its square (`DS1Metrics.leading`), so `ds1Baseline` adds the spare four.
     public static func baseline(size: CGFloat, line: CGFloat) -> CGFloat {
         let gt = ctFont(.regular, size: size)
         let ascent = CTFontGetAscent(gt), descent = CTFontGetDescent(gt)
         return (line - ascent - descent) / 2 + ascent
     }
 
-    /// Where the baseline stands in a line box `line` tall when the regular face's capitals are
-    /// centred in it, measured from its top: on the row's sixteen the capitals are then centred
-    /// on a 16-point icon beside them, as the web's GT America falls in its 16px line box
-    /// (cap top 7px below a row's top line, baseline 3px above the next).
     public static func capBaseline(size: CGFloat, line: CGFloat) -> CGFloat {
         (line + CTFontGetCapHeight(ctFont(.regular, size: size))) / 2
     }
 
-    /// The height one line of a face takes when nothing spaces it: ascent, descent and gap.
     public static func lineHeight(_ face: Face, size: CGFloat) -> CGFloat {
         let font = ctFont(face, size: size)
         return CTFontGetAscent(font) + CTFontGetDescent(font) + CTFontGetLeading(font)
@@ -123,8 +100,6 @@ extension DS1Font {
     }
 }
 
-/// Text standing on its square (`ds-text`): one line, cut short at its end, or with `wrap`
-/// as many lines as it needs, each one square tall.
 public struct DS1LineText: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.multilineTextAlignment) private var textAlignment
@@ -163,9 +138,6 @@ public struct DS1LineText: View {
             .foregroundStyle(tone.colour)
             .accessibilityLabel(string)
         if wrap {
-            // The web centres the face's height in each line; the text system lays every line
-            // a whole point tall, so the lines are spaced from that and the first stands as the
-            // web's does, each on its own square. The block takes the alignment it is set in.
             let glyphs = DS1Font.lineHeight(face, size: style.size(scale))
             let laid = glyphs.rounded(.up)
             let above = max(0, line - glyphs) / 2
@@ -184,7 +156,6 @@ public struct DS1LineText: View {
     }
 }
 
-/// A figure (an amount, a count, a date) in Olivetti Dot on its line, as text.
 public struct DS1Figures: View {
     @Environment(\.ds1Scale) private var scale
     let string: String
@@ -197,7 +168,6 @@ public struct DS1Figures: View {
         self.tone = tone
     }
 
-    /// A figure is never cut short: it keeps its width and the words beside it give way.
     public var body: some View {
         DS1LineText(string, style: style, tone: tone, figures: true)
             .fixedSize(horizontal: true, vertical: false)
@@ -207,8 +177,6 @@ public struct DS1Figures: View {
 
 
 extension View {
-    /// Stands a line of text on its square at the web's baseline for `style`, whatever its
-    /// faces: GT America, Olivetti Dot or both sit on the same line, row after row.
     public func ds1Baseline(_ style: DS1TextStyle = .text) -> some View {
         modifier(DS1Baseline(style: style))
     }
@@ -219,10 +187,6 @@ private struct DS1Baseline: ViewModifier {
     let style: DS1TextStyle
     func body(content: Content) -> some View {
         let line = style.line(scale)
-        // A title rests on the grid's line at its foot, so what stands beside it shares its square;
-        // other text takes the lower sixteen of its square with the spare four above, as Ezo
-        // sets it (a 16px line box at the foot of the row): GT America stands where the web's
-        // half-leading puts it in that sixteen, its capitals centred on a 16-point icon beside it.
         let baseline = style == .display ? line : line - scale.leading + DS1Font.capBaseline(size: style.size(scale), line: scale.leading)
         content
             .alignmentGuide(VerticalAlignment.top) { d in d[.firstTextBaseline] - baseline }

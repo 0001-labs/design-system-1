@@ -1,7 +1,6 @@
 import './component-names.css';
 const componentNames: Record<string, string> = { 'DS-CARD': 'Card', 'DS-BUTTON': 'Button', 'DS-STAT': 'Stat', 'DS-TAG': 'Tag', 'DS-IMAGE': 'Image', 'DS-TABLE': 'Table', 'DS-LIST': 'List', 'DS-ACCORDION': 'Accordion', 'DS-METER': 'Meter', 'DS-PROGRESS': 'Progress', 'DS-CHART': 'Chart', 'DS-BENTO': 'Bento', 'DS-TABS': 'Tabs' };
 const selector = [...Object.keys(componentNames).map(name => name.toLowerCase()), '.aa-block', '.aa-atom', '.consistency-carousel-frame'].join(',');
-/** Names come from the rendered unit, not its stored example or source text. */
 export function componentName(element: HTMLElement): string | null {
  if (element.closest('.consistency-carousel-tools,.consistency-button-action,ds-context')) return null;
  if (element.classList.contains('consistency-carousel-frame')) return 'Carousel';
@@ -23,13 +22,11 @@ export function componentName(element: HTMLElement): string | null {
  return element.textContent?.trim() ? 'Text' : null;
 }
 export interface VisibleBox { left: number; top: number; width: number; height: number }
-/** The overlay never reaches beyond the visible canvas, even for a wide page. */
 export function visibleComponentBox(rect: Pick<DOMRect, 'left' | 'top' | 'right' | 'bottom'>, clips: readonly Pick<DOMRect, 'left' | 'top' | 'right' | 'bottom'>[]): VisibleBox | null {
  const left = Math.max(rect.left, ...clips.map(clip => clip.left)), top = Math.max(rect.top, ...clips.map(clip => clip.top));
  const right = Math.min(rect.right, ...clips.map(clip => clip.right)), bottom = Math.min(rect.bottom, ...clips.map(clip => clip.bottom));
  return right > left && bottom > top ? { left, top, width: right - left, height: bottom - top } : null;
 }
-/** An external presentation layer; no authored nodes, source or history change. */
 export class ComponentNamesLayer {
  private overlay: HTMLElement;
  private observer: MutationObserver;

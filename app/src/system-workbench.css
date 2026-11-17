@@ -6,8 +6,6 @@
 .system-workbench-tokens > .system-workbench-filter { margin-bottom: var(--site-unit); }
 .system-workbench-tokens label { display: block; margin-bottom: calc(var(--site-unit) / 2); }
 .system-workbench-tokens label span { display: block; font: calc(10px * var(--sf, 1))/var(--site-unit) var(--typeface-mono); }
-/* The old two-row library panel belonged to the catalogue + properties stack.
-   The catalogue now has one scrolling flow, with a heading above its sections. */
 .app-shell .system-workbench .system-library-panel { display: block; overflow: auto; }
 .system-workbench .system-library-panel > .app-panel-label { position: sticky; top: 0; z-index: 1; flex-shrink: 0; background: var(--workbench-panel); }
 .system-workbench .library-button-properties { padding: var(--site-unit) 0; }
@@ -43,5 +41,4 @@
 
 .system-workbench-preview .app-panel-heading { flex-wrap: wrap; gap: calc(var(--site-unit) / 2); }
 
-/* A covered component's property groups (PropertyGroups.ts) lead the aside, a square above what follows. */
 .system-workbench-tokens > .component-editor-group:not(:has(~ .component-editor-group)) { margin-bottom: var(--site-unit); }

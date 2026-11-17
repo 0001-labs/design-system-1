@@ -20,7 +20,6 @@ describe('font outlines', () => {
     expect(winding(counter)).toBeLessThan(0);
     expect(counter[0]).toEqual(outer[0]);
     expect(reverseContour(counter)).toEqual(outer);
-    // A contour of lines and curves keeps each segment's kind when reversed.
     const mixed: SourceContour = [{ x: 0, y: 0, type: 'line' }, { x: 100, y: 0, type: 'line' }, { x: 150, y: 50, type: 'offcurve' }, { x: 150, y: 100, type: 'offcurve' }, { x: 100, y: 150, type: 'curve' }];
     const back = valid(reverseContour(mixed));
     expect(contourPath(back)).toBe('M0 0L100 150C150 100 150 50 100 0Z');
@@ -30,13 +29,11 @@ describe('font outlines', () => {
     const moved = movePoints(round, new Set([3]), 10, -5);
     expect([moved[2], moved[3], moved[4]].map(p => [p!.x, p!.y])).toEqual([[210, 17], [210, 45], [210, 73]]);
     expect(moved[0]).toBe(round[0]);
-    // Drag the incoming control of the right point (smooth): the outgoing turns to stay on its line.
     const turned = movePoints(round, new Set([2]), -40, 0);
     const [a, centre, b] = [turned[2]!, turned[3]!, turned[4]!];
     const cross = (a.x - centre.x) * (b.y - centre.y) - (a.y - centre.y) * (b.x - centre.x);
     expect(Math.abs(cross)).toBeLessThan(Math.hypot(b.x - centre.x, b.y - centre.y) * 1.5);
     expect(Math.round(Math.hypot(b.x - centre.x, b.y - centre.y))).toBe(28);
-    // A corner's control points move alone.
     const corner = toggleSmooth(round, 3);
     expect(corner[3]!.smooth).toBeUndefined();
     expect(movePoints(corner, new Set([2]), -40, 0)[4]).toEqual(round[4]);
@@ -51,7 +48,6 @@ describe('font outlines', () => {
     const split = splitSegment(round, part, 0.5);
     expect(valid(split.contour)).toHaveLength(round.length + 3);
     expect(split.contour[split.index]).toEqual({ x: Math.round(middle.x), y: Math.round(middle.y), type: 'curve', smooth: true });
-    // The closing segment's controls sit at the end of the list; splitting it keeps the contour whole.
     const closing = splitSegment(round, segments(round)[0]!, 0.25);
     expect(valid(closing.contour)).toHaveLength(round.length + 3);
     expect(contourPath(closing.contour).startsWith('M100 0')).toBe(true);

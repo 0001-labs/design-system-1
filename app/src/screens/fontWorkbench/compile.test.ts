@@ -39,7 +39,6 @@ describe('a drawn face as a font', () => {
       { unicode: 0x48, advance: 718, contours: [rectangle(80, 0, 170, 710)] },
     );
     const loaded = await import('opentype.js');
-    // Under Node the CommonJS build puts the parser on the default export.
     const parse = ('parse' in loaded ? loaded.parse : undefined) ?? loaded.default.parse;
     const font = parse(await compileSource(source));
     for (const script of ['DFLT', 'latn']) {
@@ -48,9 +47,7 @@ describe('a drawn face as a font', () => {
       expect(pairs.map(pair => font.glyphs.get(pair.by).name)).toEqual(['uni0030.tnum', 'uni0031.tnum']);
       expect(pairs.map(pair => font.glyphs.get(pair.by).advanceWidth)).toEqual([620, 620]);
     }
-    // The proportional figures keep their own widths.
     expect(font.glyphs.get(font.charToGlyphIndex('1')).advanceWidth).toBe(354);
-    // Without a figure width the widest figure's is used.
     delete source.metrics.figureWidth;
     const widest = parse(await compileSource(source));
     expect(widest.substitution.getSingle('tnum', 'latn', 'dflt').map(pair => widest.glyphs.get(pair.by).advanceWidth)).toEqual([676, 676]);

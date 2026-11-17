@@ -10,8 +10,6 @@ const index=(page:NativePageDocument)=>{const result=new Map<string,NativeBlock>
 const safeId=(id:string)=>id.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/^[^a-zA-Z]/,'section_').slice(0,70);
 const gaps=(c:EarlierComposition,id:string)=>Object.fromEntries(Object.entries(c.gaps??{}).filter(([key])=>key.startsWith(`${id}-text-`)||key.startsWith(`${id}-nested-`)||key.startsWith(`columns:${id}:`)));
 function writing(c:EarlierComposition,id:string):NativeContent{return{id:safeId(id),kind:'content',source:id==='intro'?c.text:c.sections[id]??'',gaps:gaps(c,id),wrap:c.wrap!==false};}
-/** All earlier versions enter the same native page model. The source revision is left in database
- * history; this importer has no editing operations or alternate renderer. */
 export function migrateWorkspacePage(value:unknown):WorkspacePage {
  const v=value as Record<string,unknown>;
  if(v?.schema===2)return validateWorkspacePage(value);

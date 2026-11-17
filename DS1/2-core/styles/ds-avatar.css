@@ -1,7 +1,6 @@
 @import "../../1-root/component-metrics.css";
 
 :host {
-  /* One control high, inside a one-square row. */
   --avatar-size: var(--ds-control-height);
   --avatar-pair-type-size: var(--ds-type-size-small);
   display: inline-flex;
@@ -41,8 +40,6 @@
   user-select: none;
   -webkit-user-select: none;
 }
-/* An avatar is round unless it is square, with a picture's corners; a logo is
-   a brand mark and keeps the corners of its own drawing. */
 :host([shape="square"]) .frame {
   border-radius: var(--ds-avatar-radius, var(--ds-radius));
   corner-shape: var(--ds-corner-shape, round);
@@ -57,8 +54,6 @@
   font-size: var(--ds-unit);
 }
 .initial[data-pair] {
-  /* Full-width initials must fit inside both hairline edges, even at compact
-     and independent nested scales. Keep the normal type size when it fits. */
   font-size: min(
     var(--avatar-pair-type-size),
     calc((var(--avatar-size) - 2px) / var(--initial-count))

@@ -8,7 +8,6 @@ export type ComposerProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   variant?: "field" | "plain";
 };
 const useCommitEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
-/** Native React values, events, refs and forms; DS1 owns the entire visual. */
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
   { highlights = [], autoGrow, maxRows = 12, variant = "field", className, style, ...props }, ref,
 ) {

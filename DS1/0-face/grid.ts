@@ -2,7 +2,6 @@ import { createLayoutInspector } from './layout-inspector';
 import { initGridFit } from './grid-fit';
 import { initConstraintShortcut } from './constraint-panel';
 
-/** The presses of one key, each within 800ms of the last, that toggle an overlay. */
 export const GRID_PRESSES = 5;
 let canTouchToggle: (() => boolean) | undefined;
 
@@ -12,15 +11,6 @@ function scrollRegions(root: ParentNode, found: HTMLElement[] = []): HTMLElement
   return found;
 }
 
-/**
- * Five presses of G toggle the grid and five of L inspect the layout, on every
- * page that loads this module and for everyone who reads it: never put them
- * behind a user, an owner or a development check. Escape hides both. Presses
- * typed into a field, with a modifier or held down never count, and any other
- * key starts the count again.
- * A nested scrolling viewport opts in with data-ds-grid-scroll: its grid follows
- * its content while the page grid remains aligned outside the viewport.
- */
 export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {}): void {
   if (options.canTouchToggle) canTouchToggle = options.canTouchToggle;
   if (typeof document === "undefined") return;
@@ -29,7 +19,6 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
   root.setAttribute("data-ds-grid-ready", "");
   root.setAttribute("data-design-system", "1");
   initGridFit();
-  // Five presses of C, for the page's owner alone (constraint-panel.ts).
   initConstraintShortcut();
 
   const overlay = document.createElement("div");
@@ -95,7 +84,6 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       const rect = element.getBoundingClientRect();
       let left = rect.left + element.clientLeft, top = rect.top + element.clientTop;
       let right = left + element.clientWidth, bottom = top + element.clientHeight;
-      // The overlay must respect enclosing scroll viewports as the content does.
       for (let parent = element.parentElement; parent; parent = parent.parentElement) {
         const style = getComputedStyle(parent), box = parent.getBoundingClientRect();
         if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) { left = Math.max(left, box.left + parent.clientLeft); right = Math.min(right, box.left + parent.clientLeft + parent.clientWidth); }
@@ -113,7 +101,6 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       Object.assign(grid.style, { inset: 'auto', left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` });
       grid.style.setProperty('--ds-grid-scroll-x', `${window.scrollX + left + element.scrollLeft}px`);
       grid.style.setProperty('--ds-grid-scroll-y', `${window.scrollY + top + element.scrollTop}px`);
-      // Opposite winding makes each viewport a hole in the page grid.
       holes.push(`M${left},${top}V${bottom}H${right}V${top}Z`);
     });
     scopedGrids.forEach((grid, element) => { if (!present.has(element)) { resize.unobserve(element); element.removeEventListener('scroll', updatePosition); grid.remove(); scopedGrids.delete(element); } });
@@ -147,7 +134,6 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
   if (preview.get('grid') === '1') setVisible(true);
   if (preview.get('layout') === '1') layout.toggle();
 
-  // A bundler's development flag (Vite's import.meta.env.DEV); absent elsewhere.
   {
     const development = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
     const mobile = window.matchMedia('(max-width: 768px)');

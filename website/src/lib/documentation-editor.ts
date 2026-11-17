@@ -1,7 +1,6 @@
 import type { ConsistencyDocsEditor } from '../../../packages/consistency/src/docs-site';
 import type { DocHeading } from '../../../shared/doc-pages';
 
-/** The reading page becomes Aa only after the existing owner session is checked by the API. */
 export function connectDocumentationEditor() {
   const body = document.querySelector<HTMLElement>('.sl-markdown-content');
   if (!body) return;
@@ -15,7 +14,6 @@ export function connectDocumentationEditor() {
     if (!editor) return;
     editor.hidden = !owner;
     editor.inert = !owner;
-    // Detach the reading copy so its section IDs cannot shadow Aa's anchors.
     if (owner) body.remove();
     else editor.before(body);
     toc?.replaceChildren(...(owner ? currentContents : originalContents).map(node => node.cloneNode(true)));
@@ -50,14 +48,13 @@ export function connectDocumentationEditor() {
       if (await candidate.open(location.pathname)) {
         editor = candidate;
         show();
-      } else candidate.remove(); // Private/workspace pages without Markdown retain their own interface.
+      } else candidate.remove();
     } catch (error) {
       console.error('The documentation editor could not be opened.', error);
     } finally { opening = false; }
   };
   window.addEventListener('ds1-navigation-auth', event => void auth(event));
   window.addEventListener('ds1:access-invalidated', () => { owner = false; show(); });
-  // A cached owner summary can arrive before this module.
   if (document.documentElement.hasAttribute('data-ds-owner')) {
     void auth(new CustomEvent('auth', { detail: { authenticated: true, owner: true } }));
   }

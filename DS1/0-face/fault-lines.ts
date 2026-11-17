@@ -8,14 +8,12 @@ const visible = (el: Element) => {
   return box.width > 0 && box.height > 0 && style(el).visibility !== 'hidden' && style(el).display !== 'none';
 };
 
-/** Walk each open shadow tree once; slotted children already occur in the light tree. */
 function elements(root: ParentNode): Element[] {
   return Array.from(root.querySelectorAll('*')).flatMap(el => [el, ...(el.shadowRoot ? elements(el.shadowRoot) : [])]);
 }
 
 type Grid = { element: Element; family: string | null; axis: 'x' | 'y'; lines: number[]; gaps: number[]; crossGap?: number; internalDrift: boolean; start: number; end: number };
 
-/** Related grids opt in by name; unlabelled card grids are candidates for human review. */
 export function faultLineGrids(root: ParentNode): Grid[] {
   return elements(root).flatMap(element => {
     const family = element.getAttribute('data-ds-fault-lines');
@@ -35,7 +33,6 @@ export function faultLineGrids(root: ParentNode): Grid[] {
       const band = bands.find(row => near(crossStart(row[0]!), crossStart(box)));
       if (band) band.push(box); else bands.push([box]);
     }
-    // The fullest band defines the tracks; an incomplete final row is valid.
     const band = [...bands].sort((a,b) => b.length-a.length)[0]!.sort((a,b) => start(a)-start(b));
     const lines = band.flatMap(box => [start(box), end(box)]);
     const gaps = band.slice(1).map((box,index) => start(box)-end(band[index]!));
@@ -45,7 +42,6 @@ export function faultLineGrids(root: ParentNode): Grid[] {
   });
 }
 
-/** Read the rendered label, not the host box: text tabs intentionally overhang. */
 function leadingTextEdge(element: Element): number | undefined {
   const rtl = style(element).direction === 'rtl';
   function visit(node: Node): number | undefined {
@@ -62,8 +58,6 @@ function leadingTextEdge(element: Element): number | undefined {
     if (node.nodeType !== 1) return;
     const el = node as Element;
     if (el.matches('[hidden], [aria-hidden="true"], script, style') || style(el).display === 'none' || style(el).visibility === 'hidden') return;
-    // Inline code/key/chip faces align by their outside edge; their intentional
-    // inset is not a displaced prose column. Text tabs still measure their words.
     if (el !== element && !element.matches('ds-tabs') &&
       (el.matches('code, kbd, button, input, select, textarea, img, svg') || (el.localName.startsWith('ds-') && el.localName !== 'ds-text'))) {
       const box = el.getBoundingClientRect();
@@ -81,7 +75,6 @@ function leadingTextEdge(element: Element): number | undefined {
 }
 
 type Column = { element: Element; reference: number; entries: {element: Element; edge: number}[] };
-/** Semantic content siblings share a leading text edge; nested columns remain independent. */
 export function faultLineColumns(root: ParentNode): Column[] {
   return elements(root).filter(el => el.matches('main, article, section, [data-ds-prose], [data-ds-fault-column]')).flatMap(element => {
     if (!visible(element) || element.closest('[data-ds-fault-lines="off"]')) return [];
@@ -108,7 +101,6 @@ function referenceFor(grids: Grid[], i: number) {
     });
 }
 
-/** Fault lines compare rendered tracks across separate sections, in the current viewport. */
 export function inspectFaultLines(root: ParentNode): Finding[] {
   const grids = faultLineGrids(root);
   const findings: Finding[] = [];
@@ -134,7 +126,6 @@ export function inspectFaultLines(root: ParentNode): Finding[] {
 }
 
 
-/** The same rendered geometry as the checker, painted without affecting layout or hit testing. */
 export function paintFaultLines(root: ParentNode, layer: SVGSVGElement): void {
   const doc = layer.ownerDocument;
   const width = doc.documentElement.clientWidth;
@@ -181,7 +172,6 @@ export function paintFaultLines(root: ParentNode, layer: SVGSVGElement): void {
     }
     const broken = failed.has(grid.element);
     if (!broken) continue;
-    // Draw each actual child so drift inside a later row is visible too.
     for (const child of Array.from(grid.element.children).filter(visible)) {
       const box = child.getBoundingClientRect();
       const edges = grid.axis === 'x' ? [box.left, box.right] : [box.top, box.bottom];
@@ -192,7 +182,6 @@ export function paintFaultLines(root: ParentNode, layer: SVGSVGElement): void {
           stroke: faultInk, 'stroke-width': 2 }, 'Actual edge differs from the dashed reference');
       }
     }
-    // Row spacing can drift even when every column edge still aligns.
     const rows: DOMRect[][] = [];
     for (const child of Array.from(grid.element.children).filter(visible)) {
       const box = child.getBoundingClientRect();

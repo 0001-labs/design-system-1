@@ -1,6 +1,5 @@
 import type { LayoutExample } from './layout-examples';
 
-// Composition only: all visual controls, type, colours and image frames come from DS1.
 const composition = `<style>
 .example-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--ds-unit); min-width:0; align-content:start; }
 .example-tight { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(var(--ds-unit) / 2); min-width:0; align-content:start; }

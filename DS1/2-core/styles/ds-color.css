@@ -1,4 +1,3 @@
-/* The native colour control stays in light DOM, including its browser picker. */
 ds-color > input[type="color"] {
   appearance: none !important;
   box-sizing: border-box !important;

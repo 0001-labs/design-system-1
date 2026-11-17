@@ -69,7 +69,6 @@ describe("labels", () => {
     const arrows = ["alt+arrowup", "alt+arrowdown", "mod+left", "mod+right"].map(text => shortcutLabel(text, other));
     expect(arrows).toEqual(["Alt+↑", "Alt+↓", "Ctrl+←", "Ctrl+→"]);
     expect(shortcutLabel("alt+arrowup", apple)).toBe("⌥↑");
-    // Inter Arrows covers U+2190–21FF, so every arrow and ⇧ ↩ ⇥ are Inter's.
     for (const text of [...arrows, "⇧", "↩", "⇥"].join("").replace(/[^←-⇿]/g, "")) expect(text.codePointAt(0)!).toBeGreaterThanOrEqual(0x2190);
   });
 
@@ -78,7 +77,6 @@ describe("labels", () => {
     expect(shortcutLabel("mod+shift+d", other)).toBe("Strg+Umschalt+D");
     expect(shortcutLabel("delete", other)).toBe("Entf");
     expect(modKey(other)).toBe("Strg");
-    // The language module without the shared words answers with the id: English is written.
     (globalThis as unknown as Record<symbol, unknown>)[TRANSLATOR] = (id: string) => id;
     expect(shortcutLabel("mod+shift+d", other)).toBe("Ctrl+Shift+D");
     setKeyWords({ "key.ctrl": "Control" });

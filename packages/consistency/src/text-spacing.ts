@@ -1,7 +1,6 @@
 import { bindSpacingHandle } from '../../app/src/2-core/spacing-handle';
 import { pointerGain } from './model';
 
-/** A document maps its real spaces to the editor's canonical ghost layer. */
 export interface SpacingTarget {
   id: string;
   element: HTMLElement;
@@ -14,7 +13,6 @@ export interface SpacingTarget {
   rect: () => { left: number; top: number; width: number; height: number };
 }
 
-/** Composition overlays stay outside Aa's editable block tree and authored site content. */
 export class TextSpacingLayer {
   private handles = new Map<string, { host: HTMLElement; dispose: () => void }>();
   private targets = new Map<string, SpacingTarget>();
@@ -98,7 +96,6 @@ export class TextSpacingLayer {
         binding = { host, dispose }; this.handles.set(id, binding);
       }
       const value = this.state.value(id, target.fallback), rect = target.rect(), horizontal = target.axis === 'horizontal';
-      // Empty space keeps an invisible one-square hit target, as the lab does.
       const zero = Math.max(horizontal ? rect.width : rect.height, 0) < 1;
       Object.assign(binding.host.style, { top: `${rect.top - (zero && !horizontal ? 10 * this.scale(target) : 0)}px`, left: `${rect.left - (zero && horizontal ? 10 * this.scale(target) : 0)}px`, width: `${zero && horizontal ? 20 * this.scale(target) : rect.width}px`, height: `${zero && !horizontal ? 20 * this.scale(target) : rect.height}px`, transform: 'none', cursor: horizontal ? 'ew-resize' : 'ns-resize' });
       binding.host.hidden = !this.state.enabled() && this.active !== id; binding.host.tabIndex = this.state.enabled() ? 0 : -1;

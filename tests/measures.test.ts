@@ -4,16 +4,13 @@ import { deviceScale, measures } from '../DS1/1-root/measures';
 import { calculateScalingFactor, defaultScalingConfig } from '../DS1/0-face/scaling';
 
 const css = (file: string) => readFileSync(new URL(`../DS1/1-root/${file}`, import.meta.url), 'utf8');
-/** The value a stylesheet gives a custom property, as written. */
 const declared = (file: string, name: string) => {
   const match = new RegExp(`^\\s*${name.replace(/[-]/g, '\\-')}:\\s*([^;]+);`, 'm').exec(css(file));
   if (!match) throw new Error(`${name} is not declared in ${file}`);
   return match[1].trim();
 };
 const px = (n: number) => `${n}px`;
-/** `calc(Npx * var(--sf))`, the way one.css scales a length. */
 const scaled = (n: number) => `calc(${px(n)} * var(--sf))`;
-/** `calc(var(--ds-name, Npx) * var(--ds-sf, 1))`, the way component-metrics.css does. */
 const metric = (fallback: string) => `calc(var(${fallback}) * var(--ds-sf, 1))`;
 
 describe('Measures', () => {

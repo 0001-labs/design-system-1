@@ -41,7 +41,6 @@ test("draws a toast with no framework, as Sonner does, and closes it after four 
   expect(item!.getAttribute("role")).toBe("status");
   expect(item!.getAttribute("aria-live")).toBe("polite");
   expect(item!.dataset.mounted).toBe("true");
-  // The element's own stylesheet, in the toaster's shadow root.
   expect(host().shadowRoot!.firstElementChild?.localName).toBe("style");
   await settle(3900);
   expect(toasts()).toHaveLength(1);

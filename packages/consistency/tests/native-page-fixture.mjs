@@ -1,4 +1,3 @@
-/** Isolated site storage and the actual shared native renderer; no production writes. */
 import { build } from 'esbuild';
 import { createServer } from 'node:http';
 import { mkdtemp, rm, readdir, readFile, mkdir, writeFile } from 'node:fs/promises';
@@ -12,7 +11,6 @@ const assets=fileURLToPath(new URL('../../../website/dist/',import.meta.url)),ds
 const policy="sandbox allow-same-origin allow-scripts; default-src 'none'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' https:; frame-ancestors 'self'; form-action 'none'; base-uri 'none'";
 export const nativePicture='/pictures/sample.jpg';
 const picture='<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#b4c7a8"/><circle cx="200" cy="200" r="120" fill="#e3a687"/></svg>';
-/** The `native-content` export as Sync 1 writes it for the platform, from this checkout: the platform's store is bundled against the renderer it will take, not the copy it last took. */
 async function freshNativeContent(into){
  const read=rel=>readFileSync(join(ds1,rel));
  const tree=(rel,{only,skip}={})=>{const map=new Map();for(const file of readdirSync(join(ds1,rel),{recursive:true})){const path=String(file).split(sep).join('/');if(only&&!only.test(path)||skip&&skip.test(path)||!statSync(join(ds1,rel,file)).isFile())continue;map.set(path,readFileSync(join(ds1,rel,file)));}return map;};
@@ -31,7 +29,6 @@ export async function nativePageFixture(options={}){
   {id:'story',kind:'flow',direction:'column',gap:40,mobileGap:20,padding:20,children:[{id:'words',kind:'content',source:'Words below the gallery.'},{id:'picture',kind:'image',src:nativePicture,alt:'Picture',width:400,height:280,mobileHeight:180,fit:'contain'}]},
   {id:'work-images',kind:'grid',columns:2,mobileColumns:2,columnGap:20,rowGap:20,children:[{id:'work-one',kind:'image',src:nativePicture,alt:'Work one',height:500,mobileHeight:280},{id:'work-two',kind:'image',src:nativePicture,alt:'Work two',height:500,mobileHeight:280}]},
   {id:'responsive-outer',kind:'flow',direction:'column',gap:120,mobileGap:60,padding:0,children:[{id:'responsive-inner',kind:'flow',direction:'row',gap:0,padding:0,children:[{id:'nested-words',kind:'content',source:'Nested layout keeps its own zero gap.'}]}]},
-  // Sections of the vocabulary: a hero, cards and questions, each one block with its slots and items.
   {id:'top',kind:'hero',height:24,panel:'centre',panelTone:'cream',picture:{src:nativePicture,alt:'The harbour'},title:'A hero over the harbour',text:'Words on the panel.',actions:[{text:'Book',href:'/book/',appearance:'primary'}]},
   {id:'tours',kind:'cards',columns:3,height:12,items:[{label:'1.5 hours',title:'Green raft',text:'For eight.',action:{text:'Book',href:'/book/'}},{label:'3 hours',title:'Sunset',text:'Evening light.'},{label:'Groups',title:'Quiz',text:'Culture and history.'}]},
   {id:'faq',kind:'questions',open:'first',heading:'Questions',items:[{question:'Do I need a licence?',answer:'No.'},{question:'What if it rains?',answer:'The rafts have a roof.'}]},
@@ -46,7 +43,6 @@ export async function nativePageFixture(options={}){
 ${options.styles??''}</style></head><body${editor&&snapshot.document.layout.mode==='document'?' data-c9y-native-root':''}>${engine.renderNativePage(snapshot.document,{images:snapshot.images,collections:snapshot.collections,components:snapshot.components,editor,runtime:block=>block.name==='Cart'?'<button type="button">Cart</button>':''})}</body></html>`;};
  const server=createServer(async(request,response)=>{const url=new URL(request.url,'http://localhost');if(url.pathname==='/fixture-public/'){response.setHeader('content-type','text/html; charset=utf-8');response.end(await html(url.searchParams.get('path')??'/'));return;}if(url.pathname.endsWith(nativePicture)){response.setHeader('content-type','image/svg+xml');response.end(picture);return;}const pathname=decodeURIComponent(url.pathname),file=resolve(assets,'.'+(pathname.endsWith('/')?pathname+'index.html':pathname));if(!file.startsWith(assets)){response.writeHead(403).end();return;}try{response.setHeader('content-type',({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css'})[extname(file)]??'application/octet-stream');response.end(options.workspaceShell?await readFile(file):await componentFixture(file));}catch{response.writeHead(404).end();}});await new Promise(done=>server.listen(0,'127.0.0.1',done));const base=`http://127.0.0.1:${server.address().port}`;
  return{base,url:`${base}/editor/home.html?open=${code}`,read,store,storage,engine,definition,writes,legacy,aiRequests,html,failWrites(value){fail=value;},
-  /** Ask's route: the handler takes the request's body and answers `{ status?, json }`; none answers 503, and one that never settles leaves the request hanging. */
   setAI(handler){ai=handler;},holdNextWrite(){let release,entered;const wait=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>entered=resolve);held={wait,entered};return{release,seen};},async route(page){
   await page.route('**/api/consistency/ask',route=>route.fulfill({json:route.request().method()==='GET'?{enabled:true}:['Add a hero','Add a page','but aput an extra section below with three buttons','Could you add a section?'].includes(route.request().postDataJSON()?.prompt)?{intent:'edit'}:{answer:'This is the current site.'}}));
   await page.route('**/api/consistency/workspaces',route=>route.fulfill({json:{owner:true,workspaces:[{code:workspace,name:'Native studio',role:'owner',plan:'free',sites:1,siteCodes:[code],limits:{sites:2,customDomains:false}}]}}));

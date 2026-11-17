@@ -1,9 +1,3 @@
-/**
- * The booking block in the editor: the button and its line drawn as they will publish
- * (`shared/consistency-meetings.ts`), both written in place, the button leading nowhere. Inserted from the editor's
- * menu as Booking. Published, the button leads to the site's own booking page, which takes meetings once Google is
- * connected under Site settings.
- */
 import { EMPTY_MEETINGS_SOURCE, MEETINGS_FIELDS, meetingsMarkup, readMeetings, writeMeetings, type MeetingsWords } from '../../../shared/consistency-meetings';
 import { wordsAtom } from './words-atom';
 

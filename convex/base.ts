@@ -6,18 +6,10 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { sha256Hex, utf8ByteLength } from "./lib/hash";
 import { baseOverrides, baseSheet, MAX_BASE_BYTES } from "../shared/base-sheet";
 
-/**
- * The base system: the owner's edits on designsystem1.com, live in every product that links
- * `/ds1/base/latest.css`. The Worker checks the owner and the release flag before it calls these,
- * then writes the returned sheet to R2; these check the owner again, so nobody else can write the
- * base even by calling Convex directly.
- */
-
 function fail(code: string, message: string, details?: Record<string, Value>): never {
   throw new ConvexError(details === undefined ? { code, message } : { code, message, details });
 }
 
-/** The verified account whose address is SIGN_IN_OWNER_EMAIL, the same owner sign-in names. */
 async function requireOwner(ctx: QueryCtx | MutationCtx): Promise<Id<"users">> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) fail("unauthenticated", "Sign in to continue.");
@@ -40,7 +32,6 @@ function summary(base: Doc<"baseSystem"> | null, version: Doc<"baseVersions"> | 
   return base && version ? { css: base.css, rev: base.rev, version: base.version, updatedAt: base.updatedAt, sheet: version.sheet, contentHash: version.contentHash } : null;
 }
 
-/** The base as the owner last saved it, or null before the first save. */
 export const get = query({
   args: {},
   returns: v.union(v.null(), v.object(baseValue)),
@@ -52,7 +43,6 @@ export const get = query({
   },
 });
 
-/** The latest versions, newest first, without their stylesheets. */
 export const history = query({
   args: {},
   returns: v.array(v.object({ version: v.number(), createdAt: v.number(), contentHash: v.string(), restoredFrom: v.union(v.number(), v.null()), overrides: v.number() })),
@@ -82,7 +72,6 @@ async function store(ctx: MutationCtx, userId: Id<"users">, css: string, restore
   return { css, rev, version, updatedAt: now, sheet, contentHash, unchanged: false };
 }
 
-/** Save the base as a new live version. A stale revision is refused, never merged. */
 export const save = mutation({
   args: { css: v.string(), baseRev: v.number() },
   returns: saved,
@@ -95,7 +84,6 @@ export const save = mutation({
   },
 });
 
-/** Make an earlier version live again, as a new version, so history only grows. */
 export const restore = mutation({
   args: { version: v.number() },
   returns: saved,

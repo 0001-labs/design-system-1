@@ -1,8 +1,4 @@
 import { hasSlottedContent } from "../0-face/light-dom";
-// ds-header.ts
-// A site header: the brand, the navigation with the page you are on, and the
-// actions, folding into a drawer on a narrow screen. Drawn by 1-root/header.css,
-// the same classes a page without scripts writes, and opened by 0-face/attach-overlay.ts.
 
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { getText } from "../0-face/i18n";
@@ -14,40 +10,10 @@ import metrics from "../1-root/component-metrics.css?inline";
 import controls from "../1-root/controls.css?inline";
 import styles from "./styles/ds-header.css?inline";
 
-/** The shared word that names the menu button and its drawer. */
 export const MENU_LABEL = "Menu";
 
 
 
-/**
- * @element ds-header
- * @prop {string} brand - The site's name, a link home: a translation key, or
- *   the words as they stand with `literal`. The `brand` slot takes its place.
- * @prop {string} href - Where the brand links. `/` by default.
- * @prop {string} label - The navigation's accessible name, when a page has more than one.
- * @prop {boolean} literal - Show `brand` as written, never looked up.
- * @prop {"site" | "app"} variant - Site navigation or a compact app title bar.
- * @prop {boolean} sticky - Stay at the top of the page as it scrolls, on the paper.
- *
- * @slot - The navigation: `<a href>` links, one square high. The link to the
- *   address being read gets `aria-current="page"` unless one is marked.
- * @slot brand - The brand, when it is more than words: a logo, a link of the page's own.
- * @slot actions - Buttons or links at the end of the row.
- *
- * @fires ds-header-menu - The drawer opened or closed; `detail.open` says which.
- *
- * Below thirty squares of width the navigation and actions fold away and a
- * menu button (the shared word "Menu") opens them in a drawer over the page:
- * focus stays inside it, Escape, its close button, a link or the screen
- * widening close it, and the page holds its scroll meanwhile.
- *
- * @example
- * <ds-header brand="Name" literal>
- *   <a href="/">Home</a>
- *   <a href="/help">Help</a>
- *   <ds-button slot="actions" primary href="/download">Download</ds-button>
- * </ds-header>
- */
 export class Header extends LitElement {
   static properties = {
     variant: { type: String, reflect: true },
@@ -78,15 +44,12 @@ export class Header extends LitElement {
     this.sticky = false;
   }
 
-  /** Whether the drawer is open. */
   get menuOpen(): boolean {
     return this.drawer?.isOpen ?? false;
   }
 
-  /** Open the drawer (on a narrow screen, where the menu button shows). */
   openMenu(): void { this.drawer?.open(); }
 
-  /** Close the drawer. */
   closeMenu(): void { this.drawer?.close(); }
 
   connectedCallback() {
@@ -126,12 +89,6 @@ export class Header extends LitElement {
     if (!value) return "";
     return this.literal ? value : getText(value) || value;
   }
-
-  /**
-   * Light-DOM children that fill a slot: elements, or text that is not blank.
-   * Children are told apart by node type and tag, never `instanceof`: a page
-   * drawn inside a frame by its parent holds elements of both windows.
-   */
 
 
   private links(): HTMLAnchorElement[] {

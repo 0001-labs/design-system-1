@@ -1,38 +1,3 @@
-/**
- * Toast: short messages that stack in a corner of the page and leave on their own.
- *
- * BASED ON SONNER. This component is a Lit port of Sonner, the React toast
- * library by Emil Kowalski (https://sonner.emilkowal.ski,
- * https://github.com/emilkowalski/sonner, MIT licence). Its API and behaviour
- * follow Sonner's, so Sonner's documentation describes how it works:
- *
- * - `toast()`, `toast.success()`, `.info()`, `.warning()`, `.error()`,
- *   `.loading()`, `.message()`, `.promise()` and `.dismiss()` are Sonner's calls,
- *   with Sonner's options (`id`, `description`, `duration`, `action`, `cancel`,
- *   `dismissible`, `closeButton`, `important`, `onDismiss`, `onAutoClose`).
- * - `<ds-toast>` is Sonner's `<Toaster />`, with its `position`, `expand`,
- *   `visible-toasts`, `duration`, `close-button` and `rich-colors`;
- *   `contained` draws it inside its positioned parent instead of the window.
- * - A toast stays until dismissed; an explicitly timed toast pauses while the stack is hovered,
- *   focused, held or the tab is hidden. Three show at once, stacked behind
- *   one another and spread out on hover. A swipe towards the edge dismisses one,
- *   Alt+T reaches them from the keyboard, and they come and go with Sonner's
- *   400ms slide and fade.
- *
- * Where it departs from Sonner, it follows Design system 1: a toast is drawn as
- * the system's label, an ink chip one control high per line in the tooltip's
- * colours, with no line or shadow, its actions underlined words; the pile
- * advances one square per toast, one square from the edge. Only `transform`
- * and `opacity` animate (a toast stacked behind takes the front one's height at
- * once instead of animating it). `toast()` also adds a `<ds-toast>` to the page
- * when there is none, and moving the element keeps its toasts and their time.
- * An error is announced assertively unless it says `important: false`.
- *
- * `toast()` and its queue are framework-free (`0-face/toast-queue.ts`). On a
- * page without Lit, the page toaster (`0-face/toaster.ts`) draws the same stack
- * with this component's stylesheet; where a `<ds-toast>` is in the page, it
- * takes every toast, so a page never shows two stacks.
- */
 import { LitElement, html, nothing, unsafeCSS } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { define } from "../0-face/define";
@@ -49,14 +14,12 @@ import type { ToastButton, ToastData, ToastId, ToastPosition, ToastSignal as Sig
 import "./ds-icon";
 import styles from "./styles/ds-toast.css?inline";
 
-/* Sonner's calls and their queue are framework-free (`0-face/toast-queue.ts`), shared with the page toaster. */
 export { toast } from "../0-face/toast-queue";
 export type { ToastButton, ToastData, ToastId, ToastOptions, ToastPosition, ToastPromiseMessages, ToastType } from "../0-face/toast-queue";
 
 interface Item { data: ToastData; mounted: boolean; removed: boolean; swipeOut: boolean; index: number; offset: number }
 interface Timer { remaining: number; started: number; handle?: ReturnType<typeof setTimeout> }
 
-/** The region that shows the toasts, Sonner's `<Toaster />`. Put one in the page. */
 export class Toaster extends LitElement {
   static properties = {
     position: { type: String, reflect: true },
@@ -80,9 +43,7 @@ export class Toaster extends LitElement {
   declare duration: number;
   declare closeButton: boolean;
   declare richColors: boolean;
-  /** Draw within the nearest positioned ancestor instead of the window. */
   declare contained: boolean;
-  /** The region's accessible name; products pass their own words. */
   declare label: string;
   declare closeLabel: string;
   declare private _items: Item[];
@@ -94,7 +55,6 @@ export class Toaster extends LitElement {
   private swipe?: { id: ToastId; start: number; time: number; amount: number };
   private resizes = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(() => this.measure());
   private stopListening?: () => void;
-  /** The front toast the stack was last raised for. */
   private raisedFor: ToastId | undefined;
 
   constructor() {
@@ -119,7 +79,6 @@ export class Toaster extends LitElement {
     this.stopListening = listenForToasts(this.receive);
     document.addEventListener("keydown", this.hotkey);
     document.addEventListener("visibilitychange", this.syncTimers);
-    // Moved to another parent: carry on with the time each toast had left.
     this.requestUpdate();
   }
 
@@ -151,7 +110,6 @@ export class Toaster extends LitElement {
     const data = signal.toast;
     const current = this.live.find(item => item.data.id === data.id);
     if (current) {
-      // An update keeps what it does not change and starts its time again, as in Sonner.
       this._items = this._items.map(item => item === current ? { ...item, data: { ...item.data, ...data } } : item);
       this.clearTimer(data.id);
       return;
@@ -175,7 +133,6 @@ export class Toaster extends LitElement {
     this.timers.delete(id);
   }
 
-  /** Sonner's timers: each toast keeps its remaining time while the stack is paused. */
   private syncTimers = () => {
     const now = Date.now();
     for (const item of this.live) {
@@ -228,18 +185,11 @@ export class Toaster extends LitElement {
     if (!this.live.length) { this._hovered = false; this._focused = false; }
     this.syncTimers();
     if (this._items.some(item => !item.mounted)) {
-      // Mount on the next frame so the toast slides in from its edge.
       const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (callback: () => void) => setTimeout(callback, 16);
       frame(() => { this._items = this._items.map(item => item.mounted ? item : { ...item, mounted: true }); });
     }
   }
 
-  /**
-   * In the window the stack stands in the browser's top layer, so a sheet, a drawer or a modal
-   * open on the page never covers it: a manual popover, shown again (to the top of the layer)
-   * whenever a new toast comes to the front, and hidden when none is left. Contained, it stays
-   * in its box.
-   */
   private raise() {
     const list = this.renderRoot.querySelector<HTMLElement>("ol");
     if (!list || this.contained || typeof list.showPopover !== "function") return;
@@ -250,14 +200,11 @@ export class Toaster extends LitElement {
       if (list.matches(":popover-open")) list.hidePopover();
       if (front !== undefined) list.showPopover();
     } catch {
-      // Out of the document, or a browser without popovers: it stays as it is drawn.
     }
   }
 
   private onPointerDown(event: PointerEvent, item: Item) {
     if (item.data.dismissible === false || item.data.type === "loading") return;
-    // Controls can contain icons with their own shadow root. Inspect the whole
-    // event path so swipe capture never steals their click.
     if (event.composedPath().some(node => node instanceof Element && node.matches("button, a"))) return;
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
     this.swipe = { id: item.data.id, start: event.clientY, time: Date.now(), amount: 0 };
@@ -268,7 +215,6 @@ export class Toaster extends LitElement {
   private onPointerMove = (event: PointerEvent) => {
     if (!this.swipe) return;
     const toward = this.position.startsWith("top") ? -1 : 1;
-    // Only towards the edge the toast came from.
     this.swipe.amount = Math.max(0, (event.clientY - this.swipe.start) * toward);
     const element = event.currentTarget as HTMLElement;
     element.dataset.swiping = "true";
@@ -343,7 +289,6 @@ export class Toaster extends LitElement {
   }
 
   render() {
-    // Index and offset count live toasts only; one leaving keeps where it was.
     let offset = 0;
     this.live.forEach((item, index) => {
       item.index = index;

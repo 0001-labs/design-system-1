@@ -48,13 +48,9 @@
   border-end-end-radius: var(--ds-radius);
 }
 :host([split]) button[data-icon] { width: var(--ds-control-height); padding: 0; }
-/* An icon with its words hugs them: the icon's own 4px room around its glyph
-   replaces the padding on its side and the gap before the words. */
 :host([split]) button[data-icon-words] { gap: 0; padding-inline-start: 0; }
 :host([split]) ds-icon { --ds-icon-size: 16px; color: inherit; }
 :host([split]) ds-text { color: inherit; }
-/* Compact numeric views: a single digit is a square; longer values use the
-   shared compressed face and smaller inset. Products supply only the labels. */
 :host([split][compact]) button:not([data-icon], [data-short]) {
   --ds-typeface-regular: var(--ds-typeface-compressed);
   padding-inline: calc(3px * var(--ds-sf));
@@ -67,8 +63,6 @@
   cursor: default;
 }
 :host([split]) button:disabled { cursor: default; opacity: 0.5; }
-/* Plain: the words and icons alone on no ground in any state, in the muted ink, the pointer and
-   the chosen segment taking the ink, as text tabs do. */
 :host([split][plain]) button,
 :host([split][plain]) button[aria-pressed="true"] { background: transparent; }
 :host([split][plain]) button[aria-pressed="true"] { color: var(--ds-text-color); }

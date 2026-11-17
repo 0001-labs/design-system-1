@@ -1,13 +1,3 @@
-/**
- * The documentation as a site in Consistency's app: the same place in the app as a site's canvas, drawn from the
- * page's Markdown rather than a frame, since the documentation is this Worker's own build (`services/src/doc-pages.ts`).
- * A page opens in Aa as its words, with each block only the build can draw (a live example, a component) as one atom
- * shown as it stands on the site. Aa moves or removes an atom whole and cannot damage it. The words are saved as they
- * are written, serially, and go live on the site at once.
- *
- * The title and the description are edited here and in Pages through the same route. Internal links open with
- * Command or Control held, as a link does in Aa. Pages lists every page and opens one here (`consistency-open-page`).
- */
 import { LitElement, html, nothing } from 'lit';
 import { atomPattern, createEditor, createPlainEditor, type Editor } from '../../../website/src/vendor/aa/aa';
 import '../../../website/src/vendor/aa/aa.css';
@@ -23,15 +13,12 @@ export interface DocsPage { path: string; base: string; revision: number; title:
 interface DocsListing { path: string; lang: string; title: string; fields: number; edited: number }
 type Plain = ReturnType<typeof createPlainEditor>;
 
-/** How long after the last letter the words are saved. */
 const SAVE_AFTER = 600;
 
 export class ConsistencyDocsEditor extends LitElement {
   static properties = { path: { state: true }, problem: { state: true }, page: { state: true } };
   site!: SiteSummary;
-  /** The app shows no bar over a site; the same field as a site's editor, for the place that makes either. */
   picker = false;
-  /** Reuse the editor in the public documentation's existing reading column. */
   embedded = false;
   pages: DocsListing[] | null = null;
   path: string | null = null;
@@ -60,7 +47,6 @@ export class ConsistencyDocsEditor extends LitElement {
     } catch (error) { this.problem = (error as Error).message; }
   }
 
-  /** Opens a page, read fresh, once the page before it is saved; whether it opened. */
   async open(path: string): Promise<boolean> {
     if (!await this.flush()) return false;
     const ticket = ++this.ticket;
@@ -109,7 +95,6 @@ export class ConsistencyDocsEditor extends LitElement {
     }
   }
 
-  /** The title or the description, edited in place and saved on leaving it, as Pages saves it. */
   private field(selector: string, key: 'title' | 'description', value: string) {
     const host = this.querySelector<HTMLElement>(selector)!;
     host.replaceChildren();
@@ -142,7 +127,6 @@ export class ConsistencyDocsEditor extends LitElement {
     this.dispatchEvent(new CustomEvent('documentation-headings', { detail: headings }));
   }
 
-  /** Saves the words as they stand, one save at a time; whether everything written is saved. */
   private save(): Promise<boolean> {
     if (this.saving) return this.saving.then(ok => (ok ? this.save() : false));
     if (!this.dirty || !this.page) return Promise.resolve(true);
@@ -150,14 +134,12 @@ export class ConsistencyDocsEditor extends LitElement {
     this.dirty = false;
     this.saving = siteApi<{ revision: number; headings?: DocHeading[] }>(this.site.code, `docs-page?path=${encodeURIComponent(page.path)}`, { method: 'PUT', json: { base: page.base, revision: page.revision, text } })
       .then(saved => { page.revision = saved.revision; if (!this.dirty) this.outline(saved.headings); this.problem = ''; return true; }, (error: Error) => {
-        // The words stay on the canvas, marked unsaved, so nothing written is lost.
         this.dirty = true; this.problem = error.message; return false;
       })
       .finally(() => { this.saving = null; });
     return this.saving;
   }
 
-  /** Saves what is waiting before leaving the page. `false` keeps the owner here with the words still unsaved. */
   async flush(): Promise<boolean> {
     clearTimeout(this.timer);
     if (!await this.save()) return false;

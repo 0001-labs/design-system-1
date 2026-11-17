@@ -4,7 +4,6 @@ import { expect, test } from 'vite-plus/test';
 
 const read = (path: string) => readFileSync(join(import.meta.dirname, '../DS1', path), 'utf8');
 const controls = read('1-root/native-controls.css');
-/** The body of the rule whose selector list is exactly this one. */
 const rule = (css: string, selector: string) => {
   const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)];
   const found = rules.find(([, list]) => list!.split(';').pop()!.trim().replace(/\s+/g, ' ') === selector.replace(/\s+/g, ' '));
@@ -84,7 +83,6 @@ test('a drop zone is the file picker’s area: eight squares, four compact, the 
   expect(input).toContain('inset: 0');
   expect(input).toContain('opacity: 0');
   expect(native('.ds-drop:has(> input:focus-visible),\n.ds-drop[data-dragging]:not(:has(> input:disabled)),\nlabel.ds-button:has(> input[type="file"]:focus-visible)')).toContain('outline: 2px solid var(--ds-focus-ring)');
-  // The file picker's face is one control high, as every button's: a row-high face stood 4px above its neighbours.
   expect(native('label.ds-button:has(> input[type="file"])')).not.toContain('--ds-button-height');
 });
 
@@ -105,14 +103,13 @@ test('every native piece that sets a display hides with the hidden attribute', (
 });
 
 test('the pieces scale with the surface: every length is a token, a square count or scaled', () => {
-  const start = controls.indexOf('/*\n * Pieces the components draw');
+  const start = controls.indexOf('\n.ds-field {');
   expect(start).toBeGreaterThan(0);
-  const section = controls.slice(start).replace(/\/\*[\s\S]*?\*\//g, '');
+  const section = controls.slice(start);
   const bare = [...section.matchAll(/(?<![\w-])-?\d+(?:\.\d+)?px/g)].map(match => {
     const before = section.slice(Math.max(0, match.index - 40), match.index);
     const after = section.slice(match.index, match.index + 30);
     return { length: match[0], scaled: /\*\s*var\(--ds-sf\)/.test(after) || /--ds-(?:icon|flag)-size(?::|,)\s*$/.test(before) };
   });
-  // Hairlines (a flag's centred on its edge), the focus ring and its offset, and the 2px between an initial's hairline edges stay as drawn.
   expect(bare.filter(found => !found.scaled).map(found => found.length).sort()).toEqual(['-0.5px', '1px', '1px', '1px', '1px', '1px', '2px', '2px']);
 });

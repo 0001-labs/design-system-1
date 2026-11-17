@@ -1,4 +1,3 @@
-/** Only the published marketing pages belong in search; account routes never do. */
 const origin = 'https://consistency.site';
 const pages = ['/', '/examples/'];
 

@@ -4,14 +4,12 @@ import { expect, test } from 'vite-plus/test';
 
 const css = readFileSync(join(import.meta.dirname, '../DS1/1-root/prose.css'), 'utf8');
 const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
-/** Each rule's selector list and body, in order. */
 const rules = [...code.matchAll(/([^{}@;]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector!.trim().replace(/\s+/g, ' '), body: body! }));
 const rule = (element: string) => {
   const found = rules.find(({ selector }) => selector === `[data-ds-prose] :where(${element}):not(:where([data-ds-not-prose] *))`);
   expect(found, element).toBeDefined();
   return found!.body;
 };
-/** Split a selector list on its top-level commas. */
 function selectors(list: string) {
   const parts: string[] = []; let depth = 0, start = 0;
   for (let i = 0; i < list.length; i++) {
@@ -52,7 +50,6 @@ test('text stands on one-square lines, a title on two, with a square between blo
   expect(rule('h1')).toContain('line-height: calc(2 * var(--ds-unit))');
   expect(rules.find(({ selector }) => selector.includes(' + :where(:not('))?.body).toContain('margin-top: var(--ds-unit)');
   expect(rules.find(({ selector }) => selector.includes(' + :where(h1, h2, h3, h4, h5, h6)'))?.body).toContain('margin-top: calc(2 * var(--ds-unit))');
-  // Tables share the one-square row and spare-four inset of the table component.
   expect(rule('th, td')).toContain('padding: 0 calc(4px * var(--ds-sf, 1))');
 });
 

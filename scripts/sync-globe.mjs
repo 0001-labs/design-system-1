@@ -1,4 +1,3 @@
-/** Distribute the one DS1 globe without refreshing unrelated product code. */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -31,10 +30,8 @@ for (const file of [
   'Design system 1/website/public/icons/interface/globe.svg',
   'Link/public/icons/public-globe.svg',
 ]) put(file, svg + '\n');
-// Android's SVG loader uses an explicit source colour, then applies its tint.
 put('Ezo/android/shared/src/main/resources/screen-icons/Screen-globe.svg', svg.replace('currentColor', '#1E1E1E') + '\n');
 
-// Products take the generated maps with their component copy (Sync 1), so only the source is written here.
 for (const base of ['Design system 1/DS1']) {
   for (const part of ['ds-icon-map', 'icons-extra']) {
     put(`${base}/2-core/generated/${part}.ts`, source => {
@@ -46,7 +43,6 @@ for (const base of ['Design system 1/DS1']) {
 }
 put('tau99/src/vendor/design-system.js', source => replace(source, /globe:`<svg[\s\S]*?<\/svg>`/, `globe:\`${svg}\``));
 
-// React adapters keep each product's public props; the geometry is always filled.
 for (const [file, defaults, propsType] of [
   ['Consistency/src/icons/Globe.tsx', 'size = 24', 'IconProps'],
   ['Link/client/components/Globe.tsx', 'size = 24', 'Omit<SVGProps<SVGSVGElement>, "stroke"> & { size?: string | number; stroke?: string | number }'],
@@ -58,7 +54,6 @@ for (const [file, defaults, propsType] of [
   put(file, `// Generated from Design system 1/DS1/x-icon/globe.svg by icons:sync-globe.\n${imports}\n\nexport const Globe = forwardRef<SVGSVGElement, ${propsType}>(\n  ({ ${defaults}, color = "currentColor", className, ${isConsistency ? 'absoluteStrokeWidth: _absoluteStrokeWidth, ' : 'stroke: _stroke, '}strokeWidth: _strokeWidth, ...props }, ref) => (\n    <svg ref={ref} xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={${isConsistency ? '["consistency-icon", className].filter(Boolean).join(" ")' : 'className'}} aria-hidden="true" {...props} viewBox="0 0 16 16" fill={color} stroke="none">\n      <path d=${JSON.stringify(d)} />\n    </svg>\n  ),\n);\nGlobe.displayName = "Globe";\n`);
 }
 
-// Native paths are a mechanical conversion, never an approximation of the SVG.
 const commands = [...d.matchAll(/([MCHVZ])([^MCHVZ]*)/g)];
 if (commands.map(m => m[0]).join('') !== d) throw new Error('Unsupported globe path command');
 const statements = commands.map(([, command, args]) => {

@@ -13,7 +13,6 @@ test('Aa keeps CSS as plain text and accepts both typing and token updates', asy
   try {
     await stylesheet.updateComplete;
     const block = stylesheet.querySelector<HTMLElement>('[contenteditable]')!;
-    // Happy DOM does not load the imported workbench stylesheet.
     block.style.whiteSpace = 'pre';
     expect(block.textContent).toBe(original);
     expect(block.getAttribute('contenteditable')).toBe('plaintext-only');

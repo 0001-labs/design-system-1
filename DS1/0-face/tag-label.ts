@@ -1,6 +1,5 @@
 import type { Finding } from './constraints';
 
-/** Include the face, slotted content and clipping ancestors in the visible-label check. */
 export function inspectTagLabels(root: ParentNode): Finding[] {
   return [...root.querySelectorAll<HTMLElement>('ds-tag')].flatMap(tag => {
     const face = tag.shadowRoot?.querySelector<HTMLElement>('.frame');
@@ -22,7 +21,6 @@ export function inspectTagLabels(root: ParentNode): Finding[] {
       }
     }
     for (let parent: Element | null = tag; parent; parent = parent.assignedSlot ?? parent.parentElement ?? (parent.getRootNode() as ShadowRoot).host ?? null) {
-      // A carousel intentionally hides other slides; each slide still gives its tags room.
       if (parent.matches('[part~="track"]') && (parent.getRootNode() as ShadowRoot).host?.matches('ds-carousel')) break;
       const style = view.getComputedStyle(parent);
       const box = parent.getBoundingClientRect();

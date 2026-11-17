@@ -13,7 +13,6 @@ describe('a block\'s behaviour', () => {
     expect(behaviourMembers('hero').map(([name]) => name)).toEqual(['turnEvery', 'turnOrder', 'turns']);
     expect(hasBehaviour('hero')).toBe(true);
     expect(hasBehaviour('statement')).toBe(false);
-    // A form's address, button and fields are set in the panel too: its labels are not words written in place.
     expect(behaviourMembers('form').map(([name]) => name)).toEqual(['action', 'button', 'inputs']);
     expect(hasBehaviour('nothing')).toBe(false);
   });

@@ -12,7 +12,6 @@ const expectPrivate = (response: Response) => {
   expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
 };
 
-/** System's One key as the identity binding answers it; `who` is the owner the next code redeems as. */
 function setup() {
   const codes = new Map<string, string>();
   const tokens = new Map<string, string>();

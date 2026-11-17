@@ -7,8 +7,6 @@ export type Preset = Drawing & { key: string; description: string };
 const block = (icon: GridIcon, x: number, y: number, w: number, h: number, ink: number) => {
   for (let row = y; row < y + h; row++) for (let col = x; col < x + w; col++) icon.cells[row * 16 + col] = ink;
 };
-// The packaging front's 340-unit square, sampled on the favicon's 16-unit grid.
-// Preserve its original colour tokens and progression from large to small tiles.
 const system: GridIcon = { ...packagingMosaic, mask: 'square' };
 const rhythm = blankIcon(['#594dff', '#f0ecff']);
 block(rhythm, 3, 3, 10, 2, 1); block(rhythm, 3, 7, 7, 2, 1); block(rhythm, 3, 11, 10, 2, 1);
@@ -50,7 +48,6 @@ export function drawingSvg(drawing: Drawing, size = 512, id = 'drawing'): string
 export function fileStem(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'icon';
 }
-/** PNG-backed ICO directory, with one entry per actual raster size. */
 export function packIco(images: { size: number; bytes: Uint8Array }[]): Uint8Array {
   if (!images.length || images.length > 8 || images.some(i => !Number.isInteger(i.size) || i.size < 1 || i.size > 256)) throw new Error('Invalid icon sizes');
   const header = 6 + images.length * 16;

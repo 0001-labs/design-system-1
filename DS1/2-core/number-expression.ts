@@ -1,9 +1,3 @@
-/**
- * What a person types into a number field, read as arithmetic: `12`, `10 + 5`, `(3 − 1) × 4`,
- * and an operator first (`*2`, `/2`, `+10`, `×1.5`) applied to the current value. A leading minus
- * is a negative number, never "take away". The minus sign, × and ÷ count as -, * and /; a unit
- * written after the figures (`12px`, `50 %`) is ignored. `null` when it is not arithmetic.
- */
 export function readNumberExpression(text: string, current = 0): number | null {
   let source = text.trim().replace(/[−–]/g, "-").replace(/×/g, "*").replace(/÷/g, "/").replace(/,/g, ".");
   source = source.replace(/\s*[a-z%°]+\s*$/i, "");
@@ -49,14 +43,12 @@ export function readNumberExpression(text: string, current = 0): number | null {
   }
 }
 
-/** The decimals a step implies: 1 → 0, 0.05 → 2. */
 export function stepPlaces(step: number): number {
   const text = String(step);
   if (/e-(\d+)$/.test(text)) return Number(/e-(\d+)$/.exec(text)![1]);
   return text.includes(".") ? text.split(".")[1].length : 0;
 }
 
-/** A value as the field writes it: no trailing zeros, the minus sign rather than a hyphen. */
 export function formatNumberValue(value: number, places: number): string {
   const fixed = value.toFixed(places);
   const trimmed = fixed.includes(".") ? fixed.replace(/\.?0+$/, "") : fixed;

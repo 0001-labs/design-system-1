@@ -1,23 +1,6 @@
-/**
- * Design system 1 - Main entry point for all components
- *
- * This module initializes core utilities and exports all design system components
- * organized by layer: 0-face (foundation), 2-core (components), 3-unit (composites), 4-page (layouts)
- */
-
-// ============================================================================
-// Initialization (side-effect imports)
-// ============================================================================
-
-// Initialize device detection (will auto-detect and log on load)
 import "./0-face/device";
 
-// Initialize language utilities (will auto-load external translations if available)
 import "./0-face/i18n";
-
-// ============================================================================
-// 0-face: Foundation & Utilities
-// ============================================================================
 
 export * from "./0-face/device";
 export * from "./0-face/grid";
@@ -35,10 +18,6 @@ export * from "./0-face/theme";
 export * from "./0-face/shape";
 export * from "./0-face/keys";
 export * from "./0-face/sidebar";
-
-// ============================================================================
-// 2-core: Core Components
-// ============================================================================
 
 export * from "./2-core/ds-badge";
 export * from "./2-core/ds-tag";
@@ -67,10 +46,6 @@ export * from "./2-core/ds-text";
 export * from "./2-core/ds-toast";
 export * from "./2-core/ds-tooltip";
 
-// ============================================================================
-// 3-unit: Composite Components
-// ============================================================================
-
 export * from "./3-unit/ds-accordion";
 export * from "./2-core/ds-avatar";
 export * from "./3-unit/ds-avatar-group";
@@ -83,10 +58,6 @@ export * from "./3-unit/ds-matrix";
 export * from "./3-unit/ds-row";
 export * from "./3-unit/ds-table";
 export * from "./3-unit/ds-table-of-contents";
-
-// ============================================================================
-// 4-page: Layout Components
-// ============================================================================
 
 export * from "./4-page/ds-container";
 export * from "./4-page/ds-grid";

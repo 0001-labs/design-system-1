@@ -1,7 +1,3 @@
-/* C9Y System. Design system 1's square, on the paper with no cards: the views in the work column and the focused
-   node's details in a column of sixteen squares beside it, stacking below it under forty-eight squares. Every row is
-   one square with its words on the lower sixteen; prose that wraps stays on lines of one square. */
-
 :root { --ds-sf: var(--sf, 1); }
 html, body { margin: 0; background: var(--ds-paper); color: var(--ds-text-color); }
 body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-default); }
@@ -25,7 +21,6 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
 .c9y-system ul { list-style: none; }
 .c9y-system code { font-family: var(--ds-typeface-mono); font-size: calc(13px * var(--ds-sf)); overflow-wrap: anywhere; }
 
-/* The head: the title on two squares, the count on one, the tabs a square below. */
 .c9y-head { grid-area: head; margin-bottom: calc(2 * var(--u)); }
 .c9y-head h1 { line-height: calc(2 * var(--u)); }
 .c9y-count { padding-top: var(--four); line-height: var(--line); color: var(--ds-text-color-muted); }
@@ -40,12 +35,10 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
   .c9y-detail { position: static; max-height: none; overflow: visible; margin-top: calc(2 * var(--u)); }
 }
 
-/* Headings and block lines: one square each, the words on the sixteen. */
 .c9y-system h2, .c9y-system h3, .c9y-head h1 + p { font-weight: var(--ds-type-weight-default); }
 .c9y-system h2 { font-size: var(--ds-type-size-default); padding-top: var(--four); line-height: var(--line); font-family: var(--ds-typeface-medium); font-weight: var(--ds-type-weight-bold); }
 .c9y-system h3 { padding-top: var(--four); line-height: var(--line); font-size: var(--ds-type-size-default); color: var(--ds-text-color-muted); }
 
-/* A name a person presses to focus it: the words alone, the focused one underlined. */
 .c9y-link { appearance: none; border: 0; margin: 0; padding: 0; background: none; color: inherit; font: inherit; line-height: inherit; text-align: start; cursor: pointer; }
 .c9y-link:hover, .c9y-link[aria-pressed="true"] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: calc(3px * var(--ds-sf)); }
 .c9y-system :is(.c9y-link, .c9y-node, a):focus-visible { outline: 2px solid var(--ds-text-color); outline-offset: 0; }
@@ -53,8 +46,6 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
 .c9y-none { color: var(--ds-text-color-muted); }
 .c9y-kind { color: var(--ds-text-color-muted); white-space: nowrap; }
 
-/* The map: nodes as Ezo items eight squares long, edge to edge under their stack's head, the lines beneath them. It
-   scrolls inside its own frame, never the page. */
 .c9y-map-frame { max-width: 100%; overflow: auto; overscroll-behavior-x: contain; }
 .c9y-map { position: relative; margin: 1px; }
 .c9y-edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
@@ -90,13 +81,11 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
 .c9y-node[data-faded] { color: var(--ds-text-color-muted); }
 .c9y-node[data-faded] small { opacity: .6; }
 
-/* The key, under the sites: each kind's line and System's words for it. */
 .c9y-key { position: absolute; width: calc(8 * var(--u)); }
 .c9y-key p { display: flex; align-items: flex-end; gap: var(--four); height: var(--u); line-height: var(--line); white-space: nowrap; }
 .c9y-key svg { flex: none; align-self: center; width: calc(2 * var(--u)); height: var(--u); overflow: visible; }
 .c9y-key .c9y-edge { opacity: 1; }
 
-/* Components and sites: a group a heading over its entries, each entry under a hairline, a square apart. */
 .c9y-group + .c9y-group { margin-top: calc(2 * var(--u)); }
 .c9y-entry { padding-top: var(--u); margin-top: var(--u); box-shadow: inset 0 1px var(--ds-border-color); }
 .c9y-entry[data-current] { box-shadow: inset 0 1px var(--ds-text-color); }
@@ -105,7 +94,6 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
 .c9y-entry-head code { color: var(--ds-text-color-muted); }
 .c9y-summary { max-width: calc(32 * var(--u)); }
 
-/* Design system 1 presents; Consistency adds. Two columns of twelve squares, the maker's name on its own tag. */
 .c9y-split { display: grid; grid-template-columns: repeat(auto-fill, calc(12 * var(--u))); gap: var(--u) calc(2 * var(--u)); margin: var(--u) 0; }
 .c9y-split section { min-width: 0; }
 .c9y-split li, .c9y-split .c9y-none { padding-top: var(--four); line-height: var(--line); }
@@ -114,12 +102,10 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
 .c9y-presents li { color: var(--ds-text-color-muted); }
 .c9y-adds .c9y-by { background: var(--ds-yellow); color: var(--ds-black); }
 
-/* Facts: the term in a column of five squares, the value beside it, each line one square. */
 .c9y-facts { display: grid; grid-template-columns: calc(5 * var(--u)) minmax(0, 1fr); column-gap: var(--u); }
 .c9y-facts dt { color: var(--ds-text-color-muted); }
 .c9y-facts dd { min-width: 0; overflow-wrap: anywhere; }
 
-/* The focused node's details. */
 .c9y-system .c9y-detail-body > * + * { margin-top: var(--u); }
 .c9y-detail-body h2 { font-size: var(--ds-type-size-default); }
 .c9y-detail-body .c9y-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--u); margin: var(--u) 0; }
@@ -132,9 +118,6 @@ body { font-family: var(--ds-typeface-regular); font-size: var(--ds-type-size-de
   .c9y-split { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* The matrix: a site to a row, a component to a column of one square under its layer's head, one mark a cell. Marks
-   say the kind as the map's lines do: filled shares one copy, outlined is built on its own, dashed is planned and
-   dotted not checked. It scrolls sideways in its own frame, never the page. */
 .c9y-matrix-frame { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
 .c9y-matrix { width: auto; table-layout: auto; border-collapse: collapse; font-size: var(--ds-type-size-default); line-height: var(--u); }
 .c9y-matrix th, .c9y-matrix td { padding: 0; height: var(--u); font-weight: inherit; text-align: start; vertical-align: bottom; }

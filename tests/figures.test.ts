@@ -21,7 +21,6 @@ async function mount<K extends "ds-stat" | "ds-progress">(tag: K, markup: string
 }
 const part = (host: Element, name: string) => host.shadowRoot!.querySelector<HTMLElement>(`[part~="${name}"]`)!;
 const words = (element: Element | null) => element?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-/** Intl writes a no-break space (or a narrow one) between a figure and its sign or currency. */
 const plain = (text: string) => text.replace(/[\u00a0\u202f]/g, " ");
 
 test("a figure is written in the current language: numbers, short numbers, percentages and money", () => {
@@ -33,7 +32,6 @@ test("a figure is written in the current language: numbers, short numbers, perce
   expect(formatFigure(0.12, { format: "percent", signed: true })).toBe("+12%");
   expect(formatFigure(0, { format: "percent", signed: true })).toBe("0%");
   expect(formatFigure(2, { digits: 2 })).toBe("2.00");
-  // Money without a currency is a number, and an unknown format is one too.
   expect(formatFigure(5, { format: "money" })).toBe("5");
   expect(formatFigure(5, { format: "nonsense" as never })).toBe("5");
   expect(formatFigure(1234.5, { language: "da" })).toBe("1.234,5");
@@ -215,7 +213,6 @@ test("a step with href is a link reached with Tab; the others take no focus", as
   expect(focusable.every(link => link.closest("li")!.dataset.state === "done")).toBe(true);
   focusable[0]!.focus();
   expect(steps.shadowRoot!.activeElement).toBe(focusable[0]);
-  // The link holds the step's mark and name, so its accessible name is the step's.
   expect(words(focusable[1]!.querySelector(".ds-progress__label"))).toBe("Address");
   expect(steps.shadowRoot!.querySelectorAll("li")[2]!.querySelector("a")).toBeNull();
 });
@@ -249,7 +246,6 @@ test("the native classes are imported by controls.css and draw every part the el
   for (const selector of [".ds-progress", ".ds-progress__fill", ".ds-progress--squares", ".ds-progress__square", ".ds-progress--over", ".ds-progress--steps", ".ds-progress__step", ".ds-progress__mark", ".ds-progress__label", ".ds-progress__state", ".ds-progress__link", ".ds-progress__body", ".ds-progress--vertical", ".ds-progress--dots", ".ds-progress__dot"]) {
     expect(progress, selector).toMatch(new RegExp(`${selector.replace(/[.-]/g, m => `\\${m}`)}[\\s,{:.]`));
   }
-  // Motion only on transform.
   for (const [, value] of [...figures.matchAll(/transition:\s*([^;]+);/g), ...progress.matchAll(/transition:\s*([^;]+);/g)]) expect(value).toMatch(/^(transform\b|none$)/);
 });
 

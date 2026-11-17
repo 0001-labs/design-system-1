@@ -8,7 +8,6 @@ import {
   localeTag,
 } from "../DS1/0-face/format";
 
-// A Worker's runtime: no window, no document, no localStorage
 test("formats in a Worker's runtime, in the language a request names", () => {
   expect(typeof (globalThis as { EdgeRuntime?: unknown }).EdgeRuntime).toBe("string");
   expect(typeof (globalThis as { document?: unknown }).document).toBe("undefined");

@@ -6,7 +6,6 @@ import metrics from "../1-root/component-metrics.css?inline";
 
 const styledRoots = new WeakSet<ShadowRoot>();
 
-/** A native colour input owns the platform picker, labels, forms and reset. */
 export class ColorInput extends LitElement {
   static styles = [unsafeCSS(metrics), css`
     :host {

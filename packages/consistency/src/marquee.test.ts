@@ -34,7 +34,6 @@ test('explicit component tools win over background selection and reordering', ()
 
 test('a selected element is one face unless it holds selectable units', () => {
  const root = document.createElement('div');
- // A template's words: a selectable heading whose plain editor block is its own text, and a button alike.
  root.innerHTML = '<section data-selectable="section"><h2 data-selectable="heading"><span class="aa aa-plain"><div class="aa-block">Café</div></span></h2><p data-selectable="paragraph"><span class="aa aa-plain"><div class="aa-block">Open daily</div></span></p><ds-button data-selectable="button"><span class="aa aa-plain"><div class="aa-block">Book</div></span></ds-button></section>'
   + '<div data-selectable="group-intro"><aa-editor><div class="aa-block" data-selectable="text:intro:0">A paragraph</div><div class="aa-block" data-selectable="text:intro:1"><br></div><div class="aa-block"><div class="aa-columns"><div class="aa-column"><div class="aa-block">Left</div></div></div></div></aa-editor></div>'
   + '<div data-selectable="region"><aa-editor><div class="aa-block">Native words</div><div class="aa-block">More</div></aa-editor></div>';
@@ -44,13 +43,10 @@ test('a selected element is one face unless it holds selectable units', () => {
  expect(root.querySelector('[data-selectable="heading"]')!.hasAttribute('data-selected')).toBe(true);
  paintCompositionSelection(root, new Set(['button']));
  expect(faces()).toEqual(['button']);
- // A section holds selectable units: they are painted, never the section itself or the space between them.
  paintCompositionSelection(root, new Set(['section']));
  expect(faces()).toEqual(['heading', 'paragraph', 'button']);
- // The lab's group holds an Aa editor: its blocks with words are the faces, not the group, empty lines or a block of columns.
  paintCompositionSelection(root, new Set(['group-intro']));
  expect(faces()).toEqual(['text:intro:0', 'Left']);
- // An element holding an Aa editor whose blocks are not selectable still paints the blocks.
  paintCompositionSelection(root, new Set(['region']));
  expect(faces()).toEqual(['Native words', 'More']);
  paintCompositionSelection(root, new Set());

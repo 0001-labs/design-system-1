@@ -6,7 +6,6 @@ export interface SpacingHandleProps extends SpacingOptions {
   label: string; valueText?: string; className?: string; style?: CSSProperties;
   children?: ReactNode; onDoubleClick?: (event: MouseEvent<HTMLSpanElement>) => void;
 }
-/** Internal app chrome. Shared native target, keyboard/pointer controller and face. */
 export function SpacingHandle(props: SpacingHandleProps): ReactNode {
   const ref = useRef<HTMLSpanElement>(null);
   const latest = useRef(props); latest.current = props;

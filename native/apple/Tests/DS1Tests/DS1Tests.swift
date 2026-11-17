@@ -5,7 +5,6 @@ import XCTest
 
 final class DS1Tests: XCTestCase {
     func testPaletteFollowsItsSource() {
-        // palette.ts derives Apple green's dark version as the Figma file does.
         XCTAssertEqual(DS1Color.appleGreen.light, 0x99ff73)
         XCTAssertEqual(DS1Color.appleGreen.dark, 0x529d36)
         XCTAssertEqual(DS1Color.zenithBlue.light, 0xccccff)
@@ -19,7 +18,6 @@ final class DS1Tests: XCTestCase {
         XCTAssertEqual(DS1Scale.device(width: 402).factor, 1.436)
         XCTAssertEqual(DS1Scale.device(width: 200).factor, 0.75)
         XCTAssertEqual(DS1Scale.device(width: 1024).factor, 2)
-        // Snapped to the screen's pixels, a square is a whole number of them (scaling.ts's "pixel").
         XCTAssertEqual(DS1Scale.device(width: 393, pixels: 3).unit * 3, 84)
         XCTAssertEqual(DS1Scale.device(width: 402, pixels: 3).unit * 3, 86)
         XCTAssertEqual(DS1Scale.device(width: 440, pixels: 3).unit * 3, 94)
@@ -30,7 +28,6 @@ final class DS1Tests: XCTestCase {
         XCTAssertEqual(scale.wholeSquares(in: 393 - 2 * scale.unit), 11 * scale.unit, accuracy: 0.0001)
     }
 
-    /// Without a face, text silently falls back to the system font, so load each one.
     func testEveryCopiedFaceLoads() {
         for face in DS1Font.Face.allCases {
             XCTAssertTrue(DS1Font.isAvailable(face), "\(face.rawValue) did not register")
@@ -48,8 +45,6 @@ final class DS1Tests: XCTestCase {
         let font = DS1Font.ctFont(.figures, size: 14)
         let cell = DS1Font.advance(of: "0", in: font)
         XCTAssertEqual(cell, 14 * 0.77, accuracy: 0.01)
-        // Figures are set at GT America's cap height (`figureScale`), so a 1 is centred in the
-        // cell of a 0 at that size, not at the text's 14.
         let figures = DS1Font.ctFont(.figures, size: 14 * DS1Font.figureScale)
         let text = DS1Font.attributed("1", scale: .desktop, figures: true)
         let one = DS1Font.advance(of: "1", in: figures)

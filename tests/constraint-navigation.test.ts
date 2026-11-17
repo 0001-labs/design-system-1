@@ -32,7 +32,6 @@ function run(path: string) {
   });
 }
 
-// The sweep is paused (see scripts/constraints-phone.ts): these open WebKit, so they run only when it is switched on.
 const sweep = process.env.DS1_BROWSER_CONSTRAINTS === '1';
 
 test.skipIf(sweep)('while the sweep is paused the script measures nothing and says so', async () => {

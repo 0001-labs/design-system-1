@@ -2,7 +2,6 @@ import { bindSpacingHandle } from '../../app/src/2-core/spacing-handle';
 import { CompositionSettle } from './settle';
 import './stat-spacing.css';
 export const statGapId = (stat: string, key: 'label' | 'figure') => `stat:${stat}:${key}`;
-/** Separate text groups use the same direct spacing gesture as cards. */
 export class StatSpacingLayer {
   private bindings = new Map<HTMLElement, { handles: HTMLElement[]; dispose: () => void }>();
   private observer: MutationObserver;

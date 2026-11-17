@@ -4,14 +4,11 @@ import { consistencyAI } from '../src/consistency-ai';
 import type { ReportsEnv } from '../src/reports';
 import type { OwnerIdentity } from '../src/consistency-owner';
 
-// The app's address; c9y.site's home leads here.
 const origin = 'https://consistency.site';
 const SYSTEM = 'https://system.0001.dev';
-/** Every Set-Cookie of an answer (the Workers types leave `getSetCookie` out). */
 const setCookies = (response: Response): string[] => (response.headers as unknown as { getSetCookie(): string[] }).getSetCookie();
 const proof = async (value: string) => Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))).toString('base64url');
 
-/** System's One key as the identity binding answers it: one-use codes for a challenge, tokens that end with the System session. */
 function setup() {
   const codes = new Map<string, string>();
   const tokens = new Set<string>();
@@ -30,7 +27,6 @@ function setup() {
     revoke: async token => { calls.revoke++; if (tokens.has(token)) tokens.clear(); },
   };
   const assets = vi.fn(async (_request: Request) => new Response('<!doctype html><html><body>Home</body></html>', { headers: { 'Content-Type': 'text/html' } }));
-  // The platform's landing answers at its own origin; Convex, asked about a session, says there is none.
   const send = vi.fn(async (input: string | URL | Request) => String(input instanceof Request ? input.url : input).startsWith('https://consistency.c9y.site/') ? new Response('Landing') : new Response(null, { status: 401 }));
   const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', ASSETS: { fetch: assets }, C9Y_IDENTITY: identity } as unknown as ReportsEnv & { ASSETS: Fetcher; C9Y_IDENTITY: OwnerIdentity };
   const visit = (path: string, init: RequestInit = {}) => consistencyPreview(new Request(origin + path, init), env, send);
@@ -122,7 +118,7 @@ it("the editor's AI takes the System owner too, still only from its own origin",
   const { owner } = await signIn();
   const ask = (from: string) => consistencyAI(new Request(origin + '/api/consistency/ai', { method: 'POST', headers: { Origin: from, Cookie: owner!, 'Content-Type': 'text/plain' }, body: 'x' }), env, send);
   expect((await ask('https://evil.example')).status).toBe(403);
-  expect((await ask(origin)).status).toBe(415); // past the owner check, refused only for its body
+  expect((await ask(origin)).status).toBe(415);
 });
 
 it('the editor lab has no System sign-in and ignores an owner cookie', async () => {

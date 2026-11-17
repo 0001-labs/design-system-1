@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { chosenRow, clip, DESCRIPTION_LIMIT, groupPages, languageName, languagesOf, lengthNote, pageRows, pathIn, pickerImages, shareCard, shareFields, shortTitle, siteFile, splitPath, TITLE_LIMIT, type Language, type PageSummary } from "./pages-group";
 
-// Ported from the sites' own editor's tests (team-cms/tests/app-pages.test.ts, deleted 26 October 2026).
-// CPH Raft's languages: Danish at the root, English under /en/, German under /de/.
 const languages: Language[] = [
   { code: "da", name: "Dansk", prefix: "" },
   { code: "en", name: "English", prefix: "/en" },

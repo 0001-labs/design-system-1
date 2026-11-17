@@ -74,7 +74,6 @@ describe('the library export', () => {
     await expect(files({ id, version: 7 })).rejects.toThrow(/answered with version 9/);
     served = { headers: { 'content-type': 'text/html' } };
     await expect(files({ id, version: 8 })).rejects.toThrow(/not a stylesheet/);
-    // Nothing unverified was kept.
     for (const version of [3, 5, 6, 7, 8]) expect(existsSync(join(cache, id, 'v', `${version}.css`))).toBe(false);
   });
 });

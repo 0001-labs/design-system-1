@@ -1,4 +1,3 @@
-/** Inspect the actual package, including compiled modules left by previous builds. */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

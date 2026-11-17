@@ -1,17 +1,3 @@
-/**
- * Select in React: every menu that opens from a button.
- *
- * With `<option>` children it is a field: a native select inside `ds-select`,
- * whose list DS1 draws (`native` keeps the platform's picker). Standard select
- * props, children and the ref pass through to the native select.
- *
- * With `trigger` (or `open`, or `items`) it is a menu: the shared engine on
- * `ds-select`, opened from the trigger, its entries either children (Button
- * `menuItem` rows, `hr data-ds-menu-separator`, labels) or `items`, entries as
- * data: rows with an icon on the first square, details,
- * a shortcut at the end, danger, checked, a link, rows that keep it open, and
- * nested menus; headings and separators between them.
- */
 import { createElement as h, forwardRef, useState, type ReactNode, type SelectHTMLAttributes } from "react";
 import { MenuHost, type MenuElement, type MenuProps } from "./menu-engine";
 import { Button, ButtonLink, type ButtonLinkProps, type ButtonProps } from "./button";
@@ -20,23 +6,16 @@ import { shortcutLabel } from "../0-face/keys";
 export type SelectEntry =
   | {
     label: ReactNode;
-    /** What typing finds it by, when `label` is not plain words. */
     textValue?: string;
-    /** Muted words after the label. */
     details?: ReactNode;
-    /** A library icon on the row's first square. */
     icon?: string;
-    /** A shortcut written once, `"mod+k"`, shown as the platform writes it. */
     shortcut?: string;
     href?: string;
     danger?: boolean;
     disabled?: boolean;
-    /** A choice that is on: a checkbox row. */
     checked?: boolean;
-    /** Act and stay open, as a colour that cycles in place. */
     keepOpen?: boolean;
     onSelect?: (event: Event) => void;
-    /** A nested menu opened from this row. */
     items?: SelectEntry[];
   }
   | { separator: true }
@@ -47,7 +26,6 @@ type FieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
   chip?: boolean;
   primary?: boolean;
   swatch?: string;
-  /** Keep the platform's own picker. */
   native?: boolean;
 };
 type MenuOnly = Omit<MenuProps, "tag" | "onChange"> & { items?: SelectEntry[] };
@@ -56,7 +34,6 @@ export type SelectProps = (FieldProps & { trigger?: undefined; items?: undefined
 const isMenu = (props: SelectProps): props is MenuOnly & { trigger?: HTMLElement | null } =>
   "trigger" in props || "items" in props || ("open" in props && typeof (props as { open?: unknown }).open === "boolean") || "onOpenChange" in props;
 
-/** One entry of `items`, as a row of the menu. */
 function Entry({ entry, menu }: { entry: SelectEntry; menu: { current: MenuElement | null } }): ReactNode {
   if ("separator" in entry) return h("hr", { "data-ds-menu-separator": "" });
   if ("heading" in entry) return h("ds-text", { literal: true, tone: "muted", "data-ds-menu-label": "" }, entry.heading);
@@ -66,18 +43,14 @@ function Entry({ entry, menu }: { entry: SelectEntry; menu: { current: MenuEleme
     role: entry.checked === undefined ? "menuitem" : "menuitemcheckbox", "aria-checked": entry.checked, "data-keep-open": "",
     "data-text-value": entry.textValue ?? (typeof entry.label === "string" ? entry.label : undefined),
   };
-  /** The row's own action; true when the menu then closes. */
   const choose = () => {
     const select = new Event("ds-menu-select", { cancelable: true });
     entry.onSelect?.(select);
     return !select.defaultPrevented && !entry.keepOpen;
   };
-  // A link row is a real link. A menu that unmounts its rows on close would take it out of
-  // the document before the browser follows it, so the close waits for the click to finish.
   if (entry.href !== undefined) return h(ButtonLink, {
     ...shared, href: entry.href,
     onClick: () => { const host = menu.current; if (choose()) setTimeout(() => host?.select()); },
-    // A menu row answers Space; a link by itself only answers Enter.
     onKeyDown: event => { if (event.key === " " && !entry.disabled) { event.preventDefault(); event.currentTarget.click(); } },
   } as ButtonLinkProps, ...row(entry));
   return h(Button, {
@@ -86,7 +59,6 @@ function Entry({ entry, menu }: { entry: SelectEntry; menu: { current: MenuEleme
   } as ButtonProps, ...row(entry));
 }
 
-/** A row's parts on its square: the icon, the label, details, the shortcut, the check. */
 function row(entry: Extract<SelectEntry, { label: ReactNode }>, end?: ReactNode): ReactNode[] {
   return [
     entry.icon ? h("ds-icon", { type: entry.icon, "aria-hidden": true, style: { flex: "none" } }) : null,
@@ -98,7 +70,6 @@ function row(entry: Extract<SelectEntry, { label: ReactNode }>, end?: ReactNode)
   ];
 }
 
-/** A row that opens a nested menu beside it. */
 function Nested({ entry }: { entry: Extract<SelectEntry, { label: ReactNode }> }) {
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);

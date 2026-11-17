@@ -70,7 +70,6 @@ test("replacement, detach and reconnect use the current control", async()=>{
 test("file drag feedback never replaces native drop handling and clears when disabled",async()=>{
   const host=document.createElement("ds-file-picker"),input=document.createElement("input");input.type="file";
   host.append(input);document.body.append(host);await host.updateComplete;
-  // happy-dom aliases DragEvent to Event; provide its missing native payload.
   const drag=(type:string)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.defineProperty(event,'dataTransfer',{value:{types:['Files']}});return event;};
   const enter=drag('dragenter');
   input.dispatchEvent(enter);expect(enter.defaultPrevented).toBe(false);expect(host.hasAttribute('data-dragging')).toBe(true);

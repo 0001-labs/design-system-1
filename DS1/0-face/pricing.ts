@@ -1,22 +1,13 @@
-/**
- * The currency a reader is most likely to think in, from their language or
- * country, and prices written in it. The amounts themselves come from the
- * product's billing (a payment service or its database); this only says how
- * they read. Writing them is `formatMoney` in `./format`.
- */
 import { currencySymbol, formatMoney } from "./format";
 import type { MoneyOptions } from "./format";
 import { currentLanguage } from "./i18n";
 import type { LanguageCode } from "./i18n";
 
 type PriceLabelOptions = {
-  /** The reader's language. Defaults to the current language. */
   language?: LanguageCode;
-  /** The reader's country, when known (`US`, `GB`, `JP`); it wins over the language. */
   country?: string;
 };
 
-/** The currency each language's readers most often pay in. */
 const LANGUAGE_CURRENCIES: Record<string, string> = {
   da: "DKK",
   de: "EUR",
@@ -50,10 +41,6 @@ const COUNTRY_CURRENCIES: Record<string, string> = {
   KOR: "KRW",
 };
 
-/**
- * The short labels `getPriceLabel` has always given. Other currencies read
- * the symbol the language writes them with.
- */
 const PRICE_LABELS: Record<string, string> = {
   DKK: "kr.",
   NOK: "kr.",
@@ -68,10 +55,6 @@ const PRICE_LABELS: Record<string, string> = {
   BRL: "R$",
 };
 
-/**
- * The currency (ISO 4217 code) for a reader: their country's when it is
- * known, else their language's, else USD. `pt-BR` reads BRL.
- */
 export function getPriceCurrency(options: PriceLabelOptions = {}): string {
   const country = options.country?.toUpperCase();
   if (country && COUNTRY_CURRENCIES[country]) {
@@ -85,7 +68,6 @@ export function getPriceCurrency(options: PriceLabelOptions = {}): string {
   return LANGUAGE_CURRENCIES[language] ?? LANGUAGE_CURRENCIES[primary] ?? "USD";
 }
 
-/** The currency label for a reader: `kr.`, `€`, `$`, `£`, `¥`, `₩`. */
 export function getPriceLabel(options: PriceLabelOptions = {}): string {
   const currency = getPriceCurrency(options);
   return (
@@ -94,11 +76,6 @@ export function getPriceLabel(options: PriceLabelOptions = {}): string {
   );
 }
 
-/**
- * A price for a reader: in `currency`, or the reader's currency
- * (`getPriceCurrency`) when none is given, written in their language.
- * `minor` reads the amount in cents, as payment services send it.
- */
 export function formatPrice(
   amount: number,
   options: PriceLabelOptions & MoneyOptions & { currency?: string } = {}

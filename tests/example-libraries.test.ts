@@ -21,8 +21,6 @@ it('serves each example library as the builder writes it', async () => {
   }
 });
 
-// Nook is a hand-authored, single-mode library with its own bands and type rules.
-// Keep it outside the generator, but account for every hosted stylesheet here.
 it('accounts for every hosted library, including the hand-authored Nook', async () => {
   const { readdir } = await import('node:fs/promises');
   const hosted = (await readdir(new URL('../website/public/examples/libraries/', import.meta.url))).filter(name => name.endsWith('.css')).sort();

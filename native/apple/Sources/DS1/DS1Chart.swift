@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// A bar of `DS1Bars`, as the web's `BarItem` (DS1/2-core/ds-chart.ts): its label under it, its
-/// value, an optional `compare` drawn as an outline at its height (the expected figure), a tone and
-/// a caption over the label.
 public struct DS1BarItem: Hashable, Sendable {
     public enum Tone: Sendable { case up, down, ink }
     public var label: String
@@ -16,8 +13,6 @@ public struct DS1BarItem: Hashable, Sendable {
     }
 }
 
-/// The round size each square of a bar chart stands for, as the web's `barStep`: 1, 2, 2.5 or 5 times
-/// a power of ten, the smallest with which `max` fits in `squares`.
 public func ds1BarStep(_ max: Double, squares: Int) -> Double {
     for exponent in -4 ... 9 {
         for base in [1.0, 2, 2.5, 5] {
@@ -28,13 +23,6 @@ public func ds1BarStep(_ max: Double, squares: Int) -> Double {
     return 5e9
 }
 
-/// `ds-bars`: nonnegative values side by side, each bar `span` squares wide (or, with `fill`, the
-/// width beside the scale shared in whole points) and drawn a point narrower, rising from a hairline
-/// in an area `rows - 1` squares high, then its caption (where any bar has one) and its muted label,
-/// a square each in the small type. Ink bars are the faint fill, up the accent green, down tuned red;
-/// a `compare` outline in the ink. `axis` puts the scale at the end, two squares wide: each square a
-/// round step, its label just above its line, the lines across the bars. `values` writes each bar's
-/// value just over it. `format` writes both. Read as one element: each label with its caption.
 public struct DS1Bars: View {
     @Environment(\.ds1Scale) private var scale
     let items: [DS1BarItem]
@@ -50,7 +38,6 @@ public struct DS1Bars: View {
         self.axis = axis; self.values = values; self.fill = fill; self.format = format
     }
 
-    /// Short figures, as the web's compact numbers: 950, 1.4K, 2.5M.
     public static func compact(_ value: Double) -> String {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0 ... 1)))
     }
@@ -119,7 +106,6 @@ public struct DS1Bars: View {
         .frame(maxWidth: fill ? .infinity : nil)
     }
 
-    /// The scale's lines across the bars, one a square from the foot up to its highest label, under them.
     private func guides(height: CGFloat, lines: Int) -> some View {
         Canvas { context, size in
             var path = Path()

@@ -14,7 +14,6 @@ describe("single Worker deployment", () => {
   });
   it("keeps public reads independent of database and service bindings", () => {
     for (const key of ["d1_databases", "kv_namespaces", "durable_objects", "queues", "hyperdrive"]) expect(config[key]).toBeUndefined();
-    // Consistency owner routes use its platform and System services.
     expect(config.services).toEqual([
       { binding: "AI", service: "0001-system", entrypoint: "ConsistencyAi" },
       { binding: "CONSISTENCY_WORKSPACE", service: "consistency-platform", entrypoint: "ConsistencyWorkspace" },

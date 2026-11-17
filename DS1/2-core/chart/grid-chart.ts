@@ -1,16 +1,4 @@
-/**
- * Grid chart: a numeric chart drawn one pixel column at a time on the 20px grid.
- *
- * The API follows lightweight-charts (createChart → addSeries → setData,
- * subscribeCrosshairMove), with pixel-aligned rendering:
- * - every row line of the chart is a price level, chosen so the scale lands on the grid;
- * - each pixel column holds the min/max of the points inside it, so a minute series
- *   and a five-year series draw with the same one-pixel stroke and never blur;
- * - fills are one-pixel strokes at two-pixel intervals, for a patterned fill.
- */
-
 export interface DataPoint {
-  /** Unix seconds */
   time: number;
   value: number;
 }
@@ -19,11 +7,8 @@ export type SeriesKind = "area" | "line" | "baseline";
 
 export interface SeriesOptions {
   kind?: SeriesKind;
-  /** CSS color or palette name (e.g. "--ds-chart-up"). Area and line series. */
   color?: string;
-  /** Baseline series: values above draw in the positive colour, below in the negative colour. */
   baseValue?: number;
-  /** Hatch spacing in pixels; 0 turns the fill off. */
   hatch?: number;
   hatchOpacity?: number;
 }
@@ -35,10 +20,8 @@ export interface Marker {
 
 export interface ChartOptions {
   unit?: number;
-  /** Price labels on every nth row line, in a two-square gutter on the right. */
   scaleLabels?: boolean;
   labelEvery?: number;
-  /** High and low callouts on the visible range. */
   extremes?: boolean;
   grid?: "full" | "rows" | "none";
   format?: (value: number) => string;
@@ -69,7 +52,6 @@ interface Palette {
   gridMajor: string;
 }
 
-/** The round sizes a square of a chart stands for: 1, 2, 2.5 and 5 times a power of ten. */
 export const STEPS: number[] = [];
 for (let exp = -4; exp <= 9; exp++) {
   for (const base of [1, 2, 2.5, 5]) STEPS.push(base * 10 ** exp);
@@ -157,7 +139,6 @@ export class GridChart {
     this.draw();
   }
 
-  /** Fixes the visible time range, e.g. a whole trading day while only the morning has data. */
   setTimeRange(range: [number, number] | null): void {
     this.timeRange = range;
     this.draw();
@@ -187,14 +168,12 @@ export class GridChart {
     this.listeners.delete(listener);
   }
 
-  /** Moves the crosshair to a pixel column (null hides it) and tells subscribers. */
   setCrosshair(x: number | null): void {
     this.crosshairX = x === null ? null : Math.max(0, Math.min(this.plotWidth() - 1, Math.round(x)));
     this.draw();
     for (const listener of this.listeners) listener(this.crosshair);
   }
 
-  /** Draws the series in from the left. */
   animateIn(duration = 520): void {
     cancelAnimationFrame(this.frame);
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -213,7 +192,6 @@ export class GridChart {
     this.frame = requestAnimationFrame(step);
   }
 
-  /** Position of the newest drawn value, for a live marker laid over the canvas. */
   lastPoint(): { x: number; y: number } | null {
     return this.progress === 1 ? this.lastDrawn : null;
   }
@@ -262,7 +240,6 @@ export class GridChart {
     return resolved;
   }
 
-  /** Type at its size on a 20px square, scaled with the square. */
   private font(size: number): string {
     const family = getComputedStyle(this.canvas).getPropertyValue("--ds-chart-font").trim() || getComputedStyle(this.canvas).getPropertyValue("--typeface-regular").trim() || '"Inter Arrows", sans-serif';
     return `${(size * this.options.unit) / 20}px ${family}`;
@@ -509,7 +486,6 @@ export function createChart(canvas: HTMLCanvasElement, options?: ChartOptions): 
   return new GridChart(canvas, options);
 }
 
-/** A one-row sparkline: the same column renderer, scaled to its cell. */
 export function drawSparkline(
   canvas: HTMLCanvasElement,
   values: number[],

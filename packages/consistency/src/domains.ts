@@ -11,21 +11,12 @@ import '../../../DS1/2-core/ds-icon';
 import { workspaceHeaders } from './workspace-choice';
 import { step } from './feedback';
 
-/**
- * Settings → Domains: a workspace's own domains on its sites, on a plan that has them; on Free, its sites stay on
- * their built-in colour addresses and the page says so. The platform asks Cloudflare whether a domain points here
- * and has its certificate; this page only shows what it says and keeps waiting domains current on its own, with no
- * button to check again.
- */
 export type DomainState = 'pending' | 'active' | 'failed';
 export interface Domain { host: string; state: DomainState; detail: string | null; managed: boolean; checkedAt: number | null }
-/** A site by its IDv1 code, how the app names it. */
 export interface DomainSite { code: string; name: string; domains: Domain[] }
-/** `allowed`: whether the workspace's plan connects domains of its own. */
 export interface DomainsAnswer { target: string; ready: boolean; allowed: boolean; sites: DomainSite[] }
 
 const API = '/api/consistency/domains';
-/** How often a waiting domain is asked about while the page is open and visible. */
 export const CHECK_EVERY = 30_000;
 
 const MESSAGES: Record<string, string> = {
@@ -39,11 +30,9 @@ const MESSAGES: Record<string, string> = {
   'cloudflare-refused': 'Cloudflare refused that domain.',
   'cloudflare-unavailable': 'Cloudflare did not answer. Try again.',
 };
-/** Words for a refusal the platform names; never the server's raw text. */
 export const messageFor = (code: unknown, fallback: string) => (typeof code === 'string' && MESSAGES[code]) || fallback;
 
 const STATE_WORDS: Record<DomainState, string> = { active: 'Connected', pending: 'Waiting', failed: 'Failed' };
-/** A bare domain (example.com) can only hold the CNAME where the DNS host flattens it at the root. */
 export const isApex = (host: string) => host.split('.').length === 2;
 
 export class ConsistencyDomains extends LitElement {
@@ -72,7 +61,6 @@ export class ConsistencyDomains extends LitElement {
     clearTimeout(this.timer);
   }
 
-  /** The sites and their domains, then a fresh word from Cloudflare on any still waiting. */
   async load() {
     const response = await fetch(API, { cache: 'no-store', headers: workspaceHeaders() }).catch(() => null);
     const answer = response?.ok ? await response.json().catch(() => null) as DomainsAnswer | null : null;
@@ -157,7 +145,6 @@ export class ConsistencyDomains extends LitElement {
   render() {
     const answer = this.answer;
     const sites = answer?.sites ?? [];
-    // On Free, each site stays on its built-in colour address; a domain of its own comes with Plus.
     if (answer && answer.allowed === false) return html`<section class="domains" aria-label="Domains">
       <ds-message literal text="Your sites are on their built-in addresses. Your own domain comes with Plus."></ds-message>
       ${sites.filter(site => site.domains.length).map(site => html`<ds-list heading=${site.name}>${site.domains.map(domain => this.row(domain))}</ds-list>`)}

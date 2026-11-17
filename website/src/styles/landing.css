@@ -1,6 +1,3 @@
-/* Landing page for Design system 1 docs. Scoped to the hero and .landing wrappers. */
-
-/* Starlight hero (frontmatter `hero`) restyled to the docs look. */
 .hero {
   background: none;
   border-radius: 0;
@@ -64,7 +61,6 @@
   border-color: transparent;
 }
 
-/* Sections */
 .landing {
   display: grid;
   gap: 16px;
@@ -107,7 +103,6 @@
   text-underline-offset: 3px;
 }
 
-/* Card grid */
 .landing__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -152,7 +147,6 @@
   color: var(--ds1-docs-header-text);
 }
 
-/* Live demo area inside a card */
 .landing__demo {
   display: flex;
   flex-wrap: wrap;
@@ -179,7 +173,6 @@
   flex: 1 1 200px;
 }
 
-/* Number list for the layer model */
 .landing__layers {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -207,7 +200,6 @@
   margin-bottom: 4px;
 }
 
-/* Editor teaser */
 .landing__editor {
   display: grid;
   grid-template-columns: 1.1fr 1fr;

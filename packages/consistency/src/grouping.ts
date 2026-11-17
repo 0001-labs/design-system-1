@@ -1,7 +1,6 @@
 import { visibleComponentBox } from './component-names';
 import './grouping.css';
 const selector = '.consistency-story-section,.consistency-projects,.consistency-statistics,.consistency-sample-actions,.aa-columns,.aa-column,ds-card,ds-stat,.consistency-carousel-frame';
-/** Describe real layout containers, never arbitrary DOM wrappers or text blocks. */
 export function groupingName(element: HTMLElement): string {
  if (element.matches('.consistency-story-section')) {
   const group = element.closest('[data-sort-group]');
@@ -17,7 +16,6 @@ export function groupingName(element: HTMLElement): string {
  if (element.matches('ds-stat')) return 'Stat · label, value and caption';
  return 'Carousel · slides move together';
 }
-/** A read-only overlay outside the authored page, independent of selection. */
 export class GroupingLayer {
  private overlay: HTMLElement;
  private observer: MutationObserver;
@@ -44,10 +42,8 @@ export class GroupingLayer {
   const present = new Set(targets);
   for (const old of this.observed) if (!present.has(old)) { this.resize.unobserve(old); this.observed.delete(old); }
   for (const target of targets) if (!this.observed.has(target)) { this.resize.observe(target); this.observed.add(target); }
-  // Read all layout before painting; overlays cannot change authored geometry.
   const records = targets.map(target => ({ target, box: visibleComponentBox(target.getBoundingClientRect(), clips), name: groupingName(target) }));
   const boxes: HTMLElement[] = [];
-  // Both diagnostic layers can be on: reserve component labels before placing group names.
   const occupied = Array.from(this.root.ownerDocument.querySelectorAll<HTMLElement>('.consistency-component-names:not([hidden]) .consistency-component-name > span')).map(label => label.getBoundingClientRect()).map(({top,bottom,left,right}) => ({top,bottom,left,right}));
   const scale = parseFloat(getComputedStyle(sheet).getPropertyValue('--sf')) || 1;
   this.overlay.style.setProperty('--sf', String(scale));
@@ -59,7 +55,6 @@ export class GroupingLayer {
    let depth = 0;
    for (let parent = target.parentElement; parent && parent !== sheet; parent = parent.parentElement) if (parent.matches(selector)) depth++;
    el.dataset.depth = String(depth);
-   // Reserve whole rows for nested labels so container names never cover each other.
    let y = box.top;
    while (occupied.some(r => y < r.bottom && y + unit > r.top && box.left < r.right && box.left + box.width > r.left)) y += unit;
    if (y + unit <= box.top + box.height) {

@@ -1,9 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-app.css
- * The window: a bar two squares high and the height's leftover on top, then
- * the page's panes down to the bottom edge. Every length is squares. */
-
 :host {
   --ds-app-bar: calc(2 * var(--ds-unit));
   --ds-app-top: var(--ds-grid-top, 0px);
@@ -38,7 +34,6 @@
   height: calc(var(--ds-app-bar) + var(--ds-app-top));
   padding: var(--ds-app-top) var(--ds-unit) 0;
   background: var(--ds-app-paper);
-  /* The hairline is the grid's line under the bar's last square: the pixel below its edge, as the overlay draws it. */
   position: relative;
   z-index: 3;
   box-shadow: 0 1px var(--ds-app-line);
@@ -54,8 +49,6 @@
   text-decoration: none;
 }
 
-/* The name with its apps: the switch is the bar's height, so the menu hangs from the bar's hairline,
-   on the grid's line, its entries starting under the name. */
 .switch {
   position: relative;
   display: flex;
@@ -90,16 +83,12 @@
   margin-inline-start: auto;
 }
 
-/* A sidebar takes its pane's width, so a divider resizes the navigation itself. */
 ::slotted(ds-sidebar) { width: 100%; }
 
-/* The phone's menu button, in the bar's last square as the drawer's close
-   button stands in the drawer's, so one takes the other's place. */
 .menu { display: none; flex: none; margin-inline-end: calc((var(--ds-unit) - var(--ds-control-height)) / 2); }
 @container (max-width: 599px) {
   .menu:not([hidden]) { display: inline-flex; }
 }
-/* On a phone the actions stand in the drawer, under the navigation, a square below it. */
 :host([data-narrow]) ::slotted([slot="nav"]) { margin-block-end: var(--ds-unit); }
 :host([data-narrow]) ::slotted([slot="actions"]) {
   display: flex;
@@ -108,15 +97,11 @@
   gap: var(--ds-unit);
 }
 
-/* The drawer's first row stands where the bar's does, its close button on the
-   menu button, and the navigation starts on the square under the bar. */
 ds-page::part(drawer) {
   padding-block-start: calc(var(--ds-app-top) + (var(--ds-app-bar) - var(--ds-row-height)) / 2);
   row-gap: calc((var(--ds-app-bar) - var(--ds-row-height)) / 2);
 }
 
-/* On a computer each pane scrolls on its own; on a phone the page is one
-   document, so it scrolls here, under the bar. */
 ds-page {
   min-width: 0;
   min-height: 0;
@@ -124,8 +109,6 @@ ds-page {
   overflow: auto;
 }
 
-/* Flow: the page is the document. The window scrolls it, the bar stays at the
-   top, and the paper under the page is the document's own. */
 :host([flow]) {
   position: relative;
   inset: auto;

@@ -1,4 +1,3 @@
-/** Evaluate repository-authored demo seeds at build time in an isolated DOM. Demo scripts never ship in the editor. */
 import {createHash} from 'node:crypto';
 import { Window } from 'happy-dom';
 import { Script, createContext } from 'node:vm';
@@ -32,7 +31,7 @@ for (const template of SITE_TEMPLATES) {
     if (element.localName.startsWith('ds-')) for (const key of properties) {
       const value = (element as unknown as Record<string, unknown>)[key];
       if (value !== undefined && typeof value !== 'function') {
-        try { data[key] = JSON.parse(JSON.stringify(value)); } catch { /* non-data DOM property */ }
+        try { data[key] = JSON.parse(JSON.stringify(value)); } catch {}
       }
     }
     if (Object.keys(data).length) components[element.getAttribute('data-template-node')!] = data;

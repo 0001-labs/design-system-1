@@ -1,15 +1,7 @@
-// device.ts
-// Device detection, context utilities, and responsive scaling
-
 import { signal } from "@lit-labs/signals";
 import { applyScaling, calculateScalingFactor as calculateScale, defaultScalingConfig, detectMobileDevice, type ScalingConfig } from "./scaling";
 export type { ScalingConfig, ScalingMode, ScalingOptions, ScalingSnap } from "./scaling";
-// One rule for which screens scale, shared with pages that copy scaling.ts alone.
 export { applyScaling, detectMobileDevice, startScaling, toDevicePixel, toLayoutStep } from "./scaling";
-
-// ============================================================================
-// Types
-// ============================================================================
 
 export type DeviceType = "mobile" | "tablet" | "desktop";
 
@@ -24,19 +16,10 @@ export interface DeviceInfo {
   screenHeight: number;
 }
 
-/** Reactive scaling factor signal */
 export const scalingFactor = signal<number>(1);
 
-/** Current scaling configuration */
 export const scalingConfig = signal<ScalingConfig>(defaultScalingConfig);
 
-// ============================================================================
-// Device Detection
-// ============================================================================
-
-/**
- * Get detailed device information
- */
 export function getDeviceInfo(): DeviceInfo {
   const isMobile = detectMobileDevice();
   const nav = navigator as any;
@@ -45,7 +28,6 @@ export function getDeviceInfo(): DeviceInfo {
   const touchPoints = (nav && nav.maxTouchPoints) || 0;
   const isTouchCapable = touchPoints > 1;
 
-  // Use clientWidth instead of innerWidth to exclude scrollbars
   const screenWidth =
     typeof document !== "undefined"
       ? document.documentElement.clientWidth
@@ -68,16 +50,6 @@ export function getDeviceInfo(): DeviceInfo {
   };
 }
 
-// ============================================================================
-// Scaling
-// ============================================================================
-
-/**
- * Calculate the scaling factor based on viewport width
- * @param viewportWidth - Current viewport width in pixels
- * @param config - Scaling configuration
- * @returns The calculated scaling factor
- */
 export function calculateScalingFactor(
   viewportWidth: number,
   config: ScalingConfig = scalingConfig.get()
@@ -85,25 +57,16 @@ export function calculateScalingFactor(
   return calculateScale(viewportWidth, config);
 }
 
-/**
- * Set the scaling configuration
- * @param config - Partial scaling configuration to apply
- */
 export function setScalingConfig(config: Partial<ScalingConfig>): void {
   const currentConfig = scalingConfig.get();
   const newConfig = { ...currentConfig, ...config };
   scalingConfig.set(newConfig);
 
-  // Recalculate scaling factor if in browser
   if (typeof window !== "undefined") {
     updateScalingFactor();
   }
 }
 
-/**
- * Update the scaling factor based on current viewport
- * Reuse the current scale when the page manages it before the component bundle loads.
- */
 export function updateScalingFactor(): void {
   if (typeof window === "undefined" || typeof document === "undefined") {
     return;
@@ -122,41 +85,19 @@ export function updateScalingFactor(): void {
   );
 }
 
-/**
- * Get the current scaling factor
- * @returns The current scaling factor
- */
 export function getScalingFactor(): number {
   return scalingFactor.get();
 }
 
-/**
- * Convert a design pixel value to scaled pixels
- * @param designPx - The design pixel value (based on 280px width)
- * @returns The scaled pixel value
- */
 export function scale(designPx: number): number {
   return designPx * scalingFactor.get();
 }
 
-/**
- * Convert a scaled pixel value back to design pixels
- * @param scaledPx - The scaled pixel value
- * @returns The design pixel value
- */
 export function unscale(scaledPx: number): number {
   const factor = scalingFactor.get();
   return factor === 0 ? scaledPx : scaledPx / factor;
 }
 
-// ============================================================================
-// Unified Initialization
-// ============================================================================
-
-/**
- * Initialize device detection and scaling
- * Sets CSS classes (.mobile/.desktop) and --sf custom property
- */
 export function initDeviceDetection(): DeviceInfo {
   const deviceInfo = getDeviceInfo();
 
@@ -164,7 +105,6 @@ export function initDeviceDetection(): DeviceInfo {
     return deviceInfo;
   }
 
-  // Set device class on html element
   if (deviceInfo.isMobile) {
     document.documentElement.classList.add("mobile");
     document.documentElement.classList.remove("desktop");
@@ -173,7 +113,6 @@ export function initDeviceDetection(): DeviceInfo {
     document.documentElement.classList.remove("mobile");
   }
 
-  // Update scaling factor (handles --sf CSS property)
   updateScalingFactor();
 
   const factor = scalingFactor.get();
@@ -198,19 +137,15 @@ export function initDeviceDetection(): DeviceInfo {
   return deviceInfo;
 }
 
-// Auto-initialize when module loads
 if (typeof window !== "undefined") {
-  // Wait for DOM to be ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       initDeviceDetection();
     });
   } else {
-    // DOM is already ready
     initDeviceDetection();
   }
 
-  // Single debounced resize handler for both device detection + scaling
   let resizeTimeout: ReturnType<typeof setTimeout>;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
@@ -219,26 +154,16 @@ if (typeof window !== "undefined") {
     }, 100);
   });
 
-  // Also handle orientation change
   window.addEventListener("orientationchange", () => {
     setTimeout(initDeviceDetection, 100);
   });
 }
 
-// ============================================================================
-// App-like Behavior
-// ============================================================================
-
-/**
- * Disable double-tap to zoom in the browser (app-like behavior)
- * Prevents all zoom gestures including double-tap and pinch-to-zoom
- */
 export function applike(): void {
   if (typeof document === "undefined" || typeof window === "undefined") {
     return;
   }
 
-  // Set viewport meta tag to prevent zoom - this is the most important step
   let viewport = document.querySelector('meta[name="viewport"]');
   if (!viewport) {
     viewport = document.createElement("meta");
@@ -250,7 +175,6 @@ export function applike(): void {
     "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
   );
 
-  // Apply touch-action: pan-x pan-y globally to prevent zoom but allow panning
   const style = document.createElement("style");
   style.id = "ds-one-applike-style";
   style.textContent = `
@@ -263,19 +187,16 @@ export function applike(): void {
       -ms-touch-action: pan-x pan-y !important;
     }
   `;
-  // Remove existing style if present
   const existingStyle = document.getElementById("ds-one-applike-style");
   if (existingStyle) {
     existingStyle.remove();
   }
   document.head.appendChild(style);
 
-  // Track touch events to prevent double-tap zoom
   let lastTouchEnd = 0;
   let touchStartTime = 0;
 
   const preventZoom = (event: TouchEvent | WheelEvent | Event) => {
-    // Prevent pinch zoom (two fingers)
     if (event instanceof TouchEvent) {
       if (event.touches.length > 1) {
         event.preventDefault();
@@ -286,7 +207,6 @@ export function applike(): void {
       const now = Date.now();
 
       if (event.type === "touchstart") {
-        // If touchstart happens within 300ms of last touchend, it's likely a double-tap
         if (now - lastTouchEnd < 300) {
           event.preventDefault();
           event.stopPropagation();
@@ -295,7 +215,6 @@ export function applike(): void {
         touchStartTime = now;
       } else if (event.type === "touchend") {
         const touchDuration = now - touchStartTime;
-        // If this is a quick tap (< 300ms) and happened soon after previous touchend, prevent it
         if (touchDuration < 300 && now - lastTouchEnd < 300) {
           event.preventDefault();
           event.stopPropagation();
@@ -303,7 +222,6 @@ export function applike(): void {
         }
         lastTouchEnd = now;
       } else if (event.type === "touchmove") {
-        // Prevent any touchmove that might trigger zoom
         if (event.touches.length > 1) {
           event.preventDefault();
           event.stopPropagation();
@@ -312,7 +230,6 @@ export function applike(): void {
       }
     }
 
-    // Prevent wheel zoom with ctrl/cmd key (common on trackpads)
     if (event instanceof WheelEvent && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       event.stopPropagation();
@@ -320,19 +237,15 @@ export function applike(): void {
     }
   };
 
-  // Use capture phase to catch events earlier
   const options = { passive: false, capture: true };
 
-  // Prevent all zoom gestures - use capture phase
   document.addEventListener("touchstart", preventZoom, options);
   document.addEventListener("touchmove", preventZoom, options);
   document.addEventListener("touchend", preventZoom, options);
   document.addEventListener("touchcancel", preventZoom, options);
 
-  // Prevent wheel zoom
   document.addEventListener("wheel", preventZoom, options);
 
-  // Prevent gesture events (iOS Safari) - use capture phase
   document.addEventListener(
     "gesturestart",
     (e) => {

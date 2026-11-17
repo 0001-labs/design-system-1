@@ -1,4 +1,3 @@
-/* A one-square pitch by default. Rules stay hairlines at every surface scale. */
 :host {
   --grid-scale: var(--ds-sf, var(--sf, 1));
   display: block;
@@ -17,7 +16,6 @@
 @media (max-width: 768px) {
   :host { width: calc(100% - 1px); max-width: 100vw; }
 }
-/* The containing element establishes positioning; its content stays above the paper. */
 :host([contained]) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; transform: none; z-index: 0; }
 .paper {
   position: absolute;

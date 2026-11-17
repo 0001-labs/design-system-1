@@ -1,13 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { getText } from "../DS1/0-face/i18n";
 
-/**
- * A component for displaying page titles with localization support
- *
- * @element ds-title
- * @prop {string} key - The translation key to use
- * @prop {string} defaultValue - Default value if translation is not found
- */
 export class Title extends LitElement {
   private _gridArea = "";
 

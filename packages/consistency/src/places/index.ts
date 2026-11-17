@@ -1,10 +1,3 @@
-/**
- * The places of an open site in Consistency's app: the menus under the site's name in the sidebar (Pages, Emails,
- * Design, Bookings, Gift cards, Orders, a site's own, Connections), each a Lit element mounted in the work area beside the site's canvas.
- *
- * The platform says which menus a site has (`sitePlaces`); the app shows only those it has an element for, from
- * this registry by place id. A place's element is made once per site and kept, hidden while another is shown.
- */
 import type { SiteSummary } from '../site-editing';
 import type { SitePlace } from './api';
 import { ConsistencyPlaceBookings } from './bookings';
@@ -20,26 +13,19 @@ import { flavoPlaces } from './flavo';
 
 export { SiteApiError, siteApi, sitePlaces, type SitePlace } from './api';
 
-/** Makes a place's element for a site; it reads and writes through `siteApi(site.code, …)`. */
 export type PlaceFactory = (site: SiteSummary) => HTMLElement;
 
-/** The places the app has an element for, by id. Each place registers itself here. */
 export const PLACES = new Map<string, PlaceFactory>();
 PLACES.set('pages', site => new ConsistencyPlacePages(site));
 PLACES.set('emails', site => new ConsistencyPlaceEmails(site));
 PLACES.set('settings', site => new ConsistencySiteSettings(site));
 PLACES.set('design', site => new ConsistencyPlaceDesign(site));
 PLACES.set('peer-products', site => new ConsistencyPlacePeerProducts(site));
-// Every site's, worked out by the platform from the code that runs it.
 PLACES.set('connections', site => new ConsistencyPlaceConnections(site));
 
-/** The site's places the app can show, in the site's order. */
 export const shownPlaces = (places: readonly SitePlace[]) => places.filter(place => PLACES.has(place.id));
 
-// CPH Raft's places, on the site engine's bookings and gift cards (`/team/api/bookings…`, `/team/api/giftcards…`).
 PLACES.set('bookings', site => Object.assign(new ConsistencyPlaceBookings(), { site }));
 PLACES.set('giftcards', site => Object.assign(new ConsistencyPlaceGiftCards(), { site }));
-// Every site's orders, under the site's own word for them (`/team/api/orders…`): the place of a site that takes requests or sales.
 PLACES.set('orders', site => Object.assign(new ConsistencyPlaceOrders(), { site }));
-// Flavo's own places (Produkter, Udlejning, Kunder …), Flavo's `places` export by Sync 1, on its business store.
 for (const [id, make] of flavoPlaces) PLACES.set(id, make);

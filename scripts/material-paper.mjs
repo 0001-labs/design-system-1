@@ -1,4 +1,3 @@
-/** Bake a seamless 128px grain/fibre tile. No canvas or filters at runtime. */
 import { deflateSync } from 'node:zlib';
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -16,7 +15,6 @@ function noise(seed) {
 
 const grain = noise(71);
 const fibre = noise(1957);
-// PNG grayscale + alpha. Black and white flecks work on either paper colour.
 const pixels = Buffer.alloc(size * (1 + size * 2));
 for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
   let soft = 0;

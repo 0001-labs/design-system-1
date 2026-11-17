@@ -1,56 +1,3 @@
-/*
- * A table: words straight on the paper, one square a row. No box and no
- * column lines: each row stands on a hairline at its foot, its words set on
- * that line like a caption: the sixteen of words against the 1px line, three
- * spare above, a 20px pitch, as every row is set.
- * Column headers keep the text's weight in the title grey; the first column
- * of a body row is a row header in the text colour. Nothing is filled with
- * the accent except a cell someone has selected.
- *
- * `.ds-table` dresses a native <table>; `<ds-table>` draws the same table
- * from data. Put a wide table in `.ds-table-scroll` to scroll it sideways,
- * and give the table `data-sticky` to keep its first column in place.
- *
- *   <th data-numeric>, <td data-numeric>   numbers, set to the column's end
- *   <tfoot>                                totals, under a line of their own
- *   <th colspan="2">                       a column group, in a header row
- *   <th scope="rowgroup">                  a row group, a heading row in grey
- *   <td aria-selected="true">              a selected cell
- *
- * `data-plain` takes every line away: the same rows with no rule at their
- * foot, standing on the paper as a list's rows do (a table of payments), the
- * words still on the lower sixteen of each square.
- *
- * `data-frame` draws the same rows in a rounded 1px frame with a 1px line
- * between columns. Every line is drawn inside the cells' squares, the frame
- * over the first and last pixels as the sheet's lines are at a cell's end and
- * foot, so each row keeps its 20px pitch and the last row's rule is the
- * frame's foot; words stand 4px in from the lines. Fills in the cells keep
- * inside the rounded corners.
- *
- * `data-sheet` makes it a spreadsheet: every cell four squares by one (80 by
- * 20), its 1px lines at its end and foot so the words have 79 by 19, set 4px
- * in on the sixteen. Words that do not fit fade out over the last square
- * where they are cut, never an ellipsis: put them in `.ds-table__words`,
- * which carries the fade (a mask, so it fades to whatever is behind: the
- * paper, a selected or hovered cell's fill). A table marked `data-fit`
- * (`<ds-table sheet>` is) measures its cells and marks the cut ones
- * `data-cut="end"`, or `"start"` for a number it has scrolled to its end, so
- * words that fit never fade; without it every cell's end fades. Column letters and the row numbers
- * (`.ds-table__letters`, `.ds-table__number`, two squares wide) stay in place
- * while the sheet scrolls both ways inside `.ds-table-scroll`; give the table
- * `--ds-table-columns` (the number of data columns) and the scroll a height
- * with `--ds-table-height`.
- *
- * `data-reorderable` (set by `<ds-table sheet reorderable>`) gives each row
- * number a grip, `.ds-table__handle` with the `handle` icon, in place of the
- * number while the row is hovered or the grip focused. A lifted row
- * (`tr[data-lifted]`) keeps the paper behind it and follows the pointer; while
- * `data-moving` is on the table the other rows step aside in transform alone,
- * a sortable list's 200ms on cubic-bezier(0.2, 0, 0, 1), and never under
- * reduced motion.
- */
-
 .ds-table {
   --ds-table-row: var(--ds-row-height, calc(20px * var(--ds-sf, 1)));
   --ds-table-gap: calc(var(--ds-table-row) / 2);
@@ -89,7 +36,6 @@
   padding-inline-end: 0;
 }
 
-/* A plain table: no lines at all, each row one square with its words on the lower sixteen. */
 .ds-table[data-plain] :is(th, td) {
   border-bottom: 0;
 }
@@ -100,7 +46,6 @@
   border-radius: var(--ds-table-radius);
   clip-path: inset(0 round var(--ds-table-radius));
 }
-/* The frame is drawn over the cells, so a filled cell never covers it. */
 .ds-table[data-frame]::after {
   position: absolute;
   inset: 0;
@@ -135,7 +80,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Totals: the rule above them is the last body row's; theirs closes the table. */
 .ds-table tfoot :is(th, td) {
   color: inherit;
 }
@@ -180,8 +124,6 @@
   background: var(--ds-accent-color, Highlight);
 }
 
-/* Keep the row whose details are open visible, including its sticky first cell.
-   Cell selection remains independent and keeps its accent. */
 .ds-table tbody > tr[data-open]:not([data-open="false"]) > :is(th, td):not([aria-selected="true"]) {
   background: var(--ds-row-fill-current, var(--ds-fill-hover));
 }
@@ -192,7 +134,6 @@
   }
 }
 
-/* A spreadsheet: cells four squares by one, on lines, lettered and numbered. */
 .ds-table[data-sheet] {
   --ds-table-cell: calc(4 * var(--ds-table-row));
   --ds-table-index: calc(2 * var(--ds-table-row));
@@ -230,7 +171,6 @@
   --ds-table-fade-to: left;
   --ds-table-fade-from: right;
 }
-/* Cut words fade over their last square to nothing, at the edge where they are cut. */
 .ds-table[data-sheet]:not([data-fit]) .ds-table__words,
 .ds-table[data-sheet] .ds-table__words[data-cut="end"] {
   mask-image: linear-gradient(to var(--ds-table-fade-to), #000 calc(100% - var(--ds-table-row)), transparent);
@@ -279,7 +219,6 @@
   overscroll-behavior: contain;
 }
 
-/* Rows that move: a grip on the number, the lifted row on paper, the others stepping aside. */
 .ds-table[data-sheet][data-reorderable] tbody .ds-table__number {
   -webkit-user-select: none;
   user-select: none;
@@ -344,10 +283,8 @@
   }
 }
 
-/* Numbers, dates and secondary words keep the table’s common text size. */
 .ds-table :is(small, .ds-table__words) { font-size: inherit; }
 
-/* A sideways table fades only at edges with more columns beyond them. */
 [data-ds-table-edge="right"] { mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent); }
 [data-ds-table-edge="left"] { mask-image: linear-gradient(to right, transparent, #000 var(--ds-unit)); }
 [data-ds-table-edge="both"] { mask-image: linear-gradient(to right, transparent, #000 var(--ds-unit), #000 calc(100% - var(--ds-unit)), transparent); }
@@ -371,12 +308,10 @@
 
 .ds-table[data-column-widths] { min-width: 0; }
 
-/* Existing semantic tables can take the same interaction without changing their cell content. */
 [data-ds-table-viewport] { min-width: 0; max-width: 100%; }
 table[data-ds-column-resize] { min-width: 0; }
 table[data-ds-column-resize] :is(th, td) { min-width: 0; max-width: none; width: auto; }
 table[data-ds-column-resize] :is(th, td):has(> .ds-table-column-resize) { position: relative; overflow: visible; }
-/* Keep the last target inside the table without covering its neighbour in a one-square column. */
 table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize { inset-inline-end: 0; clip-path: inset(0 0 0 50%); }
 table[data-ds-column-resize]:dir(rtl) :is(th, td):last-child > .ds-table-column-resize { clip-path: inset(0 50% 0 0); }
 table[data-ds-column-resize] :is(th, td):last-child > .ds-table-column-resize::after { inset-inline-start: auto; inset-inline-end: 0; }

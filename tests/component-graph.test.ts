@@ -2,7 +2,6 @@ import { resolve } from 'node:path';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { expect, test } from 'vite-plus/test';
-// Plain modules, read by Sync 1 through sync.exports.mjs; tests/tsconfig.json reads their JavaScript.
 import { componentGraph } from '../scripts/component-graph.mjs';
 import exported from '../sync.exports.mjs';
 
@@ -31,7 +30,6 @@ test('selecting the page carries its React adapter, so a product needs no JSX ty
 test('empty states and notices carry their React adapters and the classes that draw them', () => {
   const { files } = componentGraph(ds1, ['empty', 'notice']);
   for (const file of ['2-core/ds-empty.ts', '2-core/ds-notice.ts', 'react/empty.ts', 'react/notice.ts', '1-root/empty.css', '1-root/notice.css', '2-core/ds-icon.ts']) expect(files.has(file)).toBe(true);
-  // controls.css travels with every selection, so its native classes do too.
   expect(componentGraph(ds1, ['text']).files.has('1-root/notice.css')).toBe(true);
   expect(componentGraph(ds1, ['text']).files.has('react/notice.ts')).toBe(false);
 });
@@ -84,13 +82,11 @@ test('a specifier written with .js reads its TypeScript source, and a real scrip
 test('the site chrome carries its React adapters, the drawer script and the sheets that draw it', () => {
   const { files } = componentGraph(ds1, ['header', 'footer', 'document', 'page']);
   for (const file of ['4-page/ds-header.ts', '4-page/ds-footer.ts', '4-page/ds-document.ts', 'react/header.ts', 'react/footer.ts', 'react/document.ts', '0-face/attach-overlay.ts', '0-face/header.ts', '1-root/header.css', '1-root/overlay.css', '1-root/footer.css', '1-root/document.css', '1-root/prose.css', '2-core/ds-cycle.ts', '0-face/translations/en.json']) expect(files.has(file), file).toBe(true);
-  // The page's drawer is the header's: selecting the page alone brings the script.
   expect(componentGraph(ds1, ['page']).files.has('0-face/attach-overlay.ts')).toBe(true);
 });
 
 test('unknown and malformed names are refused', () => {
   expect(() => componentGraph(ds1, ['nothing'])).toThrow(/Unknown component/);
-  // A folded component's old name says what it became.
   expect(() => componentGraph(ds1, ['dialog'])).toThrow(/dialog is now overlay/);
   expect(() => componentGraph(ds1, ['../x'])).toThrow(/Invalid component/);
 });
@@ -111,7 +107,6 @@ test('the React adapters travel by default, and "react": false leaves every one 
   for (const file of ['react/button.ts', 'react/button-split.ts', 'react/empty.ts', 'react/notice.ts', 'react/select.ts', 'react/menu-engine.ts', 'react/loading.ts', 'react/spacing-handle.ts', 'react/kbd.ts']) expect(withAdapters.has(file), file).toBe(true);
   const lit = componentGraph(ds1, names, { react: false }).files;
   expect([...lit.keys()].filter(file => file.startsWith('react/'))).toEqual([]);
-  // The elements, their sheets and the scripts that are not adapters still travel.
   for (const file of ['2-core/ds-button.ts', '2-core/button-split.ts', '2-core/ds-empty.ts', '2-core/ds-notice.ts', '3-unit/ds-select.ts', '2-core/ds-loading.ts', '0-face/tooltips.ts', '1-root/controls.css', 'components.ts']) expect(lit.has(file), file).toBe(true);
 });
 

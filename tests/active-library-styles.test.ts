@@ -10,7 +10,6 @@ const square = ':root { --ds-radius: 0px; }';
 const active: { dispose(): void }[] = [];
 afterEach(() => { active.splice(0).forEach(connection => connection.dispose()); localStorage.clear(); sessionStorage.clear(); vi.restoreAllMocks(); });
 
-/** Stands in for a frame's window: what it was sent, and a way for it to speak. */
 function fakeWindow() { return { postMessage: vi.fn() }; }
 function page(count = 2) {
   const examples = Array.from({ length: count }, () => ({ frame: { contentWindow: fakeWindow() } as unknown as HTMLIFrameElement, label: Object.assign(document.createElement('span'), { hidden: true }) }));
@@ -48,7 +47,6 @@ test('a custom library draws from the kept stylesheet at once, then follows the 
   expect(examples[1]!.label).toMatchObject({ hidden: false, textContent: 'Acme' });
   expect(started).toHaveBeenCalled();
   expect(bridgeWindow.postMessage).toHaveBeenCalledWith({ type: 'ds1:active-library-request', id: 'lib1' }, location.origin);
-  // The same stylesheet confirmed sends nothing again; a new draft goes to every frame and is kept.
   answer({ id: 'lib1', name: 'Acme', css: pink });
   expect(sent(0)).toHaveLength(1);
   answer({ id: 'lib1', name: 'Acme studio', css: square });
@@ -62,7 +60,6 @@ test('frames that announce later take the styles; other windows, origins and lib
   keep({ id: 'lib1', name: 'Acme' });
   const { sent, examples, answer, speak, bridgeWindow } = page();
   expect(sent(0)).toEqual([]);
-  // The bridge is asked again whenever it speaks until it has answered.
   speak(bridgeWindow, { type: 'ds1:navigation-auth' });
   expect(bridgeWindow.postMessage).toHaveBeenCalledTimes(2);
   answer({ id: 'lib1', name: 'Acme', css: pink }, 'https://elsewhere.example');
@@ -91,7 +88,6 @@ test('switching to the base, signing out, or a library that is not the caller\'s
   expect(sessionStorage.getItem(LIBRARY_STYLES_KEY)).toBeNull();
   expect(bridgeWindow.postMessage).toHaveBeenLastCalledWith({ type: 'ds1:active-library-request', id: null }, location.origin);
 
-  // Another tab opens the library again, then the bridge says it is not the caller's.
   keep({ id: 'lib1', name: 'Acme' });
   window.dispatchEvent(new StorageEvent('storage', { storageArea: localStorage, key: ACTIVE_LIBRARY_KEY }));
   answer({ id: 'lib1', name: 'Acme', css: pink });
@@ -100,7 +96,6 @@ test('switching to the base, signing out, or a library that is not the caller\'s
   expect(sent(0).at(-1)).toEqual({ type: 'ds1-example-styles', css: '' });
   expect(sessionStorage.getItem(LIBRARY_STYLES_KEY)).toBeNull();
 
-  // Signing out takes the active library away.
   answer({ id: 'lib1', name: 'Acme', css: square });
   writeActiveLibrary(null);
   expect(sent(0).at(-1)).toEqual({ type: 'ds1-example-styles', css: '' });

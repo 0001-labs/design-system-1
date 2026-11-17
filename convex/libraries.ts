@@ -10,10 +10,6 @@ import { hasUnpublishedChanges, libraryState } from "./lib/libraryState";
 const DEFAULT_MAX_LIBRARIES = 20;
 const DEFAULT_MAX_CSS_BYTES = 512 * 1024;
 
-/**
- * Every failure carries a stable machine `code` alongside the human message, so
- * the UI can branch on the code and still show the server's wording.
- */
 function fail(code: string, message: string, details?: Record<string, Value>): never {
   const payload: Record<string, Value> = { code, message };
   if (details !== undefined) payload.details = details;
@@ -42,13 +38,6 @@ async function requireUser(ctx: QueryCtx | MutationCtx): Promise<Id<"users">> {
   return userId;
 }
 
-/**
- * Load a library the caller owns.
- *
- * A library that exists but belongs to someone else raises **not_found**, not
- * forbidden. Distinguishing the two would turn this into an oracle for which
- * library ids exist.
- */
 async function requireOwned(
   ctx: QueryCtx | MutationCtx,
   libraryId: Id<"libraries">,
@@ -63,7 +52,6 @@ async function requireOwned(
   return { userId, library };
 }
 
-/** The fields a dashboard card needs. Deliberately excludes draftCss. */
 function summarize(library: Doc<"libraries">) {
   return {
     _id: library._id,
@@ -82,13 +70,6 @@ function summarize(library: Doc<"libraries">) {
   };
 }
 
-/**
- * Dashboard list.
- *
- * Never returns `draftCss`. At ~20 KB per library it would dominate the
- * response and hit Convex's result-size limit after a few dozen rows, and no
- * card renders it.
- */
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -106,14 +87,6 @@ export const list = query({
   },
 });
 
-/**
- * Full library, or null.
- *
- * Returns null rather than throwing, because a thrown ConvexError surfaces
- * through `useQuery` as a render-time exception, which every caller would then
- * need an error boundary for. The no-oracle property is unaffected: "not yours"
- * and "does not exist" are the same null.
- */
 export const get = query({
   args: { id: v.id("libraries") },
   handler: async (ctx, args) => {
@@ -221,16 +194,6 @@ export const rename = mutation({
   },
 });
 
-/**
- * Autosave.
- *
- * `baseRev` is the whole concurrency story. The client sends the revision it
- * started editing from; a mismatch means another tab or device saved in the
- * meantime, and the write is refused rather than silently clobbering. Convex
- * mutations are serializable transactions, so no lock is needed — this is a
- * genuine simplification over the SQL design, where the same guarantee needed
- * an explicit lock column.
- */
 export const saveDraft = mutation({
   args: {
     id: v.id("libraries"),
@@ -260,8 +223,6 @@ export const saveDraft = mutation({
 
     const hash = await sha256Hex(args.css);
 
-    // An identical save is not an error, but it must not burn a revision
-    // either — the drag handles emit many byte-identical states.
     if (hash === library.draftHash && args.config === library.draftConfig) {
       return { draftRev: library.draftRev, draftHash: hash, draftUpdatedAt: library.draftUpdatedAt };
     }
@@ -279,12 +240,6 @@ export const saveDraft = mutation({
   },
 });
 
-/**
- * Soft delete, and the default.
- *
- * Deleting a library takes down the stylesheet on someone else's production
- * website, so the reversible option is the one that happens by accident.
- */
 export const archive = mutation({
   args: { id: v.id("libraries") },
   handler: async (ctx, args) => {
@@ -303,13 +258,6 @@ export const restore = mutation({
   },
 });
 
-/**
- * Hard delete.
- *
- * Requires echoing the publicId, so it cannot be a mis-click. The R2 objects
- * are deliberately left in place; a scheduled job removes them after a grace
- * period, which is the only thing that makes this recoverable.
- */
 export const purge = mutation({
   args: { id: v.id("libraries"), confirmPublicId: v.string() },
   handler: async (ctx, args) => {

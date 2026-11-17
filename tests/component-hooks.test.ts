@@ -4,21 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vite-plus/test";
 import { LIBRARY_TOKENS } from "../DS1/1-root/library-tokens";
 
-/**
- * Each component's own tokens are public hooks, unset by default: nothing in DS1 gives them a
- * value, and every face reads them first with exactly the expression it used before as the
- * fallback, so a page that sets none draws as it always did (e2e/tests/component-tokens.spec.ts
- * measures it in a browser).
- */
-
 const root = fileURLToPath(new URL("../DS1/", import.meta.url));
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => (statSync(join(dir, name)).isDirectory() ? walk(join(dir, name)) : [join(dir, name)]));
 const read = (file: string) => readFileSync(join(root, file), "utf8");
-/** A stylesheet without comments, its whitespace folded, so each declaration reads on one line. */
 const flat = (file: string) => read(file).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
 
-/** Token → the unscaled internal it resolves into on the component's host (null: read as it is). */
 const TOKENS: Record<string, { sheet: string; internal: string | null }> = {
   "--ds-button-size": { sheet: "2-core/styles/ds-button.css", internal: "--_button-size" },
   "--ds-button-corner-size": { sheet: "2-core/styles/ds-button.css", internal: "--_button-corner-size" },
@@ -43,7 +34,6 @@ const TOKENS: Record<string, { sheet: string; internal: string | null }> = {
   "--ds-tag-text-size": { sheet: "2-core/styles/ds-tag.css", internal: "--_tag-text-size" },
 };
 
-/** Each face's read: the new hook first, then exactly the expression the face had before. */
 const READERS: [sheet: string, declaration: string][] = [
   ["2-core/styles/ds-button.css", "width: var(--ds-button-width, var(--_button-inline-size, max-content));"],
   ["2-core/styles/ds-button.css", "height: var(--_button-height, var(--ds-control-height));"],

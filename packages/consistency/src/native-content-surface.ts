@@ -10,7 +10,6 @@ import { applyProseLook, createProseProbe } from './prose-look';
 defineAaEditor();
 
 export interface NativeContentValue { source: string; gaps?: Record<string, number> }
-/** One native writing surface, shared by page documents and authored content regions. */
 export class NativeContentSurface {
   readonly host: AaEditorElement;
   private preview: Record<string, number> = {};
@@ -59,7 +58,6 @@ export class NativeContentSurface {
     else if (target.closest?.('.consistency-content-element')) this.dirtyField = true;
     this.options.commit({ ...this.options.read(), source: this.host.value });
   };
-  /** The words wear the page's look for them (prose-look.ts): read once the region stands in the page, and again when the page's width changes what its rules give. */
   private look() { if (this.lookDue && applyProseLook(this.probe, this.stage)) this.lookDue = false; }
   private relook = () => { this.lookDue = true; this.look(); };
   private mapImages = () => {

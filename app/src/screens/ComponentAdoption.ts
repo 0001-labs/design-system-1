@@ -7,7 +7,6 @@ import "./ComponentMatrix";
 import "../../../DS1/4-page/ds-app";
 export { ComponentMatrix } from "./ComponentMatrix";
 
-/** The private report: the component matrix and the icon matrix from the last published source snapshot. */
 export class ComponentAdoption extends AppElement {
   static properties = { signOut: { attribute: false }, report: { state: true }, error: { state: true }, retry: { state: true } };
   declare signOut: (() => Promise<void>) | undefined;
@@ -31,7 +30,6 @@ export class ComponentAdoption extends AppElement {
     super.disconnectedCallback();
   }
 
-  /** Reads the report again whenever the session changes or Try again is pressed. */
   override willUpdate() {
     const token = authToken.get();
     const key = JSON.stringify([token, this.retry]);

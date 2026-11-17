@@ -1,20 +1,11 @@
-/* ds-button.css */
-/* Core button component styles. The face is a <button>, or an <a> when the
-   element has an href: both draw alike in every variant and state. */
-
 :host {
   display: inline-flex;
-  /* At the foot of a line, so a 16px face takes the lower sixteen of the square. */
   vertical-align: bottom;
   min-width: 0;
   flex: 0 0 auto;
   width: var(--ds-button-width, var(--_button-inline-size, max-content));
   max-width: 100%;
   overflow: visible;
-  /* The button's own tokens, unset by default and in unscaled px as --ds-control-size is,
-     resolved here at this button's scale. Each face reads them first and falls back to its
-     own measure, so a page that sets none draws exactly as before. --ds-button-inline-size is
-     the width: unset hugs, 100% fills, a length is fixed. */
   --_button-size: var(--ds-button-size);
   --_button-height: calc(var(--_button-size) * var(--ds-sf));
   --_button-corner-size: var(--ds-button-corner-size);
@@ -26,8 +17,6 @@
   --_button-inline-size: var(--ds-button-inline-size);
 }
 
-/* Other controls drawn on this face keep their own measures: an icon or a count's square, a
-   tab, a menu entry, a split run and a paper tab. Their colours still follow the faces. */
 :host(:is([icon], [square], [split], [menu-item], [role="option"], [role^="menuitem"], [role="tab"], [choice], [segment], [paper])) {
   --_button-height: initial;
   --_button-radius: initial;
@@ -36,17 +25,14 @@
   --_button-inline-size: initial;
 }
 
-/* Label width is standard. Fixed grid widths are explicit layout choices. */
 :host([fixed]) { width: var(--ds-button-width, calc(4 * var(--ds-unit))); }
 :host([wide]) { width: var(--ds-button-width, calc(8 * var(--ds-unit))); }
-/* Keep fit as an explicit intrinsic-width alias for existing consumers. */
 :host([fit]) {
   flex: 0 0 auto;
   width: max-content;
 }
 :host([fit]) :is(button, a) {
   flex: 0 0 auto;
-  /* Hug sizing belongs to the host, including its grid rounding. */
   width: 100%;
   min-width: var(--ds-button-min-width, 0px);
   justify-content: var(--ds-button-align, flex-start);
@@ -83,7 +69,6 @@
   overflow-x: clip;
   overflow-y: visible;
   text-overflow: clip;
-  /* Default to no-background when no variant is specified */
   background-color: transparent;
   text-decoration: none;
 }
@@ -100,8 +85,6 @@
   color: inherit;
 }
 
-/* Words drawn by a translation key take the button's text size too: unset, the expression
-   ds-text resolves for itself (component-metrics.css). */
 :is(button, a) ds-text {
   --ds-type-size-default: var(--_button-font-size, calc(var(--ds-text-size, 14px) * var(--ds-sf, 1)));
 }
@@ -114,8 +97,6 @@
   padding: 0 var(--_button-padding, calc(var(--ds-button-inset, 4px) * var(--ds-sf)));
 }
 
-/* The secondary face's words are the text's ink, as on `.ds-button--secondary`
-   and the host and slotted faces; the grey is the face, not the words. */
 :is(button, a)[secondary] {
   background-color: var(--ds-button-secondary-fill, var(--button-background-color-secondary));
   color: var(--ds-button-color, var(--ds-button-text-color));
@@ -123,11 +104,7 @@
   padding: 0 var(--_button-padding, calc(var(--ds-button-inset, 4px) * var(--ds-sf)));
 }
 
-/* An entry in a menu or a list of options is one row high on this face too,
-   as on the host and slotted faces: the menu's --ds-button-height (one
-   square, or a compact row), its words at the start, padded 4px. */
 :host(:is([menu-item], [role="option"], [role^="menuitem"])) :is(button, a) {
-  /* Its words and icon on the lower sixteen of the row, the spare four above. */
   align-items: flex-end;
   height: var(--ds-button-height, var(--ds-row-height));
   min-height: var(--ds-button-height, var(--ds-row-height));
@@ -136,13 +113,10 @@
   padding: 0 calc(var(--ds-button-inset, 4px) * var(--ds-sf));
 }
 
-/* `danger`: a destructive action's words in the danger colour, on this face
-   as on the host and slotted faces and `.ds-button--danger`. */
 :host([danger]) :is(button, a) {
   color: var(--ds-danger-color, var(--ds-tuned-red));
 }
 
-/* Disabled, as in the slotted and host modes. A disabled link has no href. */
 :is(button:disabled, a[aria-disabled="true"]) {
   cursor: default;
   opacity: 0.5;
@@ -152,11 +126,6 @@
   opacity: 0.7;
 }
 
-/* A button that holds only an icon — every close button — is a 16-unit
-   square, scaled with the page, in the shape's corners: the icon fills it,
-   no word-padding around it, so the glyph's lines are the same size wherever
-   a page or a panel closes, on the web and in the app alike. The element
-   marks itself `icon` when its only child is an ds-icon. */
 :host([icon]) {
   flex: 0 0 auto;
   width: var(--ds-control-height);
@@ -173,8 +142,6 @@
   height: var(--ds-control-height);
 }
 
-/* A button marked `square` is a 16-unit square whatever it holds, a count
-   or an initial, its words in its middle with no word-padding around them. */
 :host([square]) {
   flex: 0 0 auto;
   width: var(--ds-control-height);
@@ -185,9 +152,6 @@
   justify-content: center;
 }
 
-/* Words and an icon hug them, as on every face (controls.css): this face has
-   no gap, and on a filled face the icon takes the padding on its side, its
-   own room around the glyph standing in for it. */
 :host(:is([primary], [secondary]):not([icon])) ::slotted(ds-icon:nth-last-child(1 of :not(.c9y-native-text)):not(:nth-child(1 of :not(.c9y-native-text)))) {
   margin-inline-end: calc(-4px * var(--ds-sf));
 }
@@ -195,9 +159,6 @@
   margin-inline-start: calc(-4px * var(--ds-sf));
 }
 
-/* A paper tab (`ds-tabs paper`) on this face: a row high with its words on
-   the sixteen, 4px of room at its sides, in the run's colours,
-   rounded at the top only and square at the foot, where it joins the page. */
 :host([paper]) :is(button, a) {
   height: var(--ds-row-height);
   min-height: var(--ds-row-height);
@@ -209,8 +170,6 @@
   color: var(--ds-button-color, var(--button-text-color));
 }
 
-/* A segment gets its outside corners from the enclosing split control, or
-   from its place in a joined run of tabs (`ds-tabs split`). */
 :host([segment]) :is(button, a) {
   border-radius: 0 !important;
 }
@@ -223,22 +182,13 @@
   border-end-end-radius: var(--ds-radius) !important;
 }
 
-/* A label is never truncated to meet a chosen width. Round its minimum up,
-   so explicit widths and flex layouts retain enough space for all the words.
-   Tabs are not rounded: each hugs its words with the run's own padding, so
-   every tab in a run has the same room around its words. */
 :host(:not([icon]):not([split]):not([menu-item]):not([segment]):not([paper]):not([role="tab"])) {
   min-width: max-content;
   min-width: calc-size(max-content, round(up, size, var(--ds-unit)));
 }
-/* The rounding leaves room beyond the words; share it on both sides, so the
-   words never hug the start with the spare room piled up at the end. Menu
-   entries and options keep their words at the start; --ds-button-align still
-   chooses. */
 :host(:not([icon]):not([split]):not([menu-item]):not([role="option"]):not([role^="menuitem"])) :is(button, a) {
   justify-content: var(--ds-button-align, center);
 }
-/* A menu entry keeps a fixed width, so its words may still be cut and fade. */
 :host(:not([menu-item])) :is(button, a),
 :host(:not([menu-item])) :is(button, a) ds-text,
 :host(:not([menu-item])) :is(button, a) ::slotted(*) {
@@ -247,5 +197,4 @@
   text-overflow: clip;
 }
 
-/* Split tabs share the selected segment's contrast guard. */
 :host([segment][active]) :is(button, a) { color: var(--_ds-choice-ink, var(--ds-button-color, var(--button-text-color))); }

@@ -1,4 +1,3 @@
-/** The parts of opentype.js 2 the workbench uses to write a preview build; the package ships no types. */
 declare module 'opentype.js' {
   export class Path {
     moveTo(x: number, y: number): void;

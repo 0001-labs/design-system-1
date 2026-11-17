@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, test, vi } from 'vite-plus/test';
 
-// The panels' module counts its loads and waits until the test lets it arrive.
 const panels = vi.hoisted(() => {
   let release = () => {};
   return { loaded: vi.fn(), arrived: new Promise<void>(resolve => { release = resolve; }), release: () => release() };
@@ -38,7 +37,6 @@ test('Claude draws its layout and the product at once, and updateComplete waits 
   void chrome.updateComplete.then(() => { settled = true; });
   await ticks();
   const root = chrome.shadowRoot!;
-  // While the panels load: the layout and the stage's slot are drawn, so the product shows where it will stay.
   expect(panels.loaded).toHaveBeenCalledTimes(1);
   expect(root.querySelector('.ws-claude .ws-pane .ws-stage slot')).not.toBeNull();
   expect(root.querySelector('.ws-thread')).toBeNull();

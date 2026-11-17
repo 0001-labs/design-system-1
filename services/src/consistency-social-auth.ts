@@ -5,7 +5,6 @@ const COOKIE = /^__Host-(?:google|apple)(?:OAuth(?:pkce|state|nonce)|RedirectTo)
 
 export const isSocialAuthPath = (path: string) => PATH.test(path);
 
-/** Consistency's provider callback uses its own domain; only flow cookies reach Convex. */
 export async function consistencySocialAuth(request: Request, env: ReportsEnv, send: typeof fetch = fetch): Promise<Response> {
   const url = new URL(request.url);
   const match = PATH.exec(url.pathname);

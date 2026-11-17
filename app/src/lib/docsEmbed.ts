@@ -5,7 +5,6 @@ export function docsThemeFromMessage(data: unknown): 'light' | 'dark' | null {
   return message.theme === 'light' || message.theme === 'dark' ? message.theme : null;
 }
 
-/** Keep the editor chrome in sync with its same-origin documentation host. */
 export function initializeDocsEmbed() {
   if (window.parent === window || new URLSearchParams(window.location.search).get('embed') !== 'docs') return;
 
@@ -25,10 +24,6 @@ export function initializeDocsEmbed() {
   window.parent.postMessage({ type: 'ds1:docs-ready' }, window.location.origin);
 }
 
-/**
- * Inside the documentation's app frame the editor stands on the frame's scale: the parent's `--sf`
- * (Desktop aligned on a computer), so its squares are the documentation's squares.
- */
 export function followDocsScale() {
   const root = document.documentElement;
   const follow = () => {

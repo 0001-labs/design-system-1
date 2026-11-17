@@ -1,7 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-list.css */
-
 :host {
   box-sizing: border-box;
   display: flex;
@@ -26,9 +24,6 @@
   --ds-list-columns: 3;
 }
 
-/* The group's name on the square above its rows: words on the lower sixteen of the square with
-   the spare four above, in the muted ink, as a day's heading stands over a day's payments. It
-   names the list (aria-label), so the drawn words are hidden from assistive technology. */
 .heading {
   box-sizing: border-box;
   flex: none;
@@ -47,6 +42,5 @@
   white-space: nowrap;
   text-overflow: clip;
 }
-/* A cut heading fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 .heading[data-cut="end"] { mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent); }
 :host(:dir(rtl)) .heading[data-cut="end"] { mask-image: linear-gradient(to left, #000 calc(100% - var(--ds-unit)), transparent); }

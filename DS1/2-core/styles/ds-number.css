@@ -1,8 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-number.css */
-/* A number field: one square high, its face one control high on the lower sixteen, a whole number of squares wide. */
-
 :host {
   --ds-number-squares: 4;
   display: inline-flex;
@@ -38,17 +35,11 @@
   overflow: hidden;
 }
 
-/* Keyboard focus and typing ring the face inside its edge, so nothing around it moves. */
 .face:focus-within {
   outline: 1px solid var(--ds-number-focus, var(--ds-focus-ring));
   outline-offset: -1px;
 }
 
-/*
- * The lead: a short label 4px in, or an icon on the face's first sixteen, in the title grey, a control
- * square at least, the handle a drag scrubs. The value starts 4px after it, so after a letter or an
- * icon it stands on the next square, as words do after a picture.
- */
 .lead {
   flex: none;
   display: inline-flex;
@@ -119,7 +110,6 @@ input::selection {
   cursor: not-allowed;
 }
 
-/* With the value as the handle (`drag="value"`), the field drags up and down until it is typed in. */
 :host([drag="value"]:not([disabled]):not([readonly])) .face:not(:focus-within),
 :host([drag="value"]:not([disabled]):not([readonly])) .face:not(:focus-within) :is(.lead, input) {
   cursor: ns-resize;

@@ -1,4 +1,3 @@
-/** Controlled state for Button's split mode. The shared Button owns its face. */
 import { createElement, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import type { Button as ButtonElement, SplitSegment } from "../2-core/ds-button";
 export type { SplitSegment };

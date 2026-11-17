@@ -5,7 +5,6 @@ import "./ds-button";
 import "./ds-icon";
 import styles from "./styles/ds-token.css?inline";
 
-/** A removable value. Products own its identity and decide whether to remove it. */
 export class Token extends LitElement {
   static formAssociated = true;
   static properties = {
@@ -14,7 +13,6 @@ export class Token extends LitElement {
     disabled: { type: Boolean, reflect: true }, fieldDisabled: { state: true },
   };
   static styles = unsafeCSS(styles);
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".copy > span, small" });
   declare value: string; declare label: string; declare detail: string;
   declare removeLabel: string; declare disabled: boolean; declare fieldDisabled: boolean;
@@ -25,8 +23,6 @@ export class Token extends LitElement {
   }
   formDisabledCallback(disabled: boolean) {
     this.fieldsetDisabled = disabled;
-    // Attribute reflection can call this during Lit's update. Render once the
-    // effective native state has settled, including re-enabling this token.
     queueMicrotask(() => { if (this.isConnected) this.requestUpdate(); });
   }
   get blocked() { return this.disabled || this.fieldDisabled || this.fieldsetDisabled; }

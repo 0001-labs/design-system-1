@@ -1,4 +1,3 @@
-/** Round named area heights up to the shared unit without clipping their content. */
 export function initGridFit(): void {
   const scopes = Array.from(document.querySelectorAll<HTMLElement>('[data-ds-grid-fit]'));
   if (!scopes.length || document.documentElement.hasAttribute('data-ds-grid-fit-ready')) return;
@@ -25,14 +24,10 @@ export function initGridFit(): void {
         originalMinimums.delete(element);
       }
     }
-    // Restore natural heights first, allowing containers to shrink after a
-    // translation, font, or viewport change as well as grow.
     elements.forEach((element) => {
       if (!originalMinimums.has(element)) originalMinimums.set(element, element.style.minHeight);
       element.style.minHeight = originalMinimums.get(element)!;
     });
-    // Children settle before their containing areas; siblings share one read phase
-    // so setting a minimum does not force another layout for every named area.
     const depths = new Map<number, HTMLElement[]>();
     for (const element of elements) {
       let depth = 0;

@@ -1,6 +1,5 @@
 import type { DsTable } from "../../../DS1/3-unit/ds-table";
 
-/** The sheet example's year of print sales: 26 columns, 500 rows, the same every time. */
 export function fillSheetExample(table: DsTable) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const names = ["Atlas", "Comet", "Harbour", "Linen", "Meadow", "North", "Orchard", "Pebble", "Quarry", "Ridge", "Signal", "Tide"];

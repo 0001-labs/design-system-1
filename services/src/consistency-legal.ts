@@ -1,8 +1,3 @@
-/**
- * consistency.site's legal pages: the five documents the legacy Pages project served from
- * functions/api/routes/legal.ts, copied verbatim (they are legal text; do not reword them here).
- */
-
 const PRIVACY_HTML = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -405,7 +400,6 @@ const LEGAL_PAGES: Record<string, string> = {
 export const LEGAL_PATHS = Object.keys(LEGAL_PAGES);
 export const isLegalPath = (path: string) => Object.hasOwn(LEGAL_PAGES, path);
 
-/** A legal page's answer: the document for GET and HEAD, 405 for every other method, as the legacy routes answered. */
 export function legalPage(request: Request): Response {
   const html = LEGAL_PAGES[new URL(request.url).pathname];
   if (html === undefined) return new Response(null, { status: 404 });

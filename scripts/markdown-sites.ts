@@ -1,21 +1,3 @@
-/**
- * Markdown and MDX that a site compiles into its pages.
- *
- * A `.mdx` file is always compiled. A `.md` file counts only in an Astro
- * project's `src/pages` or `src/content` folders; elsewhere Markdown is a
- * README, a licence, or text the app reads as data and draws with its own
- * renderer, whose templates already count once, like a loop.
- *
- * Paragraphs and headings count as text, a list once as a list and a table once
- * as a table, at the line where each block starts. They are prose when the
- * renderer that draws the document is DS1's: a Starlight site whose
- * `MarkdownContent` component wraps its slot in an element marked
- * `data-ds-prose`, for the documents in `src/content/docs`. The nearest
- * `data-ds-prose` or `data-ds-not-prose` element written in the document itself
- * still decides. Any other renderer is local text. Markup and component uses in
- * MDX, and HTML in Markdown, are read like markup; code blocks, inline code,
- * frontmatter and MDX imports and exports are not sites.
- */
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 
@@ -23,7 +5,6 @@ type Site = { tag: string; line: number; prose?: boolean };
 export type ReadMarkup<S extends Site> = (file: string, source: string) => S[];
 
 const astroConfigs = ["astro.config.mjs", "astro.config.js", "astro.config.ts", "astro.config.mts", "astro.config.cjs"];
-/** The Astro project a page or content file belongs to, relative to the app. */
 function astroProject(root: string, file: string): string | undefined {
   const match = /^(?:(.*?)\/)?src\/(?:pages|content)\//.exec(file);
   if (!match) return undefined;
@@ -32,10 +13,8 @@ function astroProject(root: string, file: string): string | undefined {
 }
 
 const blank = (text: string) => text.replace(/[^\n]/g, " ");
-/** Markup without comments, frontmatter, scripts and styles, at the same offsets. */
 const markupOnly = (text: string) => text.replace(/^---[\s\S]*?\n---/, blank).replace(/<!--[\s\S]*?-->/g, blank).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, blank);
 const voidTags = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
-/** For each offset, whether the nearest open element marked data-ds-prose or data-ds-not-prose is prose. */
 export function proseAt(text: string, offsets: number[], initial: boolean): boolean[] {
   const stack: { tag: string; prose?: boolean }[] = [];
   const state = () => [...stack].reverse().find(open => open.prose !== undefined)?.prose ?? initial;
@@ -58,13 +37,11 @@ export function proseAt(text: string, offsets: number[], initial: boolean): bool
   return answers;
 }
 
-/** Whether a component's slot sits inside an element marked data-ds-prose. */
 export function slotInProse(component: string): boolean {
   const slot = markupOnly(component).search(/<slot(?=[\s/>])/);
   return slot >= 0 && proseAt(component, [slot], false)[0] === true;
 }
 
-/** Markdown block starts: [tag, zero-based line] for paragraphs, headings, lists and tables. */
 export function markdownBlocks(lines: string[]): [string, number][] {
   const found: [string, number][] = [];
   const empty = (line: string | undefined) => line === undefined || !line.trim();
@@ -122,10 +99,8 @@ export function markdownBlocks(lines: string[]): [string, number][] {
   return found;
 }
 
-/** Block sites carry only a tag, a line and prose, which every site type allows. */
 export interface MarkdownDocument<S extends Site> { sites: S[]; code: string }
 
-/** The sites of one Markdown or MDX document, and its MDX imports as code for adapter resolution. */
 export function markdownSites<S extends Site>(file: string, source: string, inProse: boolean, readMarkup: ReadMarkup<S>): MarkdownDocument<S> {
   const lines = source.split("\n");
   const code = lines.map(() => "");
@@ -147,10 +122,8 @@ export function markdownSites<S extends Site>(file: string, source: string, inPr
       for (; i < lines.length && lines[i]!.trim(); i++) { code[i] = lines[i]!; lines[i] = ""; }
     }
   }
-  // Inline code becomes letters, not spaces, so a line that opens with it is not read as indented code.
   for (let at = 0; at < lines.length; at++) lines[at] = lines[at]!.replace(/``[^\n]*?``|`[^`\n]*`/g, code => "x".repeat(code.length));
   const text = lines.join("\n");
-  // The renderer's prose scope opens before the document, on its first line.
   const markup = readMarkup("document.html", inProse ? `<div data-ds-prose>${text}</div>` : text).slice(inProse ? 1 : 0);
   const blocks = markdownBlocks(lines);
   const starts: number[] = [];
@@ -160,10 +133,8 @@ export function markdownSites<S extends Site>(file: string, source: string, inPr
   return { sites: sites.sort((a, b) => a.line - b.line), code: code.join("\n") };
 }
 
-/** Which Markdown an app compiles, and which of it DS1's prose sheet draws. */
 export function markdownScope(root: string) {
   const docs = new Map<string, string | undefined>();
-  /** The docs folder a Starlight site renders inside data-ds-prose, if it does. */
   const proseDocs = (dir: string) => {
     if (docs.has(dir)) return docs.get(dir);
     const config = astroConfigs.map(name => join(root, dir, name)).find(path => existsSync(path));

@@ -1,6 +1,3 @@
-// ds-number.ts
-// Number field: a value one control high, scrubbed by its lead, stepped by the arrows, typed as arithmetic.
-
 import { LitElement, html, nothing, unsafeCSS, type PropertyDeclarations, type PropertyValues } from "lit";
 import { live } from "lit/directives/live.js";
 import { define } from "../0-face/define";
@@ -8,25 +5,9 @@ import { formatNumberValue, readNumberExpression, stepPlaces } from "./number-ex
 import "./ds-icon";
 import styles from "./styles/ds-number.css?inline";
 
-/** How far the pointer moves before a press becomes a drag. */
 const DRAG_THRESHOLD = 3;
-/** With `drag="value"`, the pixels of upward travel a step takes, as a music program's tempo drags. */
 const VALUE_PIXELS = 3;
 
-/**
- * A number a person sets by hand, in the inspector's way: the value on the field's fill, one control
- * high on the sixteen and a whole number of squares wide (`width`, four by default). Its lead, a short
- * `label` or an `icon` in the title grey, is the handle: dragging it sideways scrubs the value a `step`
- * a pixel (Shift: `big-step`), and a double-click puts back `default`. The arrows step it, Shift by the
- * big step. What is typed is read as arithmetic (`10 + 5`, `(3 − 1) × 4`), and an operator first works
- * on the value already there (`*2`, `/2`, `+10`); Enter takes it, Escape puts the value back.
- *
- * `input` fires as a drag moves the value and `change` when a value is taken (the drag's end, Enter,
- * leaving the field, an arrow). `value` is a number; the field takes part in its form under `name`.
- *
- * `drag="value"` makes the whole field the handle, as a music program's tempo is: press the value and
- * drag up to raise it, a step every three pixels (Shift: the big step); a press without a drag types.
- */
 export class NumberField extends LitElement {
   static formAssociated = true;
   static styles = unsafeCSS(styles);
@@ -92,7 +73,6 @@ export class NumberField extends LitElement {
     this._scrubbing = false;
   }
 
-  /** The decimals the field keeps: `places`, or as many as `step` has. */
   get decimals(): number {
     return this.places ?? stepPlaces(this.step || 1);
   }
@@ -109,7 +89,6 @@ export class NumberField extends LitElement {
     return this.disabled || this.readonly;
   }
 
-  /** Kept inside min and max, at the field's decimals. */
   private clamp(value: number): number {
     let next = value;
     if (this.min !== undefined && next < this.min) next = this.min;
@@ -118,7 +97,6 @@ export class NumberField extends LitElement {
     return Math.round(next * factor) / factor;
   }
 
-  /** Steps from a value, exactly: 1.03 a step of 0.05 up is 1.08, as typed values keep their own figures. */
   private stepped(from: number, steps: number, size: number): number {
     return this.clamp(from + steps * (size || 1));
   }
@@ -127,7 +105,6 @@ export class NumberField extends LitElement {
     this.dispatchEvent(new Event(type, { bubbles: true, composed: true }));
   }
 
-  /** Sets the value as a person did: `input` while it is still moving, `change` once it is taken. */
   private set(value: number, type: "input" | "change") {
     const next = this.clamp(value);
     if (next === this.value) return;
@@ -181,11 +158,9 @@ export class NumberField extends LitElement {
     this._text = (event.target as HTMLInputElement).value;
   };
 
-  /** Sideways from the lead, a step a pixel; up from the value (`drag="value"`), a step every three. */
   private onLeadDown = (event: PointerEvent) => {
     if (this.locked || event.button !== 0 || this.drag) return;
     const vertical = this.dragMode === "value";
-    // With the value as the handle, a press on a field already being typed in places the caret.
     if (vertical && this._editing) return;
     event.preventDefault();
     event.stopPropagation();
@@ -230,12 +205,10 @@ export class NumberField extends LitElement {
 
   private onLeadDouble = () => {
     if (this.locked || this.defaultValue === undefined) return;
-    // A double-click on the value began as a press that started typing: leave the typing first.
     if (this._editing) { this._editing = false; this.input?.blur(); }
     if (this.value !== this.clamp(this.defaultValue)) this.set(this.defaultValue, "change");
   };
 
-  /** Escape during a drag puts the value back where the drag began. */
   private onWindowKey = (event: KeyboardEvent) => {
     if (event.key !== "Escape" || !this.drag) return;
     const from = this.drag.from;
@@ -254,7 +227,6 @@ export class NumberField extends LitElement {
     super.disconnectedCallback();
   }
 
-  /** The value as the field writes it. */
   get written(): string {
     return formatNumberValue(Number.isFinite(this.value) ? this.value : 0, this.decimals);
   }
@@ -269,7 +241,6 @@ export class NumberField extends LitElement {
     this.validate();
   }
 
-  /** A value outside `min` or `max` (one never set by hand, such as a starting 0 above a min) keeps its form from being sent. */
   private validate() {
     if (!this.internals?.setValidity) return;
     const low = this.min !== undefined && this.value < this.min;

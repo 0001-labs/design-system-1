@@ -37,7 +37,6 @@ test("a masked picture is drawn as soon as it has a source, before its load even
   const mask = avatar.shadowRoot!.querySelector<HTMLElement>(".mask");
   expect(mask).not.toBeNull();
   expect(mask!.style.maskImage).toContain("data:image/svg+xml;base64,logo");
-  // Its picture failing takes the mask away and returns to the initial.
   avatar.shadowRoot!.querySelector("img")!.dispatchEvent(new Event("error"));
   await avatar.updateComplete;
   expect(avatar.shadowRoot!.querySelector(".mask")).toBeNull();

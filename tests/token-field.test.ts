@@ -5,7 +5,6 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { TokenField, Token } from "../DS1/react/token-field";
 import "../DS1/3-unit/ds-token-field";
-// The native value setter, as a browser sets the value, so React sees the change.
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!;
 const setValue = (element: HTMLInputElement, value: string) => nativeValue.set!.call(element, value);
 afterEach(() => document.body.replaceChildren());

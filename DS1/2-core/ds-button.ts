@@ -1,6 +1,3 @@
-// ds-button.ts
-// Core button component
-
 import { html, unsafeCSS } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import "./ds-text";
@@ -55,18 +52,15 @@ export class Button extends Control {
   declare segments: ReadonlyArray<SplitSegment> | undefined;
   declare value: string;
   declare actions: boolean;
-  /** A split's segments with an icon show their words after it too. */
   declare labelled: boolean;
   declare literal: boolean;
   declare compact: boolean;
-  /** A plain split: its segments' words and icons alone, on no ground in any state, as text tabs are. */
   declare plain: boolean;
   declare private _fieldsetDisabled: boolean;
   private splitRole = false;
   get splitDisabled(): boolean { return this.disabled || this._fieldsetDisabled; }
   private splitLanguageChanged = () => { if (this.split) this.requestUpdate(); };
 
-  // Public properties
   declare primary: boolean;
   declare secondary: boolean;
   declare active: boolean;
@@ -89,24 +83,11 @@ export class Button extends Control {
   declare blank: boolean;
   declare language: string;
   declare text: string;
-  /**
-   * The control's accessible name, as given, for a face that does not say
-   * what the button does on its own: a value, a number or an icon. Pass words
-   * already in the page's language.
-   */
   declare label: string;
-  /**
-   * With `href` the face is a real link (`<a part="control">`): the browser
-   * navigates, so middle-click, ⌘- or Ctrl-click, Copy link and Enter work as
-   * on any link. `target` and `rel` go on the link; `blank` is `target="_blank"`,
-   * which gets `rel="noopener noreferrer"` unless `rel` says otherwise. A
-   * disabled link has no `href`, so it cannot navigate.
-   */
   declare href: string;
   declare target: string;
   declare rel: string;
 
-  // Private state
   declare _loading: boolean;
 
   constructor() {
@@ -125,7 +106,7 @@ export class Button extends Control {
     this.fit = false;
     this.danger = false;
     this.menuItem = false;
-    this.primary = false; // Default to no-background (no attribute)
+    this.primary = false;
     this.secondary = false;
     this.disabled = false;
     this.blank = false;
@@ -140,10 +121,6 @@ export class Button extends Control {
 
   static styles = [unsafeCSS(styles), unsafeCSS(hostStyles), unsafeCSS(splitStyles)];
 
-  /**
-   * A button holding only an icon — every close button — says so on its host,
-   * so its styles can make it a 16-unit square with the icon filling it.
-   */
   _reflectIcon() {
     if (this.control !== "native" || this.split) return;
     const only = this.firstElementChild;
@@ -157,7 +134,6 @@ export class Button extends Control {
     if (button) button.disabled = this.splitDisabled;
   }
 
-  /** A split is a named group from the moment it is in the document, before its first render. */
   private syncSplitRole() {
     if (this.split && !this.hasAttribute("role")) { this.setAttribute("role", "group"); this.splitRole = true; }
     else if (!this.split && this.splitRole) { this.removeAttribute("role"); this.splitRole = false; this.syncControl(); }
@@ -250,16 +226,11 @@ export class Button extends Control {
   }
 
   private _handleClick(e: Event) {
-    // Prevent any action if disabled and stop event propagation
     if (this.splitDisabled) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-
-    // Otherwise the native click bubbles from the inner <button> or <a>
-    // through the shadow boundary to consumers of <ds-button>, and a link
-    // navigates as the browser does. Nothing is re-dispatched or redirected.
   }
 }
 

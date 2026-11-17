@@ -1,4 +1,3 @@
-/** The owner's questions over the current authorized catalogue. Answering never writes a site. */
 import {authorizeReport,type ReportsEnv} from './reports';
 import {sessionRequest} from './dashboard';
 import {systemOwner,type OwnerEnv} from './consistency-owner';
@@ -41,7 +40,6 @@ export async function consistencyAsk(request:Request,env:ConsistencyAskEnv,send:
  }catch{return json({error:'No answer came this time. Try again.'},502);}finally{clearTimeout(timer);}
 }
 
-/** Service-only System adapter. Context is read from the owner's existing workspace handlers. */
 export async function consistencyAskGateway(request:Request,env:ConsistencyAskEnv):Promise<Response>{
  if(request.headers.get('X-C9y-Actor')!=='owner'||request.method!=='POST')return json({error:'Owner access required.'},403);
  const match=new URL(request.url).pathname.match(/^\/api\/consistency\/workspaces\/(\d{2}[A-Za-z]{4})\/ask$/);

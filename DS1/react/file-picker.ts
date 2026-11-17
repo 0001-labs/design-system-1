@@ -9,14 +9,12 @@ export type FilePickerProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"
   compact?: boolean;
   primary?: boolean;
   secondary?: boolean;
-  /** Native chooser cancellation is not exposed on React input props. */
   onCancel?: (event: Event) => void;
   children?: ReactNode;
 };
 
 const useCommitEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/** The ref and events belong to the native input; classes only place the host. */
 export const FilePicker = forwardRef<HTMLInputElement, FilePickerProps>(function FilePicker(
   { label, icon, preview, area, dragging, compact, primary, secondary, children, className, style, hidden, onCancel, ...props }, ref,
 ) {

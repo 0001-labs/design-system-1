@@ -3,7 +3,6 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { define } from '../0-face/define';
 import { bezelById, screenGeometry } from './bezels';
 import './app-chrome';
-/** Artwork and a measured, native-size screen. The entire screen scales uniformly into the bezel. */
 export class DsDeviceBezel extends LitElement {
   static properties={ edgeToEdge:{type:Boolean,attribute:"edge-to-edge",reflect:true}, staticFrame:{type:Boolean,attribute:"static",reflect:true}, frameless:{type:Boolean,reflect:true}, responsive:{type:Boolean,reflect:true}, device:{}, assetBase:{attribute:'asset-base'}, chromeAssets:{attribute:'chrome-assets'}, network:{}, battery:{type:Number}, dualSim:{type:Boolean,attribute:'dual-sim'}, time:{}, address:{}, browser:{}, appearance:{reflect:true}, interactive:{type:Boolean}, status:{type:Boolean}, measuredWidth:{state:true} };
   declare edgeToEdge:boolean; declare frameless: boolean; declare responsive: boolean;

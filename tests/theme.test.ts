@@ -20,7 +20,6 @@ type PageOptions = {
   url?: string;
 };
 
-/** A fresh page that runs the head script, as a browser would before the first paint. */
 function page({ dark = false, reduced = false, storage = {}, preferences, i18n, head = "", blocked = false, transition, url = "https://example.test/" }: PageOptions = {}) {
   const window = new Window({ url });
   opened.push(window);
@@ -58,7 +57,6 @@ test("with nothing stored the first paint follows the system, marked every way p
   expect(root.getAttribute("data-theme")).toBe("dark");
   expect(root.style.colorScheme).toBe("dark");
   expect(root.style.getPropertyValue("--lightningcss-dark")).toBe("initial");
-  // The other branch gets an empty value (one space), which happy-dom does not keep; browsers do.
   expect(root.style.getPropertyValue("--lightningcss-light")).not.toBe("initial");
   expect(root.style.backgroundColor).toMatch(/#2a2a2a|rgb\(42, 42, 42\)/);
   expect(meta()).toBe("#2a2a2a");
@@ -171,7 +169,6 @@ test("an address's language goes on the root before the first paint when the pro
   expect(page({ url: "https://example.test/pricing", storage: { language: "da" }, i18n }).root.lang).toBe("da");
   expect(page({ url: "https://example.test/ja/pricing", storage: { language: "da" }, i18n: { ...i18n, routing: { languages: ["da"] } } }).root.lang).toBe("da");
   expect(page({ url: "https://example.test/ja/pricing", storage: { language: "da" }, i18n: { languages: i18n.languages } }).root.lang).toBe("da");
-  // Without languages, an address may carry any of Design system 1's.
   expect(page({ url: "https://example.test/ko/", i18n: { languageFromAddress: true } }).root.lang).toBe("ko");
   expect(page({ url: "https://example.test/app/", i18n: { languageFromAddress: true } }).root.lang).toBe("");
 });

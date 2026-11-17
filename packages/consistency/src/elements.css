@@ -16,22 +16,18 @@
 .consistency-button-action{max-width:min(calc(18 * var(--ds-unit)),calc(100vw - 2 * var(--ds-unit)));flex-wrap:wrap}
 .consistency-button-action ds-input,.consistency-button-action ds-select{max-width:100%;min-width:0}
 
-/* Compact specimens retain real typography and component sizes. */
 .consistency-element-preview-inner .consistency-element-preview-stage{display:flex;width:100%;height:calc(4 * var(--ds-unit));align-items:center;justify-content:center}
 .consistency-element-preview-inner:has(ds-card) .consistency-element-preview-stage{height:auto;min-height:calc(10 * var(--ds-unit));overflow:visible}
 .aa-command-preview.consistency-element-preview:has(.consistency-element-preview-inner ds-card){width:calc(13 * var(--ds-unit))}
 .consistency-element-preview-inner .consistency-element-preview-stage ds-card{width:calc(12 * var(--ds-unit));height:auto;min-height:calc(10 * var(--ds-unit))}
 .consistency-element-preview-inner .consistency-element-preview-label{padding-top:calc(var(--ds-unit)/2);font-size:var(--ds-type-size-default);line-height:var(--ds-unit)}
 .consistency-element-preview-inner .consistency-element-preview-cursor{left:55%;top:45%}
-/* Card words always keep one square inside every edge, in all presets. */
 :is(.consistency-content-element,.consistency-element-preview) ds-card{--ds-card-text-inset-min:calc(20px * var(--sf))}
 
-/* The signup block (signup.ts): the published form's layout, its words written in place, its controls inert. */
 .consistency-content-signup .c9y-native-signup { display:grid; gap:calc(var(--ds-unit) / 2); justify-items:start; max-width:calc(16 * var(--ds-unit)); margin:0; }
 .consistency-content-signup .c9y-native-signup > .ds-field { width:100%; }
 .consistency-content-signup .c9y-native-signup-note { margin:0; color:var(--ds-text-color-muted); }
 .consistency-content-signup .c9y-native-signup-trap { display:none; }
 .consistency-content-signup .c9y-native-signup input { pointer-events:none; }
-/* The booking block (meetings-block.ts): the published button and its line, both written in place. */
 .consistency-content-meetings .c9y-native-meetings { display:grid; gap:calc(var(--ds-unit) / 2); justify-items:start; margin:0; }
 .consistency-content-meetings .c9y-native-meetings-note { margin:0; color:var(--ds-text-color-muted); }

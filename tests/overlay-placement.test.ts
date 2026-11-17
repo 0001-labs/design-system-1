@@ -11,7 +11,6 @@ afterEach(() => { document.body.replaceChildren(); document.documentElement.remo
 
 const frames = async (count = 3) => { for (let i = 0; i < count; i++) await new Promise(resolve => setTimeout(resolve, 20)); };
 
-/** A finger on the dialog, as a touch event with its touches, a frame between moves. */
 async function swipe(dialog: HTMLDialogElement, path: [number, number][], { hold = 0 } = {}) {
   const target = dialog.firstElementChild ?? dialog;
   const fire = (type: string, x: number, y: number, held: boolean, time: number) => {
@@ -36,7 +35,6 @@ const tall = (dialog: HTMLDialogElement, height = 400) =>
   vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({ width: 375, height, top: 412, left: 0, right: 375, bottom: 812, x: 0, y: 412 } as DOMRect);
 const QUICK: [number, number][] = [[100, 400], [100, 430], [100, 470], [100, 520], [100, 580]];
 
-/** An overlay of a type (a drawer at its side), opened. */
 async function sheet(type = "sheet", side = "end") {
   const host = document.createElement("ds-overlay");
   host.setAttribute("type", type);
@@ -73,11 +71,9 @@ test("type marks the native frame and its edge, a modal by default; only a sheet
     expect(dialog.getAttribute("data-ds-type")).toBe(type);
     expect(dialog.hasAttribute("data-ds-edge")).toBe(false);
   }
-  // An unknown type is drawn as a modal.
   host.setAttribute("type", "center");
   await host.updateComplete;
   expect(dialog.getAttribute("data-ds-type")).toBe("modal");
-  // A native frame tells its edge by its classes.
   const native = document.createElement("dialog");
   native.className = "ds-overlay ds-overlay--drawer ds-overlay--start";
   expect(overlayEdge(native)).toBe("start");
@@ -121,7 +117,6 @@ test("dragged towards the page it gives a little, and fades the backdrop as it g
   const { dialog } = await sheet();
   const up = await swipe(dialog, [[100, 400], [100, 370], [100, 300], [100, 200]]);
   expect(up.dragging).toBe(true);
-  // Rubber-banded: 190px up moves it far less.
   expect(Math.abs(parseFloat(up.dragged))).toBeLessThan(190);
   expect(parseFloat(up.dragged)).toBeLessThan(0);
   const target = dialog.firstElementChild!;
@@ -130,7 +125,6 @@ test("dragged towards the page it gives a little, and fades the backdrop as it g
     Object.defineProperties(event, { touches: { value: held ? [{ identifier: 2, clientX: 100, clientY: y, target }] : [] } });
     target.dispatchEvent(event);
   };
-  // Tracked from where the drag began, twenty pixels down: 200 of 400 is half way.
   touch("touchstart", 400); touch("touchmove", 420); touch("touchmove", 620);
   expect(dialog.style.getPropertyValue("--ds-overlay-progress")).toBe("0.5");
   touch("touchcancel", 620, false);

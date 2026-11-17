@@ -1,8 +1,3 @@
-// The pieces shared by the examples drawn with a published design library: the same components,
-// measures and grid as every other example, with a library's colours, corners and type. The
-// library is loaded after Design system 1's stylesheet, as any page loads one; each version is
-// pinned, so an edit to a library never changes an example until it names the new version.
-
 export const LIBRARIES = {
   slate: { name: 'Slate', id: 'SLATE_ID', version: 1 },
   lagoon: { name: 'Lagoon', id: 'LAGOON_ID', version: 1 },
@@ -18,16 +13,12 @@ export const LIBRARIES = {
   tally: { name: 'Tally', id: 'bbw9m8gdy3815th5cgvx', version: 2 },
 } as const;
 
-// Until a library is published in the libraries account, the example loads its draft, written by
-// scripts/example-libraries.mjs into public/examples/libraries; then its pinned version.
 const published = (id: string) => !id.endsWith('_ID');
 export const library = (key: keyof typeof LIBRARIES) => {
   const { id, version } = LIBRARIES[key];
   return { ...LIBRARIES[key], href: published(id) ? `https://designsystem1.com/ds1/${id}/v/${version}.css` : `/examples/libraries/${key}.css` };
 };
 
-// Pictures made for these examples. Until a picture is in public/examples/images, its place is
-// held by one of the photographs already there.
 const STAND_INS: Record<string, string> = {
   'halo-hero.jpg': 'headphones.jpg', 'halo-colours.jpg': 'cup.jpg', 'halo-shelf.jpg': 'room.jpg', 'halo-fabric.jpg': 'chair.jpg', 'halo-outdoors.jpg': 'forest.webp',
   'bike-hero.jpg': 'forest.webp', 'bike-city.jpg': 'room.jpg', 'bike-display.jpg': 'chair.jpg', 'bike-gravel.jpg': 'lake.jpg',

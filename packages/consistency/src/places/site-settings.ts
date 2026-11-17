@@ -11,7 +11,6 @@ import './places.css';
 
 export class ConsistencySiteSettings extends LitElement {
   static properties = { confirming: { state: true }, code: { state: true }, busy: { state: true }, error: { state: true }, badge: { state: true }, badgeError: { state: true } };
-  /** Whether the site shows "Built with Consistency" on its own domain; a site without one always shows it. */
   private declare badge: boolean;
   private declare badgeError: string;
   private declare confirming: boolean;
@@ -29,7 +28,6 @@ export class ConsistencySiteSettings extends LitElement {
     this.badgeError = '';
   }
 
-  /** Shows or hides the badge at once; the switch goes back if the platform did not take it. */
   private async showBadge(show: boolean) {
     const before = this.badge;
     this.badge = show;

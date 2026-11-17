@@ -80,7 +80,6 @@ test("with option children it is a field: a native select inside ds-select", asy
   expect(field.hasAttribute("native")).toBe(true);
 });
 
-/** A menu whose entries leave the document when it closes, as a product's own menu does. */
 function Unmounting({ items }: { items: SelectEntry[] }) {
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(true);
@@ -88,7 +87,6 @@ function Unmounting({ items }: { items: SelectEntry[] }) {
     h("button", { ref: setTrigger, type: "button" }, "More"),
     open ? h(Select, { trigger, open, items, onOpenChange: (next: boolean) => setOpen(next) }) : null);
 }
-/** What the browser finds once every handler ran, when it decides whether to follow the link. */
 const followed = (link: HTMLElement) => new Promise<{ prevented: boolean; connected: boolean; href: string | null }>(resolve =>
   window.addEventListener("click", event => resolve({ prevented: event.defaultPrevented, connected: link.isConnected, href: link.getAttribute("href") }), { once: true }));
 const settle = () => act(async () => { await new Promise(resolve => setTimeout(resolve)); });
@@ -118,7 +116,6 @@ test("a link row keeps a modified click and the keyboard: Enter and Space follow
   for (const key of ["Enter", " "]) {
     await act(async () => root.render(h(Unmounting, { key, items })));
     link = row("Documentation"); state = followed(link);
-    // The platform turns Enter on a link into a click by itself; Space is the row's own.
     const press = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
     await act(async () => { link.dispatchEvent(press); if (key === "Enter" && !press.defaultPrevented) link.click(); });
     expect(await state).toEqual({ prevented: false, connected: true, href: "#documentation" });

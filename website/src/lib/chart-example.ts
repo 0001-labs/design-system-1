@@ -1,4 +1,3 @@
-/** Also serialized as the example's copyable, self-contained JavaScript. */
 export function mountChartExample(root: ParentNode): void {
   const values = [12, 15, 14, 18, 16, 21, 19, 17, 22, 20, 24, 23, 26, 24, 28, 27];
   const data = values.map((value, index) => ({ time: index * 60, value }));
@@ -20,9 +19,6 @@ export function mountChartExample(root: ParentNode): void {
   const range = root.querySelector<HTMLElement>('ds-range');
   if (range) Object.assign(range, { min: 0, max: 100, from: 20, to: 80, marks: [{ value: 50, kind: 'dot' }] });
 
-  // The cycle names the chart on show. It moves on by itself every few
-  // seconds until the reader clicks it, waits while the stage is pointed at
-  // or focused, and stays put when reduced motion is asked for.
   const stage = root.querySelector<HTMLElement>('[data-chart-stage]');
   const cycle = root.querySelector<HTMLElement & { values: string[]; value: string }>('ds-cycle');
   const count = root.querySelector('[data-chart-count]');

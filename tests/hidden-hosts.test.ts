@@ -2,9 +2,6 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 
-// Every element's own styles, read from source: its `?inline` stylesheets,
-// the css`` and unsafeCSS(``) templates in the class, and the styles of a
-// class it extends through `Other.styles`.
 const root = join(import.meta.dirname, '../DS1');
 
 const stylesOf = (file: string, seen = new Set<string>()): string => {
@@ -23,7 +20,6 @@ const stylesOf = (file: string, seen = new Set<string>()): string => {
   return parts.join('\n');
 };
 
-/** Rules as [selectors, declarations], at the top level or inside @media. */
 const rules = (css: string) =>
   [...css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@import[^;]+;/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
     ([, selectors, body]) => [selectors!.split(',').map(selector => selector.trim()), body!] as const,

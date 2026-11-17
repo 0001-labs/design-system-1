@@ -7,8 +7,6 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const studio = process.env.DS1_PRODUCT_STUDIO ?? resolve(root, '..');
 const destination = resolve(root, 'DS1/x-icon');
 const checkOnly = process.argv.includes('--check');
-// Where each drawing came from. It names product folders, so it stays with
-// the scripts, outside the published package.
 const manifestFile = resolve(root, 'scripts/product-icon-sources.json');
 const previous = JSON.parse(await readFile(manifestFile, 'utf8').catch(() => '[]')) as Source[];
 interface Source { product: string; source: string; name: string; sourceHash: string; iconHash: string; }
@@ -38,18 +36,14 @@ function normalize(raw: string): string {
 const compact = (svg: string) => svg.replace(/\s+/g, '');
 async function add(product: string, source: string, desired: string, raw: string, canonical = false) {
   const name = desired;
-  // A drawing named after its product is the product's own and stays there.
   if (name.startsWith(`${product.toLowerCase()}-`)) return;
   const svg = normalize(raw);
   if (names.has(name)) {
     const current = await readFile(resolve(destination, name + '.svg'), 'utf8');
-    // A product's variant of a library drawing stays in the product too.
     if (!canonical && !name.startsWith('badge-') && compact(normalize(current)) !== compact(svg)) return;
   }
   if (!checkOnly && !canonical) {
     const current = await readFile(resolve(destination, name + '.svg'), 'utf8').catch(() => null);
-    // Keep an installed canonical drawing when the product uses the same
-    // geometry; only badges are refreshed in place.
     if (!current || name.startsWith('badge-')) {
       await writeFile(resolve(destination, name + '.svg'), svg);
     }
@@ -82,8 +76,6 @@ for (const badge of badges.FIGMA_ICONS) {
   await add('Ezo', `shared/gridIconFigma.ts#3d:${badge.key}`, `badge-${badge.key}-3d`, boxes.icon3dSvg(badge.icon, { size: 16, id: badge.key + '-3d' }));
 }
 
-// Multiple product sources may resolve to one drawing. Hash its final form
-// after every source has been processed, not an intermediate import.
 for (const source of sources) {
   source.iconHash = hash(await readFile(resolve(destination, source.name + '.svg'), 'utf8'));
 }

@@ -37,8 +37,6 @@ button:not([data-preview-component]) {
   --workbench-accent: #99ff73;
   height: 100vh;
   display: grid;
-  /* The header row is `auto`, so it collapses to nothing when no headerSlot is
-     passed — which is exactly the /playground case, left byte-identical. */
   grid-template:
     "header header" auto
     "design code" minmax(0, 1fr) /
@@ -186,7 +184,6 @@ button:not([data-preview-component]) {
   font-size: 8px;
 }
 
-/* The component trees are Design system 1's sidebar, filling the panel. */
 ds-sidebar.component-tree {
   width: 100%;
 }
@@ -398,11 +395,6 @@ ds-sidebar.component-tree {
   gap: 14px;
 }
 
-/*
- * Box-model handles: Design system 1's spacing handle (one square, its line
- * drawn in --ds-handle-ink), placed on the side it edits. The line shows on
- * hover, while its region is highlighted, and while it is dragged.
- */
 .spacing-handle {
   position: absolute;
   z-index: 6;
@@ -599,7 +591,6 @@ body.spacing-resize-y * {
   gap: 8px;
 }
 
-/* The content gap and accent are Design system 1's number field and colour field. */
 .number-input,
 .color-input {
   display: flex;
@@ -659,8 +650,6 @@ body.spacing-resize-y * {
   font: 9px/1 Arial, Helvetica, sans-serif;
 }
 
-/* Each ring highlights independently. The heading above the diagram sets the
-   "all" state, revealing the complete box-model stack. */
 .box-model[data-hover="margin"],
 .box-model[data-hover="all"] {
   background: #f7cb9e;
@@ -792,8 +781,6 @@ body.box-value-scrubbing * {
   white-space: nowrap;
 }
 
-/* Box-model ring hover highlights every button instance (and any previewed
-   element) at once, using the shared padding vars so they all match. */
 .story-preview-area [data-preview-component],
 .story-preview-area .variant-gallery button {
   position: relative;
@@ -936,7 +923,6 @@ body.box-value-scrubbing * {
   border-color: rgb(247 203 158 / 82%);
 }
 
-/* Editable border from the box model, applied to every button instance. */
 .story-preview-area button {
   border-style: solid;
   border-width: var(--bd-top, 0) var(--bd-right, 0) var(--bd-bottom, 0)
@@ -1063,10 +1049,6 @@ body.box-value-scrubbing * {
   color: var(--ds-slate-light);
 }
 
-/*
- * The stylesheet is a plain Design system 1 composer on the ink: code in the
- * code face on one-square lines, its highlights drawn by the composer.
- */
 .css-editor-shell {
   width: 100%;
   height: 100%;
@@ -1245,17 +1227,6 @@ body.box-value-scrubbing * {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Account screens
-   ---------------------------------------------------------------------------
-   The workbench chrome is deliberately tiny (9–10px) because it frames a
-   canvas. These screens are the content, so they use a readable scale while
-   keeping the same restrained line-and-panel language.
-
-   `body` is `overflow: hidden` for the workbench, so each screen owns its own
-   scrolling.
-   --------------------------------------------------------------------------- */
-
 .auth-screen,
 .dashboard,
 .route-splash {
@@ -1272,8 +1243,6 @@ body.box-value-scrubbing * {
   gap: 12px;
   color: var(--workbench-muted);
 }
-
-/* Sign in ------------------------------------------------------------------ */
 
 .auth-screen {
   display: grid;
@@ -1346,8 +1315,6 @@ body.box-value-scrubbing * {
   background: #fff;
   font-size: 12px;
 }
-
-/* Dashboard ---------------------------------------------------------------- */
 
 .dashboard {
   padding: 0 0 48px;
@@ -1423,7 +1390,6 @@ body.box-value-scrubbing * {
   text-underline-offset: 0.2em;
 }
 
-/* A library's state is Design system 1's badge, coloured only where the state means something. */
 .library-card__state {
   justify-self: start;
 }
@@ -1458,8 +1424,6 @@ body.box-value-scrubbing * {
 .library-card dd {
   margin: 0;
 }
-
-/* Editor header ------------------------------------------------------------ */
 
 .workbench > .workbench-header {
   flex-wrap: wrap;
@@ -1524,18 +1488,11 @@ body.box-value-scrubbing * {
   color: #900b09;
 }
 
-/* The editor's notices take the header's full width; ds-notice draws them. */
 [data-testid="conflict-bar"],
 [data-testid="local-draft-notice"] {
   flex-basis: 100%;
 }
 
-/* Publish panel ------------------------------------------------------------ */
-
-/*
- * The publish panel is Design system 1's panel: a header row, then blocks one
- * square apart on the paper. Lists are its rows.
- */
 .publish-panel {
   flex-basis: 100%;
   max-height: 62vh;

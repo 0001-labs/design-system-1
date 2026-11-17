@@ -1,5 +1,3 @@
-/** Hosted sites supply a native page, its trusted canvas and a revisioned save transport.
- * The same page editor is used by templates, drafts and the lab. */
 import {LitElement,html,nothing} from 'lit';
 import '../../../DS1/2-core/ds-button';
 import '../../../DS1/2-core/ds-empty';
@@ -26,7 +24,6 @@ export class ConsistencySiteEditor extends LitElement {
   return snapshot;
  }
  private async load(){
-  // Most sites open at /. Discover navigation alongside that page instead of putting it in front of it.
   const firstRead=this.read('/').then(snapshot=>({snapshot}),error=>({error}));
   try{const result=await request<{pages:SitePage[]}>(siteAddress.pages(this.site.code));if(!this.isConnected)return;this.pages=result.pages;const first=firstPage(result.pages);if(first)await this.open(first,false,first==='/'?firstRead:undefined);}catch(error){this.problem=(error as Error).message;}
  }
@@ -43,7 +40,6 @@ export class ConsistencySiteEditor extends LitElement {
    const {canvas,...snapshot}=result.snapshot!;
    if(ticket!==this.opening||!this.isConnected)return false;
    if(!await this.flush()||ticket!==this.opening)return false;
-   // A save completed during the read: retain its newer document and fetch again.
    if(previous&&this.cache.get(path)?.snapshot!==previous)return this.open(path,true);
    const editor=new ConsistencyPageEditor();
    const entry={editor,snapshot};
@@ -57,7 +53,6 @@ export class ConsistencySiteEditor extends LitElement {
     entry.snapshot=accepted;return accepted;
    },{url:siteAddress.document(this.site.code,path),html:canvas});
    this.show();this.requestUpdate();
-   // A small live page cache retains selection/undo without keeping an entire large site resident.
    for(const [key,value]of this.cache){if(this.cache.size<=4)break;if(key!==path&&!value.editor.pending){value.editor.remove();this.cache.delete(key);}}
    return true;
   }catch(error){if(ticket===this.opening)this.problem=(error as Error).message;return false;}
@@ -68,7 +63,6 @@ export class ConsistencySiteEditor extends LitElement {
    if(ticket!==this.opening||this.path!==path||entry!==this.cache.get(path))return;
    const before=entry.snapshot;
    if(JSON.stringify(latest)!==JSON.stringify(before)&&!entry.editor.pending){
-    // Reopen only after an authoritative change. A local edit always retains its guarded revision.
     await this.open(path,true);
    }
   }catch(error){if(ticket===this.opening){this.problem=(error as Error).message;if([401,403,404].includes((error as Error&{status:number}).status)){this.detach?.();for(const value of this.cache.values())value.editor.remove();this.cache.clear();this.path=null;}}}

@@ -3,29 +3,9 @@ import styles from "./styles/ds-list.css?inline";
 import { define } from "../0-face/define";
 import { CutFades } from "../0-face/cut-fade";
 
-/** Children that are never items of the list. */
 const NOT_ITEMS = new Set(["template", "script", "style", "slot"]);
-/** Controls keep their own role: a link or a button that became a list item would no longer be announced as one. */
 const CONTROLS = new Set(["a", "button", "input", "select", "textarea", "summary", "details"]);
 
-/**
- * A vertical stack of rows.
- *
- * The element is a list (`role="list"`) and each element directly inside it an
- * item (`role="listitem"`), unless the page gives either a role of its own.
- * A link, button or other control directly inside keeps its own role: wrap it
- * in a row (or another element) to make it an item.
- *
- * `heading` names the group on the square above its rows (a day, a month),
- * the words in the muted ink: the list takes it as its accessible name, so
- * the drawn words are hidden from assistive technology and a page that
- * writes its own `aria-label` keeps it.
- *
- * @element ds-list
- * @attr columns - Lay the items out in this many equal columns.
- * @attr heading - The group's name, drawn on the square above the rows and given to the list as its name.
- * @csspart heading - The heading's line.
- */
 export class List extends LitElement {
   static properties = {
     columns: { type: Number, reflect: true },
@@ -36,13 +16,10 @@ export class List extends LitElement {
   declare heading: string | undefined;
 
   static styles = unsafeCSS(styles);
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".heading" });
 
-  /** The items this element gave a role, so roles the page wrote are left alone. */
   private ownItems = new Set<Element>();
   private ownRole = false;
-  /** Whether the list's `aria-label` is its heading, so the page's own name is never replaced. */
   private ownLabel = false;
 
   connectedCallback(): void {
@@ -58,8 +35,6 @@ export class List extends LitElement {
 
   private syncItems = () => {
     const slot = this.shadowRoot?.querySelector("slot");
-    // Items only where the element is a list: a listbox or a page's own role
-    // decides its children's roles itself.
     const list = this.getAttribute("role") === "list";
     const items = new Set(list && slot ? slot.assignedElements().filter(item => !NOT_ITEMS.has(item.localName)) : []);
     for (const item of this.ownItems) {
@@ -84,7 +59,6 @@ export class List extends LitElement {
     if (changed.has("heading")) this.nameByHeading();
   }
 
-  /** The heading names the list, unless the page wrote a name of its own. */
   private nameByHeading() {
     const heading = this.heading?.trim();
     if (heading && (this.ownLabel || !this.hasAttribute("aria-label"))) {

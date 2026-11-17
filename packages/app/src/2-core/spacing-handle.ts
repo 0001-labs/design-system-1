@@ -1,13 +1,7 @@
-/** Internal value interaction used by editor handles. No product state is stored.
- * Pointer preview is raw unless snapPreview is set; commits snap to step.
- * Cancellation restores the initial preview and never commits. Keyboard callers
- * choose immediate commits or a preview followed by one commit on keyup/blur.
- * Consumers own placement, undo snapshots and the surrounding document. */
 export interface SpacingOptions {
   value: number; min?: number; max?: number; step?: number; shiftStep?: number;
   axis?: "horizontal" | "vertical"; gain?: number; disabled?: boolean;
   snapPreview?: boolean; immediateKeyboard?: boolean; threshold?: number;
-  /** Disable slider keys when a native input owns keyboard editing. */
   keyboard?: boolean;
   onPointerStart?: (event: PointerEvent) => void;
   onStart?: (kind: "pointer" | "keyboard") => void;
@@ -45,7 +39,7 @@ export function bindSpacingHandle(target: HTMLElement, options: () => SpacingOpt
       win.removeEventListener("pointercancel", cancelled); win.removeEventListener("blur", cancelled);
       win.removeEventListener("keydown", escape); target.removeEventListener("lostpointercapture", cancelled);
       cancelPointer = undefined;
-      try { if (target.hasPointerCapture?.(e.pointerId)) target.releasePointerCapture(e.pointerId); } catch { /* capture already released */ }
+      try { if (target.hasPointerCapture?.(e.pointerId)) target.releasePointerCapture(e.pointerId); } catch {}
       if (moved) {
         if (cancel) options().onPreview?.(start); else options().onCommit(snap(value, o));
         options().onEnd?.(cancel);
@@ -63,7 +57,7 @@ export function bindSpacingHandle(target: HTMLElement, options: () => SpacingOpt
     const up = (event: PointerEvent) => { if (event.pointerId === e.pointerId) finish(false); };
     const cancelled = (event: Event) => { if (!("pointerId" in event) || (event as PointerEvent).pointerId === e.pointerId) finish(true); };
     const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(true); } };
-    try { target.setPointerCapture?.(e.pointerId); } catch { /* window listeners remain available */ }
+    try { target.setPointerCapture?.(e.pointerId); } catch {}
     win.addEventListener("pointermove", move); win.addEventListener("pointerup", up);
     win.addEventListener("pointercancel", cancelled); win.addEventListener("blur", cancelled);
     win.addEventListener("keydown", escape); target.addEventListener("lostpointercapture", cancelled);

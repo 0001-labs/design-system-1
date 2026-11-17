@@ -4,8 +4,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vite-plus/test";
 import { measures } from "../DS1/1-root/measures";
 
-// Every stylesheet in DS1 reads custom properties that exist and draws its sizes from measures.ts.
-
 const root = fileURLToPath(new URL("../DS1/", import.meta.url));
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) =>
@@ -16,13 +14,11 @@ const sources = walk(root).filter(
 );
 const sheets = sources.filter((file) => file.endsWith(".css"));
 const at = (file: string) => relative(root, file);
-/** A stylesheet without its comments, each comment blanked so line numbers still match. */
 const read = (file: string) =>
   readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, (comment) =>
     comment.replace(/[^\n]/g, " "),
   );
 const lineOf = (text: string, index: number) => text.slice(0, index).split("\n").length;
-/** Every `property: value` in a stylesheet, with the line it starts on. */
 const declarations = (file: string) => {
   const text = read(file);
   return [...text.matchAll(/(?<![\w-])(--[\w-]+|[a-z-]+)\s*:\s*([^;{}]+)(?=[;}])/g)].map((m) => ({
@@ -32,7 +28,6 @@ const declarations = (file: string) => {
   }));
 };
 
-/** Names DS1 gives a value somewhere: in a stylesheet, an inline style, `setProperty` or a style object. */
 const declared = new Set<string>();
 for (const file of sources) {
   const text = readFileSync(file, "utf8");
@@ -40,10 +35,6 @@ for (const file of sources) {
   for (const m of text.matchAll(/setProperty\(\s*['"`](--[\w-]+)/g)) declared.add(m[1]);
 }
 
-/**
- * Hooks from before the `--ds-` names, read with a fallback for pages that still set them. A new
- * hook a page sets takes a `--ds-` name, so it never picks up a page's own custom property.
- */
 const legacyHooks = new Set([
   "--button-color",
   "--input-readonly-background",
@@ -59,7 +50,6 @@ describe("Custom properties", () => {
     const unknown: string[] = [];
     for (const file of sheets) {
       for (const { property, value, line } of declarations(file)) {
-        // `--a: var(--ds-b)` passes a hook on: unset, it leaves --a unset for its reader's own fallback.
         const passedOn = property.startsWith("--") && /^var\(\s*--ds-[\w-]+\s*\)$/.test(value);
         for (const m of value.matchAll(/var\(\s*(--[\w-]+)\s*\)/g)) {
           if (!declared.has(m[1]) && !passedOn) unknown.push(`${at(file)}:${line} ${m[1]}`);
@@ -75,7 +65,6 @@ describe("Custom properties", () => {
       const text = read(file);
       for (const m of text.matchAll(/var\(\s*(--[\w-]+)\s*,/g)) {
         const name = m[1];
-        // VisualKit draws another platform's chrome, with that platform's own hooks (AGENTS.md, VisualKit).
         if (at(file).startsWith("5-visual-kit/")) continue;
         if (!declared.has(name) && !name.startsWith("--ds-") && !legacyHooks.has(name))
           stray.push(`${at(file)}:${lineOf(text, m.index)} ${name}`);
@@ -90,17 +79,12 @@ describe("Custom properties", () => {
   });
 });
 
-// The design-system-1 skill's own measures that measures.ts does not carry.
-/** The spare four above the sixteen: the inset of words in a pressed item, and the gap between tabs. */
 const spare = measures.square - measures.control;
-/** A row's press layer hugs the icon tiles with 6px corners; a sidebar's highlighted row has 2px ones. */
 const rowFillRadius = 6;
 const sidebarRadius = 2;
-/** A corner this large or larger draws a pill or a circle. */
 const round = 999;
 const oneOf = (px: number, ...values: number[]) => values.includes(px);
 
-/** What each kind of property may measure, in pixels at a scale of 1. */
 const kinds: { name: string; property: RegExp; allows: (px: number) => boolean }[] = [
   {
     name: "size",
@@ -112,7 +96,6 @@ const kinds: { name: string; property: RegExp; allows: (px: number) => boolean }
   {
     name: "gap",
     property: /^(row-|column-)?gap$/,
-    // Items a pixel apart (a square's pitch), groups two pixels apart, tabs four apart.
     allows: (px) => px % measures.half === 0 || oneOf(px, measures.line, 2 * measures.line, spare),
   },
   {
@@ -133,10 +116,6 @@ const kinds: { name: string; property: RegExp; allows: (px: number) => boolean }
   },
 ];
 
-/**
- * Values off those measures, each with why. A drawn mark inside a control (a check, a dot, a
- * chevron) keeps its own geometry. Take an entry out when its value moves onto the measures.
- */
 const offMeasures: Record<string, string> = {
   "1-root/native-controls.css height 2": "an indeterminate checkbox's dash",
   "1-root/guide.css type 12": "a guide figure's caption, kept readable under the picture",
@@ -167,7 +146,6 @@ const offMeasures: Record<string, string> = {
   "3-unit/styles/ds-matrix.css width 9": "a matrix's cell marks",
 };
 
-/** A length that stands as a measure: not one added to or taken from another in a calc(). */
 const lengths = (value: string) =>
   [...value.matchAll(/(?<![\w.-])(-?\d*\.?\d+)px/g)]
     .filter((m) => !/[+-]\s+$/.test(value.slice(0, m.index)))

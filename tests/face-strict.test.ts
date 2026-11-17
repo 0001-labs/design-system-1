@@ -5,13 +5,6 @@ import { expect, test } from "vite-plus/test";
 
 const face = join(import.meta.dirname, "../DS1/0-face");
 
-/**
- * Products copy 0-face into strict TypeScript projects, browser-only, with no
- * bundler's types. Every module must check there: strict, DOM and
- * DOM.Iterable, no vite/client. The toaster's `?inline`/`?raw` imports are
- * declared as a Vite page declares them; outside Vite they are the feedback
- * module's concern.
- */
 test("every 0-face module passes a strict type check with the DOM libraries alone", () => {
   const files = readdirSync(face).filter((file) => file.endsWith(".ts")).map((file) => join(face, file));
   const queries = join(import.meta.dirname, "fixtures/vite-queries.d.ts");

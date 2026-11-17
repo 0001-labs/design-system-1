@@ -34,14 +34,12 @@ function reportPage(response: Response, path: string): Response {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    // Upgrade before authentication, APIs or private-path guards handle the request.
     if (url.protocol === "http:") {
       url.protocol = "https:";
       return new Response(null, { status: 308, headers: { Location: url.href, "Cache-Control": "no-store" } });
     }
     if (url.hostname === SYSTEM_HOST) return systemSite(request, env);
     if (url.hostname === C9Y_SYSTEM_HOST || url.hostname === C9Y_DASH_HOST) return c9ySystemSite(request, env);
-    // C9Y System's build is the System owner's, on its own host only; never public assets elsewhere.
     if (isC9ySystemPath(url.pathname)) return new Response("Not found", { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } });
     if (/^\/system-(?:data|previews)\//i.test(decodeURIComponent(url.pathname))) return new Response("Not found", { status: 404 });
     if (url.hostname === DASHBOARD_HOST) return new Response('Not found', { status: 404 });
@@ -51,9 +49,7 @@ export default {
     }
     if (url.pathname === '/api/consistency/ask') return consistencyAsk(request,env);
     if (url.pathname === '/api/consistency/ai') return consistencyAI(request, env);
-    // Dispatch before public assets and other APIs: this host has no public app routes.
     if (isConsistencyHost(url.hostname) || isEditorBuildPath(url.pathname)) return consistencyPreview(request, env);
-    // Private App HTML and assets revalidate the owner on the two configured hosts.
     if (url.pathname.startsWith('/private-app')) {
       if (![DASHBOARD_HOST, 'designsystem1.com'].includes(url.hostname)) return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
       return dashboard(request, env);
@@ -69,7 +65,6 @@ export default {
       if (url.pathname.startsWith("/app/assets/") || url.pathname === "/icons/design-system-1.svg") return env.ASSETS.fetch(request);
       if (!["/", "/app/", "/app/fonts", "/app/signin"].includes(url.pathname)) return new Response("Not found", { status: 404 });
       const asset = new URL(request.url);
-      // Only the sign-in shell and its assets are public; workspace data and font files are owner-gated above.
       asset.pathname = "/app/";
       const original = await env.ASSETS.fetch(new Request(asset, request));
       const response = new Response(original.body, original);
@@ -79,7 +74,6 @@ export default {
       return response;
     }
 
-    // Play lives on its own host: its page at the root, the site's assets beside it.
     if (url.hostname === PLAY_HOST) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Not found", { status: 404 });
       if (url.pathname === "/" || url.pathname === "/play" || url.pathname === "/play/") {
@@ -122,7 +116,6 @@ export default {
     const docsTarget = docsRedirects[url.pathname.replace(/\/$/, '')];
     if (docsTarget && (request.method === 'GET' || request.method === 'HEAD')) {
       url.pathname = docsTarget;
-      // Query is retained; browsers carry the original fragment across this redirect.
       return Response.redirect(url.toString(), 308);
     }
 
@@ -159,7 +152,6 @@ export default {
       return Response.redirect(url.toString(), 308);
     }
 
-    // Every page's Markdown and HTML for Consistency: read by the Worker alone, through its own binding.
     if (url.pathname.startsWith('/docs-pages/')) return new Response('Not found', { status: 404 });
     const response = await env.ASSETS.fetch(request);
     if (
@@ -180,19 +172,16 @@ export default {
       return shell;
     }
     if (/^\/start-here\/examples(\/|$)/.test(url.pathname)) return filterDocExamples(response, env);
-    // A page saved in Consistency, drawn over the build's page. No other host serves the documentation's words.
     if (url.hostname === 'designsystem1.com' && request.method === 'GET') return reportPage(await applyDocEdit(response, url.pathname, env), url.pathname);
     return reportPage(response, url.pathname);
   },
 } satisfies ExportedHandler<Env>;
 
-/** Private RPC only: the documentation's examples. System authenticates the owner before calling this binding. */
 export class FeatureFlagsService extends WorkerEntrypoint<Env> {
   async listExamples() { return listExamples(this.env); }
   async setExample(input: unknown) { return setExample(this.env, input); }
 }
 
-/** Owner gateway; no public route dispatches to this service entrypoint. */
 export class ConsistencyAskService extends WorkerEntrypoint<Env> {
   fetch(request:Request){return consistencyAskGateway(request,this.env);}
 }

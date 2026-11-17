@@ -1,5 +1,3 @@
-// Which layer each element belongs to, read from where its source lives, and
-// where it is documented. Used at build time by the layout examples.
 const sources = import.meta.glob<string>(
   ['../../../DS1/2-core/**/*.ts', '../../../DS1/3-unit/**/*.ts', '../../../DS1/4-page/**/*.ts'],
   { query: '?raw', import: 'default', eager: true },
@@ -12,7 +10,6 @@ export type Layer = 2 | 3 | 4;
 export const LAYER_NAMES: Record<Layer, string> = { 2: 'Core', 3: 'Unit', 4: 'Page' };
 export interface TagInfo { layer: Layer; name: string; href?: string }
 
-// An element's name as the sidebar gives it ("Table of contents"), or its tag in words.
 const NAMES = new Map(ALL_LAYERS.flatMap(layer => layer.entries.flatMap(entry => (entry.tag ? [[entry.tag, entry.name] as const] : []))));
 const nameOf = (tag: string) => NAMES.get(tag) ?? tag.slice(3).replace(/-/g, ' ').replace(/^./, letter => letter.toUpperCase());
 
@@ -29,7 +26,6 @@ for (const [path, source] of Object.entries(sources)) {
 }
 TAG_LAYERS['ds-page'].href = '/4-page/layout/';
 
-/** The distinct elements a sample uses, grouped by layer, outermost layer first. */
 export function layersIn(html: string): { layer: Layer; name: string; tags: { tag: string; name: string; href?: string }[] }[] {
   const tags = [...new Set([...html.matchAll(/<(ds-[a-z0-9-]+)/g)].map(match => match[1]))].filter(tag => TAG_LAYERS[tag]);
   return ([4, 3, 2] as Layer[])

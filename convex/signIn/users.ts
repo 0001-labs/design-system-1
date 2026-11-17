@@ -13,15 +13,6 @@ export type SignInUserArgs = {
 
 export type NewSignInUser = { email: string; name?: string; image?: string; emailVerificationTime?: number }
 
-/**
- * Who a sign-in belongs to, for a product's `createOrUpdateUser` callback: a
- * returning account's user; otherwise the user with the address, when the way
- * in proves it (the emailed code, before any session is made; Google or Apple
- * with a verified email); otherwise a new user. A password sign-up for an
- * address in use is refused, so nobody takes over an account by knowing its
- * email. Google and Apple make new accounts only once `SOCIAL_SIGN_IN` is
- * `public`. The product says how to find a user by address and how to make one.
- */
 export async function resolveSignInUser(
   ctx: MutationCtx,
   args: SignInUserArgs,

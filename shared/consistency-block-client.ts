@@ -1,13 +1,8 @@
 import {configureI18n} from '../DS1/index';
 import {defineAaDiagram} from '../website/src/vendor/aa/diagram.js';
 import {componentWords} from './consistency-component-words';
-/** A native site publishes no `translations.json`: a block's words come with its document, and a site's own
- * script that loads a table puts it on the window, where these components read it. The module's own
- * auto-load waits a task, so this is in time. */
 configureI18n({autoLoad:false});
 defineAaDiagram();
-/** Build-owned properties and document-owned text slots hydrate after the same DS1 implementation
- * used by the editor. No site script, expression or event handler is accepted from a page document. */
 async function hydrate(){
  for(const element of document.querySelectorAll<HTMLElement>('[data-c9y-component-data]')){
   if(element.dataset.c9yHydrated!==undefined)continue;const value=JSON.parse(element.dataset.c9yComponentData!);

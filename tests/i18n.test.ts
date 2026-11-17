@@ -28,10 +28,6 @@ function memoryStorage(initial: Record<string, string> = {}): Storage {
   };
 }
 
-/**
- * A page for the module to load into: a window that carries events, storage
- * and the translations, a document that is ready, and a browser language.
- */
 function stubPage({
   stored = {},
   translations,
@@ -75,7 +71,6 @@ const words = {
 beforeEach(() => {
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "info").mockImplementation(() => {});
-  // No translation files unless a test publishes some
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => new Response("", { status: 404 }))
@@ -348,7 +343,6 @@ describe("loading words", () => {
   test("falls back to the whole table when a language's file is missing", async () => {
     const win = stubPage({
       stored: { language: "en" },
-      // Configured on the page before the module loads
       config: {
         languageFile: (language: string) => `/translations/${language}.json`,
         translationsFile: "/translations.json",
@@ -528,7 +522,6 @@ describe("shared words", () => {
     expect(i18n.textInLanguage("Cancel", "nn")).toBe("Avbryt");
     expect(i18n.textInLanguage("Japanese", "ja")).toBe("日本語");
     expect(i18n.hasTranslation("Sign in")).toBe(true);
-    // The languages offered stay the product's
     expect(i18n.getAvailableLanguagesSync()).toEqual(["da"]);
   });
 
@@ -547,7 +540,6 @@ describe("shared words", () => {
       sharedWords: true,
     });
     await i18n.loadSharedWords();
-    // A bare per-language file is read as that language's table
     await vi.waitFor(() => expect(win.DS_ONE_TRANSLATIONS?.sv).toEqual({ Hello: "Hej" }));
     expect(i18n.translate("Hello")).toBe("Hej");
     expect(i18n.translate("Search")).toBe("Sök");
@@ -593,11 +585,9 @@ describe("shared actions", () => {
 
 describe("announcing the words", () => {
   test("the words that arrive as the page starts are announced once, not once each", async () => {
-    // Earlier tests' modules finish their loads on whatever window is stubbed; let them settle first.
     await new Promise((resolve) => setTimeout(resolve, 300));
     vi.useFakeTimers();
     try {
-      // A translations file that answers after the shared words have arrived.
       vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => setTimeout(() => resolve(new Response(JSON.stringify(words), { status: 200 })), 300))));
       const win = stubPage({ config: { sharedWords: true, translationsFile: "/translations.json" } });
       let loaded = 0, changed = 0;
@@ -607,7 +597,6 @@ describe("announcing the words", () => {
       await vi.advanceTimersByTimeAsync(2000);
       expect(loaded).toBe(1);
       expect(changed).toBe(1);
-      // A word added later is announced at once, on its own.
       i18n.loadTranslations({ en: { Later: "Later" } });
       await vi.advanceTimersByTimeAsync(10);
       expect(loaded).toBe(2);

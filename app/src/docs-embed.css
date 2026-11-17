@@ -1,4 +1,3 @@
-/* Documentation chrome stays separate from the stylesheet being designed. */
 :root[data-docs-embed] {
   --workbench-ink: light-dark(#2a2a2a, #f1f1f1);
   --workbench-muted: light-dark(#666, #aaa);
@@ -34,8 +33,6 @@
 [data-docs-embed] .story-preview-area { min-width: max-content; padding: 60px 40px; }
 [data-docs-embed] .button-matrix__instance-label { color: var(--workbench-muted); }
 
-/* Keep both component navigation and the box model accessible in the narrower
-   documentation content area instead of inheriting the standalone hide rule. */
 @media (max-width: 1100px) {
   [data-docs-embed] .workbench {
     grid-template:

@@ -2,11 +2,8 @@ import { defineConfig } from "vite-plus";
 import { resolve } from "path";
 
 const isMinified = process.env.MINIFY === "true";
-// FEEDBACK=true builds the feedback module alone, with no Lit, for a page that loads it with one script.
 const isFeedback = process.env.FEEDBACK === "true";
 
-// Library build config - handles CSS ?inline imports for bundling
-// This bundles everything (including lit) for standalone/CDN usage
 export default defineConfig({
   build: {
     outDir: "dist",
@@ -19,9 +16,7 @@ export default defineConfig({
     },
     minify: isMinified ? "esbuild" : false,
     sourcemap: true,
-    // The feedback module is one file: copyText's lazy toaster is in it already.
     ...(isFeedback ? { rollupOptions: { output: { codeSplitting: false } } } : {}),
-    // Target modern browsers
     target: "es2020",
   },
   resolve: {

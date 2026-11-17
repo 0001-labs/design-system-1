@@ -3,15 +3,8 @@ import "../../DS1/3-unit/ds-sidebar";
 import type { Sidebar, SidebarItem } from "../../DS1/3-unit/ds-sidebar";
 import { AppElement, defineElement } from "./lib/element";
 
-/** A component, or a group of them that opens and closes. */
 export type TreeNode = { id: string; label: string; meta?: string; children?: TreeNode[] };
 
-/**
- * The workbench's component trees, drawn by Design system 1's sidebar: one
- * square a row, its arrow keys, focus and cut-label tooltips. The workbench
- * owns which component is open (`current`, and `tree-select` when one is
- * chosen); this element keeps which groups are closed.
- */
 export class ComponentTree extends AppElement {
   static properties = {
     label: { type: String },

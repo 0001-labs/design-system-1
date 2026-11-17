@@ -15,7 +15,6 @@ export function moveCarouselSlide(slides: readonly CarouselSlide[], from: number
   if (from < 0 || from >= slides.length || to < 0 || to >= slides.length) return [...slides];
   const result = [...slides], [slide] = result.splice(from, 1); result.splice(to, 0, slide); return result;
 }
-/** One DS1 carousel, one Aa atom and one source change per edit. No parallel text editor. */
 export function carouselAtom(canWrite: () => boolean, getHost: () => HTMLElement | null, media?: EditorMedia): Atom {
  return {
   name: 'consistency-carousel', fence: 'c9y-carousel', match: () => 0,
@@ -34,7 +33,6 @@ export function carouselAtom(canWrite: () => boolean, getHost: () => HTMLElement
     const empty = createSurfaceElement(doc, 'ds-empty'); empty.literal = true; empty.heading = 'Add your first image'; empty.text = media ? 'Choose an image or add its address.' : 'Upload an image or add its address.';
     frame.append(face, empty); element.append(frame);
     const toolbar = doc.createElement('div'); toolbar.className = 'consistency-carousel-tools'; toolbar.setAttribute('data-aa-interactive', ''); toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Carousel images'); element.append(toolbar);
-    // An outside press wins over :focus-within until a fresh entry or focus.
     const showTools = () => element.removeAttribute('data-tools-dismissed');
     const focusTools = (event: FocusEvent) => { if (toolbar.contains(event.target as Node)) showTools(); };
     const dismissTools = (event: PointerEvent) => {

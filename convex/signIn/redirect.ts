@@ -1,23 +1,9 @@
-/**
- * Where a sign-in may end. `redirectTo` is caller-controlled and becomes the
- * link in an email or the page a provider returns to, so only a product's own
- * sign-in pages may ever be a destination: anything else would let a forged
- * request carry the one-use code away. Destinations receive that code and
- * never session credentials; the code is worthless without the verifier the
- * starting client keeps, which is what makes a custom URL scheme safe.
- */
 export type RedirectRules = {
-  /** Web origins a sign-in may end on: `SITE_URL` and the extra ones a product allows, such as a localhost for development. */
   origins: string[]
-  /** The pathnames allowed there: each exact, or one pattern. */
   paths: string[] | RegExp
-  /** Query keys allowed, each at most once, with the shape its value must have (null for any). `oauth`, when allowed, must be `1`. */
   params?: Record<string, RegExp | null>
-  /** Keys that have to be present. */
   require?: string[]
-  /** Custom URL schemes an app registers, with the colon (`myapp:`): the destination is then `<scheme>//callback?state=<uuid>` and nothing else. */
   nativeSchemes?: string[]
-  /** A further rule for hosts outside `origins`, such as a product's customer subdomains; https only, no port. */
   hostAllowed?: (hostname: string) => boolean
 }
 
@@ -26,7 +12,6 @@ const refuse = (reason = 'Invalid sign-in destination'): never => {
   throw new Error(reason)
 }
 
-/** The destination as a string when the rules allow it; throws otherwise. */
 export function signInRedirect(redirectTo: string, rules: RedirectRules): string {
   let url: URL
   try {

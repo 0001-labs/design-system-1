@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * After the documentation's build: takes the block markers (`website/src/lib/remark-doc-blocks.mjs`) out of every built
- * page and writes `website/dist/docs-pages/`, one file per page with its Markdown and each block's HTML, and
- * `pages.json`, the list. The owner's editor opens a page from those files, and the Worker draws a saved page from them
- * (`shared/doc-pages.ts`, `services/src/doc-pages.ts`). The folder is private: the Worker answers it to no reader.
- */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,7 +14,6 @@ const walk = directory => readdirSync(directory).flatMap(name => {
 });
 const MARK = /<template data-doc-block="(atom|text|esm)\.([\w-]+)"><\/template>|<template data-doc-block-end="([\w-]+)"><\/template>/g;
 
-/** A page's frontmatter as the lines it is written in, and the body after them. */
 export function splitFile(text) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text);
   return match ? { frontmatter: match[1], body: text.slice(match[0].length) } : { frontmatter: '', body: text };
@@ -53,7 +46,6 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     writeFileSync(path, page.html);
     const address = `/${relative(dist, dirname(path)).split(sep).join('/')}/`.replace(/^\/\.?\/$/, '/').replace(/^\/\//, '/');
     const { frontmatter, body } = splitFile(readFileSync(join(content, page.file), 'utf8'));
-    // What a page imports draws nothing, wherever it is written: it stands at the head, out of Aa's way.
     const imports = page.blocks.filter(block => block.kind === 'esm').map(block => block.source);
     const words = imports.reduce((text, line) => text.replace(line, ''), body).trim();
     const head = imports.join('\n');

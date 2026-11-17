@@ -1,9 +1,3 @@
-// Draws the dot icons: everyday money in the dot matrix of Olivetti Dot.
-// Each icon is a 7 x 7 bitmap, read top row first ("#" is a dot), set on a
-// two-unit pitch in the 16-unit frame (x and y = 2, 4 … 14). A dot's
-// diameter is 91% of its pitch, as in the font, where a 100-unit dot sits on
-// a 110-unit pitch.
-// Run: node scripts/build-dot-icons.mjs [--sheet FILE.html]
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -92,8 +86,6 @@ export const dotIcons = {
     "#.....#",
     "#######",
   ],
-  // Faces (Joachim, 19 October 2026: how much room a budget has): the coin's round outline,
-  // two eyes, and a smile, a straight mouth or a frown.
   "dot-happy": [
     "..###..",
     ".#...#.",

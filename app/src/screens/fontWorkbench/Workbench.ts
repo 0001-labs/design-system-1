@@ -1,10 +1,3 @@
-/**
- * The workbench: draw a face's outlines as cubic Béziers, glyph by glyph, with
- * the face it is measured against and any face opened from this computer drawn
- * behind as references. References are shown, never copied into the drawing.
- * The drawing is saved privately; a build written from it shows in Specimen and
- * Glyphs.
- */
 import { html, nothing, svg } from 'lit';
 import { live } from 'lit/directives/live.js';
 import '../../../../DS1/2-core/ds-button';
@@ -32,10 +25,8 @@ const defaultAdvance = (unicode: number) => unicode === 0x20 ? 245 : 600;
 const characterName = (unicode: number) => unicode === 0x20 ? 'Space' : String.fromCodePoint(unicode);
 const codeName = (unicode: number) => `U+${unicode.toString(16).toUpperCase().padStart(4, '0')}`;
 
-/** The glyph for a character, or the empty one it starts as. */
 const glyphOf = (source: FontSource, unicode: number): SourceGlyph => source.glyphs.find(glyph => glyph.unicode === unicode) ?? { unicode, advance: defaultAdvance(unicode), contours: [] };
 
-/** A copy of the source with one glyph changed. A glyph left with nothing in it and its first width goes. */
 function withGlyph(source: FontSource, unicode: number, change: (glyph: SourceGlyph) => SourceGlyph): FontSource {
   const glyph = change(glyphOf(source, unicode));
   const others = source.glyphs.filter(other => other.unicode !== unicode);
@@ -43,7 +34,6 @@ function withGlyph(source: FontSource, unicode: number, change: (glyph: SourceGl
   return { ...source, glyphs: keep ? [...others, glyph].sort((a, b) => a.unicode - b.unicode) : others };
 }
 
-/** Points by contour, from a selection. */
 function byContour(keys: Iterable<PointKey>): Map<number, Set<number>> {
   const map = new Map<number, Set<number>>();
   for (const key of keys) {
@@ -58,12 +48,6 @@ function moveSelection(source: FontSource, unicode: number, keys: Iterable<Point
   return withGlyph(source, unicode, glyph => ({ ...glyph, contours: glyph.contours.map((contour, index) => chosen.has(index) ? movePoints(contour, chosen.get(index)!, dx, dy) : contour) }));
 }
 
-/**
- * `<ds1-font-workbench>`: `face` and `request` (the workspace's authorised
- * fetch) in; `hidden` keeps the drawing as it is and rests its shortcuts. It
- * tells the workspace `workbench-message`, `workbench-error`, `build-saved`
- * (the build's file name) and `dirty-change`.
- */
 export class FontWorkbench extends AppElement {
   static properties = {
     face: { attribute: false },
@@ -149,14 +133,12 @@ export class FontWorkbench extends AppElement {
     return this.#glyph()?.advance ?? defaultAdvance(this.unicode);
   }
 
-  /** The view holds the line box and a little room round the widest glyph, in font units, y up. */
   #view() {
     const metrics = this.#metrics();
     const left = -200, right = Math.max(1000, this.#advance() + 200), top = metrics.lineAscent + 100, bottom = metrics.lineDescent - 100;
     return { x: left, y: -top, w: right - left, h: top - bottom };
   }
 
-  /** Put a new source in place; recorded, the one before it can be had back with Undo. */
   #apply(next: FontSource, record: boolean, before?: FontSource) {
     const current = this.source;
     if (!current || next === current) return;
@@ -187,7 +169,6 @@ export class FontWorkbench extends AppElement {
     this.source = next; this.selection = new Set(); this.dirty = true;
   }
 
-  /** The drawing, or an empty one when nothing has been drawn yet. */
   #load() {
     const face = this.face;
     const loading = ++this.#loading;
@@ -204,7 +185,6 @@ export class FontWorkbench extends AppElement {
       this.#loadedFace = this.face.id;
       this.#load();
     }
-    // The face it is measured against, drawn behind each glyph.
     if (this.request && !this.#referenceAsked) {
       this.#referenceAsked = true;
       this.request('/api/fonts/file/america').then(response => response.arrayBuffer())
@@ -237,12 +217,10 @@ export class FontWorkbench extends AppElement {
     if (changed.has('dirty')) this.emit('dirty-change', this.dirty);
     if (changed.has('source')) this.#schedulePreview();
     this.#observe();
-    // Shortcuts work while the workbench is shown and nothing is being typed.
     if (this.hidden && this.#shortcuts) { this.#shortcuts.abort(); this.#shortcuts = null; }
     if (!this.hidden && !this.#shortcuts) this.#bindShortcuts();
   }
 
-  /** Write the drawing as a font a moment after it changes, to try it as text below. */
   #schedulePreview() {
     if (this.#previewTimer) clearTimeout(this.#previewTimer);
     this.#previewTimer = null;
@@ -256,11 +234,10 @@ export class FontWorkbench extends AppElement {
         if (source !== this.source || !this.isConnected) return;
         if (this.#previewFace) document.fonts.delete(this.#previewFace);
         document.fonts.add(loaded); this.#previewFace = loaded; this.previewFamily = name;
-      } catch { /* A drawing part way through a change keeps the last preview. */ }
+      } catch {}
     }, 300);
   }
 
-  /** How many screen pixels a font unit is, so points and labels keep their size. */
   #observe() {
     const element = this.#canvas();
     if (element === this.#observed) { if (element) this.#measure(); return; }
@@ -317,13 +294,11 @@ export class FontWorkbench extends AppElement {
     const current = this.source;
     const unicode = this.unicode;
     if (!active || !current) return;
-    // A contour of one or two points left by the pen draws nothing: it goes.
     if ((glyphOf(current, unicode).contours[active.contour]?.length ?? 0) < 3) {
       this.#apply(withGlyph(current, unicode, item => ({ ...item, contours: item.contours.filter((_, index) => index !== active.contour) })), false);
       this.selection = new Set();
       return;
     }
-    // Close the last segment as it was drawn: a curve when the first or last point was dragged out.
     if (!active.out && !active.firstIn) return;
     this.#apply(withGlyph(current, unicode, item => ({
       ...item,
@@ -404,8 +379,6 @@ export class FontWorkbench extends AppElement {
     } else if (active.kind === 'advance') {
       this.#apply(withGlyph(active.base, unicode, item => ({ ...item, advance: Math.max(0, active.advance + dx) })), first, active.base);
     } else if (active.kind === 'pen') {
-      // Dragging out from a point just placed gives it smooth handles: the drag is the way on, its mirror the way in.
-      // Each move starts again from the source as it was when the point was placed.
       const state = this.#pen;
       if (!state) return;
       const handle = { x: Math.round(at.x), y: Math.round(at.y) };
@@ -418,7 +391,6 @@ export class FontWorkbench extends AppElement {
       if (active.index === 0) { next[0] = { ...point, smooth: true }; state.firstIn = mirror; }
       else if (point.type === 'curve') { next[index] = { ...point, smooth: true }; next[index - 1] = { ...next[index - 1]!, x: mirror.x, y: mirror.y }; }
       else {
-        // A line point turns into a curve: the segment before it gets handles, the first at the point it leaves.
         const before = placedContour[index - 1]!;
         next.splice(index, 1, { x: before.x, y: before.y, type: 'offcurve' }, { x: mirror.x, y: mirror.y, type: 'offcurve' }, { ...point, type: 'curve', smooth: true });
         index += 2;
@@ -448,12 +420,10 @@ export class FontWorkbench extends AppElement {
     if (this.tool !== 'select' || !glyph) return;
     const key = (event.target as Element).closest('[data-point]')?.getAttribute('data-point') as PointKey | null;
     if (key) {
-      // A double-click on a point chooses its whole contour.
       const [contour] = readKey(key);
       this.selection = new Set(glyph.contours[contour]!.map((_, index) => pointKey(contour, index)));
       return;
     }
-    // A double-click on the outline adds a point there.
     const at = this.#toUnits(event);
     let near: { contour: number; found: NonNullable<ReturnType<typeof nearestSegment>> } | null = null;
     for (const [index, contour] of glyph.contours.entries()) {
@@ -496,7 +466,6 @@ export class FontWorkbench extends AppElement {
     this.selection = new Set(contour.map((_, at) => pointKey(index, at)));
   }
 
-  // A stem as tall as the capitals, and a round as tall as the lower case with its overshoot.
   #addRectangle() { const middle = Math.round(this.#advance() / 2); this.#addContour(rectangle(middle - 45, 0, middle + 45, this.#metrics().capHeight)); }
   #addOval() { this.#addContour(oval(60, -10, Math.max(160, this.#advance() - 60), this.#metrics().xHeight + 10)); }
   #nudge(dx: number, dy: number) { if (this.selection.size && this.source) this.#apply(moveSelection(this.source, this.unicode, this.selection, dx, dy), true); }

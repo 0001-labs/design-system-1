@@ -1,4 +1,3 @@
-/** Product adapter for the same Ask face and speech input used by Link. */
 import type {Ask,AskRow} from '../../../packages/app/src/2-core/ds-ask';
 import type {Listening} from '../../../packages/app/src/0-face/ask-listen';
 export type AskChoice=AskRow&{open:()=>void|Promise<void>;confirm?:boolean};
@@ -13,7 +12,6 @@ export const ownsAskKeys=(event:KeyboardEvent)=>event.isComposing||event.compose
 export const asksQuestion=(text:string)=>/^(?:what|why|how|when|where|who|which|can|could|is|are|do|does|explain|tell me|hvad|hvordan|hvor|kan)\b/i.test(text.trim())||text.trim().endsWith('?');
 let current:{close():void}|undefined;
 let opening=0;
-/** One face per window. Navigation and generation both cancel obsolete answers on dismissal. */
 export async function showAskFace(options:AskFaceOptions):Promise<{close():void}> {
  const generation=++opening;current?.close();
  const [{Ask:Face},speech]=await Promise.all([import('../../../packages/app/src/2-core/ds-ask'),import('../../../packages/app/src/0-face/ask-listen')]);
@@ -61,7 +59,6 @@ export async function showAskFace(options:AskFaceOptions):Promise<{close():void}
  face.addEventListener('ask-dismiss',close);face.addEventListener('ask-choose',event=>{void choose((event as CustomEvent<{index:number}>).detail.index);});
  document.body.append(face);draw();current={close};return current;
 }
-/** Only navigation surfaces call this; text fields and gesture controls retain their keys. */
 export function isAskShortcut(event:KeyboardEvent):boolean {
  if(event.defaultPrevented||event.repeat||ownsAskKeys(event))return false;
  if((event.metaKey||event.ctrlKey)&&!event.altKey&&event.key.toLowerCase()==='k')return true;

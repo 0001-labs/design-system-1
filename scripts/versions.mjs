@@ -6,7 +6,6 @@ export function syncVersions(write = false) {
   if (!/^\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?$/.test(version)) {
     throw new Error(`Not a release version: ${version}`);
   }
-  // scripts/release.mjs passes the version it leaves, so a release version is replaced too.
   const previous = process.env.RELEASE_FROM;
   const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const references = new RegExp(

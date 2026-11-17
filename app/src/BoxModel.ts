@@ -17,11 +17,6 @@ const clampBorder = (value: number) => Math.min(24, Math.max(0, value));
 
 type Field = { value: number; min: number; max: number; step: number; disabled?: boolean; patch: (value: number) => Partial<BoxModelConfig> };
 
-/**
- * The button's box: margin, border with its corners, padding and the content's
- * size, each value a number that drags. A drag previews (`box-preview`), letting
- * go commits (`box-change`); `box-hover` names the region under the pointer.
- */
 export class BoxModel extends AppElement {
   static properties = {
     config: { attribute: false },
@@ -34,7 +29,6 @@ export class BoxModel extends AppElement {
   declare hoverRegion: BoxRegion | null;
   declare supportsSpacing: boolean;
 
-  /** Each value's current field, by its label, read by the drag as it moves. */
   #fields = new Map<string, Field>();
   #bound = new WeakSet<HTMLInputElement>();
   #unbind: Array<() => void> = [];

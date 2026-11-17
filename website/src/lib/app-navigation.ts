@@ -2,7 +2,6 @@ import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
 
 export interface AppComponent { name: string; href: string; layer: number; }
 
-/** One private label for the desktop rail and the phone's sidebar. */
 export function appComponentLink(component: AppComponent): HTMLAnchorElement {
   const link = document.createElement('a');
   link.className = 'private-component-link';
@@ -16,7 +15,6 @@ export function appComponentLink(component: AppComponent): HTMLAnchorElement {
   return link;
 }
 
-/** Only the authenticated bridge supplies private names; public catalogues stay unchanged. */
 export function readAppComponents(detail: unknown): AppComponent[] {
   const data = detail as { authenticated?: boolean; appComponents?: unknown[] } | null;
   if (data?.authenticated !== true || !Array.isArray(data.appComponents)) return [];
@@ -28,7 +26,6 @@ export function readAppComponents(detail: unknown): AppComponent[] {
   });
 }
 
-/** App-owned rows use Sidebar's existing slots, in alphabetical order within each open layer. */
 export function placeAppNavigation(root: HTMLElement, rows: SidebarItem[], components: AppComponent[]): SidebarItem[] {
   root.querySelectorAll('[data-private-component-slot]').forEach(slot => slot.remove());
   const items = rows.map(item => ({ ...item }));

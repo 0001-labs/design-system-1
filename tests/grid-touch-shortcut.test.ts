@@ -19,7 +19,7 @@ test("only an allowed reader can toggle the grid with five taps", () => {
   expect(shown()).toBe(true);
   for (let i = 0; i < 5; i++) tap();
   expect(shown()).toBe(false);
-  tap(30); // A swipe is not a tap.
+  tap(30);
   for (let i = 0; i < 4; i++) tap();
   expect(shown()).toBe(false);
   allowed = false;

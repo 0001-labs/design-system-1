@@ -1,40 +1,16 @@
-/**
- * The sign-in screen every product shows: `<sign-in-screen>`, two steps. The
- * email first; then the way in: the code sent to it, or the password where the
- * address keeps one, with Google and Apple beside the first step when the
- * backend says they are on. The element draws and asks; the product's adapter
- * talks to its own Convex deployment and keeps the session.
- *
- *   import { defineSignInScreen } from './sign-in/sign-in'
- *   defineSignInScreen()
- *   const screen = document.createElement('sign-in-screen') as SignInScreen
- *   screen.adapter = { … }
- *   screen.addEventListener('signed-in', () => …)
- *
- * No shadow root: the product's typeface and Design system 1 tokens apply, with
- * `sign-in.css` loaded beside it.
- */
 export type SocialSignIn = 'google' | 'apple'
 
-/** What the backend's `providers` query answers (`convex/signIn/social.ts`); repeated here so the screen's copy stands alone in a product. */
 export type SignInAvailability = { google: boolean; apple: boolean; newAccounts: boolean; code: boolean }
 
 export type SignInAdapter = {
-  /** The backend's `providers` query. */
   providers(): Promise<SignInAvailability>
-  /** The backend's `passwordSignIn` query: whether this address signs in with a password. */
   passwordSignIn(email: string): Promise<boolean>
-  /** Provider `email-code` with `{ email }`. */
   requestCode(email: string): Promise<void>
-  /** Provider `email-code` with `{ email, code }`; resolves once the product holds the session. */
   signInWithCode(email: string, code: string): Promise<void>
-  /** Provider `password`, flow `signIn`; resolves once the product holds the session. */
   signInWithPassword(email: string, password: string): Promise<void>
-  /** Starts Google or Apple: the page leaves for the provider. */
   signInWith(provider: SocialSignIn): Promise<void>
 }
 
-/** Every word on the screen, so a product can translate them. */
 export type SignInWords = typeof ENGLISH
 export const ENGLISH = {
   enterEmail: 'Enter your email',
@@ -67,12 +43,6 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, attributes: Reco
   return node
 }
 
-/**
- * Cut words fade over their last square, never an ellipsis: an element whose
- * words are wider than it is marked `data-cut="end"` and sign-in.css fades it
- * then; words that fit stay crisp. Measured here, the same way as Design
- * system 1's cut-fade module, since the screen stands alone in a product.
- */
 function markCut(node: Element) {
   if (node.scrollWidth > node.clientWidth + 1) {
     if (node.getAttribute('data-cut') !== 'end') node.setAttribute('data-cut', 'end')
@@ -81,7 +51,6 @@ function markCut(node: Element) {
 
 export class SignInScreen extends HTMLElement {
   private backend: SignInAdapter | null = null
-  /** The product's way to the backend. Set before or after the element is on the page: the providers are asked once both hold. */
   get adapter(): SignInAdapter | null {
     return this.backend
   }
@@ -90,7 +59,6 @@ export class SignInScreen extends HTMLElement {
     if (adapter && this.isConnected) void this.loadProviders()
   }
   words: SignInWords = ENGLISH
-  /** The way in after the email, once decided. */
   private way: 'code' | 'password' | null = null
   private email = ''
   private busy = false
@@ -112,7 +80,6 @@ export class SignInScreen extends HTMLElement {
   private readonly googleRow = element('div', { class: 'sign-in-row', hidden: true })
   private readonly appleRow = element('div', { class: 'sign-in-row', hidden: true })
   private rendered = false
-  /** Measures the labels and the error when their box changes; `measureCuts()` measures them when their words do. */
   private cuts: ResizeObserver | null = null
 
   connectedCallback() {
@@ -122,7 +89,6 @@ export class SignInScreen extends HTMLElement {
       for (const node of this.cutWords()) cuts.observe(node)
       this.cuts = cuts
     }
-    // Words drawn in a fallback face are narrower or wider once the page's fonts arrive.
     document.fonts?.ready.then(() => this.measureCuts(), () => {})
     void this.loadProviders()
   }
@@ -167,7 +133,6 @@ export class SignInScreen extends HTMLElement {
     this.appleButton.addEventListener('click', () => void this.social('apple'))
   }
 
-  /** Call after changing `words`. */
   applyWords() {
     const w = this.words
     this.emailLabel.textContent = w.enterEmail
@@ -302,7 +267,6 @@ export class SignInScreen extends HTMLElement {
     }
   }
 
-  /** Back to the email, keeping what was typed. */
   reset() {
     this.way = null
     this.clearError()

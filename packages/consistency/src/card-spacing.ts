@@ -41,7 +41,6 @@ export class CardSpacingLayer {
       const handle = card.ownerDocument.createElement('span'); handle.className = 'consistency-card-gap'; handle.dataset.gap = key; handle.contentEditable = 'false'; handle.setAttribute('data-aa-interactive', ''); handle.setAttribute('role', 'slider'); handle.setAttribute('aria-label', `Card ${key} gap`); handle.setAttribute('aria-orientation', 'vertical'); handle.setAttribute('aria-valuemin', '0'); handle.setAttribute('aria-valuemax', '2000'); card.append(handle); handles.push(handle);
       let peers: HTMLElement[] = [], originals: { card: HTMLElement; css: string; height: number }[] = [];
       const paint = (value: number) => {
-        // Preview the linked design in one frame, without changing authored content/history.
         for (const peer of peers) peer.style.setProperty(`--ds-card-${key}-gap`, `calc(${value}px * var(--sf))`, 'important');
         const minimum = Math.max(...peers.map(peer => cardMinimumHeight(peer, this.scale(peer), false)));
         const height = Math.max(minimum, ...originals.map(item => item.height));

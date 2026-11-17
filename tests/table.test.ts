@@ -18,11 +18,9 @@ test("a row is one square on a hairline, with no box and no column lines", () =>
   expect(cell).toContain("height: var(--ds-table-row)");
   expect(cell).toContain("border: 0");
   expect(cell).toContain("border-bottom: 1px solid var(--ds-table-rule)");
-  // The words' sixteen stands against the rule at the cell's foot.
   expect(cell).toContain("line-height: var(--ds-type-lineheight-default)");
   expect(cell).toContain("vertical-align: bottom");
   expect(cell).toContain("font-weight: inherit");
-  // Only a table that asks for its frame (`data-frame`) has one.
   const plain = css.replace(/\.ds-table\[data-frame\][^{]*\{[^}]*\}/g, "");
   expect(plain.replace(/outline: none;/g, '')).not.toMatch(/border-(left|right|top)|outline:/);
 });
@@ -141,7 +139,6 @@ test("Alt+↓ on a grip moves its row, fires table-move and renumbers; the grip 
   expect(table.data.map(row => (row as { item: string }).item)).toEqual(["Comet", "Atlas", "Harbour"]);
   expect(table.shadowRoot!.activeElement).toBe(table.shadowRoot!.querySelectorAll(".ds-table__handle")[1]);
   expect(table.shadowRoot!.querySelector(".ds-table__status")!.textContent).toBe("Row 1 moved to 2");
-  // The first row goes no further up.
   key(table.shadowRoot!.querySelectorAll(".ds-table__handle")[0]!, "ArrowUp", true);
   await table.updateComplete;
   expect(moves).toHaveLength(1);
@@ -183,7 +180,6 @@ test("a sheet's words that do not fit fade over their last square, never an elli
   expect(css).toContain('.ds-table[data-sheet] .ds-table__words[data-cut="end"] {\n  mask-image: linear-gradient(to var(--ds-table-fade-to), #000 calc(100% - var(--ds-table-row)), transparent);');
   expect(css).toContain('.ds-table[data-sheet] .ds-table__words[data-cut="start"] {\n  mask-image: linear-gradient(to var(--ds-table-fade-from), #000 calc(100% - var(--ds-table-row)), transparent);');
   expect(rule(".ds-table[data-sheet]:dir(rtl) .ds-table__words")).toContain("--ds-table-fade-to: left");
-  // The fade is on the words alone, so a cell's fill and lines never fade.
   expect(css).not.toMatch(/:is\(th, td\)[^{]*\{[^}]*mask-image/);
   const table = document.createElement("ds-table");
   table.sheet = true;
@@ -200,7 +196,6 @@ test("a framed table draws its rounded frame and column lines inside the cells, 
   const css = readFileSync(join(import.meta.dirname, "../DS1/1-root/table.css"), "utf8");
   const frame = css.slice(css.indexOf(".ds-table[data-frame] {"), css.indexOf(".ds-table[data-frame] :is(th, td) {"));
   expect(frame).toMatch(/border-radius: var\(--ds-table-radius\);/);
-  // Drawn over the cells by a pseudo-element, so a filled cell never covers it.
   const over = css.slice(css.indexOf(".ds-table[data-frame]::after {"));
   expect(over).toMatch(/z-index: 1;/);
   expect(over).toMatch(/border: 1px solid var\(--ds-table-rule\);/);

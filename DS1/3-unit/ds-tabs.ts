@@ -2,40 +2,6 @@ import { LitElement, html, unsafeCSS, type PropertyValues } from "lit";
 import styles from "./styles/ds-tabs.css?inline";
 import { define } from "../0-face/define";
 
-/**
- * A run of choices of which one is current: the panel's tabs, a subtab bar,
- * a segmented option group. The choices are `ds-button`s; the current one is
- * `active`.
- *
- * Four faces, always 4px apart where they stand apart: buttons (the
- * default), each tab muted on no ground and the current one on the fill;
- * `text`, the words alone; `split`, the tabs joined into one face as the
- * split button draws it, the current one on the accent; and `paper`, a
- * notebook's tabs hanging from a page's top edge, a row high, the current one
- * on the paper's colour and joined to the page.
- *
- * The element is a `tablist` unless it says otherwise, and its buttons take the
- * tab look. An option group that is not a set of tabs takes `role="group"`, its
- * buttons `aria-pressed`, and they take DS one's button looks: grey, and the
- * accent for the chosen one.
- *
- * @element ds-tabs
- * @attr fill - Share the width equally between the choices.
- * @attr text - Text tabs: the words alone, no fill, the current one in the ink.
- * @attr split - Split tabs: joined into one face a control high, the current one on the accent.
- * @attr paper - Paper tabs: a notebook's tabs a row high, rounded at the top, the current one on the paper and joined to the page.
- *
- * @example
- * <ds-tabs role="group" fill>
- *   <ds-button active aria-pressed="true">Left</ds-button>
- *   <ds-button aria-pressed="false">Right</ds-button>
- * </ds-tabs>
- *
- * <ds-tabs aria-label="Build">
- *   <ds-button role="tab" active aria-selected="true">Blocks</ds-button>
- *   <ds-button role="tab" aria-selected="false">Patterns</ds-button>
- * </ds-tabs>
- */
 export class Tabs extends LitElement {
   static properties = {
     fill: { type: Boolean, reflect: true },
@@ -82,10 +48,6 @@ export class Tabs extends LitElement {
     tabs[next].click();
   };
 
-  /**
-   * Split, each tab knows its place in the run, so only the run's ends are
-   * rounded; paper, each tab wears the mark that gives it a notebook tab's face.
-   */
   private syncFaces = (): void => {
     const tabs = [...this.children].filter(child => child.localName === "ds-button");
     tabs.forEach((tab, index) => {

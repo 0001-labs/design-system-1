@@ -59,6 +59,5 @@ test('the summary carries the library chevron at its end, never a drawn one', as
   expect(chevron.getAttribute('size')).toBe('large');
   expect(root.querySelector('svg')).toBeNull();
   expect(root.querySelector('[centered]')).toBeNull();
-  // The words first, the chevron last.
   expect([...root.querySelector('.summaryRow')!.children].map(child => child.className)).toEqual(['summaryText', 'chevron']);
 });

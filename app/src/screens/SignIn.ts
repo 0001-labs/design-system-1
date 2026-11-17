@@ -7,11 +7,6 @@ import { signInAdapter } from "../signIn/adapter";
 import { defineSignInScreen, type SignInScreen as SignInScreenElement } from "../signIn/sign-in";
 import "../signIn/sign-in.css";
 
-/**
- * The shared sign-in screen (app/src/signIn, copied from Sign-in): the email, then the code
- * sent to it or the owner's password, with Google and Apple when the backend has them.
- * Signed in, the app goes where the person was headed (`redirectTo`).
- */
 export class SignIn extends AppElement {
   static properties = {
     redirectTo: { attribute: false },
@@ -25,9 +20,7 @@ export class SignIn extends AppElement {
   declare fontsOnly: boolean;
   declare dashboardOnly: boolean;
   declare privateTitle: string | undefined;
-  /** Consistency's member sign-in; workspace access is still checked by the platform. */
   declare anyone: boolean;
-  /** Which of the backend's brands the emailed code goes out under (`convex/auth.ts`), for another product's sign-in. */
   declare brand: string | undefined;
   #screen: SignInScreenElement | null = null;
   #mounted: string | null = null;
@@ -42,7 +35,6 @@ export class SignIn extends AppElement {
     this.brand = undefined;
   }
 
-  /** A private host takes the owner's email alone, without Google or Apple. */
   #ownerOnly() {
     return this.fontsOnly || this.dashboardOnly || (Boolean(this.privateTitle) && !this.anyone);
   }
@@ -64,8 +56,6 @@ export class SignIn extends AppElement {
       },
       providers: async () => {
         const available = await query(api.auth.providers, {});
-        // These provider registrations belong to Consistency. DS1's own app
-        // keeps email until it has separate branded provider registrations.
         return ownerOnly || this.brand !== "consistency" ? { ...available, google: false, apple: false } : available;
       },
       passwordSignIn: email => query(api.auth.passwordSignIn, { email }),

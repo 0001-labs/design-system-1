@@ -12,7 +12,6 @@ function css(source: string): string {
   if (result.warnings.length) throw Error('Cannot compare template CSS safely: ' + result.warnings.map(w => w.text).join('; '));
   return result.code;
 }
-/** Comparison only. Never substitute normalized bytes into a recorded presentation. */
 function signature(page: Page): string {
   const window = new Window();
   try {
@@ -41,7 +40,6 @@ function signature(page: Page): string {
   } finally { void window.happyDOM.close(); }
 }
 
-/** Retained names always retain exact definition bytes, including comments and licenses. */
 export function reconcileTemplateRegistry(previous: TemplateRegistry, candidate: TemplateRegistry, update = false): TemplateRegistry {
   const removed = Object.keys(previous).filter(id => !candidate[id]);
   if (removed.length) throw Error(`Template removal requires an explicit history migration: ${removed.join(', ')}.`);

@@ -25,7 +25,6 @@ await copyFile(new URL('design-system-1.ico', destination), new URL('../favicon.
 await copyFile(new URL('design-system-1.svg', destination), new URL('../favicon.svg', destination));
 console.log(`Built ${PRODUCTS.length} favicon sets.`);
 
-// App logos are published separately from the monochrome interface collection.
 const apps = JSON.parse(await readFile(new URL("../DS1/x-app/catalog.json", import.meta.url), "utf8"));
 await mkdir(new URL("apps/", destination), { recursive: true });
 for (const app of apps) {

@@ -10,20 +10,14 @@ import { NOOK_EXAMPLE } from './nook-example';
 import { BIRDIE_EXAMPLES } from './birdie-example';
 import { PRICING_EXAMPLE, PRICING_JAPANESE_EXAMPLE } from './pricing-example';
 import { WORKBENCH_EXAMPLES } from './workbench-examples';
-// The standard page layouts, each filled with the core and unit components a
-// real page would hold. The preview and the copyable code share one source;
-// every sample is local and sends nothing.
 
 export interface LayoutExample {
   name: string;
-  /** When to reach for it, in one sentence. */
   use: string;
   html: string;
   script?: string;
   height: number;
-  /** A published design library the example is drawn with, pinned to one version. */
   library?: { name: string; id: string; version: number; href: string };
-  /** For a page meant to be found: its language, what a search result says and the data search engines read. */
   seo?: { lang: string; title: string; description: string; structuredData: unknown[] };
 }
 

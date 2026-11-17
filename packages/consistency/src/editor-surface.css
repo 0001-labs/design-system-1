@@ -1,8 +1,6 @@
-/* Authored site CSS must not turn the canvas back into a browser document. */
 [data-editor-surface],[data-editor-surface] *{-webkit-user-select:none!important;user-select:none!important}
 [data-editor-surface] :is(input,textarea,[contenteditable]:not([contenteditable="false"])),[data-editor-surface] [contenteditable]:not([contenteditable="false"]) *{-webkit-user-select:text!important;user-select:text!important}
 
-/* Canonical editor guide and selection skin, shared by the lab and site surfaces. */
 .consistency-gap{position:relative;background:transparent}
 .consistency-gap::before{content:'';position:absolute;inset:0;border-top:1px dashed var(--ds-pink);border-bottom:1px dashed var(--ds-pink);pointer-events:none}
 .consistency-gap .ghost{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2}
@@ -51,7 +49,6 @@
 
 .consistency-gap-name{font-size:calc(12px * var(--sf,1));color:var(--ds-text-color-muted)}
 
-/* Measurements stay quiet until hover, keyboard focus or adjustment. */
 .ghost-surface .ghost-measure{opacity:0}
 
 .ghost-surface:hover .ghost-measure,
@@ -64,7 +61,6 @@
 .consistency-tag,.ghost-measure,.consistency-gap-name,.consistency-footer{font-size:var(--ds-type-size-small)}
 
 
-/* Production reveals gap feedback only where the person is working. */
 .production-on .consistency-gap{background:transparent}
 
 .production-on .consistency-gap::before{border-color:transparent}
@@ -89,7 +85,6 @@
 
 .production-on .ghost-surface--width:is(:hover,:focus-visible,[data-spacing-active]){background-image:linear-gradient(to right,transparent calc(50% - .5px),var(--ds-yellow) calc(50% - .5px),var(--ds-yellow) calc(50% + .5px),transparent calc(50% + .5px))}
 
-/* Editing feedback is a soft blush surface rather than a framed box. */
 .ghost-measure{background:var(--ds-pink)}
 
 .ghost-surface{border-radius:var(--ds-radius)}
@@ -106,7 +101,6 @@
 .production-on .ghost-surface--padding:focus-visible,
 .production-on .ghost-surface--width:focus-visible{box-shadow:none;background:color-mix(in srgb,var(--ds-pink) 32%,transparent)}
 
-/* Zero padding has an edge, not a painted twenty-pixel hit area. */
 .consistency-shell .ghost-surface--padding[aria-valuenow="0"]{background:transparent;box-shadow:none;border-radius:0}
 
 .ghost-surface--padding[aria-valuenow="0"]::before{content:'';position:absolute;inset:0 auto 0 0;width:1px;background:var(--ds-pink);pointer-events:none}
@@ -117,7 +111,6 @@
 
 .ghost-surface--padding[aria-valuenow="0"] .ghost-measure{left:0;transform:translateY(-50%)}
 
-/* A side padding runs down the edge; at zero its line stands up, as a horizontal gap's does. */
 .ghost-surface--padding[aria-orientation="horizontal"][aria-valuenow="0"] .ghost-measure{left:50%;top:0;transform:translateX(-50%)}
 .consistency-native-guides .ghost-surface--padding[aria-orientation="horizontal"][aria-valuenow="0"]::after{left:50%;right:auto;top:0;bottom:0;width:1px;height:auto}
 
@@ -127,7 +120,6 @@
 .consistency-statistics:has(>ds-stat[hidden])>.consistency-gap,
 .consistency-sample-actions:has(>ds-button[hidden])>.consistency-gap{display:none}
 
-/* Empty gaps still have an invisible target from which to pull space open. */
 .consistency-gap--horizontal .ghost-surface--gap[aria-valuenow="0"]{width:var(--u);left:50%;transform:translateX(-50%)}
 
 .consistency-shell .ghost-surface--gap[aria-valuenow="0"]{background:transparent;box-shadow:none}
@@ -149,14 +141,12 @@
 .consistency-mobile-preview .consistency-statistics>.consistency-gap{width:100%}
 
 
-/* Measurements belong to the highlighted space, without a separate badge. */
 .consistency-shell .ghost-measure{background:transparent;color:var(--ds-text-color,#171717);padding:0;border:0;border-radius:0}
 
 .consistency-stacked>.consistency-gap{width:100%!important;height:var(--composition-gap)!important;flex:none;align-self:stretch}
 
 .consistency-stacked>.consistency-gap>.ghost-surface--gap{width:100%;height:max(var(--u),var(--composition-gap));left:0;top:50%;transform:translateY(-50%);cursor:ns-resize}
 
-/* Selection rests softly on the authored element, never its empty gaps. */
 :is(.consistency-sheet,[data-editor-surface]) :is([data-composition-selected],[data-selectable][data-selected]:not(.aa-block),[data-selection-face]){position:relative;outline:none!important;box-shadow:none}
 
 :is(.consistency-sheet,[data-editor-surface]) [data-selection-face]::after{content:'';position:absolute;inset:0;z-index:20;pointer-events:none;border:0;outline:0;border-radius:inherit;background:color-mix(in srgb,var(--consistency-selection-color,var(--ds-text-color,#171717)) 15%,transparent)}
@@ -164,16 +154,12 @@
 .context-active :is(.ghost-surface,.consistency-text-gap,.consistency-column-gap,.consistency-card-gap,.consistency-stat-gap,.consistency-resize-edge){visibility:hidden!important;pointer-events:none!important}
 
 
-/* Crossing an element during a gesture is not a request to edit its action. */
 consistency-editor[data-pointer-busy] :is(.consistency-button-action,.consistency-carousel-tools):not([data-keyboard]):not(:focus-within){visibility:hidden;pointer-events:none}
 
 .consistency-selection-face{position:fixed;z-index:20;pointer-events:none;border:0;outline:0;background:color-mix(in srgb,var(--consistency-selection-color,var(--ds-text-color,#171717)) 15%,transparent)}
 
-/* A C9Y constraint broken as drawn (c9y-constraints.ts): the blocks it moved, for a moment. */
 [data-c9y-broken]{outline:2px solid var(--ds-pink,#f0f)!important;outline-offset:-2px}
 
-/* Keep hit targets available without painting every editable space. Reveal only
-   the space under the pointer, keyboard focus or an active adjustment. */
 :is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding){background:transparent}
 :is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds):not(.spacing-off) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding):not([aria-valuenow="0"]):is(:hover,:focus-visible,[data-spacing-active]){background:color-mix(in srgb,var(--ds-pink) 24%,transparent)}
 :is(.consistency-shell,.consistency-native-guides,.consistency-text-bounds) .ghost-surface:is(.ghost-surface--gap,.ghost-surface--padding)[aria-valuenow="0"]::before,
@@ -184,13 +170,8 @@ consistency-editor[data-pointer-busy] :is(.consistency-button-action,.consistenc
 .consistency-native-guides .ghost-surface--padding[aria-valuenow="0"]::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ds-pink);opacity:0;pointer-events:none}
 .consistency-native-guides:not(.spacing-off) .ghost-surface--padding[aria-valuenow="0"]:is(:hover,:focus-visible,[data-spacing-active])::after{opacity:1}
 
-/* Where a carried block will land: the list under it is outlined (the page itself never is), a list it enters
-   reserves its room below what it holds, and a block carried over no list fades. Outlines and opacity only:
-   nothing here animates or moves a block. */
 :root[data-drag-active] [data-drag-over]:not([data-c9y-native-root]){outline:1px solid var(--ds-accent-color,var(--accent-color,var(--apple-green,Highlight)));outline-offset:-1px}
 :root[data-drag-active] .c9y-native-flow:not([data-direction="row"])[style*="--drag-reserve"]{padding-bottom:calc(var(--c9y-padding,0px) + var(--drag-reserve))}
 :root[data-drag-outside] [data-drag-overlay]{opacity:.6}
-/* A carried block is hidden where it stood: the wash a selected picture wears there goes with it. */
 :root[data-drag-active] .consistency-selection-face{visibility:hidden}
-/* How many blocks a carried selection holds: a tag one control high at the preview's top end. */
 [data-drag-preview] .c9y-drag-count{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:4px;background:var(--ds-text-color,#1e1e1e);color:var(--ds-paper,#fff);font:14px/16px var(--ds-typeface-regular,sans-serif);text-align:center;pointer-events:none}

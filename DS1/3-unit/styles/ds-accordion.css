@@ -1,8 +1,3 @@
-/* ds-accordion.css
- * The summary is a row one square high: its words at the start on the sixteen, the library's
- * chevron-down (16px, in the title grey) at its end, turned over when open. The pointer fills the
- * row 4px past its words and chevron, keeping them where they stand; keyboard focus rings it.
- * The details start on the square below, their lines one square each. */
 @import "../../1-root/component-metrics.css";
 
 :host {

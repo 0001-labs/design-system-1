@@ -61,7 +61,6 @@ describe("authentication", () => {
     expect(response.status).toBe(401);
   });
 
-  // Fail closed: an unset secret must never be read as "no auth required".
   it("returns 500 rather than allowing the write when the secret is unset", async () => {
     const unset = await startPublish("");
     try {
@@ -97,8 +96,6 @@ describe("writing an immutable version", () => {
     expect(object!.httpMetadata?.contentType).toBe("text/css; charset=utf-8");
   });
 
-  // Convex actions retry, so a replay of an identical write must resume the
-  // publish rather than fail it.
   it("treats a byte-identical replay as a no-op", async () => {
     const id = newPublicId();
     await put(`/api/artifacts/${id}/v/1`, CSS);
@@ -116,7 +113,6 @@ describe("writing an immutable version", () => {
     expect(response.status).toBe(409);
     expect((await response.json() as { error: { code: string } }).error.code).toBe("immutable_conflict");
 
-    // The original is intact — this is what "immutable" has to mean.
     expect(await (await (await mf.bucket()).get(versionKey(id, 1)))!.text()).toBe(CSS);
   });
 });

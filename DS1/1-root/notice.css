@@ -1,42 +1,5 @@
 @import "./component-metrics.css";
 
-/*
- * An inline notice, as plain classes on native elements.
- *
- * A notice stands in the flow of the page, where its words apply: a failure
- * beside the form that failed, a warning above the list it is about. It is not
- * positioned and takes no box or shadow. A square mark, one control high and
- * filled in the tone's colour, carries the tone; the words sit on the paper
- * beside it, each line one square, with the actions on the row below and the
- * dismiss button at the end of the first line. Danger turns the words into
- * the danger colour. The `ds-notice` element draws the same parts.
- *
- *   ds-notice                       the block: mark, words, dismiss
- *   ds-notice__mark                 the mark, a picture's 4px corners; holds an icon in its ink
- *   ds-notice__title                one line in the medium face
- *   ds-notice__text                 lines of one square
- *   ds-notice__actions              buttons or links on one row
- *   ds-notice__dismiss              an icon button at the end of the first line
- *   ds-notice--success, --warning, --danger     tones; neutral without one
- *   ds-notice--banner               a strip across the top of its positioning
- *                                   context instead: one square high, filled in
- *                                   the tone's colour, everything on one line
- *   ds-notice--app                  a row at the top of the page leading to the
- *                                   site's iPhone app: its picture
- *                                   (ds-notice__picture, two squares), its name
- *                                   and one line about it, Open
- *                                   (a.ds-notice__open) and the close; three
- *                                   squares high with a hairline at its foot.
- *                                   startAppBanners() from 0-face/app-banner.ts
- *                                   shows it only where it belongs
- *
- * Give the block role="status", or role="alert" for danger, so assistive
- * technology reads it when it appears.
- *
- * Tokens: `--ds-notice-mark`, `--ds-notice-mark-ink` and `--ds-notice-ink`,
- * which the tones set.
- */
-
 .ds-notice {
   --ds-notice-mark: var(--ds-fill);
   --ds-notice-mark-ink: var(--ds-text-color);
@@ -72,7 +35,6 @@
   --ds-notice-ink: var(--ds-danger-color);
 }
 
-/* The mark stands on the first line, one control high in a one-square cell. */
 .ds-notice__mark {
   box-sizing: border-box;
   grid-column: 1;
@@ -84,7 +46,6 @@
   height: var(--ds-control-height);
   margin-block: calc((var(--ds-unit) - var(--ds-control-height)) / 2);
   overflow: hidden;
-  /* Rounded as every icon tile is (Joachim, 19 October 2026). */
   border-radius: var(--ds-radius);
   corner-shape: var(--ds-corner-shape, round);
   background: var(--ds-notice-mark);
@@ -120,8 +81,6 @@
   min-height: var(--ds-row-height);
 }
 
-/* The dismiss button closes the first line: a one-square cell at the end.
-   Two classes, so the button's own reset of its margin does not undo it. */
 .ds-notice .ds-notice__dismiss {
   grid-column: 3;
   grid-row: 1;
@@ -129,11 +88,6 @@
   margin-inline-start: calc(var(--ds-unit) - var(--ds-control-height));
 }
 
-/* A banner: the same parts on one line, one square high, across the top of
-   the nearest positioned ancestor (or the page), on a fill of the tone's
-   colour. It takes no room in the flow; leave a square for it where words
-   stand under it. The actions stand at the end of the line, half a square
-   apart; danger words keep the text colour on the danger fill. */
 .ds-notice--banner {
   position: absolute;
   top: 0;
@@ -161,7 +115,6 @@
   text-overflow: clip;
 }
 
-/* Cut words fade over their last square, never an ellipsis (0-face/cut-fade.ts marks them). */
 :is(.ds-notice--banner, .ds-notice--app) :is(.ds-notice__title, .ds-notice__text)[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }
@@ -183,11 +136,6 @@
   margin-inline-start: 0;
 }
 
-/* The app banner: a row at the top of the page, in the flow, three squares
-   high: half a square above and below two squares of content, a hairline at
-   its foot. The app's picture fills two squares with a picture's corners; the
-   name and the line about it take a square each, on the sixteen; Open and the
-   close stand on the sixteen of the square in the middle of the two. */
 .ds-notice--app {
   grid-template-columns: calc(2 * var(--ds-unit)) minmax(0, 1fr) auto var(--ds-unit);
   grid-template-rows: var(--ds-unit) var(--ds-unit);
@@ -237,8 +185,6 @@
   color: var(--ds-text-color-muted);
 }
 
-/* Open and the close: their square starts half a square into the two, its
-   control on the lower sixteen of it. */
 .ds-notice--app .ds-notice__open,
 .ds-notice--app .ds-notice__dismiss {
   grid-row: 1 / 3;

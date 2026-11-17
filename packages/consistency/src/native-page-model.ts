@@ -3,7 +3,6 @@ import type { FieldDefinition, KindDefinition, SlotDefinition } from '../../../s
 import vocabulary from '../../../shared/generated/vocabulary.json';
 
 export interface NativeEntry { block: NativeBlock; parent: string; index: number }
-/** The page's blocks by id, a section counted once: its slots and items are the section's, not blocks of the page. */
 export function nativeEntries(document: NativePageDocument): Map<string, NativeEntry> {
   const entries = new Map<string, NativeEntry>();
   const visit = (blocks: NativeBlock[], parent: string) => blocks.forEach((block,index) => { if(block.kind==='text'&&block.editable===false)return; entries.set(block.id,{block,parent,index}); if ('children' in block) visit(block.children,block.id); });
@@ -18,10 +17,6 @@ export function updateNativeChildren(document: NativePageDocument, id: string, u
   return updateNativeBlock(document,id,block => 'children' in block ? {...block,children:update(block.children)} : block);
 }
 
-/**
- * Moves sibling blocks together: they leave their list and stand in document order in `parent`, at `index` among
- * the children it keeps without them. Blocks that are not siblings, or a parent inside one of them, change nothing.
- */
 export function moveNativeBlocks(document: NativePageDocument, ids: readonly string[], parent: string, index: number): NativePageDocument {
   const entries = nativeEntries(document), moving = ids.map(id => entries.get(id));
   const home = moving[0]?.parent;
@@ -32,52 +27,37 @@ export function moveNativeBlocks(document: NativePageDocument, ids: readonly str
   return updateNativeChildren(removed, parent, children => { const next = [...children]; next.splice(Math.max(0, Math.min(index, next.length)), 0, ...blocks); return next; });
 }
 
-/**
- * A column is a flow down the page standing in a flow across it. Holding a single block it moves with that
- * block (the C9Y `column` rule): a press on the block carries the column, so no empty column is left behind.
- */
 export function soleColumnBlock(entries: Map<string, NativeEntry>, id: string): NativeEntry | undefined {
   const entry = entries.get(id), parent = entry && entries.get(entry.parent);
   if (entry?.block.kind !== 'flow' || entry.block.direction !== 'column' || entry.block.children.length !== 1 || parent?.block.kind !== 'flow' || parent.block.direction !== 'row') return undefined;
   return entries.get(entry.block.children[0]!.id);
 }
-/** What a carried block becomes where it lands: a column landing anywhere but among columns lands as its single block. */
 export function landingBlock(entries: Map<string, NativeEntry>, id: string, parent: string): NativeBlock | undefined {
   const entry = entries.get(id); if (!entry) return undefined;
   const sole = soleColumnBlock(entries, id), destination = entries.get(parent)?.block;
   return sole && !(destination?.kind === 'flow' && destination.direction === 'row') ? sole.block : entry.block;
 }
 
-/*
- * The vocabulary, as `shared/generated/vocabulary.json` records it: every kind's fields with their
- * ranges and defaults, its slots and its examples. The editor reads ranges, defaults, choices and
- * examples from here alone; it keeps no table of its own.
- */
 const VOCABULARY = vocabulary as unknown as { tones: readonly string[]; kinds: KindDefinition[] };
 export const TONE_NAMES: readonly string[] = VOCABULARY.tones;
 export const sectionKinds = (): KindDefinition[] => VOCABULARY.kinds.filter(kind => kind.layer === 'section');
 export const kindDefinition = (kind: string): KindDefinition | undefined => VOCABULARY.kinds.find(definition => definition.kind === kind);
 export const sectionField = (kind: string, name: string): FieldDefinition | undefined => kindDefinition(kind)?.fields[name];
-/** A section field's current value, or the vocabulary's default. */
 export function sectionValue<T = unknown>(block: NativeSection, name: string): T {
   const value = (block as unknown as Record<string, unknown>)[name];
   return (value === undefined ? sectionField(block.kind, name)?.default : value) as T;
 }
-/** A measure in squares kept on the square and inside the kind's range (and on its step). */
 export function clampSectionMeasure(kind: string, name: string, squares: number): number {
   const field = sectionField(kind, name); if (!field) return Math.round(squares);
   const min = field.min ?? 0, max = field.max ?? 2000, step = field.step ?? 1;
   const stepped = min + Math.round((squares - min) / step) * step;
   return Math.max(min, Math.min(max, stepped));
 }
-/** The fields a section's spacing handles stand on: gaps and widths in squares between its items. */
 export const SPACING_FIELDS: Readonly<Record<string, string>> = { panels: 'gap', footer: 'columnWidth' };
-/** The field a section's height edge resizes, in squares, and the element it stands on: the section, or each item. */
 export const HEIGHT_FIELDS: Readonly<Record<string, { field: string; on: 'section' | 'items' | 'picture' }>> = {
   hero: { field: 'height', on: 'section' }, split: { field: 'imageHeight', on: 'picture' }, cards: { field: 'height', on: 'items' }, gallery: { field: 'height', on: 'items' }, bento: { field: 'height', on: 'items' },
 };
 
-/** The slot that holds a section's items: records, heroes or pictures, reordered and removed inside the section. */
 export function itemsSlot(kind: string): { name: string; definition: SlotDefinition } | undefined {
   const definition = kindDefinition(kind); if (!definition) return undefined;
   const entry = Object.entries(definition.slots).find(([, slot]) => ['items', 'heroes', 'pictures'].includes(slot.type));
@@ -87,7 +67,6 @@ const ITEM_LABELS: Readonly<Record<string, string>> = { cards: 'Card', bento: 'T
 export const itemLabel = (kind: string) => ITEM_LABELS[kind] ?? 'Item';
 export const sectionLabel = (kind: string) => kind.charAt(0).toUpperCase() + kind.slice(1);
 const items = (block: NativeSection): unknown[] | undefined => { const slot = itemsSlot(block.kind); const value = slot && (block as unknown as Record<string, unknown>)[slot.name]; return Array.isArray(value) ? value : undefined; };
-/** The ids the renderer gives a section's items: a hero's own id in panels, `<id>.<slot>.<index>` elsewhere. */
 export function sectionItemIds(block: NativeSection): string[] {
   const slot = itemsSlot(block.kind), list = items(block); if (!slot || !list) return [];
   return list.map((item, index) => slot.definition.type === 'heroes' ? (item as NativeBlock).id : `${block.id}.${slot.name}.${index}`);
@@ -100,14 +79,12 @@ export function moveSectionItem(document: NativePageDocument, id: string, from: 
     return { ...block, [slot.name]: next } as NativeBlock;
   });
 }
-/** Removes an item unless the kind's minimum forbids it; the document is unchanged then. */
 export function removeSectionItem(document: NativePageDocument, id: string, index: number): NativePageDocument {
   return updateNativeBlock(document, id, block => {
     const slot = itemsSlot(block.kind), list = isNativeSection(block) ? items(block) : undefined; if (!slot || !list || list.length <= (slot.definition.min ?? 0)) return block;
     return { ...block, [slot.name]: list.filter((_, at) => at !== index) } as NativeBlock;
   });
 }
-/** Adds an item from the kind's first example, its words placeholders and its pictures the site's, unless the kind's maximum forbids it. */
 export function addSectionItem(document: NativePageDocument, id: string, images: readonly string[], newId: () => string): NativePageDocument {
   return updateNativeBlock(document, id, block => {
     const slot = itemsSlot(block.kind), list = isNativeSection(block) ? items(block) : undefined, definition = kindDefinition(block.kind);
@@ -118,15 +95,9 @@ export function addSectionItem(document: NativePageDocument, id: string, images:
   });
 }
 
-/*
- * A new section is the kind's first example with fresh ids, its words emptied to short placeholders,
- * its pictures the site's own, and the slots the site may not have (runtimes, languages, collections)
- * left out, so what is inserted is valid on the page it lands in.
- */
 const PLACEHOLDERS: Readonly<Record<string, string>> = { title: 'Title', text: 'Text', kicker: 'Kicker', heading: 'Heading', label: 'Label', line: 'Line', legal: 'Legal line', tagline: 'Tagline', answer: 'Answer', term: 'Term', value: 'Value', question: 'Question', name: 'Name' };
 const ACTION_WORDS: Readonly<Record<string, string>> = { links: 'Link', policies: 'Policy', follow: 'Follow', lines: 'Line' };
 export const placeholderWords = (slot: string) => PLACEHOLDERS[slot] ?? slot.charAt(0).toUpperCase() + slot.slice(1);
-/** The picture a new section shows on a site that has no images yet, from Design system 1's own examples. */
 export const PLACEHOLDER_PICTURE = 'https://designsystem1.com/examples/images/atelier-hero.jpg';
 const freshPicture = (value: unknown, images: readonly string[]) => { const picture = value as { src: string; alt: string; fit?: string; href?: string }; return { ...picture, src: images[0] ?? PLACEHOLDER_PICTURE, alt: '' }; };
 const freshAction = (value: unknown, slot: string) => ({ ...(value as { href: string }), text: ACTION_WORDS[slot] ?? 'Button' });
@@ -161,21 +132,15 @@ export function freshSection(example: NativeSection, images: readonly string[], 
   if (definition.oneOf && !definition.oneOf.some(name => result[name] !== undefined)) result[definition.oneOf[0]!] = [];
   return result as unknown as NativeSection;
 }
-/** A new section of this kind for a page with these images. */
 export function newSection(kind: string, images: readonly string[], newId: () => string): NativeSection | undefined {
   const definition = kindDefinition(kind); if (!definition || definition.layer !== 'section') return undefined;
   return freshSection(structuredClone(definition.examples[0]) as NativeSection, images, newId);
 }
-/** The first words slot of a section as drawn: the content block the caret goes to after inserting it. */
 export function firstWordsId(block: NativeSection): string | undefined {
   const find = (blocks: NativeBlock[]): string | undefined => { for (const child of blocks) { if (child.kind === 'content') return child.id; const inner = 'children' in child ? find(child.children) : isNativeSection(child) ? find(expandNativeSection(child).children) : undefined; if (inner) return inner; } return undefined; };
   return find(expandNativeSection(block).children);
 }
 
-/*
- * A derived id names a place in its section: `<id>.<slot>`, `<id>.<slot>.<index>` or
- * `<id>.<items>.<index>.<member>`, as the renderer marks it; the footer's mark stands for its brand.
- */
 const ALIASES: Readonly<Record<string, string>> = { mark: 'brand' };
 export function sectionPath(sectionId: string, derivedId: string): string[] | undefined {
   if (!derivedId.startsWith(`${sectionId}.`)) return undefined;
@@ -187,7 +152,6 @@ export function readAt(block: NativeSection, path: readonly string[]): unknown {
   for (const part of path) { if (value === null || typeof value !== 'object') return undefined; value = (value as Record<string, unknown>)[/^\d+$/.test(part) ? Number(part) : part]; }
   return value;
 }
-/** The words at a path, or none: a slot that is not words reads as empty. */
 export const wordsAt = (block: NativeSection, path: readonly string[]): string => { const value = readAt(block, path); return typeof value === 'string' ? value : ''; };
 export function writeAt(block: NativeSection, path: readonly string[], value: unknown): NativeSection {
   const set = (target: unknown, at: number): unknown => {
@@ -198,7 +162,6 @@ export function writeAt(block: NativeSection, path: readonly string[], value: un
   };
   return set(block, 0) as NativeSection;
 }
-/** The member a derived path reaches in the vocabulary: its own definition, or the slot that holds it. */
 export function memberAt(kind: string, path: readonly string[]): FieldDefinition | SlotDefinition | undefined {
   const definition = kindDefinition(kind); if (!definition) return undefined;
   let member: FieldDefinition | SlotDefinition | undefined = definition.slots[path[0]!] ?? definition.fields[path[0]!];
@@ -212,7 +175,6 @@ export function memberAt(kind: string, path: readonly string[]): FieldDefinition
 
 export interface SpaceBox {left:number;top:number;width:number;height:number}
 interface Box extends SpaceBox {right:number;bottom:number}
-/** Track rows from rendered native grid items. Only intersecting tracks form a gutter. */
 export function nativeGridSpaces(boxes: readonly Box[]): Array<{axis:'horizontal'|'vertical';box:SpaceBox}> {
   const rows: Box[][] = [];
   for (const box of [...boxes].filter(box=>box.width>0&&box.height>0).sort((a,b)=>a.top-b.top||a.left-b.left)) {
@@ -225,8 +187,6 @@ export function nativeGridSpaces(boxes: readonly Box[]): Array<{axis:'horizontal
   }}
   let occupied:Box[]=[],bottomEdge=-Infinity;
   for(let index=1;index<rows.length;index++){
-    // A sticky or overlapping row can sit inside an earlier, taller row. The occupied
-    // frontier, not the last row's bottom, is the boundary of real whitespace.
     for(const box of rows[index-1]){if(box.bottom>bottomEdge){bottomEdge=box.bottom;occupied=[box];}else if(box.bottom===bottomEdge)occupied.push(box);}
     const before=occupied,after=rows[index],top=bottomEdge,bottom=Math.min(...after.map(box=>box.top));
     const left=Math.max(Math.min(...before.map(box=>box.left)),Math.min(...after.map(box=>box.left))),right=Math.min(Math.max(...before.map(box=>box.right)),Math.max(...after.map(box=>box.right)));

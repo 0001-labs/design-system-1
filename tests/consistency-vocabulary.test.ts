@@ -43,7 +43,6 @@ describe('the vocabulary record', () => {
       expect(checked.blocks[0], label).toEqual(example);
       const html = renderNativePage(checked, { editor, images: context.images, collections: { storefront: { items: [{ id: 'a', title: 'A raft', href: '/a/', price: '100 kr' }] } }, runtime: block => `<span data-runtime="${block.name}"></span>` });
       if (example.kind === 'text' && (!editor || example.editable === false)) {
-        // Literal children must remain valid inside native options and textareas.
         expect(literalExamples[example.id], label).toBeDefined();
         expect(renderNativeBlock(example, { editor }), label).toBe(literalExamples[example.id]);
         expect(html, label).not.toContain(`data-native-block="${example.id}"`);
@@ -51,7 +50,6 @@ describe('the vocabulary record', () => {
       if (definition.layer === 'section') {
         expect(html, label).toContain(`class="c9y-native-node c9y-native-section`);
         expect(html, label).toContain(`data-section="${definition.kind}"`);
-        // A slot is drawn in its place; turns are not drawn, they travel as data on the block for the page's behaviours.
         for (const [name, slot] of Object.entries(definition.slots)) if ((example as unknown as Record<string, unknown>)[name] !== undefined) expect(html, `${label} slot ${name}`).toContain(slot.type === 'turns' ? ` data-${name}="` : `data-slot="${name}"`);
       }
       expect(html, label).not.toMatch(/<script|javascript:/);

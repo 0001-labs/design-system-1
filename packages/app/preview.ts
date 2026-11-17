@@ -8,7 +8,6 @@ import { wireCodeCopy } from '../../website/src/lib/example-controls';
 import './src/index';
 import '../../DS1/1-root/prose.css';
 
-// The private guide's controlled example; applications supply their own state.
 export function mountPrivateExamples(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('.preview').forEach((preview, index) => {
     const section = document.createElement('section');

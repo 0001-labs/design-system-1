@@ -8,7 +8,6 @@ export function libraryComponent(value: string | null): string {
 export function libraryHeading(library: Pick<LibraryNavigation, "name" | "publishedVersion">): string {
   return `${library.name} · ${library.publishedVersion === null ? "Draft" : `v${library.publishedVersion}`}`;
 }
-/** The last crumb for what a library has open: Overview, or the component's name. */
 export function libraryPage(library: Pick<LibraryNavigation, "component" | "view">): string {
   if (library.view === "overview") return "Overview";
   return LAYERS.flatMap(layer => layer.entries).find(entry => entry.href === library.component)?.name ?? "";
@@ -16,7 +15,6 @@ export function libraryPage(library: Pick<LibraryNavigation, "component" | "view
 export function libraryHref(library: LibraryNavigation, component = library.component): string {
   return `/app/l/${encodeURIComponent(library.id)}?${new URLSearchParams({ component, ...(library.view ? { view: library.view } : {}) })}`;
 }
-/** Only accept metadata for the library returned by the authenticated editor. */
 export function readLibraryNavigation(value: unknown): LibraryNavigation | null {
   if (!value || typeof value !== "object") return null;
   const data = value as Record<string, unknown>;
@@ -29,12 +27,10 @@ export function libraryWorkspaceHref(library: LibraryNavigation, component = lib
   return `/libraries/workspace/?${new URLSearchParams({ library: library.id, component, ...(library.view ? { view: library.view } : {}) })}`;
 }
 
-/** Normal library links share the docs shell; embedded and explicit full-screen apps stay put. */
 export function libraryWorkspaceRedirect(path: string, query: URLSearchParams, embedded: boolean, _standalone: boolean): string | null {
   if (embedded) return null;
   if (path === '/profile') return '/account/';
   if (path === '/' || path === '/playground') return '/libraries/playground/';
-  // The base system is Design system 1 among the owner's libraries; its component or view travels.
   if (path === '/base') {
     const kept = new URLSearchParams();
     for (const key of ['component', 'view']) if (query.get(key)) kept.set(key, query.get(key)!);

@@ -10,8 +10,6 @@ import {
 } from "../DS1/0-face/languages";
 import type { Language } from "../DS1/0-face/languages";
 
-// Two products' languages: one that speaks Bokmål and Brazilian Portuguese only,
-// and one that adds Italian and Chinese
 const TWELVE: Language[] = ["en", "da", "sv", "nb", "fi", "is", "ja", "de", "fr", "es", "ko", "pt-BR"];
 const FOURTEEN: Language[] = [...TWELVE, "it", "zh"];
 

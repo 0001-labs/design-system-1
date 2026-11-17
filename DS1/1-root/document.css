@@ -1,38 +1,5 @@
 @import "./component-metrics.css";
 
-/*
- * A document page: terms, a privacy policy, a legal notice, a help article.
- *
- * The contents stand at the start, twelve squares wide, and stay in view as
- * the writing scrolls past; the writing, two squares after them, is a reading
- * column of at most thirty-two squares, native headings and paragraphs marked
- * `data-ds-prose` (prose.css draws them). Where the two do not fit side by
- * side the contents stand above the writing. Every line is one square; the
- * contents' links are in the text's ink, the section in view (`aria-current`)
- * on a hairline of the full ink, a third level half a square in. The
- * `ds-document` element builds the contents from the headings and marks the
- * one in view.
- *
- *   ds-document                  the page's two columns
- *   ds-document__toc             the contents, a <nav>, as tall as the writing
- *   ds-document__contents        inside it, what stays in view: the title and the list
- *   ds-document__toc-title       "Contents", one line in the title grey
- *   ds-document__toc-list        the links, an <ol> with one link per <li>
- *   ds-document__toc-sub         an <li> for a third-level heading
- *   ds-document__body            the writing, marked data-ds-prose
- *
- * A definition table (`ds-definitions` on a <dl>) sets terms beside what they
- * mean, as a legal notice such as 特定商取引法に基づく表記 does: the term eight
- * squares wide in the muted ink, its definition beside it, each pair on a
- * hairline at its foot with half a square above and below, as a prose table's
- * rows are. Pairs may stand in a <div> each. Below twenty-four squares the
- * definition goes under its term. It works inside or outside prose.
- *
- * Tokens: `--ds-document-top` (where the contents stop below the top of the
- * view, one square; add a sticky header's height), `--ds-definitions-term`
- * (the term column, eight squares).
- */
-
 .ds-document {
   box-sizing: border-box;
   display: flex;
@@ -49,9 +16,6 @@
   letter-spacing: var(--ds-type-letterspacing-default);
 }
 
-/* The contents column stretches to the writing's height when the two stand
-   side by side, so what is inside it can stay in view; standing above the
-   writing it is only as tall as itself, and nothing sticks. */
 .ds-document__toc {
   flex: 0 0 calc(12 * var(--ds-unit));
   max-width: 100%;
@@ -98,7 +62,6 @@
   white-space: nowrap;
 }
 
-/* A cut link fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 .ds-document__toc-list a[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }
@@ -119,19 +82,15 @@
   outline-offset: -1px;
 }
 
-/* The writing: at least twenty squares beside the contents, else below them. */
 .ds-document__body {
   flex: 1 1 0;
   min-width: min(100%, calc(20 * var(--ds-unit)));
   max-width: calc(32 * var(--ds-unit));
 }
 
-/* A heading the contents jump to stops where the contents do. */
 .ds-document__body :is(h1, h2, h3, h4, h5, h6) {
   scroll-margin-top: var(--ds-document-top, var(--ds-unit));
 }
-
-/* A definition table. */
 
 .ds-definitions {
   box-sizing: border-box;

@@ -1,25 +1,3 @@
-/**
- * Published design libraries: stylesheets authored in Design system 1's
- * libraries app and served from `designsystem1.com/ds1/<id>/latest.css` (or an
- * immutable `/v/<n>.css`). A product can hand native controls to one, marking
- * each with a literal `data-library-control` attribute, often through thin
- * wrappers of its own.
- *
- * Such a site claims DS1 styling through the library, not through controls.css.
- * The claim verifies only for a pinned library: Sync 1's `library` export copied
- * one published version (`ds1-library/<id>/v/<n>.css`) with its manifest, the
- * lock records both hashes at a DS1 commit, the copy and manifest are unchanged,
- * the stylesheet carries the stamp publishing writes (the DS1 library revision
- * that prepared it), and the product loads that copy and no library address.
- * Then its sites count as DS1 styles. A library loaded from its address
- * (`latest.css` changes with every publish), a copy that was changed, or one
- * without a lock or stamp, counts as needs review, never as local.
- *
- * Only literal evidence counts: a library address in the app's tracked source,
- * the marker on the element itself, or an imported JSX use of a wrapper whose
- * exported component renders exactly one marked native element. Native text a
- * page-wide library sheet may also draw is not inferred.
- */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -27,33 +5,27 @@ import { dirname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 import type { ComponentCell } from "../shared/component-adoption";
 
-/** A published library's public address: a 20-character Crockford base32 ID. */
 const addressPattern = "designsystem1\\.com/ds1/[0-9a-hjkmnp-tv-z]{20}/(latest|v/[1-9][0-9]*)\\.css";
 export const libraryAddress = new RegExp(addressPattern);
 export const libraryMarker = "data-library-control";
 export const libraryIssue = (connection: string) => `Drawn by a published design library (connected in ${connection}). Its rules are not verifiable against a DS1 revision: no lock records the published library version and content hash this product carries.`;
-/** A library loaded from its address: `latest.css` changes with every publish, and no address is locked. */
 const liveIssue = (connection: string, latest: boolean) => latest
   ? `${libraryIssue(connection)} It is fetched from latest.css, which changes with every publish; pin a version through Sync 1's library export.`
   : `${libraryIssue(connection)} It is loaded from its address rather than a pinned copy; pin the version through Sync 1's library export.`;
 
-/** What publishing stamps first (DS1/1-root/library-tokens.ts). */
 const stamp = /^(?:@charset "[^"]*";\s*)?\/\* Design system 1 library, revision (sha256:[0-9a-f]{12}) \*\//;
 const pinnedPath = /^(?:(.*)\/)?ds1-library\/([0-9a-hjkmnp-tv-z]{20})\/v\/([1-9][0-9]*)\.css$/;
 const sha256 = (body: string | Buffer) => createHash("sha256").update(body).digest("hex");
 
-/** A published library pinned through Sync 1's library export, and whether its copy verifies against the lock. */
 export interface PinnedLibrary {
   id: string;
   version: number;
-  /** The copy's path, relative to the app. */
   path: string;
   revision?: string;
   verified: boolean;
   issues: string[];
 }
 
-/** The libraries the app's sync.lock.json records as pinned, each checked against the lock, its manifest and its stamp. */
 export function pinnedLibraries(root: string): PinnedLibrary[] {
   const lockPath = join(root, "sync.lock.json");
   if (!existsSync(lockPath)) return [];
@@ -97,18 +69,15 @@ export function pinnedLibraries(root: string): PinnedLibrary[] {
   return pins.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** A native element carrying the marker, at the line its site is recorded. */
 export type MarkedElement = { tag: string; line: number; component: string; start: number; end: number };
 type Site = { tag: string; line: number };
 
-/** The column a marked native element counts in: a marked link is a library button face. */
 function markedColumn(tag: string, type: string | undefined): string | undefined {
   if (tag === "button" || tag === "a") return "button";
   if (tag === "input") return type === "checkbox" || type === "radio" || type === "color" ? type : type === "file" ? "file-picker" : "input";
   return ({ select: "select", textarea: "textarea" } as Record<string, string>)[tag];
 }
 
-/** Marked native elements in markup, JSX and createElement/h calls, with literal attributes only. */
 export function markedElements(file: string, source: string): MarkedElement[] {
   const found: MarkedElement[] = [];
   const line = (offset: number) => source.slice(0, offset).split("\n").length;
@@ -159,14 +128,12 @@ export function markedElements(file: string, source: string): MarkedElement[] {
   return found;
 }
 
-/** A wrapper is an exported component whose declaration renders exactly one marked native element. */
 function exportedWrappers(file: string, source: string): Map<string, MarkedElement> {
   const marked = markedElements(file, source);
   const wrappers = new Map<string, MarkedElement>();
   if (!marked.length) return wrappers;
   const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, /x$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const exported = (node: ts.Node) => ts.canHaveModifiers(node) && ts.getModifiers(node)?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
-  /** The expressions a declaration's functions return: a wrapper returns its marked element itself. */
   const returned = (node: ts.Node) => {
     const ranges = new Set<string>();
     const add = (expression: ts.Expression) => {
@@ -196,25 +163,18 @@ function exportedWrappers(file: string, source: string): Map<string, MarkedEleme
 
 export type LibraryUse = { component: string };
 export interface PublishedLibrary {
-  /** Where the app connects the library, relative to the app. */
   connection: string;
-  /** A pinned copy that verifies, loaded in place of any library address: its sites are DS1 styles. */
   verified: boolean;
-  /** Why the library's sites need review, when they do. */
   issue?: string;
-  /** Per file: wrapper uses by binding name, marked native sites, and wrapper faces counted at their uses instead. */
   read(file: string, source: string): LibraryFile;
 }
 export interface LibraryFile {
-  /** A site drawn by the library (its column), `null` for a wrapper's own face, or undefined when the library has no claim on it. */
   site(site: Site): LibraryUse | null | undefined;
 }
 
-/** The app's published library connection, from its tracked files. Without one, the marker means nothing. */
 export function publishedLibrary(root: string): PublishedLibrary | undefined {
   const pins = pinnedLibraries(root);
   const pinnedFiles = new Set(pins.map(pin => pin.path));
-  // Code and stylesheets connect a library; a brief, README, manifest or test that names it does not.
   const connecting = (args: string[]) => {
     let listed = "";
     try { listed = execFileSync("git", ["grep", "-l", ...args, "--", "."], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
@@ -245,7 +205,6 @@ export function publishedLibrary(root: string): PublishedLibrary | undefined {
     if (!base.startsWith(resolve(root) + "/")) return undefined;
     return [base, `${base}.ts`, `${base}.tsx`, join(base, "index.ts"), join(base, "index.tsx")].find(path => existsSync(path) && statSync(path).isFile() && /\.[cm]?[jt]sx?$/.test(path));
   };
-  /** Follow named re-exports: they bind the same component whatever else the module does. */
   const wrapper = (path: string | undefined, name: string, depth = 0): MarkedElement | undefined => {
     if (!path || depth > 3) return undefined;
     const own = wrappersIn(path).get(name);
@@ -295,7 +254,6 @@ export function publishedLibrary(root: string): PublishedLibrary | undefined {
   };
 }
 
-/** Record a library site: DS1 styles through a verified pinned library, else needs review with the provenance issue. */
 export function countLibrarySite(cell: ComponentCell, file: string, site: Site, library: Pick<PublishedLibrary, "connection" | "verified" | "issue">) {
   const tag = /^[a-z]/.test(site.tag) ? `${site.tag}[${libraryMarker}]` : site.tag;
   if (library.verified) {

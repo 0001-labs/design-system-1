@@ -1,4 +1,3 @@
-/** A published library owns appearance; its last published snapshot covers offline starts. */
 export function connectLibraryStyles(options: {
   url: string;
   fallback: string;
@@ -13,7 +12,6 @@ export function connectLibraryStyles(options: {
   published.href = options.url;
   published.dataset.designLibrary = "published";
   const loaded = () => {
-    // Replace, rather than layer: deleting a library rule must really delete it.
     fallback.disabled = true;
     published.dataset.state = "published";
   };

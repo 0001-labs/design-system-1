@@ -43,8 +43,6 @@ test("ordered members survive insert, remove, hide and reconnect without owning 
 });
 
 test("moving a member between groups restores its original styles after release", async () => {
-  // Observe the destination first: its callback may claim the node before the
-  // source sees the removal, so the previous owner's state must be handed over.
   const destination = document.createElement("ds-avatar-group");
   const source = document.createElement("ds-avatar-group");
   const member = document.createElement("span");

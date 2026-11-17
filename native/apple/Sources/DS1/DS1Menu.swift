@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// One option of a select: its value and its words, and an optional colour for a swatch.
 public struct DS1Option<Value: Hashable>: Identifiable {
     public let value: Value
     public let label: String
@@ -12,10 +11,6 @@ public struct DS1Option<Value: Hashable>: Identifiable {
     }
 }
 
-/// `ds-select`: eight squares by one on the field's ground with a 1-point border and the
-/// corner, the chosen option's words 4 in and the down arrow 2 from the end; a press opens the
-/// options in the platform's menu, which keeps its own look and accessibility. `chip` is a
-/// control-high chip on the fill (on the accent when `primary`); `fit` hugs the words.
 public struct DS1Select<Value: Hashable>: View {
     @Environment(\.ds1Scale) private var scale
     let options: [DS1Option<Value>]
@@ -58,9 +53,6 @@ public struct DS1Select<Value: Hashable>: View {
     }
 }
 
-/// A menu entry drawn as Design system 1 draws one: one square high, 4 in, the corner, with
-/// a check on the chosen option. Use it inside a `DS1Menu` (a menu of the system's own) when
-/// it needs the entry's look in a list of the product's own.
 public struct DS1MenuItem: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -94,9 +86,6 @@ struct DS1MenuItemStyle: ButtonStyle {
     }
 }
 
-/// `ds-menu` inline: entries in a frame 4 in, with a 1-point border, the corner and the paper,
-/// at least eight squares wide and at most 16 tall, scrolling. Floating menus use the
-/// system's `Menu`, as `DS1Select` does.
 public struct DS1Menu<Content: View>: View {
     @Environment(\.ds1Paper) private var paper
     @Environment(\.ds1Scale) private var scale
@@ -112,7 +101,6 @@ public struct DS1Menu<Content: View>: View {
     }
 }
 
-/// A menu's heading: one square high, 4 in, muted.
 public struct DS1MenuLabel: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -120,7 +108,6 @@ public struct DS1MenuLabel: View {
     public var body: some View { DS1ControlText(label, colour: .textMuted).padding(.horizontal, scale(4)).frame(maxWidth: .infinity, minHeight: scale.unit, alignment: .leading) }
 }
 
-/// A 1-point line between a menu's groups, half a square above and below.
 public struct DS1MenuSeparator: View {
     @Environment(\.ds1Scale) private var scale
     public init() {}

@@ -1,4 +1,3 @@
-/** Package only the private System app, data and previews. The public site has its own release. */
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 const report = JSON.parse(await readFile('website/dist/system-data/examples.json', 'utf8'));

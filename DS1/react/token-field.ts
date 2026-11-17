@@ -17,7 +17,6 @@ export type TokenFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "child
   tokens?: ReactNode; suggestions?: ReactNode; chooseLabel?: string; separators?: string;
   onCommit?: (request: TokenCommit) => void;
 };
-/** All native field attributes, handlers and refs are passed to the native input. */
 export const TokenField = forwardRef<HTMLInputElement, TokenFieldProps>(function TokenField(
   {tokens, suggestions, chooseLabel = "", separators, onCommit, className, style, ...props}, ref,
 ) {

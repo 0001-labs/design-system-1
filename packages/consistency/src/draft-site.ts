@@ -11,7 +11,6 @@ import {draftSiteApi,type DraftSiteSummary,type DraftSite} from './draft-site-ap
 import { step } from './feedback';
 export {draftSiteApi,type DraftSiteSummary,type DraftSite} from './draft-site-api';
 
-/** A saved private site draft, using the production editor without the lab inspector. */
 export class DraftSiteEditor extends LitElement {
   static properties = { problem: { state: true } };
   workspace = '';
@@ -59,7 +58,6 @@ export class DraftSiteEditor extends LitElement {
 }
 customElements.define('consistency-draft-site', DraftSiteEditor);
 
-/** Template selection → name and editable preview → durable site. Creation retries keep the same id. */
 export class NewSite extends LitElement {
   static properties = { selected: { state: true }, search: { state: true }, name: { state: true }, busy: { state: true }, problem: { state: true } };
   workspace = '';

@@ -34,7 +34,6 @@ test("never on a computer, Android, from the home screen or in an app's web view
   expect(appBannerPlacement(app, phone(ANDROID))).toBe("none");
   expect(appBannerPlacement(app, phone(SAFARI, { standalone: true }))).toBe("none");
   expect(appBannerPlacement(app, phone(WEBVIEW))).toBe("none");
-  // An iPad asking for the desktop site still says Macintosh, with touch.
   expect(appBannerPlacement(app, phone(MAC))).toBe("safari");
 });
 

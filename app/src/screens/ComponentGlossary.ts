@@ -10,7 +10,6 @@ import { AppElement, defineElement } from "../lib/element";
 import { button } from "../lib/ui";
 import "./component-adoption.css";
 
-/** Every component's code, layer by layer, for the owner. */
 export class ComponentGlossary extends AppElement {
   static properties = { document: { type: Boolean }, signOut: { attribute: false }, query: { state: true }, layer: { state: true } };
   declare document: boolean;
@@ -46,7 +45,6 @@ export class ComponentGlossary extends AppElement {
         </table>
       </section>
     </section>`;
-    // Inside a document it is a section of that document; on its own, a page in the app frame.
     return this.document ? glossary : html`<ds-app name="Component glossary" home="#glossary" class="adoption-frame">
       <p slot="bar" class="adoption-eyebrow"><a href="#adoption">Component adoption</a> · Private</p>
       <div slot="actions">${button("Sign out", () => void this.signOut(), { secondary: false })}</div>

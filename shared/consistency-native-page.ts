@@ -19,9 +19,7 @@ export interface NativeGrid extends NativeBlockBase {
 export interface NativeContent extends NativeBlockBase {
   kind: 'content'; source: string; wrap?:boolean; gaps?: Record<string, number>; binding?: string;
 }
-/** What a picture of a screen stands in: a browser window, a bar with its three dots over it, or a phone, a bezel with its island. */
 export type NativeFrame = 'window' | 'phone';
-/** Where a picture's subject is, as whole percentages from the left and the top; 50 and 50 when absent. */
 export interface NativeFocus { x: number; y: number }
 export interface NativeImage extends NativeBlockBase {
   kind: 'image'; src: string; alt: string; height?: number; mobileHeight?: number; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string; frame?: NativeFrame;
@@ -33,7 +31,6 @@ export interface NativeLink extends NativeBlockBase {
 }
 export interface NativeCollection extends NativeBlockBase {
   kind: 'collection'; binding: string; layout: 'grid' | 'gallery';
-  /** Gallery uses this many ordinary cards per row; its first row contains featured cards. */
   columns: number; featured: number; columnGap: number; rowGap: number;
   imageHeight: number; featuredImageHeight?: number; mobileImageHeight?: number; fit: 'contain' | 'cover';
 }
@@ -43,23 +40,15 @@ export interface NativeText extends NativeBlockBase { kind: 'text'; text: string
 export interface NativeComponent extends NativeBlockBase { kind:'component'; name:string; children:NativeBlock[]; values?:Record<string,string>; words?:Record<string,string>; gap?:number; padding?:number; sidePadding?:number; height?:number; marginTop?:number; marginBottom?:number; columnGap?:number; rowGap?:number; design?:SiteSurfaceDesign }
 export type NativePrimitive = NativeText | NativeComponent | NativeFlow | NativeGrid | NativeContent | NativeImage | NativeLink | NativeCollection | NativeRuntime;
 
-/*
- * Sections: typed blocks above the primitives. A section has appearance fields in whole squares and
- * named slots; the renderer expands it to the primitives' markup, so geometry, selection and
- * publication keep one model. No section carries CSS, HTML or a colour: a tone is a name the site's
- * library defines. `shared/consistency-vocabulary.ts` holds every field's range and every slot.
- */
 export type { Tone } from './consistency-vocabulary';
 export type NativeWords = string;
 export interface NativePicture { src: string; alt: string; fit?: 'contain' | 'cover'; focus?: NativeFocus; href?: string; frame?: NativeFrame }
-/** `icon` names one of the library's icons, drawn where the section draws marks (a footer's `follow`). */
 export interface NativeAction { text: string; href: string; appearance?: 'plain' | 'default' | 'primary' | 'secondary'; face?: NativeButtonFace; size?: NativeButtonSize; icon?: string }
 export interface NativeLine { text: string; href?: string }
 export interface NativeLanguage { text: string; href: string; picture?: NativePicture }
 export interface NativeRuntimeSlot { name: string; props: NativeRuntimeProps }
 export type NativeMeasure = 'narrow' | 'reading' | 'wide' | 'full';
 export type NativeRoom = 'flush' | 'gap';
-/** What a hero changes to in turn: a kicker, a title and a picture of its own, in plain words. */
 export interface NativeTurn { kicker?: string; title: string; picture?: NativePicture }
 export interface NativeHero extends NativeBlockBase {
   kind: 'hero'; turnEvery?: number; turnOrder?: 'shuffled' | 'in-order'; turns?: NativeTurn[]; arrangement?: 'over' | 'column'; height?: number; mobileHeight?: number; fill?: 'fixed' | 'window'; panel?: 'left' | 'centre' | 'right'; panelTone?: Tone; panelWidth?: number; translucent?: boolean; room?: NativeRoom; level?: number; fit?: 'cover' | 'contain';
@@ -100,7 +89,6 @@ export interface NativeFooter extends NativeBlockBase {
   brand?: NativePicture; tagline?: NativeWords; columns: NativeFooterColumn[]; legal?: NativeWords;
   policies?: NativeAction[]; languages?: NativeLanguage[]; follow?: NativeAction[]; preferences?: NativeRuntimeSlot; theme?: boolean;
 }
-/** A field of a form: the name its value is sent under, its label, and what kind of control it is. */
 export interface NativeFormInput { name: string; label: string; type?: 'text' | 'email' | 'tel' | 'textarea' | 'choices' | 'hidden'; required?: boolean; options?: string; value?: string }
 export interface NativeForm extends NativeBlockBase { kind: 'form'; action: string; button?: string; measure?: NativeMeasure; heading?: NativeWords; text?: NativeWords; inputs: NativeFormInput[] }
 export type NativeSection = NativeHero | NativeSplit | NativeStatement | NativePanels | NativeCards | NativeGallery | NativeBento | NativeQuestions | NativeFacts | NativeList | NativeCallToAction | NativeForm | NativeHeader | NativeFooter;
@@ -125,19 +113,15 @@ export interface NativePageRenderOptions {
   components?: NativeComponents;
   images?: readonly string[];
   collections?: Readonly<Record<string, NativeCollectionData>>;
-  /** Trusted site code renders a registered runtime; HTML is never a document field. */
   runtime?: (block: NativeRuntime) => string;
   collectionAction?: (block: NativeCollection, item: NativeCollectionItem) => string;
   editor?: boolean;
-  /** The page's language, for dates; the document's `lang` when a page is rendered. */
   lang?: string;
-  /** The address being shown: a link to it is marked `aria-current="page"`, which is never stored. */
   currentPath?: string;
 }
 const dropImports = (sheet: string) => sheet.replace(/^@import[^;]+;\s*/gm, '');
 export const nativePageStyles = nativeRegionStyles + '\n' + dropImports(headerStyles) + '\n' + dropImports(footerStyles) + '\n' + pageStyles;
 
-/** The error's message stays `invalid-native-page`; `reason` says what was refused, for a person or a model. */
 export interface NativePageRefusal extends Error { reason?: string }
 const invalid = (reason?: string): never => { throw Object.assign(new Error('invalid-native-page'), reason ? { reason } : {}) as NativePageRefusal; };
 const record = (value: unknown, reason?: string): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : invalid(reason);
@@ -156,7 +140,6 @@ function address(value: unknown, image = false, reason?: string): string {
 const measure = (value: number) => `calc(${value}px * var(--sf,1))`;
 const squares = (value: number) => measure(value * 20);
 
-/** Native documents contain only closed blocks. Binding registries belong to the site's trusted code. */
 export function validateNativePage(value: unknown, context: NativePageContext): NativePageDocument {
   const source = record(value); keys(source,['schema','kind','title','description','lang','layout','blocks']);
   if (source.schema !== 1 || source.kind !== 'native-page') return invalid();
@@ -166,7 +149,6 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
   if(layout.overrides!==undefined){if(!Array.isArray(layout.overrides)||layout.overrides.some(key=>!['gap','padding','sidePadding','width'].includes(key)))return invalid();result.layout.overrides=[...layout.overrides] as ('gap'|'padding'|'sidePadding'|'width')[];}
   if(layout.tone!==undefined)result.layout.tone=choice(layout.tone,['','ink','sharp-blue','apple-green','pink','orange','yellow','purple']);
   if (layout.maxWidth !== undefined) result.layout.maxWidth=integer(layout.maxWidth,10000,200);
-  // The sides are their own space; a page that names none keeps them equal to its top and bottom, as it always has.
   if (layout.sidePadding !== undefined) result.layout.sidePadding=integer(layout.sidePadding);
   if (source.title !== undefined) result.title=text(source.title,500);
   if (source.description !== undefined) result.description=text(source.description,2000);
@@ -264,7 +246,6 @@ export function validateNativePage(value: unknown, context: NativePageContext): 
       block[name]=slot(input[name],slotDefinition,`${path}.${name}`,depth);
     }
     if(definition.oneOf&&definition.oneOf.filter(name=>input[name]!==undefined).length!==1)return invalid(`${path}: exactly one of ${definition.oneOf.join(' or ')}`);
-    // A form posts to its own site and names each field once; `website` is the trap robots fill in.
     if(definition.kind==='form'){
       const form=block as unknown as NativeForm,names=new Set<string>();
       if(!/^\/(?!\/)/.test(form.action))return invalid(`${path}.action: a path on the site itself, starting with /`);
@@ -369,19 +350,16 @@ export function nativeCollectionTracks(block: NativeCollection): { columns: numb
   const columns=block.columns*block.featured/gcd(block.columns,block.featured);
   return{columns,ordinarySpan:columns/block.columns,featuredSpan:columns/block.featured};
 }
-/** A section field's value, or the vocabulary's default. */
 export function sectionField<T = unknown>(block: NativeSection, name: string): T {
   const value=(block as unknown as Record<string,unknown>)[name];
   return (value===undefined?sectionDefinition(block.kind)?.fields[name]?.default:value) as T;
 }
-/** Every measure is a model field; neither the editor nor publisher infers layout from arbitrary HTML. */
 export function nativeBlockStyles(block: NativeBlock): Record<string,string> {
   const styles:Record<string,string>={};
   for(const key of ['marginTop','marginBottom'] as const)if(block[key]!==undefined)styles[key==='marginTop'?'margin-top':'margin-bottom']=measure(block[key]!);
   if(block.width!==undefined){styles.width=measure(block.width);styles.flex='0 1 auto';}
   if(block.kind==='component'){if(block.padding!==undefined)styles['--c9y-component-padding']=measure(block.padding);if(block.gap!==undefined)styles['--c9y-component-gap']=measure(block.gap);if(block.height!==undefined)for(const key of ['--ds-card-height','--ds-carousel-height'])styles[key]=measure(block.height)+'!important';if(block.width!==undefined)styles['--ds-card-width']=measure(block.width)+'!important';}
   if(block.kind==='component')for(const key of COMPONENT_MEASURES)if(key!=='sidePadding'&&block[key]!==undefined)styles[key.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase())]=measure(block[key]!)+'!important';
-  // Named sides stand apart from the top and bottom; without them a component's padding is one measure all round, as before.
   if(block.kind==='component'&&block.sidePadding!==undefined){if(block.padding!==undefined)styles.padding=`${measure(block.padding)} ${measure(block.sidePadding)}!important`;else styles['padding-inline']=measure(block.sidePadding)+'!important';}
   if(block.kind==='flow')Object.assign(styles,{'--c9y-direction':block.direction,'--c9y-mobile-direction':block.mobileDirection??'column','--c9y-gap':measure(block.gap),'--c9y-mobile-gap':measure(block.mobileGap??block.gap),'--c9y-padding':measure(block.padding),...(block.sidePadding!==undefined?{'--c9y-side-padding':measure(block.sidePadding)}:{})});
   if(block.kind==='grid'||block.kind==='collection')Object.assign(styles,{'--c9y-columns':String(block.kind==='collection'?nativeCollectionTracks(block).columns:block.columns),'--c9y-column-gap':measure(block.columnGap),'--c9y-row-gap':measure(block.rowGap)});
@@ -400,10 +378,8 @@ export function nativeBlockStyles(block: NativeBlock): Record<string,string> {
   if(isNativeSection(block))Object.assign(styles,nativeSectionStyles(block));
   return styles;
 }
-/** The sections whose items stand in a column of a chosen measure: narrow 20 squares, reading 32, wide 62, full the page. */
 const MEASURED_KINDS: readonly string[] = ['cards','gallery','bento','questions','facts','list','action','form'];
 const measureWidth=(value:NativeMeasure)=>value==='narrow'?squares(20):value==='reading'?squares(32):value==='wide'?squares(62):'none';
-/** A section's fields as custom properties, read by consistency-native-page.css; tones travel as `data-tone` names. */
 export function nativeSectionStyles(block: NativeSection): Record<string,string> {
   const styles:Record<string,string>={};
   const field=<T,>(name:string)=>sectionField<T>(block,name);
@@ -429,12 +405,10 @@ export function nativeSectionStyles(block: NativeSection): Record<string,string>
   if(block.kind==='footer'){styles['--ds-footer-column-width']=String(field<number>('columnWidth'));if(!field<boolean>('line'))styles['--ds-footer-line']='transparent';}
   return styles;
 }
-/** The attributes a section root carries besides its styles: names, never values the stylesheet could not check. */
 export function nativeSectionAttributes(block: NativeSection): Record<string,string> {
   const field=<T,>(name:string)=>sectionField<T>(block,name);
   const attrs:Record<string,string>={};
   if(block.kind==='hero'){if(field<string>('arrangement')==='column')attrs['data-arrangement']='column';attrs['data-panel']=field<string>('panel');attrs['data-room']=field<string>('room');if(field<boolean>('translucent'))attrs['data-translucent']='';
-    // The turns travel as data the page's behaviours read; without them the hero stands as written.
     if(block.turns?.length){attrs['data-turns']=JSON.stringify(block.turns.map(turn=>({...(turn.kicker===undefined?{}:{kicker:turn.kicker}),title:turn.title,...(turn.picture?{src:address(turn.picture.src,true),alt:turn.picture.alt}:{})})));attrs['data-turn-every']=String(field<number>('turnEvery'));attrs['data-turn-order']=field<string>('turnOrder');}}
   if(block.kind==='split'){if(field<boolean>('reverse'))attrs['data-reverse']='';attrs['data-heading-align']=field<string>('headingAlign');}
   if(block.kind==='statement'){attrs['data-align']=field<string>('align');attrs['data-heading-align']=field<string>('headingAlign');if(block.panel)attrs['data-tone']=block.panel;if(field<boolean>('hiddenTitle'))attrs['data-hidden-title']='';}
@@ -451,7 +425,6 @@ export function nativeSectionAttributes(block: NativeSection): Record<string,str
 const styleText=(styles:Record<string,string>)=>Object.entries(styles).map(([key,value])=>`${key}:${value}`).join(';');
 const attrText=(attrs:Record<string,string>)=>Object.entries(attrs).map(([key,value])=>value===''?` ${key}`:` ${key}="${escape(value)}"`).join('');
 
-/** Where an expanded primitive stands in its section, so the editor maps presses and handles to fields and slots. */
 export interface NativeMark { slot?: string; item?: number; classes?: string; attrs?: Record<string,string> }
 type Marks = ReadonlyMap<string,NativeMark>;
 const markText=(mark?:NativeMark)=>mark?`${mark.slot!==undefined?` data-slot="${escape(mark.slot)}"`:''}${mark.item!==undefined?` data-item="${mark.item}"`:''}${mark.attrs?attrText(mark.attrs):''}`:'';
@@ -476,7 +449,6 @@ function render(block: NativeBlock, options: NativePageRenderOptions, mark?: Nat
     const image=`<img src="${escape(address(block.src,true))}" alt="${escape(block.alt)}" loading="lazy">`;
     return`<figure ${attrs}${block.frame?` data-frame="${block.frame}"`:''}>${block.href?`<a href="${escape(address(block.href))}"${current(options,block.href)}>${image}</a>`:image}</figure>`;
   }
-  // A button's face and size travel as the library's `data-face` and `data-size`, written only when the link names them.
   if(block.kind==='link')return`<div ${attrs}><a class="${block.appearance&&block.appearance!=='plain'?`ds-button${block.appearance==='default'?'':` ds-button--${block.appearance}`}`:'ds-link c9y-native-link'}"${block.face?` data-face="${block.face}"`:''}${block.size?` data-size="${block.size}"`:''} href="${escape(address(block.href))}"${current(options,block.href)}>${escape(block.text)}</a></div>`;
   if(block.kind==='runtime')return`<div ${attrs}>${options.runtime?.(block)??''}</div>`;
   return`<div ${attrs}>${(options.collections?.[block.binding]?.items??[]).map((item,index)=>{
@@ -487,23 +459,15 @@ function render(block: NativeBlock, options: NativePageRenderOptions, mark?: Nat
   }).join('')}</div>`;
 }
 
-/*
- * Expansion: a section is drawn as the primitives it stands for. The section root carries
- * `c9y-native-section` and `data-section="<kind>"`; each slot's element `data-slot="<name>"` and, in a
- * list of items, `data-item="<index>"`; the primitives inside keep their classes, with ids derived as
- * `<sectionId>.<slot>[.<index>[.<member>]]`, so the editor's geometry code sees stable identities.
- */
 const sub=(id:string,...parts:(string|number)[])=>[id,...parts].join('.');
 const heading=(source:string,level:number)=>/^\s*#{1,6}\s/.test(source)?source:`${'#'.repeat(level)} ${source}`;
 const wordsBlock=(id:string,source:string):NativeContent=>({id,kind:'content',source});
 const pictureBlock=(id:string,picture:NativePicture,extra:Partial<NativeImage>={}):NativeImage=>({id,kind:'image',src:picture.src,alt:picture.alt,...(picture.fit?{fit:picture.fit}:{}),...(picture.focus?{focus:picture.focus}:{}),...(picture.href?{href:picture.href}:{}),...(picture.frame?{frame:picture.frame}:{}),...extra});
 const actionBlock=(id:string,action:NativeAction,appearance?:NativeLink['appearance']):NativeLink=>({id,kind:'link',text:action.text,href:action.href,...(action.appearance??appearance?{appearance:action.appearance??appearance}:{}),...(action.face?{face:action.face}:{}),...(action.size?{size:action.size}:{})});
-/** A title as a strong line rather than a heading, unless it is already a heading of its own. */
 const strongLine=(source:string)=>/^\s*#{1,6}\s/.test(source)?source:`**${source}**`;
 const flowBlock=(id:string,direction:'row'|'column',gap:number,children:NativeBlock[],extra:Partial<NativeFlow>={}):NativeFlow=>({id,kind:'flow',direction,gap,padding:0,children,...extra});
 const runtimeBlock=(id:string,slot:NativeRuntimeSlot):NativeRuntime=>({id,kind:'runtime',name:slot.name,props:slot.props});
 
-/** The primitives a section expands to, with each one's place in the section; the editor and the renderer read the same expansion. */
 export function expandNativeSection(block: NativeSection): { children: NativeBlock[]; marks: ReadonlyMap<string, NativeMark> } {
   const id=block.id,marks=new Map<string,NativeMark>();
   const put=<T extends NativeBlock>(value:T,mark:NativeMark):T=>{marks.set(value.id,mark);return value;};
@@ -515,7 +479,6 @@ export function expandNativeSection(block: NativeSection): { children: NativeBlo
   const actions=(slot:string,values:NativeAction[]|undefined,appearance:NativeLink['appearance'],item?:number,classes?:string)=>values?.length?[put(flowBlock(at(slot,item),'row',10,values.map((value,index)=>put(actionBlock(sub(at(slot,item),index),value,index?undefined:appearance),{slot,item:index})),{mobileDirection:'row'}),{slot,item,classes})]:[];
   const panel=(children:NativeBlock[],padding:number)=>put(flowBlock(sub(id,'panel'),'column',20,children,{padding}),{slot:'panel',classes:'c9y-native-toned',attrs:{'data-tone':field<string>('panelTone')}});
   switch(block.kind){
-    // A column reads as it is drawn: the kicker and the title, the picture, then the words and actions; no panel.
     case 'hero':if(field<string>('arrangement')==='column')return{marks,children:[
       ...picture('logo',block.logo,{height:60,fit:'contain'}),...words('kicker',block.kicker),...words('title',block.title,field<number>('level')),
       ...picture('picture',block.picture,{fit:block.picture.fit??field<'cover'|'contain'>('fit')}),
@@ -570,23 +533,17 @@ function renderNativeSection(block: NativeSection, options: NativePageRenderOpti
   if(block.kind==='footer'){
     const line=(column:number,item:NativeLine,index:number)=>`<li>${item.href?`<a href="${escape(address(item.href))}"${current(options,item.href)} data-native-block="${escape(sub(id,'columns',column,'lines',index))}" data-slot="lines" data-item="${index}">${escape(item.text)}</a>`:`<span data-native-block="${escape(sub(id,'columns',column,'lines',index))}" data-slot="lines" data-item="${index}">${escape(item.text)}</span>`}</li>`;
     const columns=block.columns.map((column,index)=>`<div class="ds-footer__column" data-native-block="${escape(sub(id,'columns',index))}" data-slot="columns" data-item="${index}"${column.width?` style="--ds-footer-column-width:${column.width}"`:''}>${column.heading!==undefined?`<p class="ds-footer__heading" data-native-block="${escape(sub(id,'columns',index,'heading'))}" data-slot="heading" data-item="${index}">${column.href?`<a href="${escape(address(column.href))}">${escape(column.heading)}</a>`:escape(column.heading)}</p>`:''}<ul class="ds-footer__links" data-native-block="${escape(sub(id,'columns',index,'lines'))}" data-slot="lines" data-item="${index}">${column.lines.map((item,lineIndex)=>line(index,item,lineIndex)).join('')}</ul></div>`).join('');
-    // Follow links with an icon are the design system's stacked column: round marks one control high, each named by its words.
     const stacked=block.follow?.some(item=>item.icon)??false;
     const followLink=(item:NativeAction,index:number)=>`<a href="${escape(address(item.href))}"${item.icon?` aria-label="${escape(item.text)}"`:''} data-native-block="${escape(sub(id,'follow',index))}" data-slot="follow" data-item="${index}">${item.icon?`<span class="c9y-native-icon" aria-hidden="true">${nativeIcon(item.icon)??''}</span>`:escape(item.text)}</a>`;
     const follow=block.follow?.length?`<div class="ds-footer__column c9y-native-follow${stacked?' ds-footer__column--stack':''}" data-native-block="${escape(sub(id,'follow'))}" data-slot="follow"><ul class="${stacked?'ds-footer__icons':'ds-footer__links'}">${block.follow.map((item,index)=>`<li>${followLink(item,index)}</li>`).join('')}</ul></div>`:'';
     const brand=children.filter(child=>marks.get(child.id)?.slot==='brand').map(draw).join('');
     const base=children.filter(child=>['legal','policies'].includes(marks.get(child.id)?.slot??'')).map(draw).join('');
     const preferences=children.filter(child=>['languages','preferences'].includes(marks.get(child.id)?.slot??'')).map(draw).join('');
-    // The theme control names the theme the page is in; the page's behaviours run it, so a published page hides it until they can.
     const theme=field<boolean>('theme')?`<button type="button" class="c9y-native-theme" data-c9y-theme data-light="Light" data-dark="Dark" aria-description="Switch between light and dark"${options.editor?'':' hidden'}>Light</button>`:'';
     return open(`${brand}<nav class="ds-footer__columns" data-native-block="${escape(sub(id,'columns'))}" data-slot="columns">${columns}${follow}</nav><div class="ds-footer__base" data-native-block="${escape(sub(id,'base'))}">${base}${preferences||theme?`<div class="ds-footer__preferences" data-native-block="${escape(sub(id,'preferences-row'))}">${preferences}${theme}</div>`:''}</div>`);
   }
   return open(children.map(draw).join(''));
 }
-/**
- * A form as the browser's own: a label over each control, a group of choices as checkboxes, a hidden value, the trap
- * for robots and the button. Published it posts to its action; in the editor it neither posts nor takes input.
- */
 function renderForm(block: NativeForm, options: NativePageRenderOptions): string {
   const id=block.id,editor=options.editor===true,inert=editor?' disabled tabindex="-1"':'';
   const input=(item:NativeFormInput,index:number)=>{
@@ -602,7 +559,7 @@ function renderForm(block: NativeForm, options: NativePageRenderOptions): string
 function renderList(block: NativeList, options: NativePageRenderOptions): string {
   const id=block.id,dated=sectionField<boolean>(block,'dated'),grouped=sectionField<boolean>(block,'grouped'),slot=block.collection?'collection':'items';
   let format:(day:string)=>string=day=>day;
-  try{const formatter=new Intl.DateTimeFormat(options.lang??'en',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});format=day=>formatter.format(new Date(`${day}T00:00:00Z`));}catch{/* an unknown language keeps the ISO day */}
+  try{const formatter=new Intl.DateTimeFormat(options.lang??'en',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});format=day=>formatter.format(new Date(`${day}T00:00:00Z`));}catch{}
   const rows:{index:number;item:NativeListItem}[]=block.collection
     ?(options.collections?.[block.collection]?.items??[]).map((item,index)=>({index,item:{name:item.title,...(item.href?{href:item.href}:{}),...(item.price?{value:item.price}:{})}}))
     :(block.items??[]).map((item,index)=>({index,item}));
@@ -622,5 +579,4 @@ export function renderNativePage(document: NativePageDocument, options: NativePa
   return`<div class="c9y-native-page"${options.editor?' data-c9y-native-root':''} style="${escape(styleText(styles))}">${document.blocks.map(block=>render(block,pageOptions)).join('')}</div>`;
 }
 
-/** Typed document-root overrides; the authored library owns every unspecified declaration. */
 export function nativePageRootStyles(document:NativePageDocument):Record<string,string>{const styles={...sitePagePatch(document.layout.tone??'').styles};if(document.layout.mode==='document')for(const key of document.layout.overrides??[])styles[key==='width'?'width':key==='sidePadding'?'padding-inline':key]=measure(key==='width'?document.layout.maxWidth??1000:key==='sidePadding'?document.layout.sidePadding??document.layout.padding:document.layout[key]);return styles;}

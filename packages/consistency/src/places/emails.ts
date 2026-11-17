@@ -1,19 +1,3 @@
-/**
- * Emails, one of an open site's places in Consistency's app, ported from the sites' own editor (deleted 26 October
- * 2026): what the site has sent and to whom, and how each kind looks. Sent and How they look are Design system 1's
- * text tabs. Sent lists every email kept, newest first, fifty at a time with Show more: when, to whom, its kind as a
- * tag and its subject, a failed one in the danger colour; words (an address or a subject) and a kind narrow it. How
- * they look lists every kind the site sends, drawn by the site engine with made up people, in the language chosen.
- *
- * Pressing one opens it in a non-modal drawer beside the list, so another row can be pressed while it is open: its
- * HTML drawn in a frame sandboxed without scripts (`srcdoc`), its plain text under a disclosure, then To, From, when
- * and its status, what it was about, and its attachments by name and size, a gift card's PDF opened through the
- * site's API. Nothing here sends anything. The list is read on entry, on coming back and when the window has the
- * focus again, drawn first from the last read.
- *
- * Flows, the third tab, is the email flow designer (`email-flows.ts`): shown only when the site answers its flows,
- * which it does for the owner.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
 import '../../../../DS1/3-unit/ds-row';
@@ -38,7 +22,6 @@ import './places.css';
 
 interface ListAnswer { kinds?: string[]; emails?: EmailSummary[]; next?: string | null }
 interface TemplatesAnswer { lang?: string; from?: string | null; templates?: EmailTemplate[] }
-/** What the drawer shows: a sent email (read whole once opened), or a kind drawn with made up people. */
 type Shown = { kind: 'sent'; summary: EmailSummary; email?: EmailDetail; problem?: string } | { kind: 'look'; template: EmailTemplate; from: string | null };
 
 const TABS: { view: EmailsView; label: string }[] = [{ view: 'sent', label: 'Sent' }, { view: 'look', label: 'How they look' }, { view: 'flows', label: 'Flows' }];
@@ -61,7 +44,6 @@ export class ConsistencyPlaceEmails extends LitElement {
   declare from: string | null;
   declare lookProblem: string;
   declare shown: Shown | null;
-  /** The site's flows, when it answers them: the owner's. */
   declare flows: FlowsAnswer | null;
   private readonly flowsEditor = new ConsistencyEmailFlows();
   site!: SiteSummary;
@@ -89,14 +71,12 @@ export class ConsistencyPlaceEmails extends LitElement {
   }
   disconnectedCallback() { super.disconnectedCallback(); this.stop?.(); this.stop = null; window.clearTimeout(this.typing); }
 
-  /** What the tab shows, again: the first page of what was sent, or every kind in the language chosen. */
   read() {
     if (this.view === 'flows') return this.readFlows();
     void this.readFlows();
     return this.view === 'sent' ? this.load(null) : this.look();
   }
 
-  /** The site's flows, and its languages for their words; a site that does not answer them has no Flows tab. */
   private async readFlows() {
     try {
       const answer = await siteApi<FlowsAnswer>(this.site.code, 'emails/flows');
@@ -111,7 +91,6 @@ export class ConsistencyPlaceEmails extends LitElement {
     }
   }
 
-  /** A page of the emails sent; from the first, it takes the place of what was shown. */
   private async load(after: string | null) {
     const mine = after ? this.turn : ++this.turn;
     try {
@@ -128,8 +107,6 @@ export class ConsistencyPlaceEmails extends LitElement {
     }
   }
 
-  /** Every kind the site sends, drawn in the language chosen; the site's languages are read from its pages. */
-  /** The site's languages, read once from its pages. */
   private async ensureLanguages() {
     if (this.languages.length) return;
     const pages = await siteApi<{ pages?: PageSummary[] }>(this.site.code, 'pages').then(answer => answer.pages ?? [], () => [] as PageSummary[]);
@@ -160,14 +137,12 @@ export class ConsistencyPlaceEmails extends LitElement {
     void this.read();
   }
 
-  /** Narrows the list by the words typed, a quarter of a second after the last key. */
   private search(words: string) {
     this.words = words;
     window.clearTimeout(this.typing);
     this.typing = window.setTimeout(() => void this.load(null), 250);
   }
 
-  /** Opens a sent email in the drawer, read whole. */
   private async open(summary: EmailSummary) {
     if (!await this.flush()) return;
     this.shown = { kind: 'sent', summary };
@@ -218,7 +193,6 @@ export class ConsistencyPlaceEmails extends LitElement {
     return html`${this.languageTabs()}${this.flowsEditor}`;
   }
 
-  /** The site's languages as tabs, when it has more than one: what How they look and Flows show their words in. */
   private languageTabs() {
     const lang = this.chosenLang ?? this.languages[0]?.code;
     return this.languages.length > 1 ? html`<ds-tabs text class="place-languages" aria-label="Language">${this.languages.map(each => html`<ds-button control="host" role="tab" lang=${each.code}
@@ -256,7 +230,6 @@ export class ConsistencyPlaceEmails extends LitElement {
     editor.refresh(template);
     return editor;
   }
-  /** The drawer beside the list: one email, drawn as it went, or as its kind looks. */
   private drawer() {
     const shown = this.shown;
     const group = (label: string, rows: unknown) => html`<div class="place-drawer__group"><ds-list heading=${label}>${rows}</ds-list></div>`;

@@ -3,7 +3,6 @@ import { applyLibraryTokens } from './libraries';
 export type StatDesign = { color?: string };
 export type ButtonDesign = { appearance?: 'plain' | 'primary' | 'secondary' };
 export const SURFACE_TONES = ['', 'sharp-blue', 'apple-green', 'pink', 'orange', 'yellow', 'purple', 'ink'] as const;
-/** Native context chrome is shared by the example document and authored-site adapters. */
 export function createSurfaceContext(label: string, surface?: HTMLElement): Context {
  const menu = new Context(); menu.setAttribute('data-consistency-context', ''); menu.setAttribute('aria-label', label);
  applyLibraryTokens(menu, surface?.closest<HTMLElement>('[data-consistency-library]')?.dataset.consistencyLibrary ?? 'original');
@@ -13,7 +12,6 @@ export function editableSurface(target: Element): HTMLElement | null {
  const surface = target.closest<HTMLElement>('ds-card[data-selectable],ds-stat[data-selectable],ds-button[data-selectable]');
  return surface && surface.closest('.consistency-sheet') && !surface.closest('.aa-atom') ? surface : null;
 }
-/** The canonical appearance choices, shared by every document adapter. */
 export function appendSurfaceOptions(menu: Context, kind: 'card' | 'stat' | 'button', commit: (patch: Record<string, unknown>) => void) {
   const option = (label: string, patch: Record<string, unknown>) => { const row = document.createElement('button'); row.type = 'button'; row.setAttribute('role', 'menuitem'); row.textContent = label; row.addEventListener('click', () => commit(patch)); menu.append(row); };
   if (kind === 'card') {
@@ -23,7 +21,6 @@ export function appendSurfaceOptions(menu: Context, kind: 'card' | 'stat' | 'but
    for (const color of SURFACE_TONES) option(color ? `${color.replaceAll('-', ' ').replace(/^./, value => value.toUpperCase())} text` : 'Default text colour', { color });
   } else { option('Plain button', { appearance: 'plain' }); option('Primary button', { appearance: 'primary' }); option('Secondary button', { appearance: 'secondary' }); }
 }
-/** Rendered sample components own their appearance menu; Aa retains its text menu. */
 export class SurfaceContextMenu {
  private menu?: Context;
  private buttonDefaults = new WeakMap<HTMLElement, { primary: boolean; secondary: boolean }>();

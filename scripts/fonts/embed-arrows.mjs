@@ -1,4 +1,3 @@
-/** Keep the portable arrow stylesheet and both typography entry points self-contained. */
 import { readFileSync, writeFileSync } from 'node:fs';
 const root = new URL('../../DS1/1-root/', import.meta.url);
 const bytes = readFileSync(new URL('fonts/Inter-Arrows.woff2', root));

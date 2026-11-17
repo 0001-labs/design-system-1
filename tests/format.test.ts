@@ -4,7 +4,6 @@ type Format = typeof import("../DS1/0-face/format");
 type I18n = typeof import("../DS1/0-face/i18n");
 type Pricing = typeof import("../DS1/0-face/pricing");
 
-/** A fresh copy of the modules, so settings and the language start over. */
 async function load(): Promise<{ format: Format; i18n: I18n; pricing: Pricing }> {
   vi.resetModules();
   const i18n = await import("../DS1/0-face/i18n");
@@ -14,10 +13,9 @@ async function load(): Promise<{ format: Format; i18n: I18n; pricing: Pricing }>
   return { format, i18n, pricing };
 }
 
-/** Intl separates some parts with no-break spaces; compare them as plain ones. */
 const plain = (text: string) => text.replace(/[  ]/g, " ");
 
-const MOMENT = Date.UTC(2026, 9, 17, 14, 30, 5); // Saturday 17 October 2026, 14:30:05 UTC
+const MOMENT = Date.UTC(2026, 9, 17, 14, 30, 5);
 const UTC = { timeZone: "UTC" } as const;
 
 let format: Format;
@@ -165,7 +163,6 @@ describe("relative time", () => {
   test("keeps hours within the same day, and days by the calendar", () => {
     const late = Date.UTC(2026, 9, 17, 23, 30);
     expect(format.formatRelativeTime(late - 23 * HOUR, { now: late, language: "en", ...UTC })).toBe("23 hours ago");
-    // 22.5 hours before 23:00 in Tokyo is the same day there, and yesterday in UTC
     const at = Date.UTC(2026, 9, 16, 15, 30);
     const now = Date.UTC(2026, 9, 17, 14, 0);
     expect(format.formatRelativeTime(at, { now, language: "en", timeZone: "UTC" })).toBe("yesterday");

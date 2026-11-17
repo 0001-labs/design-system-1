@@ -1,23 +1,3 @@
-/**
- * Schedule, the owners' tab of Bookings, drawn as a matrix rather than a form; ported from the site engine's own app.
- *
- * - **The offers' groups** are text tabs above the matrix (`bookings-matrix.ts`): offers sharing a pool together,
- *   the rest by kind, named from the offers.
- * - **The matrix** is Design system 1's sheet on a native table: a row per offer, for trips its start times on each
- *   weekday ("10 12 14"), its price and an Open switch; for stays its price a night, its season and the switch.
- *   Pressing a cell edits it in place as one text field, read on Enter or when it is left; what cannot be read
- *   stays in the danger colour and is not kept. Each row's ⋯ is a Select: another row's week ("Same times as …"),
- *   its own season and limits in a non-modal drawer, or the group's again.
- * - **One line under it** holds the group's season (one range picker), notice, horizon and closed days, put on
- *   every offer of the group without limits of its own.
- * - **Save** sends the group's changed offers with `PUT booking-offers`; Discard takes them back. A save that fails
- *   keeps the drafts and says why. Unsaved cells are marked.
- * - **Closed for everything**, the days no offer can be booked, is saved with `PUT booking-settings` at once, and
- *   put back when the site refuses it.
- *
- * Read again whenever Bookings is, a group with unsaved changes keeping its drafts. The engine checks everything
- * again: an offer without a price cannot be booked, whatever is written here.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-calendar';
 import '../../../../DS1/3-unit/ds-select';
@@ -46,7 +26,6 @@ import type { BookingSettings } from './bookings';
 
 interface OffersAnswer { offers?: ResolvedOffer[]; currency?: string; testMode?: boolean }
 
-/** One tab: its offers as saved and as drafted, its shared limits, which offers keep their own, and cells that could not be read. */
 export interface GroupState {
   group: OfferGroup;
   saved: Map<string, ResolvedOffer>;
@@ -69,14 +48,10 @@ function stateOf(group: OfferGroup): GroupState {
     limits: clone(limits), savedLimits: clone(limits), own, savedOwn: new Set(own), invalid: new Set(),
   };
 }
-/** The group's offers whose drafts differ from what was saved. */
 export const changedOffers = (state: GroupState) => state.group.offers.map(offer => offer.id).filter(id => changesOf(state.saved.get(id)!, state.drafts.get(id)!).size > 0);
-/** Whether a group has anything unsaved: a changed offer, its limits, or words that could not be read. */
 export const unsaved = (state: GroupState) => changedOffers(state).length > 0 || state.invalid.size > 0 || JSON.stringify(state.limits) !== JSON.stringify(state.savedLimits);
 
-/** A cell being edited in place: its key, the words in it, and why they could not be read. */
 interface Editing { key: string; value: string; error: string }
-/** An offer's own season and limits being written in the drawer. */
 interface OwnLimits { id: string; season: string; notice: string; horizon: string; closed: string[]; error: string }
 
 export class ConsistencyBookingsSchedule extends LitElement {
@@ -94,7 +69,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
   declare limitsError: string;
   declare saving: boolean;
   declare saveError: string;
-  /** The days closed for every offer, as saved or being saved. */
   declare everything: string[];
   declare everythingError: string;
   declare ownLimits: OwnLimits | null;
@@ -106,7 +80,7 @@ export class ConsistencyBookingsSchedule extends LitElement {
     this.saveError = ''; this.everything = []; this.everythingError = ''; this.ownLimits = null;
   }
   protected createRenderRoot() { return this; }
-  connectedCallback() { super.connectedCallback(); if (!this.states) this.refresh().catch(() => { /* said inline; read again with Bookings */ }); }
+  connectedCallback() { super.connectedCallback(); if (!this.states) this.refresh().catch(() => {}); }
 
   private get locale() { return localeOfCurrency(this.currency); }
   private get symbol() {
@@ -114,7 +88,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
   }
   private nameOf(offer: ResolvedOffer) { return wordsIn(offer.name, 'en') || offer.id; }
 
-  /** The offers and the closed days, read again; a group with unsaved changes keeps its drafts. */
   async refresh(): Promise<void> {
     try {
       const [answer, settings] = await Promise.all([
@@ -164,7 +137,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
   private changes(state: GroupState, id: string) { return changesOf(state.saved.get(id)!, this.draft(state, id)); }
   private put(state: GroupState, offer: ResolvedOffer) { state.drafts.set(offer.id, offer); this.requestUpdate(); }
 
-  /** A cell pressed to edit in place: one text field, read on Enter or when left; Escape keeps what was there. */
   private cell(state: GroupState, key: string, label: string, shown: string, value: string, commit: (typed: string) => string | null, changed: boolean, numeric = false) {
     const editing = this.editing?.key === key ? this.editing : null;
     const close = (keep: boolean, input: HTMLInputElement) => {
@@ -195,7 +167,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
   private matrix(state: GroupState) {
     const { group } = state;
     const trips = group.kind !== 'nights';
-    // The offer two cells, a cell each weekday (trips) or the season (stays), the price and Open; the ⋯ a square after.
     const columns = trips ? 2 + 7 + 1 + 1 : 2 + 1 + 1 + 1;
     const symbol = this.symbol;
     return html`<div class="ds-table-scroll place-matrix-scroll"><table class="ds-table place-matrix" data-sheet data-fit style=${`--place-matrix-cells: ${columns}`} aria-label=${`${group.name}: schedule`}>
@@ -253,7 +224,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
     </tr>`;
   }
 
-  /** The group's limits, put on every offer without its own. */
   private putLimits(state: GroupState, limits: Limits) {
     state.limits = limits;
     for (const offer of applyLimits([...state.drafts.values()], limits, state.own)) state.drafts.set(offer.id, offer);
@@ -282,7 +252,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
     </div>`;
   }
 
-  /** Closed days as tags, each with its close, then a picker and Add, which adds the day chosen or every day of the range. */
   private chips(days: readonly string[], change: (days: string[]) => void, label: string, changed = false) {
     let picker: (HTMLElement & { value: string; clear(): void }) | null = null;
     const add = (event: Event) => {
@@ -299,7 +268,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
     </span>`;
   }
 
-  /** Closed for everything: saved at once, put back when the site refuses it. */
   private async closeEverything(days: string[]) {
     const before = this.everything;
     this.everything = days; this.everythingBusy = true; this.everythingError = '';
@@ -324,7 +292,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
       ${this.saveError ? html`<ds-message role="alert" tone="danger" literal text=${this.saveError}></ds-message>` : nothing}`;
   }
 
-  /** Sends the group's changed offers; what the site answers becomes what was saved. A failure keeps the drafts. */
   private async save(state: GroupState) {
     const send = changedOffers(state);
     if (!send.length || state.invalid.size || this.saving) return;
@@ -360,7 +327,6 @@ export class ConsistencyBookingsSchedule extends LitElement {
     this.ownLimits = { id: offer.id, season: seasonValue(mine.season), notice: String(mine.noticeHours), horizon: String(mine.horizonDays), closed: [...mine.closed], error: '' };
   }
 
-  /** An offer's own season and limits, in a non-modal drawer beside the matrix. */
   private ownDrawer(state: GroupState) {
     const own = this.ownLimits;
     const offer = own ? state.group.offers.find(each => each.id === own.id) : undefined;

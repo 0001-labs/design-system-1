@@ -1,11 +1,5 @@
 import { signal } from "@lit-labs/signals";
 
-/**
- * A small router over history.pushState: the address is a signal, so every
- * element that reads it while rendering follows it.
- */
-
-/** Matches Vite's `base` and the production `/app/*` route. */
 export const BASE = "/app";
 
 function stripBase(pathname: string): string {
@@ -19,7 +13,6 @@ export function href(path: string): string {
 }
 
 export interface LocationValue {
-  /** Path with the base stripped, e.g. "/libraries". */
   path: string;
   search: URLSearchParams;
 }
@@ -28,7 +21,6 @@ function readLocation(): LocationValue {
   return { path: stripBase(window.location.pathname), search: new URLSearchParams(window.location.search) };
 }
 
-/** Where the app is. */
 export const currentLocation = signal<LocationValue>(readLocation());
 window.addEventListener("popstate", () => currentLocation.set(readLocation()));
 
@@ -39,17 +31,12 @@ export function navigate(path: string, options: { replace?: boolean } = {}): voi
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
-/** Drop query params without adding a history entry. */
 export function replaceSearch(search: string): void {
   const next = `${window.location.pathname}${search ? `?${search}` : ""}`;
   window.history.replaceState({}, "", next);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
-/**
- * The click listener of an in-app link (`<a href=${href(to)} @click=${follow(to)}>`):
- * modified clicks are left alone so "open in new tab" still works.
- */
 export function follow(to: string) {
   return (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0) return;
@@ -59,10 +46,6 @@ export function follow(to: string) {
   };
 }
 
-/**
- * Match a pattern like "/l/:id" against a path.
- * Returns the captured params, or null when it does not match.
- */
 export function matchRoute(pattern: string, path: string): Record<string, string> | null {
   const patternParts = pattern.split("/").filter(Boolean);
   const pathParts = path.split("/").filter(Boolean);

@@ -1,27 +1,3 @@
-/**
- * Pages, one of an open site's places in Consistency's app, ported from the sites' own editor (deleted 26 October
- * 2026), in three columns two squares apart: on the left a list sixteen squares wide, a row per page across its
- * languages (its short title, its address in the code face and how many of its words are edited), with the
- * languages as text tabs above it; in the middle, at most thirty-two squares wide, the chosen page, its title with
- * Edit, and under it its details; on the right, sixteen squares wide, its share image.
- *
- * The details are the page's search and sharing in the chosen language: its title and description, each edited in
- * place with Aa's plain editor and saved (`POST edit`) on Enter or on leaving it, Escape putting back the words saved
- * last and a failed save putting them back too, with the failure beside them; each with its length against what
- * search shows. Then its address, its languages, how many of its words are edited and its last edit. The share image
- * is shown as a link preview shows it, following the words as they are typed, and changed from the site's pictures
- * in a non-modal drawer, saved on choosing. Under the list, the edits whose words are no longer on the site.
- *
- * Choosing a row only changes the other two columns; Edit, double-pressing a row or Enter opens the page on the
- * site's canvas: the place sends `consistency-open-page` `{ path }`, which the app answers. The pages are read on
- * entry, on coming back to the place and when the window has the focus again, drawn first from the last read.
- *
- * A site may have pages of its own beside the site engine's (Flavo's content and project pages): the platform names
- * their sources on the site's Pages place (`sources`), and each is registered here by that name (`PAGE_SOURCES`) by
- * the site's own code, never in this file. Their rows follow the site engine's in the same list, each with its
- * address; choosing one shows the source's own editor in the middle column, kept per page. A source's editor sends
- * `consistency-page-saved` when it saved, and the rows are read again.
- */
 import { LitElement, html, nothing } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import '../../../../DS1/3-unit/ds-list';
@@ -47,26 +23,18 @@ import './places.css';
 
 interface PagesAnswer { pages?: PageSummary[]; images?: string[]; sourced?: SourcedRow[] }
 
-/** A page of a site's own, beside the site engine's: its address on the site, its title, and a short word (Hidden). */
 export interface SourcePage { path: string; title: string; tag?: string }
-/** A site's own pages, listed in Pages beside the site engine's; each page is edited by the source's own element. */
 export interface PageSource {
   list(): Promise<SourcePage[]>;
-  /** The element that edits the page at this address, as last listed, or none. */
   editor(path: string): HTMLElement | null;
 }
-/** The page sources, by the name the platform gives on a site's Pages place (`sources`); a site's own code adds its own. */
 export const PAGE_SOURCES = new Map<string, (site: SiteSummary) => PageSource>();
-/** The event a source's editor sends when it saved a page. */
 export const PAGE_SAVED = 'consistency-page-saved';
-/** A source's page as a row of the list. */
 interface SourcedRow extends SourcePage { source: string }
 const sourcedKey = (row: Pick<SourcedRow, 'source' | 'path'>) => `${row.source} ${row.path}`;
 interface Saved { html: string; edit?: { markdown: string; editor: string; at: number } }
-/** A plain editor standing in a line of the details, for one field of one page. */
 interface Words { host: HTMLElement; plain: ReturnType<typeof createPlainEditor>; path: string; key: string; field: PageField; accepted: string; value: string; saving: boolean }
 
-/** The event a place sends to have the app show one of the site's pages on its canvas. */
 export const OPEN_PAGE = 'consistency-open-page';
 
 export class ConsistencyPlacePages extends LitElement {
@@ -82,24 +50,17 @@ export class ConsistencyPlacePages extends LitElement {
   declare problem: string;
   declare language: string | null;
   declare chosenBase: string | null;
-  /** Each page's fields as last read, by path. */
   declare details: Map<string, PageFields>;
   declare detailProblem: string;
-  /** A save that failed: which field, and the words saying why. */
   declare failure: { key: string; words: string } | null;
-  /** The share image field being chosen for, while the drawer is open. */
   declare picking: { path: string; field: PageField } | null;
   declare pickProblem: string;
-  /** The site's own pages, from its page sources, after the site engine's. */
   declare sourced: SourcedRow[];
-  /** The source's page chosen, by `source path`; the site engine's chosen page is then none. */
   declare chosenSourced: string | null;
   declare sourceProblem: string;
   site!: SiteSummary;
-  /** The site's page sources by name, once its places have named them. */
   private sources: Map<string, PageSource> | null = null;
   private readonly saved = () => void this.read();
-  /** The words being typed in each field, by `path key`, for the counts and the share card. */
   private readonly typed = new Map<string, string>();
   private readonly editors = new Map<HTMLElement, Words>();
   private stop: (() => void) | null = null;
@@ -134,7 +95,6 @@ export class ConsistencyPlacePages extends LitElement {
     this.editors.clear();
   }
 
-  /** The pages and the edits no longer on the site, then the chosen page's fields, again. */
   async read() {
     const ticket = ++this.reading;
     const [answer, detached, sourced] = await Promise.all([
@@ -158,10 +118,6 @@ export class ConsistencyPlacePages extends LitElement {
     if (row) void this.readPage(row.path);
   }
 
-  /**
-   * The site's own pages from the sources its Pages place names, or none when its places could not be read (the rows
-   * read last stay). A source that fails keeps its rows read last, and says so.
-   */
   private async readSources(): Promise<{ rows: SourcedRow[]; problem: string } | null> {
     if (!this.sources) {
       try {
@@ -178,7 +134,6 @@ export class ConsistencyPlacePages extends LitElement {
     return { rows, problem: lists.includes(null) ? 'Some of the site\'s pages could not be read.' : '' };
   }
 
-  /** One page's fields; a field being typed in keeps its words. */
   private async readPage(path: string) {
     try {
       const detail = await siteApi<PageFields>(this.site.code, `page?path=${encodeURIComponent(path)}`);
@@ -193,7 +148,6 @@ export class ConsistencyPlacePages extends LitElement {
   private get currentLanguage(): Language | null { const all = this.languages; return all.find(each => each.code === this.language) ?? all[0] ?? null; }
   private get rows(): PageRow[] { return pageRows(groupPages(this.pages ?? [], this.languages), this.currentLanguage); }
   private get chosen(): PageRow | null { return this.sourcedChosen ? null : chosenRow(this.rows, this.chosenBase); }
-  /** The source's page chosen, or the first when the site engine has none. */
   private get sourcedChosen(): SourcedRow | null {
     const chosen = this.sourced.find(row => sourcedKey(row) === this.chosenSourced);
     return chosen ?? (this.rows.length ? null : this.sourced[0] ?? null);
@@ -212,14 +166,12 @@ export class ConsistencyPlacePages extends LitElement {
     if (row && !this.details.has(row.path)) void this.readPage(row.path);
   }
 
-  /** Shows the page on the site's canvas, where its words are edited. */
   private edit(row: PageRow | null) {
     if (row) this.dispatchEvent(new CustomEvent(OPEN_PAGE, { detail: { path: row.path }, bubbles: true, composed: true }));
   }
 
   private chooseSourced(row: SourcedRow) { this.chosenSourced = sourcedKey(row); this.detailProblem = ''; }
 
-  /** Enter opens the site engine's page on the canvas, or goes to a source's editor; the arrows choose the next row. */
   private rowKey(event: KeyboardEvent, index: number) {
     const rows = this.rows;
     if (event.key === 'Enter') {
@@ -235,7 +187,6 @@ export class ConsistencyPlacePages extends LitElement {
     this.querySelectorAll<HTMLElement>('.place-pages-list > ds-row')[next]?.focus();
   }
 
-  /** Saves one field of the page, as the canvas saves its words; whether it was saved. */
   private async save(path: string, field: PageField, markdown: string): Promise<boolean> {
     try {
       const saved = await siteApi<Saved>(this.site.code, 'edit', { method: 'POST', json: { path, key: field.key, markdown } });
@@ -253,10 +204,6 @@ export class ConsistencyPlacePages extends LitElement {
     }
   }
 
-  /**
-   * Makes the plain editors the details stand in, after each render: one per field line, made again for a new page.
-   * A field read again shows the words saved since, unless its words are being typed or saved.
-   */
   protected updated() {
     for (const [host, words] of this.editors) if (!host.isConnected) { words.plain.destroy(); this.editors.delete(host); }
     for (const host of this.querySelectorAll<HTMLElement>('.place-details__words')) {
@@ -284,7 +231,6 @@ export class ConsistencyPlacePages extends LitElement {
     host.addEventListener('focusout', event => { if (!host.contains(event.relatedTarget as Node | null)) void this.settle(words); });
   }
 
-  /** Aa's plain editor in the line, with the words saved last. */
   private draw(words: Words) {
     words.host.replaceChildren();
     const id = `${words.path} ${words.key}`;
@@ -293,10 +239,8 @@ export class ConsistencyPlacePages extends LitElement {
     words.plain = createPlainEditor(words.host, { value: words.value, onChange: value => { words.value = value; this.typed.set(id, value); this.requestUpdate(); } });
   }
 
-  /** The editor's words back to the words saved last. */
   private putBack(words: Words) {
     const focused = words.host.contains(document.activeElement);
-    // The words typed are let go first, so the editor leaving the focus saves nothing.
     words.value = words.field.markdown;
     words.plain.destroy();
     this.draw(words);
@@ -304,7 +248,6 @@ export class ConsistencyPlacePages extends LitElement {
     this.requestUpdate();
   }
 
-  /** Saves the words typed in a line, unless they are the words saved; a failure puts the saved words back. */
   private async settle(words: Words) {
     if (words.saving || words.value === words.field.markdown) return;
     if (words.value.length > MARKDOWN_LIMIT) { this.failure = { key: words.key, words: 'Too many words for one field.' }; this.putBack(words); return; }
@@ -363,16 +306,13 @@ export class ConsistencyPlacePages extends LitElement {
     </div>`;
   }
 
-  /** A source's page: its own editor in the middle column, kept by the source per page. */
   private sourcedPage(row: SourcedRow) {
-    // Until the sources are read, the rows are last visit's and their editors are not made yet.
     const editor = this.sources?.get(row.source)?.editor(row.path) ?? null;
     return html`<section class="place-pages-page" aria-label="The chosen page">${editor ?? (!this.sources ? nothing
         : html`<ds-message role="alert" tone="danger" literal heading="This page could not be opened" text="Read the pages again."></ds-message>`)}</section>
       <section class="place-pages-share" aria-hidden="true"></section>`;
   }
 
-  /** The chosen page's column and its share image's. */
   private page(row: PageRow, detail: PageFields | undefined) {
     const { title, description, image } = detail ? shareFields(detail.fields) : {};
     const typed = (field: PageField | undefined) => (field ? this.typed.get(`${row.path} ${field.key}`) ?? field.markdown : '');
@@ -420,7 +360,6 @@ export class ConsistencyPlacePages extends LitElement {
       </section>`;
   }
 
-  /** The site's pictures in a drawer beside the page, two to a line; pressing one makes it the share image. */
   private picker() {
     const picking = this.picking;
     const choices = picking ? pickerImages(this.images, picking.field.markdown) : [];

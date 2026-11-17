@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// `ds-accordion`: a `summary` row one square high with a chevron that turns over in 140 ms;
-/// open, the details follow half a square below. Twelve squares wide unless told otherwise.
 public struct DS1Accordion<Details: View>: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -32,14 +30,12 @@ public struct DS1Accordion<Details: View>: View {
     }
 }
 
-/// `ds-list`: rows edge to edge with no gap.
 public struct DS1List<Content: View>: View {
     let content: Content
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View { VStack(alignment: .leading, spacing: 0) { content } }
 }
 
-/// `ds-panel`: a column on the paper with a pinned `header` and `footer` around a body that takes the rest.
 public struct DS1Panel<Header: View, Body: View, Footer: View>: View {
     @Environment(\.ds1Paper) private var paper
     let header: Header
@@ -58,13 +54,11 @@ public struct DS1Panel<Header: View, Body: View, Footer: View>: View {
     }
 }
 
-/// A navigation entry of `DS1Sidebar`. Collapsed children are left out of the list.
 public struct DS1SidebarItem: Identifiable, Sendable {
     public let id: String
     public let label: String
     public let icon: DS1IconName?
     public let depth: Int
-    /// Whether it has children: true open, false closed, nil none.
     public let expanded: Bool?
     public let current: Bool
     public let enabled: Bool
@@ -74,8 +68,6 @@ public struct DS1SidebarItem: Identifiable, Sendable {
     }
 }
 
-/// `ds-sidebar`: navigation 12 squares wide, rows one square high, each depth half a square
-/// further in, a disclosure square for a section, the current row filled in the medium face.
 public struct DS1Sidebar: View {
     @Environment(\.ds1Scale) private var scale
     let items: [DS1SidebarItem]
@@ -126,7 +118,6 @@ public struct DS1Sidebar: View {
     }
 }
 
-/// A column of `DS1Table`: its heading, how to read a row, and whether it holds numbers (set to the end).
 public struct DS1Column<Row> {
     public let label: String
     public let numeric: Bool
@@ -137,9 +128,6 @@ public struct DS1Column<Row> {
     }
 }
 
-/// `ds-table`: rows one square high, 19 points of words on a 1-point rule, no box and no
-/// column lines, half a square between columns, numbers to the end in tabular figures. The
-/// headings are in the title colour. It scrolls sideways when it is wider than its room.
 public struct DS1Table<Row>: View {
     @Environment(\.ds1Scale) private var scale
     let rows: [Row]
@@ -174,9 +162,6 @@ public struct DS1Table<Row>: View {
     }
 }
 
-/// `ds-token-field`: chosen values as `DS1Token`s and a field to type the next, wrapping a
-/// square at a time inside a 1-point outline on the paper. Return or a `separators` character
-/// asks to commit the text; deleting in an empty field asks to remove the last token.
 public struct DS1TokenField<Tokens: View>: View {
     @Environment(\.ds1Paper) private var paper
     @Environment(\.ds1Scale) private var scale
@@ -221,7 +206,6 @@ public struct DS1TokenField<Tokens: View>: View {
     }
 }
 
-/// Lays out views in rows, wrapping to the next row when one is full.
 public struct DS1Flow: Layout {
     let spacing: CGFloat
     public init(spacing: CGFloat) { self.spacing = spacing }

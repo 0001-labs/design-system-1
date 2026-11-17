@@ -3,11 +3,8 @@ import SwiftUI
 import XCTest
 @testable import DS1
 
-/// Where words and marks land on the grid, read from the pixels of a rendered view, against
-/// where the web's CSS puts them.
 @MainActor
 final class DS1GeometryTests: XCTestCase {
-    /// The rows of a view's rendering, at `scale` pixels per point, that hold ink.
     private func inkRows<V: View>(_ view: V, width: CGFloat, height: CGFloat, scale: CGFloat = 4) -> (first: CGFloat, last: CGFloat)? {
         let renderer = ImageRenderer(content: view.frame(width: width, height: height, alignment: .topLeading).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = scale
@@ -34,7 +31,6 @@ final class DS1GeometryTests: XCTestCase {
     }
 
     func testALineStandsOnTheSixteen() throws {
-        // A 14px line in a 16px line box at the foot of its square: capitals centred in the sixteen.
         let ink = try XCTUnwrap(inkRows(DS1LineText("HHH").environment(\.ds1Scale, .desktop), width: 100, height: 20))
         let baseline = 4 + (16 + metrics.cap) / 2
         XCTAssertEqual(ink.last, baseline, accuracy: 0.5)
@@ -42,7 +38,6 @@ final class DS1GeometryTests: XCTestCase {
     }
 
     func testWrappedLinesStandWhereTheWebsTwentyPixelLinesPutThem() throws {
-        // Prose on 20px lines: the face's ascent and descent centred in each line, as CSS does.
         let m = metrics
         let baseline = (20 - (m.ascent + m.descent)) / 2 + m.ascent
         let one = try XCTUnwrap(inkRows(DS1LineText("HHH", wrap: true).environment(\.ds1Scale, .desktop), width: 100, height: 60))
@@ -53,7 +48,6 @@ final class DS1GeometryTests: XCTestCase {
     }
 
     func testACentredEmptyStateCentresAOneLineHeading() throws {
-        // Ink of a short heading over a longer line, centred: both midpoints on the block's middle.
         let view = DS1Empty(heading: "HH", text: "HHHHHHHH", centered: true).environment(\.ds1Scale, .desktop)
         let renderer = ImageRenderer(content: view.frame(width: 320).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = 2

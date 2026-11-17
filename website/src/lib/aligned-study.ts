@@ -1,13 +1,6 @@
-/**
- * The window in whole squares for the aligned studies. Under Desktop aligned the squares come from
- * the root's `--ds-grid-columns` and `--ds-grid-rows`; on a phone, which keeps its own scale, they
- * are as many as fit (fourteen across). The root gets `--across` and `--down`, and `data-narrow`
- * under forty across, where a study may run as a simpler column.
- */
 import { startScaling } from '../../../DS1/0-face/scaling';
 
 export interface Squares {
-  /** One square in pixels. */
   unit: number;
   across: number;
   down: number;
@@ -31,7 +24,6 @@ export function measure(): Squares {
   return { unit, across, down, narrow };
 }
 
-/** Calls `draw` now and whenever the squares change. */
 export function onSquares(draw: (squares: Squares) => void): () => void {
   listeners.add(draw);
   draw(last ?? startStudy());
@@ -39,7 +31,6 @@ export function onSquares(draw: (squares: Squares) => void): () => void {
 }
 
 let started = false;
-/** Puts Desktop aligned on the page and keeps the squares measured; once a page. */
 export function startStudy(): Squares {
   if (!started) {
     started = true;
@@ -58,5 +49,4 @@ export function startStudy(): Squares {
   return (last = measure());
 }
 
-/** Whether the visitor asked for less motion. */
 export const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;

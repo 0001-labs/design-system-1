@@ -5,12 +5,8 @@ import UIKit
 import AppKit
 #endif
 
-/// Dates, numbers and money in the reader's language, as format.ts and pricing.ts on the web:
-/// the same locales for each language, a date-only value staying on its day in every zone,
-/// and the same steps for relative time.
 @MainActor
 public enum DS1Format {
-    /// The locale format.ts uses for each language.
     public static let locales: [DS1Language: String] = [
         .da: "da-DK", .de: "de-DE", .en: "en-US", .es: "es-ES", .fi: "fi-FI", .fr: "fr-FR", .is: "is-IS", .it: "it-IT",
         .ja: "ja-JP", .ko: "ko-KR", .nb: "nb-NO", .nn: "nn-NO", .no: "no-NO", .pt: "pt-PT", .ptBR: "pt-BR", .sv: "sv-SE", .zh: "zh-CN",
@@ -25,7 +21,6 @@ public enum DS1Format {
         let f = DateFormatter(); f.locale = locale; f.timeZone = timeZone; f.dateStyle = style(length); f.timeStyle = .none
         return f.string(from: date)
     }
-    /// A date-only value (`2026-10-17`) on its own day, whatever the time zone.
     public static func date(day: DateComponents, _ length: Length = .medium) -> String {
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(identifier: "UTC")!
         let f = DateFormatter(); f.locale = locale; f.timeZone = calendar.timeZone; f.dateStyle = style(length)
@@ -58,8 +53,6 @@ public enum DS1Format {
     public static func compact(_ value: Double) -> String { value.formatted(.number.notation(.compactName).locale(locale)) }
     public static func list(_ items: [String]) -> String { items.formatted(.list(type: .and).locale(locale)) }
 
-    /// An amount of money: `minor` when it is in the currency's smallest unit (øre, cents),
-    /// `whole` to leave out a zero fraction.
     public static func money(_ amount: Double, currency: String, minor: Bool = false, whole: Bool = false) -> String {
         let f = NumberFormatter(); f.locale = locale; f.numberStyle = .currency; f.currencyCode = currency
         let value = minor ? amount / pow(10, Double(f.maximumFractionDigits)) : amount
@@ -67,12 +60,8 @@ public enum DS1Format {
         return f.string(from: value as NSNumber) ?? "\(value) \(currency)"
     }
 
-    /// The steps of relative time.
     public enum Unit: Sendable, Equatable { case minute, hour, day, week, month, year }
 
-    /// The step and its signed count, or nil for "now": under 45 seconds now, minutes under 45
-    /// minutes, hours under 22 (or the same day), days under a week, weeks under 26 days,
-    /// months under 335 days, then years.
     public nonisolated static func relativeStep(seconds: Int, then: Date, now: Date, calendar: Calendar = .current) -> (count: Int, unit: Unit)? {
         let a = abs(seconds), sign = seconds < 0 ? -1 : 1
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: then)).day ?? 0
@@ -85,7 +74,6 @@ public enum DS1Format {
         return (sign * Int((Double(abs(days)) / 365.25).rounded()), .year)
     }
 
-    /// How long ago or how soon, in those steps.
     public static func relative(_ date: Date, now: Date = Date()) -> String {
         let f = RelativeDateTimeFormatter(); f.locale = locale; f.dateTimeStyle = .named
         guard let step = relativeStep(seconds: Int(date.timeIntervalSince(now)), then: date, now: now) else {
@@ -104,7 +92,6 @@ public enum DS1Format {
     }
 }
 
-/// Prices in the reader's currency, as pricing.ts: the country wins over the language, else US dollars.
 @MainActor
 public enum DS1Pricing {
     static let byLanguage = ["da": "DKK", "de": "EUR", "es": "EUR", "fi": "EUR", "fr": "EUR", "it": "EUR", "pt": "EUR", "en": "USD", "is": "ISK", "ja": "JPY", "ko": "KRW", "nb": "NOK", "nn": "NOK", "no": "NOK", "pt-BR": "BRL", "sv": "SEK", "zh": "CNY"]
@@ -121,7 +108,6 @@ public enum DS1Pricing {
     }
 }
 
-/// Copies text, as `copyText()`: the pasteboard, then "Copied" as a toast.
 @MainActor
 public enum DS1Clipboard {
     @discardableResult

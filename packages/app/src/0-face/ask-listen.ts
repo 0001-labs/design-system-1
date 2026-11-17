@@ -18,7 +18,6 @@ function recognitionClass(): RecognitionClass | null {
   return scope.SpeechRecognition ?? scope.webkitSpeechRecognition ?? null
 }
 
-/** Whether this browser can listen at all. */
 export function canListen(): boolean {
   return recognitionClass() !== null
 }
@@ -32,10 +31,6 @@ const FAILURES: Record<string, string> = {
 
 export type Listening = { stop(): void; abort(): void }
 
-/**
- * Listen until the person stops speaking. `heard` has everything heard so far;
- * `end` comes once, with what went wrong or null.
- */
 export function listen(options: { lang: string; heard: (words: string) => void; end: (failure: string | null) => void }): Listening | null {
   const Recognition = recognitionClass()
   if (!Recognition) return null

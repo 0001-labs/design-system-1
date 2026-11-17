@@ -1,8 +1,3 @@
-// Writes the Swift and Kotlin packages' generated files (scripts/native-tokens.ts) and lays
-// out their resources (scripts/native-apple.mjs, scripts/native-android.mjs) for building and
-// testing them here. The resources are not committed: products receive them through Sync 1's
-// `swift` and `kotlin` exports.
-// Run: vp run native:tokens
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

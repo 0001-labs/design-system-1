@@ -1,13 +1,5 @@
 import type { LayoutExample } from './layout-examples';
 
-// Workbenches: the examples that are whole tools rather than pages. Each fills a computer's window
-// edge to edge, drawn Desktop aligned: the window is a whole number of squares wide and the
-// height's leftover sits above it, so every pane, row and grid line ends on a square.
-
-// Multitrack: an arrangement of loops on tracks, one beat a square at the middle zoom, with a
-// transport, a loop browser, a mixer and the selected clip's inspector. It plays without sound,
-// apart from an optional metronome made in the page; nothing is loaded or sent.
-
 const tracks = [
   { id: 'drums', name: 'Drums', kind: 'audio', tone: 'var(--ds-orange)', vol: -3, pan: 0 },
   { id: 'bass', name: 'Bass', kind: 'midi', tone: 'var(--ds-apple-green)', vol: -6, pan: 0 },
@@ -18,7 +10,6 @@ const tracks = [
   { id: 'fx', name: 'Effects', kind: 'audio', tone: 'var(--one-purple)', vol: -14, pan: 0 },
 ];
 
-// The loop library: [name, folder, kind, beats, key, shape].
 const library = [
   ['Breaks 01', 'Drums', 'audio', 4, '—', 'drum'], ['Breaks 02', 'Drums', 'audio', 8, '—', 'drum'],
   ['Brush kit', 'Drums', 'audio', 4, '—', 'drum'], ['Four floor', 'Drums', 'audio', 4, '—', 'drum'],
@@ -37,7 +28,6 @@ const library = [
   ['Vinyl dust', 'Effects', 'audio', 16, '—', 'dust'],
 ].map(([name, folder, kind, beats, key, shape], index) => ({ name, folder, kind, beats, key, shape, seed: 7 + index * 13 }));
 
-// The song's opening arrangement: [track, source, start beat, length in beats].
 const clips = [
   ['drums', 'Breaks 01', 16, 32], ['drums', 'Four floor', 64, 32], ['drums', 'Half time', 96, 16],
   ['bass', 'Sub walk', 16, 48], ['bass', 'Octave pump', 64, 32],

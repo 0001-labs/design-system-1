@@ -1,7 +1,3 @@
-/* ds-notice.css */
-/* The element only places the block; 1-root/notice.css draws it and
-   controls.css its dismiss button. */
-
 :host {
   display: block;
   min-width: 0;
@@ -12,7 +8,6 @@
   display: none !important;
 }
 
-/* The banner is placed by the host; its block then fills the host. */
 :host([banner]),
 :host([form="banner"]) {
   position: absolute;
@@ -25,18 +20,15 @@
   position: static;
 }
 
-/* The app banner stands in the flow, at the top of the page. */
 :host([form="app"]) {
   display: block;
 }
 
-/* Slotted words take the notice's lines rather than their own margins. */
 ::slotted([slot="heading"]),
 ::slotted(:not([slot])) {
   margin: 0;
 }
 
-/* The app's own picture in the icon slot fills its two squares. */
 ::slotted(img[slot="icon"]) {
   display: block;
   width: 100%;

@@ -12,10 +12,6 @@ import { authState, LiveQuery } from "./lib/backend";
 import { AppElement, defineElement } from "./lib/element";
 import { currentLocation, follow, href, matchRoute, navigate } from "./router";
 
-/**
- * The page it holds (`content`) in Design system 1's app frame, the site's navigation in its bar.
- * Framed in the documentation, whose own frame stands around it, the page alone.
- */
 export class AppShell extends AppElement {
   static properties = { content: { attribute: false } };
   declare content: unknown;
@@ -37,7 +33,6 @@ export class AppShell extends AppElement {
     window.parent.postMessage({ type: "ds1:library-navigation", ...JSON.parse(this.#reported ?? "{}") }, window.location.origin);
   };
 
-  /** Design system 1's component editor: what it edits and what is open, for the docs sidebar. */
   #editor(): EditorNavigation | null {
     const { path, search } = currentLocation.get();
     if (path !== "/base") return null;
@@ -79,7 +74,6 @@ export class AppShell extends AppElement {
     super.disconnectedCallback();
   }
 
-  /** In the documentation's frame, the parent hears which library is open whenever it changes. */
   override updated() {
     if (!this.#embedded() || !this.isConnected) return;
     const context = JSON.stringify({ library: this.#current, libraryId: matchRoute("/l/:id", currentLocation.get().path)?.id ?? null });

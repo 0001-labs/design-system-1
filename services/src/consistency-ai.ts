@@ -1,5 +1,4 @@
 import { TYPESAFE_URL } from './vendor/ai-gateway/client';
-/** The private editor's inference transport. Provider credentials never reach the browser. */
 import { authorizeReport, type ReportsEnv } from './reports';
 import { sessionRequest } from './dashboard';
 import { isConsistencyHost } from './consistency';
@@ -19,7 +18,6 @@ export async function consistencyAI(request: Request, env: PreviewAIEnv, send: t
   const denied = (await systemOwner(request, env)) ? null : await authorizeReport(sessionRequest(new Request(request.url, { headers: request.headers })), env, send);
   if (denied) return denied;
   if (!request.headers.get('content-type')?.startsWith('application/json')) return error('Send JSON.', 415);
-  // Bound streamed input too: Content-Length alone is not trustworthy.
   const reader = request.body?.getReader();
   if (!reader) return error('The request is empty.', 400);
   const chunks: Uint8Array[] = []; let bytes = 0;
@@ -57,7 +55,6 @@ export async function consistencyAI(request: Request, env: PreviewAIEnv, send: t
     return Response.json(wholeDocument ? { document: answer } : { insert: answer }, { headers });
   } catch { return error('AI could not complete this edit. Try again.', 502); }
 }
-/** One run of the generator, bounded in time and length; empty or overlong writing is no answer. */
 async function generate(ai: Ai, messages: Array<{ role: string; content: string }>, maxTokens: number, timeoutMs: number): Promise<string | null> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const answer = await Promise.race([ai.run(MODEL, { messages, max_tokens: maxTokens, temperature: 0.3 }), new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('timeout')), timeoutMs); })]).finally(() => clearTimeout(timeout));
@@ -65,13 +62,6 @@ async function generate(ai: Ai, messages: Array<{ role: string; content: string 
   return answer.response;
 }
 
-/*
- * Ask, on the vocabulary: a section or a page generated from a request in free text. The judgment
- * (TypeSafe, behind the component routing flag and the same timeout) decides the intent, the kind
- * and the pictures meant; without it a heuristic reads the request. The generator writes one JSON
- * object; `checkAskAnswer` keeps only what the vocabulary can say, and a refusal answers 422 with
- * the words to show. The browser sends the page's context; the platform validates again on save.
- */
 const strings = (value: unknown, max: number): string[] | null => Array.isArray(value) && value.length <= max && value.every(item => typeof item === 'string' && item.length <= 4000) ? value as string[] : null;
 async function ask(request: Request, input: Record<string, unknown>, env: PreviewAIEnv, send: typeof fetch): Promise<Response> {
   const level = input.kind as AskLevel;
@@ -111,7 +101,6 @@ async function ask(request: Request, input: Record<string, unknown>, env: Previe
   if (checked.level === 'section') return Response.json({ level, intent: judgment.intent, ...(judgment.kind ? { kind: judgment.kind } : {}), block: checked.block }, { headers: responseHeaders });
   return Response.json({ level, intent: 'rewrite', document: checked.document }, { headers: responseHeaders });
 }
-/** The judgment, when the TypeSafe key is there; null when it is missing, slow, failed or unsure. Caller has authorized the owner. */
 async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetch, signal: AbortSignal): Promise<AskJudgment | null> {
   if (!env.SYSTEM_AI_TOKEN || signal.aborted) return null;
   const abort = new AbortController();

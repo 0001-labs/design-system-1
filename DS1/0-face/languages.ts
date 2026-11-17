@@ -1,13 +1,3 @@
-/**
- * The languages every product chooses from: one list, with the name of
- * each in English and in itself, and how to read whatever a browser, a URL or
- * a saved setting calls a language.
- *
- * No browser code, so a product's backend (Convex, Node) imports it as well.
- * Each product turns on the subset it translates (`configureI18n({ languages })`).
- */
-
-/** Every language Design system 1 knows, in the order pickers show them. */
 export const LANGUAGES = [
   "da",
   "de",
@@ -30,16 +20,12 @@ export const LANGUAGES = [
 
 export type Language = (typeof LANGUAGES)[number];
 
-/** The language every product falls back to. */
 export const DEFAULT_LANGUAGE: Language = "en";
 
 export type LanguageMetadata = {
   code: Language;
-  /** The name in English */
   label: string;
-  /** The name in the language itself, as a picker shows it */
   nativeLabel: string;
-  /** Other tags that mean this language, lower case (`da-dk`) */
   aliases: readonly string[];
 };
 
@@ -103,12 +89,6 @@ export const LANGUAGE_METADATA: Readonly<Record<Language, LanguageMetadata>> = {
   },
 };
 
-/**
- * Languages close enough to stand in for each other, nearest first. A product
- * that speaks only one of them gets it for the others (one that speaks `nb`
- * reads `no` and `nn` as `nb`; one that speaks `pt-BR` reads `pt` as it), and
- * a missing word is looked up in them before English.
- */
 const RELATED_LANGUAGES: Readonly<Partial<Record<Language, readonly Language[]>>> = {
   nb: ["no", "nn"],
   no: ["nb", "nn"],
@@ -117,7 +97,6 @@ const RELATED_LANGUAGES: Readonly<Partial<Record<Language, readonly Language[]>>
   "pt-BR": ["pt"],
 };
 
-/** Every tag, lower case, to the language it means. */
 const ALIASES = new Map<string, Language>();
 for (const code of LANGUAGES) {
   ALIASES.set(code.toLowerCase(), code);
@@ -128,7 +107,6 @@ for (const code of LANGUAGES) {
 
 const ORDER = new Map<string, number>(LANGUAGES.map((code, index) => [code, index]));
 
-/** Whether a value is one of the list's codes, exactly as written there. */
 export function isLanguage(value: unknown): value is Language {
   return typeof value === "string" && ORDER.has(value);
 }
@@ -137,7 +115,6 @@ function primarySubtag(tag: string): string {
   return tag.split("-")[0] ?? "";
 }
 
-/** The first of `language` and its relatives that `allowed` holds. */
 function within(language: Language, allowed: ReadonlySet<Language>): Language | null {
   if (allowed.has(language)) {
     return language;
@@ -145,14 +122,6 @@ function within(language: Language, allowed: ReadonlySet<Language>): Language | 
   return RELATED_LANGUAGES[language]?.find((related) => allowed.has(related)) ?? null;
 }
 
-/**
- * Read any way of naming a language as one of the list: `da-DK`, `nb_NO`,
- * `pt-br`, or a browser's list (`"nl-NL,da;q=0.8"`, the first language it
- * knows wins). Pass the product's languages to land on one it speaks: a
- * relative stands in where the product lacks the language itself, so with
- * `nb` and `pt-BR` among them, `no` and `nn` read as `nb`, and `pt` as `pt-BR`. Returns
- * `fallback` when nothing matches (`null` to tell).
- */
 export function normalizeLanguage(
   input: string | null | undefined,
   fallback?: Language,
@@ -190,11 +159,6 @@ export function normalizeLanguage(
   return fallback;
 }
 
-/**
- * The languages of `subset` that the list knows, in the list's order, each
- * once. Codes are matched whatever their case (`pt-br` is `pt-BR`); others are
- * left out.
- */
 export function pickLanguages(subset: Iterable<string>): Language[] {
   const wanted = new Set<Language>();
   for (const code of subset) {
@@ -206,21 +170,12 @@ export function pickLanguages(subset: Iterable<string>): Language[] {
   return LANGUAGES.filter((code) => wanted.has(code));
 }
 
-/**
- * Where a language sits in the list's order, for sorting: the code itself,
- * else its primary subtag; codes the list does not know come last.
- */
 export function languageOrder(code: string): number {
   const normalized = String(code ?? "").toLowerCase().replace(/_/g, "-");
   const member = ALIASES.get(normalized) ?? ALIASES.get(primarySubtag(normalized));
   return member ? (ORDER.get(member) ?? LANGUAGES.length) : LANGUAGES.length;
 }
 
-/**
- * The languages to look a word up in for `language`, before English: the
- * language as given, its primary subtag (`ja-JP` reads `ja`), then its
- * relatives (`nn` reads `nb`, `pt-BR` reads `pt`).
- */
 export function fallbackLanguages(language: string): string[] {
   const codes: string[] = [];
   const add = (code: string | undefined) => {

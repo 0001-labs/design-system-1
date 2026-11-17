@@ -1,4 +1,3 @@
-/* Light DOM preserves native forms, labels and React event targets. */
 ds-overlay > dialog {
   box-sizing: border-box;
   position: var(--ds-overlay-position, fixed);
@@ -35,7 +34,6 @@ ds-overlay > dialog[data-ds-type="popover"] {
   max-width: var(--ds-overlay-available-width, calc(100vw - var(--ds-unit)));
   max-height: var(--ds-overlay-available-height, calc(100dvh - var(--ds-unit)));
 }
-/* A compact calendar is its own menu surface: no extra frame or spacing. */
 ds-overlay > dialog[data-ds-type="popover"]:has(> ds-calendar[compact]) {
   padding: 0;
   border: 0;
@@ -56,10 +54,8 @@ ds-overlay > dialog[data-ds-overlay-rotated] {
 }
 ds-overlay > dialog[data-ds-type="screen"][data-ds-overlay-rotated] { width: 100dvh; height: 100vw; }
 ds-overlay > dialog::backdrop { background: color-mix(in srgb, var(--ds-black) 40%, transparent); }
-/* The header keeps the last square of its row for the close button, only when it has one. */
 ds-overlay [data-ds-overlay="header"] { display: flex; flex-direction: column; }
 ds-overlay > dialog:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] { padding-inline-end: var(--ds-unit); }
-/* The title on its square's lower sixteen, as every row's words. */
 ds-overlay [data-ds-overlay="title"] {
   display: flex;
   align-items: flex-end;
@@ -94,8 +90,6 @@ ds-overlay > dialog[data-ds-overlay-inline] {
   background: transparent;
 }
 
-/* Mobile sheets dismiss by swipe, backdrop or Escape. Keep the close control
-   available to assistive technology without drawing a second visible handle. */
 @media (max-width: 768px) {
   ds-overlay > dialog[data-ds-type="sheet"] [data-ds-overlay="close"] {
     position: absolute;
@@ -112,8 +106,6 @@ ds-overlay > dialog[data-ds-overlay-inline] {
     padding-inline-end: 0;
   }
 
-  /* Opt into a stable tabbed frame; short and long panels share the visible
-     viewport's bounds, including the keyboard and safe areas. */
   ds-overlay > dialog[data-ds-type="sheet"][data-ds-overlay-tabbed] {
     height: calc(var(--ds-overlay-viewport-height, 100dvh) - var(--ds-overlay-sheet-gap, calc(2 * var(--ds-unit))) - env(safe-area-inset-top, 0px));
     overflow: hidden;

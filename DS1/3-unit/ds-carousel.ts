@@ -1,11 +1,4 @@
 import { isHTMLElement } from "../0-face/light-dom";
-// ds-carousel.ts
-// Slides side by side that snap sideways, one to a stop, tied to a row of
-// page dots and optional previous and next buttons; or, with slides of their
-// own width, a strip of several in view that can run on to the window's
-// edges, loop without an end and, when asked, move on by itself. Drawn by
-// 1-root/carousel.css, the same classes a page without scripts writes, and
-// moved by the helpers it shares with 0-face/carousel.ts.
 
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { getText } from "../0-face/i18n";
@@ -19,59 +12,14 @@ import controls from "../1-root/controls.css?inline";
 import carousel from "../1-root/carousel.css?inline";
 import styles from "./styles/ds-carousel.css?inline";
 
-/** Detail of `change`: the slide now in view and the one before it. */
 export interface CarouselChangeDetail {
   index: number;
   previous: number;
 }
 
-/** A whole number of squares, or `undefined` for a value that is not one. */
 const squares = (value: number | undefined, least: number) =>
   typeof value === "number" && Number.isFinite(value) && value >= least ? Math.floor(value) : undefined;
 
-/**
- * @element ds-carousel
- * @prop {string} label - The region's name: a translation key, or literal
- *   words. Name what the slides show ("Colours", "What people say").
- * @prop {boolean} literal - Show `label` as written, never looked up.
- * @prop {number} current - The slide in view, from 0. Setting it scrolls there.
- * @prop {boolean} buttons - Show previous and next buttons beside the dots.
- * @prop {boolean} noDots - Leave the dots out (`no-dots`).
- * @prop {boolean} end - Draw the last dot as an end marker.
- * @prop {number | "auto"} slideWidth - Each slide's width in whole squares
- *   (`slide-width`); the carousel's own width when not set; `auto` for slides
- *   of their own width, a strip of several in view.
- * @prop {number} gap - Squares between slides; one by default.
- * @prop {string} bleed - `none` (the default) keeps the strip in its box;
- *   `end` runs it on to the window's end edge, the first slide still on the
- *   box's start; `both` runs it to both edges.
- * @prop {boolean} loop - Hold the slides three times over, so the strip has no
- *   end. The copies are hidden from assistive technology and never focused;
- *   a looping carousel draws no dots.
- * @prop {string} autoplay - Move on a slide at a time by itself: empty for
- *   every five seconds, or a number of milliseconds. Held while a person is
- *   in the strip or cannot see it, never under reduced motion, and always
- *   with a pause button.
- * @prop {boolean} free - Slide freely, without stopping at slides.
- *
- * @slot - The slides, one element each.
- *
- * @fires change - A person moved to another slide: by swiping, scrolling, a
- *   dot or a button. `detail` is `{ index, previous }`. Setting `current` or
- *   calling `goTo()` does not fire it.
- *
- * The element is a region described as a carousel, named by `label`; each
- * slide is a group labelled "2 of 5" unless the page labels it, and the
- * current slide is announced politely when it changes. It moves on its own
- * only with `autoplay`. `bleed`, `loop` and `autoplay` are read when the
- * element first draws; put a new element in its place to change them.
- *
- * @example
- * <ds-carousel label="Colours" slide-width="12" buttons>
- *   <figure>…</figure>
- *   <figure>…</figure>
- * </ds-carousel>
- */
 export class Carousel extends LitElement {
   static properties = {
     label: { type: String },
@@ -81,7 +29,6 @@ export class Carousel extends LitElement {
     noDots: { type: Boolean, reflect: true, attribute: "no-dots" },
     noDrag: { type: Boolean, reflect: true, attribute: "no-drag" },
     end: { type: Boolean, reflect: true },
-    // A number of squares, or "auto" for slides of their own width.
     slideWidth: { attribute: "slide-width", reflect: true, converter: {
       fromAttribute: (value: string | null) => (value === null ? undefined : value === "auto" ? "auto" : Number(value)),
       toAttribute: (value: number | string | undefined) => (value === undefined ? null : String(value)),
@@ -114,18 +61,13 @@ export class Carousel extends LitElement {
   declare count: number;
   declare announcement: string;
   declare paused: boolean;
-  /** The strip's drive: the bleed's measures, the loop's copies and autoplay. */
   private drive: CarouselDrive | null = null;
-  /** Stops the strip's drag (dragTrack); started with the track, again when the element comes back to a page. */
   private undrag: (() => void) | undefined;
 
-  /** Attributes this element wrote, so what the page wrote is left alone. */
   private readonly own = new Map<Element, Set<string>>();
-  /** A slide asked for by `current`, a dot or a button, kept until its scroll stops. */
   private pending: number | undefined;
   private settle: ReturnType<typeof setTimeout> | undefined;
   private frame = 0;
-  /** `current` changed from inside: the track is already there or on its way. */
   private moving = false;
   private readonly relabel = () => { this.labelSlides(); this.requestUpdate(); };
 
@@ -146,17 +88,14 @@ export class Carousel extends LitElement {
     this.paused = false;
   }
 
-  /** The slides: the elements given to the carousel, without a loop's copies. */
   get slides(): HTMLElement[] {
     return [...this.children].filter((child): child is HTMLElement => isHTMLElement(child) && !child.hasAttribute("slot") && !child.hasAttribute(COPY));
   }
 
-  /** Milliseconds between autoplay steps; 0 for none. */
   private get every(): number {
     return autoplayInterval(this.autoplay);
   }
 
-  /** Slides of their own width: a strip. */
   private get strip(): boolean {
     return this.slideWidth === "auto";
   }
@@ -165,7 +104,6 @@ export class Carousel extends LitElement {
     return this.renderRoot.querySelector<HTMLElement>(".ds-carousel__track");
   }
 
-  /** The slide in view, inside the count. */
   private get index(): number {
     const current = Number.isFinite(this.current) ? Math.floor(this.current) : 0;
     return Math.max(0, Math.min(this.count - 1, current));
@@ -201,7 +139,6 @@ export class Carousel extends LitElement {
     return params ? text.replace(/\{\{?(\w+)\}?\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole)) : text;
   }
 
-  /** Writes an attribute the page has not written, and remembers it as this element's. */
   private write(element: Element, name: string, value: string) {
     const mine = this.own.get(element) ?? new Set<string>();
     if (element.hasAttribute(name) && !mine.has(name)) return;
@@ -223,7 +160,6 @@ export class Carousel extends LitElement {
 
   protected willUpdate(changed: PropertyValues<this>) {
     super.willUpdate(changed);
-    // The slides are counted before the first paint, so `current` can start on any of them.
     if (!this.hasUpdated) this.labelSlides();
     this.write(this, "role", "region");
     this.write(this, "aria-roledescription", this.words(undefined, "Carousel"));
@@ -238,9 +174,7 @@ export class Carousel extends LitElement {
   }
 
   protected firstUpdated() {
-    // The strip's drive starts once, from the options the element was given.
     const track = this.track;
-    // A mouse drags the strip, and a press that ends a drag or a swipe chooses nothing (dragTrack).
     this.startDrag();
     const bleed = bleedOf(this.bleed);
     if (track && (bleed !== "none" || this.loop || this.every > 0)) {
@@ -254,26 +188,21 @@ export class Carousel extends LitElement {
     if (this.loop) return;
     if (changed.has("current")) {
       if (this.moving) { this.moving = false; return; }
-      // The page set `current`: go there, at once on the first paint and smoothly after.
       this.travel(this.index, changed.get("current") !== undefined);
     } else if (changed.has("count") && !changed.get("count") && this.index > 0) {
-      // The slides arrived after the first paint: stand on the current one.
       this.travel(this.index, false);
     }
   }
 
-  /** Goes to a slide: smoothly, unless the reader asks for reduced motion. Fires no `change`. */
   goTo(index: number): void {
     this.current = index;
   }
 
-  /** Goes to the next slide, as the next button does. */
   next(): void {
     if (this.drive) this.drive.step(1);
     else this.move(this.index + 1);
   }
 
-  /** Goes to the previous slide, as the previous button does. */
   previous(): void {
     if (this.drive) this.drive.step(-1);
     else this.move(this.index - 1);
@@ -293,7 +222,6 @@ export class Carousel extends LitElement {
     this.settle = setTimeout(() => { this.pending = undefined; }, 600);
   }
 
-  /** A person moved to `index`: show it, say it, and fire `change`. */
   private show(index: number) {
     const target = Math.max(0, Math.min(this.count - 1, index));
     const previous = this.index;
@@ -312,11 +240,9 @@ export class Carousel extends LitElement {
 
   private readonly scrolled = () => {
     cancelAnimationFrame(this.frame);
-    // A loop has no place to point to: nothing to follow.
     if (this.loop) return;
     this.frame = requestAnimationFrame(() => {
       if (this.pending !== undefined) {
-        // A scroll asked for by a dot or a button: wait for it to stop before following the track again.
         clearTimeout(this.settle);
         this.settle = setTimeout(() => { this.pending = undefined; }, 150);
         return;
@@ -329,7 +255,6 @@ export class Carousel extends LitElement {
   private readonly ended = () => { this.pending = undefined; };
 
   private readonly picked = (event: CustomEvent<ProgressSelectDetail>) => {
-    // The dots are this carousel's own; their pick becomes its change.
     event.stopPropagation();
     event.preventDefault();
     this.move(event.detail.index);
@@ -337,7 +262,6 @@ export class Carousel extends LitElement {
 
   render() {
     const index = this.index;
-    // A drive steps on and back without an end to stop at.
     const driven = this.drive !== null || bleedOf(this.bleed) !== "none" || this.loop || this.every > 0;
     const button = (which: "previous" | "next") => html`<button
       class="ds-button ds-button--icon ds-carousel__${which}"

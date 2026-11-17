@@ -1,4 +1,3 @@
-/** Opt-in synthetic provider evaluation; no owner documents or saved editor state. */
 import { componentContext, componentState, componentQuestions, applyComponentDecision, COMPONENT_ROUTING_MODEL } from '../shared/consistency-routing';
 import { componentDefaults, writeBasicContentElement } from '../shared/consistency-content';
 import { PAGE_INSERTIONS } from '../shared/consistency-insertions';

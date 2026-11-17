@@ -64,7 +64,6 @@ it('serves the page sandboxed, with no script source, even opened on its own', a
   expect(page.status).toBe(200);
   expect(page.headers.get('content-security-policy')).toBe(DOCUMENT_POLICY);
   expect(DOCUMENT_POLICY).toMatch(/^sandbox allow-same-origin allow-scripts;/); expect(DOCUMENT_POLICY).toContain("script-src 'none'");
-  // A library that pins a Google face draws it in the frame: its stylesheet from one host, its files from the other, and native pages may load only the trusted DS1 base path as well.
   const directive = (policy: string, name: string) => policy.split(';').map(part => part.trim()).find(part => part.startsWith(`${name} `))!;
   for (const policy of [DOCUMENT_POLICY, FILE_POLICY]) {
     expect(directive(policy, 'style-src')).toBe(`style-src ${policy === DOCUMENT_POLICY ? "'self' " : ''}'unsafe-inline' ${FACE_HOSTS.styles}${policy === DOCUMENT_POLICY ? ` ${BASE_STYLES}` : ''}`);
@@ -142,7 +141,6 @@ it('passes on exactly the platform\'s allowlist of a site\'s API, each route by 
     [`orders/${id}/invoice`, 'POST'], [`orders/${id}/fulfil`, 'POST'], [`orders/${id}/note`, 'PUT'], ['order-settings', 'GET'], ['order-settings', 'PUT']])
     expect(apiRoute(route!)?.methods, `${method} ${route}`).toContain(method);
   const { call, workspace } = setup();
-  // The site's library, its theme: read, set and taken away, each the platform's own route.
   for (const method of ['GET', 'PUT', 'DELETE']) expect(apiRoute('library')?.methods, `${method} library`).toContain(method);
   expect(apiRoute('library')?.methods).not.toContain('POST'); expect(apiRoute('library/x')).toBeNull(); expect(apiRoute('libraries')).toBeNull();
   for (const route of ['editors', 'report', 'code', 'verify', 'sign-out', 'analytics', 'flags', 'pages/', 'bookings/nope', `giftcards/${id}/refund`, 'emails/a/b', 'library/x', 'libraries',
@@ -247,7 +245,6 @@ it('answers a site\'s meetings to the owner alone', async () => {
   expect((await ask(member)).status).toBe(404);
   expect((await ask(member, 'meetings/google/callback', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(404);
   expect(await (await ask(owner, 'meetings/google', { method: 'DELETE', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings/google', method: 'DELETE' });
-  // A write from another origin never reaches the platform.
   expect((await ask(owner, 'meetings/google', { method: 'POST', headers: { origin: 'https://elsewhere.example', 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(403);
 });
 
@@ -261,6 +258,5 @@ it('hands Google\'s return on to the app, naming the site its state opens with',
   expect(await returned.text()).toContain(`<meta http-equiv="refresh" content="0;url=/?open=60BVFI&amp;google_code=4%2F0Ab-c_d&amp;google_state=${state}">`);
   expect(await page(`?state=${state}&error=access_denied`).text()).toContain('url=/?open=60BVFI&amp;google_error=access_denied"');
   expect(await page(`?state=${state}&error=<script>`).text()).toContain('google_error=failed"');
-  // A state that names no site goes to the app's front with nothing.
   expect(await page('?state=nonsense&code="><script>').text()).toContain('content="0;url=/"');
 });

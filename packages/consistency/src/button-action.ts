@@ -5,7 +5,6 @@ import '../../../DS1/2-core/ds-input';
 
 export type ButtonAction = ReturnType<typeof readAction>;
 
-/** The native destination fields; callers own hover or Context presentation. */
 export function createButtonActionControls(doc:Document,initialAction:ButtonAction,canWrite:()=>boolean,onChange:(action:ButtonAction)=>void,options:{allowNone?:boolean}={}):{element:HTMLDivElement;dispose:()=>void} {
   const element=doc.createElement('div');element.setAttribute('data-aa-interactive','');element.setAttribute('aria-label','Button action');
   const select=createSurfaceElement(doc,'ds-select'),choice=doc.createElement('select');choice.setAttribute('aria-label','Button action type');

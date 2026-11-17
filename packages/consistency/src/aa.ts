@@ -3,7 +3,6 @@ import { pageAtoms, pageCommands } from './insertions';
 import { contentElementAtoms } from './elements';
 import type { Prompter, PromptAnswer } from '../../../website/src/vendor/aa/aa';
 
-/** Aa owns prompt, selection, retry and undo; this adapter owns authenticated transport. */
 export const previewPrompt: Prompter = async (prompt, context) => {
   const response = await fetch('/api/consistency/ai', {
     method: 'POST', credentials: 'same-origin', cache: 'no-store',
@@ -34,7 +33,6 @@ import { diagramAtom } from '../../../website/src/vendor/aa/diagram.js';
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_BATCH_BYTES = 8 * 1024 * 1024;
 
-/** One stable instance per editor; comments and attachments remain in this tab's draft. */
 export function createPreviewEditorOptions(getHost: () => AaEditorElement | null, onError: (message: string) => void, media?: EditorMedia): EditorOptions {
   const comments = memoryCommentStore({ me: { id: 'owner', name: 'Joachim' } });
   const canWrite = () => { const host = getHost(); return !!host && !(host.editor?.readOnly ?? host.readOnly); };
@@ -78,7 +76,6 @@ export function createPreviewEditorOptions(getHost: () => AaEditorElement | null
           const image = /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.type);
           return `${image ? '!' : ''}[${name}](${url})`;
         }));
-        // Do not replace a changed document or an editor that was removed while reading.
         if (getHost()?.editor !== instance || instance.readOnly || instance.value !== original) {
           onError('The draft changed while the files were read. Insert the files again.'); return;
         }

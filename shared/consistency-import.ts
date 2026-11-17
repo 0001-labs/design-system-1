@@ -1,8 +1,6 @@
 import type { NativeBlock, NativePageDocument } from './consistency-native-page';
 import { COMPONENT_FIELDS, type NativeComponentDefinition } from './consistency-components';
 export interface ImportedPage { document: NativePageDocument; components: Record<string,NativeComponentDefinition>; textKeys: Record<string,string>; sourceIds: Record<string,string> }
-/** A one-way build/migration importer. Its result is an ordinary native page tree; no source
- * placement graph is retained, and both publication and editing read that tree thereafter. */
 export function importComponentPage(body: HTMLElement, options: {namespace:string;properties?:Record<string,Record<string,unknown>>;origin?:string;title?:string;description?:string;lang?:string}): ImportedPage {
   const components: Record<string,NativeComponentDefinition>={},textKeys:Record<string,string>={},sourceIds:Record<string,string>={};
   let serial=0,words=0;

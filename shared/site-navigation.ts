@@ -1,4 +1,3 @@
-/** Destinations shared by the public site and the libraries app. */
 export const siteNavigation: readonly { label: string; href: string }[] = [];
 
 export function isNavigationCurrent(href: string, pathname: string): boolean {

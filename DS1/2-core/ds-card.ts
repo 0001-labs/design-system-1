@@ -1,15 +1,9 @@
-// ds-card.ts
-// A card: one thing on a fill of its own, its name, a title, writing and a
-// picture that can run off its foot. Drawn by 1-root/card.css, the same
-// classes a page without scripts writes.
-
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { define } from "../0-face/define";
 import metrics from "../1-root/component-metrics.css?inline";
 import card from "../1-root/card.css?inline";
 import styles from "./styles/ds-card.css?inline";
 
-/** A whole number of squares, or `undefined` for a value that is not one. */
 const squares = (value: number | undefined) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
 
@@ -22,42 +16,6 @@ const PADDING: Record<string, string> = {
 
 type Slot = "label" | "title" | "media";
 
-/**
- * @element ds-card
- * @prop {string} href - A destination: the whole card becomes one link.
- * @prop {boolean} interactive - The whole card is one button-like press
- *   target that fires `ds-card-press`; use `href` for a destination.
- * @prop {string} tone - A palette colour for the fill (`sharp-blue`,
- *   `apple-green`, `pink`…), drawn as its pastel and dim in dark mode, or
- *   `ink` for the ink with the paper's words. The quiet fill by default.
- * @prop {string} variant - `filled` (the default) or `outlined`, a 1px line
- *   and no fill.
- * @prop {number} width - The card's width in whole squares.
- * @prop {number} height - The card's height in whole squares.
- * @prop {number} mediaHeight - The picture's room in whole squares (`media-height`), from the
- *   foot up: cards side by side given one start their pictures on one line, and the foot cuts a
- *   taller picture.
- * @prop {string} padding - `none`, `small` (half a square), `medium` (one,
- *   the default) or `large` (two).
- * @prop {string} media - Where the picture stands: `start` (the default),
- *   `center`, or `bleed` to run on past the padding to the end edge.
- * @prop {boolean} disabled - Neither pressed nor followed.
- *
- * @slot label - The thing's name, muted, on one square.
- * @slot title - The title, display size, a square and a half a line.
- * @slot - Writing, one square a line.
- * @slot media - A picture of it, a square below the words; it may run off
- *   the card's foot and end edge and is cut there.
- *
- * @fires ds-card-press - An `interactive` card was pressed (click, Enter or Space).
- *
- * @example
- * <ds-card href="/lists" tone="sharp-blue" width="14" height="22" media="center">
- *   <span slot="label">Lists</span>
- *   <span slot="title">Lists on one grid</span>
- *   <img slot="media" src="lists.webp" alt="A list on a phone" />
- * </ds-card>
- */
 export class Card extends LitElement {
   static properties = {
     href: { type: String, reflect: true },
@@ -85,7 +43,6 @@ export class Card extends LitElement {
   declare padding: "none" | "small" | "medium" | "large";
   declare media: "start" | "center" | "bleed";
   declare disabled: boolean;
-  /** The named slots that hold something. */
   declare filled: Set<Slot>;
 
   constructor() {
@@ -113,7 +70,6 @@ export class Card extends LitElement {
     this.style.setProperty("--ds-card-padding", PADDING[this.padding] ?? PADDING.medium);
   }
 
-  /** The named slots the card's children fill, read from the children so the first paint already has them. */
   private read(): Set<Slot> {
     const filled = new Set<Slot>();
     for (const child of this.children) {

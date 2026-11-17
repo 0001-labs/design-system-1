@@ -2,21 +2,8 @@ import { paintFaultLines } from './fault-lines';
 import { measureConstraints, type Constraint, type Finding } from './constraints';
 import { VIEWPORT_WIDTHS, checkSite, findSitePages, inspectInFrame, ruleLine, summarizePages, summarizeRules, type PageResult } from './constraint-site';
 
-// appendChild, not append: a Worker project's types redefine append for its HTML rewriter.
-
-/** The presses of C, each within 800ms of the last, that toggle the panel. */
 export const CONSTRAINT_PRESSES = 5;
 
-/**
- * A panel at the page's end edge listing every small rule the page breaks
- * (constraints.ts), each with its code, what is wrong and the element ringed
- * on the page; pressing one scrolls to it. It measures the page as drawn when
- * it opens and again with Page. Site measures every page of the site at every
- * phone width (constraint-site.ts) and lists what each breaks, with a link to
- * the page. Under what is broken it says what each rule measured and kept,
- * and after a Site check every page it checked. It draws over the page and
- * changes nothing in it.
- */
 export function createConstraintPanel() {
   const panel = document.createElement('div');
   panel.setAttribute('data-ds-constraint-panel', '');
@@ -164,7 +151,6 @@ export function createConstraintPanel() {
     siteButton.textContent = 'Site';
   };
 
-  /** What each rule measured and kept, over `total` page views (one: this page). */
   const showRules = (summaries: ReturnType<typeof summarizeRules>, total: number) => {
     rulesSection.hidden = false;
     rulesList.replaceChildren(...summaries.map(summary => {
@@ -185,7 +171,6 @@ export function createConstraintPanel() {
     }));
   };
 
-  /** Every page the Site check opened, a row each: kept at every width, or how much it broke and where. */
   const showPages = (results: PageResult[]) => {
     const pages = summarizePages(results);
     pagesSection.hidden = !pages.length;
@@ -248,7 +233,6 @@ export function createConstraintPanel() {
     place();
   };
 
-  /** One broken rule on another page: its number, code and width, what is wrong, and a link to the page. */
   const siteItem = (index: number, { url, width }: PageResult, code: string, message: string, detail: string) => {
     const item = document.createElement('li');
     const link = document.createElement('a');
@@ -274,7 +258,6 @@ export function createConstraintPanel() {
     return item;
   };
 
-  /** Every page of the site at every phone width, listed as each comes in. */
   const runSite = async () => {
     if (site) { stopSite(); status.textContent = 'Stopped.'; return; }
     const controller = new AbortController();
@@ -347,47 +330,30 @@ export function createConstraintPanel() {
   };
 }
 
-/** The device switch a site without sign-in has instead: `?ds-owner=on` once in a browser, `?ds-owner=off` to forget it. */
 export const OWNER_DEVICE_KEY = 'ds-owner';
 
-/** Takes `?ds-owner=on` or `off` from the address into this browser's storage for the site. */
 function rememberOwnerDevice(): void {
   const asked = new URLSearchParams(window.location.search).get('ds-owner');
   if (asked !== 'on' && asked !== 'off') return;
   try {
     if (asked === 'on') localStorage.setItem(OWNER_DEVICE_KEY, 'on');
     else localStorage.removeItem(OWNER_DEVICE_KEY);
-  } catch { /* Storage blocked: the switch lasts this page alone. */ }
+  } catch {}
 }
 
-/** A browser switched on as the owner's with `?ds-owner=on`. */
 const isOwnerDevice = () => {
   try { return localStorage.getItem(OWNER_DEVICE_KEY) === 'on'; } catch { return false; }
 };
 
-/**
- * Whether the viewer owns the page: `<html data-ds-owner>`, which a site with
- * sign-in sets from its own server-checked owner, or a browser switched on as
- * the owner's (`?ds-owner=on`) on a site without sign-in.
- */
 export const isPageOwner = () => document.documentElement.hasAttribute('data-ds-owner') || isOwnerDevice()
   || new URLSearchParams(window.location.search).get('ds-owner') === 'on';
 
-/** What the address asks the panel to show on load: `?constraints=1` this page, `?constraints=site` every page. */
 export function askedConstraints(search = window.location.search): 'page' | 'site' | null {
   const asked = new URLSearchParams(search).get('constraints');
   if (asked === 'site') return 'site';
   return asked === '1' || asked === 'page' || asked === '' ? 'page' : null;
 }
 
-/**
- * Five presses of C toggle the constraint panel, for the page's owner only
- * (`isPageOwner`): for anyone else the presses do nothing. `?constraints=1` in
- * the address opens it for anyone once the page has loaded, since it only
- * measures; `?constraints=site` opens it on the whole site's check. Escape
- * hides it. Presses typed into a field, with a modifier or held down never
- * count, and any other key starts the count again.
- */
 export function initConstraintShortcut(): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
@@ -398,7 +364,6 @@ export function initConstraintShortcut(): void {
   const open = () => (panel ??= createConstraintPanel());
 
   const asked = askedConstraints();
-  // Not in a frame of the site's own check, and only once the page and its pictures have drawn.
   if (asked && window.parent === window) {
     if (document.readyState === 'complete') open().show(asked);
     else window.addEventListener('load', () => open().show(asked), { once: true });

@@ -3,11 +3,6 @@ import { createPlainEditor } from "../../website/src/vendor/aa/aa.js";
 import "../../website/src/vendor/aa/aa.css";
 import { AppElement, defineElement } from "./lib/element";
 
-/**
- * CSS stays exact plain text; Aa owns native editing, clipboard, undo and
- * selection. Each edit is a `stylesheet-change` with the whole text; a new
- * `value` from outside replaces it.
- */
 export class AaStylesheet extends AppElement {
   static properties = { value: { type: String } };
   declare value: string;
@@ -41,7 +36,6 @@ export class AaStylesheet extends AppElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    // Put back after a move in the page: the editor went with the last disconnection.
     if (this.hasUpdated && !this.#editor) {
       this.querySelector(".aa-stylesheet")?.replaceChildren();
       queueMicrotask(() => { if (this.isConnected && !this.#editor) this.firstUpdated(); });

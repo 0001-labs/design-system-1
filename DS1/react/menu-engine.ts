@@ -1,12 +1,7 @@
-/**
- * The menu engine's React state and native events, for Select and Context (and
- * token fields): not a component of its own. No positioning or gesture code.
- */
 import { createElement, forwardRef, useEffect, useLayoutEffect, useRef, type HTMLAttributes } from "react";
 import type { Menu as MenuElement, MenuAnchor, MenuCloseReason, MenuTriggerMode, MenuToggleDetail } from "../3-unit/ds-menu";
 export type { MenuElement, MenuAnchor, MenuCloseReason, MenuTriggerMode, MenuToggleDetail };
 export type MenuProps = HTMLAttributes<MenuElement> & {
-  /** The element drawn: Select's or Context's (the engine's own for a token field). */
   tag?: "ds-select" | "ds-context" | "ds-menu";
   open?: boolean; compact?: boolean; columns?: number; hover?: boolean; disabled?: boolean;
   contextSelector?: string;

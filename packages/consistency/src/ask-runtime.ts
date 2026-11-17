@@ -1,4 +1,3 @@
-/** The app supplies its authorized navigation; the active shared page supplies editing context. */
 import {LitElement,html,nothing} from 'lit';
 import '../../../DS1/2-core/ds-button';
 export type {AskChoice} from './ask-face';
@@ -33,7 +32,6 @@ export async function openGlobalAsk(seed='') {
   if(activePage()!==started)throw Error('The page changed. Open Ask again.');if(answer.intent==='edit'){if(!page)throw Error('Open a page to ask for an edit.');await page.generate(prompt,signal);return;}return String(answer.answer);
  }});
 }
-/** Setup is small; the face, speech and catalogue work start only when Ask is opened. */
 export function installGlobalAsk(){
  if(installed)return;installed=true;
  const bound=new WeakMap<Document,AbortController>();

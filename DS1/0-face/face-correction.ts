@@ -1,26 +1,11 @@
-/**
- * A face Design system 1 did not draw, set on the sixteen: its `@font-face` corrected once so that at 14px on a
- * 16px line its capitals are 10px tall and its baseline stands 3px above the square's foot, as GT America's do
- * (https://designsystem1.com/1-root/constraints/#a-face-you-add). Plain TypeScript with no imports, for the
- * browser and for a build script alike.
- *
- * A face's metrics are fractions of its em: the ascent and descent the browser sets a line with and the height
- * of its capitals (`readFaceMetrics` takes them from a TrueType or OpenType file). `google-face-metrics.json`
- * beside this module holds them for the Google faces 0001's products offer; `scripts/face-metrics.mjs` measures
- * more. Correct the face, never its words: no padding, `top` or transform in a component.
- */
-
-/** A face's vertical metrics, each over its em. */
 export interface FaceMetrics {
   ascent: number;
   descent: number;
   capHeight: number;
 }
 
-/** GT America's: capitals 0.71 of the em, and its ascent less its descent, which places the baseline in a line. */
 export const SIXTEEN_FACE = { capHeight: 0.71, baseline: 0.742 } as const;
 
-/** The four `@font-face` descriptors that put a face on the sixteen, as CSS values. */
 export interface FaceDescriptors {
   sizeAdjust: string;
   ascentOverride: string;
@@ -28,11 +13,6 @@ export interface FaceDescriptors {
   lineGapOverride: string;
 }
 
-/**
- * The descriptors for a face: `size-adjust` makes its capitals 0.71 of the em, and the overrides make its ascent
- * less its descent 0.742 while it keeps its own height of ascent and descent. `size-adjust` scales the overrides
- * too, so they are given before it.
- */
 export function faceDescriptors({ ascent, descent, capHeight }: FaceMetrics): FaceDescriptors {
   if (!(capHeight > 0) || !(ascent + descent > 0)) throw new Error('A face needs a cap height and a line height');
   const size = SIXTEEN_FACE.capHeight / capHeight;
@@ -46,16 +26,11 @@ export function faceDescriptors({ ascent, descent, capHeight }: FaceMetrics): Fa
   };
 }
 
-/** The descriptors as declarations for an `@font-face` rule. */
 export function faceCorrection(metrics: FaceMetrics): string {
   const { sizeAdjust, ascentOverride, descentOverride, lineGapOverride } = faceDescriptors(metrics);
   return `size-adjust:${sizeAdjust};ascent-override:${ascentOverride};descent-override:${descentOverride};line-gap-override:${lineGapOverride}`;
 }
 
-/**
- * A stylesheet of `@font-face` rules (Google's css2 answer, say) with every face corrected in its own rule,
- * without comments or spaces. A face with no metrics stops it: an uncorrected face would stand off the sixteen.
- */
 export function correctFaces(css: string, metrics: Readonly<Record<string, FaceMetrics>>): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*([{};:,])\s*/g, '$1').trim().replace(/@font-face{([^}]*)}/g, (_, body: string) => {
     const family = body.match(/font-family:(['"]?)([^;'"]+)\1(?:;|$)/)?.[2];
@@ -64,18 +39,12 @@ export function correctFaces(css: string, metrics: Readonly<Record<string, FaceM
   });
 }
 
-/** Google's css2 stylesheet at `href`, read and corrected. css2 answers with woff2 to the browser asking. */
 export async function correctedGoogleFonts(href: string, metrics: Readonly<Record<string, FaceMetrics>>, init?: RequestInit): Promise<string> {
   const response = await fetch(href, init);
   if (!response.ok) throw new Error(`Google Fonts answered ${response.status} for ${href}`);
   return correctFaces(await response.text(), metrics);
 }
 
-/**
- * The metrics a browser sets a line of the face with, from its TrueType or OpenType file (not woff2): `hhea`'s
- * ascent and descent, or `OS/2`'s typographic ones when the face asks for them (USE_TYPO_METRICS), and `OS/2`'s
- * cap height, each over `head`'s units per em, to four places.
- */
 export function readFaceMetrics(file: Uint8Array): FaceMetrics {
   const view = new DataView(file.buffer, file.byteOffset, file.byteLength);
   const tables = new Map<string, number>();

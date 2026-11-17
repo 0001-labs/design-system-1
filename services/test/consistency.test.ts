@@ -155,12 +155,10 @@ it('takes anyone signed in with a verified address at consistency.site alone, na
   const workspace = { fetch: vi.fn(async (request: Request) => Response.json({ actor: request.headers.get('X-C9y-Actor'), workspace: request.headers.get('X-C9y-Workspace') })) };
   const bound = { ...env, CONSISTENCY_WORKSPACE: workspace } as unknown as Parameters<typeof consistencyPreview>[1];
   const ask = (url: string, send: typeof fetch, extra: Record<string, string> = {}) => consistencyPreview(new Request(url, { headers: { ...headers, ...extra } }), bound, send);
-  // The browser cannot name someone else, and the workspace it names is passed on only as a code.
   const asked = await ask('https://consistency.site/api/consistency/sites', person(' Ada@Example.com '), { 'X-C9y-Actor': 'owner', 'X-C9y-Workspace': '12ABCD' });
   expect(await asked.json()).toEqual({ actor: 'member ada@example.com', workspace: '12ABCD' });
   expect(await (await ask('https://consistency.site/api/consistency/workspaces', person('ada@example.com'), { 'X-C9y-Workspace': '../x' })).json()).toEqual({ actor: 'member ada@example.com', workspace: null });
   expect(await (await ask('https://consistency.site/api/consistency/sites', setup().send)).json()).toEqual({ actor: 'owner', workspace: null });
-  // Unverified, or on the lab or c9y.site, they are refused before the platform.
   const calls = workspace.fetch.mock.calls.length;
   expect((await ask('https://consistency.site/api/consistency/sites', person('ada@example.com', false))).status).toBe(403);
   expect((await ask('https://c9y.site/api/consistency/sites', person('ada@example.com'))).status).toBe(403);
@@ -213,9 +211,7 @@ it('gates site-draft creation with identity, same-origin JSON, size and captured
  expect(forwarded.headers.get('X-C9y-Draft-Room')).toBeNull();
 });
 
-// consistency.site, off the legacy Pages project: the landing, the legal pages, the film kit, and the way home.
 const site = 'https://consistency.site';
-/** Answers the platform's landing and the legacy kit by their origins; anything else is a Convex identity answer. */
 function upstreams(answer: (url: string, init?: RequestInit) => Response | undefined) {
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
@@ -233,7 +229,6 @@ it('draws the landing for anyone signed out, asked of the platform without cooki
   expect(url).toBe('https://consistency.c9y.site/?ref=1'); expect(init.redirect).toBe('manual');
   expect(Object.keys(init.headers as Record<string, string>)).toEqual(['Accept']); expect((init.headers as Record<string, string>).Accept).toBe('text/html');
   expect(assets).not.toHaveBeenCalled();
-  // The landing's other addresses are the platform's too, signed in or not, and never the app's.
   for (const path of ['/index.html', '/icon.svg', '/_c9y/blocks.js', '/_c9y/blocks.css', '/_landing/style.css', '/sites/flavo.png', '/examples', '/examples/shop/']) {
     await consistencyPreview(new Request(site + path, { headers }), env, send);
     expect(send.mock.calls.at(-1)![0]).toBe('https://consistency.c9y.site' + path);
@@ -298,7 +293,6 @@ it('keeps the app\'s own addresses on consistency.site as they were', async () =
   const elsewhere = () => send.mock.calls.filter(([url]) => !String(url).startsWith('https://example.convex.cloud/')).length;
   for (const path of ['/app/signin', '/app/assets/login.js', '/icons/design-system-1.svg']) expect((await consistencyPreview(new Request(site + path), env, send)).status).toBe(200);
   expect(assets).toHaveBeenCalledTimes(3);
-  // consistency.site asks the owner's System sign-in quietly first (consistency-owner.ts).
   const gated = await consistencyPreview(new Request(`${site}/guide/`), env, send);
   expect(gated.status).toBe(302); expect(gated.headers.get('location')).toBe('/auth/start?silent=1');
   const home = await consistencyPreview(new Request(`${site}/`, { headers }), env, send);

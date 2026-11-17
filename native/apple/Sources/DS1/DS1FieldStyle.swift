@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// `ds-input` for SwiftUI's `TextField` and `SecureField`: one square high on the field's
-/// ground, text inset 4 points, the 4-point corner, in the field's colours.
 public struct DS1FieldStyle: TextFieldStyle {
     public init() {}
 

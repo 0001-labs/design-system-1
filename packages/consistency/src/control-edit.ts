@@ -8,7 +8,6 @@ export function composedContains(parent: Node, child: Node | null): boolean {
   for (let node = child; node; node = composedParent(node)) if (node === parent) return true;
   return false;
 }
-/** Resolve the authored control, including a DS1 button's nested shadow label. */
 export function editableControl(node: Node | null, root: HTMLElement): HTMLElement | undefined {
   let found: HTMLElement | undefined;
   for (let current = node; current && current !== root; current = composedParent(current)) {
@@ -21,7 +20,6 @@ export function editableControl(node: Node | null, root: HTMLElement): HTMLEleme
   return found && composedContains(root, found) ? found : undefined;
 }
 
-/** One transient editing action; the site's actual control keeps its normal press. */
 export class ControlEdit {
   private readonly action = createSurfaceElement(document, 'ds-button');
   private target?: HTMLElement;
@@ -50,7 +48,6 @@ export class ControlEdit {
     root.ownerDocument.addEventListener('focusin', this.over);
     root.ownerDocument.addEventListener('keydown', this.key, true);
     root.ownerDocument.addEventListener('click', this.hide, true);
-    // Hiding also changes observations; defer it outside resize delivery in WebKit.
     this.resize = new ResizeObserver(() => {
       if (!this.resizeFrame) this.resizeFrame = requestAnimationFrame(() => {
         this.resizeFrame = 0;
@@ -59,8 +56,6 @@ export class ControlEdit {
     });
     this.resize.observe(frame);
     this.resize.observe(this.action);
-    // An inline link otherwise inherits Aa's writing surface. WebKit selects its
-    // text before a press can follow it; only its Edit action enters that text.
     this.changes = new MutationObserver(this.protectLinks);
     this.changes.observe(root, { childList: true, subtree: true });
     this.protectLinks();

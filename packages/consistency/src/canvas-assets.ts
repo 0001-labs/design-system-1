@@ -1,4 +1,3 @@
-/** Component asset directories belong to the viewed site, just like its pictures and styles. */
 export function canvasAssetAddress(value: string, files: string, page: string): string {
   if (!value || !files || value.startsWith(files + '/')) return value;
   try {

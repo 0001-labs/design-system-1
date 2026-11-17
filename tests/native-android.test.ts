@@ -54,7 +54,6 @@ describe('Icons as vector drawables', () => {
     const xml = vectorDrawable('<svg viewBox="0 0 16 16" width="16" height="16"><g transform="translate(2 2)"><rect x="0" y="0" width="4" height="4" fill="#ff0000"/></g><svg viewBox="0 0 32 32" width="16" height="16"><circle cx="16" cy="16" r="8" fill="none" stroke="#00ff00" stroke-width="2"/></svg></svg>');
     expect(xml).toContain('android:pathData="M2 2L6 2L6 6L2 6Z"');
     expect(xml).toContain('android:fillColor="#FFFF0000"');
-    // The nested viewport halves the circle: from x 8 at radius 4, with a 1-unit stroke.
     expect(xml).toMatch(/android:pathData="M4 8C/);
     expect(xml).toContain('android:strokeWidth="1"');
   });

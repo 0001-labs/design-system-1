@@ -1,18 +1,6 @@
 import { authorizeReport, type ReportsEnv } from './reports';
 import { BASE_ID, latestKey, versionKey } from './shared/keys';
 
-/**
- * The owner's edits to the base system, live at `/ds1/base/latest.css`.
- *
- *   GET  /api/base           the base, its live version and its history
- *   PUT  /api/base           { css, baseRev } saves a new live version
- *   POST /api/base/restore   { version } makes an earlier version live again
- *
- * Every call needs the verified owner; writes also need this origin. Convex (convex/base.ts)
- * checks the owner again and keeps every version. A version is live once its sheet is in R2:
- * `v/{n}.css` first, then `latest.css` as its byte copy, the same layout libraries publish, so
- * reading it needs neither Convex nor a session.
- */
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Cookie, Authorization' };
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
 const fail = (code: string, message: string, status: number, details?: unknown) => json({ error: { code, message, ...(details ? { details } : {}) } }, status);
@@ -50,12 +38,10 @@ export async function baseApi(request: Request, env: ReportsEnv, ctx?: Pick<Exec
   const saved = result.value as Saved;
   try { await publishBase(env, saved); }
   catch { return fail('not_live', 'Saved, but not live yet. Save again to publish it.', 502, { version: saved.version }); }
-  // This location's edge copy goes at once; others follow within latest.css's ten-second s-maxage.
   if (ctx && typeof caches !== 'undefined') ctx.waitUntil(caches.default.delete(new Request(new URL(`/ds1/${BASE_ID}/latest.css`, request.url))).catch(() => false));
   return json({ base: { ...saved, unchanged: undefined } });
 }
 
-/** The version first, then `latest.css`: a reader never meets a pointer to bytes that are not there. */
 export async function publishBase(env: Pick<ReportsEnv, 'LIBRARIES'>, saved: Pick<Saved, 'version' | 'sheet' | 'contentHash'>) {
   const options = { httpMetadata: { contentType: 'text/css; charset=utf-8' }, customMetadata: { version: String(saved.version), contentHash: saved.contentHash } };
   await env.LIBRARIES.put(versionKey(BASE_ID, saved.version), saved.sheet, options);

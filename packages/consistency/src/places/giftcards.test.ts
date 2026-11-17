@@ -14,10 +14,8 @@ import {
   viewOf,
 } from "./giftcards-view";
 
-// Spaces in money vary by ICU: compare with every kind of space as a plain one.
 const plain = (words: string) => words.replace(/[\u00a0\u202f]/g, " ");
 
-// A card as the team's API answers it.
 const card = (code: string, extra: Partial<TeamGiftCardView> = {}): TeamGiftCardView => ({
   id: code, code, amount: 50000, balance: 50000, held: 0, currency: "dkk", status: "active", expires: "2027-10-21", recipient: "Ida", recipientEmail: "ida@example.com",
   sendTo: "recipient", sendOn: null, sent: true, lang: "da", testMode: true, buyer: { name: "Bo", email: "bo@example.com" }, message: "", paid: 50000, issuedBy: null,

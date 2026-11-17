@@ -3,14 +3,6 @@ import { TableColumns } from "./table-columns";
 export { TableColumns } from "./table-columns";
 export type { ColumnResizeDetail } from "./table-columns";
 import { define } from "../0-face/define";
-// ds-table.ts
-// A data table: rows one square high on hairlines, drawn from data with the
-// same rules as a native `<table class="ds-table">` (1-root/table.css). With
-// `sheet` it is a spreadsheet: every cell four squares by one, lettered
-// columns and numbered rows held in place while it scrolls both ways, and with
-// `reorderable` its rows move by the grip on their number: dragged with a
-// mouse, after a long press on a touch screen, or with Alt+↑/↓. A sheet's
-// words that do not fit fade out over their last square, never an ellipsis.
 
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { getText } from "../0-face/i18n";
@@ -20,29 +12,19 @@ import metrics from "../1-root/component-metrics.css?inline";
 import table from "../1-root/table.css?inline";
 import styles from "./styles/ds-table.css?inline";
 
-/** A column: the key it reads from each row, its header, and whether it holds numbers. */
 export interface TableColumn {
   key: string;
   label: string;
-  /** Sets the column to its end in tabular figures. Unset, a column of numbers is numeric. */
   numeric?: boolean;
 }
 
-/** A row: values by column key, or by column position. */
 export type TableRow = Record<string, unknown> | readonly unknown[];
 
-/** `table-move`: a row someone moved, from its index to its new one, both from 0. */
 export interface TableMoveDetail {
   from: number;
   to: number;
 }
 
-/**
- * The feel of a move, a sortable list's: a mouse moves 5px before the row
- * lifts, a finger holds 250ms (moving 5px first scrolls instead), the rows
- * between step aside in 200ms, the row settles in 330 to 550ms by its
- * distance, and the sheet scrolls near its edges up to 24px a frame.
- */
 const DRAG_DISTANCE = 5;
 const TOUCH_HOLD = 250;
 const STEP_ASIDE = 200;
@@ -65,7 +47,6 @@ interface Drag {
   frame?: number;
 }
 
-/** The rows in their new order: the row at `from` taken out and put back at `to`. */
 export function moveRow<T>(rows: readonly T[], from: number, to: number): T[] {
   const next = [...rows];
   const [row] = next.splice(from, 1);
@@ -88,21 +69,13 @@ export class DsTable extends LitElement {
     label: { type: String },
   };
 
-  /** The body rows. */
   declare data: TableRow[];
-  /** Headers as labels (`"Users"` reads `users`) or columns; unset, the first row's keys. */
   declare columns: (string | TableColumn)[];
-  /** A totals row under the body. */
   declare footer: TableRow | undefined;
-  /** Keeps the first column in place while the table scrolls sideways. */
   declare sticky: boolean;
-  /** Column boundaries drag freely and snap to whole squares on release; arrows resize by a square. */
   declare resizable: boolean;
-  /** A spreadsheet: cells 80 by 20, columns lettered A, B, C…, rows numbered, both held in place. */
   declare sheet: boolean;
-  /** A sheet's rows move by the grip on their number; each move fires `table-move`. */
   declare reorderable: boolean;
-  /** The table's accessible name. */
   declare label: string | undefined;
 
   private sizing = new TableColumns(this, {
@@ -120,12 +93,9 @@ export class DsTable extends LitElement {
   });
 
   private drag: Drag | undefined;
-  /** The row whose grip the keyboard reaches with Tab; arrows move between grips. */
   private grip = 0;
-  /** A move waiting for the page's data, and the time it settles back without it. */
   private settle: { from: number; to: number; timer: ReturnType<typeof setTimeout> } | undefined;
   private status = "";
-  /** Measures the cells again when the sheet's size changes, as its scale does. */
   private resize: ResizeObserver | undefined;
   private watched: Element | undefined;
 
@@ -143,7 +113,6 @@ export class DsTable extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    // The faces may arrive after the first measure and change every width.
     void document.fonts?.ready.then(() => { if (this.isConnected && (this.sheet || this.resizable)) this.fit(); });
   }
 
@@ -158,7 +127,6 @@ export class DsTable extends LitElement {
 
   protected willUpdate(changed: PropertyValues<this>) {
     super.willUpdate(changed);
-    // New data puts every row where it belongs: the steps aside end in the same frame.
     if (changed.has("columns")) {
       this.sizing.widths = [];
       this.table?.style.removeProperty('width'); this.table?.style.removeProperty('table-layout');
@@ -171,7 +139,6 @@ export class DsTable extends LitElement {
   protected updated(changed: PropertyValues<this>) {
     super.updated(changed);
     if (!this.sheet && !this.resizable) return;
-    // Before the first paint, so words that fit never show a fade.
     if (["data", "columns", "footer", "sheet"].some(name => changed.has(name as keyof DsTable))) this.fit();
     const table = this.table;
     if (!table || table === this.watched || typeof ResizeObserver === "undefined") return;
@@ -181,13 +148,6 @@ export class DsTable extends LitElement {
     this.watched = table;
   }
 
-  /**
-   * Marks the cells whose words are cut, so only they fade where they are
-   * cut; a label fades at its end. A number always shows its last digits and loses its first: in a
-   * left-to-right sheet it is scrolled to its end and fades at its start;
-   * in a right-to-left one its digits already overflow on the left, the
-   * cell's end. All the reads come before any write, so it lays out once.
-   */
   private fit() {
     const words = [...this.renderRoot.querySelectorAll<HTMLElement>(".ds-table__words")];
     if (!words.length) return;
@@ -248,10 +208,8 @@ export class DsTable extends LitElement {
   private get bodyRows() { return [...this.renderRoot.querySelectorAll<HTMLTableRowElement>("tbody > tr")]; }
   private handle(index: number) { return this.bodyRows[index]?.querySelector<HTMLButtonElement>(".ds-table__handle") ?? null; }
   private get calm() { return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches; }
-  /** True from a lift until every row is in its place again. */
   private get moving() { return Boolean(this.table?.hasAttribute("data-moving")); }
 
-  /** The press that may become a drag: on a row's number, the first button, not while a row settles. */
   private press = (event: PointerEvent) => {
     if (!this.reorderable || !this.sheet || this.drag || event.button !== 0) return;
     const number = (event.target as Element).closest?.("tbody .ds-table__number");
@@ -262,7 +220,6 @@ export class DsTable extends LitElement {
     const touch = event.pointerType === "touch";
     this.drag = { pointer: event.pointerId, touch, from, to: from, startY: event.clientY, y: event.clientY, startScroll: this.scroller?.scrollTop ?? 0, pitch: 0, row, lifted: false };
     if (touch) this.drag.hold = setTimeout(() => this.lift(), TOUCH_HOLD);
-    // A mouse keeps its press for the drag: no words selected on the way.
     else event.preventDefault();
     addEventListener("pointermove", this.follow, { passive: true });
     addEventListener("pointerup", this.drop);
@@ -276,16 +233,13 @@ export class DsTable extends LitElement {
     drag.y = event.clientY;
     if (!drag.lifted) {
       if (Math.abs(drag.y - drag.startY) < DRAG_DISTANCE) return;
-      // A finger that moves before the hold has ended is scrolling.
       if (drag.touch) { this.release(); return; }
       this.lift();
     }
     this.track();
   };
 
-  /** A finger holding a lifted row moves it, not the page. */
   private holdTouch = (event: TouchEvent) => { if (this.drag?.lifted) event.preventDefault(); };
-  /** A long press lifts the row rather than opening the context menu. */
   private holdMenu = (event: Event) => { if (this.drag?.touch) event.preventDefault(); };
 
   private lift() {
@@ -306,14 +260,12 @@ export class DsTable extends LitElement {
     this.track();
   }
 
-  /** How far the row has come, kept within the body. */
   private offset(drag: Drag) {
     const travelled = drag.y - drag.startY + (this.scroller?.scrollTop ?? 0) - drag.startScroll;
     const last = this.data.length - 1;
     return Math.min(Math.max(travelled, -drag.from * drag.pitch), (last - drag.from) * drag.pitch);
   }
 
-  /** The lifted row follows the pointer; the rows it passes step aside by one row, in transform alone. */
   private track() {
     const drag = this.drag;
     if (!drag?.lifted) return;
@@ -331,7 +283,6 @@ export class DsTable extends LitElement {
     drag.to = to;
   }
 
-  /** Near the sheet's top (under its held header) or foot, it scrolls, faster the closer the pointer. */
   private autoscroll() {
     const drag = this.drag, scroller = this.scroller;
     if (!drag || !scroller) return;
@@ -353,7 +304,6 @@ export class DsTable extends LitElement {
     const { from, to, pitch, row } = drag;
     const distance = Math.abs(this.offset(drag) - (to - from) * pitch);
     this.release(true);
-    // The row settles into its place, then the move is the page's to keep.
     row.style.transition = this.calm ? "none" : `transform ${Math.round(DROP.min + (DROP.max - DROP.min) * Math.min(distance / DROP.far, 1))}ms cubic-bezier(.2, 1, .1, 1)`;
     row.style.transform = to === from ? "" : `translateY(${(to - from) * pitch}px)`;
     const done = () => { row.removeEventListener("transitionend", done); clearTimeout(timer); this.commit(from, to); };
@@ -375,7 +325,6 @@ export class DsTable extends LitElement {
     this.place(true);
   };
 
-  /** Lets go of the pointer; `keep` leaves the rows where they stand. */
   private release(keep = false) {
     const drag = this.drag;
     if (!drag) return;
@@ -390,7 +339,6 @@ export class DsTable extends LitElement {
     if (!keep) this.table?.removeAttribute("data-moving");
   }
 
-  /** Puts every row back in its own place, gliding there or at once. */
   private place(glide: boolean) {
     if (this.settle) clearTimeout(this.settle.timer);
     this.settle = undefined;
@@ -404,12 +352,6 @@ export class DsTable extends LitElement {
     if (glide && !this.calm) setTimeout(() => { if (!this.drag) table?.removeAttribute("data-moving"); }, STEP_ASIDE);
   }
 
-  /**
-   * Asks the page with a cancelable `table-move`. Unless it is prevented the
-   * table moves the row in its own `data`; prevented, the page sets `data`
-   * itself, and the rows stay where they were dropped until it does, or
-   * glide back when it does not.
-   */
   private commit(from: number, to: number) {
     if (from === to) { this.place(true); return; }
     this.settle = { from, to, timer: setTimeout(() => this.place(true), STEP_ASIDE * 2) };
@@ -421,7 +363,6 @@ export class DsTable extends LitElement {
     this.requestUpdate();
   }
 
-  /** Alt+↑/↓ (or ⌘⇧↑/↓, as a writing surface moves a block) moves the row; ↑/↓, Home and End move between grips. */
   private gripKey = (event: KeyboardEvent) => {
     const index = this.bodyRows.findIndex(row => row.contains(event.target as Node));
     if (index < 0 || this.drag || this.moving) return;
@@ -450,7 +391,6 @@ export class DsTable extends LitElement {
     handle?.closest("tr")?.scrollIntoView?.({ block: "nearest" });
   }
 
-  /** A keyboard move: the two rows trade places, each gliding from where it stood. */
   private async stepMove(from: number, to: number) {
     const pitch = this.bodyRows[from]?.getBoundingClientRect().height ?? 0;
     this.commit(from, to);
@@ -510,14 +450,12 @@ function cell(row: TableRow, key: string, index: number): unknown {
   return Array.isArray(row) ? row[index] : (row as Record<string, unknown>)[key];
 }
 
-/** A spreadsheet's column name: A … Z, then AA, AB … */
 export function columnLetter(index: number): string {
   let name = "";
   for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
   return name;
 }
 
-/** A shared word in the page's language, its `{name}`s filled. */
 function words(key: string, params: Record<string, number>): string {
   const text = getText(key, params) || key;
   return text.replace(/\{\{?(\w+)\}?\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole));

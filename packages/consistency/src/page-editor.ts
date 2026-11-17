@@ -9,11 +9,6 @@ import { canvasAssetAddress } from './canvas-assets';
 import { PANEL_EVENT, type BehaviourTarget, type ConsistencyBehaviourPanel } from './behaviour-panel';
 import './behaviour-panel';
 
-/**
- * A host-independent page document editor. The host supplies a
- * snapshot, its trusted page shell and the persistence transport; blocks and gestures never vary
- * by host. The shell is build-owned, never accepted from a saved document.
- */
 export class ConsistencyPageEditor extends LitElement {
   private controller?: NativeSiteController;
   private snapshot?: NativePageSnapshot;
@@ -31,7 +26,6 @@ export class ConsistencyPageEditor extends LitElement {
   private ready: Promise<boolean> = Promise.resolve(false);
   private settle?: (ready: boolean) => void;
   private readonly frame = Object.assign(document.createElement('iframe'), { className: 'consistency-site-frame', title: 'Page to edit' });
-  /** The behaviour panel beside the page (`behaviour-panel.ts`), shown while a block's behaviour is open. */
   private readonly panel: ConsistencyBehaviourPanel = Object.assign(document.createElement('consistency-behaviour-panel'), { hidden: true });
   private readonly unloading = (event: BeforeUnloadEvent) => { if (this.pending) { event.preventDefault(); event.returnValue = ''; } };
   constructor() {
@@ -40,7 +34,6 @@ export class ConsistencyPageEditor extends LitElement {
     this.frame.addEventListener('load', () => this.checkReady());
     this.panel.addEventListener('behaviour-close', () => { this.closeBehaviour(); this.frame.focus(); });
   }
-  /** Opens a block's behaviour beside the page; the app around the editor hears it and lets its sidebar give way. */
   private openBehaviour(target: BehaviourTarget) {
     this.panel.flush(); this.panel.target = target; this.panel.refresh();
     if (!this.panel.hidden) return;
@@ -58,7 +51,6 @@ export class ConsistencyPageEditor extends LitElement {
   connectedCallback() { super.connectedCallback(); addEventListener('beforeunload', this.unloading); }
   disconnectedCallback() { super.disconnectedCallback(); this.destroy(); removeEventListener('beforeunload', this.unloading); }
   destroy() { this.closeBehaviour(); this.generation++; clearTimeout(this.poll); this.controller?.destroy(); this.controller = undefined; this.settle?.(false); }
-  /** Call after flushing the previous document. A supplied URL is the authenticated, script-free site canvas. */
   open(snapshot: NativePageSnapshot, save: NativePageSave, source?: { url: string; html?: string } | { styles: string }) {
     clearTimeout(this.poll); this.expectedDocument = this.frame.contentDocument ?? undefined;
     this.closeBehaviour();
@@ -80,7 +72,6 @@ export class ConsistencyPageEditor extends LitElement {
     this.poll = setTimeout(() => this.checkReady(), 0);
     return this.ready;
   }
-  /** DOM and styles are enough to edit. Eager pictures must not hold the entire editor hostage. */
   private checkReady() {
     clearTimeout(this.poll);
     if (this.mounting === this.generation) return;
@@ -113,7 +104,6 @@ export class ConsistencyPageEditor extends LitElement {
       assetURL: this.assetURL,
       behaviour: target => this.openBehaviour(target),
       changed: () => {
-        // The open block changed or went: the panel draws it as it stands, or closes with it.
         if (!this.panel.hidden) { if (this.panel.target?.read()) this.panel.refresh(); else this.closeBehaviour(); }
         const document = JSON.stringify(this.controller?.state.document ?? this.snapshot?.document);
         if (document === this.observedDocument) return;
@@ -135,7 +125,6 @@ export class ConsistencyPageEditor extends LitElement {
   readDocument(): NativePageDocument { if (!this.snapshot) throw new Error('No page is open.'); return structuredClone(this.controller?.state.document ?? this.snapshot.document); }
   async flush() {
     await this.ready;
-    // A rejected canvas has no editable controller or local changes; let the host reopen it.
     return this.controller ? this.controller.flush() : true;
   }
   render() { return html`<div class="consistency-site-stage">${this.frame}${this.panel}</div>`; }

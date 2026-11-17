@@ -26,7 +26,6 @@ test("ds-footer draws its brand, columns of links, copyright and preferences", a
   const mark = root.querySelector<HTMLAnchorElement>(".ds-footer__mark")!;
   expect([mark.textContent, mark.getAttribute("href")]).toEqual(["Name", "/"]);
   expect(root.querySelector(".ds-footer__tagline")!.textContent).toBe("What it does");
-  // Without a label the columns are lists, not a second navigation.
   expect(root.querySelector("nav")).toBeNull();
   const columns = root.querySelectorAll(".ds-footer__column");
   expect(columns).toHaveLength(3);
@@ -102,7 +101,6 @@ test("ds-document builds its contents from the writing's headings, giving them i
     ["特定商取引法に基づく表記", "#特定商取引法に基づく表記"],
   ]);
   expect(element.querySelector("h2")!.id).toBe("using-the-service");
-  // A heading in a part marked data-ds-not-prose is not the writing's.
   expect(element.querySelector("[data-ds-not-prose] h2")!.id).toBe("");
 
   element.levels = "2 3"; await element.updateComplete; await element.updateComplete;
@@ -111,7 +109,6 @@ test("ds-document builds its contents from the writing's headings, giving them i
     ["Using the service", false], ["Accounts", true], ["Payments", false], ["特定商取引法に基づく表記", false],
   ]);
 
-  // Writing that changes is read again.
   element.querySelector("h2#pay")!.textContent = "Paying";
   await settle(); await element.updateComplete;
   expect([...root.querySelectorAll(".ds-document__toc-list a")].map(link => link.textContent)).toContain("Paying");
@@ -135,7 +132,6 @@ test("a contents link scrolls to its heading, focuses it and marks it as the sec
   await element.updateComplete;
   expect(link.getAttribute("aria-current")).toBe("location");
   expect(root.querySelectorAll('[aria-current="location"]')).toHaveLength(1);
-  // A modified click is the browser's: a new tab, a copied link.
   const modified = new MouseEvent("click", { bubbles: true, composed: true, cancelable: true, metaKey: true });
   link.dispatchEvent(modified);
   expect(modified.defaultPrevented).toBe(false);
@@ -208,12 +204,10 @@ test("ds-footer draws contact lines: words alone beside links, a heading that is
   expect(office!.querySelector(".ds-footer__heading")!.children).toHaveLength(0);
   expect(office!.getAttribute("style")).toContain("--ds-footer-column-width: 10");
   expect(follow!.classList.contains("ds-footer__column--stack")).toBe(true);
-  // The stacked column's heading names its marks; it draws no heading line.
   expect(follow!.querySelector(".ds-footer__heading")).toBeNull();
   expect(follow!.querySelector(".ds-footer__icons")!.getAttribute("aria-label")).toBe("Follow");
   expect([...follow!.querySelectorAll<HTMLAnchorElement>(".ds-footer__icons a")].map(a => a.getAttribute("aria-label"))).toEqual(["Instagram", "LinkedIn"]);
   expect(follow!.querySelector(".ds-footer__links")).toBeNull();
-  // Policies stand under the copyright as secondary buttons; one without an address is left out.
   expect(root.querySelector(".ds-footer__legal")!.textContent!.trim()).toBe("© 2023 Name");
   const policies = [...root.querySelectorAll<HTMLAnchorElement>(".ds-footer__policies a")];
   expect(policies.map(a => [a.className, a.textContent, a.getAttribute("href")])).toEqual([["ds-button ds-button--secondary", "Privacy policy", "/privacy"]]);

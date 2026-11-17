@@ -8,7 +8,6 @@ import { COLOURS, COMPONENTS, TEXT_SIZES, componentSpec, readLength, readWidth, 
 const stylesheet = (tag: string) => readFileSync(fileURLToPath(new URL(`../../DS1/2-core/styles/${tag}.css`, import.meta.url)), "utf8");
 const properties = COMPONENTS.flatMap(spec => spec.properties.map(property => ({ spec, property })));
 
-/** Every value the editor can write for a property. */
 function values(property: ComponentProperty): string[] {
   switch (property.kind) {
     case "width": return [...new Set([1, property.min!, property.max!, Number(property.default)].flatMap(squares => property.modes!.map(mode => tokenValue(property, { mode, squares }))))];
@@ -44,7 +43,6 @@ describe("component specs", () => {
         expect(result, `${property.token}: ${value}`).toEqual({ overrides: [[property.token, value || "initial"]] });
       }
     }
-    // A whole set of edits together is one valid block.
     let css = "";
     for (const { property } of properties) {
       const value = values(property).find(Boolean);

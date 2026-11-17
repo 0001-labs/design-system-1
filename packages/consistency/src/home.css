@@ -1,22 +1,17 @@
 consistency-home{display:block;height:100dvh}
 consistency-home>ds-page{height:100%}
 .home-nav{display:flex;flex-direction:column;gap:var(--ds-unit);height:100%}
-/* Each page opens with its title at display size, as Money's pages do, a square above what it holds. */
 .home-main{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0;min-height:100%}
-/* Settings, as Money's: the text tabs a square under the title, the tab's content a square under them, in a settings column of 32 squares. */
 .home-settings{display:flex;flex-direction:column;gap:var(--ds-unit);max-width:calc(32 * var(--ds-unit))}
 .home-account{display:flex;flex-direction:column;gap:var(--ds-unit)}
 .home-sign-out{display:flex;margin-top:var(--ds-unit)}
-/* The workspace on the first row: its avatar, name and menu, the notifications bell at the end. */
 .home-workspace{display:flex;align-items:flex-end;justify-content:space-between;gap:calc(var(--ds-unit) / 2);min-height:var(--ds-unit)}
 .home-workspace :is(.home-workspace-name, [menu-item]) ds-avatar{margin-inline-end:calc(4px * var(--ds-sf, 1))}
 .home-workspace-name ds-icon{margin-inline-start:calc(4px * var(--ds-sf, 1))}
 .home-bar{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--ds-unit);min-height:var(--ds-unit)}
 .home-grid{display:grid;grid-template-columns:repeat(auto-fill,calc(12 * var(--ds-unit)));gap:var(--ds-unit)}
-/* A connected domain: the globe before it, 16px on the label's sixteen, hugging the words 4px apart. */
 .home-site-domain{display:flex;align-items:center;height:var(--ds-type-lineheight-default, calc(16px * var(--ds-sf, 1)));gap:calc(4px * var(--ds-sf, 1))}
 @media(max-width:600px){.home-grid{grid-template-columns:minmax(0,1fr)}.home-grid>ds-card{width:auto}}
-/* Settings → Domains: a settings column of 32 squares; the connect row on the sixteen; each waiting domain's record under its row. */
 consistency-domains{display:block;max-width:calc(32 * var(--ds-unit))}
 .domains{display:flex;flex-direction:column;gap:var(--ds-unit)}
 .domains-connect{display:flex;flex-wrap:wrap;align-items:flex-end;gap:calc(var(--ds-unit) / 2);min-height:var(--ds-unit)}
@@ -25,49 +20,32 @@ consistency-domains{display:block;max-width:calc(32 * var(--ds-unit))}
 .domain-record{display:grid;grid-template-columns:calc(4 * var(--ds-unit)) minmax(0,1fr) minmax(0,1fr);align-items:end;min-height:var(--ds-unit);line-height:calc(16px * var(--ds-sf, 1))}
 .domain-detail{display:block}
 @media(max-width:600px){.domain-record{grid-template-columns:calc(4 * var(--ds-unit)) minmax(0,1fr)}.domain-record>:last-child{grid-column:2}}
-/* The page title stands half a square higher, level with the workspace row. */
 .home-title{margin-top:calc(var(--ds-unit) / -2)}
-/* A site open in the editor fills the work beside the sidebar. */
 .home-main--site{height:100%;gap:0}
 .home-stage{flex:1;min-height:0;display:flex;flex-direction:column}
 .home-stage[hidden]{display:none}
 .home-stage>*{flex:1;min-height:0}
 .home-stage>[hidden]{display:none}
-/* On a computer the hint stands in the window's last square, the square of room the page keeps under its work,
-   centred on the work and taking no row of its own: fixed, as the work's own area clips what leaves it. A phone's
-   page, which scrolls whole, keeps it as its last row. */
 .home-ask:not([hidden]){display:flex;flex:none;justify-content:center;margin-block-start:auto}
 @container (min-width:600px){.home-ask:not([hidden]){position:fixed;inset-block-end:0;align-self:center;margin:0}}
 .home-ask button{background:none;border:0;padding:calc(var(--ds-unit) - var(--ds-type-lineheight-default)) 0 0;line-height:var(--ds-type-lineheight-default);cursor:pointer}
 .home-ask button:is(:hover,:focus-visible){color:var(--ds-text-color)}
-/* An open site's places fill the sidebar under its name and scroll on their own. */
-/* Under the site's name, a square apart, its menus on whole squares: the sidebar's own half square of room is taken back,
-   and each row is drawn 4px back so its words start on the column's edge, under the name's. */
 .home-places{flex:1;min-height:0;overflow:auto;margin-top:calc(var(--ds-unit) / -2);margin-inline-start:calc(-4px * var(--ds-sf, 1))}
-/* The workspace's name in Account is a field that hugs a name of up to twelve squares. */
 .home-workspace-field{width:calc(12 * var(--ds-unit))}
-/* The plan's draft sites under the title, half a square up so they sit with it. */
 .home-drafts{margin-top:calc(var(--ds-unit) / -2)}
-/* A failed read, said under the title over the cards from the last visit, in the settings column's 32 squares. */
 .home-problem{display:block;max-width:calc(32 * var(--ds-unit))}
-/* Settings → People: the settings column of 32 squares; the invite row on the sixteen, as Domains' connect row. */
 consistency-members{display:block;max-width:calc(32 * var(--ds-unit))}
 .members{display:flex;flex-direction:column;gap:var(--ds-unit)}
 .members-invite{display:flex;flex-wrap:wrap;align-items:flex-end;gap:calc(var(--ds-unit) / 2);min-height:var(--ds-unit)}
 .members-email{flex:1 1 calc(12 * var(--ds-unit));min-width:0}
 .member-row .ds-row__value{display:flex;align-items:flex-end;gap:calc(4px * var(--ds-sf, 1))}
-/* A draft's mark before a site's name on its card, 16px and 4px from the name, with its capitals. */
 .home-site-title{display:flex;align-items:center;gap:calc(4px * var(--ds-sf, 1))}
 .home-site-title ds-icon{flex:none}
-/* The people on the card's foot: a button of their avatars, one control high on the sixteen, pressing only itself. */
 .home-site-people{display:flex;align-items:flex-end;height:var(--ds-unit);margin:0 0 var(--ds-unit);padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;border-radius:var(--ds-radius, 4px)}
 .home-site-people:focus-visible{outline:2px solid var(--ds-focus-color, currentColor);outline-offset:2px}
-/* The people panel's list fills the drawer's column. */
 .home-people consistency-members{max-width:none}
-/* Settings at the sidebar's foot, its row on whole squares as the site's menus are, its words on the column's edge. */
 .home-foot{flex:none;margin-top:auto;margin-bottom:calc(var(--ds-unit) / -2);margin-inline-start:calc(-4px * var(--ds-sf, 1))}
 
-/* Template choices use the same card face and whole-square columns as Sites. */
 consistency-new-site,.new-site{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0}
 .template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(16 * var(--ds-unit))),1fr));gap:var(--ds-unit)}
 .template-grid>ds-card{width:auto}

@@ -1,17 +1,9 @@
-/**
- * The pure parts of the Orders place: no DOM, so they are tested on their own. The shapes the site engine's
- * `/team/api/orders…` answers (`orders.ts` in the site engine, its team side), what a site calls its orders and
- * their kinds in the app's language, a status in words with its tone, the steps the engine allows the owner from
- * a status (the engine's `TRANSITIONS`, copied: the engine checks them again and refuses with 409), the step's
- * words for its button, an order's history in words, and the query a list is asked with.
- */
 import { formatMoney } from './bookings-view';
 
 export type OrderKind = 'booking' | 'request' | 'sale';
 export type OrderStatus = 'requested' | 'held' | 'confirmed' | 'paid' | 'invoiced' | 'cancelled' | 'fulfilled' | 'expired';
 export type OrderPayment = 'stripe' | 'invoice' | 'none';
 export type OrderAction = 'confirm' | 'cancel' | 'mark-paid' | 'invoice' | 'fulfil';
-/** Who may order on the site: the engine's `order_settings.open`, as the booking flag works. */
 export type OrderOpen = 'off' | 'owners' | 'everyone';
 
 export interface OrderLabel { one: string; many: string }
@@ -31,7 +23,6 @@ export interface OrderLineView {
   meta: Record<string, unknown>;
 }
 
-/** An order as the team reads it (the engine's `OrderView`). */
 export interface OrderView {
   id: string;
   code: string;
@@ -57,7 +48,6 @@ export interface OrderView {
 
 export interface OrderEvent { id: number; order: string; at: number; by: string | null; what: string; detail: Record<string, unknown> | null }
 
-/** What the site says about its orders: its words, kinds, money, zone, payments and test mode. */
 export interface OrdersAbout {
   label?: Record<string, OrderLabel>;
   kindLabels?: Partial<Record<OrderKind, Record<string, OrderLabel>>>;
@@ -67,33 +57,26 @@ export interface OrdersAbout {
   payment?: { stripe?: boolean; invoice?: boolean };
   testMode?: boolean;
 }
-/** `GET orders`: a page of orders, newest first, and the cursor for the page after. */
 export interface OrdersAnswer extends OrdersAbout { orders?: OrderView[]; next?: string | null }
-/** `GET orders/config`: the site's words and who may order. */
 export interface OrdersConfig extends OrdersAbout { open?: OrderOpen }
-/** `GET orders/<id>` and every step's answer. */
 export interface OrderDetail { order: OrderView; events?: OrderEvent[]; giftCard?: { code?: string; amount?: number; state?: string } | null; testMode?: boolean }
 
-/** The app's language, in which a site's own words are read. */
 export const APP_LANGUAGE = 'en';
 
 const KIND_WORDS: Record<OrderKind, OrderLabel> = {
   booking: { one: 'Booking', many: 'Bookings' }, request: { one: 'Request', many: 'Requests' }, sale: { one: 'Sale', many: 'Sales' },
 };
 
-/** What the site calls its orders in the app's language: its word, else "Order" and "Orders". */
 export function ordersLabel(about: OrdersAbout | null | undefined, fallback?: string): OrderLabel {
   return about?.label?.[APP_LANGUAGE] ?? (fallback ? { one: fallback, many: fallback } : { one: 'Order', many: 'Orders' });
 }
 
-/** What the site calls a kind in the app's language: its word for it, else the kind's own. */
 export function kindLabel(about: OrdersAbout | null | undefined, kind: OrderKind): OrderLabel {
   return about?.kindLabels?.[kind]?.[APP_LANGUAGE] ?? KIND_WORDS[kind] ?? { one: kind, many: kind };
 }
 
 export const STATUSES: readonly OrderStatus[] = ['requested', 'held', 'confirmed', 'invoiced', 'paid', 'fulfilled', 'cancelled', 'expired'];
 
-/** A status in words, and the tone of its tag. */
 export function orderStatusName(status: OrderStatus): { name: string; tone: 'success' | 'warning' | 'danger' | 'muted' | 'accent' } {
   switch (status) {
     case 'requested': return { name: 'Requested', tone: 'accent' };
@@ -107,7 +90,6 @@ export function orderStatusName(status: OrderStatus): { name: string; tone: 'suc
   }
 }
 
-/** The owner's steps and the statuses each starts from: the engine's `TRANSITIONS`, the owner's part. */
 export const OWNER_STEPS: Record<OrderAction, readonly OrderStatus[]> = {
   confirm: ['requested'],
   invoice: ['confirmed'],
@@ -116,12 +98,10 @@ export const OWNER_STEPS: Record<OrderAction, readonly OrderStatus[]> = {
   cancel: ['requested', 'held', 'confirmed', 'invoiced', 'paid'],
 };
 
-/** The steps the owner may take from a status, in the order the drawer shows them: the way on first, cancelling last. */
 export function allowedSteps(status: OrderStatus): OrderAction[] {
   return (['confirm', 'invoice', 'mark-paid', 'fulfil', 'cancel'] as const).filter(step => OWNER_STEPS[step].includes(status));
 }
 
-/** A step's words for its button: a request is approved and declined; everything else confirmed and cancelled. */
 export function stepName(step: OrderAction, order: Pick<OrderView, 'kind' | 'status'>): string {
   switch (step) {
     case 'confirm': return order.kind === 'request' ? 'Approve' : 'Confirm';
@@ -132,7 +112,6 @@ export function stepName(step: OrderAction, order: Pick<OrderView, 'kind' | 'sta
   }
 }
 
-/** What a step did, for the toast: "Rb42Xq is approved". */
 export function stepDone(step: OrderAction, order: Pick<OrderView, 'code' | 'kind' | 'status'>): string {
   const words: Record<OrderAction, string> = {
     confirm: order.kind === 'request' ? 'approved' : 'confirmed', invoice: 'invoiced', 'mark-paid': 'marked paid', fulfil: 'fulfilled',
@@ -141,13 +120,10 @@ export function stepDone(step: OrderAction, order: Pick<OrderView, 'code' | 'kin
   return `${order.code} is ${words[step]}`;
 }
 
-/** Whether a step tells the customer when asked to: approving, declining and cancelling do; an invoice is always sent. */
 export const stepNotifies = (step: OrderAction) => step === 'confirm' || step === 'cancel';
 
-/** The list's filters, as the engine reads them. */
 export interface OrdersFilter { kind: OrderKind | null; status: OrderStatus | null; q: string }
 
-/** The query a page of the list is asked with: the filters set, the words trimmed, the cursor after the last page. */
 export function ordersQuery(filter: OrdersFilter, after: string | null = null, limit = 50): string {
   const query = new URLSearchParams();
   if (filter.kind) query.set('kind', filter.kind);
@@ -159,16 +135,13 @@ export function ordersQuery(filter: OrdersFilter, after: string | null = null, l
   return `orders?${query}`;
 }
 
-/** When an order happens: its first line's start, else when it was made. */
 export const orderAt = (order: Pick<OrderView, 'lines' | 'createdAt'>) => order.lines.find(line => line.startsAt !== null)?.startsAt ?? order.createdAt;
 
-/** An instant as a short day in the site's zone: "23 Oct", with the year when it is not this one; "23 Oct, 10:00" with its time. */
 export function dayAt(at: number, timeZone: string, withTime = false, now = Date.now()): string {
   const year = (time: number) => new Intl.DateTimeFormat('en-GB', { timeZone, year: 'numeric' }).format(time);
   return new Intl.DateTimeFormat('en-GB', { timeZone, day: 'numeric', month: 'short', ...(year(at) === year(now) ? {} : { year: 'numeric' }), ...(withTime ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } : {}) }).format(at);
 }
 
-/** A line's span in words: a dated item's days, a booking's start and nights, or nothing. */
 export function lineSpan(line: Pick<OrderLineView, 'startsAt' | 'nights' | 'meta'>, timeZone: string): string {
   const from = typeof line.meta.from === 'string' ? line.meta.from : null;
   const to = typeof line.meta.to === 'string' ? line.meta.to : null;
@@ -178,14 +151,12 @@ export function lineSpan(line: Pick<OrderLineView, 'startsAt' | 'nights' | 'meta
   return line.nights ? `${start}, ${line.nights} ${line.nights === 1 ? 'night' : 'nights'}` : start;
 }
 
-/** How an order is paid, in words. */
 export function paymentName(order: Pick<OrderView, 'payment' | 'invoice'>): string {
   if (order.payment === 'stripe') return 'Stripe';
   if (order.payment === 'invoice') return order.invoice ? `Invoice ${order.invoice.number}` : 'Invoice';
   return 'No payment';
 }
 
-/** One event of an order's history in words, with its amount or address where it has one. */
 export function orderEventName(event: Pick<OrderEvent, 'what' | 'detail'>, currency: string, locale: string): string {
   const detail = event.detail ?? {};
   const amount = [detail.amount, detail.refund, detail.paid].find(value => typeof value === 'number') as number | undefined;
@@ -217,7 +188,6 @@ export function orderEventName(event: Pick<OrderEvent, 'what' | 'detail'>, curre
   }
 }
 
-/** Who may order, in the place's words. */
 export const WHO_ORDERS: { open: OrderOpen; name: string; about: string }[] = [
   { open: 'off', name: 'Off', about: 'Visitors cannot order on the site; only its owners can.' },
   { open: 'owners', name: 'Owners only', about: 'Everyone can see prices on the site, and only its owners can place an order.' },

@@ -5,12 +5,6 @@ import UIKit
 import AppKit
 #endif
 
-/// A Design system 1 colour: its light value and the one it turns into in dark mode, as the
-/// stylesheet writes `light-dark(light, dark)`. The palette and the surfaces are generated
-/// (Generated/Palette.swift); use them, never a hex value.
-///
-/// It is a `ShapeStyle`, so `.foregroundStyle(DS1Color.text)` follows the view's colour
-/// scheme, and `color`, `uiColor` and `nsColor` follow the system appearance.
 public struct DS1Color: ShapeStyle, Hashable, Sendable {
     public let light: UInt32
     public let dark: UInt32
@@ -24,7 +18,6 @@ public struct DS1Color: ShapeStyle, Hashable, Sendable {
         self.darkOpacity = darkOpacity
     }
 
-    /// The same colour in both modes.
     public init(_ value: UInt32, opacity: Double = 1) {
         self.init(light: value, dark: value, lightOpacity: opacity, darkOpacity: opacity)
     }
@@ -39,7 +32,6 @@ public struct DS1Color: ShapeStyle, Hashable, Sendable {
         return Color.Resolved(colorSpace: .sRGB, red: Float(v.red), green: Float(v.green), blue: Float(v.blue), opacity: Float(v.opacity))
     }
 
-    /// This colour with another opacity in both modes.
     public func withOpacity(_ opacity: Double) -> DS1Color {
         DS1Color(light: light, dark: dark, lightOpacity: lightOpacity * opacity, darkOpacity: darkOpacity * opacity)
     }
@@ -63,25 +55,19 @@ public struct DS1Color: ShapeStyle, Hashable, Sendable {
     #endif
 }
 
-/// One colour of the palette with its pastel, in the palette's order.
 public struct DS1PaletteEntry: Hashable, Sendable {
     public let name: String
     public let colour: DS1Color
     public let pastelName: String
     public let pastel: DS1Color
-    /// An ink (a grey, white or black) rather than a colour.
     public let ink: Bool
 }
-
-// MARK: The paper
 
 private struct DS1PaperKey: EnvironmentKey {
     static let defaultValue = DS1Color.paper
 }
 
 extension EnvironmentValues {
-    /// The paper everything stands on (`--ds-paper`): pages, page layouts, panels, dialogs,
-    /// menus and fields fill with it. Design system 1's `paper` unless a view above sets another.
     public var ds1Paper: DS1Color {
         get { self[DS1PaperKey.self] }
         set { self[DS1PaperKey.self] = newValue }
@@ -89,8 +75,6 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Sets the paper for everything inside, as a stylesheet sets `--ds-paper` on the page:
-    /// `.ds1Paper(.white)` on the root view puts every page, dialog and menu on white.
     public func ds1Paper(_ paper: DS1Color) -> some View {
         environment(\.ds1Paper, paper)
     }

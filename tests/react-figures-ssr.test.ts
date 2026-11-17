@@ -15,7 +15,6 @@ test("the stat adapter writes its label, figure and caption in the light DOM wit
   expect(stat).toContain('<span slot="figure">€1,234.50</span>');
   expect(stat).toContain('<span slot="caption">Since last month</span>');
   expect(stat).toContain('change-format="percent"');
-  // A server answering a request writes the figure in the request's language.
   expect(plain(renderToString(createElement(Stat, { value: 1234.5, language: "da" })))).toContain('<span slot="figure">1.234,5</span>');
   expect(renderToString(createElement(Stat, { label: "Month ends at", figure: "Incomplete" }))).toContain('<span slot="figure">Incomplete</span>');
   const cells = renderToString(createElement(Stat, { value: 1204, cells: true }));

@@ -168,7 +168,6 @@ test("activity runs weeks in columns a square each and fills a day's colours in 
   ];
   await calendar.updateComplete;
   const root = calendar.shadowRoot!;
-  // The week holding October's first starts on Monday 28 September; its September days stay empty.
   expect(root.querySelector('[data-day="2026-09-28"]')).toBeNull();
   const first = cell(calendar, "2026-10-01");
   expect(first.style.gridRow).toBe("4");
@@ -178,11 +177,9 @@ test("activity runs weeks in columns a square each and fills a day's colours in 
   expect(cell(calendar, "2026-10-06").style.getPropertyValue("--ds-calendar-cell-fill")).toBe("red");
   expect(cell(calendar, "2026-10-07").style.getPropertyValue("--ds-calendar-cell-fill")).toContain("linear-gradient");
   expect(cell(calendar, "2026-10-20").style.getPropertyValue("--ds-calendar-cell-fill")).toContain("--ds-apple-green");
-  // Two months: October and November over their weeks, in order.
   expect([...root.querySelectorAll(".activity-month")].map(month => month.textContent)).toEqual(["Oct 2026", "Nov"]);
   expect(cell(calendar, "2026-11-30")).not.toBeNull();
   expect(root.querySelector('[data-day="2026-12-01"]')).toBeNull();
-  // No dates are written; each day says its date and events in its name.
   expect(cell(calendar, "2026-10-06").textContent!.trim()).toBe("");
   expect(cell(calendar, "2026-10-06").getAttribute("aria-label")).toContain("A");
   expect(cell(calendar, "2026-10-18").getAttribute("aria-current")).toBe("date");
@@ -206,10 +203,8 @@ test("a picker opens its month, takes a day and gives it to its form", async () 
   picker.addEventListener("change", event => changes.push((event as CustomEvent).detail.value));
   cell(calendar, "2026-10-21").click();
   await picker.updateComplete;
-  // The first press starts a range and the panel waits for its end.
   expect(picker.value).toBe("2026-10-21");
   expect(picker.open).toBe(true);
-  // The same day again ends it as one day, and the panel closes.
   await calendar.updateComplete;
   cell(calendar, "2026-10-21").click();
   await picker.updateComplete;
@@ -252,7 +247,6 @@ test("a selectable calendar takes a first and a last day, either way round, and 
   expect(cell(calendar, "2026-10-17").getAttribute("aria-selected")).toBe("true");
   expect(cell(calendar, "2026-10-20").hasAttribute("data-last")).toBe(true);
   expect(calendar.shadowRoot!.querySelector(".grid")!.getAttribute("aria-multiselectable")).toBe("true");
-  // A third press starts again.
   cell(calendar, "2026-10-25").click();
   expect(calendar.value).toBe("2026-10-25");
 });
@@ -307,7 +301,6 @@ test("the picker always collects a range: a first and a last day, written as one
   const calendar = picker.shadowRoot!.querySelector("ds-calendar") as Calendar;
   await calendar.updateComplete;
   expect(calendar.selectable).toBe(true);
-  // A whole range is there, so the first press starts a new one.
   cell(calendar, "2026-10-12").click();
   await picker.updateComplete;
   expect(picker.value).toBe("2026-10-12");
@@ -347,7 +340,6 @@ test("heat lights a day by its amount, in four steps of the busiest day", () => 
   expect(levels.get("2026-10-02")).toBe(2);
   expect(levels.get("2026-10-03")).toBe(4);
   expect(levels.has("2026-10-04")).toBe(false);
-  // A fixed scale keeps a quiet month quiet.
   expect(days.heatLevels(byDay, 32).get("2026-10-03")).toBe(1);
   expect(days.heatLevels(byDay, 4).get("2026-10-03")).toBe(4);
 });
@@ -359,7 +351,6 @@ test("a heat calendar marks each busy day with its step and leaves quiet days pl
     { title: "Commits", start: "2026-07-03", count: 2 },
     { title: "Commits", start: "2026-07-08", count: 3 },
     { title: "Commits", start: "2026-07-09", count: 4 },
-    // The month after is drawn in the title grey, unlit, and never sets the scale.
     { title: "Commits", start: "2026-08-01", count: 40 },
   ];
   await calendar.updateComplete;
@@ -377,7 +368,6 @@ test("heat's colours come from the palette, follow light and dark, and keep the 
   expect(css).toMatch(/--ds-calendar-heat-1: var\(--one-apple-green-pastel/);
   expect(css).toMatch(/--ds-calendar-heat-3: var\(--one-apple-green,/);
   expect(css).toMatch(/--ds-calendar-heat-4: light-dark\(/);
-  // Each step's fill against its ink, as the palette resolves them, light then dark.
   const luminance = (hex: string) => {
     const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -400,15 +390,12 @@ test("a selectable calendar shows Clear under its dates while something is chose
   await calendar.updateComplete;
   expect(calendar.value).toBe("");
   expect(changes).toEqual([{ value: "", previous: "2026-10-10/2026-10-17", start: "", end: "" }]);
-  // Nothing chosen, nothing to clear: Clear goes.
   expect(calendar.shadowRoot!.querySelector(".clear-value")).toBeNull();
-  // From code, the same; nothing to clear says nothing.
   calendar.value = "2026-10-05";
   await calendar.updateComplete;
   calendar.clear();
   calendar.clear();
   expect(changes.map(change => change.value)).toEqual(["", ""]);
-  // A required calendar, a plain month and the month inside a picker have none.
   for (const markup of [`<ds-calendar selectable required></ds-calendar>`, `<ds-calendar></ds-calendar>`]) {
     const other = await mount<Calendar>(markup);
     expect(other.shadowRoot!.querySelector(".clear-value")).toBeNull();
@@ -432,11 +419,9 @@ test("the title travels up to the months and to twelve years, and a choice comes
   const months: string[] = [];
   calendar.addEventListener("navigate", event => months.push((event as CustomEvent).detail.month));
   expect(title().textContent!.trim()).toBe("Sep 2027");
-  // The title is its words alone.
   expect(title().querySelector("ds-icon")).toBeNull();
   title().click();
   await calendar.updateComplete;
-  // The months of 2027, three across, the chosen month marked; the arrows step a year.
   expect(title().textContent!.trim()).toBe("2027");
   const picks = () => [...root.querySelectorAll<HTMLButtonElement>(".pick")];
   expect(picks().map(pick => pick.textContent)).toEqual(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
@@ -447,14 +432,12 @@ test("the title travels up to the months and to twelve years, and a choice comes
   await calendar.updateComplete;
   expect(title().textContent!.trim()).toBe("2026");
   expect(picks().filter(pick => pick.hasAttribute("data-today")).map(pick => pick.textContent)).toEqual(["Oct"]);
-  // Up again: twelve years, the title not a button; arrows step twelve.
   title().click();
   await calendar.updateComplete;
   expect(title().textContent!.trim()).toBe("2016 – 2027");
   expect(root.querySelector(".title-button")).toBeNull();
   expect(picks().map(pick => pick.textContent)[0]).toBe("2016");
   expect(root.querySelector('[part="next"]')!.getAttribute("aria-label")).toBe("Later years");
-  // A year goes down to its months, a month to its days.
   picks().find(pick => pick.textContent === "2025")!.click();
   await calendar.updateComplete;
   expect(title().textContent!.trim()).toBe("2025");
@@ -464,7 +447,6 @@ test("the title travels up to the months and to twelve years, and a choice comes
   expect(title().textContent!.trim()).toBe("Mar 2025");
   expect(cells(calendar).length).toBeGreaterThan(0);
   expect(months).toEqual(["2025-03"]);
-  // Nothing was chosen on the way.
   expect(calendar.value).toBe("2027-09-16");
 });
 
@@ -474,7 +456,6 @@ test("among the months the arrow keys move, Enter chooses and Escape goes back d
   root.querySelector<HTMLElement>(".title-button")!.click();
   await calendar.updateComplete;
   const focused = () => root.querySelector<HTMLElement>('.pick[tabindex="0"]')!;
-  // The Tab stop starts on the month shown.
   expect(focused().textContent).toBe("May");
   key(focused(), "ArrowDown");
   await calendar.updateComplete;
@@ -492,7 +473,6 @@ test("among the months the arrow keys move, Enter chooses and Escape goes back d
   await calendar.updateComplete;
   key(root.querySelector<HTMLElement>('.pick[data-pick="0"]')!, "ArrowLeft");
   await calendar.updateComplete;
-  // Before January is the year before's December.
   expect(root.querySelector(".title-button")!.textContent!.trim()).toBe("2025");
   expect(focused().textContent).toBe("Dec");
   key(focused(), "Enter");
@@ -526,7 +506,6 @@ test("activity squares retain date labels and update their event fills", async (
   calendar.events = [];
   await calendar.updateComplete;
   expect(cell(calendar, "2026-10-08")?.hasAttribute("data-filled")).toBe(false);
-  // Without activity it is the month again.
   calendar.activity = false;
   await calendar.updateComplete;
   expect(calendar.shadowRoot!.querySelector(".activity")).toBeNull();
@@ -552,7 +531,6 @@ test("an event over several days is one bar on one line, its name written once, 
   expect(bar.dataset.span).toBe("5");
   expect(bar.style.getPropertyValue("--ds-calendar-event-span").trim()).toBe("5");
   expect(cell(calendar, "2026-10-19").querySelectorAll(".event")).toHaveLength(1);
-  // Across a week's end the bar starts again on the next week's first day.
   expect(cell(calendar, "2026-10-24").querySelector<HTMLElement>(".event")!.dataset.span).toBeUndefined();
   expect(cell(calendar, "2026-10-25").querySelector<HTMLElement>(".event")!.dataset.span).toBe("2");
 });
@@ -643,12 +621,10 @@ test("a swipe sideways across the days goes to the next month or the one before,
   expect(surface.hasAttribute("data-swipe")).toBe(true);
   await swipe(200, 100);
   expect(calendar.month).toBe("2026-11");
-  // The next arrow stops at max, and so does the swipe.
   await swipe(200, 100);
   expect(calendar.month).toBe("2026-11");
   await swipe(100, 200);
   expect(calendar.month).toBe("2026-10");
-  // Too short, too steep, or a mouse: no swipe.
   await swipe(100, 120);
   await swipe(200, 100, "touch", 120);
   await swipe(200, 100, "mouse");
@@ -687,7 +663,6 @@ test("the swimlane view: months in order over the weeks, today in its disc, a ba
   await calendar.updateComplete;
   const root = calendar.shadowRoot!;
   const weeks = [...root.querySelectorAll(".swimlane-date")];
-  // A week to each square of the month's width: 28 weeks, Oct 2026 to Apr 2027.
   expect(weeks).toHaveLength(28);
   expect(root.querySelector(".title-text")!.textContent).toMatch(/Oct.*2026.*Apr.*2027/);
   const months = [...root.querySelectorAll(".swimlane-month")].map(month => month.textContent);
@@ -730,7 +705,6 @@ test("views can be a list with the page's own words, and a name the calendar doe
   root.querySelector<HTMLButtonElement>('[part="next"]')!.click();
   await calendar.updateComplete;
   expect(calendar.month).toBe("2026-11");
-  // A view the calendar draws is drawn through view alone, offered or not.
   calendar.view = "day";
   await calendar.updateComplete;
   expect(calendar.shownView).toBe("day");
@@ -747,11 +721,9 @@ test("a full month names its days inside the first week, writes the week's numbe
   const first = root.querySelector(".week")!;
   expect([...first.querySelectorAll(".weekday-name")].map(name => name.textContent)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
   expect(root.querySelectorAll(".week + .week .weekday-name")).toHaveLength(0);
-  // The month starts on a Thursday: Monday's box is empty and still names its day and its week.
   expect(first.querySelector(".day.outside .week-number")!.textContent).toBe("40");
   expect(first.querySelector(".weekday-name[data-today]")!.textContent).toBe("Mon");
   expect(cell(calendar, "2026-10-26").querySelector(".week-number")!.textContent).toBe("44");
-  // A step back, Today and a step on, in that order.
   expect([...root.querySelector(".controls")!.children].map(button => button.getAttribute("part"))).toEqual(["previous", "today", "next"]);
 });
 

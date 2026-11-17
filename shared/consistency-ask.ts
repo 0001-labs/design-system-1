@@ -1,25 +1,10 @@
-/**
- * Ask, on the vocabulary: the pure parts of generating a section or a page from a request in
- * free text. The judgment questions for TypeSafe (the intent, the section kind, the pictures
- * meant), the heuristic that stands in when TypeSafe is not there, the prompt for the generator
- * (any model: Workers AI today, another behind the same route later), and the check every answer
- * passes before it lands: the vocabulary's fields and slots, measures snapped to the square inside
- * their ranges, only the site's pictures, runtimes and collections, no HTML, no CSS, no addresses
- * that are not the site's, and a document limit. The Worker runs this module too, so it imports
- * nothing that draws: no stylesheet, no renderer, and the vocabulary as `shared/generated/vocabulary.json`
- * records it, the one record the editor's insert menu and the renderer's documentation read. Where
- * the renderer is at hand (the editor, the tests) `context.validate` runs `validateNativePage` on
- * the result as the last word; the platform validates again on every save.
- */
 import generated from './generated/vocabulary.json';
 
-/** The vocabulary record's shapes, as `consistency-vocabulary.ts` defines and `vocabulary.json` carries them. */
 export interface AskField { type: 'squares' | 'pixels' | 'integer' | 'boolean' | 'choice' | 'tone' | 'text' | 'date' | 'address' | 'markdown' | 'identifier' | 'map' | 'blocks' | 'props'; min?: number; max?: number; step?: number; choices?: readonly string[]; default?: string | number | boolean; required?: boolean; meaning: string }
 export interface AskSlot { type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes' | 'turns'; required?: boolean; min?: number; max?: number; meaning: string; item?: Record<string, AskMember> }
 export type AskMember = AskField | AskSlot;
 export interface AskKind { kind: string; layer: 'primitive' | 'section'; description: string; fields: Record<string, AskField>; slots: Record<string, AskSlot>; oneOf?: readonly string[]; examples: AskBlock[] }
 export interface AskVocabulary { description: string; tones: readonly string[]; common: Record<string, AskField>; kinds: AskKind[] }
-/** A block as the check knows it: an id, a kind, and what the vocabulary says of the kind. The editor reads it as its `AskBlock`. */
 export type AskBlock = { id: string; kind: string; hidden?: boolean; width?: number; locale?: string; children?: AskBlock[]; source?: string };
 export interface AskDocument { schema: 1; kind: 'native-page'; title?: string; description?: string; lang?: string; layout: { maxWidth?: number; padding: number; gap: number }; blocks: AskBlock[] }
 export const ASK_VOCABULARY = generated as unknown as AskVocabulary;
@@ -28,16 +13,12 @@ const isSlot = (member: AskMember): member is AskSlot => ['words', 'picture', 'a
 export type AskLevel = 'section' | 'page';
 export type AskIntent = 'make' | 'replace' | 'rewrite';
 export const ASK_LEVELS: readonly AskLevel[] = ['section', 'page'];
-/** The generator's time, by level: a page has more to write. */
 export const ASK_TIMEOUTS: Readonly<Record<AskLevel, number>> = { section: 45_000, page: 60_000 };
-/** A picture of the site, as the judgment and the prompt see it: its path, its file name and the words the page already uses for it. */
 export interface AskPicture { src: string; file: string; alt: string[] }
 export interface AskSite { name?: string; lang?: string; origin?: string; pages?: { path: string; title?: string }[] }
 export interface AskInput {
   level: AskLevel; prompt: string;
-  /** The page's current document, as the editor holds it. */
   document?: AskDocument;
-  /** The section pressed, at section level. */
   selected?: string;
   images: readonly string[]; collections: readonly string[]; runtimes: Readonly<Record<string, readonly string[]>>;
   site?: AskSite;
@@ -46,13 +27,9 @@ export interface AskJudgment { intent: AskIntent; kind?: string; pictures: strin
 export interface AskContext {
   images: readonly string[]; collections: readonly string[]; runtimes: Readonly<Record<string, readonly string[]>>;
   site?: AskSite;
-  /** The ids already on the page: a new block never takes one of them. */
   ids?: Iterable<string>;
-  /** Fresh ids for blocks that need one. */
   newId?: () => string;
-  /** The page's layout, kept when the answer gives none. */
   layout?: AskDocument["layout"];
-  /** The renderer's own validator, where it can be loaded: the last check on the clean result. */
   validate?: (document: AskDocument) => unknown;
 }
 export type AskResult = { ok: true; level: "section"; block: AskBlock } | { ok: true; level: "page"; document: AskDocument } | { ok: false; refusal: string };
@@ -63,7 +40,6 @@ const definitionOf = (kind: string, vocabulary: AskVocabulary = ASK_VOCABULARY) 
 const isSectionKind = (kind: string, vocabulary: AskVocabulary = ASK_VOCABULARY) => sections(vocabulary).some(definition => definition.kind === kind);
 const fileName = (src: string) => decodeURIComponent(src.split('?')[0]!.split('/').pop() ?? src);
 
-/** Every picture the document refers to, with the words it uses for it; the site's images that the page does not show come after, unnamed. */
 export function askPictures(images: readonly string[], document?: unknown): AskPicture[] {
   const alts = new Map<string, Set<string>>();
   const visit = (value: unknown) => {
@@ -77,7 +53,6 @@ export function askPictures(images: readonly string[], document?: unknown): AskP
   visit(document);
   return [...images].sort((a, b) => Number(alts.has(b)) - Number(alts.has(a))).map(src => ({ src, file: fileName(src), alt: [...(alts.get(src) ?? [])] }));
 }
-/** The headings the page already carries: section titles and headings, and the `#` lines of its writing. */
 export function askHeadings(document?: AskDocument): string[] {
   const headings: string[] = [];
   const visit = (block: AskBlock) => {
@@ -98,11 +73,6 @@ const selectedBlock = (input: AskInput): AskBlock | undefined => {
   return found;
 };
 
-/*
- * The judgment. One request to TypeSafe asks everything at once over the same state: whether the
- * request changes anything, the intent, the kind, and for each of the site's pictures whether it
- * is meant. Thresholds are a first policy for the owner trial, to be read against real requests.
- */
 export function askJudgmentQuestions(input: AskInput, vocabulary: AskVocabulary = ASK_VOCABULARY) {
   const pictures = askPictures(input.images, input.document).slice(0, PICTURES_JUDGED);
   const selected = selectedBlock(input);
@@ -139,7 +109,6 @@ const choiceOf = (value: unknown, criteria: Record<string, string>, confidence: 
   return answer.choice;
 };
 const noulOf = (value: unknown): number | null => { const answer = value as { type?: unknown; noul?: unknown } | undefined; return answer?.type === 'noul' && typeof answer.noul === 'number' && Number.isFinite(answer.noul) ? answer.noul : null; };
-/** TypeSafe's answers read as one judgment, or null when they do not say enough: the heuristic stands in then. */
 export function readAskJudgment(input: AskInput, result: unknown): AskJudgment | null {
   if (!result || typeof result !== 'object') return null;
   const answers = (result as { answers?: Record<string, unknown> }).answers;
@@ -163,7 +132,6 @@ const KIND_WORDS: Readonly<Record<string, string>> = {
   list: 'list', news: 'list', minutes: 'list', records: 'list', action: 'action', button: 'action', cta: 'action', header: 'header', footer: 'footer',
 };
 const words = (text: string) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-/** Without TypeSafe: the first word naming a kind, replace when the request speaks of this section, and pictures named by file or alt. */
 export function askHeuristic(input: AskInput): AskJudgment {
   const tokens = words(input.prompt);
   const kind = tokens.map(token => KIND_WORDS[token]).find(Boolean);
@@ -175,13 +143,7 @@ export function askHeuristic(input: AskInput): AskJudgment {
   return { intent: input.level === 'page' ? 'rewrite' : replace ? 'replace' : 'make', ...(kind ? { kind } : {}), pictures };
 }
 
-/*
- * The prompt. The generator sees the vocabulary record for the chosen kind (or every kind it may
- * use), the page as it stands, the site's words and the pictures it may use, and one hard rule:
- * the answer is one JSON object of the schema, nothing else. Written for any model.
- */
 const compactKind = (definition: AskKind, examples: number) => ({ kind: definition.kind, description: definition.description, fields: definition.fields, slots: definition.slots, ...(definition.oneOf ? { oneOf: definition.oneOf } : {}), examples: definition.examples.slice(0, examples) });
-/** The page as the prompt carries it: whole when it fits, else an outline of its blocks. */
 function outline(document: AskDocument | undefined) {
   if (!document) return null;
   const text = JSON.stringify(document);
@@ -223,7 +185,6 @@ export function askPrompt(level: AskLevel, input: AskInput, judgment: AskJudgmen
   });
   return { system, user };
 }
-/** The hrefs the page already uses, so the prompt can name the site's own addresses. */
 function askAddresses(document?: AskDocument): string[] {
   const found: string[] = [];
   const visit = (value: unknown) => { if (!value || typeof value !== 'object') return; if (Array.isArray(value)) { value.forEach(visit); return; } const record = value as Record<string, unknown>; if (typeof record.href === 'string' && record.href.startsWith('/')) found.push(record.href); Object.values(record).forEach(visit); };
@@ -231,14 +192,8 @@ function askAddresses(document?: AskDocument): string[] {
   return found;
 }
 
-/*
- * The check. The answer is parsed, then walked against the vocabulary: unknown keys are dropped,
- * measures are snapped to the square and clamped into their ranges, and anything the vocabulary
- * cannot say is refused in plain words. The result is the clean block or document.
- */
 class Refusal extends Error {}
 const refuse = (words: string): never => { throw new Refusal(words); };
-/** A measure in squares kept on the square and inside the field's range (and on its step): the same rule the editor's handles use. */
 export function snapMeasure(field: AskField, value: number): number {
   const min = field.min ?? 0, max = field.max ?? 2000, step = field.step ?? 1;
   const unit = field.type === 'pixels' ? 20 : 1;
@@ -275,7 +230,7 @@ export function checkAskAnswer(answer: unknown, level: AskLevel, context: AskCon
     if (!text || /[\s\\<>]/.test(text) || text.startsWith('//')) return refuse(`${at}: "${text}" is not an address.`);
     if (image) { if (!context.images.includes(text)) return refuse(`${at}: "${text}" is not one of the site's pictures.`); return text; }
     if (/^\/(?!\/)/.test(text) || /^(?:mailto:|tel:|#)/i.test(text)) return text;
-    if (/^https?:\/\//i.test(text)) { try { if (siteHost && new URL(text).host === siteHost) return text; } catch { /* refused below */ } return refuse(`${at}: "${text}" leads away from the site.`); }
+    if (/^https?:\/\//i.test(text)) { try { if (siteHost && new URL(text).host === siteHost) return text; } catch {} return refuse(`${at}: "${text}" leads away from the site.`); }
     if (!/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
     return refuse(`${at}: "${text}" is not an address of the site.`);
   };
@@ -383,7 +338,6 @@ export function checkAskAnswer(answer: unknown, level: AskLevel, context: AskCon
     if (typeof input.locale === 'string' && /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(input.locale)) block.locale = input.locale;
     for (const [name, fieldDefinition] of Object.entries(definition.fields)) {
       const item = input[name];
-      // A binding names a store of the site's own code; an answer never binds. A collection's name and a picture's path must be the site's.
       if (name === 'binding' && kind !== 'collection') continue;
       if (item === undefined || item === null) { if (fieldDefinition.required) return refuse(`${where(kind, name)} is required.`); continue; }
       if (kind === 'collection' && name === 'binding') { const binding = plain(item, 200, where(kind, name)); if (!context.collections.includes(binding)) return refuse(`${where(kind, name)}: "${binding}" is not one of the site's collections.`); block[name] = binding; }

@@ -1,27 +1,4 @@
 import { anchoredPanel, mobilePanel, panelViewport } from "../0-face/anchored-panel";
-// ds-calendar.ts
-// A month on whole squares: seven days across, a week to a row. `view` shows
-// one week instead (every event of each day, nothing folded behind "+N") or one
-// day (its events without a time across the top, then its hours, one square
-// each, with the timed events at their hour) or a swimlane (weeks across, a
-// row to an event, each event one bar from its first week to its last);
-// `views` puts Day, Week, Month and Swimlane in the header to change between
-// them. An event over several days is one bar
-// with its name written once, and words that do not fit fade out at the end.
-// By default a
-// day is four squares wide and four high (its date on the first square, two
-// lines of events, one square to spare), drawn in hairline boxes with a frame
-// rounded more than a card's; the first week names its days inside its boxes,
-// and a step back, Today and a step on are one plain split. `compact`
-// makes a day one square: the small month a year is drawn from. `picker`
-// makes the calendar a field that opens that small month below it, with the
-// first and last day written out where they can be typed, a switch for a
-// time, and Clear.
-//
-// There is one way to pick, in a month and in a picker: the first day
-// pressed is the value, the next ends a range from it, and leaving after the
-// first keeps the one day. A form takes the value as ISO 8601: a day, a day
-// and a time, or two of them joined by a slash.
 
 import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { define } from "../0-face/define";
@@ -60,7 +37,6 @@ import styles from "./styles/ds-calendar.css?inline";
 
 export * from "./calendar-base";
 
-/** An activity day's fill: one colour, or bands side by side when several share it. */
 function activityFill(events: readonly CalendarEvent[]): string | undefined {
   if (!events.length) return undefined;
   const colours = [...new Set(events.map(event => event.color || "var(--ds-calendar-event-fill, var(--ds-apple-green))"))];
@@ -72,20 +48,12 @@ function activityFill(events: readonly CalendarEvent[]): string | undefined {
 const whole = (value: number | undefined, least: number, most: number, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) ? Math.max(least, Math.min(most, Math.floor(value))) : fallback;
 
-/**
- * A day's lines of events in a full month: the event that starts a bar on a
- * line (and how many days the bar runs), `"on"` where a bar from an earlier
- * day passes over the line, or null where the line is empty.
- */
-/** What a full calendar shows: a month, a week, a day, or the events as a swimlane over weeks. */
 export type CalendarView = "month" | "week" | "day" | "swimlane";
 
-/** The views in the header, the shortest first, with their shared words. */
 const VIEWS: readonly (readonly [CalendarView, string])[] = [["day", "Day"], ["week", "Week"], ["month", "Month"], ["swimlane", "Swimlane"]];
 
 const isView = (value: unknown): value is CalendarView => VIEWS.some(([view]) => view === value);
 
-/** `views` as an attribute: present and empty for every view the calendar draws, or the views to offer, in order. */
 const viewsConverter = {
   fromAttribute: (value: string | null): boolean | string[] => {
     if (value === null || value === "false") return false;
@@ -95,7 +63,6 @@ const viewsConverter = {
   toAttribute: (value: boolean | string[]) => (Array.isArray(value) ? value.join(" ") : value ? "" : null),
 };
 
-/** One event's bar in a swimlane: its row, and the first and last week (counted from 0) it covers in view. */
 export interface SwimlaneBar {
   event: CalendarEvent;
   row: number;
@@ -103,13 +70,6 @@ export interface SwimlaneBar {
   to: number;
 }
 
-/**
- * Lays events out as a swimlane over `weeks` (each the first day of a week
- * of seven): one row each, in the order `eventsByDay` lists them (by first
- * day, the longer first), each a bar from the week holding its first day to
- * the week holding its last, held inside the weeks drawn. Events wholly
- * outside them are left out.
- */
 export function swimlaneBars(events: readonly CalendarEvent[], weeks: readonly Day[]): SwimlaneBar[] {
   if (!weeks.length) return [];
   const first = weeks[0], last = addDays(weeks.at(-1)!, 6);
@@ -121,28 +81,16 @@ export function swimlaneBars(events: readonly CalendarEvent[], weeks: readonly D
   return ordered.map((event, row) => ({ event, row, from: weekOf(event.start < first ? first : event.start), to: weekOf(endOf(event) > last ? last : endOf(event)) }));
 }
 
-/** An event's last day: its end, or its start for one day. */
 const endOf = (event: CalendarEvent): Day => (event.end && isDay(event.end) && event.end > event.start ? event.end : event.start);
 
-/** Whole days from `from` to `to`. */
 const daysBetween = (from: Day, to: Day) => Math.round((Date.UTC(+to.slice(0, 4), +to.slice(5, 7) - 1, +to.slice(8, 10)) - Date.UTC(+from.slice(0, 4), +from.slice(5, 7) - 1, +from.slice(8, 10))) / 864e5);
 
-/** Detail of `view-change`. */
 export interface CalendarViewDetail { view: CalendarView }
 
-/** What a full month's day writes before its date: its weekday's name (the first week), and its week's number. */
 type DayLabel = { weekday?: string; today?: boolean; week?: number };
 
 export type CalendarLine = { event: CalendarEvent; span: number } | "on" | null;
 
-/**
- * Lays one week's events on lines, so an event over several days keeps its
- * line and is one bar with its name written once: each event takes the
- * lowest line free on all its days in the week, longest first as `byDay`
- * lists them. A day whose events need more lines than `lines` keeps the last
- * one for "+N", and a bar breaks there and goes on after it; `shown` says
- * which days are drawn at all (a bar stops at a day that is not).
- */
 export function weekLines(
   week: readonly Day[],
   byDay: ReadonlyMap<Day, readonly CalendarEvent[]>,
@@ -162,7 +110,6 @@ export function weekLines(
       for (const next of columns) taken[next].add(line);
     }
   });
-  // How many lines each day draws: all of them, or one fewer for "+N".
   const room = week.map(day => {
     if (!shown(day)) return 0;
     const events = byDay.get(day) ?? [];
@@ -181,7 +128,6 @@ export function weekLines(
       while (column + span < week.length && line < room[column + span] && (byDay.get(week[column + span]) ?? []).includes(event)) span++;
       drawn.push({ event, span });
     }
-    // Drop the empty lines at the foot, so a quiet day draws nothing under its date.
     while (drawn.length && drawn.at(-1) === null) drawn.pop();
     const hidden = room[column] < lines ? events.filter(event => lineOf.get(event)! >= room[column]).length : 0;
     return { lines: drawn, hidden };
@@ -191,7 +137,6 @@ export function weekLines(
 type EventBox = { row: number; from: number; to: number; start?: boolean; end?: boolean };
 type EventCorners = { topStart: boolean; topEnd: boolean; bottomStart: boolean; bottomEnd: boolean };
 
-/** Only exposed corners round: touching event fills share square seams. */
 function eventCorners(boxes: readonly EventBox[]): EventCorners[] {
   const rows = new Map<number, EventBox[]>();
   for (const box of boxes) rows.set(box.row, [...(rows.get(box.row) ?? []), box]);
@@ -210,7 +155,6 @@ function eventCorners(boxes: readonly EventBox[]): EventCorners[] {
   });
 }
 
-/** One end of a picker's value: its day and, when it has one, its time (`14:30`). */
 export interface CalendarEnd {
   day: Day;
   time: string;
@@ -218,7 +162,6 @@ export interface CalendarEnd {
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-/** Reads a value: `2026-10-21`, `2026-10-21T14:30`, or two of them joined by `/`. */
 export function readDateValue(value: string | null | undefined): { start?: CalendarEnd; end?: CalendarEnd } {
   const read = (part: string | undefined): CalendarEnd | undefined => {
     const [day = "", time = ""] = (part ?? "").trim().split("T");
@@ -232,17 +175,12 @@ export function readDateValue(value: string | null | undefined): { start?: Calen
   return { start, end };
 }
 
-/**
- * Writes a value from its ends, the times only with `time`. An end that is
- * the same moment as the start leaves the value one day.
- */
 export function writeDateValue(start: CalendarEnd | undefined, end: CalendarEnd | undefined, options: { time: boolean }): string {
   if (!start) return "";
   const part = (side: CalendarEnd) => (options.time && side.time ? `${side.day}T${side.time}` : side.day);
   return end && part(end) !== part(start) ? `${part(start)}/${part(end)}` : part(start);
 }
 
-/** Reads what a person typed: a day written `YYYY-MM-DD`, or a date the browser can read ("Oct 21, 2026"). */
 export function parseTypedDay(text: string): Day | null {
   const trimmed = text.trim();
   if (isDay(trimmed)) return trimmed;
@@ -252,114 +190,6 @@ export function parseTypedDay(text: string): Day | null {
 
 const openPickers = new Set<Calendar>();
 
-/**
- * @element ds-calendar
- * @prop {string} month - The month shown, `YYYY-MM` (or a day in it). The
- *   selected day's month, or today's, when left out; the arrows change it.
- * @prop {string} value - The selected day, `YYYY-MM-DD`, or a range,
- *   `YYYY-MM-DD/YYYY-MM-DD`; in a picker either end may carry a time
- *   (`2026-10-21T09:00`).
- * @prop {boolean} selectable - Pressing a day selects it and fires `change`:
- *   the first press one day, the next the end of a range from it.
- * @prop {boolean} picker - A field one control high that opens the small
- *   month below it, with the days to type, Include time and Clear.
- * @prop {boolean} compact - One square per day, no events written out: the
- *   small month.
- * @prop {number} dayWidth - Squares per day (`day-width`): 4 by default, 1
- *   when compact.
- * @prop {string} view - `month` (the default), `week`, `day` or `swimlane`:
- *   the weeks from the month shown across (a week half a day wide, so it is
- *   as wide as the month), each event one row with one bar from its first
- *   week to its last. A compact calendar and a picker are always a month.
- * @prop {boolean | string[]} views - Day, Week, Month and Swimlane in the
- *   header, to change `view`; or the views to offer, in order
- *   (`views="month swimlane"`). A name the calendar does not draw is the
- *   page's own view: chosen, the calendar keeps its header (the month's title,
- *   the arrows moving a month) and shows what the page puts in its slot of
- *   that name (`<div slot="earnings">`) in place of the days. Supply
- *   `earnings-previous` and `earnings-next` slots to reveal the adjacent
- *   months during a swipe, with the same data and permissions as the current view.
- * @prop {Record<string, string>} viewNames - The words for each view in the
- *   switch (property only), over the shared Day, Week, Month and Swimlane;
- *   a page's own view is named by its name when left out.
- * @prop {string} date - The day the week or day view shows, `YYYY-MM-DD`;
- *   today, or the first of the month shown, by default.
- * @prop {number} lines - Lines of events under a day's date: 2 by default.
- * @prop {boolean} weekNumbers - Write the week's number (`week-numbers`) on
- *   its first day.
- * @prop {boolean} swimlaneAll - Fit all events into one swimlane, including undated events.
- * @prop {string} undatedLabel - Words for an undated event in an all-events swimlane.
- * @prop {boolean} swimlaneHug - Fit the swimlane to its visible event rows, including when fixed.
- * @prop {boolean} fixed - Always draw six weeks, so the month keeps its height,
- *   and every other view stands in that same height (the weekdays and six
- *   weeks): the week's days grow to it, the day's hours fill it, the
- *   swimlane's rows fill it and scroll beyond it, and a page's own view gets
- *   it, so nothing under the calendar moves when the view changes.
- * @prop {boolean} outsideDays - Draw the days of the months before and after
- *   in the title grey (`outside-days`); pressing one moves there.
- * @prop {boolean} activity - The days as quiet squares, a contribution grid:
- *   weeks across a square each, as the swimlane runs, and the days down them,
- *   every other weekday named before them and the month over its weeks; a
- *   day on which something happens is filled with its events' colours, split
- *   into bands when several share it. Dates stay in each day's name and
- *   tooltip. Takes the place of the large calendar's months in squares.
- * @prop {number} months - How many months activity draws from `month`: 1 by default.
- * @prop {boolean} heat - Light each day by how much happens on it, as a
- *   contribution graph does: the events' `count`s added up (one each by
- *   default), in four steps of the busiest day shown.
- * @prop {number} heatMax - The amount that lights a day fully (`heat-max`),
- *   for a scale that stays put from month to month; the busiest day shown
- *   by default.
- * @prop {boolean} noHeader - Leave out the title and arrows (`no-header`).
- *   With a header, pressing the title travels by months and years: the
- *   twelve months of the year, then twelve years, and back down. With a
- *   header, a swipe sideways across the days (a finger or a pen), or a
- *   trackpad's sideways scroll, does what the arrows do, the next month
- *   towards the start and the one before towards the end, and stops where
- *   they stop; the days take sideways touches for it, so a carousel or a
- *   page around the calendar does not move with them.
- * @prop {boolean} noToday - Leave out the Today button (`no-today`).
- * @prop {string} min - The first day a person may choose.
- * @prop {string} max - The last day a person may choose.
- * @prop {string} weekStart - The week's first day (`week-start`), 0–6 from
- *   Sunday or its English name; the language's own by default.
- * @prop {string} today - The day drawn as today; the reader's own by default.
- * @prop {string} label - The grid's name, or a picker's: a translation key,
- *   or literal words with `literal`.
- * @prop {string} name - The form field's name.
- * @prop {string} placeholder - A picker's words before a day is chosen; the
- *   shared "Choose a date" by default.
- * @prop {string} length - How a picker writes a day: `short`, `medium` (the
- *   default) or `long`.
- * @prop {boolean} time - A picker chooses a time with each day (Include time).
- * @prop {boolean} required - A form needs a value; Clear is left out.
- * @prop {boolean} disabled - A picker cannot be opened.
- * @prop {boolean} open - A picker's month is open.
- * @prop {CalendarEvent[]} events - What happens on the days (property only).
- * @prop {(month: Date, view: string) => string} monthHeading - Names the month view's title, and a page's own view's,
- *   (property only): given the first of the month shown, it returns the words,
- *   so a product can write "Events in October" instead of "October 2026". The
- *   week and day views, the twelve months and the twelve years keep their own
- *   titles, and the title button's label still says what it opens.
- *
- * @fires day-press - A day was pressed or chosen with Enter or Space;
- *   `{ day, events }`. Cancelable: cancelled, a selectable calendar keeps its value.
- * @fires change - A person selected a day or ended a range;
- *   `{ value, previous, start, end }`, `end` empty while it is still to come.
- * @fires input - A picker's value changed, the same moment as `change`.
- * @fires event-press - An event was pressed; `{ event, day }`.
- * @fires navigate - A person moved to another month, week or day; `{ month }`.
- * @fires view-change - A person chose another view; `{ view }`.
- * @fires ds-calendar-toggle - A picker's month opened or closed; `{ open }`.
- *
- * A selectable calendar shows Clear right under its dates while something is chosen, and `clear()`
- * empties the value from code; both fire `change` with an empty value.
- *
- * @example
- * <ds-calendar month="2026-10" week-numbers></ds-calendar>
- * <ds-calendar compact selectable value="2026-10-18/2026-10-24"></ds-calendar>
- * <ds-calendar picker label="When" literal name="when" value="2026-10-21/2026-10-24"></ds-calendar>
- */
 export class Calendar extends CalendarBase {
   static formAssociated = true;
 
@@ -402,11 +232,9 @@ export class Calendar extends CalendarBase {
   };
 
   static styles = [unsafeCSS(metrics), unsafeCSS(controls), unsafeCSS(styles)];
-  /** Words cut short (the title, a weekday, the picker's value, an event's name on its bar) fade over their last square, never "…": marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".title:not(.title-button), .title-text, .weekday, .trigger .text, .event .name, .swimlane-month" });
 
   declare month: string | undefined;
-  /** Names the month view's title from the first of the month shown; the month and year when unset. */
   declare monthHeading: ((month: Date, view: string) => string) | undefined;
   declare compact: boolean;
   declare dayWidth: number | undefined;
@@ -435,15 +263,10 @@ export class Calendar extends CalendarBase {
   declare required: boolean;
   declare disabled: boolean;
   declare open: boolean;
-  /** The day whose hidden events are unfolded. */
   declare unfolded: Day | undefined;
-  /** The small month inside a picker, whose Clear is the picker's own. */
   declare embedded: boolean;
-  /** What the grid shows: the month's days, the twelve months of a year, or twelve years. */
   declare level: "days" | "months" | "years";
-  /** The year the months and years are drawn around. */
   declare browseYear: number;
-  /** The month (0–11) or year holding the Tab stop among the months or years. */
   declare pickFocus: number | undefined;
 
   protected readonly weeksRun = "rows" as const;
@@ -451,10 +274,8 @@ export class Calendar extends CalendarBase {
   private byDay = new Map<Day, CalendarEvent[]>();
   private heatByDay = new Map<Day, HeatLevel>();
   private readonly internals = typeof this.attachInternals === "function" ? this.attachInternals() : null;
-  /** The value the field started with, for a form's reset. */
   private initial = "";
   private shown = false;
-  /** Whether opening a picker should move focus into the month (a key opened it). */
   private focusMonth = false;
 
   constructor() {
@@ -482,7 +303,6 @@ export class Calendar extends CalendarBase {
     this.browseYear = 0;
   }
 
-  // Reuse the painted-fill resolver: retain the library's muted/red label ink where readable.
   private labelContrast = new ChoiceContrast(this, () => [...this.renderRoot.querySelectorAll<HTMLElement>(".today-button,.weekday-name,#title")]);
 
   connectedCallback() {
@@ -504,7 +324,6 @@ export class Calendar extends CalendarBase {
     this.initial = this.value;
   }
 
-  /** The form was reset: back to the value it started with. */
   formResetCallback() {
     this.value = this.initial;
   }
@@ -513,7 +332,6 @@ export class Calendar extends CalendarBase {
     this.disabled = disabled;
   }
 
-  /** The first of the month shown. */
   get shownMonth(): Day {
     return readMonth(this.month) ?? readMonth(readRange(this.value).start) ?? startOfMonth(this.todayDay);
   }
@@ -530,53 +348,44 @@ export class Calendar extends CalendarBase {
     return this.byDay.get(day) ?? [];
   }
 
-  /** The view drawn: a compact calendar and a picker are always a month. */
   get shownView(): CalendarView {
     if (this.picker || this.compact) return "month";
     if (isView(this.view)) return this.view;
     return this.viewChoices.includes(this.view) ? (this.view as CalendarView) : "month";
   }
 
-  /** The views offered in the header, in order: every one the calendar draws, or the page's list. */
   get viewChoices(): string[] {
     const views = this.views;
     if (Array.isArray(views)) return [...new Set(views.map(view => String(view).trim()).filter(Boolean))];
     return views ? VIEWS.map(([view]) => view) : [];
   }
 
-  /** Whether the view shown is the page's own, drawn in its slot. */
   private get ownView() {
     return !isView(this.shownView);
   }
 
-  /** A view's words in the switch: the page's, else the shared ones, else its name. */
   private viewName(view: string): string {
     const shared = VIEWS.find(([choice]) => choice === view)?.[1];
     const word = this.viewNames?.[view] ?? (shared ? this.words(shared) : view);
-    // The switch's options are written `value:words,value:words`.
     return word.replace(/,/g, " ");
   }
 
-  /** Whether the view moves by days (a week or a day) rather than by months (a month or a swimlane). */
   private get byDays() {
     const view = this.shownView;
     return view === "week" || view === "day";
   }
 
-  /** The day the week or day view shows: `date`, else today in the month shown, else its first. */
   get shownDay(): Day {
     if (isDay(this.date)) return this.date;
     const month = this.shownMonth;
     return sameMonth(this.todayDay, month) ? this.todayDay : month;
   }
 
-  /** The seven days of the week `day` falls in. */
   private weekOf(day: Day): Day[] {
     const start = addDays(day, -((weekdayOf(day) - this.firstDay + 7) % 7));
     return Array.from({ length: 7 }, (_, index) => addDays(start, index));
   }
 
-  /** Shows another week or day around `day`, and says so with `navigate`. */
   showDay(day: Day, announce = false) {
     if (!isDay(day) || day === this.date) return;
     this.date = day;
@@ -585,7 +394,6 @@ export class Calendar extends CalendarBase {
     if (announce) this.announceMonth(day);
   }
 
-  /** Changes the view, as Day, Week and Month do, and says so with `view-change`. */
   showView(view: CalendarView) {
     if (view === this.shownView) return;
     if (!isDay(this.date)) this.date = this.shownDay;
@@ -594,14 +402,12 @@ export class Calendar extends CalendarBase {
     this.dispatchEvent(new CustomEvent<CalendarViewDetail>("view-change", { bubbles: true, composed: true, detail: { view } }));
   }
 
-  /** The split button's choice; its own change event stays inside, since a calendar's change is a chosen day. */
   private onViewChange = (event: Event) => {
     event.stopPropagation();
     const view = (event as CustomEvent<{ value: string }>).detail?.value;
     if (view && (isView(view) || this.viewChoices.includes(view))) this.showView(view as CalendarView);
   };
 
-  /** Brings a day into view: its month, its week or the day itself. */
   private bringIntoView(day: Day) {
     const view = this.shownView;
     if (!this.byDays) {
@@ -609,7 +415,6 @@ export class Calendar extends CalendarBase {
     } else if (view === "day" || !this.weekOf(this.shownDay).includes(day)) this.showDay(day, true);
   }
 
-  /** Each shown day's lines of events, laid out a week at a time in render(). */
   private laidOut = new Map<Day, { lines: CalendarLine[]; hidden: number }>();
   private lineCorners = new WeakMap<object, EventCorners>();
 
@@ -618,12 +423,10 @@ export class Calendar extends CalendarBase {
     if (!this.pageCommitting && (changed.has("view") || changed.has("month") || changed.has("level"))) this.resetMonthMotion();
     this.style.setProperty("--ds-calendar-day-squares", String(this.squaresPerDay));
     this.style.setProperty("--ds-calendar-lines", String(this.eventLines));
-    // A compact month with events writes the days without any fainter.
     this.toggleAttribute("data-events", (this.events ?? []).length > 0);
     this.toggleAttribute("data-roomy", this.squaresPerDay >= 2);
     if (this.picker && changed.has("value") && this.value) {
       const { start, end } = this.ends;
-      // A value with a time turns the switch on.
       if (!start) this.value = "";
       else if (start.time || end?.time) this.time = true;
     }
@@ -633,7 +436,6 @@ export class Calendar extends CalendarBase {
   protected updated(changed: PropertyValues<this>) {
     super.updated(changed);
     if (this.isConnected) this.labelContrast.resolve();
-    // A day opens its hours an hour before its first timed event, or at seven.
     if (this.shownView === "day" && (changed.has("view") || changed.has("date") || changed.has("events"))) {
       const hours = this.renderRoot.querySelector<HTMLElement>(".hours");
       const first = hours?.querySelector<HTMLElement>(".hour[data-busy]")?.dataset.hour;
@@ -651,7 +453,6 @@ export class Calendar extends CalendarBase {
     }
   }
 
-  /** Shows another month and says so with `navigate`. */
   showMonth(month: string, announce = false) {
     const first = readMonth(month);
     if (!first || first === this.shownMonth) return;
@@ -660,17 +461,14 @@ export class Calendar extends CalendarBase {
     if (announce) this.announceMonth(first);
   }
 
-  /** The month before, as the previous arrow does. */
   previousMonth() {
     this.showMonth(addMonths(this.shownMonth, -1), true);
   }
 
-  /** The month after, as the next arrow does. */
   nextMonth() {
     this.showMonth(addMonths(this.shownMonth, 1), true);
   }
 
-  /** Today's month, as the Today button does. */
   showToday() {
     this.level = "days";
     this.showMonth(this.todayDay, true);
@@ -678,10 +476,8 @@ export class Calendar extends CalendarBase {
     this.focusDay = this.todayDay;
   }
 
-  /** Empties the value, as Clear does, and says so with `change`. */
   clear() {
     if (this.picker) {
-      // Restore focus before the empty value removes the focused Clear button.
       this.hide();
       this.commit("");
       this.open = false;
@@ -695,12 +491,8 @@ export class Calendar extends CalendarBase {
     this.dispatchEvent(new CustomEvent<CalendarChangeDetail>("change", { bubbles: true, composed: true, detail: { value: "", previous, start: "", end: "" } }));
   }
 
-  // Travelling by months and years: the title goes up a level, a choice comes back down.
-
-  /** A person has moved between levels, so a level's grid fades in when it comes. */
   private travelled = false;
 
-  /** The twelve years drawn around `browseYear`, as their first and last. */
   private get yearSpan(): [number, number] {
     const first = Math.floor(this.browseYear / 12) * 12;
     return [first, first + 11];
@@ -710,7 +502,6 @@ export class Calendar extends CalendarBase {
     return dateFormatter({ year: "numeric", timeZone: "UTC" }).format(Date.UTC(year, 6, 1));
   }
 
-  /** The title: the days go up to the months of their year, the months to twelve years. */
   private levelUp = () => {
     this.travelled = true;
     if (this.level === "days") {
@@ -723,7 +514,6 @@ export class Calendar extends CalendarBase {
     }
   };
 
-  /** Back down a level: from twelve years to the months, from the months to the days. */
   private levelDown(focus = false) {
     this.travelled = true;
     if (this.level === "years") {
@@ -736,7 +526,6 @@ export class Calendar extends CalendarBase {
     }
   }
 
-  /** The arrows: a month among the days, a year among the months, twelve years among the years. */
   private step(direction: -1 | 1) {
     if (this.level === "days") {
       const view = this.shownView;
@@ -747,7 +536,6 @@ export class Calendar extends CalendarBase {
     if (this.level === "years") this.pickFocus = (this.pickFocus ?? this.browseYear) + direction * 12;
   }
 
-  /** A month or a year chosen: a year shows its months, a month its days. */
   private choose(value: number) {
     this.travelled = true;
     if (this.level === "years") {
@@ -788,7 +576,6 @@ export class Calendar extends CalendarBase {
       event.preventDefault();
       let next = value + moves[event.key];
       if (this.level === "months") {
-        // Past December is the next year's January.
         if (next < 0 || next > 11) { this.browseYear += next < 0 ? -1 : 1; next = (next + 12) % 12; }
       } else {
         const [first, last] = this.yearSpan;
@@ -799,7 +586,6 @@ export class Calendar extends CalendarBase {
     }
   };
 
-  /** Months and years stand in rows of one square, one square apart: three across a narrow month, four across a wider one. */
   private get pickColumns() {
     return 7 * this.squaresPerDay >= 12 ? 4 : 3;
   }
@@ -858,7 +644,6 @@ export class Calendar extends CalendarBase {
     </div>`;
   }
 
-  /** The day holding the Tab stop: the one moved to, the selected day, today, or the first. */
   private get tabDay(): Day {
     const month = this.shownMonth;
     for (const day of [this.focusDay, this.chosen.start, this.todayDay]) if (day && sameMonth(day, month)) return day;
@@ -886,8 +671,6 @@ export class Calendar extends CalendarBase {
     void this.focusCell(target);
   };
 
-  // A swipe sideways across the days or the months, as the arrows: by finger or pen, or a trackpad's
-  // sideways scroll. Read from the arrows themselves, so a swipe goes nowhere an arrow cannot.
   private swipe?: { id: number; x: number; y: number; at: number };
   private swipedAt = 0;
   private wheel = { dx: 0, at: 0, locked: 0 };
@@ -977,7 +760,6 @@ export class Calendar extends CalendarBase {
     if (!this.swipe || !this.pagedView || !event.composedPath().some(node => node instanceof HTMLElement && node.classList.contains("month-track"))) return;
     const track = this.renderRoot.querySelector<HTMLElement>(".month-track");
     if (!track) return;
-    // An interrupted settling motion is taken over at its current visible position.
     const transform = getComputedStyle(track).transform;
     const offset = transform && transform !== "none" ? new DOMMatrixReadOnly(transform).m41 : 0;
     this.stopMonthMotion();
@@ -1000,7 +782,7 @@ export class Calendar extends CalendarBase {
       if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 2) return;
       pan.horizontal = true;
       this.swipedAt = Date.now();
-      try { (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId); } catch { /* A synthetic pointer has no capture. */ }
+      try { (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId); } catch {}
     }
     event.preventDefault();
     const direction = dx * (this.rtl ? -1 : 1) < 0 ? 1 : -1;
@@ -1041,7 +823,6 @@ export class Calendar extends CalendarBase {
     event.preventDefault();
     const now = Date.now();
     if (now < this.wheel.locked) {
-      // Momentum belongs to this gesture until its horizontal stream stops.
       this.wheel.locked = now + 160;
       this.wheel.at = now;
       return;
@@ -1103,11 +884,9 @@ export class Calendar extends CalendarBase {
     }
     this.focusDay = day;
     this.press(day);
-    // A day of the month before or after takes the calendar there.
     this.bringIntoView(day);
   };
 
-  /** While a range waits for its end, the day under the pointer previews it. */
   private onPointerOver = (event: PointerEvent) => {
     if (!this.endPending || !this.selectable) return;
     const cell = (event.composedPath() as HTMLElement[]).find(node => node instanceof HTMLElement && node.dataset?.day);
@@ -1246,21 +1025,18 @@ export class Calendar extends CalendarBase {
     </div>`;
   }
 
-  /** What a day writes before its date: its weekday's name in the first week, and the week's number on its first day. */
   private renderLabel(label: DayLabel) {
     return html`${label.weekday ? html`<span class="weekday-name" ?data-today=${label.today}>${label.weekday}</span>` : nothing}${label.week
       ? html`<span class="week-number">${label.week}</span>`
       : nothing}`;
   }
 
-  /** A week's days as one title: "Oct 18 – 24, 2026", in the language's own way. */
   private rangeTitle(from: Day, to: Day): string {
     const format = dateFormatter({ month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
     const at = (day: Day) => Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10)), 12);
     return typeof format.formatRange === "function" ? format.formatRange(at(from), at(to)) : `${format.format(at(from))} – ${format.format(at(to))}`;
   }
 
-  /** Scale the all-events view by whole weeks so every dated event fits on the same grid. */
   private get swimlaneScale(): { start: Day; step: number; count: number } {
     const count = Math.max(4, 7 * this.squaresPerDay);
     const dated = (this.events ?? []).filter(event => isDay(event.start));
@@ -1275,7 +1051,6 @@ export class Calendar extends CalendarBase {
     return Array.from({ length: count }, (_, index) => addDays(start, index * step * 7));
   }
 
-  /** The month owning most of a week: its Thursday's, counted from the week's first day. */
   private ownerOf(weekStart: Day): Day {
     return startOfMonth(addDays(weekStart, 3));
   }
@@ -1288,7 +1063,6 @@ export class Calendar extends CalendarBase {
     return this.monthRangeTitle([startOfMonth(first), startOfMonth(last)]);
   }
 
-  /** The months a swimlane covers as one title: "Oct 2026 – Jan 2027". */
   private monthRangeTitle(weeks: readonly Day[]): string {
     const from = this.ownerOf(weeks[0]), to = this.ownerOf(weeks.at(-1)!);
     const format = dateFormatter({ month: "short", year: "numeric", timeZone: "UTC" });
@@ -1297,12 +1071,6 @@ export class Calendar extends CalendarBase {
     return typeof format.formatRange === "function" ? format.formatRange(at(from), at(to)) : `${format.format(at(from))} – ${format.format(at(to))}`;
   }
 
-  /**
-   * The events as a swimlane: weeks across, a square each; over them the
-   * months, named where the month owning the week changes, and each week's
-   * first date (today's date in its disc on today's week); then a row to an
-   * event, a square high, each one bar from its first week to its last.
-   */
   private renderSwimlane() {
     const weeks = this.swimlaneWeeks;
     const { step } = this.swimlaneScale;
@@ -1314,7 +1082,6 @@ export class Calendar extends CalendarBase {
           return isDay(event.start) ? { event, row, from: column(event.start), to: column(endOf(event)) } : { event, row, from: 0, to: weeks.length - 1 };
         })
       : swimlaneBars(all, weeks);
-    // Fixed, the rows (a square each) fill the month's height under the months and dates, and scroll past it.
     const fit = this.fixed ? Math.max(1, 6 * (this.eventLines + 2) - 1) : 6;
     const rows = this.swimlaneHug ? Math.max(1, bars.length) : Math.max(fit, bars.length + 1);
     const corners = eventCorners(bars.map(({ event, row, from, to }) => ({
@@ -1384,7 +1151,6 @@ export class Calendar extends CalendarBase {
       </div>`));
   }
 
-  /** The first day of each week activity draws: from the week holding the month's first to the one holding its last month's last day. */
   private get activityWeeks(): Day[] {
     const first = this.shownMonth;
     const end = addDays(addMonths(first, whole(this.months, 1, 36, 1)), -1);
@@ -1393,12 +1159,6 @@ export class Calendar extends CalendarBase {
     return weeks;
   }
 
-  /**
-   * The days as quiet squares: every other weekday named down the start, the
-   * months over their weeks, and a week to a column a square wide, its days
-   * down it, each a square drawn two pixels in with a picture's corners,
-   * filled with its events' colours. Days outside the months stay empty.
-   */
   private renderActivity() {
     const weeks = this.activityWeeks;
     const first = this.shownMonth;
@@ -1409,7 +1169,6 @@ export class Calendar extends CalendarBase {
     const long = weekdayNames(this.firstDay, "long");
     const today = this.todayDay;
     const months: { column: number; span: number; month: Day }[] = [];
-    // A week is named by the month owning most of it, held to the months drawn.
     const lastMonth = addMonths(end, -1);
     weeks.forEach((start, column) => {
       const owner = this.ownerOf(start);
@@ -1468,7 +1227,6 @@ export class Calendar extends CalendarBase {
     </div>`;
   }
 
-  /** A view drawn under the header that swipes as the arrows move: the swimlane and a page's own view. */
   private swipeFrame(content: unknown) {
     const swipes = !this.noHeader;
     return html`<div
@@ -1487,17 +1245,11 @@ export class Calendar extends CalendarBase {
     </div>`;
   }
 
-  /** A page's own view: what it puts in the slot named after the view, as wide as the month. */
   private renderOwnView() {
     const view = this.shownView;
     return this.swipeFrame(this.monthTrack(html`<div class="own-view" part="own-view" data-view=${view} ?data-travel=${this.travelled && !this.pageCommitting}><slot name=${view} @slotchange=${() => this.requestUpdate()}></slot></div>`));
   }
 
-  /**
-   * One day: its events without a time across the top, a day's width each,
-   * then its hours, a square each, in an area that scrolls, with each timed
-   * event at its hour beside the others of that hour.
-   */
   private renderDayView() {
     const day = this.shownDay;
     this.byDay = eventsByDay(this.events ?? [], day, day);
@@ -1529,7 +1281,6 @@ export class Calendar extends CalendarBase {
     </div>`;
   }
 
-  /** An event on its line: one bar over `span` days, its name written once. */
   private renderEvent(event: CalendarEvent, events: readonly CalendarEvent[], span: number, corners?: EventCorners) {
     const fill = event.color ? `--ds-calendar-event-fill: ${event.color}; --ds-calendar-event-ink: var(--ds-slate);` : "";
     return html`<span
@@ -1557,10 +1308,8 @@ export class Calendar extends CalendarBase {
     const weeks = view === "week" ? [this.weekOf(this.shownDay)] : monthWeeks(month, first, this.fixed);
     this.byDay = eventsByDay(this.events ?? [], weeks[0][0], weeks.at(-1)![6]);
     this.laidOut = new Map();
-    // In view: the week's days, or the month's (the days around it are drawn only with outside-days).
     const inView = (day: Day) => view === "week" || sameMonth(day, month);
     const drawn = (day: Day) => inView(day) || this.outsideDays;
-    // A week shows every event of each day: as many lines as its fullest day needs.
     const depth = view === "week"
       ? Math.max(this.eventLines, ...weekLines(weeks[0], this.byDay, 99).map(day => day.lines.length))
       : this.eventLines;
@@ -1581,16 +1330,13 @@ export class Calendar extends CalendarBase {
     const tabDay = view === "week"
       ? [this.focusDay, this.chosen.start, this.todayDay].find(day => day && weeks[0].includes(day)) ?? weeks[0][0]
       : this.tabDay;
-    // Heat is measured over the days of the month shown, so the neighbours' days never set its scale.
     this.heatByDay = this.heat ? heatLevels(new Map([...this.byDay].filter(([day]) => sameMonth(day, month))), this.heatMax) : new Map();
-    // A compact month names its days in a letter (one square) or two (wider); a full month in short.
     const short = this.compact
       ? this.squaresPerDay < 2
         ? weekdayNames(first, "narrow")
         : weekdayNames(first, "short").map(name => (/^\p{Script=Latin}/u.test(name) ? name.replace(/\.$/, "").slice(0, 2) : name))
       : weekdayNames(first, "short");
     const long = weekdayNames(first, "long");
-    // Inside a day's box the name is short where the day is three squares or more, and a letter where it is narrower.
     const inside = this.squaresPerDay >= 3 ? short : weekdayNames(first, "narrow");
     const today = this.todayDay;
     const todayColumn = drawn(today) && weeks.some(week => week.includes(today)) ? (weekdayOf(today) - first + 7) % 7 : -1;
@@ -1626,10 +1372,8 @@ export class Calendar extends CalendarBase {
           ${short.map((name, index) => html`<span role="columnheader" class="weekday" aria-label=${long[index]}>${name}</span>`)}
         </div>
         ${weeks.map((week, row) => html`<div role="row" class="week" part="week">${week.map((day, column) => this.renderDay(day, inView(day), tabDay, this.compact ? undefined : {
-          // A full month names its days inside the first week's boxes, at their start, today's weekday in today's red.
           weekday: row === 0 ? inside[column] : undefined,
           today: row === 0 && todayColumn === column,
-          // The week's number on its first day, counted from the week's middle so a week from Sunday takes its Monday's.
           week: this.weekNumbers && column === 0 && this.squaresPerDay >= 3 && week.some(drawn) ? isoWeek(addDays(day, 3)) : undefined,
         }))}</div>`)}
       </div>`)}
@@ -1651,8 +1395,6 @@ export class Calendar extends CalendarBase {
     return html`<div class="month-swipe"><div class="month-track">${neighbour(-1)}${grid}${neighbour(1)}</div></div>`;
   }
 
-  // The picker: a field that opens the small month.
-
   private pickerWords(value: string | undefined, fallback: string): string {
     if (value && this.literal) return value;
     return getText(value || fallback) || value || fallback;
@@ -1666,7 +1408,6 @@ export class Calendar extends CalendarBase {
     return this.renderRoot.querySelector<HTMLElement>(".popover");
   }
 
-  /** The small month inside the picker. */
   private get smallMonth() {
     return this.renderRoot.querySelector<Calendar>("ds-calendar");
   }
@@ -1675,7 +1416,6 @@ export class Calendar extends CalendarBase {
     return readDateValue(this.value);
   }
 
-  /** Opens a picker's month. */
   show() {
     if (this.shown || !this.picker || this.disabled || !this.isConnected) return;
     const panel = this.panel;
@@ -1687,7 +1427,6 @@ export class Calendar extends CalendarBase {
     const month = this.smallMonth;
     if (month) {
       month.month = (this.ends.start?.day || this.today || this.todayDay).slice(0, 7);
-      // Each opening starts a new pick on the month's days: the first press is a first day.
       month.endPending = false;
       month.level = "days";
     }
@@ -1703,7 +1442,6 @@ export class Calendar extends CalendarBase {
     if (this.focusMonth) void this.focusPickerDay();
   }
 
-  /** Closes a picker's month, giving focus back to the field when it was inside. */
   hide(restore = true) {
     if (!this.shown) return;
     this.shown = false;
@@ -1728,7 +1466,6 @@ export class Calendar extends CalendarBase {
     month.renderRoot.querySelector<HTMLElement>('[data-day][tabindex="0"]')?.focus({ preventScroll: true });
   }
 
-  /** Directly against the field, or above when there is more room there; held inside the screen. */
   private place = () => {
     const panel = this.panel, trigger = this.trigger;
     if (!this.shown || !panel || !trigger) return;
@@ -1751,7 +1488,6 @@ export class Calendar extends CalendarBase {
     const width = viewport?.width ?? view.innerWidth, height = viewport?.height ?? view.innerHeight;
     const box = panel.getBoundingClientRect();
     const gap = 0;
-    // The face is one control high at the foot of its square: measure from that square.
     const square = Math.max(rect.height, gap * 2);
     const foot = rect.bottom, head = rect.bottom - square;
     const below = top + height - foot - 2 * gap, above = head - top - 2 * gap;
@@ -1794,7 +1530,6 @@ export class Calendar extends CalendarBase {
     if (this.open && next instanceof Node && !this.contains(next) && !this.renderRoot.contains(next)) this.open = false;
   };
 
-  /** Takes a new value and says so. */
   private commit(value: string) {
     const previous = this.value || "";
     if (value === previous) return;
@@ -1809,10 +1544,6 @@ export class Calendar extends CalendarBase {
     this.commit(writeDateValue(start, end, { time: this.time }));
   }
 
-  /**
-   * A day pressed in the month. The first press of an opening is the value;
-   * the second ends the range and, without times to set, closes the month.
-   */
   private picked = (event: CustomEvent<CalendarChangeDetail>) => {
     event.stopPropagation();
     const { start, end } = this.ends;
@@ -1826,7 +1557,6 @@ export class Calendar extends CalendarBase {
     if (!this.time) this.open = false;
   };
 
-  /** A day typed in a field, read when the person leaves it or presses Enter. */
   private typed(side: "start" | "end", input: HTMLInputElement) {
     const { start, end } = this.ends;
     const text = input.value.trim();
@@ -1862,7 +1592,6 @@ export class Calendar extends CalendarBase {
     this.write(timed(start, "09:00"), timed(end ?? (this.time ? start : undefined), "10:00"));
   };
 
-  /** Pressing the switch's row presses the switch, as a label would. */
   private passPress = (event: MouseEvent) => {
     const row = event.currentTarget as HTMLElement;
     const control = row.querySelector<HTMLButtonElement>(".ds-switch");
@@ -1886,7 +1615,6 @@ export class Calendar extends CalendarBase {
     return side ? this.formatter(false).format(this.moment(side)) : "";
   }
 
-  /** The face's words: one day, or a range written as the language writes one ("Oct 21 – 24, 2026"). */
   private faceText(): string {
     const { start, end } = this.ends;
     if (!start) return this.pickerWords(this.placeholder, "Choose a date");

@@ -1,14 +1,8 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-input.css */
-/* Input component styles */
-
 :host {
   display: block;
   width: 100%;
-  /* The field's own tokens (variant="field"), unset by default and in unscaled px, resolved
-     here at this field's scale. A context that sets --ds-input-height, --ds-input-padding or
-     --ds-input-radius keeps its own; otherwise the field reads these, then its measure. */
   --_input-size: var(--ds-input-size);
   --_input-height: calc(var(--_input-size) * var(--ds-sf));
   --_input-padding-size: var(--ds-input-padding-size);
@@ -20,7 +14,6 @@
   display: none !important;
 }
 
-/* Its width: unset fills the row as before, a length fixes it. */
 :host([variant="field"]) {
   width: var(--ds-input-inline-size, 100%);
 }
@@ -52,7 +45,6 @@ label {
   padding: 0 calc(2px * var(--ds-sf, 1));
   font-size: var(--ds-type-size-default);
   font-family: "Inter Arrows", var(--ds-typeface-regular);
-  /* The field's ink, whole, before focus too: a dimmed grey at half opacity read at 2:1 (color.text-contrast). */
   color: var(--ds-input-color, #2a2a2a);
   line-height: calc(16px * var(--ds-sf, 1));
   letter-spacing: calc(-0.4px * var(--ds-sf, 1));
@@ -74,7 +66,6 @@ input {
 }
 
 :is(input, textarea)::placeholder {
-  /* The muted ink, whole: half-transparent grey on the field's fill fell to 1.3:1 (color.text-contrast). */
   color: var(--ds-input-placeholder-color, var(--ds-text-color-muted));
   opacity: 1;
 }
@@ -109,12 +100,6 @@ input {
   border-color: var(--accent-color, #007aff);
 }
 
-/*
- * The error stands on one-square lines in the danger colour, as
- * `.ds-field__error` does. While it shows, every row of the field is at least
- * one square high and a lower control keeps its place at the top of its row,
- * so the error starts on the square below the control in every variant.
- */
 .input-wrapper.has-error {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -134,7 +119,6 @@ input {
   letter-spacing: var(--ds-type-letterspacing-default);
 }
 
-/* A translated error wraps on the same lines as a literal one. */
 .error-message > ds-text {
   display: block;
 }
@@ -144,7 +128,6 @@ input {
   color: var(--ds-danger-color);
 }
 
-/* Error state */
 :is(input, textarea).has-error {
   border-color: var(--ds-danger-color);
 }
@@ -153,11 +136,9 @@ input {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-danger-color) 20%, transparent);
 }
 
-/* A field drawn 18px high inside a 20px form row. */
 :host([variant="row"]) {
   box-sizing: border-box;
   padding-top: calc(2px * var(--ds-sf, 1));
-  /* The host's 2px above the 18px field make up its row. */
   --ds-input-control-row: calc(18px * var(--ds-sf, 1));
 }
 :host([variant="row"]) .input-container,
@@ -236,7 +217,6 @@ input {
   }
 }
 
-/* Standard standalone form field and text-only inline editor. */
 :host([variant="field"]) :is(input, textarea),
 :host([variant="plain"]) :is(input, textarea) {
   height: var(--ds-input-height, var(--ds-row-height));
@@ -250,8 +230,6 @@ input {
   line-height: var(--ds-type-lineheight-default);
   letter-spacing: var(--ds-type-letterspacing-default);
 }
-/* A field is one control high (16px) on the lower sixteen of its square, as a button and a
- * select are: the square keeps the row it stands in, the face stands at its foot. */
 :host([variant="field"]) {
   --_field-height: var(--ds-input-height, var(--_input-height, var(--ds-control-height)));
 }
@@ -293,8 +271,6 @@ input {
   padding-inline-end: calc(24px * var(--ds-sf));
 }
 
-/* ---- Multiline ------------------------------------------------------- */
-/* A text area spans whole rows; shared input styles own its field treatment. */
 .row-metric {
   position: absolute;
   width: 0;
@@ -303,8 +279,6 @@ input {
   visibility: hidden;
   pointer-events: none;
 }
-/* Pill-shaped corners would cut into multiline writing. A text area's field
- * corners stay small independently of the surrounding control preference. */
 :host([variant="field"]) textarea {
   border-radius: var(--ds-textarea-radius, calc(4px * var(--ds-sf)));
   corner-shape: var(--ds-textarea-corner-shape, squircle);

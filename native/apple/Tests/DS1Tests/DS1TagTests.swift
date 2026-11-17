@@ -4,7 +4,6 @@ import XCTest
 
 @MainActor final class DS1TagTests: XCTestCase {
     func testDefaultColoursMatchTheWebsSrgbMixes() {
-        // ds-tag.css: base grey #797979, fills at 28%/20%, inks at 45%/30%.
         let colours=DS1TagColours(accent:nil)
         XCTAssertEqual(colours.background.light,0xd9d9d9);XCTAssertEqual(colours.background.dark,0x3a3a3a)
         XCTAssertEqual(colours.ink.light,0x363636);XCTAssertEqual(colours.ink.dark,0xd7d7d7)

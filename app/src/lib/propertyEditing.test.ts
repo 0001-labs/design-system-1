@@ -27,11 +27,9 @@ it("takes out a token the library sets in a block of its own by writing the defa
   expect(own.write).toHaveBeenLastCalledWith("--ds-button-primary-fill", "initial");
   expect(libraryTokenValues(own.css()).get("--ds-button-primary-fill")).toBe("initial");
   expect(own.draft.value("--ds-button-primary-fill")).toBeUndefined();
-  // A token the template defines goes back to the template's value, and then reads as unset.
   own.draft.remove("--ds-switch-track-on");
   expect(own.write).toHaveBeenLastCalledWith("--ds-switch-track-on", "#529d36");
   expect(own.draft.value("--ds-switch-track-on")).toBeUndefined();
-  // Set again and taken out again: only the override block's line goes.
   own.draft.edit("--ds-button-primary-fill", "blue");
   own.draft.remove("--ds-button-primary-fill");
   expect(libraryTokenValues(own.css()).get("--ds-button-primary-fill")).toBe("initial");

@@ -18,7 +18,6 @@ function issuesToValue(issues: Issue[]): string {
   return JSON.stringify(issues);
 }
 
-/** Shared by `publish` and `rollback` — both report the same shape. */
 export const publishResultValidator = v.object({
   version: v.number(),
   publishedAt: v.number(),
@@ -26,43 +25,6 @@ export const publishResultValidator = v.object({
   immutableUrl: v.string(),
 });
 
-/**
- * Publish.
- *
- * The plan's transaction ordering, adapted to Convex. The invariant it exists
- * to protect is unchanged: **a failed publish must leave the live stylesheet
- * byte-identical.**
- *
- *   1. read the draft
- *   2. VALIDATE  — before a version number is allocated and before R2 is
- *                  touched at all, so a rejected stylesheet costs nothing and
- *                  leaks nothing into production; then PREPARE it
- *                  (`prepareLibrary`: DS1's component tokens after the
- *                  library's own, the button-link faces and the revision
- *                  stamp) and validate what will be served
- *   3. begin     — re-check baseRev, allocate the version, write the
- *                  'writing' row and the in_progress event (the durable
- *                  breadcrumb)
- *   4. PUT v/{n}.css      -> failure leaves latest.css untouched
- *   5. PUT latest.css     -> failure leaves latest.css untouched; v/{n} exists
- *                            and the publish is retryable
- *   6. finish    — mark published
- *
- * Two deliberate differences from the SQL design:
- *
- * - Validation runs *before* allocation rather than after, because it needs no
- *   lock. That removes the "burn a version number, then roll it back" step
- *   entirely; version numbers still gap on an R2 failure, which is fine — they
- *   are opaque identifiers, not a count.
- * - There is no lock column. Convex mutations are serializable transactions, so
- *   `begin` either wins the baseRev check or loses it. The SQL plan needed
- *   `publish_lock_until` to get the same guarantee.
- *
- * If step 6 fails after step 5 succeeded, production is *ahead* of the
- * database — the correct direction to fail in, since customers already have the
- * new bytes. Retrying is safe and self-healing: step 4 finds an identical
- * version already present and returns `reused: true` rather than conflicting.
- */
 export const publish = action({
   args: {
     id: v.id("libraries"),
@@ -85,13 +47,11 @@ export const publish = action({
       });
     }
 
-    // The draft is the live one's source, prepared by today's rules: nothing would change.
     const prepared = prepareLibrary(draft.draftCss);
     if (!args.force && draft.publishedHash === draft.draftHash && draft.publishedTransform === prepared.transform) {
       fail("nothing_to_publish", "The live stylesheet already matches this draft.");
     }
 
-    // ---- Step 2: validate. Nothing has been allocated or written yet. ----
     const result = validateCss(draft.draftCss);
     if (!result.ok) {
       await ctx.runMutation(internal.publish.recordValidationFailure, {
@@ -103,8 +63,6 @@ export const publish = action({
       });
     }
 
-    // What is served is the prepared stylesheet. It must be as valid as the draft; if it is
-    // not, preparation is at fault, not the owner, and nothing is allocated or written.
     const served = validateCss(prepared.css);
     if (!served.ok) {
       fail("preparation_failed", "This stylesheet could not be prepared for publishing. The live version is unchanged.", {
@@ -114,7 +72,6 @@ export const publish = action({
 
     const contentHash = await sha256Hex(prepared.css);
 
-    // ---- Step 3: allocate ----
     const begun = await ctx.runMutation(internal.publish.begin, {
       id: args.id,
       baseRev: args.baseRev,
@@ -125,7 +82,6 @@ export const publish = action({
       note: args.note,
     });
 
-    // ---- Steps 4 and 5 ----
     try {
       await putVersion(draft.publicId, begun.version, prepared.css, {
         libraryId: args.id,
@@ -148,8 +104,6 @@ export const publish = action({
         contentHash,
       });
     } catch (error) {
-      // v/{n} exists but latest still points at the previous version, so
-      // customers are unaffected and a retry can resume from here.
       await ctx.runMutation(internal.publish.recordArtifactFailure, {
         id: args.id,
         eventId: begun.eventId,
@@ -160,7 +114,6 @@ export const publish = action({
       throw toPublicError(error, "r2_latest");
     }
 
-    // ---- Step 6 ----
     return await ctx.runMutation(internal.publish.finish, {
       id: args.id,
       eventId: begun.eventId,
@@ -273,8 +226,6 @@ export const begin = internalMutation({
   handler: async (ctx, args) => {
     const library = await requireOwnedInternal(ctx, args.id);
 
-    // Re-checked inside the transaction: the draft may have moved between the
-    // action reading it and this mutation running.
     if (args.baseRev !== library.draftRev) {
       fail("draft_conflict", "This library was edited somewhere else. Reload before publishing.", {
         serverRev: library.draftRev,
@@ -338,9 +289,6 @@ export const recordArtifactFailure = internalMutation({
       ]),
     });
 
-    // A version whose bytes never landed is 'orphaned'. One whose bytes DID
-    // land but never became live stays 'writing', because a retry can complete
-    // it rather than starting over.
     if (args.orphanVersion) {
       await ctx.db.patch(args.versionDocId, { status: "orphaned" });
     }
@@ -361,7 +309,6 @@ export const finish = internalMutation({
     eventId: v.id("publishEvents"),
     versionDocId: v.id("libraryVersions"),
     version: v.number(),
-    /** The draft's hash: `publishedHash` says which draft is live, so the editor can tell unpublished changes. */
     sourceHash: v.string(),
   },
   returns: publishResultValidator,

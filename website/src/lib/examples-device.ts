@@ -1,4 +1,3 @@
-/** One device choice controls every embedded page in the Examples gallery. */
 export function setExamplesDevice(root: HTMLElement, device: string): void {
   if (!['computer', 'mobile', 'tablet'].includes(device)) return;
   root.dataset.globalExampleDevice = device;

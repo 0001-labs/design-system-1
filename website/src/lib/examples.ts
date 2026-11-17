@@ -1,4 +1,3 @@
-/** The complete public example catalogue, with independently authored additions. */
 import { EXAMPLES as COMPONENT_EXAMPLES, PAGE_EXAMPLES as COMPONENT_PAGES } from './component-examples';
 import { TOC_EXAMPLES } from './toc-examples';
 import { LIST_EXAMPLES } from './list-examples';

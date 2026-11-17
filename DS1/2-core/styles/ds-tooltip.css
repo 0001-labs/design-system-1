@@ -5,9 +5,6 @@
 }
 :host([hidden]) { display: none !important; }
 
-/* In the top layer (a manual popover), fixed over its control by the box
- * ds-tooltip.ts measures: centred, two pixels above, shifted to stay four
- * pixels inside the window; nothing the control stands in can cut it short. */
 .bubble {
   box-sizing: border-box;
   position: fixed;

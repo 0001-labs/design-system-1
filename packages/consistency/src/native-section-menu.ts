@@ -6,13 +6,10 @@ import { TONE_NAMES, kindDefinition, sectionLabel, sectionValue } from './native
 import '../../../DS1/2-core/ds-number';
 import '../../../DS1/2-core/ds-icon';
 
-/** A camelCase field name as words: `panelTone` reads Panel tone. */
 export const fieldWords = (name: string) => (name.charAt(0).toUpperCase() + name.slice(1)).replace(/([a-z])([A-Z])/g, (_, a: string, b: string) => `${a} ${b.toLowerCase()}`);
-/** A choice or tone as words: `pastel-1` reads Pastel 1, `centre` Centre; a ratio stays as written. */
 export const choiceWords = (value: string) => /^\d/.test(value) ? value : (value.charAt(0).toUpperCase() + value.slice(1)).replaceAll('-', ' ');
 
 const check = (doc: Document) => { const icon = createSurfaceElement(doc, 'ds-icon') as HTMLElement & { type: string }; icon.type = 'check'; icon.setAttribute('aria-hidden', 'true'); return icon; };
-/** A row that chooses one value or turns one on, staying open so the next choice can follow. */
 function choiceRow(menu: HTMLElement, role: 'menuitemradio' | 'menuitemcheckbox', text: string, checked: () => boolean, run: () => void): () => void {
   const doc = menu.ownerDocument, row = doc.createElement('button'); row.type = 'button'; row.setAttribute('role', role); row.setAttribute('data-keep-open', '');
   const words = doc.createElement('span'); words.textContent = text; row.append(words);
@@ -21,7 +18,6 @@ function choiceRow(menu: HTMLElement, role: 'menuitemradio' | 'menuitemcheckbox'
 }
 function label(menu: HTMLElement, text: string) { const row = menu.ownerDocument.createElement('span'); row.setAttribute('data-ds-menu-label', ''); row.textContent = text; menu.append(row); }
 function separator(menu: HTMLElement) { const rule = menu.ownerDocument.createElement('hr'); rule.setAttribute('data-ds-menu-separator', ''); menu.append(rule); }
-/** A whole number set by hand: the Number control, a step of one, inside the kind's range; the menu keeps its hands off its arrows. */
 function numberRow(menu: HTMLElement, name: string, field: FieldDefinition, value: number, run: (value: number) => void) {
   const doc = menu.ownerDocument, row = doc.createElement('div'); row.setAttribute('data-keep-open', ''); row.setAttribute('data-aa-interactive', ''); row.className = 'consistency-native-number';
   const number = createSurfaceElement(doc, 'ds-number') as HTMLElement & { value: number; min?: number; max?: number; step: number; label: string; unit: string; width: number; defaultValue?: number };
@@ -33,12 +29,6 @@ function numberRow(menu: HTMLElement, name: string, field: FieldDefinition, valu
   row.append(number); menu.append(row);
 }
 
-/**
- * A section's fields from the vocabulary, as rows of its menu: a choice as one row a value, the
- * current one checked; a boolean as a row that turns it on or off; a tone as the tone list; a
- * measure in squares or a count as the Number control. Nothing here is a table of the editor's own.
- * A behaviour (`group: 'behaviour'`) is not a row here: the behaviour panel holds it (`behaviour-panel.ts`).
- */
 export function appendSectionFields(menu: HTMLElement, read: () => NativeSection | undefined, commit: (patch: Record<string, unknown>) => void) {
   const block = read(); const definition = block && kindDefinition(block.kind); if (!block || !definition) return;
   const fields = Object.entries(definition.fields).filter(([, field]) => field.group !== 'behaviour'); if (!fields.length) return;
@@ -56,7 +46,6 @@ export function appendSectionFields(menu: HTMLElement, read: () => NativeSection
     }
   }
 }
-/** The tone list: every tone the library defines, and None where the field may be left out. Returns what repaints the checks. */
 export function appendToneList(menu: HTMLElement, heading: string, current: () => string | undefined, optional: boolean, choose: (tone: string | undefined) => void): () => void {
   label(menu, heading);
   const paints: Array<() => void> = [], repaint = () => paints.forEach(paint => paint()), set = (tone: string | undefined) => { choose(tone); repaint(); };
@@ -64,7 +53,6 @@ export function appendToneList(menu: HTMLElement, heading: string, current: () =
   for (const tone of TONE_NAMES) paints.push(choiceRow(menu, 'menuitemradio', choiceWords(tone), () => current() === tone, () => set(tone)));
   return repaint;
 }
-/** The section kinds by name, each described in its tooltip and to assistive technology. */
 export function appendKindChooser(menu: HTMLElement, kinds: readonly KindDefinition[], choose: (kind: string) => void) {
   const doc = menu.ownerDocument;
   for (const definition of kinds) {

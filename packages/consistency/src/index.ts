@@ -8,7 +8,6 @@ import {GOOGLE_FONT_FAMILIES,isGoogleFont} from './fonts';
 import type {WorkspacePage} from '../../../shared/consistency-workspace-page';
 import '../../../DS1/3-unit/ds-select';
 import '../../../DS1/2-core/ds-device-bezel';
-/** The lab owns navigation and presentation choices. Every page is edited by the shared host. */
 export class ConsistencyEditor extends LitElement {
  static properties={example:{state:true},mobile:{state:true},problem:{state:true}};
  controlsHost?:HTMLElement;siteMode=false;
@@ -26,7 +25,6 @@ export class ConsistencyEditor extends LitElement {
  private controls(){return html`<div class="consistency-inspector"><label class="consistency-select-label">Example page<ds-select><select aria-label="Example page" .value=${this.example} @change=${(e:Event)=>void this.choose((e.target as HTMLSelectElement).value)}>${[{id:'editor',label:'Consistency editor'},{id:'studio',label:'Studio'},...SITE_TEMPLATES].map(item=>html`<option value=${item.id}>${item.label}</option>`)}</select></ds-select></label><ds-button @click=${()=>this.mobile=!this.mobile}>${this.mobile?'Desktop preview':'Mobile preview'}</ds-button><label class="consistency-select-label">Library preset<ds-select><select aria-label="Library preset" .value=${this.value.library} @change=${(e:Event)=>void this.presentation('library',(e.target as HTMLSelectElement).value)}>${LIBRARY_PRESETS.map(item=>html`<option value=${item.id}>${item.label}</option>`)}</select></ds-select></label>${(['heading','text']as const).map(role=>html`<label class="consistency-select-label">${role==='heading'?'Heading face':'Text face'}<ds-select><select aria-label=${role==='heading'?'Heading face':'Text face'} .value=${this.value.fonts[role]??''} @change=${(e:Event)=>void this.presentation(role,(e.target as HTMLSelectElement).value)}><option value="">The library’s own</option>${GOOGLE_FONT_FAMILIES.map(family=>html`<option value=${family}>${family}</option>`)}</select></ds-select></label>`)}${this.problem?html`<ds-text role="alert" literal tone="danger" .text=${this.problem}></ds-text>`:''}</div>`;}
  protected updated(){
   if(this.controlsHost)render(this.controls(),this.controlsHost);
-  // Options are rendered after the select’s value property; restore it once they exist.
   const controls=this.controlsHost??this;
   for(const [label,value] of [['Example page',this.example],['Library preset',this.value.library],['Heading face',this.value.fonts.heading??''],['Text face',this.value.fonts.text??'']] as const){
    const select=controls.querySelector<HTMLSelectElement>(`select[aria-label="${label}"]`);if(select)select.value=value;

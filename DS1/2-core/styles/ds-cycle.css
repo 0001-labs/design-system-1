@@ -1,5 +1,3 @@
-/* ds-cycle.css */
-/* Cycle component styles for cycling through options */
 @import "../../1-root/component-metrics.css";
 
 :host {
@@ -19,7 +17,6 @@
   max-width: 100%;
 }
 
-/* Each name is set in its own language's typeface */
 :host([type="language"]) button:lang(ja) {
   --ds-typeface-regular: var(--typeface-regular-jp, sans-serif);
 }

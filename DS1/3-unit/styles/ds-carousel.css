@@ -1,8 +1,3 @@
-/* ds-carousel.css */
-/* The element only places the parts; 1-root/carousel.css draws them and
-   controls.css the buttons. The slides are the element's children, so the
-   track's rules for its children are said again for slotted ones. */
-
 :host {
   display: block;
   min-width: 0;
@@ -20,7 +15,6 @@
   scroll-snap-align: start;
 }
 
-/* One slide to a stop; a strip of slides of their own width may pass a few. */
 :host(:not([slide-width="auto"])) ::slotted(*) {
   scroll-snap-stop: always;
 }

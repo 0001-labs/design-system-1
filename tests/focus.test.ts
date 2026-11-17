@@ -3,7 +3,6 @@ import { afterEach, expect, test } from "vite-plus/test";
 import { CENTRE, focusFromRegions, focusImage, focusOf, objectPosition } from "../DS1/0-face/focus";
 afterEach(() => document.body.replaceChildren());
 
-/** A picture `width` × `height` in one colour, with rectangles painted on it. */
 function picture(width: number, height: number, ground: number[], ...shapes: { x: number; y: number; w: number; h: number; rgb: number[] }[]) {
   const pixels = new Uint8ClampedArray(width * height * 4);
   for (let y = 0; y < height; y++) {

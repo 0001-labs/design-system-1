@@ -1,13 +1,7 @@
 import SwiftUI
 
-/// `ds-page`'s layouts, in whole squares: navigation 12 beside the main column (`sidebar`), a
-/// list 16 beside its detail (`split`), navigation, main and a 12-square inspector
-/// (`inspector`), one column of `measure` squares, 32 by default (`column`), one of 16 centred
-/// both ways (`centered`), and the whole width for `DS1Tiles` (`tiles`).
 public enum DS1PageLayoutKind: Sendable { case sidebar, split, inspector, column, centered, tiles }
 
-/// A page in one of the standard layouts: a square of padding, two squares between columns
-/// (a 1-point line in the middle when `divided`), every layout one column below 30 squares.
 public struct DS1PageLayout<Nav: View, Main: View, Aside: View>: View {
     @Environment(\.ds1Paper) private var paper
     @Environment(\.ds1Scale) private var scale
@@ -63,10 +57,8 @@ extension DS1PageLayout where Nav == EmptyView, Aside == EmptyView {
     }
 }
 
-/// How much of a row a tile takes: one tile of 12 squares, two, or the whole row.
 public enum DS1TileSpan: Sendable { case one, wide, full }
 
-/// `ds-page tiles`' grid: tiles 12 squares wide a square apart, as many as fit a row.
 public struct DS1Tiles<Content: View>: View {
     @Environment(\.ds1Scale) private var scale
     let content: Content
@@ -75,7 +67,6 @@ public struct DS1Tiles<Content: View>: View {
 }
 
 extension View {
-    /// One tile of `DS1Tiles`.
     public func ds1Tile(_ span: DS1TileSpan = .one) -> some View { modifier(DS1TileWidth(span: span)) }
 }
 

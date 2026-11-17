@@ -1,4 +1,3 @@
-/** Stable text slots of a registered DS1 component. The public client and editor use the same keys. */
 export function componentWords(element: HTMLElement, visit: (text: Text,key: string)=>void) {
   const walk=(root:ShadowRoot,prefix:string)=>{
     const walker=root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_TEXT),texts:Text[]=[];

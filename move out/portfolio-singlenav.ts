@@ -1,12 +1,5 @@
 import { LitElement, html, css } from "lit";
 
-/**
- * A component for single navigation links
- *
- * @element singlenav-v1
- * @prop {string} type - Type of navigation: "projects" or "work"
- * @prop {string} to - Optional custom destination URL
- */
 export class SingleNav extends LitElement {
   static get properties() {
     return {

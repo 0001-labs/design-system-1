@@ -1,4 +1,3 @@
-/** The real platform validator, SQLite store and public renderer behind an isolated local canvas. */
 import { build } from 'esbuild';
 import { createServer } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -13,8 +12,6 @@ export const fixturePicture = '/pictures/sample.svg';
 const picture = '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#ded2ed"/></svg>';
 
 export async function sitePlatformFixture(sources) {
-  // The application renderer stays with its owner. Release worktrees can point
-  // this cross-product contract at another checked platform with this override.
   const platform = resolve(process.env.C9Y_PLATFORM_ROOT ?? join(homedir(), '0001/Consistency/platform'));
   const temporary = await mkdtemp(join(tmpdir(), 'c9y-canvas-fixture-'));
   const output = join(temporary, 'platform.mjs');

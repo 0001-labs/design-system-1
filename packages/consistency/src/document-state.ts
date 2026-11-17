@@ -1,13 +1,11 @@
 import { step } from './feedback';
 
-/** Revisioned persistence shared by native pages and the source-page adapter. */
 export interface DocumentSnapshot<Document> { build: string; base: string; revision: number; document: Document }
 export type DocumentSave<Document, Snapshot extends DocumentSnapshot<Document>> = (value: DocumentSnapshot<Document>) => Promise<Snapshot>;
 const copy = <T>(value: T): T => structuredClone(value);
 const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => [key, canonical(entry)])) : value;
 const equal = (a: unknown, b: unknown) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-/** One request at a time. A response acknowledges only its own snapshot, never newer edits. */
 export class DocumentState<Document, Snapshot extends DocumentSnapshot<Document>> {
   document: Document;
   private accepted: Document;
@@ -34,7 +32,6 @@ export class DocumentState<Document, Snapshot extends DocumentSnapshot<Document>
     clearTimeout(this.timer);
     if (this.saving) return this.saving;
     if (!this.dirty || this.disposed) return Promise.resolve(!this.dirty);
-    // Install the lock before calling a transport, which may throw synchronously.
     let complete!: (saved: boolean) => void;
     const pending = new Promise<boolean>(resolve => { complete = resolve; });
     this.saving = pending;
@@ -55,7 +52,6 @@ export class DocumentState<Document, Snapshot extends DocumentSnapshot<Document>
           this.changed();
         } catch (error) { clearTimeout(this.timer); this.error = error instanceof Error ? error.message : 'Could not save. Try again.'; return false; }
       }
-      // One step for a run of saves, so the Feedback loop sees each change reach the site.
       if (saves && !this.dirty) step('changes saved');
       return !this.dirty;
     } finally { this.saving = null; this.changed(); }

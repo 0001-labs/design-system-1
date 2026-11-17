@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { expect, test, vi } from 'vite-plus/test';
 
-// The overlay's module counts its loads and waits until the test lets it arrive.
 const overlay = vi.hoisted(() => {
   let release = () => {};
   return { loaded: vi.fn(), arrived: new Promise<void>(resolve => { release = resolve; }), release: () => release() };
@@ -35,7 +34,6 @@ test('Instagram draws its frame and media at once, and updateComplete waits for 
   void chrome.updateComplete.then(() => { settled = true; });
   await ticks();
   const root = chrome.shadowRoot!;
-  // While the overlay loads: the frame and its slot are drawn, so the picture shows; nothing else is.
   expect(overlay.loaded).toHaveBeenCalledTimes(1);
   expect(root.querySelector('.reels .reels-media slot')).not.toBeNull();
   expect(root.querySelector('.reels-header')).toBeNull();

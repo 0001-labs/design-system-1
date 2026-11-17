@@ -1,11 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { icon, image, library, photo, text } from './library-example-parts';
 
-// A design studio's site in the Atelier library, as a study of how far the components reach on a
-// calm, mostly white brand page: a header, a hero, cards for the cases, a band that turns over to
-// black for the services and the contact form, portraits, quotes, a strip of reasons, and a
-// footer. Everything stands on the grid: every line one square, every gap whole squares.
-
 const composition = `<style>
 .studio { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(4 * var(--ds-unit)); min-width:0; padding-block:calc(2 * var(--ds-unit)); }
 .studio-section { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(2 * var(--ds-unit)); min-width:0; }

@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * Writes the pages saved in Consistency back into their source files, so Git keeps what the site shows. Reads the saved
- * pages from the libraries bucket, writes each into `website/src/content/docs`, and says which it wrote. Run it with
- * the sandbox off, in a checkout at the build that was live when the pages were saved; a page whose source moved on
- * since is listed and left alone. Once the source is committed and deployed, `--clear <path>` takes a saved page away.
- */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

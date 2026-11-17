@@ -1,4 +1,3 @@
-/** Presentation metadata only. Private requests still authorize on the server. */
 export type NavigationSummary = {
   type: 'ds1:navigation-auth'; authenticated: boolean; loading: boolean; owner: boolean;
   appComponents: { name: string; href: string; layer: number }[];
@@ -22,7 +21,7 @@ export async function saveNavigationCache(key: string, token: string | null, sum
     const expires = Date.now() + NAVIGATION_MAX_AGE;
     sessionStorage.setItem(KEY, JSON.stringify({ key, fingerprint: hash, expires, summary } satisfies Saved));
     return expires;
-  } catch { /* Storage is optional; use the live bridge. */ }
+  } catch {}
 }
 export async function readNavigationCache(): Promise<Saved | null> {
   try {

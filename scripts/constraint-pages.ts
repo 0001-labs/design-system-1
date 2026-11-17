@@ -1,6 +1,5 @@
 import { DOC_EXAMPLES } from '../shared/doc-examples';
 const locations = (xml: string) => [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map(match => match[1]!.replaceAll('&amp;', '&'));
-/** Same-origin sitemap discovery, including Astro indexes and the noindex DS1 example catalogue. */
 export async function remoteConstraintPages(site: string, send: typeof fetch = fetch): Promise<string[]> {
   const origin = new URL(site).origin, seen = new Set<string>(), pages = new Set<string>();
   const read = async (address: string): Promise<void> => {
@@ -20,12 +19,6 @@ export async function remoteConstraintPages(site: string, send: typeof fetch = f
   return pages.size ? [...pages] : [new URL('/', site).href];
 }
 
-/**
- * Visits every item with this many workers. A visit that answers false could not load at all, which says nothing of a
- * rule and much of how busy the machine is, so it waits for the others and is tried once more alone, `last` set: then
- * the machine has room, and a page that still does not load is the page's fault.
- */
-/** Phone and desktop widths checked in separate browser contexts, one document load each. */
 export function viewportBatches(widths: readonly number[]): number[][] {
   const phone: number[] = [];
   const desktop: number[] = [];

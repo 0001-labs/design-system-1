@@ -8,7 +8,6 @@ import { LoadingIndicator as Loading } from '../packages/app/src/react/loading';
 import { configureI18n, loadSharedWords, setLanguage } from '../DS1/0-face/i18n';
 import { SHARED_WORDS } from '../DS1/0-face/shared-words';
 import { LANGUAGES } from '../DS1/0-face/languages';
-// The language runtime asks for a translations file as it loads.
 vi.hoisted(() => { globalThis.fetch = async () => new Response('{}'); });
 
 afterEach(() => { document.body.replaceChildren(); setLanguage('en'); });

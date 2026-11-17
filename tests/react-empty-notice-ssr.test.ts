@@ -12,7 +12,6 @@ test("the empty state and notice adapters render their words in the light DOM wi
   expect(empty).toContain('<span slot="heading">No lists</span>');
   expect(empty).toContain("Make one to start.");
   expect(empty).toContain('<div slot="actions" style="display:contents"><button>New list</button></div>');
-  // Without a heading the element shows the shared words' title itself.
   expect(renderToString(createElement(Empty, { text: "Nothing to show" }))).not.toContain('slot="heading"');
 
   const danger = renderToString(createElement(Notice, { tone: "danger", heading: "Couldn't save" }, "Your changes are kept."));

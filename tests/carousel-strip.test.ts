@@ -45,7 +45,6 @@ test("a native loop holds the slides three times over, the copies inert, hidden 
   expect(copies).toHaveLength(6);
   expect(copies.every(copy => copy.getAttribute("aria-hidden") === "true" && copy.inert && !copy.id)).toBe(true);
   expect([...track.children].slice(3, 6).map(item => item.id)).toEqual(["card-0", "card-1", "card-2"]);
-  // A looping strip has no place to point to, so its dots stay empty.
   expect(document.querySelectorAll(".ds-progress__dot")).toHaveLength(0);
   stop();
   expect(track.children).toHaveLength(3);

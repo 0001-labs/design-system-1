@@ -220,23 +220,15 @@ customElements.define(
     }
 
     private renderMarkdown(markdown: string): any {
-      // Simple markdown rendering - you might want to use a proper markdown parser
       let htmlContent = markdown
-        // Headers
         .replace(/^### (.*$)/gim, "<h3>$1</h3>")
         .replace(/^## (.*$)/gim, "<h2>$1</h2>")
         .replace(/^# (.*$)/gim, "<h1>$1</h1>")
-        // Bold
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // Italic
         .replace(/\*(.*?)\*/g, "<em>$1</em>")
-        // Code blocks
         .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
-        // Inline code
         .replace(/`(.*?)`/g, "<code>$1</code>")
-        // Links
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-        // Line breaks
         .replace(/\n/g, "<br>");
 
       return html`${htmlContent}`;

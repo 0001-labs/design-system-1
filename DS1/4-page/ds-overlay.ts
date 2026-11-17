@@ -12,23 +12,16 @@ import placementStyles from "../1-root/overlay.css?inline";
 import metrics from "../1-root/component-metrics.css?inline";
 
 export type { OverlayEdge } from "../0-face/overlay-swipe";
-/**
- * What an overlay is: a `modal` in the centre (the default), a `sheet` from the
- * foot of the screen, a `drawer` at the end or start of a line, a `popover`
- * at a point (`anchor`), or the whole `screen`.
- */
 export type OverlayType = "modal" | "sheet" | "drawer" | "detail" | "popover" | "screen";
 export type OverlaySide = "end" | "start";
 export type OverlayCloseReason = "escape" | "backdrop" | "outside" | "button" | "native" | "swipe";
 const dialogStyles = `${frameStyles}\n${placementStyles}`;
 const TYPES = new Set<string>(["modal", "sheet", "drawer", "detail", "popover", "screen"]);
-/** A phone's width, as `0-face/grid.ts` reads it. */
 const onPhone = () => typeof matchMedia === "function" && matchMedia("(max-width: 768px)").matches;
 const openDialogs = new WeakMap<Document, Set<Overlay>>();
 type SavedStyle = { style: CSSStyleDeclaration; name: string; value: string; priority: string; locked: string };
 const scrollStyles = new WeakMap<Document, { declarations: SavedStyle[]; x: number; y: number }>();
 
-/** One owner per declaration, including mixed modal and stationary panels. */
 function syncScroll(document: Document) {
   const stack = [...(openDialogs.get(document) ?? [])];
   const holding = stack.some(dialog => !dialog.modeless || dialog.holdScroll);
@@ -74,18 +67,6 @@ function styleRoot(root: Node) {
   styledRoots.add(root);
 }
 
-/** Everything that stands over the page is an overlay, on a native light-DOM
- * `<dialog>` that keeps forms and accessible ID references together. The
- * browser owns the top layer, inert background and modal focus navigation.
- * Listen to ds-close-request and preventDefault to control whether it closes.
- * `type` says what it is: a `modal` in the centre (the default; a sheet on a phone), a `sheet`
- * from the foot of the screen, a `drawer` at the `side` `"end"` (the default)
- * or `"start"`, a responsive `detail` (drawer on desktop, sheet on phones), a `popover` at the `anchor` point, or the whole `screen`. A
- * sheet and a drawer slide in and out and a finger swipes them away (reason
- * `"swipe"`); a popover is modeless. A modeless sheet has no backdrop, so with
- * `closeOnBackdrop` a press on the page above it closes it (reason
- * `"outside"`), as `closeOnOutside` does for the others.
- */
 export class Overlay extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
@@ -109,15 +90,10 @@ export class Overlay extends LitElement {
   declare holdScroll: boolean;
   declare closeOnEscape: boolean;
   declare closeOnBackdrop: boolean;
-  /** What it is: `"modal"`, `"sheet"`, `"drawer"`, `"detail"`, `"popover"` or `"screen"`. */
   declare type: OverlayType;
-  /** A drawer's side: `"end"` (the default) or `"start"`. */
   declare side: OverlaySide;
-  /** A popover's viewport point. */
   declare anchor: { x: number; y: number } | null;
-  /** A field anchoring a small popover; centres below it on mobile. */
   declare trigger: HTMLElement | null;
-  /** Resolve a replacement opener after the product has rendered its closed state. */
   declare returnFocus: (() => HTMLElement | null) | null;
   private dialog: HTMLDialogElement | null = null;
   private opener: HTMLElement | null = null;
@@ -159,22 +135,18 @@ export class Overlay extends LitElement {
 
   protected updated() { this.syncType(); this.syncOpen(); this.place(); }
 
-  /** Its type as drawn: detail follows the viewport; an unknown one is a modal, and a modal on a phone is a sheet (Joachim, 20 October 2026: no modals on a phone at all). */
   get kind(): OverlayType {
     const type = TYPES.has(this.type) ? this.type : "modal";
     if (type === "detail") return onPhone() ? "sheet" : "drawer";
     return type === "modal" && onPhone() ? "sheet" : type;
   }
-  /** A modeless overlay leaves the page live: a popover always, any other with `non-modal`. */
   get modeless() { return this.nonModal || this.kind === "popover"; }
-  /** The edge it comes from and a finger swipes it back to. */
   get edge(): OverlayEdge {
     if (this.kind === "sheet") return "bottom";
     if (this.kind === "drawer") return this.side === "start" ? "start" : "end";
     return "none";
   }
 
-  /** Mark the native frame with its type and edge before it opens, so it slides in from that edge, and let a finger swipe it away. */
   private syncType() {
     const dialog = this.dialog;
     if (!dialog) return;
@@ -193,7 +165,6 @@ export class Overlay extends LitElement {
     }
   }
 
-  /** Keep a popover inside the visible viewport as its content or keyboard changes. */
   place = () => {
     const dialog = this.dialog, view = this.ownerDocument.defaultView;
     if (!dialog || !view) return;
@@ -258,9 +229,6 @@ export class Overlay extends LitElement {
     if (!dialog || !this.isConnected) return;
     if (this.open && !dialog.open) {
       if (this.pendingOpen) return;
-      // Let slotted Lit fields/buttons render before the browser chooses focus.
-      // Otherwise their empty shadow roots can make the dialog itself receive it.
-      // Waiting for every descendant blocked heavy sheets (for example a project people panel).
       const updates = [...dialog.querySelectorAll("ds-input, ds-button, ds-select, ds-checkbox, ds-radio, ds-tabs")]
         .map((element) => (element as LitElement).updateComplete);
       const ready = updates.length ? Promise.all(updates) : Promise.resolve();
@@ -275,15 +243,10 @@ export class Overlay extends LitElement {
     }
   }
 
-  /** Immediate opening preserves a user gesture for mobile keyboard/media focus.
-   * The caller then focuses its already-rendered control synchronously. */
   async show({ immediate = false }: { immediate?: boolean } = {}) {
     this.open = true;
     if (immediate) {
-      // The native frame must be in the rendered tree within this gesture too.
-      // A newly connected Lit host has not drawn its slot yet.
       this.performUpdate();
-      // Nested menu slots and fields must also exist before gesture-time focus.
       for (const child of this.querySelectorAll('*')) {
         (child as HTMLElement & { renderNow?: () => void }).renderNow?.();
       }
@@ -346,7 +309,6 @@ export class Overlay extends LitElement {
     document.removeEventListener("wheel", this.onScrollGesture);
     document.removeEventListener("touchmove", this.onScrollGesture);
     this.outsidePress = null;
-    // Modeless content must not steal focus from a control already used outside it.
     let active = document.activeElement;
     while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
     let within = active;
@@ -377,7 +339,6 @@ export class Overlay extends LitElement {
     return stack[stack.length - 1] === this;
   }
 
-  /** A sheet gives Escape to an open floating menu first; otherwise it closes before an editor can consume it. */
   private onSheetEscape = (event: KeyboardEvent) => {
     if (event.key !== "Escape" || this.kind !== "sheet" || !this.isTop()) return;
     if (topFloatingMenu(this.ownerDocument)) return;
@@ -406,19 +367,10 @@ export class Overlay extends LitElement {
     if (this.closesOutside && this.outsidePress !== false) this.requestClose("outside");
     this.outsidePress = null;
   };
-  /**
-   * A finger lifted outside closes it at once: Safari sends no click for a tap on something that is
-   * not itself clickable (a header's fill, a page's margin), so waiting for one leaves the overlay
-   * open on an iPhone. A finger that scrolled was cancelled and lifts nothing; a mouse keeps its click.
-   */
   private onOutsideRelease = (event: PointerEvent) => {
     if (event.pointerType === "mouse" || !this.modeless || !this.isTop() || this.blockOutside || event.composedPath().includes(this)) return;
     if (this.closesOutside && this.outsidePress === true) this.requestClose("outside");
   };
-  /** Whether a press outside closes it: `closeOnOutside`, or a modeless sheet's `closeOnBackdrop`.
-   * A modeless sheet has no backdrop, and on a phone its close button is hidden: the page above it
-   * stands for the backdrop, or the sheet could not be left at all (a sheet of people, 3 November
-   * 2026). The press still reaches the page, as every modeless outside press does. */
   private get closesOutside() { return this.closeOnOutside || (this.kind === "sheet" && this.closeOnBackdrop); }
 
   private onCancel = (event: Event) => {

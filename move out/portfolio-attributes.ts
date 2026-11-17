@@ -1,15 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { getText } from "../DS1/0-face/i18n";
 
-/**
- * A component for displaying project/work attributes (year, category, status)
- *
- * @element portfolio-attributes
- * @prop {string} year - Year key for translation
- * @prop {string} category - Category key for translation
- * @prop {string} status - Status key for translation
- * @prop {string} type - Type of attributes: "project" or "work"
- */
 export class PortfolioAttributes extends LitElement {
   static get properties() {
     return {

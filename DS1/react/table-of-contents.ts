@@ -1,4 +1,3 @@
-/** Register the element in the browser before hydrating this property adapter. */
 import { createElement, forwardRef, useEffect, useLayoutEffect, useRef, type HTMLAttributes } from 'react';
 import type { TableOfContents as Element, TableOfContentsItem } from '../3-unit/ds-table-of-contents';
 export type { TableOfContentsItem };

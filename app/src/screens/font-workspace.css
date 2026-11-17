@@ -2,7 +2,6 @@
 .font-workspace-dark { color-scheme: dark; }
 .font-heading h2 { font: inherit; font-family: var(--typeface-medium); margin: 0; }
 .fonts-place { opacity: .6; white-space: nowrap; }
-/* The app frame places the font list, heading, desk and footer under its bar; each column scrolls on its own. */
 .font-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--font-unit); line-height: var(--font-unit); }
 .font-heading > span { opacity: .6; }
 .font-desk { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; gap: var(--font-unit); }
@@ -22,8 +21,6 @@
 .fonts-status h1 { font-size: calc(20px * var(--sf, 1)); }
 .fonts-status ds-button { margin-right: calc(20px * var(--sf, 1)); }
 .font-workspace :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-/* The frame stacks below 600px of width and scrolls as one document; the specimen keeps a
-   fixed viewport so size changes still stay inside it. */
 @media (max-width: 599px) {
   .font-desk { height: auto; }
   .font-stage { flex: none; height: calc(16 * var(--font-unit)); }

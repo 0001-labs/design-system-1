@@ -1,4 +1,3 @@
-/** Root connections count authored imports, not every element inheriting a token. */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -34,12 +33,11 @@ const cssImports = /@import\s*(?:url\(\s*)?["']([^"']+)["']/g;
 const uncomment = (body: string) => body.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, match => match.replace(/[^\n]/g, ' '));
 type RecordSource = { commit?: string; dirty?: boolean; files?: Record<string, string> };
 
-/** Supports both retained pre-monorepo revisions and current studio commits. */
 export function historicalSource(dsRoot: string, commit: string, path: string): Buffer | undefined {
   let prefix = '';
   try { prefix = execFileSync('git', ['rev-parse', '--show-prefix'], { cwd: dsRoot, encoding: 'utf8' }).trim(); } catch { return; }
   for (const candidate of [...new Set([prefix + path, path])]) {
-    try { return execFileSync('git', ['show', `${commit}:${candidate}`], { cwd: dsRoot, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { /* Try the older repository layout. */ }
+    try { return execFileSync('git', ['show', `${commit}:${candidate}`], { cwd: dsRoot, stdio: ['ignore', 'pipe', 'ignore'] }); } catch {}
   }
 }
 
@@ -83,7 +81,6 @@ export function rootConnections(root: string, dsRoot: string, manifestPath?: str
     return result;
   };
   return (file: string, source: string, cells: Record<string, ComponentCell>) => {
-    // Copied foundation internals are dependencies, not authored product connections.
     const manifestFile = manifestPath ? relative(dirname(join(root, manifestPath)), join(root, file)) : '';
     if (lock?.files?.[file] || manifest?.files?.[manifestFile]) return;
     const connections: { address: string; at: number }[] = [];

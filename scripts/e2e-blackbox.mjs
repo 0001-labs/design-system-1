@@ -1,20 +1,4 @@
 #!/usr/bin/env node
-// Black box tests: Design system 1 as anyone on the internet meets it, checked
-// over HTTP alone, signed out. Each step is a contract from the Worker
-// (services/src/index.ts, dashboard.ts), the site's routes and redirects
-// (website/astro.config.mjs, website/public/_headers), the component directory,
-// the Languages page, the README and Use with HTML, and AGENTS.md's
-// Distribution: the documentation and every page its navigation, directory and
-// sitemap name, the redirects and hosts, every file those pages load, the
-// hosted stylesheet and module, Play, the owner-only hosts
-// asking to sign in, and the published package on npm and jsDelivr.
-//
-//   node scripts/e2e-blackbox.mjs                              # against https://designsystem1.com
-//   node scripts/e2e-blackbox.mjs --local                      # against astro dev :4321
-//   node scripts/e2e-blackbox.mjs --base http://localhost:8787 # wrangler dev
-//
-// Read-only: every request is a GET or HEAD, sent without credentials. The
-// package checks always read the public npm registry and jsDelivr.
 
 import process from "node:process";
 
@@ -33,19 +17,15 @@ const baseFlag = process.argv.indexOf("--base");
 const BASE = new URL(baseFlag > 0 ? process.argv[baseFlag + 1] : LOCAL ? "http://localhost:4321" : PUBLIC);
 const APEX = BASE.origin;
 const PRODUCTION = APEX === PUBLIC;
-// astro dev serves the pages alone; the Worker's redirects and private routes need it in front.
 const WORKER = !LOCAL;
 
-// The one list of languages (DS1/0-face/languages.ts, the Languages page).
 const LANGUAGES = ["da", "de", "en", "es", "fi", "fr", "is", "it", "ja", "ko", "nb", "nn", "no", "pt", "pt-BR", "sv", "zh"];
-// Built into apps, never public pages (DS1/0-face/component-visibility.ts).
 const INTERNAL = ["/2-core/spacing-handle/", "/2-core/loading/"];
 
 let passed = 0;
 let failed = 0;
 const failures = [];
 
-// A few requests at a time, so the sitemap's pages do not arrive as a flood.
 let inFlight = 0;
 const waiting = [];
 async function slot(run) {
@@ -63,7 +43,6 @@ async function request(target, { method = "GET", headers = {} } = {}) {
   const url = new URL(target, APEX);
   return slot(async () => {
     let response;
-    // A request the network drops is sent once more before it counts; a status never is.
     for (let attempt = 1; !response; attempt += 1) {
       try {
         response = await fetch(url, {
@@ -83,7 +62,6 @@ async function request(target, { method = "GET", headers = {} } = {}) {
   });
 }
 
-// The same page is read by several steps; one GET serves them all.
 const pages = new Map();
 function page(target) {
   const key = new URL(target, APEX).href;
@@ -120,7 +98,6 @@ function expectHeader(response, name, pattern) {
   expect(pattern.test(value), `${where(response)} has ${name}: "${value}"`);
 }
 
-/** What the owner-only routes answer with (services/src/dashboard.ts). */
 function expectPrivate(response) {
   expectHeader(response, "cache-control", /^private, no-store$/);
   expectHeader(response, "x-robots-tag", /^noindex, nofollow$/);
@@ -155,7 +132,6 @@ function json(response) {
   }
 }
 
-/** A documentation page: it draws, named as its link names it, in Starlight's "<title> | Design system 1". */
 async function expectDocsPage(path, label) {
   const answer = await page(path);
   expectStatus(answer, 200);
@@ -165,7 +141,6 @@ async function expectDocsPage(path, label) {
   return answer;
 }
 
-// The type each kind of file must be served as, by its extension.
 const TYPES = {
   css: ["text/css"],
   js: ["text/javascript", "application/javascript"],
@@ -186,7 +161,6 @@ const TYPES = {
 };
 const extension = (url) => url.pathname.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase() ?? "";
 
-/** Same-origin files a page links in its head and body: stylesheets, icons, preloads and scripts. */
 function linkedFiles(html, base) {
   const found = new Set();
   for (const tag of html.matchAll(/<link\b[^>]*>/gi)) {
@@ -198,7 +172,6 @@ function linkedFiles(html, base) {
   return [...found].filter((href) => new URL(href).origin === new URL(base).origin);
 }
 
-/** What a stylesheet or module pulls in after it: @import and url() in CSS, relative imports and Vite's preload list in JavaScript. */
 function referencedFiles(url, text) {
   const found = new Set();
   const kind = extension(url);
@@ -206,7 +179,6 @@ function referencedFiles(url, text) {
     for (const match of text.matchAll(/@import\s+(?:url\()?\s*["']?([^"')\s;]+)/g)) found.add(match[1]);
     for (const match of text.matchAll(/url\(\s*["']?([^"')]+?)["']?\s*\)/g)) found.add(match[1]);
   } else if (kind === "js" || kind === "mjs") {
-    // Module imports only: a stylesheet's "@import" kept as text inside a module is not one.
     for (const match of text.matchAll(/(?:\bfrom\s*|(?<![@\w.$])import\s*\(?\s*)["'](\.{1,2}\/[^"']+)["']/g)) found.add(match[1]);
     for (const match of text.matchAll(/["'](_astro\/[^"']+\.(?:js|css))["']/g)) found.add(`/${match[1]}`);
   }
@@ -217,7 +189,6 @@ function referencedFiles(url, text) {
     .map((ref) => (ref.hash = "", ref.href));
 }
 
-/** Every file reachable from the starting ones, each read once. */
 async function crawl(start) {
   const seen = new Map();
   let wave = [...new Set(start)];
@@ -242,7 +213,6 @@ async function crawl(start) {
   return [...seen.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-/** A check for each file: it answers 200 as its own type, with any further demand the caller makes. */
 function fileChecks(files, label, more = () => {}) {
   return files.map(([href, answer]) => [
     label(href),
@@ -257,8 +227,6 @@ function fileChecks(files, label, more = () => {}) {
   ]);
 }
 
-// A step's checks run side by side and report in order. A failed check is
-// "✗ step — check: message", which test-run reads as the failing step.
 async function step(name, checks) {
   console.log(`\n${name}`);
   const results = await Promise.all(
@@ -285,7 +253,6 @@ async function step(name, checks) {
 
 console.log(`Design system 1 black box tests against ${APEX}`);
 
-// The navigation is the sidebar's own data on the Overview (website/src/components/MySidebar.astro).
 const home = await page("/");
 let navigation = [];
 try {
@@ -297,7 +264,6 @@ try {
 }
 const internalLinks = navigation.filter((link) => link.href.startsWith("/"));
 
-// The component directory is the Overview's list of every component, by layer (ComponentDirectory.astro).
 const directoryHtml = home.text.slice(home.text.indexOf('class="component-directory'));
 const directory = [...directoryHtml.matchAll(/<section class="directory-layer[\s\S]*?<\/section>/g)]
   .flatMap((layer) => [...layer[0].matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)])
@@ -325,7 +291,6 @@ await step("Pages", [
       const nested = [];
       for (const link of internalLinks) {
         const answer = await page(link.href);
-        // Tags in the markup only: a code sample's copy button carries its document in an attribute.
         const markup = answer.text.replace(/<script\b[\s\S]*?<\/script>/gi, "").replace(/="[^"]*"/g, '=""');
         const count = (pattern) => (markup.match(pattern) ?? []).length;
         if (count(/<html[\s>]/gi) !== 1 || count(/<head>/gi) !== 1 || count(/<title>/gi) !== 1) nested.push(link.href);
@@ -422,7 +387,6 @@ await step("Sitemap", [
   }),
 ]);
 
-// The Worker's moved documentation addresses (services/src/index.ts).
 const WORKER_REDIRECTS = {
   "/classless": "/start-here/quick-start/",
   "/classless/libraries": "/libraries/workspace/",
@@ -441,7 +405,6 @@ const WORKER_REDIRECTS = {
   "/built-ins/preferences": "/1-root/preferences/",
   "/built-ins/pricing": "/1-root/pricing/",
 };
-// The site's own redirects, pages that move on at once (website/astro.config.mjs).
 const SITE_REDIRECTS = {
   "/2-core/choice/": "/2-core/checkbox/",
   "/1-root/pricing/": "/1-root/formatting/#prices",
@@ -532,7 +495,6 @@ await step("Files", [
   ],
 ]);
 
-// Every file the navigation's and directory's pages link, and what those files load in turn.
 const pagePaths = [...new Set(["/", ...internalLinks.map((link) => link.href), ...directory.map((entry) => entry.href)])];
 const pageAnswers = await Promise.all(pagePaths.map((path) => page(path).catch(() => null)));
 const siteFiles = await crawl(pageAnswers.flatMap((answer) => (answer?.status === 200 ? linkedFiles(answer.text, answer.url) : [])));
@@ -541,8 +503,6 @@ await step("Assets", [
   ...fileChecks(siteFiles, (href) => `${new URL(href).pathname} answers`),
 ]);
 
-// The hosted stylesheet and module Use with HTML gives a page, and what they load. Pages on
-// other sites load them, so each answers to any origin (website/public/_headers).
 const hosted = await crawl([`${APEX}/resources/design-system-1.css`, `${APEX}/resources/design-system-1.js`]);
 await step("Hosted files", [
   [
@@ -613,7 +573,6 @@ if (PRODUCTION) {
 
   await step("Private hosts", [
     ["Consistency social callbacks refuse unsupported methods before provider routing", async () => {
-      // No provider request, consent or account is created by these method refusals.
       for (const provider of ["google", "apple"]) {
         const answer = await request(`https://consistency.site/api/auth/signin/${provider}`, { method: "OPTIONS" });
         expectStatus(answer, 405);
@@ -635,8 +594,6 @@ if (PRODUCTION) {
     ]),
     ...[ICON, EDITOR].flatMap((origin) => [
       [
-        // c9y.site is where customers' sites live; its home leads to the app at consistency.site
-        // (services/src/consistency.ts). The icon host keeps its sign-in shell.
         origin === EDITOR ? "c9y.site's home leads to the app at consistency.site" : `${new URL(origin).hostname} asks to sign in`,
         async () => {
           const answer = await request(`${origin}/`);
@@ -659,7 +616,6 @@ if (PRODUCTION) {
     ]),
     ["Private editor files require a session", async () => {
       const answer = await request(`${EDITOR}/editor/assets/editor.js`);
-      // c9y.site asks the owner's System sign-in quietly first (services/src/consistency-owner.ts).
       expectRedirect(answer, 302, `${EDITOR}/auth/start?silent=1`);
       expectPrivate(answer);
     }],
@@ -723,8 +679,6 @@ if (PRODUCTION) {
   ]);
 }
 
-// The published package: the version the latest tag names, and the files the README, Use with
-// HTML and AGENTS.md's Distribution tell products to load from it.
 const manifest = await request(`${REGISTRY}/latest`).then(
   (response) => ({ response, body: response.status === 200 ? JSON.parse(response.text) : null }),
   (error) => ({ error }),

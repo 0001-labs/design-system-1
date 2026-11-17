@@ -1,12 +1,9 @@
 import { siteSurfacePatch, type SiteSurfaceDesign } from './consistency-site-design';
-/** Presentations are trusted library/build data. Page documents carry only named components,
- * their bounded values and their children; they never submit tags, HTML, scripts or CSS. */
 export interface NativeComponentDefinition {
   tag: string;
   attributes: Record<string, string>;
   fields: readonly string[];
   properties?: Record<string, unknown>;
-  /** Icons and authored styles are library assets, not editable page content. */
   markup?: string;
 }
 export type NativeComponents = Readonly<Record<string, NativeComponentDefinition>>;
@@ -14,15 +11,10 @@ export const COMPONENT_MEASURES = ['gap','padding','sidePadding','height','margi
 export const COMPONENT_FIELDS = ['text','label','title','figure','caption','placeholder','alt','href','src','poster','value','tone','variant','color','primary','secondary','data-face','data-size','size'] as const;
 export const componentEscape = (value: string) => value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const voidTags = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
-/** Typed geometry follows the component's own layout surface. */
 export function componentGeometry(definition:NativeComponentDefinition,styles:Record<string,string>):Record<string,string>{
   const result={...styles};
-  // A card pads through its own tokens: the top and bottom through one, the sides through another that falls back to it.
   if(definition.tag==='ds-card'&&result.padding!==undefined){const important=result.padding.endsWith('!important')?'!important':'',value=result.padding.replace(/!important$/,''),two=value.match(/^(.+\))\s+(calc\(.+)$/),top=two?two[1]!:value,side=two?.[2];result['--ds-card-padding-override']=top+important;if(side)result['--ds-card-side-padding-override']=side+important;delete result.padding;}
   if(definition.tag==='ds-card'&&result['padding-inline']!==undefined){result['--ds-card-side-padding-override']=result['padding-inline'];delete result['padding-inline'];}
-  // A content height is a minimum: spacing and writing must be able to make the
-  // page taller. Media keep their explicit crop height. Editor and publication
-  // share this mapping, so reopening never restores a clipping box.
   if(result.height!==undefined&&['div','section','main','article','aside','nav','header','footer','ds-card','ds-page'].includes(definition.tag)){
     result['min-height']=result.height;
     result.height='auto!important';
@@ -43,14 +35,12 @@ export function componentMarkup(id: string, name: string, children: string, valu
   if (definition.properties || Object.keys(words).length || Object.keys(styles).length) attributes['data-c9y-component-data'] = JSON.stringify({properties:definition.properties??{},values,words,styles});
   const attrs=Object.entries(attributes).filter(([key])=>!editor||!/^on/i.test(key)&&!['srcdoc','autofocus'].includes(key)).map(([key,value])=>` ${key}="${componentEscape(value)}"`).join('');
   if (definition.markup) {
-    // These two immutable assets are generated from repository-owned sources, never saved documents.
     if (!['svg','style'].includes(definition.tag)) throw new Error('invalid-component-asset');
     return definition.markup.replace(/^<[^>]+>/,`<${definition.tag}${attrs}>`);
   }
   return `<${definition.tag}${attrs}>${voidTags.has(definition.tag)?'':children+`</${definition.tag}>`}`;
 }
 
-/** Structural presentations used when importing earlier grouping operations. */
 export const BUILTIN_COMPONENTS: NativeComponents = {
   group: {tag:'div',attributes:{},fields:[]},
   columns: {tag:'div',attributes:{style:'display:flex;flex-wrap:wrap;gap:calc(20px * var(--sf,1));align-items:flex-start'},fields:[]},

@@ -3,7 +3,6 @@ import { define } from "../0-face/define";
 import "./ds-button";
 import styles from "./styles/ds-file-picker.css?inline";
 
-/** Native file selection, forms and focus, with one shared Button face. */
 export class FilePicker extends LitElement {
   static properties = {
     label: { type: String },

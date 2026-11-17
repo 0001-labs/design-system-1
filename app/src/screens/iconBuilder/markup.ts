@@ -1,24 +1,18 @@
 import { PRODUCTS, drawingSvg } from '../../../../website/src/lib/icons/studio';
 import { FIGMA_ICONS } from '../../../../website/src/lib/icons/gridIconFigma';
 
-// The private host serves only the app shell, so the public favicon files are
-// linked from the site itself.
 const SITE = 'https://designsystem1.com';
 const escape = (value: string) => value.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-/** A native button inside Design system 1's button face (`ds-button control="slotted"`), as React's `Button` draws it. */
 const button = (attributes: string, content: string, host = '') => `<ds-button control="slotted"${host ? ' ' + host : ''}><button type="button" ${attributes}>${content}</button></ds-button>`;
-/** A download link drawn as the button, as React's `ButtonLink` draws it. */
 const link = (href: string, label: string, download = '') => `<ds-button control="slotted" secondary><a href="${href}" download${download ? `="${download}"` : ''}>${label}<ds-icon type="download" aria-hidden="true"></ds-icon></a></ds-button>`;
 const icon = (type: string) => `<ds-icon type="${type}" aria-hidden="true"></ds-icon>`;
 const heading = (title: string, aside = '') => `<div class="section-heading"><h2 class="ds-text ds-text--heading">${title}</h2>${aside}</div>`;
 const note = (text: string, id = '') => `<p class="ds-text ds-text--small ds-text--muted"${id ? ` id="${id}"` : ''}>${text}</p>`;
 const count = (text: string) => `<span class="ds-text ds-text--small ds-text--muted">${text}</span>`;
-/** One choice of a segmented control (`ds-tabs role="group"`): the chosen one is `active` and pressed. */
 const choice = (attributes: string, label: string, chosen: boolean, tooltip = '') =>
   button(`${attributes} aria-pressed="${chosen}"${tooltip ? ` data-tooltip="${escape(tooltip)}"` : ''}`, label, chosen ? 'active' : '');
 
-/** The badge and favicon builder's page; `editor.ts` wires it by element ID. */
 export function builderMarkup(): string {
   const products = PRODUCTS.map((preset, index) => button(
     `data-product="${preset.key}" aria-pressed="${index === 0}"`,

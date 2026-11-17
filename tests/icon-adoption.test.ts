@@ -35,9 +35,7 @@ test("a copy is compared with today's DS1 drawing and names DS1 lacks are local 
   expect(icons.cells.check).toMatchObject({ uses: 1, status: "differs", copy: "missing" });
   expect(icons.cells.own).toMatchObject({ uses: 1, status: "local" });
   expect(icons.cells.sparkle).toMatchObject({ uses: 0, status: "local", copy: "local" });
-  // An unused copy that is DS1's drawing is not listed.
   expect(icons.cells.globe).toBeUndefined();
-  // Without a copy, a name resolves from DS1 itself.
   expect(scanIcons(root, undefined, ["src/app.ts"], ds1).cells.home).toMatchObject({ status: "shared", copy: "none" });
 });
 
@@ -79,11 +77,9 @@ test("CSS masks and backgrounds name the drawing they point at", () => {
   const icons = scanIcons(root, undefined, ["src/app.css", "src/page.html", "src/icon.ts"], ds1Drawings);
   expect(icons.cells.close).toMatchObject({ uses: 4, status: "shared" });
   expect(icons.cells.close!.sites.map(site => [site.line, site.kind, site.drawing ?? ""])).toEqual([[1, "mask", "src/icons/close.svg"], [7, "mask", "src/icons/close-copy.svg"], [8, "mask", "data:"], [1, "mask", "src/icons/close.svg"]]);
-  // A file named after a DS1 icon that is not its drawing needs the DS1 drawing.
   expect(icons.cells.star).toMatchObject({ uses: 2, status: "differs" });
   expect(icons.cells.star!.sites.map(site => site.kind)).toEqual(["mask", "file"]);
   expect(icons.cells.own).toMatchObject({ uses: 1, status: "local" });
-  // Unread custom properties and pictures are not icons; an inline drawing that is not DS1's is counted apart.
   expect(Object.keys(icons.cells).sort()).toEqual(["close", "own", "star"]);
   expect(icons.inline).toMatchObject([{ line: 9, kind: "mask" }]);
   expect(icons.dynamic).toMatchObject([{ file: "src/icon.ts", kind: "mask" }]);
@@ -180,7 +176,6 @@ export const App = () => <><XIcon /><Trash2 size={16} /><Close /><Up /><A /><One
   const icons = scanIcons(root, undefined, ["src/app.tsx"], ds1Drawings);
   expect(icons.cells.X).toMatchObject({ uses: 1, status: "local", ds1: "close", sites: [{ kind: "component", name: "XIcon" }] });
   expect(icons.cells.Trash2).toMatchObject({ uses: 2, status: "local" });
-  // DS1 has no delete drawing in this fixture, so no DS1 icon is suggested.
   expect(icons.cells.Trash2!.ds1).toBeUndefined();
   expect(icons.cells.close).toMatchObject({ uses: 1, status: "shared", sites: [{ kind: "component", name: "Close" }] });
   expect(icons.cells.up).toMatchObject({ uses: 1, sites: [{ kind: "component" }] });

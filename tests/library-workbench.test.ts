@@ -8,7 +8,6 @@ import { LAYERS } from '../shared/component-directory';
 const settle = async () => { for (let tick = 0; tick < 5; tick++) await new Promise(resolve => setTimeout(resolve, 0)); };
 
 it('uses the public catalogue and examples, preserving saved CSS until an edit', async () => {
-  // The open component is the address's ?component=, read through the app's router, as in the app.
   window.history.replaceState({}, '', '/app/');
   window.dispatchEvent(new PopStateEvent('popstate'));
   const dirty = vi.fn();
@@ -18,7 +17,6 @@ it('uses the public catalogue and examples, preserving saved CSS until an edit',
   workbench.addEventListener('workbench-dirty', dirty);
   document.body.append(workbench);
   await settle();
-  // The catalogue is Design system 1's sidebar: a group row per layer, a row per component.
   const sidebar = workbench.querySelector<Sidebar>('ds-sidebar')!;
   await sidebar.updateComplete;
   const entries = LAYERS.flatMap(layer => layer.entries);

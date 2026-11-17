@@ -7,7 +7,6 @@ final class DS1BehaviourTests: XCTestCase {
     func testWordsFallBackAsTheWebDoes() {
         let words = DS1Words.shared
         XCTAssertEqual(words.text("Save", language: .da), "Gem")
-        // nn has no table of its own and reads nb's.
         XCTAssertEqual(words.text("Save", language: .nn), words.text("Save", language: .nb))
         XCTAssertEqual(words.text("Not a shared word", language: .da), "Not a shared word")
         XCTAssertEqual(DS1Words.fill("Hello {name}", ["name": "Ada"]), "Hello Ada")

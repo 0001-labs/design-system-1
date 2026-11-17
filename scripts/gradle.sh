@@ -1,7 +1,4 @@
 #!/bin/sh
-# Runs the Kotlin package's Gradle build in native/android with a JDK and the Android SDK found
-# on this Mac: JAVA_HOME and ANDROID_HOME when set, otherwise Homebrew's OpenJDK 21 and
-# Android command-line tools, or Android Studio's.
 set -e
 cd "$(dirname "$0")/../native/android"
 if [ -z "$JAVA_HOME" ]; then

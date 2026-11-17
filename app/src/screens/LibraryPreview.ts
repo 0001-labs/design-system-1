@@ -7,7 +7,6 @@ import { AppElement, defineElement } from "../lib/element";
 import { previewColours } from "../lib/libraryPreview";
 import { libraryTemplate } from "../lib/libraryTemplate";
 
-/** A library's colours on a small page, or Design system 1's own without `libraryId`. */
 export class LibraryPreview extends AppElement {
   static properties = { libraryId: { attribute: false } };
   declare libraryId: Id<"libraries"> | undefined;

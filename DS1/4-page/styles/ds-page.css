@@ -1,11 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-page.css
- * Five areas, six arrangements. Every width is whole squares; areas are
- * separated by one square down the page and two across. An empty area takes
- * no room, so its margin goes with it.
- */
-
 :host {
   --ds-page-nav: calc(12 * var(--ds-unit));
   --ds-page-aside: calc(12 * var(--ds-unit));
@@ -13,9 +7,6 @@
   --ds-page-tile: calc(12 * var(--ds-unit));
   --ds-page-gap: calc(2 * var(--ds-unit));
   --ds-page-line: var(--ds-border-color, var(--ds-slate-light));
-  /* How far the content stands outside its column on each side, the column's place and the
-     grid's lines kept: a phone's lists take a little more width, their words a longer line
-     (4px, for one). Zero by default. */
   --ds-page-bleed: 0px;
   box-sizing: border-box;
   display: block;
@@ -50,7 +41,6 @@
 :host([fill]) .page { height: 100%; }
 
 .area { position: relative; min-width: 0; }
-/* The drawer's menu button: shown only on a narrow page with `drawer`. */
 .bar { display: none; grid-area: bar; }
 .bar[hidden] { display: none !important; }
 .area[data-empty] { display: none; }
@@ -62,10 +52,8 @@
 
 :host([fill]) :is(.nav, .main, .aside) { min-height: 0; overflow: auto; }
 
-/* List and detail: a wider leading column holds the list. */
 :host([layout="split"]) { --ds-page-nav: calc(16 * var(--ds-unit)); }
 
-/* Inspector: navigation, the work, and its properties beside it. */
 :host([layout="inspector"]) .page {
   grid-template-columns: var(--ds-page-nav) minmax(0, 1fr) var(--ds-page-aside);
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -76,15 +64,6 @@
 }
 :host([layout="inspector"]) .aside { margin-block-start: 0; }
 
-/* One column down the middle; centred is narrower and sits in the middle of
- * the height it is given. Tiles fill the width with 12-square tiles.
- *
- * A centred column stands on a whole square. The room beside it is shared out
- * and rounded down to squares, then added to the page's own square of padding,
- * so when the room is an odd number of squares the extra one falls on the
- * trailing side instead of leaving the column on a half. 100% is the width of
- * the element; with less room than the measure needs, the padding stays one
- * square and the column takes what is left. */
 :host(:is([layout="column"], [layout="centered"], [layout="tiles"])) .page {
   grid-template-columns: minmax(0, calc(var(--ds-page-measure) + 2 * var(--ds-page-bleed)));
   grid-template-rows: auto auto minmax(0, 1fr) auto auto;
@@ -96,9 +75,6 @@
 }
 :host(:is([layout="column"], [layout="centered"], [layout="tiles"])) .nav { margin-block-end: var(--ds-unit); }
 
-/* A column or centred page stands what it holds one square apart, as blocks of writing are,
-   so a page needs no spacing of its own; `--ds-page-flow` sets another distance. A button or a tag
-   keeps its own width. */
 :host(:is([layout="column"], [layout="centered"])) .main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -122,9 +98,6 @@
 :host([layout="tiles"]) .main ::slotted([data-tile="wide"]) { grid-column: span 2; }
 :host([layout="tiles"]) .main ::slotted([data-tile="full"]) { grid-column: 1 / -1; }
 
-/* Hairlines between columns, on the grid line in the middle of the gap. The
- * column reaches across half the gap to draw it, so its content keeps its
- * whole width. */
 :host([divided]:not([layout="column"]):not([layout="centered"]):not([layout="tiles"])) .nav {
   border-inline-end: 1px solid var(--ds-page-line);
   padding-inline-end: calc(var(--ds-page-gap) / 2 - 1px);
@@ -136,7 +109,6 @@
   margin-inline-start: calc(var(--ds-page-gap) / -2);
 }
 
-/* Narrower than navigation, the work and its properties: properties go below. */
 @container (max-width: 959px) {
   :host([layout="inspector"]) .page {
     grid-template-columns: var(--ds-page-nav) minmax(0, 1fr);
@@ -151,7 +123,6 @@
   :host([divided][layout="inspector"]) .aside { border-inline-start: 0; padding-inline-start: 0; margin-inline-start: 0; }
 }
 
-/* Phone width: every layout is one column, navigation first. */
 @container (max-width: 599px) {
   .page,
   :host([layout="inspector"]) .page {
@@ -174,9 +145,6 @@
   :host([layout="tiles"]) .main { display: flex; flex-direction: column; align-items: stretch; }
 }
 
-/* Phone width with a drawer: the navigation folds away and the menu button
- * stands in a one-square column before the header. In the drawer the
- * navigation takes the panel's width, with none of the page's margins. */
 @container (max-width: 599px) {
   :host([drawer]) .page,
   :host([drawer][layout="inspector"]) .page {
@@ -192,15 +160,12 @@
     margin-block-end: var(--ds-unit);
   }
   :host([drawer]) .page > .nav { display: none; }
-  /* The menu button stands in the frame's bar, or there is no navigation to fold: the header takes the whole width. */
   :host([drawer]) .page:is([data-toggle-outside], :has(.nav[data-empty])) {
     grid-template-columns: minmax(0, 1fr);
     column-gap: 0;
     grid-template-areas: "header" "main" "aside" "footer";
   }
 }
-/* Important, as the layouts' own margins and hairlines for the navigation
- * reach it by more specific selectors. */
 .ds-overlay--screen > .nav {
   margin: 0 !important;
   padding: 0 !important;
@@ -208,9 +173,6 @@
   overflow: visible !important;
 }
 
-/* Flush: the work reaches over the square of room around it, to the page's edge
- * or the hairline beside it, while its grid area (and every width) stays put. A
- * header, a footer or an inspector under the work keeps its distance. */
 :host([flush]) .main { margin: calc(-1 * var(--ds-unit)); margin-inline: calc(var(--ds-page-bleed) - var(--ds-unit)); }
 :host([flush]) .page:not(:has(.header[data-empty])) .main { margin-block-start: 0; }
 :host([flush]) .page:not(:has(.footer[data-empty])) .main { margin-block-end: 0; }
@@ -218,8 +180,6 @@
   :host([flush][layout="inspector"]) .page:not(:has(.aside[data-empty])) .main { margin-block-end: 0; }
 }
 
-/* Inspection: each area outlined and named by its slot, in the corner its
- * content is least likely to use. */
 :host([view]) .area:not([data-empty]) {
   outline: 1px dashed color-mix(in srgb, var(--ds-pink) 80%, var(--ds-text-color));
   outline-offset: -1px;
@@ -239,14 +199,12 @@
   pointer-events: none;
 }
 
-/* The split boundary shares the columns' full height, with a square-wide hit area. */
 :host([layout="split"][resizable]) .page {
   --_split-room: calc(100% - var(--ds-page-gap));
   --_split-min: min(calc(10 * var(--ds-unit)), round(down, calc(var(--_split-room) / 2), var(--ds-unit)));
   --_split-max: round(down, calc(var(--_split-room) - var(--_split-min)), var(--ds-unit));
   grid-template-columns: minmax(0, var(--ds-page-resize-width, clamp(var(--_split-min), round(nearest, calc(var(--_split-room) * var(--ds-page-split, 0.5)), var(--ds-unit)), var(--_split-max)))) minmax(0, 1fr);
 }
-/* A split's divider is the page's own child, on the column's grid area: a column that scrolls cannot cut it off. */
 :host([resizable]) .page { position: relative; }
 .resize-nav { grid-area: nav; }
 .resize-aside { grid-area: aside; inset-inline-end: auto; inset-inline-start: calc(-0.5 * var(--ds-page-gap) - 0.5 * var(--ds-unit)); }
@@ -259,17 +217,14 @@
   .resize { display: none; }
 }
 
-/* The resize hairline owns the boundary; a divided sidebar must not draw a second line beside it. */
 :host([divided][resizable]:not([layout="column"]):not([layout="centered"]):not([layout="tiles"])) .nav { border-inline-end-color: transparent; }
 
 :host([divided][resizable][layout="inspector"]) .aside { border-inline-start-color: transparent; }
 @container (max-width: 959px) { .resize-aside { display: none; } }
 
 .page:has(.nav[data-empty]) .resize-nav, .page:has(.aside[data-empty]) .resize-aside { display: none; }
-/* No navigation, nothing for a drawer to hold: no menu button. */
 .page:has(.nav[data-empty]) > .bar { display: none; }
 
-/* An inspector without navigation is a document with properties, without an empty leading track. */
 :host([layout="inspector"]) .page:has(.nav[data-empty]) {
   grid-template-columns: minmax(0, 1fr) var(--ds-page-aside);
   grid-template-areas: "header aside" "main aside" "footer aside";
@@ -287,7 +242,6 @@
 }
 .resize.resize-aside { inset-inline-end: auto; }
 
-/* Saved wide panes must still leave readable work after the window narrows. */
 @container (min-width: 600px) {
   :host([resizable][layout="sidebar"]) .page {
     --_nav-max: max(calc(4 * var(--ds-unit)), round(down, calc(100% - var(--ds-page-gap) - 10 * var(--ds-unit)), var(--ds-unit)));
@@ -296,8 +250,6 @@
 }
 
 
-/* Adjustable inspector panes stay beside the work while the readable minimums fit.
-   The phone layout remains one flowing document below six hundred pixels. */
 @container (min-width: 600px) {
   :host([resizable][layout="inspector"]) .page {
     --_aside-fit: min(var(--ds-page-aside), max(calc(4 * var(--ds-unit)), round(down, calc(100% - 2 * var(--ds-page-gap) - 14 * var(--ds-unit)), var(--ds-unit))));

@@ -28,7 +28,6 @@ const wrappers = [
 const page = 'import { Button, ButtonLink } from "../design/library-controls";\nexport const Page = () => <form><Button /><ButtonLink href="/" /><button>Local</button></form>;';
 const spec = { id: "example", name: "Example", directory: "Example", roots: ["src"], manifest: "design/components-manifest.json" };
 
-/** A DS1 source and an app that pins a library through its sync.lock.json, as Sync 1 writes it. */
 function fixture({ css = published, revision = LIBRARY_REVISION }: { css?: string; revision?: string } = {}) {
   const studio = mkdtempSync(join(tmpdir(), "library-pin-")); temporary.push(studio);
   const ds = join(studio, "Design system 1"), app = join(studio, "Example");

@@ -153,7 +153,6 @@ test("open details are controlled independently of navigation and reset on close
 test("a record's name and value are drawn alike by the element and the native class", () => {
   const element = css("DS1/3-unit/styles/ds-row.css");
   const native = css("DS1/1-root/row.css");
-  // Comments can hold braces (a page's `* { margin: 0 }` reset): read the rules without them.
   const rule = (css: string, selector: string) => css.replace(/\/\*[\s\S]*?\*\//g, "").match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}"))?.[1];
   const name = [rule(element, "::slotted(.ds-row__name)"), rule(native, ".ds-row .ds-row__name")];
   for (const css of name) {
@@ -174,7 +173,6 @@ test("a record's name and value are drawn alike by the element and the native cl
 test("the element marks a name cut while its words are wider than its box, and unmarks it when they fit", async () => {
   const element = await row("", '<span class="ds-row__name">A long name</span><span class="ds-row__value">12</span>');
   const name = element.querySelector<HTMLElement>(".ds-row__name")!;
-  // happy-dom has no layout: stand in for the measures a browser would give.
   Object.defineProperty(name, "scrollWidth", { value: 120, configurable: true });
   Object.defineProperty(name, "clientWidth", { value: 80, configurable: true });
   const frame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));

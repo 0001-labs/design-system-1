@@ -1,9 +1,5 @@
 import SwiftUI
 
-/// `ds-checkbox` for SwiftUI's `Toggle`: a 16-point box on its square's lower sixteen at its
-/// start, as an icon stands, a 1-point border, the corner; on, the
-/// accent with the check in the ink on it. Use `Toggle(…).toggleStyle(.ds1Checkbox)`, or
-/// `DS1Checkbox` for a mixed state.
 public struct DS1CheckboxStyle: ToggleStyle {
     public init() {}
     public func makeBody(configuration: Configuration) -> some View {
@@ -23,7 +19,6 @@ extension ToggleStyle where Self == DS1CheckboxStyle {
     public static var ds1Checkbox: DS1CheckboxStyle { DS1CheckboxStyle() }
 }
 
-/// A checkbox on its own, with `indeterminate` for a mixed state.
 public struct DS1Checkbox: View {
     @Binding var isOn: Bool
     let indeterminate: Bool
@@ -59,8 +54,6 @@ struct DS1CheckboxBox: View {
     }
 }
 
-/// `ds-radio`: a 16-point circle on its square's lower sixteen at its start, with an 8-point
-/// dot in the text colour when chosen.
 public struct DS1Radio: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.isEnabled) private var enabled
@@ -87,8 +80,6 @@ public struct DS1Radio: View {
     }
 }
 
-/// `ds-radio choice`: a labelled tile four squares by one (one with `compact`) on the field's
-/// ground; the chosen tile's outline turns the text colour. With a `preview`, four by three.
 public struct DS1Choice<Preview: View>: View {
     @Environment(\.ds1Paper) private var paper
     @Environment(\.ds1Scale) private var scale
@@ -128,8 +119,6 @@ extension DS1Choice where Preview == EmptyView {
     }
 }
 
-/// `ds-switch` for SwiftUI's `Toggle`: a 32 by 16 pill and a 12-point white round thumb 2 in;
-/// grey when off and dark Apple green when on, sliding one control height in 140 ms.
 public struct DS1SwitchStyle: ToggleStyle {
     public init() {}
     public func makeBody(configuration: Configuration) -> some View { Face(configuration: configuration) }
@@ -170,7 +159,6 @@ extension ToggleStyle where Self == DS1SwitchStyle {
     public static var ds1Switch: DS1SwitchStyle { DS1SwitchStyle() }
 }
 
-/// One segment of a split button or one tab: its value, its words, an icon, and whether it can be chosen.
 public struct DS1Segment<Value: Hashable>: Identifiable {
     public let value: Value
     public let label: String
@@ -182,9 +170,6 @@ public struct DS1Segment<Value: Hashable>: Identifiable {
     }
 }
 
-/// `ds-button split`: segments on the fill one control high, 1 point apart, only the outer
-/// corners rounded; the chosen one on the accent. Without a `selection` it is a row of
-/// actions. `compact` squares one-letter labels.
 public struct DS1SplitButton<Value: Hashable>: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.isEnabled) private var enabled
@@ -225,13 +210,6 @@ public struct DS1SplitButton<Value: Hashable>: View {
     }
 }
 
-/// `ds-tabs`: tabs 4 apart on a row one square high, in one of three faces. `.button` (the
-/// default): each one control high on no ground and muted, the chosen one on the fill in the text
-/// colour. `.text` (`ds-tabs text`): the words alone, no fill, the chosen one in the ink, the run
-/// drawn 4 back so the first word starts on the edge. `.split` (`ds-tabs split`): joined into one
-/// face a control high as the split button, a point between them, the chosen one on the accent.
-/// `segmented` (an option group) puts button tabs on the fill one square high, the chosen one on
-/// the accent. `fill` gives each the same width.
 public struct DS1Tabs<Value: Hashable>: View {
     public enum Face: Sendable { case button, text, split }
 

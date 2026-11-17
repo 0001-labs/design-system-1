@@ -1,5 +1,4 @@
 import type {NativeBlock,NativeComponent,NativePageDocument} from './consistency-native-page';
-/** Read-only description of the retired placement format, confined to its importer. */
 interface EarlierLayout {schema:1;nodes:Record<string,Record<string,unknown>>;order:Record<string,string[]>;groups?:{id:string;kind:'flow'|'columns'|'column'}[];insertions?:{id:string;parent:string;before?:string;kind:string;text?:string;source?:string;gaps?:Record<string,number>;src?:string;alt?:string;href?:string}[];pageTone?:string}
 export function importEarlierLayout(document:NativePageDocument,sourceIds:Record<string,string>,input:unknown):NativePageDocument {
  const layout=input as EarlierLayout;if(!layout||layout.schema!==1||!layout.nodes||!layout.order)throw Error('invalid-earlier-layout');

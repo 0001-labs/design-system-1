@@ -52,7 +52,6 @@ for (const { type, nonModal } of presentations) {
       expect(host.open).toBe(true);
       expect(native.open).toBe(true);
       expect(host.hasAttribute("open")).toBe(true);
-      // Interacting inside must leave the frame open.
       input.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
       input.click();
       input.focus();
@@ -60,7 +59,6 @@ for (const { type, nonModal } of presentations) {
       const before = reasons.length;
       if (action === "button") host.querySelector<HTMLButtonElement>("[data-ds-overlay-dismiss]")!.click();
       else if (action === "escape") {
-        // Modal Escape is delivered by the browser as cancel; modeless frames own keydown.
         if (host.modeless) input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true, composed: true }));
         else native.dispatchEvent(new Event("cancel", { cancelable: true }));
       } else if (action === "outside") {
@@ -83,7 +81,6 @@ for (const { type, nonModal } of presentations) {
       expect(document.activeElement).toBe(action === "outside" && host.modeless ? outside : opener);
       expect(document.documentElement.style.overflow).toBe("");
     }
-    // A closed frame must not retain its document Escape handler.
     const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
     outside.dispatchEvent(escape);
     expect(escape.defaultPrevented).toBe(false);

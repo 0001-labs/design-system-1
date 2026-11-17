@@ -1,7 +1,6 @@
 @import "../../1-root/component-metrics.css";
 
 :host {
-  /* The overlap for avatars one control high. */
   --group-overlap: calc(3px * var(--ds-sf));
   display: inline-flex;
   flex: 0 0 auto;
@@ -21,7 +20,6 @@
   margin-inline-start: calc(4px * var(--ds-sf));
 }
 ::slotted(*) {
-  /* Structural slots must survive a document-wide margin/flex reset. */
   display: inline-flex !important;
   flex: 0 0 auto !important;
   position: relative;

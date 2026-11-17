@@ -1,10 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { choices, choose, icon, library, photo, text } from './library-example-parts';
 
-// Five sites, each drawn by a published design library (library-example-parts.ts): a product
-// launch, a bike maker, a festival, a developer platform and a magazine, made of headers, banners,
-// big cards in a bento, strips and slides of carousels, and footers.
-
 export const composition = `<style>
 .site { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(4 * var(--ds-unit)); min-width:0; padding-block:calc(2 * var(--ds-unit)); }
 .site-section { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(2 * var(--ds-unit)); min-width:0; }
@@ -257,8 +253,6 @@ document.querySelector('#ticket-count').addEventListener('change', total);
 document.querySelector('#ticket-buy').addEventListener('click', () => { document.querySelector('#ticket-status').textContent = document.querySelector('#ticket-total').label + ' in your basket. Nothing is paid in this demo.'; });
 showDay('friday'); total();`,
   },
-  // Pricing repeats equal tracks. The feature bento intentionally alternates one- and two-column
-  // spans, so equal-track fault-line comparisons do not apply; its other constraints still do.
   platform: {
     name: 'Developer platform', use: 'A developer platform in the Signal library: code type throughout, Egg paper and Drip yellow.', height: 900,
     library: library('signal'),

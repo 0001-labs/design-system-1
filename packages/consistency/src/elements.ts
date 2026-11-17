@@ -40,7 +40,6 @@ function paint(face: HTMLElement, value: Exclude<ContentElement, CarouselContent
     face.append(label, title, body); face.setAttribute('variant', value.variant ?? 'outlined'); if (value.tone) face.setAttribute('tone', value.tone); face.setAttribute('data-ds-prose', ''); face.setAttribute('height', String((value.height ?? 160) / 20)); if (value.width) face.style.width = `calc(${value.width}px * var(--sf))`; if (value.height) face.style.height = `calc(${value.height}px * var(--sf))`;
   }
 }
-/** Aa owns insertion, selection and undo; only this adapter knows component data. */
 export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTMLElement | null = () => null, media?: EditorMedia): Atom[] {
   const atoms: Atom[] = (['button', 'card'] as const).map(kind => ({
     name: `consistency-${kind}`, fence: `c9y-${kind}`, match: () => 0,
@@ -57,7 +56,6 @@ export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTML
       const cursor = createSurfaceElement(target.ownerDocument, 'ds-icon'); cursor.type = 'cursor'; cursor.className = 'consistency-element-preview-cursor'; cursor.setAttribute('aria-hidden', 'true'); frame.append(cursor);
       const label = target.ownerDocument.createElement('span'); label.className = 'consistency-element-preview-label'; label.textContent = kind === 'button' ? 'A button from your library' : 'A card from your library';
       const inner = target.ownerDocument.createElement('div'); inner.className = 'consistency-element-preview-inner'; inner.append(frame, label); target.append(inner); target.setAttribute('aria-hidden', 'true');
-      // Pointer-only feedback demonstrates the specimen; keyboard browsing stays instant.
       const media = target.ownerDocument.defaultView?.matchMedia;
       const canAnimate = () => !!media && media.call(window, '(hover: hover) and (pointer: fine)').matches && !media.call(window, '(prefers-reduced-motion: reduce)').matches;
       let animation: Animation | undefined;
@@ -103,8 +101,6 @@ export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTML
         const editor = createPlainEditor(node, { value: (value as unknown as Record<string, string>)[field], readOnly: !canWrite() });
         editors.push(editor);
       });
-      // Keep native text selection, paste and composition within the rendered face.
-      // Commit at the end of a field edit so Aa records one normal atom history entry.
       const resize = (event: Event) => { if (value?.kind !== 'card' || !canWrite()) return; const size = (event as CustomEvent<{ width: number; height: number }>).detail; value = { ...value, width: size.width, height: size.height }; commit(); };
       element.addEventListener('consistency-resize', resize);
       const gap = (event: Event) => { if (value?.kind !== 'card' || !canWrite()) return; const detail = (event as CustomEvent<{ key: string; value: number; height: number }>).detail; value = { ...value, gaps: { ...value.gaps, [detail.key]: detail.value }, height: detail.height }; commit(); };
@@ -172,8 +168,6 @@ export function contentElementAtoms(canWrite: () => boolean, getHost: () => HTML
         event.preventDefault(); event.stopPropagation();
         const host = getHost(), index = host ? Array.from(host.querySelectorAll('.aa-atom')).indexOf(element) : -1;
         commit();
-        // A changed field may redraw its atom. Open the context on that live
-        // replacement, never a menu whose write callback belongs to detached DOM.
         if (!element.isConnected) {
           const replacement = index >= 0 ? host?.querySelectorAll('.aa-atom')[index] : null;
           replacement?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: event.clientX, clientY: event.clientY }));

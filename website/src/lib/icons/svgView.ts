@@ -1,4 +1,3 @@
-/** Isolate inline SVG IDs without changing its path geometry or source file. */
 export function scopedSvg(source: string, prefix: string): string {
   const ids = new Map<string,string>();
   const safe = prefix.replace(/[^a-zA-Z0-9_-]/g,'');

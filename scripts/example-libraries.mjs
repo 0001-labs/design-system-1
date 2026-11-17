@@ -1,24 +1,3 @@
-// The design libraries the Examples page draws its library examples with (website/src/lib/
-// library-example-parts.ts). Each starts as a new library does, from DS1's component tokens and
-// measures, with its colours, corners and type edited. Writes each draft as <id>.css into the
-// folder given (the site serves them until the libraries are published), and with --requests the
-// library API's create request as <id>.json, for `ds1 create --json`.
-//
-//   node scripts/example-libraries.mjs website/public/examples/libraries
-//
-// Nook is hand-authored in website/public/examples/libraries/nook.css and is intentionally
-// outside LIBRARIES; its single-mode bands and type rules are maintained there.
-//
-// Every colour is a palette colour, its pastel, its dark version, or a tint of the paper's own hue
-// for fills and lines, except in a library that stands for a brand of its own (Voyage), as a
-// client's library does. A library with a band (a coloured strip behind a header) also declares
-// --brand-band, --brand-band-ink and --brand-highlight. Every library writes the section tones of
-// Consistency's native pages (shared/consistency-vocabulary.ts TONES) as --c9y-tone-<name> and
-// --c9y-tone-<name>-ink: paper, cream (`cream`, or the fill), dark (the text and the paper turned
-// over), accent, highlight (`highlight`, or the cream), band (`band` and `bandInk`, or the dark tone)
-// and six pastels (`pastels`, or Design system 1's: Sharp blue, Apple green, Orange, Pink, Yellow and
-// Chartreuse, light and dim), each with the ink that reads on it. The run fails when a pair that
-// carries words reads below 4.5:1, a tone included.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +7,6 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 
 const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
 const revision = /LIBRARY_REVISION = "([^"]+)"/.exec(readFileSync(join(root, 'DS1/1-root/library-tokens.ts'), 'utf8'))[1];
-// A hosted stylesheet cannot reach a relative @import, so the drafts leave it out.
 const withoutImports = css => css.replace(/^@import[^;]+;\s*/gm, '');
 const metrics = withoutImports(readFileSync(join(root, 'DS1/1-root/component-metrics.css'), 'utf8'));
 const tokens = withoutImports(readFileSync(join(root, 'DS1/1-root/component-tokens.css'), 'utf8'));
@@ -42,23 +20,19 @@ const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - 
 const ld = (light, dark) => `light-dark(${light}, ${dark})`;
 const mono = '"Inter Arrows", "Iosevka", "Iosevka Extended", ui-monospace, "SF Mono", Menlo, monospace';
 
-/** The six pastels a library's bento tiles turn through unless it names its own: palette pastels, light and dim (DS1/1-root/palette.css). */
 export const PASTELS = [
-  ['#ccccff', '#1d1a4c'], // Sharp blue
-  ['#daffcc', '#284c1a'], // Apple green
-  ['#fff2cc', '#4c3f1a'], // Orange
-  ['#fad1e6', '#471f34'], // Pink
-  ['#fbffcc', '#484c1a'], // Yellow
-  ['#f2ffcf', '#3e4c1a'], // Chartreuse
+  ['#ccccff', '#1d1a4c'],
+  ['#daffcc', '#284c1a'],
+  ['#fff2cc', '#4c3f1a'],
+  ['#fad1e6', '#471f34'],
+  ['#fbffcc', '#484c1a'],
+  ['#f2ffcf', '#3e4c1a'],
 ];
-/** The names of the section tones, as shared/consistency-vocabulary.ts lists them. */
 export const TONES = ['paper', 'cream', 'dark', 'accent', 'highlight', 'band', 'pastel-1', 'pastel-2', 'pastel-3', 'pastel-4', 'pastel-5', 'pastel-6'];
 
-/** The ink that reads on a surface: the library's text where it reaches 4.5:1, else its paper, else the slate or white. */
 const inkOn = (surface, candidates) => candidates.find(ink => contrast(ink, surface) >= 4.5) ?? candidates.reduce((best, ink) => (contrast(ink, surface) > contrast(best, surface) ? ink : best));
 const inkPair = (lib, surface) => [0, 1].map(i => inkOn(surface[i], [lib.text[i], lib.paper[i], '#1e1e1e', '#ffffff']));
 
-/** A library's section tones, each `[surface, ink]` with `[light, dark]` values, by tone name. */
 export function sectionTones(lib) {
   const cream = lib.cream ?? lib.fill;
   const highlight = lib.highlight ?? cream;
@@ -75,10 +49,6 @@ export function sectionTones(lib) {
   };
 }
 
-// Tally's own roles, for a price list: its bands, its type, its package cards and its lists. The
-// faces are corrected to the sixteen, which draws Funnel 1.05 times its size, so a size here is that
-// much under the size it is seen at (16px reads as 17). The large roles follow the window on a phone
-// and the rest take the device scale, none falling under its size on a computer.
 const TALLY_RULES = `
 /* One mode: white paper and night bands, whatever the reader's system says. */
 html {
@@ -370,7 +340,6 @@ ul[data-list]:lang(ja) {
 }
 `;
 
-// Each value is [light, dark].
 export const LIBRARIES = {
   slate: {
     name: 'Slate', note: 'A dark issue workspace on a 10px unit, with readable 14px text and 30px control rows.',
@@ -451,7 +420,6 @@ export const LIBRARIES = {
     typeface: '"Inter Arrows", "Funnel Sans", "Helvetica Neue", Arial, sans-serif',
     typefaceMedium: '"Inter Arrows", "Funnel Display", "Funnel Sans", "Helvetica Neue", Arial, sans-serif',
     metrics: { '--ds-type-weight-bold': '600' },
-    // Funnel's capitals are 0.675 of the em, measured by scripts/face-metrics.mjs; both faces are variable from 300 to 800.
     faces: [['Funnel Display', 'funneldisplay/v3/B50WF7FGv37QNVWgE0ga--4Pbb6dDYs0gnHA'], ['Funnel Sans', 'funnelsans/v3/OpNIno8Dg9bX6Bsp3Wq69TpyfhjoyU7d']].map(([family, file]) => ({ family, weight: '300 800', src: `https://fonts.gstatic.com/s/${file}.woff2`, metrics: { ascent: 1, descent: 0.25, capHeight: 0.675 } })),
     sizes: { large: { squares: 3, text: 16, leading: 24, inset: 30, corner: 6, weight: 600, phone: { size: 40, text: 12, leading: 20, inset: 20, corner: 4 } } },
     componentRules: TALLY_RULES,
@@ -464,7 +432,6 @@ export const LIBRARIES = {
     chart: ['#594dff', '#ccccff'], chartInk: ['#ffffff', '#1e1e1e'],
     band: ['#0a0a0a', '#fafafa'], bandInk: ['#fafafa', '#18181b'], highlight: ['#fde70c', '#fde70c'],
     corner: '8px', inset: '5px', card: '16px',
-    // Buttons in the code face, as a studio sets its labels apart from its prose; every size, the outlined face too.
     componentRules: 'ds-button { --ds-typeface-regular: var(--ds-typeface-mono); --ds-typeface-medium: var(--ds-typeface-mono); }',
   },
   birdie: {
@@ -478,8 +445,6 @@ export const LIBRARIES = {
   },
 };
 
-// Button sizes beyond the one control high: medium two squares, large three. Each face stands on
-// the foot of its squares with the spare four above, as the one-control face does in one square.
 const SIZES = { medium: { squares: 2, text: 16, leading: 20, inset: 12 }, large: { squares: 3, text: 24, leading: 28, inset: 20 } };
 const px = value => parseFloat(value);
 
@@ -511,18 +476,15 @@ export function draft(lib) {
   const chart = ld(...lib.chart);
   const extra = [
     `/* ${lib.name}: ${lib.note} */`,
-    // A face of the library's own, corrected at its @font-face so it stands on the sixteen.
     ...(lib.faces ?? []).map(face => `@font-face { font-family: "${face.family}"; src: url("${face.src}") format("woff2"); font-weight: ${face.weight}; font-style: normal; font-display: swap; ${faceCorrection(face.metrics).replaceAll(';', '; ')}; }`),
     ':root {',
     `  --ds-corner-size: ${lib.corner};`,
     `  --ds-card-corner-size: ${lib.card};`,
     `  --ds-button-inset: ${lib.inset};`,
-    // The base's primary button hooks too, so the library's accent and ink stand over the base's.
     '  --ds-button-primary-fill: var(--ds-accent-color);',
     `  --ds-button-primary-text: ${ld(...lib.onAccent)};`,
     ...Object.entries(lib.metrics ?? {}).map(([name, value]) => `  ${name}: ${value};`),
     ...(lib.tracking ? [`  --ds-text-tracking: ${lib.tracking};`] : []),
-    // The page's own paper and words, which prose and the page's background read.
     '  --background: var(--ds-paper);',
     '  --dialog-background: var(--ds-paper);',
     '  --text-color: var(--ds-text-color);',
@@ -608,7 +570,6 @@ export function draft(lib) {
   return `${css.trimEnd()}\n\n${extra}${lib.componentRules ? `\n${lib.componentRules}\n` : ''}`;
 }
 
-/** One library's pairs that carry words and read below 4.5:1, as "<library> <scheme> <pair>: <ratio>"; the section tones among them. */
 export function lowContrastOf(lib, extra = {}) {
   const low = [];
   const tones = Object.fromEntries(Object.entries(sectionTones(lib)).map(([tone, [surface, ink]]) => [`tone ${tone}`, [ink, surface]]));
@@ -622,7 +583,6 @@ export function lowContrastOf(lib, extra = {}) {
   return low;
 }
 
-/** The pairs of every example library that read below 4.5:1. */
 export const lowContrast = () => Object.values(LIBRARIES).flatMap(lib => lowContrastOf(lib));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

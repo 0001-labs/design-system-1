@@ -41,10 +41,8 @@ import {
 import { daysOf, rangeOf, seasonValue } from "./calendar-value";
 import { bookingPageOf } from "./bookings-view";
 
-// Spaces in money vary by ICU: compare with every kind of space as a plain one.
 const plain = (words: string) => words.replace(/[  ]/g, " ");
 
-// A booking as the team's API answers it, the site's days already in its time zone.
 const booking = (code: string, date: string, extra: Partial<TeamBookingView> = {}): TeamBookingView => {
   const nights = extra.nights ?? null;
   return {
@@ -97,7 +95,6 @@ describe("the bookings each tab shows, by day", () => {
   });
 
   it("starts today in the site's time zone, not the browser's", () => {
-    // 23:30 in London on 21 October is already 22 October in Copenhagen.
     const late = Date.UTC(2026, 9, 21, 22, 30);
     const today = localDate(late, "Europe/Copenhagen");
     expect(today).toBe("2026-10-22");
@@ -267,7 +264,6 @@ describe("the schedule's matrix", () => {
   });
 
   it("names seasons and closed days briefly", () => {
-    // ICU writes September "Sep" or "Sept" depending on its version.
     expect(seasonText({ from: "2026-05-01", to: "2026-09-30" })).toMatch(/^1 May – 30 Sept?$/);
     expect(seasonText(null)).toBe("All year");
     expect(closedDayName("2026-12-24")).toBe("Thu 24 Dec");

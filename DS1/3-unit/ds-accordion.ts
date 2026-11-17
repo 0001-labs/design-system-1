@@ -5,32 +5,6 @@ import "../2-core/ds-button";
 import { define } from "../0-face/define";
 import styles from "./styles/ds-accordion.css?inline";
 
-/**
- * Native accordion using <details>/<summary> (no JS toggle logic): the
- * summary one square high at the start, the library's chevron-down at its
- * end (turned over when open), the details from the square below.
- *
- * Usage (with translation text):
- * <ds-accordion summary="How it began" details="Designed in Hokkaido"></ds-accordion>
- *
- * Usage (with text someone wrote, shown as it stands and never translated):
- * <ds-accordion literal summary="Ideas for spring" details="Plant the bulbs"></ds-accordion>
- *
- * Usage (with slotted details content):
- * <ds-accordion summary="How it began">
- *   <div slot="details">Rich HTML content here</div>
- * </ds-accordion>
- *
- * Usage (with a summary of its own, and a plus that turns into a close):
- * <ds-accordion icon="plus">
- *   <ds-text slot="summary" literal>Who owns the shop?</ds-text>
- *   <ds-text slot="details" literal wrap>You do.</ds-text>
- * </ds-accordion>
- *
- * @csspart summary - The pressed row.
- * @csspart row - The words and the icon inside it.
- * @csspart details - What opens below it.
- */
 export class Accordion extends LitElement {
   static properties = {
     summary: { type: String },
@@ -44,11 +18,9 @@ export class Accordion extends LitElement {
 
   declare summary: string;
   declare details: string;
-  /** The summary and details are what someone wrote, not translation keys. */
   declare literal: boolean;
   declare open: boolean;
   declare control: string;
-  /** The icon at the summary's end: `chevron-down`, turned over when open, or `plus`, turned to a close. */
   declare icon: string;
   declare _hasSlottedContent: boolean;
 
@@ -87,7 +59,6 @@ export class Accordion extends LitElement {
   private _handleSlotChange(e: Event) {
     const slot = e.target as HTMLSlotElement;
     const assignedNodes = slot.assignedNodes({ flatten: true });
-    // Filter out empty text nodes (whitespace only)
     const hasContent = assignedNodes.some(
       (node) =>
         node.nodeType === Node.ELEMENT_NODE ||

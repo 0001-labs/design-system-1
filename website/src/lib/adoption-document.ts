@@ -4,7 +4,6 @@ import type { AdoptionReport } from '../../../shared/component-adoption';
 import '../../../app/src/screens/ComponentMatrix';
 import '../../../app/src/screens/ComponentGlossary';
 
-/** The document reads through its existing server-checked owner cookie, without booting the app. */
 export class AdoptionDocument extends AppElement {
   static properties = { report: { state: true }, error: { state: true } };
   declare report: AdoptionReport | null;

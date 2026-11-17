@@ -1,16 +1,8 @@
 import type { C9yRelation, C9ySystem } from './model';
 import { KIND_WORDS, LAYERS } from './map';
 
-/**
- * The matrix, as 0001's System matrix draws it: a row for each site, a column for each component under its layer's
- * coloured head, and one mark where a site takes a component. The last column says how much of what a site uses
- * runs on Consistency's own components: every relation that shares one copy, of every relation it has. A site is
- * on C9Y when the two are equal; what is built on its own or not checked is what is left to move.
- */
-
 const escape = (text: string) => text.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
 
-/** A site's place on C9Y: what shares one copy, of everything it uses, and what is left to move. */
 export function onC9y(system: C9ySystem, site: string) {
   const relations = system.relations.filter(relation => relation.source === site && relation.kind !== 'opportunity');
   const shared = relations.filter(relation => relation.kind === 'shared').length;

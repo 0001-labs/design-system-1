@@ -21,7 +21,6 @@ describe("canvas handles", () => {
     const height = handle("button", "height");
     const slider = handleSlider(height, undefined, button, 1);
     expect(slider).toMatchObject({ value: 1, min: 1, max: 3, step: 1, axis: "vertical", gain: 1 / 20 });
-    // One square down the pointer is one square more, at any scale.
     expect(snapHandle(slider, slider.value + 20 * slider.gain)).toBe(2);
     expect(snapHandle(handleSlider(height, undefined, button, 1.5), 1 + 30 * handleSlider(height, undefined, button, 1.5).gain)).toBe(2);
     expect(handleToken(height, 2)).toBe("36px");
@@ -93,10 +92,8 @@ describe("canvas handles", () => {
     const overlap = (a: typeof height, b: typeof height) => a!.left < b!.left + b!.width && b!.left < a!.left + a!.width && a!.top < b!.top + b!.height && b!.top < a!.top + a!.height;
     for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) expect(overlap(rects[i], rects[j]), `${kinds[i]} and ${kinds[j]}`).toBe(false);
     expect(end!.left + end!.width).toBe(96);
-    // On a box too small for an inset handle, the corner stands just outside it.
     expect(cornerPoint(button, 4, 1)).toBe(-6);
     expect(corner!.left + corner!.width).toBe(0);
-    // On a taller box it is inset at the radius, at least 8 and at most half the box.
     expect(cornerPoint({ width: 100, height: 36 }, 4, 1)).toBe(8);
     expect(cornerPoint({ width: 100, height: 36 }, 12, 1)).toBe(12);
     expect(cornerPoint({ width: 100, height: 36 }, 20, 1)).toBe(18);

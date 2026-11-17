@@ -1,7 +1,3 @@
-/* ds-document.css */
-/* The element places the two columns; 1-root/document.css draws them, and the
-   writing in the page is drawn by prose.css, which the element brings. */
-
 :host {
   display: block;
   min-width: 0;
@@ -12,7 +8,6 @@
   display: none !important;
 }
 
-/* The page's own contents take the list's place. */
 ::slotted([slot="contents"]) {
   margin: 0;
 }

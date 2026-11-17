@@ -5,29 +5,20 @@ export function selectionRect(x1: number, y1: number, x2: number, y2: number): S
 export function intersects(a: SelectionRect, b: SelectionRect): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
-/** Selection owns no content, and never starts on editors or their controls. */
 export function canStartMarquee(target: Element): boolean {
   return !target.closest('aa-editor, ds-card, ds-button, ds-number, ds-select, ds-switch, [role="slider"], [role="button"], [role="menu"], [role="toolbar"], [data-aa-interactive], [data-handle], .consistency-resize-edge, button, input, select, textarea, a, summary, [contenteditable]');
 }
-/** Empty editor lines and composition chrome are space, not authored elements. */
 export function isMarqueeContent(element: HTMLElement): boolean {
   if (element.closest('.consistency-gap,.consistency-text-gap,.consistency-card-gap,.consistency-stat-gap,.ghost-surface,.consistency-resize-edge,[data-handle]')) return false;
   if (!element.classList.contains('aa-block')) return true;
   return !!element.textContent?.trim() || element.dataset.kind === 'divider' || !!element.querySelector('.aa-atom,img,hr,video,canvas,ds-card,ds-button,table');
 }
 
-/** The selectable units of a surface: selectables, and the blocks of an Aa editor. A plain editor's block is its element's own words, not a unit. */
 const SELECTION_UNITS = '[data-selectable], aa-editor .aa-block';
-/** Whether an element holds units of its own, to be painted in its place. */
 function holdsSelectionUnits(element: HTMLElement): boolean {
   return !!element.querySelector(element.closest('aa-editor') ? '[data-selectable], .aa-block' : SELECTION_UNITS);
 }
 
-/**
- * Keep group identity for commands, but paint only authored component bounds: a selected element is one
- * face over its own bounds, unless it holds selectable units (selectable descendants, or the blocks of an Aa
- * editor), which are painted separately while the container and the space between them stay unfilled.
- */
 export function paintCompositionSelection(root: HTMLElement, selection: Set<string>): void {
   const elements = Array.from(root.querySelectorAll<HTMLElement>('[data-selectable]'));
   const selected = elements.filter(element => selection.has(element.dataset.selectable!));
@@ -43,10 +34,8 @@ export function paintCompositionSelection(root: HTMLElement, selection: Set<stri
   }
 }
 
-/** A gesture owns its overlay and geometry cache; the composition changes only at release. */
 export function beginMarquee(root: HTMLElement, event: PointerEvent, previous: Set<string>, commit: (selection: Set<string>) => void, paint?: (selection: Set<string>) => void): () => void {
   const view = root.ownerDocument.defaultView!;
-  // A press heard on the document (a page whose root is its body) draws the marquee on the root.
   const stage = ((event.currentTarget as Node | null)?.nodeType === 1 ? event.currentTarget : root) as HTMLElement;
   const base = event.shiftKey ? new Set(previous) : new Set<string>();
   const overlay = root.ownerDocument.createElement('div');
@@ -103,7 +92,6 @@ export function beginMarquee(root: HTMLElement, event: PointerEvent, previous: S
   const up = (next: PointerEvent) => { if (next.pointerId === event.pointerId) { point = { x: next.clientX, y: next.clientY }; finish(false); } };
   const resize = new ResizeObserver(invalidate); resize.observe(stage);
   const mutation = new MutationObserver(invalidate);
-  // Content changes invalidate geometry; selection attributes and the overlay do not.
   const sheet = root.querySelector('.consistency-sheet');
   if (sheet) mutation.observe(sheet, { subtree: true, childList: true, characterData: true });
   view.addEventListener('pointermove', move); view.addEventListener('pointerup', up);

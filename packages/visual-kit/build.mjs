@@ -7,7 +7,6 @@ const here=fileURLToPath(new URL('.',import.meta.url));
 const out=resolve(here,'../../website/dist/private-app');
 await mkdir(out,{recursive:true});
 const bezels=JSON.parse(await readFile(resolve(here,'bezel-imports.json'),'utf8'));
-// These originals are intentionally not in Git or the npm package. Missing or changed sources stop publication.
 for(const bezel of bezels){
  const filename=bezel.asset.split('/').pop(); const source=resolve(here,'private-assets',filename);
  const bytes=await readFile(source);
@@ -21,12 +20,10 @@ console.log(`VisualKit: ${bezels.length} verified bezels in the owner-only previ
 
 await build({entryPoints:[resolve(here,'../../DS1/1-root/one.css')],outfile:resolve(out,'visual-kit.css'),bundle:true,minify:true,loader:{'.woff2':'file','.woff':'file'},assetNames:'[name]-[hash]'});
 
-// Keep third-party notices beside the hosted component bundle as well as copied source.
 const resources=resolve(here,'../../website/dist/resources');
 await mkdir(resources,{recursive:true});
 await copyFile(resolve(here,'../../DS1/5-visual-kit/browser-icons.LICENSE'),resolve(resources,'browser-icons.LICENSE'));
 
-// The inline documentation example is public; the rest of the gallery stays owner-only.
 const publicExample=resolve(here,'../../website/dist/examples/visual-kit');
 await mkdir(publicExample,{recursive:true});
 for(const file of ['iphone-17-pro-max-deep-blue.png','status-wifi.svg','status-battery.svg']) {

@@ -9,7 +9,6 @@ it('round-trips component Markdown with quotes, newlines and closing fences', ()
   expect(readContentElement('```c9y-card\n{"label":"x","title":3}\n```')).toBeNull();
 });
 it('offers slash insertions with real DS1 faces and read-only permissions', () => {
-  // Signup and Booking hold only their words (words-atom.ts) and have tests of their own below.
   for (const atom of contentElementAtoms(() => false).filter(each => each.fence !== 'c9y-signup' && each.fence !== 'c9y-meetings')) {
     expect(atom.insert?.label).toMatch(/Button|Card|Carousel/);
     expect(readContentElement(atom.insert!.source)?.kind).toBe(atom.fence!.slice(4));

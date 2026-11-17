@@ -5,8 +5,6 @@ import { EXAMPLES, MATRIX_DATA, TABLE_DATA, TABLE_FOOTER, calendarEvents } from 
 import type { DsTable } from '../../../DS1/3-unit/ds-table';
 import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
 
-// A preview has its own preferences. Trying a language or theme must not
-// overwrite the reader's choice in the surrounding documentation.
 const preferences = new Map<string, string>();
 Object.defineProperty(window, 'localStorage', {
   value: {
@@ -35,8 +33,6 @@ loadTranslations({ en: { Save: 'Save' }, da: { Save: 'Gem' }, ja: { Save: '‰øùÂ≠
 setLanguage('en');
 const output = document.querySelector<HTMLOutputElement>('#event-output')!;
 const sample = document.querySelector<HTMLElement>('#sample')!;
-// Parse the sample with all its elements already registered, so attributes
-// and initial tooltip state are applied before the example becomes ready.
 const example = EXAMPLES[document.body.dataset.exampleId!];
 sample.innerHTML = example.html;
 sample.querySelectorAll<HTMLButtonElement>('ds-switch button').forEach(button => {
@@ -74,7 +70,6 @@ sample.addEventListener('select', event => {
 sample.addEventListener('change', event => {
   if ((event.target as HTMLElement).localName === 'ds-carousel') output.textContent = `change: ${(event as CustomEvent).detail.index}`;
 });
-// The calendars hold the events their published scripts show, in the month being read.
 sample.querySelectorAll('ds-calendar[heat]:not([data-showcase-props])').forEach(calendar => { (calendar as HTMLElement & { events: unknown }).events = calendarEvents('heat'); });
 sample.querySelectorAll('ds-calendar:not([compact])').forEach(calendar => { (calendar as HTMLElement & { events: unknown }).events = calendarEvents('month'); });
 sample.querySelectorAll('ds-calendar[view="swimlane"]').forEach(calendar => { (calendar as HTMLElement & { events: unknown }).events = calendarEvents('swimlane'); });
@@ -90,7 +85,6 @@ sample.addEventListener('change', event => {
   const target = (event.target as HTMLElement).localName;
   if (target === 'ds-calendar') output.textContent = `change: ${(event as CustomEvent).detail.value || '(cleared)'}`;
 });
-// An open picker's month stands over the page: the page grows to hold it while it is open, so the frame shows it whole.
 sample.addEventListener('ds-calendar-toggle', event => {
   const picker = event.target as HTMLElement;
   const hold = () => {
@@ -139,7 +133,6 @@ if (sidebar && !sidebar.hasAttribute("data-showcase-props")) {
   sidebar.addEventListener('sidebar-activate', event => { selected = (event as CustomEvent).detail.id; render(); output.textContent = `Selected: ${selected}`; });
   render();
 }
-// The tree and row examples do what their published scripts show.
 const tree = sample.querySelector('ds-sidebar[tree]');
 if (tree) {
   type File = { id: string; label: string; icon: string; meta?: string; children?: File[] };
@@ -180,23 +173,16 @@ if (grid) sample.querySelectorAll<HTMLSelectElement>('[data-grid-option]').forEa
 const table = sample.querySelector<DsTable>('ds-table');
 if (table?.hasAttribute('sheet')) fillSheetExample(table);
 else if (table && !table.hasAttribute("data-showcase-props")) Object.assign(table, { data: TABLE_DATA, footer: TABLE_FOOTER });
-// A tooltip example should show the label on first sight, before someone
-// knows that they need to hover. Use its real hover behaviour for the demo.
 sample.querySelectorAll('ds-tooltip').forEach(tooltip => {
   tooltip.dispatchEvent(new MouseEvent('mouseenter'));
 });
 parent.postMessage({ type: 'ds1-example-ready' }, location.origin);
 
-// Library previews use the identical examples and component runtime as the catalogue:
-// the library workbench and, for a signed-in person's own design, the documentation send
-// `ds1-example-styles` with the library's stylesheet; an empty one puts the example back.
 const legacyPreviewStyle = document.createElement('style');
 const libraryStyle = document.createElement('style');
 document.head.append(legacyPreviewStyle, libraryStyle);
 const baseSheet = document.querySelector<HTMLLinkElement>('link[data-ds1-base]');
 
-// The library's box diagram measures the real shared control and never reaches
-// into its shadow root to override implementation styles. Editing uses its part.
 let libraryRequestId: number | undefined;
 let libraryHoverRegion: string | null = null;
 const boxOverlay = document.createElement('div');
@@ -228,10 +214,8 @@ window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'ds1-example-styles' || typeof event.data.css !== 'string' || new TextEncoder().encode(event.data.css).length > 524288) return;
   const css: string = event.data.css;
   libraryStyle.textContent = css;
-  // A custom design does not inherit the live DS1 design: the base sheet applies only without one.
   baseSheet?.toggleAttribute('disabled', css.trim() !== '');
   syncLegacyButtonPreview(css);
-  // Only the workbench asks for the button's box, with a request id; anyone else gets no metrics or overlay.
   libraryRequestId = typeof event.data.requestId === 'number' ? event.data.requestId : undefined;
   libraryHoverRegion = libraryRequestId !== undefined && ['margin', 'border', 'padding', 'content', 'all'].includes(event.data.hoverRegion) ? event.data.hoverRegion : null;
   if (libraryRequestId === undefined) boxOverlay.style.display = 'none';
@@ -240,8 +224,6 @@ window.addEventListener('message', event => {
 const measuredButton = sample.querySelector('ds-button');
 if (measuredButton) new ResizeObserver(buttonMetrics).observe(measuredButton);
 
-// Earlier libraries authored ordinary button rules. Project that authored face
-// onto the real DS1 control only inside its preview; keep saved CSS untouched.
 let legacyReference: HTMLButtonElement | undefined;
 function syncLegacyButtonPreview(css: string) {
   if (!/--one-button-padding-inline\s*:/.test(css)) { legacyPreviewStyle.textContent = ''; return; }
@@ -264,7 +246,6 @@ function syncLegacyButtonPreview(css: string) {
     if (variant) legacyReference!.setAttribute('variant', variant); else legacyReference!.removeAttribute('variant');
     legacyReference!.disabled = disabled;
     const face = getComputedStyle(legacyReference!);
-    // Zero selector specificity lets the user's authored part rules win.
     return `:where(${selector}) { margin: ${face.margin}; max-width: ${face.maxWidth}; } :where(${selector})::part(control) { ${properties.map(name => `${name}: ${face.getPropertyValue(name)};`).join(' ')} height: auto; min-height: ${face.minHeight}; max-height: none; }`;
   }).join('\n');
 }
@@ -277,8 +258,6 @@ if (document.body.dataset.exampleId === 'chart') {
   });
 }
 
-// Select's and Context's menus are shown open, as they look in use, without taking the
-// reader's focus; whatever is chosen is said below the example.
 {
   const exampleId = document.body.dataset.exampleId;
   type Shown = HTMLElement & { open: boolean; focusOnOpen: boolean; updateComplete: Promise<unknown>; openAt(point: { x: number; y: number }, control: HTMLElement, options: { focus: boolean }): void };
@@ -295,7 +274,6 @@ if (document.body.dataset.exampleId === 'chart') {
     }
   }
   if (exampleId === 'context-bar') {
-    // The bar stands over the words chosen, and over any the reader selects instead.
     const bar = sample.querySelector<Shown & { openOver(anchor: DOMRect): void }>('ds-context[bar]');
     const passage = sample.querySelector<HTMLElement>('.passage'), chosen = sample.querySelector<HTMLElement>('.chosen');
     if (bar && passage && chosen) {
@@ -319,8 +297,6 @@ if (document.body.dataset.exampleId === 'chart') {
   }
 }
 
-// Announce readiness after the library listeners exist, including in browsers
-// whose iframe load event precedes completion of awaited module imports.
 parent.postMessage({ type: 'ds1-example-library-ready' }, location.origin);
 
 mountShowcase(sample);

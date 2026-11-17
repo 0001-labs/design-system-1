@@ -1,7 +1,5 @@
 import { colorReader, composite, contrastRatio, paintedParent, TEXT_CONTRAST_MINIMUM, type RGBA } from "./text-contrast";
 
-/** Selected joined controls keep a library's ink when readable, otherwise use black or white.
- * Resolve the painted fill, not an assumed accent or theme. No per-frame polling. */
 export class ChoiceContrast {
   private observer?: MutationObserver;
   private frame = 0;
@@ -35,7 +33,7 @@ export class ChoiceContrast {
         const fill = read(view.getComputedStyle(node).backgroundColor);
         if (fill) background = composite(background, fill);
       }
-      if (background[3] < 1) continue; // The page must declare its paper; the contrast constraint checks it.
+      if (background[3] < 1) continue;
       const preferred = read(view.getComputedStyle(control).color);
       if (preferred && contrastRatio(composite(preferred, background), background) >= TEXT_CONTRAST_MINIMUM) continue;
       const black: RGBA = [0, 0, 0, 1], white: RGBA = [1, 1, 1, 1];

@@ -1,11 +1,3 @@
-// Image focus with Apple's Vision framework: the faces in each picture and the part a person looks at
-// first (attention-based saliency), as JSON for `focusFromRegions()` in focus.ts. macOS only; a build
-// script runs it where it can and falls back to `focusOf()` elsewhere.
-//
-//   swift focus-vision.swift photo.jpg other.jpg …
-//   {"photo.jpg":{"faces":[{"x":0.41,"y":0.12,"w":0.18,"h":0.14}],"salient":[…]}, …}
-//
-// Boxes are fractions of the picture, from its top left corner, as the web measures them.
 import Foundation
 import Vision
 

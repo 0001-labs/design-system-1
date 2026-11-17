@@ -1,6 +1,3 @@
-/**
- * The words and choices of a site's meetings (`site-meetings.ts`), apart from the element so they test without a page.
- */
 import { SiteApiError } from './api';
 
 const WORDS: Record<string, string> = {
@@ -21,8 +18,6 @@ export const HALF_HOURS = Array.from({ length: 49 }, (_, index) => index * 30);
 export const NOTICES: [number, string][] = [[0, 'None'], [1, '1 hour'], [2, '2 hours'], [4, '4 hours'], [12, '12 hours'], [24, '1 day'], [48, '2 days'], [168, '1 week']];
 export const AHEAD = [7, 14, 21, 30, 60];
 export const zones = (): string[] => { try { return (Intl as unknown as { supportedValuesOf(key: string): string[] }).supportedValuesOf('timeZone'); } catch { return []; } };
-/** The owner's own zone, which a site that has never saved its meetings starts in. */
 export const ownZone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } };
 export const when = (at: number, zone: string) => new Intl.DateTimeFormat('en-GB', { timeZone: zone, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
-/** Why Google's consent came back without a connection. */
 export const returnWords = (error: string) => WORDS[error] ?? 'Google was not connected. Try again.';

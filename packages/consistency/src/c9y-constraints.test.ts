@@ -10,10 +10,8 @@ import { createSortable, type SortableMovement } from './vendor/drag/sortable';
 const read = (path: string) => readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', path), 'utf8');
 const SQUARE = 20;
 
-/** A block as the page lays it out: its height and the space it owns above and below. */
 type Block = { height: number; above: number; below: number };
 
-/** Block flow down the page, as a browser draws it: adjoining margins collapse into the larger. */
 function layout(blocks: Block[], origin = 0): number[] {
   const tops: number[] = [];
   let edge = origin, below = 0;
@@ -31,7 +29,6 @@ function pointer(type: string, target: EventTarget, x: number, y: number) {
 }
 const key = (target: EventTarget, name: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
 
-/** Where layout put each element; its box is that place moved by its translate, as getBoundingClientRect draws it. */
 const placed = new Map<HTMLElement, number>();
 function place(element: HTMLElement, top: number, height: number) {
   placed.set(element, top);
@@ -42,7 +39,6 @@ function place(element: HTMLElement, top: number, height: number) {
   };
 }
 
-/** A page section of blocks, laid out, in a sortable list; the drop commits the new order and lays it out again. */
 function page(blocks: Block[], movements: SortableMovement[]) {
   const list = document.createElement('section');
   list.style.display = 'block';
@@ -74,7 +70,6 @@ function page(blocks: Block[], movements: SortableMovement[]) {
   return { sortable, elements };
 }
 
-/** Blocks of whole squares with their own space: a heading with room above, words, a card, a button. */
 const SECTION: Block[] = [
   { height: 40, above: 40, below: 0 },
   { height: 60, above: 0, below: 20 },
@@ -103,7 +98,6 @@ describe('drag', () => {
           const before = movements.length;
           key(document.body, steps > 0 ? 'ArrowDown' : 'ArrowUp');
           const moved = movements.slice(before).map(({ element }) => element);
-          // One change of place: each sibling moves at most once.
           expect(new Set(moved).size, `${source}→${target}, step ${step}`).toBe(moved.length);
         }
         key(document.body, ' ');
@@ -116,7 +110,6 @@ describe('drag', () => {
 
   test('a block carries its own space when it moves', async () => {
     const { sortable, elements } = page(SECTION, movements);
-    // The heading, with 40px of its own above it, moves below the words: the words close up by the heading and its space.
     key(elements[0], ' ');
     key(document.body, 'ArrowDown');
     expect(elements[1].style.translate).toBe('0 -80px');
@@ -140,12 +133,10 @@ describe('drag', () => {
     const { sortable, elements } = page([{ height: 40, above: 0, below: 0 }, { height: 40, above: 0, below: 0 }, { height: 40, above: 0, below: 0 }], movements);
     pointer('pointerdown', elements[0], 10, 20);
     pointer('pointermove', window, 10, 26);
-    // The carried edge (40 + moved) passes the next centre (60) once moved past 20.
     pointer('pointermove', window, 10, 39);
     expect(elements[1].style.translate || 'none').toBe('none');
     pointer('pointermove', window, 10, 42);
     expect(elements[1].style.translate).toBe('0 -40px');
-    // Resting just past it, back and forth, moves nothing more.
     const settled = movements.length;
     for (const y of [41, 43, 41, 42]) pointer('pointermove', window, 10, y);
     expect(movements.length).toBe(settled);
@@ -174,20 +165,17 @@ describe('drag', () => {
       expect(document.documentElement.hasAttribute('data-drag-active')).toBe(false);
       for (const element of elements) { expect(element.style.visibility).toBe(''); expect(element.style.translate || 'none').toBe('none'); }
     };
-    // A drop the page cannot commit.
     mouse('pointerdown', elements[0], 20, 1); mouse('pointermove', window, 26, 1); mouse('pointermove', window, 70, 1);
     expect(sortable.isDragging()).toBe(true);
     mouse('pointerup', window, 70, 0);
     await vi.runAllTimersAsync();
     home();
     expect(reported).toHaveBeenCalledTimes(1);
-    // A mouse released where the page could not see it comes back with no button down.
     mouse('pointerdown', elements[0], 20, 1); mouse('pointermove', window, 26, 1); mouse('pointermove', window, 70, 1);
     expect(sortable.isDragging()).toBe(true);
     mouse('pointermove', window, 90, 0);
     await vi.runAllTimersAsync();
     home();
-    // A pointer pressed while the keyboard carries a block.
     key(elements[0], ' '); key(document.body, 'ArrowDown');
     expect(sortable.isDragging()).toBe(true);
     mouse('pointerdown', elements[2], 100, 1); mouse('pointerup', window, 100, 0);
@@ -222,7 +210,6 @@ describe('blocks', () => {
       expect(BLOCKS[kind].rules.length, kind).toBeGreaterThan(0);
       expect(blockCapabilities(kind), kind).toContain('width');
     }
-    // Only blocks that hold blocks take new ones, and only those lay children out along an axis.
     for (const kind of KINDS) expect(blockCapabilities(kind).includes('insert'), kind).toBe(['root', 'container', 'group', 'columns', 'column'].includes(kind));
     expect(BLOCKS.columns.axis).toBe('horizontal');
   });

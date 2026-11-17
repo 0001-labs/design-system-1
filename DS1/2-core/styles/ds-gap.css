@@ -1,5 +1,3 @@
-/* ds-gap.css */
-
 :host {
   --ds-gap-size: var(--ds-1);
   display: block;

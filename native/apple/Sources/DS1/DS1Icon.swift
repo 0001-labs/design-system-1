@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// An icon from Design system 1's library (DS1/x-icon), drawn as a vector template in the
-/// text colour, as `.ds-icon` draws it as a mask in `currentColor`: 14 by default, 12 small,
-/// 16 large, times the scale.
 public struct DS1Icon: View {
     public enum Size: Sendable {
         case small, regular, large
@@ -33,7 +30,6 @@ public struct DS1Icon: View {
             .accessibilityHidden(true)
     }
 
-    /// The icon's image in the package's catalogue.
     public static func image(_ name: DS1IconName) -> Image {
         Image(name.rawValue, bundle: .module)
     }

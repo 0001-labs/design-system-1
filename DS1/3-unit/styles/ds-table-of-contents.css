@@ -28,7 +28,6 @@ a, ::slotted(a) {
   overflow: hidden;
   text-overflow: clip;
 }
-/* A cut label fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 a[data-cut="end"], ::slotted(a[data-cut="end"]) {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }

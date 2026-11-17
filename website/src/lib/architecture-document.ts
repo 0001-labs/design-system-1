@@ -5,10 +5,6 @@ import { defineAaDiagram, diagramAtom } from '../vendor/aa/diagram.js';
 
 defineAaDiagram();
 
-/**
- * The architecture document, read through the owner cookie as Adoption is. It lives in private
- * storage, published from its Ezo note, and Aa draws it read-only with its diagrams.
- */
 export class ArchitectureDocument extends AppElement {
   static properties = { error: { state: true }, loaded: { state: true } };
   declare error: string;

@@ -7,8 +7,6 @@
   min-width: max-content;
   max-width: none;
   vertical-align: bottom;
-  /* The tag's own tokens, unset by default and in unscaled px: its height, side padding,
-     corners and text size; --ds-tag-accent colours it. */
   --_tag-size: var(--ds-tag-size);
   --_tag-height: calc(var(--_tag-size) * var(--ds-sf, 1));
   --_tag-padding-size: var(--ds-tag-padding-size);
@@ -19,8 +17,6 @@
   --_tag-font-size: calc(var(--_tag-text-size) * var(--ds-sf, 1));
 }
 :host([hidden]) { display: none !important; }
-/* The face stays one control high at the foot of its box, on the lower sixteen,
-   even when a row stretches the tag to a square. */
 .frame {
   display: block;
   align-self: flex-end;
@@ -29,7 +25,6 @@
   padding-inline: var(--_tag-padding, calc(4px * var(--ds-sf, 1)));
   border-radius: var(--_tag-radius, var(--ds-radius));
   background: var(--ds-tag-background, light-dark(color-mix(in srgb, var(--ds-tag-accent, var(--ds-grey, #7a7a7a)) 28%, white), color-mix(in srgb, var(--ds-tag-accent, var(--ds-grey, #7a7a7a)) 20%, var(--ds-black, #2a2a2a))));
-  /* Tint the dark-mode ink: raw grey/accent colours cannot meet 4.5:1 on this fill. */
   color: var(--ds-tag-color, light-dark(color-mix(in srgb, var(--ds-tag-accent, var(--ds-grey, #7a7a7a)) 45%, black), color-mix(in srgb, var(--ds-tag-accent, var(--ds-grey, #7a7a7a)) 30%, white)));
   font-family: "Inter Arrows", var(--ds-typeface-regular);
   font-feature-settings: var(--ds-font-features);

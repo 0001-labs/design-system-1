@@ -2,8 +2,6 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 
-// Design system 1 is a general system: nothing in it says which product a rule came from.
-// `Money` and `Ins` also stand for amounts and the Insert key, so those two count only as a product's name.
 const root = join(import.meta.dirname, '../DS1');
 const NAMES = /\b(?:Ezo|tau99|Peer|Consistency)\b|\b(?:Link|Money|Visual|Ins)['’]s\b/;
 const walk = (directory: string): string[] => readdirSync(directory).flatMap(name => {

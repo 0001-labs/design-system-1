@@ -1,7 +1,3 @@
-/**
- * Authenticated artifact writes for the unified Design system 1 Worker.
- * Only Convex actions call these routes; every write requires the bearer secret.
- */
 import { bearerToken, sha256Hex, timingSafeEqual } from "../shared/crypto.ts";
 import { CONTENT_TYPE } from "../shared/headers.ts";
 import { parseWritePath } from "../shared/keys.ts";
@@ -9,7 +5,6 @@ import { parseWritePath } from "../shared/keys.ts";
 export interface Env {
   LIBRARIES: R2Bucket;
   PUBLISH_SECRET: string;
-  /** Byte ceiling, mirroring the validator's. Defaults to 512 KiB. */
   MAX_CSS_BYTES?: string;
 }
 
@@ -22,7 +17,6 @@ export default {
     if (!ref) return json({ error: { code: "not_found" } }, 404);
 
     if (!env.PUBLISH_SECRET) {
-      // Fail closed. An unset secret must never mean "no auth required".
       return json({ error: { code: "misconfigured" } }, 500);
     }
 
@@ -56,8 +50,6 @@ export default {
       return json({ error: { code: "missing_metadata" } }, 400);
     }
 
-    // For an immutable key the version is in the path; requiring the header to
-    // agree catches a caller that has computed one of them wrong.
     if (ref.version !== undefined && String(ref.version) !== declaredVersion) {
       return json({ error: { code: "version_mismatch" } }, 400);
     }
@@ -73,16 +65,11 @@ export default {
 
     const contentHash = await sha256Hex(body);
 
-    // If the caller declared a hash, verify it. A mismatch means the bytes were
-    // altered in transit, and publishing them would make the version row lie.
     const declaredHash = request.headers.get("ds1-content-hash");
     if (declaredHash && declaredHash !== contentHash) {
       return json({ error: { code: "hash_mismatch" } }, 422);
     }
 
-    // Immutable keys are written exactly once. A retry with identical bytes is
-    // a no-op rather than an error, because Convex actions retry and must be
-    // able to resume a publish safely.
     if (ref.immutable) {
       const existing = await env.LIBRARIES.head(ref.key);
       if (existing) {

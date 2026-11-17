@@ -1,27 +1,3 @@
-/**
- * The page toaster: Sonner's toast stack on a page without Lit or any other
- * framework. Import it (or `0-face/feedback.ts`) and call `toast()`; nothing
- * else goes in the page.
- *
- * BASED ON SONNER, the React toast library by Emil Kowalski
- * (https://sonner.emilkowal.ski, https://github.com/emilkowalski/sonner, MIT
- * licence), as `<ds-toast>` is: the same calls, options, stacking, timers,
- * hover and focus pauses, swipe, Alt+T and 400ms slide and fade.
- *
- * It shares the look rather than wrapping the element: it draws the element's
- * markup in a shadow root of its own with the element's stylesheet
- * (`2-core/styles/ds-toast.css`, as plain text in `./generated/toast-assets.ts`,
- * which `scripts/toast-assets.mjs` writes from it), so the two cannot drift
- * apart, and it needs no Lit, which a page without Lit does not have. It is
- * plain TypeScript: no `?inline` or `?raw` import, so any bundler and type
- * check reads it. It shares the queue too
- * (`0-face/toast-queue.ts`): where a `<ds-toast>` is in the page, that element
- * takes every toast and this one stays quiet, so a page never shows two stacks.
- *
- * Its region is in the page before the first toast arrives, a polite live
- * region in which each toast is announced, and an error assertively. Only
- * `transform` and `opacity` animate, and nothing moves with reduced motion.
- */
 import { feedbackWord } from "./feedback-words";
 import { toastIcons, toastStyles } from "./generated/toast-assets";
 import {
@@ -39,27 +15,17 @@ import type { ToastButton, ToastData, ToastId, ToastPosition, ToastSignal } from
 export { toast } from "./toast-queue";
 export type { ToastButton, ToastData, ToastId, ToastOptions, ToastPosition, ToastPromiseMessages, ToastType } from "./toast-queue";
 
-/** Sonner's `<Toaster />` props, for the page toaster. */
 export interface ToasterOptions {
-  /** `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center` or `bottom-right` (the default). */
   position?: ToastPosition;
-  /** Keep the toasts spread out instead of stacked. */
   expand?: boolean;
-  /** How many show at once; three by default. */
   visibleToasts?: number;
-  /** Milliseconds each toast stays; Infinity by default, until dismissed. */
   duration?: number;
-  /** A close button on every toast. */
   closeButton?: boolean;
-  /** Fill success, info, warning and error toasts with their colour. */
   richColors?: boolean;
-  /** The region's accessible name; the shared word "Notifications" by default. */
   label?: string;
-  /** The close button's accessible name; the shared word "Close" by default. */
   closeLabel?: string;
 }
 
-/** The icons the page carries: the types' own and the close button's, in the text's colour. */
 const INK = /(fill|stroke)=("|')(#1E1E1E|#2A2A2A|#000000|#000|black)\2/gi;
 const SVGS: Record<string, string> = Object.fromEntries(
   Object.entries(toastIcons)
@@ -72,7 +38,6 @@ interface Timer { remaining: number; started: number; handle?: ReturnType<typeof
 let settings: ToasterOptions = {};
 let current: PageToaster | undefined;
 
-/** Set the page toaster's options, as Sonner's `<Toaster />` props. Toasts already shown take them at once. */
 export function configureToaster(options: ToasterOptions): void {
   settings = { ...settings, ...options };
   current?.render();
@@ -99,7 +64,6 @@ class PageToaster {
   readonly host = element("div", { "data-ds-toaster": "" });
   private readonly section = element("section", { "aria-live": "polite", "aria-relevant": "additions text", "aria-atomic": "false" });
   private readonly list = element("ol", { tabindex: "-1", popover: "manual" });
-  /** The front toast the stack was last raised for. */
   private raisedFor: ToastId | undefined;
   private items: Item[] = [];
   private heights = new Map<ToastId, number>();
@@ -130,7 +94,6 @@ class PageToaster {
     this.render();
   }
 
-  /** Back in the page if something took it out, at the end of the body. */
   attach() {
     if (!this.host.isConnected && document.body) document.body.appendChild(this.host);
   }
@@ -149,7 +112,6 @@ class PageToaster {
     const data = signal.toast;
     const existing = this.live.find(item => item.data.id === data.id);
     if (existing) {
-      // An update keeps what it does not change and starts its time again, as in Sonner.
       existing.data = { ...existing.data, ...data };
       this.clearTimer(data.id);
     } else {
@@ -178,7 +140,6 @@ class PageToaster {
     this.timers.delete(id);
   }
 
-  /** Sonner's timers: each toast keeps its remaining time while the stack is paused. */
   private syncTimers = () => {
     const now = Date.now();
     for (const item of this.live) {
@@ -232,7 +193,6 @@ class PageToaster {
     return node;
   }
 
-  /** The toast's words and buttons, drawn again only when they change. */
   private draw(item: Item) {
     const { data } = item;
     const dismissible = data.dismissible !== false;
@@ -269,8 +229,6 @@ class PageToaster {
     toast.addEventListener("pointerdown", event => {
       const now = this.live.find(entry => entry.data.id === id);
       if (!now || now.data.dismissible === false || now.data.type === "loading") return;
-      // Controls can contain icons with their own shadow root. Inspect the whole
-      // event path so swipe capture never steals their click.
       if (event.composedPath().some(node => node instanceof Element && node.matches("button, a"))) return;
       toast.setPointerCapture?.(event.pointerId);
       this.swipe = { id, start: event.clientY, time: Date.now(), amount: 0 };
@@ -280,7 +238,6 @@ class PageToaster {
     toast.addEventListener("pointermove", event => {
       if (!this.swipe || this.swipe.id !== id) return;
       const toward = this.position.startsWith("top") ? -1 : 1;
-      // Only towards the edge the toast came from.
       this.swipe.amount = Math.max(0, (event.clientY - this.swipe.start) * toward);
       toast.dataset.swiping = "true";
       toast.style.setProperty("--swipe", `${this.swipe.amount * toward}px`);
@@ -301,8 +258,6 @@ class PageToaster {
     return toast;
   }
 
-  /** Draw the stack: every toast's place, and each toast's words where they changed. */
-  /** In the top layer, above an open sheet or modal, as `<ds-toast>`: shown again for each new front toast. */
   private raise() {
     const front = this.live[0]?.data.id;
     if (front === this.raisedFor || typeof this.list.showPopover !== "function" || !this.list.isConnected) return;
@@ -311,7 +266,6 @@ class PageToaster {
       if (this.list.matches(":popover-open")) this.list.hidePopover();
       if (front !== undefined) this.list.showPopover();
     } catch {
-      // A browser without popovers: it stays as it is drawn.
     }
   }
 
@@ -327,7 +281,6 @@ class PageToaster {
     this.items.forEach((item, index) => {
       if (this.list.children[index] !== item.element) this.list.insertBefore(item.element!, this.list.children[index] ?? null);
     });
-    // A copy: the live collection shrinks as children leave.
     for (const child of Array.from(this.list.children)) {
       if (this.items.some(item => item.element === child)) continue;
       const body = child.querySelector(".body");
@@ -338,7 +291,6 @@ class PageToaster {
     this.measure();
     this.syncTimers();
     if (!this.mounting && this.items.some(item => !item.mounted)) {
-      // Mount on the next frame so the toast slides in from its edge.
       this.mounting = true;
       frame(() => {
         this.mounting = false;
@@ -348,7 +300,6 @@ class PageToaster {
     }
   }
 
-  /** Each toast's index and offset, counting live toasts only; one leaving keeps where it was. */
   private layout() {
     let offset = 0;
     this.live.forEach((item, index) => {
@@ -383,7 +334,6 @@ class PageToaster {
   }
 }
 
-/** The page toaster, put in the page when it is first needed. */
 export function pageToaster(): HTMLElement | undefined {
   if (typeof document === "undefined" || !document.body) return undefined;
   current ??= new PageToaster();
@@ -393,8 +343,6 @@ export function pageToaster(): HTMLElement | undefined {
 
 setFallbackToaster(() => { pageToaster(); });
 
-// The region is in the page before the first toast, so the first is announced
-// too; not where a `<ds-toast>` already draws the toasts.
 if (typeof document !== "undefined") {
   const ready = () => { if (typeof customElements === "undefined" || !customElements.get("ds-toast")) pageToaster(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready, { once: true });

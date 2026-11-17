@@ -1,14 +1,3 @@
-/**
- * The behaviour panel (Joachim, 16 November 2026): what a block does on a published page, set in a panel at the
- * work's right edge. It is an inspector twelve squares wide, in the room the app's sidebar gives up while it is open
- * (`SidebarEdge.giveWay`), so the page keeps its width. A block's menu opens it with Behaviour and holds none of
- * these members itself.
- *
- * Nothing here is a table of the editor's own: the rows are the members the vocabulary marks `group: 'behaviour'`.
- * A whole number is the Number control, a choice a Select, an on or off a switch, and turns a list of records with
- * a field for each of their members. Every change goes through the page's own history and saves as any other edit;
- * words are written a moment after the last key and at once when the field is left.
- */
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import '../../../DS1/2-core/ds-button';
 import '../../../DS1/2-core/ds-icon';
@@ -26,24 +15,18 @@ import { choiceWords, fieldWords } from './native-section-menu';
 import './behaviour-panel.css';
 
 const fileName = (src: string) => decodeURIComponent(src.split('/').pop() ?? src);
-/** How long words wait after the last key before they are written, in ms. */
 const WRITE_MS = 500;
 
 export class ConsistencyBehaviourPanel extends LitElement {
   static properties = { target: { attribute: false } };
   target?: BehaviourTarget;
-  /** Words on their way to the page: written after a pause, or at once when the field is left or the panel closes. */
   private pending?: { timer: number; write: () => void };
 
   createRenderRoot() { return this; }
-  // The panel takes the focus when it opens, so Escape closes it at once and Tab goes to its first control; a control
-  // that keeps Escape for itself (the Number's own cancel) is left to it.
   connectedCallback() { super.connectedCallback(); this.setAttribute('role', 'complementary'); this.tabIndex = -1; this.addEventListener('keydown', this.onKey); }
   disconnectedCallback() { super.disconnectedCallback(); this.flush(); this.removeEventListener('keydown', this.onKey); }
 
-  /** The page changed (an edit here, an undo, another hand): draw the block as it stands. */
   refresh() { this.requestUpdate(); }
-  /** Writes words still waiting. */
   flush() { const pending = this.pending; if (!pending) return; clearTimeout(pending.timer); this.pending = undefined; pending.write(); }
   private close() { this.flush(); this.dispatchEvent(new CustomEvent('behaviour-close', { bubbles: true })); }
   private readonly onKey = (event: KeyboardEvent) => { if (event.key === 'Escape' && !event.defaultPrevented) { event.preventDefault(); this.close(); } };
@@ -70,10 +53,6 @@ export class ConsistencyBehaviourPanel extends LitElement {
     }
   }
 
-  /**
-   * A list of records: a hero's turns (the block as written is the first, so they count from 2) or a form's fields
-   * (from 1). Each record's members are fields of their kind; records move, go and are added here.
-   */
   private turns(section: NativeSection, slot: string, definition: SlotDefinition): TemplateResult {
     const turns = turnsOf(section, slot), members = Object.entries(definition.item ?? {}), images = this.target?.images() ?? [];
     const first = definition.type === 'turns' ? 2 : 1, noun = definition.type === 'turns' ? 'turn' : 'field';

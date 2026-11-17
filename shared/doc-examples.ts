@@ -1,4 +1,3 @@
-/** The owner's documentation catalogue. Visibility changes listings, not example URLs. */
 export const DOC_EXAMPLES = [
   ['issues', 'Issue tracker'],
   ['settings', 'General settings'], ['shop', 'Shop'], ['planner', 'Planning app'],

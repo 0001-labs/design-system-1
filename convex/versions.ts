@@ -31,14 +31,6 @@ function assetsBase(): string {
   return (process.env.ASSETS_BASE ?? "https://designsystem1.com/ds1").replace(/\/$/, "");
 }
 
-/**
- * Publication history: versions and the events that produced them, including
- * the failures.
- *
- * Failed attempts are returned alongside successful versions rather than hidden,
- * because `failed-validation` is a state the dashboard is required to surface
- * and the issue list is the only actionable thing about it.
- */
 export const history = query({
   args: { id: v.id("libraries") },
   returns: v.object({
@@ -114,14 +106,6 @@ export const history = query({
   },
 });
 
-/**
- * Roll back by repointing `latest.css`, minting no new version.
- *
- * This is deliberately the *same single write* as the last step of a publish:
- * copy a version's exact bytes over the live pointer. Every prior version stays
- * reachable at its immutable URL forever, and rolling forward again is just
- * another rollback to a higher number.
- */
 export const rollback = action({
   args: { id: v.id("libraries"), version: v.number() },
   returns: publishResultValidator,
@@ -136,8 +120,6 @@ export const rollback = action({
       version: args.version,
     });
 
-    // Read the exact bytes back from the public artifact rather than
-    // regenerating them: what gets restored is what customers actually had.
     const response = await fetch(`${assetsBase()}/${target.publicId}/v/${args.version}.css`);
     if (!response.ok) {
       fail("version_unavailable", "That version's stylesheet could not be read back from storage.");
@@ -232,7 +214,6 @@ export const finishRollback = internalMutation({
     id: v.id("libraries"),
     eventId: v.id("publishEvents"),
     version: v.number(),
-    /** The hash of the draft the version was published from, as `publish` records it. */
     sourceHash: v.string(),
   },
   returns: publishResultValidator,
@@ -259,18 +240,6 @@ export const finishRollback = internalMutation({
   },
 });
 
-/**
- * Repair the database from R2 when a publish died between writing `latest.css`
- * and recording it.
- *
- * R2 wins, because R2 is what the world is actually being served.
- *
- * A note on where this runs: the SQL plan called this on every library-detail
- * GET. Convex queries cannot make network requests, so it cannot live inside
- * `libraries.get` — it is an action, invoked when a library is left showing
- * `in_progress`. In practice a retried publish is self-healing anyway, because
- * writing an identical version is idempotent.
- */
 export const reconcile = action({
   args: { id: v.id("libraries") },
   returns: v.object({ repaired: v.boolean(), liveVersion: v.union(v.number(), v.null()) }),
@@ -318,7 +287,6 @@ export const applyReconciliation = internalMutation({
       )
       .unique();
 
-    // publishedHash names the live draft; R2 knows only the served bytes' hash.
     await ctx.db.patch(library._id, {
       publishedVersion: args.version,
       publishedHash: version?.sourceHash ?? args.contentHash,

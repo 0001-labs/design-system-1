@@ -3,13 +3,6 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-/**
- * The signed-in user, or null.
- *
- * Convex Auth does not reliably populate `users.email` — it lives on the
- * `authAccounts` row as `providerAccountId`, which is what the sibling
- * Consistency repo reads too.
- */
 export const current = query({
   args: {},
   returns: v.union(v.null(), v.object({
@@ -37,7 +30,6 @@ export const current = query({
   },
 });
 
-/** Company identity belongs to the signed-in account, never a caller-supplied user ID. */
 export const profile = query({
   args: {},
   returns: v.union(v.null(), v.object({ companyName: v.string() })),

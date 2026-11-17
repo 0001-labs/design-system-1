@@ -1,16 +1,3 @@
-/**
- * Orders, the one place of a site that takes requests or sales, on the site engine's orders
- * (`/team/api/orders…`), under the site's own word for them (`orders/config`'s `label` in the app's language, else
- * Orders). The list is newest first, a page at a time with Show more; its kinds are text tabs (labelled by the
- * site's `kindLabels`) when the site takes more than one, its status a Select, and a search reads the code, the
- * customer and the invoice number. Each order is a `ds-row`: its code in the code face, the customer, a kind tag, a
- * status tag, the total in the site's own money and when it happens. Pressing one opens it in a non-modal drawer
- * beside the list: its lines, customer, payment (Stripe, the invoice's number and due day, paid and refunded),
- * history and the team's note, edited in place and saved on leaving it. The steps the engine allows from its
- * status are buttons; cancelling (declining a request) is confirmed in place before anything is sent. Who can
- * order says who may place one on the site, saved at once. Every amount, status and step is the engine's: it checks
- * each step again and refuses one the status no longer allows.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
 import '../../../../DS1/3-unit/ds-row';
@@ -34,16 +21,11 @@ import {
 import { failed, KeepCurrent, say, toneStyle } from './place';
 import './places.css';
 
-/** A page of the list. */
 const PAGE = 50;
-/** The most a fresh read asks for at once, so the pages shown so far stay. */
 const MOST = 200;
-/** How long the search waits after the last key before it asks. */
 const SEARCH_WAIT = 300;
 
-/** A step being taken, or cancelling being asked about: the refund as typed and whether the customer is told. */
 interface Acting { step: OrderAction | null; asking: boolean; refund: string; notify: boolean; busy: boolean; error: string }
-/** The team's note being written: as typed, as last saved, and whether it is being saved. */
 interface Noting { text: string; saved: string; busy: boolean; error: string }
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -54,23 +36,17 @@ export class ConsistencyPlaceOrders extends LitElement {
     opened: { state: true }, acting: { state: true }, noting: { state: true }, who: { state: true },
   };
   declare site: SiteSummary;
-  /** The site's words for its orders, its kinds and who may order. */
   declare config: OrdersConfig | null;
   declare filter: OrdersFilter;
-  /** The orders shown, the pages read so far, and the cursor for the next. */
   declare answer: OrdersAnswer | null;
   declare error: string;
-  /** Show more being read. */
   declare more: boolean;
-  /** The order in the drawer, and its detail once read. */
   declare opened: { order: OrderView; detail: OrderDetail | null } | null;
   declare acting: Acting;
   declare noting: Noting;
-  /** Who can order being changed: what it means once changed, and an error that put it back. */
   declare who: { busy: boolean; about: string; error: string };
   private readonly current = new KeepCurrent(this, () => this.read());
   private searching: ReturnType<typeof setTimeout> | undefined;
-  /** Each read's turn, so an older answer never draws over a newer filter's. */
   private turn = 0;
 
   constructor() {
@@ -83,7 +59,6 @@ export class ConsistencyPlaceOrders extends LitElement {
   private get code() { return this.site.code; }
   private fresh(): Acting { return { step: null, asking: false, refund: '', notify: true, busy: false, error: '' }; }
 
-  /** The site's words and who may order, and the list as far as it was read; the drawer's order follows it. */
   private async read(): Promise<boolean> {
     const turn = ++this.turn;
     const shown = this.answer?.orders?.length ?? 0;
@@ -101,7 +76,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     return true;
   }
 
-  /** The next page after the last one shown. */
   private async showMore() {
     const after = this.answer?.next;
     if (!after || this.more) return;
@@ -115,7 +89,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     } finally { this.more = false; }
   }
 
-  /** A filter changed: the list from its first page. */
   private refilter(next: Partial<OrdersFilter>) {
     this.filter = { ...this.filter, ...next };
     this.answer = null;
@@ -126,7 +99,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     this.searching = setTimeout(() => { if (q.trim() !== this.filter.q.trim()) this.refilter({ q }); }, SEARCH_WAIT);
   }
 
-  /** Who can order, saved the moment it is chosen; a refusal puts the choice back and says why. */
   private async chooseWho(open: OrderOpen) {
     const before = this.config;
     if (!before || before.open === open || this.who.busy) return;
@@ -142,7 +114,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     }
   }
 
-  // The site's words, money and zone.
   private get label() { return ordersLabel(this.config ?? this.answer); }
   private get about() { return this.config ?? this.answer; }
   private get kinds(): OrderKind[] { return this.about?.kinds ?? []; }
@@ -150,7 +121,6 @@ export class ConsistencyPlaceOrders extends LitElement {
   private currencyOf(order?: OrderView) { return order?.currency ?? this.about?.currency ?? 'dkk'; }
   private money(minor: number, order?: OrderView) { const currency = this.currencyOf(order); return formatMoney(minor, currency, localeOfCurrency(currency)); }
 
-  /** Opens an order in the drawer at once from the list, then reads it again with its history. */
   private async open(listed: OrderView) {
     this.opened = { order: listed, detail: null };
     this.acting = this.fresh();
@@ -162,7 +132,6 @@ export class ConsistencyPlaceOrders extends LitElement {
       if (this.opened?.order.id === listed.id) this.opened = { order: listed, detail: { order: listed, events: [] } };
     }
   }
-  /** An order's answer: into the drawer and the list; the note being written stays. */
   private take(detail: OrderDetail) {
     this.opened = { order: detail.order, detail };
     if (this.noting.text === this.noting.saved) this.noting = { ...this.noting, text: detail.order.note, saved: detail.order.note };
@@ -171,7 +140,6 @@ export class ConsistencyPlaceOrders extends LitElement {
   }
   private close() { this.opened = null; this.acting = this.fresh(); }
 
-  /** A step, as the engine takes it; it answers the order as it is now, or refuses a step its status no longer allows. */
   private async step(order: OrderView, step: OrderAction, body: Record<string, unknown> = {}) {
     this.acting = { ...this.acting, step, busy: true, error: '' };
     try {
@@ -185,7 +153,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     }
   }
 
-  /** The note, saved on leaving it when it changed; a refusal puts the saved one back and says why. */
   private async saveNote(order: OrderView) {
     const { text, saved } = this.noting;
     if (text === saved || this.noting.busy) return;
@@ -260,7 +227,6 @@ export class ConsistencyPlaceOrders extends LitElement {
     </ds-row>`;
   }
 
-  /** The drawer beside the list: one order, its lines, customer, payment, history and note, and its steps. */
   private drawer() {
     const opened = this.opened;
     return html`<ds-overlay type="drawer" non-modal .holdScroll=${false} .blockOutside=${false} ?open=${!!opened} @ds-close-request=${() => this.close()}>
@@ -321,7 +287,6 @@ export class ConsistencyPlaceOrders extends LitElement {
       <div data-ds-overlay="footer"><ds-button secondary @click=${() => this.close()}>Close</ds-button></div>`;
   }
 
-  /** The steps its status allows, as buttons; cancelling asks first, in place, with the refund and the email. */
   private steps(order: OrderView) {
     const steps = allowedSteps(order.status);
     if (!steps.length) return nothing;

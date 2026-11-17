@@ -1,10 +1,3 @@
-// ds-matrix.ts
-// Rows against columns, one 20px square where each pair meets: read across a
-// row for what it has, down a column for who has it. Columns stand in
-// coloured groups whose colour tints the squares below; their names rise at
-// 45° from the middle of their column. A mark in a square says how the row
-// and column meet, and the legend below names the marks.
-
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { define } from "../0-face/define";
 import { CutFades } from "../0-face/cut-fade";
@@ -12,41 +5,32 @@ import { getText } from "../0-face/i18n";
 import metrics from "../1-root/component-metrics.css?inline";
 import styles from "./styles/ds-matrix.css?inline";
 
-/** How a square is drawn. */
 export type MatrixMarkKind = "fill" | "outline" | "stripes" | "dot" | "triangle" | "dash";
 
-/** A row or a column. A column may stand in a group. */
 export interface MatrixAxis {
   id: string;
   label: string;
-  /** The group a column stands in. */
   group?: string;
 }
 
-/** A group of columns: a bar in its colour over them, its colour tinting their squares. */
 export interface MatrixGroup {
   id: string;
   label: string;
-  /** A colour token or value, from the palette. */
   color: string;
 }
 
-/** What is in the square where a row meets a column. */
 export interface MatrixCell {
   row: string;
   column: string;
   mark: MatrixMarkKind;
-  /** More about this square, added to its name. */
   note?: string;
 }
 
-/** A mark and what it means, for the legend and the squares' names. */
 export interface MatrixMark {
   mark: MatrixMarkKind;
   label: string;
 }
 
-/** Detail of `cell-press`: the row, the column and what is there, if anything. */
 export interface MatrixPressDetail {
   row: MatrixAxis;
   column: MatrixAxis;
@@ -58,7 +42,6 @@ const MARKS: readonly MatrixMarkKind[] = ["fill", "outline", "stripes", "dot", "
 const whole = (value: unknown, least: number, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) ? Math.max(least, Math.floor(value)) : fallback;
 
-/** The columns in their groups' order, each with its group. */
 export function orderColumns(columns: readonly MatrixAxis[], groups: readonly MatrixGroup[]) {
   const byId = new Map(groups.map(group => [group.id, group]));
   const seen = new Set<string>();
@@ -71,26 +54,6 @@ export function orderColumns(columns: readonly MatrixAxis[], groups: readonly Ma
   return ordered;
 }
 
-/**
- * @element ds-matrix
- * @prop {MatrixAxis[]} rows - The rows, top to bottom (property only).
- * @prop {MatrixAxis[]} columns - The columns; a column's `group` names its group (property only).
- * @prop {MatrixGroup[]} groups - The column groups, in order, with their colours (property only).
- * @prop {MatrixCell[]} cells - The marks (property only).
- * @prop {MatrixMark[]} marks - What each mark means, drawn as the legend (property only).
- * @prop {boolean} totals - A last row counting the marked squares in each column.
- * @prop {string} totalsLabel - That row's name (`totals-label`); the shared word "Total".
- * @prop {number} names - Squares for the row names: 8 by default.
- * @prop {string} label - The matrix's name: a translation key, or literal words.
- * @prop {boolean} literal - Show `label` and `totals-label` as written.
- *
- * @fires cell-press - A square was pressed, or Enter pressed on it; `{ row, column, cell }`.
- * @fires row-press - A row's name was pressed; `{ row }`.
- * @fires column-press - A column's name was pressed; `{ column }`.
- *
- * @example
- * <ds-matrix label="Products and parts" literal totals></ds-matrix>
- */
 export class Matrix extends LitElement {
   static properties = {
     rows: { attribute: false },
@@ -108,7 +71,6 @@ export class Matrix extends LitElement {
   };
 
   static styles = [unsafeCSS(metrics), unsafeCSS(styles)];
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".name" });
 
   declare rows: MatrixAxis[];
@@ -121,9 +83,7 @@ export class Matrix extends LitElement {
   declare names: number | undefined;
   declare label: string | undefined;
   declare literal: boolean;
-  /** The row and column under the pointer or focus, lit as a crosshair; -1 for neither. */
   declare lit: { row: number; column: number } | undefined;
-  /** The square holding the one Tab stop. */
   declare focusAt: { row: number; column: number };
 
   private readonly relabel = () => this.requestUpdate();
@@ -236,7 +196,6 @@ export class Matrix extends LitElement {
     const byPair = new Map((this.cells ?? []).map(cell => [`${cell.row}>${cell.column}`, cell]));
     const lit = this.lit;
     const focus = this.focusAt;
-    // One bar over each run of columns in the same group.
     const bars: { group?: MatrixGroup; start: number; span: number }[] = [];
     ordered.forEach(({ group }, index) => {
       const last = bars.at(-1);

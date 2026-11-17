@@ -1,14 +1,7 @@
-/**
- * Write a drawn face as an OpenType font in the browser, so it can be tried as
- * text and kept as a build. opentype.js loads only when a build is written.
- * Figures are drawn proportional; each also gets a tabular copy, centred in
- * the face's figure width, that the tnum feature swaps in (tables, stats).
- */
 import { glyphName, type FontSource } from '../../../../shared/font-source';
 import { segments } from './geometry';
 
 export async function compileSource(source: FontSource): Promise<ArrayBuffer> {
-  // A bundler gives the ES module's named exports; plain Node gives the CommonJS build, its classes on the default export.
   const loaded = await import('opentype.js');
   const { Font, Glyph, Path } = 'Font' in loaded && loaded.Font ? loaded : loaded.default;
   const { metrics } = source;
@@ -39,7 +32,6 @@ export async function compileSource(source: FontSource): Promise<ArrayBuffer> {
     index.set(glyph.unicode, glyphs.length);
     glyphs.push(new Glyph({ name: glyphName(glyph.unicode), unicode: glyph.unicode, advanceWidth: glyph.advance, path: pathOf(glyph.contours) }));
   }
-  // Tabular copies of the figures, each centred on its ink in one width.
   const figures = source.glyphs.filter(glyph => glyph.unicode >= 0x30 && glyph.unicode <= 0x39);
   const figureWidth = metrics.figureWidth ?? Math.max(0, ...figures.map(glyph => glyph.advance));
   const tabular: [number, number][] = [];
@@ -53,7 +45,6 @@ export async function compileSource(source: FontSource): Promise<ArrayBuffer> {
     familyName: source.family,
     styleName: source.style,
     unitsPerEm: metrics.unitsPerEm,
-    // hhea: the line box a browser builds, as the face this one replaces has it.
     ascender: metrics.lineAscent,
     descender: metrics.lineDescent,
     weightClass: source.weight,

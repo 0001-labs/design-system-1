@@ -21,18 +21,6 @@ import "./screens/SignIn";
 
 const splash = () => html`<div class="route-splash" data-testid="route-splash">${loading("Loading")}</div>`;
 
-/**
- * Route table.
- *
- *   /playground   today's workbench, no account, no persistence
- *   /signin       the shared sign-in screen: the email, then the code or the owner's password
- *   /libraries    dashboard
- *   /l/:id        editor
- *   /base         the base system's components, edited live by the owner (`?view=tokens`: every token)
- *
- * `/playground` keeps the product's current front door working and gives people
- * something to try before creating an account.
- */
 export class AppRoutes extends AppElement {
   #path: string | null = null;
 
@@ -54,7 +42,6 @@ export class AppRoutes extends AppElement {
     if (path === "/" || path === "/playground") return html`<ds1-system-workbench></ds1-system-workbench>`;
     if (isLoading) return splash();
     if (!isAuthenticated) {
-      // Remember where they were headed so sign-in can return them there.
       return path !== "/signin" ? html`<ds1-sign-in .redirectTo=${path}></ds1-sign-in>` : html`<ds1-sign-in></ds1-sign-in>`;
     }
     if (path === "/signin") {
@@ -74,7 +61,6 @@ export class AppRoutes extends AppElement {
 }
 defineElement("ds1-routes", AppRoutes);
 
-/** The page this address and host show. */
 export class AppRoot extends AppElement {
   override render() {
     const { pathname, hostname } = window.location;
@@ -90,10 +76,6 @@ export class AppRoot extends AppElement {
 }
 defineElement("ds1-root", AppRoot);
 
-/**
- * Bridges the existing owner sign-in to this host's protected root. At consistency.site (`anyone`) it is the
- * sign-in of everyone invited to a workspace there, by the emailed code; the Worker decides what they may open.
- */
 class PrivatePreviewSignIn extends AppElement {
   static properties = { anyone: { type: Boolean } };
   declare anyone: boolean;

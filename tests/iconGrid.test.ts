@@ -26,7 +26,6 @@ import { FIGMA_ICONS } from '../website/src/lib/icons/gridIconFigma'
 
 test('the ground is drawn as few rectangles, whole units only', () => {
   const striped = patternCells('stripes', 2)
-  // Eight stripes two units tall, each one rectangle across the icon.
   expect(groundRects(striped)).toHaveLength(8)
   expect(groundRects(blankIcon().cells)).toEqual([{ x: 0, y: 0, width: 16, height: 16, ink: 0 }])
   const cleared = paintSquare(blankIcon(), 0, 0, 8, CLEAR)
@@ -41,7 +40,6 @@ test('painting fills the grid square under the pointer, snapped to its size', ()
   expect(painted.cells[cellIndex(4, 8)]).toBe(1)
   expect(painted.cells[cellIndex(7, 11)]).toBe(1)
   expect(painted.cells[cellIndex(8, 8)]).toBe(0)
-  // The last square stays inside the icon.
   expect(paintSquare(blankIcon(), 15.9, 15.9, 8, 1).cells[cellIndex(8, 8)]).toBe(1)
 })
 
@@ -125,14 +123,12 @@ test('the Figma badges are drawn again, whole, on the grid', () => {
     expect(parseIcon(badge.icon), badge.name).toEqual(badge.icon)
     expect(badge.node).toMatch(/^\d+:\d+$/)
     for (const shard of badge.icon.shards) for (const [x, y] of shard.points) {
-      // Every corner stands on a crossing of the four-unit grid.
       expect(x % 4, badge.name).toBe(0)
       expect(y % 4, badge.name).toBe(0)
     }
   }
   const red = FIGMA_ICONS.find(badge => badge.name === 'Red')!
   expect(iconSvg(red.icon)).toContain('fill="#ff5f5f"')
-  // The fans cover the whole square with their shards and leave no ground.
   const fan = FIGMA_ICONS.find(badge => badge.name === 'Fan')!
   expect(fan.icon.cells.every(ink => ink === CLEAR)).toBe(true)
   expect(fan.icon.shards.reduce((area, shard) => area + shardArea(shard.points), 0)).toBe(256)

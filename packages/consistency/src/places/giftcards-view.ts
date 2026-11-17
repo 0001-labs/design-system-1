@@ -1,11 +1,3 @@
-/**
- * The pure parts of the Gift cards place: no DOM, so they are tested on their
- * own. The cards each tab shows and their order, a status and a use in words,
- * an expiry as a date, the address a card last went to, an amount the team
- * types for a card it issues, and the card's history in words. Money is
- * Bookings' own (`formatMoney` in bookings-view.ts), so a card's amount reads
- * as a booking's does. Every status, balance and code is the Worker's.
- */
 import type { GiftCardStatus, GiftCardUse, TeamGiftCardView } from "../vendor/site-engine/bookings-shared";
 import { formatMoney, parseAmount } from "./bookings-view";
 
@@ -14,10 +6,8 @@ export type GiftCardsOrder = "created" | "expiry";
 
 export const GIFT_CARDS_VIEWS: readonly GiftCardsView[] = ["active", "used", "all"];
 
-/** What the lists read of a card. */
 type Card = Pick<TeamGiftCardView, "code" | "status" | "expires" | "createdAt">;
 
-/** A card's event as the Worker keeps it: what happened, when, by whom, and its detail. */
 export interface GiftCardEvent {
   id?: number;
   at: number;
@@ -26,16 +16,10 @@ export interface GiftCardEvent {
   detail: Record<string, unknown> | null;
 }
 
-/** The tab a route names, or Active. */
 export function viewOf(chosen: string | null | undefined): GiftCardsView {
   return GIFT_CARDS_VIEWS.find(view => view === chosen) ?? "active";
 }
 
-/**
- * Cards in order. By created: the newest first. By expiry: the soonest to
- * run out first, a card with no expiry yet (unpaid) last, then the newest.
- * The code breaks a tie, so the order never wavers.
- */
 export function sortCards<T extends Card>(cards: T[], by: GiftCardsOrder): T[] {
   const newest = (a: T, b: T) => b.createdAt - a.createdAt || (a.code ?? "").localeCompare(b.code ?? "");
   if (by === "created") return [...cards].sort(newest);
@@ -46,19 +30,12 @@ export function sortCards<T extends Card>(cards: T[], by: GiftCardsOrder): T[] {
   });
 }
 
-/**
- * The cards a tab shows, in its order. Active: the cards that can still pay,
- * the soonest to run out first. Used: those spent to nothing, the newest
- * first. All: every card, awaiting payment, expired and void ones too, the
- * newest first.
- */
 export function chooseCards<T extends Card>(cards: T[], view: GiftCardsView): T[] {
   if (view === "active") return sortCards(cards.filter(card => card.status === "active"), "expiry");
   if (view === "used") return sortCards(cards.filter(card => card.status === "used"), "created");
   return sortCards(cards, "created");
 }
 
-/** A status in words, and the tone of its tag. */
 export function giftStatusName(status: GiftCardStatus): { name: string; tone: "success" | "warning" | "danger" | "muted" } {
   if (status === "active") return { name: "Active", tone: "success" };
   if (status === "pending") return { name: "Awaiting payment", tone: "warning" };
@@ -67,7 +44,6 @@ export function giftStatusName(status: GiftCardStatus): { name: string; tone: "s
   return { name: "Expired", tone: "muted" };
 }
 
-/** A use of a card in words: what became of what it paid or held. */
 export function useName(state: GiftCardUse["state"]): string {
   if (state === "drawn") return "Paid";
   if (state === "held") return "Held while the guest pays";
@@ -76,13 +52,11 @@ export function useName(state: GiftCardUse["state"]): string {
   return "Let go, not paid";
 }
 
-/** A day as a date: "21 October 2027", or "21 Oct 2027" when `short`. Empty for none. */
 export function dateName(date: string | null | undefined, short = false): string {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
   return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: short ? "short" : "long", year: "numeric" }).format(new Date(`${date}T12:00:00Z`));
 }
 
-/** A moment as a day and time in the browser's zone: "21 October 2026, 14:30". */
 export function momentName(at: number | null | undefined, timeZone?: string): string {
   if (typeof at !== "number" || !Number.isFinite(at) || at <= 0) return "";
   return new Intl.DateTimeFormat("en-GB", { timeZone, day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(at));
@@ -90,11 +64,6 @@ export function momentName(at: number | null | undefined, timeZone?: string): st
 
 const SENDINGS = new Set(["sent", "resent"]);
 
-/**
- * The address the card last went to: the latest sending's, else, for a card
- * sent to its buyer, the receipt's (which carries the card), else where it is
- * meant to go.
- */
 export function sentTo(card: Pick<TeamGiftCardView, "sendTo" | "recipientEmail" | "buyer">, events: Pick<GiftCardEvent, "type" | "detail">[]): string {
   const to = (event: Pick<GiftCardEvent, "detail">) => (typeof event.detail?.to === "string" ? event.detail.to : "");
   const latest = [...events].reverse().find(event => (SENDINGS.has(event.type) || (card.sendTo === "buyer" && event.type === "receipt")) && to(event));
@@ -102,17 +71,11 @@ export function sentTo(card: Pick<TeamGiftCardView, "sendTo" | "recipientEmail" 
   return card.sendTo === "recipient" ? (card.recipientEmail ?? card.buyer.email) : card.buyer.email;
 }
 
-/** The bounds of an amount the team gives, from the site's gift card options, in øre or cents. */
 export interface IssueBounds {
   min: number;
   max: number;
 }
 
-/**
- * An amount the team typed for a card it issues, in minor units: whole
- * kroner (or euros), more than nothing, within the site's bounds when they
- * are known. The Worker checks it again.
- */
 export function checkIssueAmount(typed: string, currency: string, locale: string, bounds: IssueBounds | null): { minor: number } | { error: string } {
   const minor = parseAmount(typed, currency);
   if (minor === null || minor <= 0) return { error: "Write the amount in whole kroner, such as 500." };
@@ -121,12 +84,10 @@ export function checkIssueAmount(typed: string, currency: string, locale: string
   return { minor };
 }
 
-/** How much of a message is written: "12 of 300". */
 export function messageCount(message: string, limit: number): string {
   return `${[...message].length} of ${limit}`;
 }
 
-/** One event of a card's history in words, with its amount, address or booking where it has one. */
 export function giftEventName(event: Pick<GiftCardEvent, "type" | "detail">, currency: string, locale: string): string {
   const detail = event.detail ?? {};
   const money = typeof detail.amount === "number" ? ` ${formatMoney(detail.amount, currency, locale)}` : "";

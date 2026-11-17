@@ -209,7 +209,6 @@ test("slide widths and gaps are whole squares; no-dots and a single slide leave 
   expect(single.shadowRoot!.querySelector(".ds-carousel__controls")).toBeNull();
 });
 
-/** A track 100px wide whose slides stand 120px apart, scrolled to `left`. */
 function laidOut(left = 0, rtl = false) {
   const track = document.createElement("div");
   if (rtl) track.dir = "rtl";
@@ -234,7 +233,6 @@ test("going to a slide scrolls its start to the track's, smoothly unless the rea
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
   script.scrollToSlide(track, slides[1]!);
   expect(scrolls.at(-1)).toEqual({ left: 120, behavior: "instant" });
-  // As far as the track goes, and no further.
   script.scrollToSlide(track, slides[3]!, false);
   expect(scrolls.at(-1)).toEqual({ left: 360, behavior: "instant" });
   expect(script.scrollToSlide(track, slides[0]!)).toBe(false);
@@ -294,7 +292,6 @@ test("the script's words follow the language module, or the page's own", async (
   const stop = script.startCarousels();
   const block = document.querySelector<HTMLElement>(".ds-carousel")!;
   expect(block.getAttribute("aria-roledescription")).toBe("Carousel");
-  // The script's own words follow the language as it changes.
   setLanguage("ja");
   expect(block.getAttribute("aria-roledescription")).toBe("カルーセル");
   expect(block.querySelector("p")!.getAttribute("aria-label")).toBe("2 枚中 1 枚目");
@@ -314,7 +311,6 @@ test("the dots and the carousel are drawn on the square, autoplay is opt-in, and
   expect(css).toMatch(/\.ds-carousel__track \{[^}]*scroll-snap-type: x mandatory;/);
   expect(css).toMatch(/column-gap: var\(--ds-carousel-gap, var\(--ds-unit\)\);/);
   for (const [, value] of css.matchAll(/transition: ([^;]+);/g)) expect(value).toMatch(/^(transform [^,]+|none)$/);
-  // The dots share progress.css with the bar, whose fill grows along an easing curve: still transform alone.
   for (const [, value] of dots.matchAll(/transition: ([^;]+);/g)) expect(value).toMatch(/^(transform\b|none$)/);
   expect(dots).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.ds-progress__dot::before \{\s*transition: none;/);
   expect(sheet("1-root/controls.css")).toContain('@import "./carousel.css";');
@@ -330,7 +326,6 @@ test("a drag across the strip never presses the slide it ends on; a plain press 
   const pressed: string[] = [];
   element.querySelectorAll("button").forEach(button => button.addEventListener("click", () => pressed.push(button.className)));
   const pointer = (type: string, x: number, pointerType = "mouse") => track.dispatchEvent(new PointerEvent(type, { pointerId: 3, pointerType, isPrimary: true, button: 0, clientX: x, bubbles: true }));
-  // A mouse drag: the strip follows it, and the press that ends it chooses nothing.
   pointer("pointerdown", 200);
   pointer("pointermove", 150);
   expect(track.hasAttribute("data-dragging")).toBe(true);
@@ -338,14 +333,12 @@ test("a drag across the strip never presses the slide it ends on; a plain press 
   expect(track.hasAttribute("data-dragging")).toBe(false);
   element.querySelector<HTMLButtonElement>(".a")!.click();
   expect(pressed).toEqual([]);
-  // A finger's swipe scrolls the track natively; the press that ends it chooses nothing either.
   await new Promise(resolve => setTimeout(resolve, 450));
   pointer("pointerdown", 200, "touch");
   track.dispatchEvent(new Event("scroll"));
   pointer("pointerup", 120, "touch");
   element.querySelector<HTMLButtonElement>(".b")!.click();
   expect(pressed).toEqual([]);
-  // A press without a drag is a press.
   await new Promise(resolve => setTimeout(resolve, 450));
   pointer("pointerdown", 200);
   pointer("pointerup", 201);
@@ -358,11 +351,9 @@ test("the sheet holds off snapping while a mouse drags the strip", () => {
   expect(sheet("1-root/carousel.css")).toMatch(/\.ds-carousel__track\[data-dragging\] \{\s*scroll-snap-type: none;/);
 });
 
-// carousel.sideways-scroll in DS1/0-face/constraints.ts
 test("only a carousel scrolls sideways: a plain box that scrolls sideways breaks the rule, a track, a table or a block of code does not", async () => {
   const { constraints } = await import("../DS1/0-face/constraints");
   const rule = constraints.find(c => c.code === "carousel.sideways-scroll")!;
-  /** A box as a browser would measure it: how wide it is drawn, and how wide what it holds is. */
   const box = (html: string, clientWidth: number, scrollWidth: number) => {
     document.body.insertAdjacentHTML("beforeend", html);
     const element = document.body.lastElementChild as HTMLElement;
@@ -371,12 +362,10 @@ test("only a carousel scrolls sideways: a plain box that scrolls sideways breaks
     Object.defineProperty(target, "scrollWidth", { value: scrollWidth });
     return target;
   };
-  // Nothing scrolls sideways: a box whose pieces fit, and one that may scroll but holds no more than its width.
   box(`<div data-scroller style="overflow-x: auto">fits</div>`, 375, 375);
   box(`<div data-scroller style="overflow: hidden">cut</div>`, 375, 900);
   expect(rule.count(document)).toBe(0);
   expect(rule.inspect(document)).toEqual([]);
-  // By design: a carousel's track, a table in its frame, a block of code and a matrix.
   box(`<div class="ds-carousel"><ul class="ds-carousel__track" data-scroller style="overflow-x: auto"><li>1</li></ul></div>`, 375, 1200);
   box(`<ds-carousel><div data-scroller style="overflow-x: auto">strip</div></ds-carousel>`, 375, 1200);
   box(`<div class="ds-table-scroll" data-scroller style="overflow-x: auto"><table class="ds-table"></table></div>`, 375, 800);
@@ -384,7 +373,6 @@ test("only a carousel scrolls sideways: a plain box that scrolls sideways breaks
   box(`<ds-matrix><div class="matrix" data-scroller style="overflow-x: auto"></div></ds-matrix>`, 375, 700);
   expect(rule.count(document)).toBe(5);
   expect(rule.inspect(document)).toEqual([]);
-  // A plain box scrolling a row of cards sideways is what the rule is for, whether its overflow is auto or scroll.
   const board = box(`<section><div class="board" data-scroller style="overflow-x: auto"><article>1</article><article>2</article></div></section>`, 375, 1080);
   const strip = box(`<div data-scroller style="overflow-x: scroll; overflow-y: hidden">pieces</div>`, 320, 640);
   expect(rule.count(document)).toBe(7);
@@ -392,7 +380,6 @@ test("only a carousel scrolls sideways: a plain box that scrolls sideways breaks
     { element: board, message: "It holds 1080px of pieces in 375px and scrolls them sideways; only a carousel does that." },
     { element: strip, message: "It holds 640px of pieces in 320px and scrolls them sideways; only a carousel does that." },
   ]);
-  // The carousel's own track is the strip the rule points to: it scrolls sideways and snaps.
   const track = /\.ds-carousel__track \{([^}]*)\}/.exec(sheet("1-root/carousel.css"))![1]!;
   expect(track).toContain("overflow-x: auto");
   expect(track).toContain("scroll-snap-type: x mandatory");

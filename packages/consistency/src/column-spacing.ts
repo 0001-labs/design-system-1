@@ -2,7 +2,6 @@ import { bindSpacingHandle } from '../../app/src/2-core/spacing-handle';
 import { pointerGain } from './model';
 import './column-spacing.css';
 type GapState = { enabled(): boolean; value(id: string, fallback: number): number; select(id: string): void; preview(id: string, value: number): void; commit(id: string, value: number, pointer: boolean): void; cancel(): void };
-/** Column layout and its empty space belong to composition, outside Aa's source. */
 export class ColumnSpacingLayer {
  private handles = new Map<string,{host:HTMLElement;atom:HTMLElement;next:HTMLElement;dispose():void}>();
  private nativeDefaults = new WeakMap<Element,number>();

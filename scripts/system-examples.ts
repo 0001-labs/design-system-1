@@ -1,4 +1,3 @@
-/** Build the System example snapshots with the canonical rendered constraint inspector. No account or data writes. */
 import { build } from 'esbuild';
 import { createServer } from 'node:http';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
@@ -21,7 +20,6 @@ const server = createServer(async (request, response) => {
     response.setHeader('Content-Type', types[extname(path)] ?? 'application/octet-stream');
     response.end(await readFile(path));
   } catch {
-    // Examples take the published token-only base; every other missing asset remains a failure.
     if (url.pathname.startsWith('/ds1/')) {
       const result = await fetch(new URL(url.pathname, 'https://designsystem1.com'), { signal: AbortSignal.timeout(5_000) }).catch(() => null);
       if (result?.ok) { response.setHeader('Content-Type', result.headers.get('content-type') ?? 'text/css'); response.end(Buffer.from(await result.arrayBuffer())); return; }

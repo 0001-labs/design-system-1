@@ -1,20 +1,11 @@
 import SwiftUI
 
-/// The device scale, `--sf` on the web: on an iPhone or iPad every measure is multiplied by
-/// the screen's width over 280, between 0.75 and 2, rounded to three decimals; a Mac stays at 1.
-/// Put it on once at the root with `.ds1Scaled()` and read it with
-/// `@Environment(\.ds1Scale)`; every length is then `scale.unit`, `scale(16)` and so on.
 public struct DS1Scale: Equatable, Sendable {
     public let factor: CGFloat
-    /// The corner of pictures, buttons and fields at a scale of 1; an app may change it.
     public var corner: CGFloat = DS1Metrics.radius
 
     public init(factor: CGFloat) { self.factor = factor }
 
-    /// The scale for a screen `width` points wide, as DS1/0-face/scaling.ts computes it. With the
-    /// screen's `pixels` per point it snaps as scaling.ts's `"pixel"` does (`toDevicePixel`): a
-    /// square is a whole number of the screen's pixels, rounded down, so every grid line falls on
-    /// a pixel, stays sharp and even, and rows meet the lines exactly. Without, three decimals.
     public static func device(width: CGFloat, pixels: CGFloat? = nil) -> DS1Scale {
         let clamped = min(DS1Metrics.scaleMax, max(DS1Metrics.scaleMin, width / DS1Metrics.scaleBase))
         if let pixels, pixels > 0 {
@@ -25,12 +16,9 @@ public struct DS1Scale: Equatable, Sendable {
         return DS1Scale(factor: (clamped * step).rounded() / step)
     }
 
-    /// A computer: everything at its own size.
     public static let desktop = DS1Scale(factor: 1)
 
-    /// A length at this scale.
     public func callAsFunction(_ length: CGFloat) -> CGFloat { length * factor }
-    /// A length of `squares` squares.
     public func squares(_ squares: CGFloat) -> CGFloat { squares * unit }
 
     public var unit: CGFloat { DS1Metrics.square * factor }
@@ -46,11 +34,9 @@ public struct DS1Scale: Equatable, Sendable {
     public var leading: CGFloat { DS1Metrics.leading * factor }
     public var tracking: CGFloat { DS1Metrics.tracking * factor }
     public var displayTracking: CGFloat { DS1Metrics.displayTracking * factor }
-    /// Lines stay one point at every scale.
     public var line: CGFloat { DS1Metrics.line }
     public var radius: CGFloat { corner * factor }
 
-    /// The widest whole number of squares that fits `width`.
     public func wholeSquares(in width: CGFloat) -> CGFloat { max(0, (width / unit).rounded(.down)) * unit }
 }
 
@@ -77,7 +63,6 @@ private struct DS1Scaled: ViewModifier {
         #if os(macOS)
         var scale = DS1Scale.desktop
         #else
-        // Snapped to the screen's pixels, as the web's `"pixel"` scaling.
         var scale = DS1Scale.device(width: width, pixels: pixels)
         #endif
         scale.corner = corner
@@ -86,7 +71,6 @@ private struct DS1Scaled: ViewModifier {
 }
 
 extension View {
-    /// Puts the device scale on from the width this view is given: the screen's, at the root.
     public func ds1Scaled(corner: CGFloat = DS1Metrics.radius) -> some View {
         modifier(DS1Scaled(corner: corner))
     }

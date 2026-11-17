@@ -1,10 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { library, text } from './library-example-parts';
 
-// A one-person studio's fixed prices in the Tally library: night bands, big headings, three
-// package cards standing level, plain lists and a page of questions. The look is the library's;
-// this page holds only where things stand.
-
 const composition = `<style>
 /* The page stands centred, so the grid starts where the page does. Sixty-one squares less a square
    each side leave fifty-nine: three cards of nineteen, or two columns of twenty-nine, one square
@@ -71,7 +67,6 @@ const question = (words: string, answer: string) => `<ds-accordion icon="plus" d
 
 interface Plan { name: string; price: string; amount: number; audience: string; days: string; rounds: string; items: string[]; demo: string }
 interface Addon { name: string; price: string; audience: string; items: string[]; days: string }
-/** Every word of one page: the language changes, where things stand does not. */
 interface PricingCopy {
   lang?: string; currency: string; name: string; use: string; book: string; bookShort: string;
   nav: [string, string, string, string]; title: string; lead: string;
@@ -200,8 +195,6 @@ const ENGLISH: PricingCopy = {
   tagline: 'Online shops at a fixed price', site: 'Site', policies: '[{"label":"Terms","href":"#terms"},{"label":"Privacy","href":"#privacy"}]', legal: 'VAT 12 34 56 78',
 };
 
-// Prices stand tax included, as Japan asks of a price shown to consumers, and the keywords people
-// search with (ネットショップ制作, ECサイト制作, 費用, 料金, 納期) stand in the headings and questions.
 const JAPANESE: PricingCopy = {
   lang: 'ja', currency: 'JPY', name: 'ネットショップ制作の料金', book: '15分の相談を予約', bookShort: '15分相談',
   use: '固定料金のサービスページを日本語で。Tallyライブラリで、夜色の帯、3枚の料金カード、大きな見出し、よくある質問を組みました。',
@@ -255,7 +248,6 @@ const JAPANESE: PricingCopy = {
 
 export const PRICING_EXAMPLE: LayoutExample = { name: ENGLISH.name, use: ENGLISH.use, height: 900, library: library('tally'), html: page(ENGLISH) };
 
-/** What a search result and a shared link say, and the data search engines read: the prices and the questions as they stand on the page. */
 const seo = (copy: PricingCopy, title: string, description: string) => ({
   lang: copy.lang!, title, description,
   structuredData: [

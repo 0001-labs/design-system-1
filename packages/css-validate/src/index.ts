@@ -15,15 +15,6 @@ const DEFAULT_WARN_BYTES = 128 * 1024;
 const DEFAULT_MAX_DATA_URL_BYTES = 64 * 1024;
 const DEFAULT_MAX_IMPORTS = 5;
 
-/**
- * Validate a stylesheet before it becomes a published artifact.
- *
- * The same module runs in two places and they can legitimately disagree — a
- * user on a cached SPA bundle may run an older ruleset than the deployed
- * Worker. The client copy is **advisory**, driving inline editor feedback; the
- * copy in the publish handler is **authoritative**. The UI must therefore be
- * able to render server-returned issues in the same component as its own.
- */
 export function validateCss(css: string, options: ValidateOptions = {}): ValidateResult {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const warnBytes = options.warnBytes ?? DEFAULT_WARN_BYTES;
@@ -37,8 +28,6 @@ export function validateCss(css: string, options: ValidateOptions = {}): Validat
     issues.push(issue);
   };
 
-  // A leading BOM is legitimate. Strip it so offsets line up with the text the
-  // editor shows; it sits at offset 0, so line/column are unaffected.
   const source = css.charCodeAt(0) === 0xfeff ? css.slice(1) : css;
   const byteSize = new TextEncoder().encode(source).length;
 
@@ -47,7 +36,6 @@ export function validateCss(css: string, options: ValidateOptions = {}): Validat
   }
 
   if (byteSize > maxBytes) {
-    // Do not attempt to parse something oversized — report and stop.
     return finish(
       [
         {
@@ -78,8 +66,6 @@ export function validateCss(css: string, options: ValidateOptions = {}): Validat
       parseAtrulePrelude: true,
       parseRulePrelude: true,
       parseValue: true,
-      // DS1 is almost entirely custom properties, so their values must be
-      // parsed or url() inside them would never be seen.
       parseCustomProperty: true,
       onParseError(error: unknown) {
         push(parseErrorToIssue(error));
@@ -128,10 +114,6 @@ function parseErrorToIssue(error: unknown): Issue {
   };
 }
 
-/**
- * NUL and unpaired surrogates survive JSON round-trips but corrupt the stored
- * artifact, so they are rejected before anything else looks at the text.
- */
 function findControlCharacter(source: string): Issue | null {
   for (let index = 0; index < source.length; index += 1) {
     const code = source.charCodeAt(index);
@@ -145,7 +127,6 @@ function findControlCharacter(source: string): Issue | null {
       };
     }
 
-    // High surrogate must be followed by a low surrogate, and vice versa.
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = source.charCodeAt(index + 1);
       if (Number.isNaN(next) || next < 0xdc00 || next > 0xdfff) {

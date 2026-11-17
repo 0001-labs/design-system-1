@@ -1,6 +1,5 @@
 import { css, html, svg } from 'lit';
 
-/** Measured from the supplied 1179×2556 iPhone capture at 3× (393×852 points). */
 export const mobileChromeStyles = css`
   :host([kind=safari-ios]) { background:transparent; color:#080808; }
   :host([kind=safari-ios][appearance=dark]) { color:#f5f5f5; }

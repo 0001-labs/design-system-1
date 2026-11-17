@@ -1,16 +1,13 @@
 import SwiftUI
 
-/// What a toast reports.
 public enum DS1ToastKind: Sendable { case message, success, info, warning, error, loading }
 
-/// A toast's action or cancel: its words and what a press does. A press also closes the toast.
 public struct DS1ToastAction {
     public let label: String
     public let action: () -> Void
     public init(_ label: String, action: @escaping () -> Void) { self.label = label; self.action = action }
 }
 
-/// One toast in the stack. Reusing an `id` updates it in place and restarts its time.
 public struct DS1ToastItem: Identifiable {
     public let id: Int
     public var title: String
@@ -23,9 +20,6 @@ public struct DS1ToastItem: Identifiable {
     var version = 0
 }
 
-/// Toasts, as `toast()` on the web: `DS1Toast.success("Saved")` from anywhere; `.ds1Theme()`
-/// puts the stack on screen. Each stays 4 seconds (a loading toast until it is updated), paused
-/// while a finger is on the stack; three show at once; a swipe toward the edge dismisses one.
 @MainActor
 public final class DS1Toast: ObservableObject {
     public static let shared = DS1Toast()
@@ -60,7 +54,6 @@ public final class DS1Toast: ObservableObject {
     @discardableResult public static func error(_ title: String, description: String? = nil) -> Int { show(title, description: description, kind: .error) }
     @discardableResult public static func loading(_ title: String, description: String? = nil) -> Int { show(title, description: description, kind: .loading) }
 
-    /// A loading toast while `work` runs, then its success or its error in the same place.
     public static func promise<T>(loading: String, success: @escaping (T) -> String, error: @escaping (Error) -> String, _ work: () async throws -> T) async throws -> T {
         let id = Self.loading(loading)
         do {
@@ -73,14 +66,11 @@ public final class DS1Toast: ObservableObject {
         }
     }
 
-    /// Dismisses one toast, or every toast.
     public static func dismiss(_ id: Int? = nil) {
         withAnimation(.easeIn(duration: 0.2)) { shared.items.removeAll { id == nil || $0.id == id } }
     }
 }
 
-/// The stack of toasts (`<ds-toast>`): at most 16 squares wide, a square from the edge and the
-/// safe area. `.ds1Theme()` places one; place it yourself with `.ds1Theme(toasts: false)`.
 public struct DS1ToastHost: View {
     @Environment(\.ds1Scale) private var scale
     @ObservedObject private var store = DS1Toast.shared

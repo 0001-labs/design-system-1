@@ -5,7 +5,6 @@ import { matchingBrace, readCustomProperty, replaceCustomProperty, rootBlockRang
 
 const stock = () => ':root {\n  --one-accent-color: #99ff73;\n  --one-radius: 4px;\n  --one-unit: 20px;\n  --one-font: Arial;\n  --one-page-width: 640px;\n}\nbody { box-sizing: border-box; }';
 
-/** A dark-mode override above `:root` — the shape that used to corrupt drafts. */
 const DARK_BLOCK_ABOVE_ROOT = [
   "@media (prefers-color-scheme: dark) {",
   "  :root {",
@@ -25,7 +24,6 @@ describe("rootBlockRange", () => {
     const body = css.slice(range!.start, range!.end);
     expect(body).toContain("--one-accent-color");
     expect(body).toContain("--one-page-width");
-    // The block must stop before the Reset section that follows it.
     expect(body).not.toContain("box-sizing");
   });
 
@@ -78,21 +76,14 @@ describe("replaceCustomProperty", () => {
 
     expect(next).not.toBe(css);
     expect(next.length - css.length).toBe("13px".length - radius.length);
-    // Undoing that single declaration must restore the file exactly, which is
-    // only true if nothing else moved — including the token's own alignment.
     expect(next.replace(/(--one-radius:\s*)13px;/, (_, name: string) => `${name}${radius};`)).toBe(css);
   });
 
-  // The regression this whole module exists for. Before the fix, an unanchored
-  // first-match regex rewrote the declaration inside the @media block and left
-  // the real :root untouched, permanently once drafts are persisted.
   it("edits the real :root, not an earlier @media override", () => {
     const css = DARK_BLOCK_ABOVE_ROOT + stock();
     const next = replaceCustomProperty(css, "--one-accent-color", "#ff0066");
 
-    // The dark-mode override is untouched...
     expect(next).toContain("--one-accent-color: #99ccff;");
-    // ...and the value the controls actually bind to did change.
     expect(readCustomProperty(next, "--one-accent-color")).toBe("#ff0066");
   });
 
@@ -103,7 +94,6 @@ describe("replaceCustomProperty", () => {
       next = replaceCustomProperty(next, "--one-accent-color", value);
       expect(readCustomProperty(next, "--one-accent-color")).toBe(value);
     }
-    // Exactly one occurrence was ever rewritten.
     expect(next.match(/--one-accent-color:/g)?.length).toBe(
       css.match(/--one-accent-color:/g)?.length,
     );

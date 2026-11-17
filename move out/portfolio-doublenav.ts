@@ -1,15 +1,5 @@
 import { LitElement, html, css } from "lit";
 
-/**
- * A component for double navigation (previous/next)
- *
- * @element portfolio-doublenav
- * @prop {string} previous - URL for previous link
- * @prop {string} next - URL for next link
- * @prop {string} previousText - Text for previous link
- * @prop {string} nextText - Text for next link
- * @prop {string} overlay - Overlay color (blue, red, orange, green, yellow)
- */
 export class PortfolioDoubleNav extends LitElement {
   static get properties() {
     return {

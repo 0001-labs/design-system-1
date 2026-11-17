@@ -33,7 +33,6 @@ test.each(["google", "apple"])("Consistency keeps the %s verifier through naviga
   expect(window.location.href).toBe(redirect);
   expect(localStorage.getItem(proofKey)).toBe("opaque-return-proof");
 
-  // A new page keeps origin storage, but not the old session module's memory.
   vi.resetModules();
   window.history.replaceState({}, "", "/app/signin?code=one-use-provider-code");
   calls.verify.mockResolvedValue({ tokens: { token: "provider-token", refreshToken: "provider-refresh" } });

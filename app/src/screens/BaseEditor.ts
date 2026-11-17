@@ -6,7 +6,6 @@ import { AppElement, defineElement } from "../lib/element";
 import { button, loading, notice } from "../lib/ui";
 import { currentLocation, navigate } from "../router";
 
-/** Inline notices for a save that cannot go on: a newer version saved elsewhere, or a failure. Routine saves stay silent. */
 export function draftNotices(draft: BaseDraft) {
   return html`${draft.state === "conflict" ? notice("Open the newest base to keep editing. Your last change has not been made live.", {
     tone: "warning", role: "alert", heading: "The base was saved somewhere else", testid: "base-conflict",
@@ -14,7 +13,6 @@ export function draftNotices(draft: BaseDraft) {
   }) : nothing}${draft.state === "error" && draft.failure ? notice(draft.failure, { tone: "danger", testid: "base-error" }) : nothing}`;
 }
 
-/** The base's versions, newest first, each made live again on request. */
 export function draftHistory(draft: BaseDraft) {
   return html`<ol class="base-history" data-testid="base-history">${draft.history.map(row => html`<li>
     <span>Version ${row.version}${row.restoredFrom ? ` (from ${row.restoredFrom})` : ""}, ${row.overrides} ${row.overrides === 1 ? "token" : "tokens"} changed, ${new Date(row.createdAt).toLocaleString()}</span>
@@ -22,11 +20,6 @@ export function draftHistory(draft: BaseDraft) {
   </li>`)}</ol>`;
 }
 
-/**
- * Every token of the base system in the libraries' token workbench (`/base?view=tokens`), live
- * once saved: every save is a version, and `/ds1/base/latest.css` serves it to every product that
- * links it. Loading and saving are the draft's (`lib/baseDraft.ts`).
- */
 export class BaseEditor extends AppElement {
   static properties = { showHistory: { state: true } };
   declare showHistory: boolean;
@@ -58,7 +51,6 @@ export class BaseEditor extends AppElement {
     const draft = this.draft;
     if (draft.failure && draft.base === undefined) return html`<main class="route-splash"><p class="ds-text" role="alert">${draft.failure}</p></main>`;
     if (draft.base === undefined) return html`<main class="route-splash">${loading("Loading Design system 1")}</main>`;
-    // Seeded once per load, as a library editor is per library.
     return keyed(draft.seed, html`<ds1-system-workbench
       .initialCss=${draft.css}
       .header=${this.#header()}

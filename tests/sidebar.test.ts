@@ -75,7 +75,6 @@ test("rows carry no browser title; only a label cut short shows the whole label 
   const { initTooltips } = await import("../DS1/0-face/tooltips");
   document.documentElement.removeAttribute("data-ds-tooltips-ready");
   initTooltips();
-  // happy-dom has no layout: a label is as wide as eight pixels a letter, its row 100.
   vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) { return this.classList.contains("name") ? (this.textContent ?? "").length * 8 : 0; });
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) { return this.classList.contains("name") ? 100 : 0; });
   try {
@@ -90,7 +89,6 @@ test("rows carry no browser title; only a label cut short shows the whole label 
     expect(control(sidebar, "long").dataset.tooltip).toBe(long);
     expect(control(sidebar, "folder").dataset.tooltip).toBe(folder);
 
-    // The page's one tooltip finds the mark inside the shadow root, without a broken id reference.
     const link = control(sidebar, "long");
     link.querySelector(".name")!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, composed: true }));
     const bubble = document.querySelector<HTMLElement>("[data-ds-tooltip]")!;
@@ -99,7 +97,6 @@ test("rows carry no browser title; only a label cut short shows the whole label 
     expect(link.hasAttribute("aria-describedby")).toBe(false);
     expect(link.textContent?.trim()).toBe(long);
 
-    // A label that fits again loses its tooltip.
     sidebar.items = [{ id: "long", label: "Fits", href: "#long" }];
     await sidebar.updateComplete;
     expect(control(sidebar, "long").hasAttribute("data-tooltip")).toBe(false);

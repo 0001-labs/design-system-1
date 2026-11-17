@@ -1,11 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { library, photo, text } from './library-example-parts';
 
-// Nook, a fictional private workspace, in the Nook library: white paper and near-black ink, light
-// display type, hairline page rules, soft blooms of colour and full-bleed black bands. The look is
-// the library's; this page holds only where things stand. Tabs and the floating pill draw their
-// first state in the markup, so the page reads the same with no script (the editor runs none).
-
 const composition = `<style>
 /* The page stands centred in sixty-one squares, ruled down both sides, so the grid starts where the
    page does. Below that the page fills and the grid keeps the left edge. */
@@ -133,8 +128,6 @@ const heading = (role: string, words: string, level: number, extra = '') => type
 const body = (words: string, attrs = '') => type('body', words, `tone="muted" ${attrs}`);
 const small = (words: string, attrs = '') => type('small', words, attrs);
 
-// A line drawing in the library's stroke: one weight, round ends, the ink. A cabin on a ground
-// line, a shield with a keyhole in it, a phone and a laptop each side, and a dashed link between.
 const drawing = `<svg viewBox="0 0 400 340" role="img" aria-label="A small house with a lock on its door, a laptop and a phone beside it, joined by dashed lines" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20 300H380"/>
   <path d="M110 300V168L200 96L290 168V300"/>
@@ -282,7 +275,6 @@ const html = `${composition}
 </div>
 <div class="nook-float-wrap"><nav class="nook-float" aria-label="Sections"><a href="#what" aria-current="true">What</a><a href="#why">Why</a><a href="#who">Who</a></nav></div>`;
 
-// A tab shows its panel; the first state is already in the markup, so this only adds switching.
 const script = `document.querySelectorAll('ds-tabs[data-switch]').forEach(tabs => {
   tabs.addEventListener('click', event => {
     const target = event.target.closest('ds-button[role="tab"]');

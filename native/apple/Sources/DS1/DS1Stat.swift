@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// The stat's label on one square, figure on two, and caption on one.
-/// Its container owns the column width; long labels and captions keep their complete words.
 public struct DS1Stat: View {
     let label: String
     let value: String

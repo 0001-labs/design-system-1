@@ -1,16 +1,5 @@
 import type { C9ySystem, ComponentLayer, RelationKind } from './model';
 
-/**
- * The map, drawn as 0001's System map draws it: every node an item eight squares by one, stacks under a coloured
- * head, and the relations one inline SVG of runs along the grid with square turns. The sites stand in the upper
- * left; the four layers stand in columns to the right of them and start below the last site, so a relation leaves
- * its site to the right above every column, turns down in the gap before its layer and enters the component from
- * the left. No run crosses another node.
- *
- * Positions are counted in squares; the SVG's user space is the 20px square at base scale and the page scales the
- * whole drawing with `--ds-unit`, the lines held at 1px by `vector-effect`.
- */
-
 export const LAYERS: { layer: ComponentLayer; title: string; one: string }[] = [
   { layer: 'block', title: 'Blocks', one: 'Block' },
   { layer: 'runtime', title: 'Runtimes', one: 'Runtime' },
@@ -18,7 +7,6 @@ export const LAYERS: { layer: ComponentLayer; title: string; one: string }[] = [
   { layer: 'service', title: 'Services', one: 'Service' },
 ];
 
-/** System's words for each kind (0001/system/web/modules/pages/system-model.ts). */
 export const KIND_WORDS: Record<RelationKind, string> = {
   shared: 'Shares one copy',
   local: 'Built on its own',
@@ -59,7 +47,6 @@ export function mapLayout(system: C9ySystem): MapLayout {
 export const relationsOf = (system: C9ySystem, id: string) =>
   system.relations.filter(relation => relation.source === id || relation.target === id);
 
-/** The node and everything one relation away from it. */
 export function neighbourhood(system: C9ySystem, focus: string): Set<string> {
   const near = new Set([focus]);
   for (const relation of relationsOf(system, focus)) { near.add(relation.source); near.add(relation.target); }
@@ -85,7 +72,6 @@ function edges(system: C9ySystem, layout: MapLayout, focus: string): string {
   return svg;
 }
 
-/** The map's HTML: the stacks of nodes over one SVG of relations, and the key under the sites. */
 export function renderMap(system: C9ySystem, focus: string): string {
   const layout = mapLayout(system);
   const near = focus ? neighbourhood(system, focus) : null;

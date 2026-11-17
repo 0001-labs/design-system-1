@@ -2,7 +2,6 @@ import { html, type ReactiveController, type ReactiveControllerHost } from 'lit'
 
 export const snapColumn = (width: number, unit: number, minimum = 2 * unit) => Math.max(minimum, Math.round(width / unit) * unit);
 export interface ColumnResizeDetail { widths: number[] }
-/** Shared table interaction for native tables and product-owned grid rows. Widths are CSS pixels; emitted widths are squares. */
 export class TableColumns implements ReactiveController {
   widths: number[] = [];
   private observer?: ResizeObserver;

@@ -1,8 +1,3 @@
-/**
- * Inspect a page's layout without changing its size, opacity, or interaction:
- * named areas in dashed outlines with their name and size, text and fields in
- * green boxes, and every component (a custom element) outlined with its tag name.
- */
 export function createLayoutInspector() {
   const root = document.documentElement;
   const overlay = document.createElement('div');
@@ -52,12 +47,9 @@ export function createLayoutInspector() {
   document.body.appendChild(overlay);
   const layer = shadow.querySelector<HTMLDivElement>('.boxes')!;
   type Kind = 'area' | 'text' | 'field' | 'component';
-  // A page of thousands of words draws its first boxes and stops.
   const limit = 2000;
   const fields = new Set(['input', 'textarea', 'select', 'img', 'picture', 'svg', 'video', 'canvas', 'iframe']);
   const skipped = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'slot']);
-  // Primitives drawn as what they show rather than named: words, an icon,
-  // and a gap with nothing to see.
   const primitives: Record<string, Kind | 'none'> = { 'ds-text': 'text', 'ds-icon': 'field', 'ds-gap': 'none' };
   let frame = 0;
   let visible = false;
@@ -83,8 +75,6 @@ export function createLayoutInspector() {
         const text = !inText && !component && (primitive === 'text' || Array.from(element.childNodes).some((node) =>
           node.nodeType === Node.TEXT_NODE && node.textContent!.trim() !== ''));
         if (text) words.push([element, 'text']);
-        // A design system component is drawn whole; an app's own component is
-        // opened, so what it holds is drawn too.
         const content = element.shadowRoot;
         if (content && !primitive && (!name.startsWith('ds-') || element.hasAttribute('data-ds-layout-root'))) {
           if (!observedRoots.has(content)) {
@@ -97,7 +87,6 @@ export function createLayoutInspector() {
       }
     };
     visit(document.querySelector<HTMLElement>('[data-ds-inspect-active]') ?? document.body, false);
-    // Semantic fallback for pages that have not supplied their own area names.
     const named = areas.length ? areas : Array.from(document.querySelectorAll<HTMLElement>('header, main, section, footer, one-footer'))
       .filter((element) => !element.querySelector('section, header, footer, one-footer'));
     return { areas: named, words, components };
@@ -125,8 +114,6 @@ export function createLayoutInspector() {
     if (kind === 'area') {
       const areaName = element.dataset.dsArea || element.getAttribute('aria-label') ||
         (element.localName === 'one-footer' ? 'footer' : element.localName);
-      // Reduce dimensions measured to a tenth of a CSS pixel; use a decimal
-      // for fluid shapes whose exact fraction would be too long to read.
       const width = Math.max(1, Math.round(rect.width * 10));
       const height = Math.max(1, Math.round(rect.height * 10));
       let divisor = width;
@@ -142,7 +129,6 @@ export function createLayoutInspector() {
         horizontal <= 100 && vertical <= 100 ? `${horizontal}:${vertical}` : `≈ ${Number((rect.width / rect.height).toFixed(2))}:1`,
       ));
     } else if (kind === 'component') {
-      // A name with no room above the component stands inside it.
       panel.toggleAttribute('data-inside', rect.top < 16);
       panel.appendChild(tag(element.localName));
     }
@@ -159,7 +145,6 @@ export function createLayoutInspector() {
     for (const element of watched) {
       if (!observed.has(element)) { resize.observe(element); observed.add(element); }
     }
-    // Areas first, then words, then components, so component names lie on top.
     const drawn: HTMLElement[] = [];
     const draw = (element: HTMLElement, kind: Kind) => {
       if (drawn.length >= limit) return;

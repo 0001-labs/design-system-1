@@ -1,19 +1,16 @@
-/* Design system 1 shared sizing foundation */
 :root {
   --sf: 1;
   --01: calc(var(--1) * 0.1);
   --025: calc(var(--1) * 0.25);
   --05: calc(var(--1) * 0.5);
   --08: calc(var(--1) * 0.8);
-  --1: 20px; /* SET BASE UNIT HERE FOR EXAMPLE 20px */
+  --1: 20px;
   --2: calc(var(--1) * 2);
   --3: calc(var(--1) * 3);
   --4: calc(var(--1) * 4);
   --8: calc(var(--1) * 8);
   --12: calc(var(--1) * 12);
   --20: calc(var(--1) * 20);
-
-  /* Semantic sizing units */
 
   --tenth: var(--01);
   --quarter: var(--025);
@@ -30,25 +27,14 @@
   --ds-grid-unit: calc(var(--unit) * var(--sf));
 }
 
-/* Desktop aligned (0-face/scaling.ts, `desktop: "aligned"`): a computer's page
-   is a whole number of squares wide, and the height's leftover, --ds-grid-top,
-   goes to the top, so the first row is that much taller and the bottom edge
-   lands on a square. A bar fixed to the top takes the leftover itself:
-   calc(n * var(--ds-grid-unit) + var(--ds-grid-top)). A layout as high as the
-   window is calc(var(--ds-grid-rows) * var(--ds-grid-unit)) under it. */
 :root[data-desktop-aligned] {
-  /* The grid overlay's rows start under the leftover. */
   --ds-grid-origin-y: var(--ds-grid-top, 0px);
-  /* A scroll bar that comes and goes would change the width, and the scale with it. */
   scrollbar-gutter: stable;
 }
 :root[data-desktop-aligned] body {
   padding-block-start: var(--ds-grid-top, 0px);
 }
 
-/* The app frame (4-page/ds-app.ts) before its script has run: already the
-   window, its bar's paper and hairline drawn, and what it holds out of sight,
-   so the first paint is the frame and nothing jumps into place. */
 ds-app:not(:defined) {
   position: fixed;
   inset: 0;
@@ -60,7 +46,6 @@ ds-app:not(:defined) {
     var(--ds-header-paper, var(--background, Canvas));
 }
 ds-app:not(:defined) > * { visibility: hidden; }
-/* A flowing frame is the document: its page is drawn at once, under the bar's room. */
 ds-app[flow]:not(:defined) {
   position: relative;
   inset: auto;

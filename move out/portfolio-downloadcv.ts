@@ -1,15 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { currentLanguage, translate } from "../DS1/0-face/i18n";
 
-/**
- * Download CV button that resolves language-specific URLs
- *
- * @element portfolio-downloadcv
- * @prop {string} urlEn - URL for English CV
- * @prop {string} urlDa - URL for Danish CV
- * @prop {string} urlJa - URL for Japanese CV
- * @prop {string} filename - Base filename for download (default: "cv")
- */
 export class PortfolioDownloadCV extends LitElement {
   static properties = {
     urlEn: { type: String, attribute: "url-en", reflect: true },
@@ -85,7 +76,6 @@ export class PortfolioDownloadCV extends LitElement {
     );
 
     try {
-      // Prefer blob download (reliable filename, works cross-origin with CORS)
       const res = await fetch(this._activeUrl, { mode: "cors" });
       console.log(
         "[portfolio-downloadcv] Fetch response:",
@@ -114,7 +104,6 @@ export class PortfolioDownloadCV extends LitElement {
         "[portfolio-downloadcv] Fetch failed, using fallback:",
         err
       );
-      // Fallback: open the file directly
       window.open(this._activeUrl, "_blank", "noopener,noreferrer");
     }
   }

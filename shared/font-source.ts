@@ -1,34 +1,15 @@
-/**
- * A drawn face's source: the outlines drawn in the private font workspace,
- * held as UFO's glyphs hold them, so they can be written out as a UFO later.
- *
- * Every contour is closed. An on-curve point is `line` or `curve`, naming the
- * segment that ends at it; a `curve` point follows exactly two `offcurve`
- * control points (a cubic Bézier), a `line` point none. The first segment of a
- * contour runs from its last on-curve point to its first, so the control points
- * of that segment sit at the end of the list. Coordinates are whole font units
- * with y up, the baseline at 0.
- *
- * The workspace's app and Worker both read this module; it uses no browser or
- * Worker types.
- */
-
 export type SourcePointType = 'line' | 'curve' | 'offcurve';
 export type SourcePoint = { x: number; y: number; type: SourcePointType; smooth?: boolean };
 export type SourceContour = SourcePoint[];
 export type SourceGlyph = { unicode: number; advance: number; contours: SourceContour[] };
-/** The face's vertical measures: the design guides, and the line the face stands on. */
 export type SourceMetrics = {
   unitsPerEm: number;
-  /** The guides drawn to: ascenders, descenders, capitals, lower case. */
   ascender: number;
   descender: number;
   capHeight: number;
   xHeight: number;
-  /** The line box a browser builds from the face (hhea and win metrics). */
   lineAscent: number;
   lineDescent: number;
-  /** The width each figure takes when tabular figures are asked for (tnum); unset, the widest figure's. */
   figureWidth?: number;
 };
 export type FontSource = {
@@ -43,11 +24,6 @@ export type FontSource = {
 
 export const SOURCE_LIMITS = { bytes: 4 * 1024 * 1024, glyphs: 1200, contours: 64, points: 2000, coordinate: 4000 } as const;
 
-/**
- * The vertical measures of the text face a drawn sans replaces: 14px text on
- * a 16px line box then stands where it stands today, capitals 7px below the
- * square's top line and the baseline 3px above its foot.
- */
 export const DEFAULT_METRICS: SourceMetrics = {
   unitsPerEm: 1000,
   ascender: 785,
@@ -58,19 +34,17 @@ export const DEFAULT_METRICS: SourceMetrics = {
   lineDescent: -258,
 };
 
-/** The characters a drawn face starts with: Basic Latin, the Danish letters, quotes, dashes and a few signs. */
 export const SOURCE_CHARACTERS: readonly number[] = [
   ...Array.from({ length: 0x7e - 0x20 + 1 }, (_, index) => 0x20 + index),
-  0xc6, 0xd8, 0xc5, 0xe6, 0xf8, 0xe5, // Æ Ø Å æ ø å
-  0x2013, 0x2014, 0x2018, 0x2019, 0x201c, 0x201d, 0x2026, // – — ‘ ’ “ ” …
-  0x20ac, 0xa3, 0x2212, 0xd7, // € £ − ×
+  0xc6, 0xd8, 0xc5, 0xe6, 0xf8, 0xe5,
+  0x2013, 0x2014, 0x2018, 0x2019, 0x201c, 0x201d, 0x2026,
+  0x20ac, 0xa3, 0x2212, 0xd7,
 ];
 
 export function emptySource(family: string, style = 'Regular', weight = 400): FontSource {
   return { format: 'font-source', version: 1, family, style, weight, metrics: { ...DEFAULT_METRICS }, glyphs: [] };
 }
 
-/** A glyph's name in a built font. */
 export const glyphName = (unicode: number) => unicode === 0x20 ? 'space' : `uni${unicode.toString(16).toUpperCase().padStart(4, '0')}`;
 
 const fail = (message: string): never => { throw new Error(message); };
@@ -78,11 +52,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const wholeNumber = (value: unknown, limit: number = SOURCE_LIMITS.coordinate): value is number => Number.isInteger(value) && Math.abs(value as number) <= limit;
 const words = (value: unknown, length: number): value is string => typeof value === 'string' && value.length > 0 && value.length <= length && /^[\x20-\x7e]+$/.test(value);
 
-/** Whether a contour's control points are where its on-curve points say they are. */
 export function contourProblem(contour: readonly SourcePoint[]): string | null {
   const onCurve = contour.findIndex(point => point.type !== 'offcurve');
   if (onCurve < 0) return 'A contour needs a point on its outline.';
-  // Walk once around from the first on-curve point, counting the control points before each on-curve one.
   let run = 0;
   for (let step = 1; step <= contour.length; step += 1) {
     const point = contour[(onCurve + step) % contour.length]!;
@@ -94,10 +66,6 @@ export function contourProblem(contour: readonly SourcePoint[]): string | null {
   return null;
 }
 
-/**
- * Read a source sent to the Worker or loaded from storage. Throws with words a
- * person can act on; returns a copy holding only the known fields.
- */
 export function validateSource(value: unknown): FontSource {
   if (!isRecord(value) || value.format !== 'font-source' || value.version !== 1) fail('This is not a drawing the workspace can read.');
   const source = value as Record<string, unknown>;

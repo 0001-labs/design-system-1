@@ -1,4 +1,3 @@
-/** Temporary interaction mode; never writes the user's saved layer preferences. */
 export class ContextActivity {
   private observer: MutationObserver;
   private queued = false;

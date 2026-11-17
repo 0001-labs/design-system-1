@@ -8,16 +8,13 @@ import { SOURCE_CHARACTERS, validateSource } from '../../../../shared/font-sourc
 import './Workbench';
 import type { FontWorkbench } from './Workbench';
 
-// Resolve the fixture from this file so root and app test runs use the same face.
 const america = readFileSync(resolve(__dirname, '../../../../DS1/1-root/fonts/GT-America-Standard-Regular.woff2'));
 type Props = { face: { id: string; name: string }; request: FontWorkbench['request']; onMessage: Mock<(value: string) => void>; onError: Mock<(value: string) => void>; onBuildSaved: Mock<(value: string) => void>; onDirtyChange: Mock<(value: boolean) => void> };
 let host: HTMLDivElement;
 let request: ReturnType<typeof vi.fn>;
 let props: Props;
 const settle = async () => { for (let tick = 0; tick < 4; tick++) await new Promise(resolve => setTimeout(resolve, 5)); };
-/** Waits for the element's updates after a change made outside it. */
 const act = async (run: () => unknown) => { await run(); await settle(); };
-/** The workbench as the font workspace puts it in: its face and request in, its events out. */
 async function render(hidden = false) {
   const element = document.createElement('ds1-font-workbench') as FontWorkbench;
   element.face = props.face;
@@ -76,7 +73,6 @@ describe('font workbench', () => {
     expect(outline()).toBe('M255 0L345 0L345 710L255 710Z');
     await press('z', { mod: true, shift: true });
     expect(outline()).toBe('M265 0L355 0L355 710L265 710Z');
-    // Drag one corner: a click chooses it alone, and the drag moves it in whole units (0.4 pixels a unit here).
     const corner = host.querySelector<SVGElement>('[data-point="0:0"]')!;
     const canvas = host.querySelector<SVGSVGElement>('.workbench-canvas')!;
     await act(() => { corner.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100, pointerId: 1 })); });

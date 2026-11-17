@@ -32,7 +32,6 @@ def extract(root, sample, pages):
     if page not in pages:
         pages[page] = Image.open(root / f'source/full-{page}.png').convert('RGB')
     box = sample['box']
-    # Coordinates are expressed on an 1800px preview; full scans are twice that.
     left, top, right, bottom = [round(v * 2) for v in box]
     image = pages[page].crop((left, top, right, bottom))
     gray = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2GRAY)
@@ -72,14 +71,12 @@ def main(root):
         if not ink.any():
             raise ValueError(f'No ink for {char!r}, crop {index}')
         bitmap = output / f'{name}.pbm'
-        # Potrace traces foreground black; use an explicit PBM without dither.
         Image.fromarray(255 - ink).convert('1', dither=Image.Dither.NONE).save(bitmap)
         svg = output / f'{name}.svg'
         subprocess.run(['potrace', str(bitmap), '--svg', '--output', str(svg), '--turdsize', '4', '--opttolerance', '0.15'], check=True)
         recording = RecordingPen()
         for path in ET.parse(svg).getroot().iter('{http://www.w3.org/2000/svg}path'):
             parse_path(path.attrib['d'], recording)
-        # Potrace paths use 10 units per raster pixel, y positive up.
         scale = sample['scale'] / 20
         placement = RecordingPen()
         recording.replay(TransformPen(placement, (scale, 0, 0, scale, 0, (sample['baseline'] - sample['box'][3]) * sample['scale'])))
@@ -98,7 +95,6 @@ def main(root):
         else:
             groups[char].append(name)
             cmap.setdefault(ord(char), name)
-        # Pair straight/curly apostrophes only; no unobserved letters are added.
         if char == "'":
             cmap[0x2018] = cmap[0x2019] = name
         preview = Image.fromarray(255 - ink)
@@ -133,7 +129,6 @@ def main(root):
         for text, name in sorted(ligatures, key=lambda item: -len(item[0])):
             features.append('  sub ' + ' '.join(cmap[ord(c)] for c in text) + ' by ' + name + ';')
         features.append('} liga;')
-    # Cycle real alternate scans by word position; no random or transformed clones.
     bases, alternatives, thirds = [], [], []
     for char, names in groups.items():
         if len(names) > 1:

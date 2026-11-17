@@ -1,23 +1,6 @@
-/**
- * What a published native page's blocks do by themselves. One small module with no imports, served by the platform
- * at `/_c9y/behaviours.js` and loaded only by a page whose document holds a behaviour. The editor's canvas runs no
- * script, and a reader without scripts gets none either: both see every block as it is written.
- *
- * A hero with turns (`data-turns`, written by the renderer) changes to the next one every `data-turn-every` seconds
- * and when its title is pressed: the kicker and the title take the turn's words, a kicker of digits counting to its
- * new number, and the picture follows once it has loaded. The hero as written is the first turn. Nothing changes
- * while the page is hidden, and reduced motion changes the words at once. A theme can draw the time left to the next
- * turn with an animation named `c9y-turn` anywhere in a hero that behaves (`[data-c9y-behaving]`), lasting
- * `var(--c9y-turn-every)` and filling forwards: it starts again with every turn, a press of the title included.
- *
- * A footer's theme control (`data-c9y-theme`) switches the page between light and dark through Design system 1's
- * theme runtime (`window.DS_ONE_THEME`, which the platform starts in the page's head before the first paint) and
- * names the theme the page is in. Without that runtime the control stays hidden.
- */
 export interface Turn { kicker?: string; title: string; src?: string; alt?: string }
 export type TurnOrder = 'shuffled' | 'in-order';
 
-/** The turns to come after `current`: every other one, shuffled, or as written from the one after it. */
 export function turnQueue(count: number, current: number, order: TurnOrder, random: () => number = Math.random): number[] {
   const rest = Array.from({ length: count }, (_, index) => index).filter(index => index !== current);
   if (order === 'in-order') return [...rest.filter(index => index > current), ...rest.filter(index => index < current)];
@@ -25,13 +8,11 @@ export function turnQueue(count: number, current: number, order: TurnOrder, rand
   return rest;
 }
 
-/** Digits on their way to `to`: its places settle from the left as `progress` goes from 0 to 1, the rest still counting. */
 export function countingText(to: string, progress: number, random: () => number = Math.random): string {
   const settled = Math.floor(Math.min(1, Math.max(0, progress)) * to.length);
   return [...to].map((char, index) => index < settled || !/\d/.test(char) ? char : String(Math.floor(random() * 10))).join('');
 }
 
-/** The turns a hero carries, or none when the data is not a list of them. */
 export function readTurns(source: string | undefined): Turn[] {
   try {
     const value: unknown = JSON.parse(source ?? '');
@@ -39,7 +20,6 @@ export function readTurns(source: string | undefined): Turn[] {
   } catch { return []; }
 }
 
-/** The element that holds a slot's words: the deepest one that is its parent's only content, so a link or a heading stays. */
 function leaf(slot: Element | null): HTMLElement | null {
   let node = slot as HTMLElement | null;
   while (node && node.children.length === 1 && !Array.from(node.childNodes).some(child => child.nodeType === 3 && child.textContent?.trim())) node = node.children[0] as HTMLElement;
@@ -48,7 +28,6 @@ function leaf(slot: Element | null): HTMLElement | null {
 
 const COUNT_MS = 600;
 
-/** Starts the theme's line to the next turn again: every `c9y-turn` animation in the hero, its pseudo-elements included. */
 export function restartTurnLine(hero: Pick<Element, 'getAnimations'>) {
   for (const animation of hero.getAnimations({ subtree: true })) if ((animation as CSSAnimation).animationName === 'c9y-turn') animation.currentTime = 0;
 }
@@ -80,7 +59,6 @@ function bindHero(hero: HTMLElement) {
     if (turn.kicker !== undefined) count(turn.kicker);
     title.textContent = turn.title;
     if (picture && turn.src && turn.src !== picture.getAttribute('src')) {
-      // The picture follows once it can be drawn, and only if no later turn has been shown since.
       const next = new Image();
       const swap = () => { if (ticket !== shown) return; picture.removeAttribute('srcset'); picture.src = turn.src!; picture.alt = turn.alt ?? ''; };
       next.src = turn.src;
@@ -98,9 +76,7 @@ function bindHero(hero: HTMLElement) {
   wait();
 }
 
-/** Design system 1's theme runtime, as much of it as the control uses (`DS1/0-face/theme-bootstrap.js`). */
 interface ThemeRuntime { theme(): 'light' | 'dark'; set(mode: 'light' | 'dark' | 'system'): void }
-/** The theme a press goes to. */
 export const otherTheme = (theme: 'light' | 'dark'): 'light' | 'dark' => theme === 'dark' ? 'light' : 'dark';
 
 function bindTheme(button: HTMLElement) {
@@ -113,7 +89,6 @@ function bindTheme(button: HTMLElement) {
   button.hidden = false;
 }
 
-/** Starts every behaviour the page holds; a block already started is left alone. */
 export function startBehaviours(root: ParentNode = document) {
   for (const button of root.querySelectorAll<HTMLElement>('[data-c9y-theme]')) {
     if (button.dataset.c9yBehaving !== undefined) continue;

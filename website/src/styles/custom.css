@@ -1,22 +1,15 @@
-/* Custom styles for Design system 1 documentation */
-
 :root {
-  /* Content layout */
   --sl-content-width: calc(720px * var(--sf, 1));
 
-  /* Typography */
   --sl-text-5xl: 3.5rem;
   --sl-text-4xl: 2.5rem;
 
-  /* Colors - Purple theme to match the sidebar */
   --sl-color-accent: #667eea;
   --sl-color-accent-low: rgba(102, 126, 234, 0.15);
   --sl-color-accent-high: #5568d3;
 
-  /* Spacing */
   --sl-nav-height: calc(60px * var(--sf, 1));
 
-  /* Design system 1 Documentation Colors */
   --ds1-docs-header-bg: light-dark(var(--white), var(--slate-dark));
   --ds1-docs-header-border: light-dark(#e0e0e0, #000000);
   --ds1-docs-header-text: light-dark(#2a2a2a, #f1f1f1);
@@ -28,7 +21,6 @@
   --ds1-docs-divider: light-dark(#e0e0e0, #000000);
 }
 
-/* Dark mode adjustments */
 [data-theme="dark"] {
   --sl-color-accent: #8b9cf5;
   --sl-color-accent-low: rgba(139, 156, 245, 0.2);
@@ -40,7 +32,6 @@
 }
 
 
-/* Links */
 a {
   transition: color 0.2s ease;
 }
@@ -49,7 +40,6 @@ a:hover {
   color: var(--sl-color-accent-high);
 }
 
-/* Cards */
 .card {
   transition:
     transform 0.2s ease,
@@ -61,7 +51,6 @@ a:hover {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
-/* Headers */
 h1,
 h2,
 h3,
@@ -72,27 +61,23 @@ h6 {
   font-family: var(--typeface-regular);
 }
 
-/* Main content area */
 .main-pane {
   background: var(--ds1-docs-content-bg);
   padding: calc(40px * var(--sf, 1));
 }
 
-/* Mobile responsive content padding */
 @media (max-width: 768px) {
   .main-pane {
     padding: calc(20px * var(--sf, 1));
   }
 }
 
-/* Sidebar backdrop on mobile */
 @media (max-width: 50rem) {
   [aria-label="Main"] {
     padding: 1rem;
   }
 }
 
-/* Button styles in content */
 .sl-link-button {
   transition: all 0.2s ease;
 }
@@ -114,32 +99,27 @@ h1#_top {
   margin: 0 0 calc(20px * var(--sf, 1)) 0;
 }
 
-/* Header z-index */
 header {
   z-index: 200;
   position: relative;
 }
 
-/* Ensure content stays below header and sidebar */
 .main-pane,
 .content-panel {
   z-index: 1;
   position: relative;
 }
 
-/* Table styles */
 table {
   border-radius: 0.5rem;
   overflow: hidden;
 }
 
-/* Inline code */
 :not(pre) > code {
   background: rgba(102, 126, 234, 0.1);
   border-radius: 0.25rem;
 }
 
-/* Mobile responsive adjustments */
 @media (max-width: 768px) {
   h1#_top {
     height: auto;
@@ -152,19 +132,16 @@ table {
   }
 }
 
-/* Tablet adjustments */
 @media (max-width: 1024px) and (min-width: 769px) {
   .sidebar-content {
     width: 100%;
   }
 }
 
-/* Prevent body scroll when mobile menu is open */
 body.sidebar-open {
   overflow: hidden;
 }
 
-/* Smooth transitions for responsive layout */
 @media (prefers-reduced-motion: no-preference) {
   .sidebar,
   .sidebar-overlay {
@@ -172,7 +149,6 @@ body.sidebar-open {
   }
 }
 
-/* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .sidebar-overlay {
@@ -180,13 +156,6 @@ body.sidebar-open {
   }
 }
 
-/* ------------------------------------------------------------------------
-   The page on the grid. One square is 20px. Every panel is a whole number of
-   squares wide, every line of writing is one square tall, and every space
-   between two blocks is one or two squares. The sizes: writing 14,
-   a heading 15, a section's title 17 and the page's 20, small print 10.
-   A hairline is drawn as a shadow, so it takes no room from the squares.
-   ------------------------------------------------------------------------ */
 :root {
   --grid: calc(20px * var(--sf, 1));
   --docs-type: calc(14px * var(--sf, 1));
@@ -206,11 +175,6 @@ body.sidebar-open {
   letter-spacing: var(--docs-tracking);
 }
 
-/* The page's title is .ds-text--display (src/components/Heading.astro): 20 on two squares. */
-
-/* The writing itself is drawn by Design system 1's prose sheet
-   (DS1/1-root/prose.css), on data-ds-prose (src/components/MarkdownContent.astro).
-   What follows is Starlight's own markup: its anchored headings and its code frames. */
 .sl-markdown-content :not(h1, h2, h3, h4, h5, h6, .sl-heading-wrapper) + .sl-heading-wrapper:not(:where(.not-content *)) {
   margin-top: calc(2 * var(--grid));
 }
@@ -224,7 +188,6 @@ body.sidebar-open {
 .sl-markdown-content .sl-heading-wrapper > :is(h1, h2, h3, h4, h5, h6) { display: block; margin: 0; padding: 0; }
 .sl-markdown-content .sl-heading-wrapper .sl-anchor-link { position: relative; display: flex; align-items: center; height: var(--grid); margin: 0; }
 
-/* Code frames: thirteen on the same rows, a square of room around it, its frame a shadow. */
 .expressive-code {
   --ec-codeFontFml: var(--typeface-mono);
   --ec-codePadInl: var(--grid);
@@ -257,7 +220,6 @@ body.sidebar-open {
 }
 .expressive-code .frame .copy button { width: var(--grid); height: var(--grid); }
 
-/* The page's foot: two squares under the writing. */
 .main-pane footer { margin-top: calc(2 * var(--grid)); gap: var(--grid); font-size: var(--docs-type); line-height: var(--grid); }
 .main-pane footer .meta { margin-top: 0; gap: var(--grid); font-size: var(--docs-type); line-height: var(--grid); }
 .main-pane footer .pagination-links { gap: var(--grid); }
@@ -296,8 +258,6 @@ body.sidebar-open {
   outline-offset: calc(-2px * var(--ds-sf));
 }
 
-/* Signed in there is no On this page, on any page: the page's column takes the room, with no line,
-   handle or gap left where it stood (src/components/TwoColumnContent.astro). Signed out it stays. */
 html[data-signed-in] :is(.docs-contents, .right-sidebar-container, mobile-starlight-toc) { display: none; }
 html[data-signed-in] .docs-columns::part(aside),
 html[data-signed-in] .docs-columns::part(resize-aside) { display: none; }
@@ -307,14 +267,11 @@ html[data-signed-in] .docs-columns::part(page) {
   column-gap: 0;
 }
 
-/* On this page: twelve squares, its writing starting level with the page's. */
 .right-sidebar-container { width: calc(240px * var(--sf, 1)); flex: none; }
 .right-sidebar { width: calc(240px * var(--sf, 1)); box-shadow: inset 1px 0 var(--ds1-docs-header-border); border: 0; }
 .right-sidebar-panel { padding: calc(2 * var(--grid)) var(--grid); }
 .right-sidebar-panel .sl-container { width: calc(200px * var(--sf, 1)); max-width: calc(200px * var(--sf, 1)); }
 
-/* No horizontal lines and nothing that scrolls inside itself in the docs (Joachim, 19 October 2026):
-   tables keep their rows on the squares without rules, and wrap rather than scroll; code wraps. */
 .sl-markdown-content table {
   display: table;
   width: 100%;
@@ -340,16 +297,12 @@ html[data-signed-in] .docs-columns::part(page) {
 .expressive-code pre {
   overflow: visible;
 }
-/* On a phone a table shares its width among its columns and a wrapped code line starts a square in, so neither
-   widens the page (carousel.sideways-scroll: the content column must never scroll sideways). */
 @media (max-width: 600px) {
   .sl-markdown-content table { table-layout: fixed; }
   .expressive-code .frame .ec-line .code { padding-inline-start: var(--grid); text-indent: 0; }
 }
 html:root { --ds-sf: var(--sf, 1); }
 
-/* Root's topics: the names are the links, without an underline. */
 .sl-markdown-content .topic-table a { text-decoration: none; }
 
-/* Contents stays in its content viewport, below the page's own navigation controls. */
 mobile-starlight-toc > nav { position: relative; inset: auto; top: auto; }

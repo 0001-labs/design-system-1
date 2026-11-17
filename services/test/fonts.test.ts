@@ -51,7 +51,6 @@ describe('private font workspace', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('access-control-allow-origin')).toBeNull();
     const { fonts } = (await response.json()) as { fonts: Listed[] };
-    // The faces in development come first, each honest about whether a build exists, then the references.
     expect(fonts.slice(0, 2)).toEqual([
       expect.objectContaining({ id: 'supernatural', name: 'Supernatural', development: true, drawing: false, available: false, fileName: null }),
       expect.objectContaining({ id: '0001-sans', name: '0001 Sans', development: true, drawing: true, available: false, fileName: null }),
@@ -86,7 +85,6 @@ describe('private font workspace', () => {
     expect(fonts.find(font => font.id === 'supernatural')).toMatchObject({ available: false, fileName: null });
     expect(new Uint8Array(await (await fontWorkspace(request('/api/fonts/file/0001-sans'), env, send)).arrayBuffer())).toEqual(bytes);
     expect((await fontWorkspace(request('/api/fonts/file/supernatural'), env, send)).status).toBe(404);
-    // Saving the other face afterwards does not move this one's pointer, and a build without a name takes the face's.
     expect((await fontWorkspace(request('/api/fonts/supernatural', { method: 'PUT', body: woff2() }), env, send)).status).toBe(200);
     expect(JSON.parse(String(objects.get('fonts/0001-sans/current.json')))).toEqual(current);
     expect(JSON.parse(String(objects.get('fonts/supernatural/current.json')))).toMatchObject({ key: expect.stringMatching(/^fonts\/supernatural\//), name: 'Supernatural' });
@@ -96,7 +94,6 @@ describe('private font workspace', () => {
     expect((await fontWorkspace(request('/api/fonts/supernatural', { method: 'PUT', body: 'x', headers: { origin: 'https://other.example' } }), env, send)).status).toBe(403);
     expect((await fontWorkspace(request('/api/fonts/supernatural', { method: 'PUT', body: 'x', headers: { 'content-length': '10485761' } }), env, send)).status).toBe(413);
     expect((await fontWorkspace(request('/api/fonts/supernatural', { method: 'PUT', body: '<html>bad</html>' }), env, send)).status).toBe(400);
-    // The references and anything else outside the development table cannot be overwritten.
     for (const path of ['/api/fonts/olivetti', '/api/fonts/america', '/api/fonts/file/supernatural', '/api/fonts/reference/olivetti.woff2']) {
       expect((await fontWorkspace(request(path, { method: 'PUT', body: woff2() }), env, send)).status).toBe(404);
     }
@@ -142,7 +139,6 @@ describe('private font workspace', () => {
       await fontWorkspace(request('/api/fonts/0001-sans/source', put(JSON.stringify(second))), env, send);
       expect(objects.has(pointer.key)).toBe(true);
       expect(JSON.parse(String(objects.get('fonts/0001-sans/source/current.json'))).key).not.toBe(pointer.key);
-      // A drawing is not a build: the face still has no font to show.
       expect(objects.has('fonts/0001-sans/current.json')).toBe(false);
     });
     it('stores only the fields it knows, in character order', async () => {

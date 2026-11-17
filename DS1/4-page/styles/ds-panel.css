@@ -1,7 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-panel.css */
-
 :host {
   box-sizing: border-box;
   display: flex;
@@ -32,6 +30,5 @@ slot[name="footer"] {
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  /* The header and footer stay put while the words between them scroll. */
   overflow: hidden auto;
 }

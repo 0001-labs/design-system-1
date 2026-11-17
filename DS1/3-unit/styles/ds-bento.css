@@ -1,6 +1,3 @@
-/* ds-bento.css */
-/* The element's bento: the same as 1-root/bento.css's .ds-bento, on the host and its slotted tiles. */
-
 :host {
   --ds-bento-unit: var(--ds-unit);
   --ds-bento-gap: calc(var(--ds-bento-unit) / 2);
@@ -40,7 +37,6 @@
 
 :host([squares]) {
   --ds-bento-reach: calc(var(--ds-bento-unit) / 4);
-  /* Exactly its squares wide: each column one square. */
   width: calc(var(--ds-bento-columns, 48) * var(--ds-bento-unit));
   max-width: none;
   grid-template-columns: repeat(var(--ds-bento-columns, 48), var(--ds-bento-unit));
@@ -48,7 +44,6 @@
   grid-auto-flow: row;
   gap: 0;
 }
-/* Fit: the columns share a measure narrower (or wider) than the squares, the rows still one square. */
 :host([squares][fit]) {
   width: auto;
   grid-template-columns: repeat(var(--ds-bento-columns, 48), minmax(0, 1fr));
@@ -62,7 +57,6 @@
   grid-row: calc(var(--ds-bento-y, 0) + 1) / span var(--ds-bento-h, 4);
   margin: calc(-1 * var(--ds-bento-inset-top)) calc(-1 * var(--ds-bento-inset-end)) calc(-1 * var(--ds-bento-inset-bottom)) calc(-1 * var(--ds-bento-inset-start));
 }
-/* A card grows its own padding by the reach (card.css); any other tile is padded here, a square inside. */
 :host([squares]) ::slotted(:not(.ds-card, ds-card)) {
   padding:
     calc(var(--ds-bento-padding, var(--ds-bento-unit)) + var(--ds-bento-inset-top))

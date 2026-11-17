@@ -7,11 +7,8 @@ import { provideIcons } from "./ds-icon";
 import { avatarIcon } from "./generated/icon-avatar";
 import styles from "./styles/ds-avatar.css?inline";
 
-// The person drawing (`icon="avatar"`) comes with the avatar, so it draws in
-// the first frame instead of the initial while the deferred icons load.
 provideIcons({ avatar: avatarIcon });
 
-/** The ink that reads on a fill: black on a light one, white on a dark one. */
 const inkOn = (rgb: number[]) => {
   const fill = [...rgb, 1] as RGBA;
   const white: RGBA = [1, 1, 1, 1], black: RGBA = [42 / 255, 42 / 255, 42 / 255, 1];
@@ -20,7 +17,6 @@ const inkOn = (rgb: number[]) => {
   return "black";
 };
 
-/** Saved identity colours are hex; their ink must stay legible in either theme. */
 export function avatarInk(color: string): string | undefined {
   const match = /^#([a-f\d]{6}|[a-f\d]{3})$/i.exec(color);
   if (!match) return undefined;
@@ -28,17 +24,13 @@ export function avatarInk(color: string): string | undefined {
   return inkOn([0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255));
 }
 
-/** The ink on a fill as the browser resolved it (`rgb(253, 187, 45)`), for a `color` given as a variable. */
 export function inkOnResolved(fill: string): string | undefined {
   const match = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+%?))?\s*\)/.exec(fill);
   if (!match) return undefined;
-  // A fill with no colour yet (`rgba(0, 0, 0, 0)`) says nothing about the ink.
   if (match[4] !== undefined && parseFloat(match[4]) === 0) return undefined;
   return inkOn([match[1], match[2], match[3]].map((n) => Number(n) / 255));
 }
 
-// A new element must know a previously drawn image's proportions before its first paint.
-// Bound source retention; embedded SVGs also carry their dimensions across document reloads.
 const imageRatios = new Map<string, string>();
 function rememberImageRatio(src: string, width: number, height: number): string | undefined {
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
@@ -64,18 +56,9 @@ function knownImageRatio(src: string): string | undefined {
     const box = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
     if (box?.length === 4) return rememberImageRatio(src, box[2], box[3]);
   } catch {
-    // Other or malformed images get their dimensions from their successful load event.
   }
 }
 
-/**
- * A person's or workspace's mark, one control high and round by default;
- * `shape="square"` gives it a picture's corners (`--ds-avatar-radius`, the
- * shared corner by default). Two ways to colour it: `color` fills it, `ink`
- * letters and outlines it on the neutral fill. Identity selection, which
- * identities are square, and actions belong to the app. `logo` is a brand
- * mark in its image area, unclipped and with no corners at all.
- */
 export class Avatar extends LitElement {
   static properties = {
     label: { type: String },
@@ -98,16 +81,13 @@ export class Avatar extends LitElement {
   };
   declare label: string;
   declare initial: string | undefined;
-  /** Derive one letter or the first and last initials from the label. */
   declare initials: "single" | "pair" | undefined;
   declare src: string;
   declare icon: string;
   declare color: string;
   declare ink: string;
   declare logo: boolean;
-  /** `round` is the default; `square` takes a picture's corners. */
   declare shape: "round" | "square";
-  /** `compact` is the default size, kept for products that still name it. */
   declare size: "default" | "compact" | "large" | "fill";
   declare fit: "cover" | "contain";
   declare mask: boolean;
@@ -139,7 +119,6 @@ export class Avatar extends LitElement {
     super.connectedCallback();
     const view = this.ownerDocument.defaultView!;
     this.inkObserver = new view.MutationObserver(this.queueInk);
-    // Observe only the painted ancestors, never our own shadow's ink writes.
     for (let parent: Element | null = this; parent; parent = parent.parentElement ?? (parent.getRootNode() as ShadowRoot).host ?? null) {
       this.inkObserver.observe(parent, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
     }
@@ -160,13 +139,10 @@ export class Avatar extends LitElement {
       else this.style.removeProperty("--ds-avatar-intrinsic-ratio");
     }
   }
-  /** A fill named by a variable (`var(--brand-highlight)`) gets its ink once the browser has resolved it. */
   protected updated() {
     if (this.ink || this.pending || this.plain) return;
     this.resolveInk();
   }
-  /** Reads the fill as drawn; while the variable is still undefined (its stylesheet on its way), looks again next
-   *  frame, and once more when the page has loaded everything. */
   private resolveInk(tries = 0) {
     const frame = this.renderRoot.querySelector<HTMLElement>(".frame");
     if (!frame || !this.isConnected) return;
@@ -242,11 +218,6 @@ export class Avatar extends LitElement {
           : nothing
       }
       ${
-        // A masked picture is drawn as soon as it has a source: a mask paints
-        // nothing until its image is there, so a logo already on the device (a
-        // data URL) is on the first frame rather than a frame after its load
-        // event, and a header never blinks from blank to logo. A picture that
-        // fails to load leaves the mask and returns to the initial.
         this.mask && src && !this.failed ? html`<span class="mask" style=${styleMap({ maskImage: `url(${JSON.stringify(src)})` })}></span>` : nothing
       }
     </span>`;

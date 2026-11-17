@@ -1,20 +1,3 @@
-/**
- * The email flow designer, the Flows tab of a site's Emails place (System's Emails part: where a site has flows, it
- * has a clear designer beside them). Every flow the site has, each a group naming what starts it, its emails in
- * order with when each goes and its subject in the language chosen; Add a flow offers the kinds it has not got,
- * started with their first words. Pressing an email opens it in the place's non-modal drawer: when it goes (a
- * number, a unit and, for a kind with several, the event it waits on), its subject and message, the fields it may
- * use, and a preview with made up people. The whole document saves by itself a moment after each change, on its
- * revision; a refused save keeps the edits and says so.
- *
- * Each flow has a switch: on, it sends (the platform's `email-sending.ts`), each email at its time after what starts
- * it, and the group says what it has sent, has waiting and could not send. An email waiting on an event the platform
- * does not raise yet is marked Not sent yet; one whose words use a field its event does not fill is named in the
- * drawer, since it would not be sent. The site's offer, what `{{offer}}` stands for, is written above the flows, and
- * Welcome names the site's signup page.
- *
- * The owner's alone; the Emails place shows the tab only when the flows answer.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
 import '../../../../DS1/3-unit/ds-row';
@@ -31,20 +14,17 @@ import { siteApi } from './api';
 import { emailDocument, templatePreview } from './emails-view';
 import { DELAY_UNITS, MAX_FLOW_STEPS, blockers, firstWordsLanguage, flowOf, inOrder, replaceFlow, statsName, whenName, withEmail, wordsOf, type DelayUnit, type Flow, type FlowKind, type FlowsAnswer, type FlowsDocument, type FlowsSnapshot, type FlowStep } from './email-flows-view';
 
-/** The email the drawer shows: its flow's kind and its place in the flow. */
 export interface ShownFlowEmail { kind: string; index: number }
 
 export class ConsistencyEmailFlows extends LitElement {
   site = '';
   lang = '';
   answer!: FlowsAnswer;
-  /** The email open in the place's drawer, which the place draws with `drawerBody`. */
   shown: ShownFlowEmail | null = null;
   private state?: DocumentState<FlowsDocument, FlowsSnapshot>;
   private removed: string | null = null;
   protected createRenderRoot() { return this; }
 
-  /** Takes the flows as read; edits not yet saved are kept over a newer read. */
   use(answer: FlowsAnswer) {
     this.answer = answer;
     if (this.state && (this.state.dirty || this.state.busy || this.state.snapshot.revision >= answer.flows.revision)) { this.requestUpdate(); return; }
@@ -69,7 +49,6 @@ export class ConsistencyEmailFlows extends LitElement {
     const flow = this.flow(kind);
     if (flow?.steps[index]) this.setFlow({ ...flow, steps: flow.steps.map((step, at) => (at === index ? change(step) : step)) });
   }
-  /** A change of when an email goes: the flow kept in order, the email still open where it moved to. */
   private setTiming(kind: string, index: number, change: (step: FlowStep) => FlowStep) {
     const flow = this.flow(kind);
     if (!flow?.steps[index]) return;
@@ -134,7 +113,6 @@ export class ConsistencyEmailFlows extends LitElement {
   private toggle(flow: Flow) { this.setFlow({ ...flow, on: !flow.on }); }
   private get hasOffer() { return Boolean((this.document.offer?.[this.lang] ?? Object.values(this.document.offer ?? {}).find(words => words.trim()) ?? '').trim()); }
 
-  /** The latest emails that could not go, by flow and why. */
   private failures() {
     const failed = this.answer.sending?.failures ?? [];
     if (!failed.length) return nothing;
@@ -178,14 +156,12 @@ export class ConsistencyEmailFlows extends LitElement {
     } catch (error) { if (this.state) { this.state.error = (error as Error).message; this.requestUpdate(); } }
   }
 
-  /** Why this email would not be sent, when it would not. */
   private blocked(words: { subject: string; text: string }, step: FlowStep, kind: FlowKind | undefined) {
     const { live, missing } = blockers(words, step, kind, this.hasOffer);
     if (!live) return html`<ds-message literal tone="neutral" heading="Not sent yet" text="Nothing on the site raises what this email waits for yet. It sends once something does."></ds-message>`;
     return missing.length ? html`<ds-message role="status" literal tone="warning" heading="This email would not be sent" text=${`${missing.map(field => `{{${field}}}`).join(', ')} ${missing.length > 1 ? 'have' : 'has'} no value when it goes. Take ${missing.length > 1 ? 'them' : 'it'} out${missing.includes('offer') ? ', or write your offer above' : ''}.`}></ds-message>` : nothing;
   }
 
-  /** The drawer's title and description for the email shown. */
   drawerHead(): { title: string; description: string } | null {
     const flow = this.shown && this.flow(this.shown.kind), step = flow?.steps[this.shown!.index];
     if (!flow || !step) return null;
@@ -193,7 +169,6 @@ export class ConsistencyEmailFlows extends LitElement {
     return { title: templatePreview(words, this.answer.values).subject || 'No subject yet', description: `${kind?.name ?? flow.kind} · ${whenName(step, kind)}. Previewed with made up people.` };
   }
 
-  /** The email shown, to edit: when it goes, its words in the language chosen, and its preview. */
   drawerBody() {
     const shown = this.shown, flow = shown && this.flow(shown.kind), step = flow?.steps[shown!.index];
     if (!shown || !flow || !step) return nothing;

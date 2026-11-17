@@ -1,6 +1,3 @@
-// The site Play opens with: three pages and no CSS of their own, the components laying
-// them out. Each page is a complete HTML document that loads Design system 1 from
-// designsystem1.com, links to the others by file name and works as it stands when downloaded.
 export interface PlayFile { name: string; content: string }
 
 const head = (title: string) => `<head>

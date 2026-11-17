@@ -1,11 +1,3 @@
-/**
- * The one record of what a native page can say: every block kind, the primitives and the sections
- * above them, with its fields (type, range, default, meaning), its slots and complete examples.
- * `validateNativePage` reads the section fields and slots from here, `scripts/write-vocabulary.ts`
- * writes `shared/generated/vocabulary.json` from here, and the editor's insert menu, the renderer's
- * documentation and the Ask prompt read that one record. No DOM, no CSS, no colours: a tone is a
- * name the library defines as `--c9y-tone-<name>` and `--c9y-tone-<name>-ink`.
- */
 import type { NativeBlock } from './consistency-native-page';
 
 export const TONES = ['paper', 'cream', 'dark', 'accent', 'highlight', 'band', 'pastel-1', 'pastel-2', 'pastel-3', 'pastel-4', 'pastel-5', 'pastel-6'] as const;
@@ -14,31 +6,12 @@ export const PRIMITIVE_KINDS = ['text', 'component', 'flow', 'grid', 'content', 
 export const SECTION_KINDS = ['hero', 'split', 'statement', 'panels', 'cards', 'gallery', 'bento', 'questions', 'facts', 'list', 'form', 'action', 'header', 'footer'] as const;
 export type SectionKind = (typeof SECTION_KINDS)[number];
 
-/**
- * A field is a typed value: `squares` and `pixels` are whole numbers in that unit, `integer` a count,
- * `choice` one of `choices`, `tone` a name from TONES, `tones` a list of `min` to `max` such names,
- * `text` a line of plain words, `date` a day as `YYYY-MM-DD`, `address` a link target. `step` keeps a
- * measure on a coarser grid.
- */
 export interface FieldDefinition {
   type: 'squares' | 'pixels' | 'integer' | 'boolean' | 'choice' | 'tone' | 'tones' | 'text' | 'date' | 'address' | 'markdown' | 'identifier' | 'map' | 'blocks' | 'props';
   min?: number; max?: number; step?: number; choices?: readonly string[];
   default?: string | number | boolean | readonly string[]; required?: boolean; meaning: string;
-  /** A behaviour is what a block does on a published page, set in the editor's behaviour panel instead of the block's menu. */
   group?: 'behaviour';
 }
-/**
- * A slot holds content: `words` is Aa Markdown as a `content` block carries it; `picture` an image
- * reference `{ src, alt, fit?, href?, focus?, frame? }` with `src` from the page's images, `frame` `window` or `phone` for a picture of a screen, and `focus` `{ x, y }`
- * where its subject is, as percentages from the left and the top (50 and 50 when absent); `action`
- * `{ text, href, appearance?, face?, size?, icon? }` as a `link` block, `face` `filled` or `outlined`,
- * `size` `medium` or `large`, `icon` a name from the library's icons where the section draws one;
- * `actions`, `pictures`, `links` (`{ text, href? }`) and `languages` (`{ text, href, picture? }`) are
- * arrays of those; `runtime` `{ name, props }` as a `runtime` block; `collection` the name of a
- * registered collection; `items` an array of records whose members are described by `item`; `heroes`
- * an array of complete `hero` blocks; `turns` an array of records described by `item`, which the block
- * changes to one after another on a published page.
- */
 export interface SlotDefinition {
   type: 'words' | 'picture' | 'action' | 'actions' | 'pictures' | 'links' | 'languages' | 'runtime' | 'collection' | 'items' | 'heroes' | 'turns';
   required?: boolean; min?: number; max?: number; meaning: string;
@@ -50,17 +23,14 @@ export const isSlot = (member: MemberDefinition): member is SlotDefinition => ['
 
 export interface KindDefinition {
   kind: string;
-  /** Primitives carry layout and content; sections stand above them and expand to primitives. */
   layer: 'primitive' | 'section';
   description: string;
   fields: Record<string, FieldDefinition>;
   slots: Record<string, SlotDefinition>;
-  /** The names of slots of which exactly one must be given (the `list`'s items or collection). */
   oneOf?: readonly string[];
   examples: NativeBlock[];
 }
 
-/** Fields every block carries, whatever its kind. */
 export const COMMON_FIELDS: Record<string, FieldDefinition> = {
   id: { type: 'identifier', required: true, meaning: 'Unique on the page: a letter, then letters, digits, _ or -, at most 80; never a dot, which derived ids use' },
   marginTop: {type:'pixels',min:0,max:2000,meaning:'An explicit top margin in logical pixels'},
@@ -71,9 +41,7 @@ export const COMMON_FIELDS: Record<string, FieldDefinition> = {
 };
 
 const squares = (min: number, max: number, def: number, meaning: string, step?: number): FieldDefinition => ({ type: 'squares', min, max, default: def, meaning, ...(step ? { step } : {}) });
-/** A measure on a phone (700px and narrower) with no default of its own: the computer's measure when absent. */
 const mobileSquares = (min: number, max: number, meaning: string): FieldDefinition => ({ type: 'squares', min, max, meaning });
-/** The column a grid of items stands in; the sections that take it share one definition. */
 const MEASURE: FieldDefinition = { type: 'choice', choices: ['narrow', 'reading', 'wide', 'full'], default: 'full', meaning: 'The column\'s measure: narrow, 20 squares; reading, 32 squares; wide, 62 squares; full, the page; narrow, wide and full keep a square from a phone\'s edges' };
 const headingAlign = (what: string): FieldDefinition => ({ type: 'choice', choices: ['start', 'centre'], default: 'start', meaning: `${what} against the start, or centred` });
 const choice = (choices: readonly string[], def: string, meaning: string): FieldDefinition => ({ type: 'choice', choices, default: def, meaning });
@@ -593,7 +561,6 @@ export const SECTIONS: KindDefinition[] = [
 export const KINDS: KindDefinition[] = [...PRIMITIVES, ...SECTIONS];
 export const sectionDefinition = (kind: string): KindDefinition | undefined => SECTIONS.find(definition => definition.kind === kind);
 
-/** The record as written to `shared/generated/vocabulary.json`. */
 export function vocabularyRecord() {
   return {
     schema: 1 as const,
@@ -604,5 +571,4 @@ export function vocabularyRecord() {
     kinds: KINDS,
   };
 }
-/** The record as JSON, exactly as the file is committed. */
 export const vocabularyJson = () => JSON.stringify(vocabularyRecord(), null, 2) + '\n';

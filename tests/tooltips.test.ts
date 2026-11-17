@@ -17,7 +17,6 @@ function pointer(target: Element, type: string, init: PointerEventInit = {}) {
 }
 
 beforeAll(() => {
-  // The module installs itself on import; a second call changes nothing.
   initTooltips();
   expect(document.querySelectorAll("[data-ds-tooltip]")).toHaveLength(1);
 });
@@ -43,9 +42,7 @@ test("hover with a mouse shows the tooltip at once, and leaving hides it", () =>
 test("focus shows the tooltip only when it is the keyboard's", () => {
   const first = element("Backwards");
   let keyboard = false;
-  // happy-dom cannot tell a keyboard's focus from a pointer's; the browser does through :focus-visible.
   vi.spyOn(first, "matches").mockImplementation((selector: string) => selector === ":focus-visible" && keyboard);
-  // A menu opened by a press moves focus into its first row: no tooltip.
   first.dispatchEvent(new FocusEvent("focusin", { bubbles: true, composed: true }));
   expect(visible()).toBe(false);
   keyboard = true;
@@ -86,7 +83,6 @@ test("a tap never shows a tooltip, a long press does, and the next touch or a mo
   vi.advanceTimersByTime(LONG_PRESS_DELAY);
   expect(visible()).toBe(true);
   pointer(remove, "pointerup", { pointerType: "touch" });
-  // The release of a press for the label does not press the element.
   remove.click();
   expect(clicked).toHaveBeenCalledTimes(1);
   pointer(document.body, "pointerdown", { pointerType: "touch" });
@@ -98,7 +94,6 @@ test("a tap never shows a tooltip, a long press does, and the next touch or a mo
   vi.advanceTimersByTime(TOUCH_TOOLTIP_DURATION);
   expect(visible()).toBe(false);
 
-  // A finger that moves is scrolling, not pressing.
   pointer(remove, "pointerdown", { pointerType: "touch", clientX: 0, clientY: 0 });
   pointer(remove, "pointermove", { pointerType: "touch", clientX: 0, clientY: 40 });
   vi.advanceTimersByTime(LONG_PRESS_DELAY);

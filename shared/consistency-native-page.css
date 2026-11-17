@@ -1,4 +1,3 @@
-/* The same native block layout is used by publication and the editing frame. */
 .c9y-native-page{--c9y-unit:calc(20px * var(--sf,1));box-sizing:border-box;max-width:100%;margin-inline:auto;padding:var(--c9y-page-padding,0px) var(--c9y-page-side-padding,var(--c9y-page-padding,0px));display:flex;flex-direction:column;gap:var(--c9y-page-gap,var(--c9y-unit))}
 .c9y-native-page *, .c9y-native-page *::before, .c9y-native-page *::after{box-sizing:border-box}
 .c9y-native-node{min-width:0;max-width:100%;margin:0}
@@ -11,8 +10,6 @@ details.c9y-native-flow{display:block}
 .c9y-native-content>aa-editor{display:block;min-width:0}
 .c9y-native-image{display:block}
 .c9y-native-image img{display:block;width:100%;max-width:100%;height:var(--c9y-image-height,auto);object-fit:var(--c9y-image-fit,contain);object-position:var(--c9y-image-focus,50% 50%)}
-/* A picture of a screen in a frame, drawn here and by no script: a browser window, a bar with its three dots over the
-   picture, or a phone, a bezel with its island. A cropped screen keeps its top in view. */
 .c9y-native-image[data-frame]{position:relative;overflow:hidden;--c9y-frame-ink:var(--c9y-ink,#1e1e1e);--c9y-frame-paper:var(--c9y-paper,#fff)}
 .c9y-native-image[data-frame] img{object-position:var(--c9y-image-focus,50% 0)}
 .c9y-native-image[data-frame="window"]{padding-top:calc(1.5 * var(--c9y-unit));border-radius:calc(var(--c9y-unit) / 2);background:var(--c9y-frame-paper);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c9y-frame-ink) 16%,transparent)}
@@ -29,10 +26,6 @@ details.c9y-native-flow{display:block}
 .c9y-native-collection-caption a{color:inherit;text-decoration:none}
 .c9y-native-collection-price{white-space:nowrap}
 @media(max-width:700px){.c9y-native-flow,.c9y-native-disclosure{flex-direction:var(--c9y-mobile-direction,column);gap:var(--c9y-mobile-gap,var(--c9y-gap))}.c9y-native-grid{grid-template-columns:repeat(var(--c9y-mobile-columns,1),minmax(0,1fr))}.c9y-native-image img{height:var(--c9y-mobile-image-height,var(--c9y-image-height,auto))}.c9y-native-collection{grid-template-columns:repeat(2,minmax(0,1fr))}.c9y-native-collection-item,.c9y-native-collection-item[data-featured]{grid-column:span 1}.c9y-native-collection .c9y-native-collection-item .c9y-native-collection-media{height:var(--c9y-mobile-image-height,var(--c9y-image-height))}}
-/* Sections expand to the primitives above; these rules draw each kind on the square. The renderer writes
-   measures as custom properties and tones as names: the library defines --c9y-tone-<name>,
-   --c9y-tone-<name>-ink and, for a translucent panel, --c9y-tone-<name>-glass; until it does each tone
-   falls back to a Design system 1 token and the glass to the tone at 85% over what is behind it. */
 .c9y-native-page{--c9y-ink:var(--ds-text-color,CanvasText);--c9y-paper:var(--ds-paper,var(--background,Canvas));--c9y-fill:var(--ds-fill,#e6e6e6);--c9y-fill-hover:var(--ds-fill-hover,var(--ds-fill,#e2e2e2));--c9y-accent:var(--ds-accent-color,#99ff73);--c9y-on-accent:var(--ds-button-text-color-on-accent,#2a2a2a);--c9y-radius:var(--ds-radius,calc(4px * var(--sf,1)));--c9y-radius-card:var(--ds-radius-card,calc(4px * var(--sf,1)));--c9y-chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.25 6.25L8 10L11.75 6.25' stroke='black'/%3E%3C/svg%3E")}
 [data-tone="paper"]{--c9y-tone:var(--c9y-tone-paper,var(--c9y-paper));--c9y-tone-ink:var(--c9y-tone-paper-ink,var(--c9y-ink));--c9y-tone-glass:var(--c9y-tone-paper-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))}
 [data-tone="cream"]{--c9y-tone:var(--c9y-tone-cream,var(--c9y-fill));--c9y-tone-ink:var(--c9y-tone-cream-ink,var(--c9y-ink));--c9y-tone-glass:var(--c9y-tone-cream-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))}
@@ -46,27 +39,18 @@ details.c9y-native-flow{display:block}
 [data-tone="pastel-4"]{--c9y-tone:var(--c9y-tone-pastel-4,var(--one-pink-pastel,var(--c9y-fill)));--c9y-tone-ink:var(--c9y-tone-pastel-4-ink,var(--c9y-ink));--c9y-tone-glass:var(--c9y-tone-pastel-4-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))}
 [data-tone="pastel-5"]{--c9y-tone:var(--c9y-tone-pastel-5,var(--one-yellow-pastel,var(--c9y-fill)));--c9y-tone-ink:var(--c9y-tone-pastel-5-ink,var(--c9y-ink));--c9y-tone-glass:var(--c9y-tone-pastel-5-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))}
 [data-tone="pastel-6"]{--c9y-tone:var(--c9y-tone-pastel-6,var(--one-chartreuse-pastel,var(--c9y-fill)));--c9y-tone-ink:var(--c9y-tone-pastel-6-ink,var(--c9y-ink));--c9y-tone-glass:var(--c9y-tone-pastel-6-glass,color-mix(in srgb,var(--c9y-tone) 85%,transparent))}
-/* A toned surface carries its ink into the words on it, the scoped region tokens included. */
 .c9y-native-toned,.c9y-native-toned .c9y-native-region{--ds-text-color:var(--c9y-tone-ink);--ds-title-color:color-mix(in srgb,var(--c9y-tone-ink) 72%,var(--c9y-tone));--ds-text-color-muted:color-mix(in srgb,var(--c9y-tone-ink) 72%,var(--c9y-tone));--ds-border-color:color-mix(in srgb,var(--c9y-tone-ink) 20%,var(--c9y-tone))}
 .c9y-native-toned{background:var(--c9y-tone);color:var(--c9y-tone-ink)}
 .c9y-native-section{min-width:0;max-width:100%;margin:0}
 .c9y-native-section:not(.ds-header,.ds-footer){display:flex;flex-direction:column;gap:var(--c9y-unit)}
 .c9y-native-section .c9y-native-flow[data-slot="actions"]>.c9y-native-node,.c9y-native-section .c9y-native-flow[data-slot="policies"]>.c9y-native-node,.ds-header .c9y-native-flow[data-direction="row"]>.c9y-native-node,.ds-footer .c9y-native-flow[data-direction="row"]>.c9y-native-node{flex:0 0 auto}
-/* A row of actions or policies wraps rather than widening the page: three medium buttons do not fit a phone. */
 .c9y-native-section .c9y-native-flow[data-slot="actions"],.c9y-native-section .c9y-native-flow[data-slot="policies"]{flex-wrap:wrap}
-/* The column a grid of items stands in (data-measure): narrow twenty squares, reading thirty-two, wide sixty-two, full the page. */
 .c9y-native-section[data-measure]{width:100%;max-width:var(--c9y-measure,none);margin-inline:auto}
-/* Words for machines only (a statement's hiddenTitle): kept in the page for search engines and screen readers, not drawn. */
 .c9y-native-section[data-hidden-title]{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-/* A button's face and size (the library's data-face and data-size), drawn here until the library draws them: one class and one
-   type strong, so a library's `.ds-button[data-face]` rule wins. Outlined is the ink's line around a primary, a hairline around the rest;
-   large is two squares high. */
 .c9y-native-page a:where(.ds-button[data-face="outlined"]){--ds-button-background:transparent;--ds-button-color:var(--ds-text-color,var(--c9y-ink));box-shadow:inset 0 0 0 1px currentColor}
 .c9y-native-page a:where(.ds-button--primary[data-face="outlined"]){box-shadow:inset 0 0 0 calc(3px * var(--sf,1)) currentColor}
 .c9y-native-page a:where(.ds-button[data-face="outlined"]):hover{--ds-button-background:var(--ds-fill-hover,var(--c9y-fill-hover))}
 .c9y-native-page a:where(.ds-button[data-size="large"]){--ds-button-height:calc(2 * var(--c9y-unit));--ds-button-padding:0 var(--c9y-unit)}
-/* Hero: the photo fills the section, the panel stands over it where the field says; translucent, the panel is the tone's glass over the photo.
-   Under a header a flush hero (or panels) takes the page's gap back, a hidden title between them notwithstanding. */
 .c9y-native-section[data-section="hero"]{position:relative;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;justify-items:center;min-height:var(--c9y-hero-height);padding:calc(2 * var(--c9y-unit)) var(--c9y-unit);overflow:hidden}
 [data-section="hero"]>[data-slot="picture"]{position:absolute;inset:0;margin:0;max-width:none}
 [data-section="hero"]>[data-slot="picture"] img{width:100%;height:100%}
@@ -77,32 +61,26 @@ details.c9y-native-flow{display:block}
 [data-section="hero"][data-panel="left"]>[data-slot="panel"]{justify-self:start}
 [data-section="hero"][data-panel="right"]>[data-slot="panel"]{justify-self:end}
 [data-section="hero"] [data-slot="logo"] img{width:auto;max-width:100%;max-height:calc(3 * var(--c9y-unit));margin-inline:inherit}
-/* A hero as a column: the kicker and the title above the picture, the words and the actions under it, in a column the panel's width. */
 .c9y-native-section[data-section="hero"][data-arrangement="column"]{display:flex;flex-direction:column;align-items:stretch;gap:var(--c9y-unit);width:min(100%,var(--c9y-panel-width,calc(24 * var(--c9y-unit))));min-height:0;margin-inline:auto;padding:0;overflow:visible}
 [data-section="hero"][data-arrangement="column"]>[data-slot="picture"]{position:static;inset:auto;margin:0;max-width:100%}
 [data-section="hero"][data-arrangement="column"]>[data-slot="picture"] img{width:100%;height:var(--c9y-hero-height);border-radius:var(--c9y-radius)}
 [data-section="hero"] [data-slot="kicker"],[data-section="split"] [data-slot="kicker"]{color:var(--ds-text-color-muted)}
 .c9y-native-page>[data-section="header"]+:is([data-section="hero"],[data-section="panels"])[data-room="flush"],.c9y-native-page>[data-section="header"]+:is([hidden],[data-hidden-title])+:is([data-section="hero"],[data-section="panels"])[data-room="flush"]{margin-top:calc(-1 * var(--c9y-page-gap,0px))}
-/* Split: the words on a panel laid `overlap` squares over the photo's edge, the heading centred when the field says. */
 .c9y-native-section[data-section="split"]{display:grid;grid-template-columns:var(--c9y-split-columns);align-items:center;gap:0}
 [data-section="split"]>[data-slot="picture"] img{height:var(--c9y-split-image-height);border-radius:var(--c9y-radius)}
 [data-section="split"]>[data-slot="panel"]{position:relative;z-index:1;margin-inline-start:calc(-1 * var(--c9y-split-overlap,calc(2 * var(--c9y-unit))));border-radius:var(--c9y-radius)}
 [data-section="split"][data-reverse]>[data-slot="picture"]{order:2}
 [data-section="split"][data-reverse]>[data-slot="panel"]{margin-inline:0 calc(-1 * var(--c9y-split-overlap,calc(2 * var(--c9y-unit))))}
 [data-section="split"][data-heading-align="centre"] [data-slot="heading"]{text-align:center}
-/* Statement: a reading column of thirty-two squares, fifty when wide, the page when full, on a panel when toned. */
 .c9y-native-section[data-section="statement"]{width:100%;max-width:var(--c9y-statement-width);margin-inline:auto}
 [data-section="statement"].c9y-native-toned{padding:calc(1.5 * var(--c9y-unit)) calc(2 * var(--c9y-unit)) calc(2 * var(--c9y-unit));border-radius:var(--c9y-radius)}
 [data-section="statement"][data-align="centre"]{align-items:center;text-align:center}
 [data-section="statement"][data-align="centre"] [data-slot="actions"]{justify-content:center}
 [data-section="statement"][data-heading-align="centre"]>[data-slot="heading"]{text-align:center}
-/* Panels: heroes side by side, each panel as wide as its hero says. */
 .c9y-native-section[data-section="panels"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));gap:var(--c9y-gap)}
-/* Cards: each a card padded one square, its label muted, its picture on its foot, square where it meets the edge. */
 .c9y-native-section[data-section="cards"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));gap:var(--c9y-unit);align-items:stretch}
 .c9y-native-card{min-height:var(--c9y-card-height);overflow:hidden;border-radius:var(--c9y-radius-card)}
 [data-section="cards"][data-variant="outlined"] .c9y-native-card{box-shadow:inset 0 0 0 1px var(--ds-border-color)}
-/* A wide card takes two cards' room; as a strip the cards stand in one row that scrolls sideways. */
 [data-section="cards"]>.c9y-native-card[data-wide]{grid-column:span 2}
 [data-section="cards"][data-strip]{display:flex;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}
 [data-section="cards"][data-strip]>.c9y-native-card{flex:0 0 calc((100% - (var(--c9y-columns) - 1) * var(--c9y-unit)) / var(--c9y-columns));scroll-snap-align:start}
@@ -110,17 +88,14 @@ details.c9y-native-flow{display:block}
 .c9y-native-card>[data-slot="label"]{color:var(--ds-text-color-muted)}
 .c9y-native-card>[data-slot="picture"]{margin:auto calc(-1 * var(--c9y-unit)) calc(-1 * var(--c9y-unit));padding-top:calc(var(--c9y-unit) / 2)}
 .c9y-native-card>[data-slot="picture"] img{aspect-ratio:3 / 2;height:auto}
-/* A framed picture stands on the card's foot inside the card's own padding, its frame running off the foot. */
 .c9y-native-card>[data-slot="picture"][data-frame]{margin-inline:0;border-end-start-radius:0;border-end-end-radius:0}
 .c9y-native-card>[data-slot="picture"][data-frame="window"]{padding-top:calc(1.5 * var(--c9y-unit))}
 .c9y-native-card>[data-slot="picture"][data-frame="phone"]{width:min(100%,calc(12 * var(--c9y-unit)));margin-inline:auto;padding:calc(.4 * var(--c9y-unit)) calc(.4 * var(--c9y-unit)) 0}
 .c9y-native-card>[data-slot="picture"][data-frame="phone"] img{aspect-ratio:3 / 4;border-end-start-radius:0;border-end-end-radius:0}
-/* Gallery: photos in a grid with a card's corners, or a strip that snaps one photo at a time. */
 .c9y-native-section[data-section="gallery"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));gap:var(--c9y-unit)}
 [data-section="gallery"] img{height:var(--c9y-gallery-height);border-radius:var(--c9y-radius-card)}
 [data-section="gallery"][data-strip]{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}
 [data-section="gallery"][data-strip]>.c9y-native-node{flex:0 0 calc((100% - (var(--c9y-columns) - 1) * var(--c9y-unit)) / var(--c9y-columns));scroll-snap-align:start}
-/* Bento: tiles half a square apart in a palette pastel, the picture filling the top, the words below. */
 .c9y-native-section[data-section="bento"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));grid-auto-rows:minmax(var(--c9y-bento-height),auto);grid-auto-flow:dense;gap:calc(var(--c9y-unit) / 2)}
 .c9y-native-tile{min-height:100%;overflow:hidden;border-radius:var(--c9y-radius-card);padding-bottom:calc(var(--c9y-unit) / 2)}
 .c9y-native-tile>[data-slot="picture"]{display:flex;flex:1 1 calc(6 * var(--c9y-unit));min-height:calc(6 * var(--c9y-unit))}
@@ -130,7 +105,6 @@ details.c9y-native-flow{display:block}
 [data-rhythm="featured"]>.c9y-native-tile:nth-child(8n+1){grid-column:span 2;grid-row:span 2}
 [data-rhythm="featured"]>.c9y-native-tile:nth-child(8n+4){grid-row:span 2}
 [data-rhythm="featured"]>.c9y-native-tile:nth-child(8n+6){grid-column:span 2}
-/* Questions: each on a line two squares high with the library's chevron at its end, the answer a square below. */
 .c9y-native-section[data-section="questions"]{gap:0}
 [data-section="questions"]>[data-slot="heading"]{margin-bottom:var(--c9y-unit)}
 [data-section="questions"]>details{border-bottom:1px solid var(--ds-border-color)}
@@ -139,11 +113,9 @@ details.c9y-native-flow{display:block}
 [data-section="questions"]>details>summary::after{content:"";flex:0 0 auto;width:calc(16px * var(--sf,1));height:calc(16px * var(--sf,1));margin-bottom:calc(2px * var(--sf,1));background:var(--ds-title-color,currentColor);mask:var(--c9y-chevron) center / contain no-repeat;-webkit-mask:var(--c9y-chevron) center / contain no-repeat;transition:transform 200ms cubic-bezier(0.2,0,0,1)}
 [data-section="questions"]>details[open]>summary::after{transform:rotate(180deg)}
 [data-section="questions"]>details>.c9y-native-disclosure{padding-block:0 var(--c9y-unit)}
-/* Facts: the term eight squares in the muted ink, each pair on a hairline with half a square above and below. */
 .c9y-native-section[data-section="facts"]{display:grid;grid-template-columns:repeat(var(--c9y-columns),minmax(0,1fr));gap:0 calc(2 * var(--c9y-unit))}
 [data-section="facts"]>.c9y-native-flow{display:grid;grid-template-columns:minmax(0,calc(8 * var(--c9y-unit))) minmax(0,1fr);gap:0 var(--c9y-unit);padding-block:calc(var(--c9y-unit) / 2);box-shadow:inset 0 -1px var(--ds-border-color)}
 [data-section="facts"] [data-slot="term"]{color:var(--ds-text-color-muted)}
-/* List: records in rows, the name first, the value or date at the row's end on the sixteen, a year's records under their year. */
 .c9y-native-section[data-section="list"]{gap:0}
 .c9y-native-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;column-gap:var(--c9y-unit);min-height:var(--c9y-unit);line-height:calc(16px * var(--sf,1))}
 .c9y-native-row-name{grid-column:1;min-width:0}
@@ -151,14 +123,9 @@ details.c9y-native-flow{display:block}
 .c9y-native-row-value,.c9y-native-row-date{grid-column:2;grid-row:1;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ds-text-color-muted)}
 .c9y-native-group+.c9y-native-group{margin-top:var(--c9y-unit)}
 .c9y-native-group-heading{padding-top:calc(4px * var(--sf,1));line-height:calc(16px * var(--sf,1));color:var(--ds-text-color-muted)}
-/* Action: one button, centred or at the start; its size is the button's own (data-size above). */
 .c9y-native-section[data-section="action"]{flex-direction:row;justify-content:center}
 [data-section="action"][data-align="start"]{justify-content:flex-start}
 [data-section="action"]>.c9y-native-node{flex:0 0 auto}
-/* Header and footer: Design system 1's own header and footer classes; the fold and the mark's height are chosen in squares.
-   A language with a picture is a flag as the design system draws one: one control high, 3:2, corners a quarter of its height,
-   the fill's hairline on its edge. Links hanging from a line (data-links="line") are two squares high under a hairline of the
-   ink, two pixels under the pointer, the current page four of the accent in the accent's ink. */
 .ds-header [data-slot="logo"] img{width:auto;max-width:100%;height:var(--c9y-logo-height,var(--c9y-unit))}
 .ds-header .ds-header__brand{height:var(--c9y-logo-height,var(--c9y-unit))}
 .ds-footer [data-slot="mark"] img{width:auto;max-width:100%;height:var(--c9y-unit)}
@@ -168,7 +135,6 @@ details.c9y-native-flow{display:block}
 .ds-header[data-links="line"] .ds-header__nav a{display:flex;align-items:flex-end;height:calc(2 * var(--c9y-unit));padding:0 calc(8px * var(--sf,1));text-decoration:none;box-shadow:inset 0 1px currentColor}
 .ds-header[data-links="line"] .ds-header__nav a:hover{box-shadow:inset 0 calc(2px * var(--sf,1)) currentColor}
 .ds-header[data-links="line"] .ds-header__nav a[aria-current]:not([aria-current="false"]){color:var(--ds-accent-color,var(--c9y-accent));box-shadow:inset 0 calc(4px * var(--sf,1)) currentColor}
-/* A form: its fields one under another, each a label over its control; a group of choices wraps as it needs. */
 .c9y-native-section[data-section="form"]{align-items:stretch}
 .c9y-native-form{position:relative;display:grid;gap:calc(var(--c9y-unit) / 2);justify-items:start;width:100%;margin:0}
 .c9y-native-form>.ds-field{width:100%}
@@ -177,11 +143,9 @@ details.c9y-native-flow{display:block}
 .c9y-native-choices{display:flex;flex-wrap:wrap;gap:0 var(--c9y-unit);width:100%;min-width:0;margin:0;padding:0;border:0}
 .c9y-native-choices>legend{width:100%;padding:0}
 .c9y-native-choice{display:inline-flex;align-items:center;gap:calc(4px * var(--sf,1));line-height:var(--c9y-unit)}
-/* The footer's theme control: a quiet button one control high that names the theme the page is in, hidden until the page's behaviours can run it. */
 .c9y-native-theme{appearance:none;border:0;margin:0;padding:0 calc(4px * var(--sf,1));height:var(--ds-control-height,calc(16px * var(--sf,1)));border-radius:calc(4px * var(--sf,1));background:var(--ds-fill,color-mix(in srgb,currentColor 8%,transparent));color:inherit;font:inherit;line-height:var(--ds-control-height,calc(16px * var(--sf,1)));cursor:pointer}
 .c9y-native-theme[hidden]{display:none}
 .c9y-native-theme:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-/* The footer's follow marks (ds-footer__column--stack): the library's icon in the paper's colour on the round mark; the language being read is on the full line. */
 .ds-footer .c9y-native-follow:not(.ds-footer__column--stack){margin-inline-start:auto}
 .ds-footer .c9y-native-follow .c9y-native-icon{display:flex;width:calc(14px * var(--sf,1));height:calc(14px * var(--sf,1))}
 .ds-footer .c9y-native-follow .c9y-native-icon svg{width:100%;height:100%}

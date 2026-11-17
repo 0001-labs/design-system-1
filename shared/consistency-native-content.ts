@@ -1,5 +1,4 @@
 /// <reference types="vite/client" />
-/** Server publication of the same Markdown and closed atoms the editor writes. No browser DOM. */
 import { parseBlocks, blockRuns, readColumns, readTabs, tableRows, tableAlignments, exportMarkdown, DEFAULT_ATOMS, type Block, type AtomSyntax } from '../website/src/vendor/aa/parse.js';
 import { readBasicContentElement } from './consistency-content';
 import { readCarousel } from './consistency-carousel';
@@ -16,25 +15,11 @@ import prose from '../DS1/1-root/prose.css?raw';
 import palette from '../DS1/1-root/palette.css?raw';
 import native from './consistency-native-content.css?raw';
 
-/** The sheets a region is drawn from, as `composeRegionStyles` takes them; the tests read the same files from disk. */
 export interface RegionSheets { tokens: string; palette: string; metrics: string; appearance: string; controls: string; card: string; prose: string; native: string }
 const dropImports = (sheet: string) => sheet.replace(/^@import[^;]+;\s*/gm, '');
-/**
- * Design system 1's tokens as the page's defaults: on the root with no specificity, so a library's or
- * the site's own `:root` tokens win wherever they are loaded, and a region inherits whichever the page
- * has. Nothing is declared on the region itself, where it would outweigh the root by inheritance.
- */
 const pageDefaults = (sheet: string) => dropImports(sheet).replace(/:root((?::lang\([^)]*\))?)/g, ':where(:root$1)');
-/** The component metrics are the one thing a region declares for itself: they resolve the inherited base tokens at the region's own scale. */
 const regionMetrics = (sheet: string) => dropImports(sheet).replace(/:root\b/g, ':scope');
-/**
- * Prose defaults in a region yield to the page's own prose rules: every selector loses its
- * specificity in `:where()`, so a library's `[data-ds-prose] :where(h1, h2)` face reaches the headings
- * in a region, where the scoped rule's proximity would otherwise outweigh it. The order of the rules
- * among themselves is kept, which is all they rely on.
- */
 const yielding = (sheet: string) => dropImports(sheet).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\})\s*([^@{}]+?)\s*\{/g, (_all, before: string, selector: string) => `${before}\n:where(${selector.trim().replace(/\s*\n\s*/g, ' ')}) {`);
-/** The region stylesheet from its sheets: the page's defaults, then what the region draws for itself, scoped to it. */
 export function composeRegionStyles(sheets: RegionSheets): string {
   const defaults = [sheets.tokens, sheets.palette].map(pageDefaults).join('\n');
   const scoped = [regionMetrics(sheets.metrics), dropImports(sheets.appearance), dropImports(sheets.controls), dropImports(sheets.card), yielding(sheets.prose)].join('\n');
@@ -45,7 +30,6 @@ const escape = (text: string) => text.replaceAll('&', '&amp;').replaceAll('<', '
 const unit = (value: number) => `calc(${value}px * var(--sf, 1))`;
 const fail = (): never => { throw new Error('invalid-native-region'); };
 const iconSources: Readonly<Record<string, string>> = { ...icons, ...extraIcons };
-/** One of the library's icons as inline SVG in the current colour, or undefined for a name it has not got. */
 export const nativeIcon = (name: string): string | undefined => (Object.hasOwn(iconSources, name) ? iconSources[name] : undefined);
 const atoms: AtomSyntax[] = [...DEFAULT_ATOMS, { name: 'page-icon', match: (source, at) => /^:icon\[[a-z0-9-]{1,80}\]/.exec(source.slice(at))?.[0].length ?? 0 }];
 
@@ -59,7 +43,6 @@ function imageSource(value: string, images?: readonly string[]): string {
   if (!/^\/(?!\/)/.test(value) || (images && !images.includes(value))) return fail();
   return href(value);
 }
-/** Validate the stored source without rewriting it or losing Aa's offsets/history. */
 export function validateNativeRegion(source: unknown, images: readonly string[], gaps?: Record<string, number>, id?: string): string {
   if (typeof source !== 'string' || source.length > 24_000 || source.includes('\0')) return fail();
   renderNativeRegion(source, { images, gaps, id });
@@ -90,7 +73,6 @@ export function renderNativeRegion(source: string, options: { images?: readonly 
         if (!svg) return fail();
         return `<span class="c9y-native-icon" role="img" aria-label="${escape(name)}">${svg}</span>`;
       }
-      // Equations keep their authored source readable without running page scripts.
       return `<code>${escape(raw)}</code>`;
     }
     let text = escape(raw);
@@ -124,7 +106,6 @@ export function renderNativeRegion(source: string, options: { images?: readonly 
       if (block.kind === 'tabs') {
         const tabs = readTabs(block.source), name = `${prefix}-tabs-${++serial}`;
         if (tabs.length > 24) return fail();
-        // Native radio controls work with keyboard and pointer, even on script-free sites.
         return `<div class="c9y-native-tabs" role="group" aria-label="Tabs">${tabs.map((tab, index) => `<input class="c9y-native-tab-choice" type="radio" name="${name}" id="${name}-${index}"${index ? '' : ' checked'}><label for="${name}-${index}">${escape(tab.name || `Tab ${index + 1}`)}</label><div class="c9y-native-tab-panel">${render(tab.content, depth + 1, ++containerSerial)}</div>`).join('')}</div>`;
       }
       if (block.kind === 'table') {

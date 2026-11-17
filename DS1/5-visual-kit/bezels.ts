@@ -1,4 +1,3 @@
-/** Measured screen slots from the supplied community file. Artwork is separately licensed. */
 export interface Bezel {
   id: string; label: string; width: number; height: number;
   screen: { x: number; y: number; width: number; height: number; radius: number };

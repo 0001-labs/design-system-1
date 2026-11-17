@@ -1,16 +1,9 @@
-/**
- * A date picker's value, as Design system 1's `<ds-calendar picker>` gives it (ISO 8601: a day, or two joined by a
- * slash for a range, with a time on each when Include time is on), read as the days the places need.
- */
-
-/** A picker's value as its first and last day, without times; one day is both. Empty or unreadable is null. */
 export function rangeOf(value: string): { from: string; to: string } | null {
   const [first = "", last = first] = value.split("/").map(end => end.slice(0, 10));
   if (!isDay(first) || !isDay(last)) return null;
   return first <= last ? { from: first, to: last } : { from: last, to: first };
 }
 
-/** Every day a picker's value covers, first to last. */
 export function daysOf(value: string): string[] {
   const range = rangeOf(value);
   if (!range) return [];
@@ -22,7 +15,6 @@ export function daysOf(value: string): string[] {
   }
 }
 
-/** A season as a picker's value: `from/to`, or empty for all year. */
 export function seasonValue(season: { from: string; to: string } | null | undefined): string {
   return season ? `${season.from}/${season.to}` : "";
 }

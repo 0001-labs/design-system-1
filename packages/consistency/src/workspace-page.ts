@@ -7,7 +7,6 @@ import { templatePage } from './templates';
 import { editableControl } from './control-edit';
 import { fontTokens, loadPageFonts, readPageFonts } from './fonts';
 
-/** Workspace persistence owns its revision; this host owns no alternative block editor or history. */
 export class WorkspacePageEditor extends LitElement {
   private value?: WorkspacePage;
   private readonly pageEditor = new ConsistencyPageEditor();
@@ -25,7 +24,6 @@ export class WorkspacePageEditor extends LitElement {
         if (event.defaultPrevented) return;
         const link = event.composedPath().find(node => (node as Element)?.nodeType === 1 && (node as Element).matches('a[href],ds-button[href],ds-link[href]')) as Element | undefined;
         if (!link) return;
-        // A srcdoc anchor otherwise resolves against the editor URL and loads the shell inside itself.
         event.preventDefault();
         const control = editableControl(event.composedPath()[0] as Node, doc.body);
         if (link.matches('[disabled],[aria-disabled="true"]') || control?.matches('[disabled],[aria-disabled="true"]')) return;
@@ -73,7 +71,7 @@ export class WorkspacePageEditor extends LitElement {
   readDocument(): Record<string, unknown> {
     if (!this.value) throw new Error('No page is open.');
     let page = this.value.page;
-    try { page = this.pageEditor.readDocument(); } catch { /* Before the first canvas mounts, retain the loaded page. */ }
+    try { page = this.pageEditor.readDocument(); } catch {}
     return {...this.value,page};
   }
   async flush() { await this.updateComplete; await this.ready; return this.pageEditor.flush(); }

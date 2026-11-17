@@ -22,7 +22,6 @@ VERSION = 1.3
 PITCH, ORIGIN_X, ORIGIN_Y, ADVANCE = 110, 165, 55, 770
 
 MARKS = {
-    # code point: (glyph name, rows from the top)
     0x00A2: ('cent', ['..#..', '.####', '#.#..', '#.#..', '#.#..', '.####', '..#..']),
     0x00A4: ('currency', ['.....', '#...#', '.###.', '.#.#.', '.###.', '#...#', '.....']),
     0x00A5: ('yen', ['#...#', '.#.#.', '#####', '..#..', '#####', '..#..', '..#..']),
@@ -36,7 +35,6 @@ MARKS = {
     0x20BA: ('uni20BA', ['.#...', '.#.#.', '.##..', '##...', '.#..#', '.#..#', '.###.']),
     0x20BD: ('uni20BD', ['.###.', '.#..#', '.#..#', '####.', '.#...', '###..', '.#...']),
     0x20BF: ('uni20BF', ['.#.#.', '####.', '#...#', '####.', '#...#', '####.', '.#.#.']),
-    # The true minus matches the plus: five dots on its bar.
     0x2212: ('minus', ['.....', '.....', '.....', '#####', '.....', '.....', '.....']),
 }
 
@@ -56,7 +54,6 @@ def build(path):
     strings, private = top.CharStrings, top.Private
     glyphs = font.getGlyphSet()
 
-    # The full stop is one dot at column 0, row 0: the pattern for every dot.
     dot = RecordingPen()
     glyphs[font.getBestCmap()[ord('.')]].draw(dot)
 

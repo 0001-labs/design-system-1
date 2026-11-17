@@ -4,7 +4,6 @@ import type { ReportsEnv } from './reports';
 
 export interface ComponentRoutingEnv extends ReportsEnv { SYSTEM_AI_TOKEN?: string }
 
-/** Caller must have completed the existing verified owner authorization. */
 export async function routeComponentEdit(input: ComponentRequest, env: ComponentRoutingEnv, send: typeof fetch, signal: AbortSignal) {
   const context = componentContext(input);
   if (!context || !env.SYSTEM_AI_TOKEN || signal.aborted) return null;
@@ -30,7 +29,6 @@ export async function routeComponentEdit(input: ComponentRequest, env: Component
   finally { clearTimeout(timer); signal.removeEventListener('abort', cancel); }
 }
 
-/** A typed request judgment, without page text that could masquerade as permission to edit. */
 export async function routePageRequest(prompt:string,env:ComponentRoutingEnv,send:typeof fetch,signal:AbortSignal):Promise<'edit'|'answer'> {
  if(!env.SYSTEM_AI_TOKEN||signal.aborted)throw Error('Request routing is unavailable.');
  const abort=new AbortController(),cancel=()=>abort.abort();signal.addEventListener('abort',cancel,{once:true});

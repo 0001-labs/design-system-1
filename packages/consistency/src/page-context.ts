@@ -1,7 +1,6 @@
 import { Context } from '../../../DS1/3-unit/ds-context';
 import { applyLibraryTokens, libraryTokens } from './libraries';
 export const PAGE_TONES = ['', 'sharp-blue', 'apple-green', 'pink', 'orange', 'yellow', 'ink'] as const;
-/** Only the website's empty surface owns this menu; child editors keep theirs. */
 export function isPageBackground(target: Element, sheet: HTMLElement): boolean {
  return sheet.contains(target) && !target.closest('aa-editor,ds-card,ds-button,ds-stat,input,textarea,select,button,a,[contenteditable],[role="slider"],.consistency-resize-edge,.consistency-card-gap');
 }

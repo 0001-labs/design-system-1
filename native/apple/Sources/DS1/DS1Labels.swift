@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// A control's one line of words: 14 with its tracking, arrows in Inter, in `colour`.
 struct DS1ControlText: View {
     @Environment(\.ds1Scale) private var scale
     let string: String
@@ -15,9 +14,6 @@ struct DS1ControlText: View {
     }
 }
 
-/// `ds-badge`: a status, not a control. One square high on the fill (or `background`), words
-/// padded 4, square corners, its width rounded up to whole squares. `iconOnly` keeps the words
-/// for VoiceOver only.
 public struct DS1Badge: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -47,7 +43,6 @@ public struct DS1Badge: View {
     }
 }
 
-/// Lays its content out at its own width rounded up to whole squares, centred.
 struct WholeSquares: Layout {
     let unit: CGFloat
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -63,9 +58,6 @@ struct WholeSquares: Layout {
     }
 }
 
-/// `ds-token`: a chosen value one square high on the fill with the corner: an optional
-/// `leading` mark, its label, a 10-point `detail` muted, and with `removeLabel` a one-square
-/// close button that asks for its removal.
 public struct DS1Token<Leading: View>: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -103,8 +95,6 @@ extension DS1Token where Leading == EmptyView {
     }
 }
 
-/// `ds-swatch`: a 16-point square of a colour with a 1-point border; `selected` draws a
-/// 2-point outline in the text colour.
 public struct DS1Swatch: View {
     @Environment(\.ds1Scale) private var scale
     let colour: Color
@@ -121,7 +111,6 @@ public struct DS1Swatch: View {
     }
 }
 
-/// `.ds-link`: words in their ink on a 1-point underline 2 below, the ink at 40%.
 public struct DS1Link: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -138,10 +127,8 @@ public struct DS1Link: View {
     }
 }
 
-/// `ds-gap`'s sizes, in squares.
 public enum DS1GapSize: CGFloat, Sendable { case tenth = 0.1, quarter = 0.25, half = 0.5, eightTenths = 0.8, unit = 1, double = 2, triple = 3, quad = 4, oct = 8, dozen = 12 }
 
-/// `ds-gap`: empty room the width of its parent, in squares.
 public struct DS1Gap: View {
     @Environment(\.ds1Scale) private var scale
     let size: DS1GapSize

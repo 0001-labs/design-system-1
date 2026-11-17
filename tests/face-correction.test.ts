@@ -3,7 +3,6 @@ import { correctFaces, faceCorrection, faceDescriptors, readFaceMetrics, type Fa
 import metrics from '../DS1/0-face/google-face-metrics.json';
 import { GOOGLE_FONT_FAMILIES } from '../packages/consistency/src/fonts';
 
-/** Where a 14px line of the corrected face puts its baseline down a 16px line box, and how tall its capitals are. */
 const setting = (face: FaceMetrics) => {
   const { sizeAdjust, ascentOverride, descentOverride } = faceDescriptors(face);
   const size = parseFloat(sizeAdjust) / 100;
@@ -16,7 +15,6 @@ test('GT America is left as it is drawn', () => {
 });
 
 test('every offered face has metrics and every measured face stands on the sixteen', () => {
-  // Measuring another face does not add it to the curated picker.
   for (const family of GOOGLE_FONT_FAMILIES) expect(metrics).toHaveProperty(family);
   for (const face of Object.values(metrics)) {
     const { baseline, capitals } = setting(face);

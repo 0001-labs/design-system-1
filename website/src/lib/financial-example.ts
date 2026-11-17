@@ -1,8 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 const text = (words: string, attrs = '') => `<ds-text literal wrap ${attrs}>${words}</ds-text>`;
 const heading = (words: string, level = 2, classes = '') => text(words, `size="display" strong role="heading" aria-level="${level}" class="${classes}"`);
-/** Fictional financial-services marketing. All figures and interactions are local
- * sample data; the demo never creates accounts, takes details or moves money. */
 export const FINANCIAL_EXAMPLE: LayoutExample = {
  name: 'Financial services', use: 'A financial-services marketing site with an interactive product preview, modular products and developer documentation.', height: 900,
  html: `<style>

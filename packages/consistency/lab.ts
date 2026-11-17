@@ -24,6 +24,5 @@ if(workspace) compositionWorkspace(workspace,{
     nav.append(brand,bar,controls,navigation);page.append(nav,stage);workspace.replaceChildren(page);
   },
   create(draft){const element=new ConsistencyEditor();if(draft)element.loadDocument(draft);const controls=document.createElement('div');element.controlsHost=controls;return{element,controls,read:()=>element.readDocument(),flush:()=>element.flush(),destroy:()=>element.remove()};},
-  // A site's words, edited on its real page and saved to the live site; its layout stays as published.
   openSite(site){const element=new ConsistencySiteEditor();element.site=site;element.picker=false;return {element,flush:()=>element.flush(),destroy:()=>element.remove()};},
 });

@@ -6,7 +6,6 @@ export interface ComponentExample {
   html: string;
   script?: string;
   height?: number;
-  /** `content`: the frame fits what is drawn and may be shorter than `height`, growing while something opens over it. */
   fit?: "content";
 }
 
@@ -17,7 +16,6 @@ export const TABLE_DATA = [
 ];
 export const TABLE_FOOTER = { product: "Total", users: 264 };
 
-/** The matrix example's items: two headed columns and an item further down. */
 export const MATRIX_DATA = {
   groups: [
     { id: 'stack', label: 'Stack', color: 'var(--ds-orange)' },
@@ -61,8 +59,6 @@ export const MATRIX_DATA = {
   ],
 };
 
-/** The examples' events, in the month being read so a calendar always has some. */
-/** How much happened on each day of the month, as the heat example's script writes it. */
 export const HEAT_COUNTS = [0, 2, 5, 1, 0, 0, 3, 8, 4, 0, 1, 6, 12, 2, 0, 0, 7, 3, 9, 1, 0, 0, 2, 10, 5, 4, 0, 0, 1, 3, 6];
 
 export function calendarEvents(kind: 'month' | 'swimlane' | 'activity' | 'heat') {
@@ -97,8 +93,6 @@ export function calendarEvents(kind: 'month' | 'swimlane' | 'activity' | 'heat')
   ];
 }
 
-// The preview and the copyable code use the same source. These are local
-// examples only; no sample sends a request to a product's backend.
 export const EXAMPLES: Record<string, ComponentExample> = {
   ...SHOWCASE_EXAMPLES,
   toggle: {

@@ -5,7 +5,6 @@ import schema from '../convex/schema';
 import { api } from '../convex/_generated/api';
 import { LIBRARY_REVISION, libraryRevision } from '../DS1/1-root/library-tokens';
 import type { Id } from '../convex/_generated/dataModel';
-// The function modules these tests call, named as import.meta.glob would name them.
 const modules = {
   '../convex/_generated/api.js': () => import('../convex/_generated/api.js'),
   '../convex/libraries.ts': () => import('../convex/libraries'),
@@ -16,7 +15,6 @@ const modules = {
 const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 const draft = ':root { --one-radius: 8px; --one-accent-color: #d357fe; }\nbutton { border-radius: var(--one-radius); }\n';
 
-/** The storage Worker, in memory: written once per immutable key, as services/src/publish does. */
 function storage() {
   const objects = new Map<string, { body: string; version: string; hash: string }>();
   const writes: string[] = [];
@@ -34,7 +32,6 @@ function storage() {
       writes.push(key);
       return Response.json({ ok: true, key, etag: null, contentHash: hash, byteSize: body.length, reused: Boolean(existing) });
     }
-    // A public read of an immutable version, as rollback makes.
     const match = /\/ds1\/([^/]+)\/v\/(\d+)\.css$/.exec(url.pathname);
     const object = match ? objects.get(`${match[1]}/v/${match[2]}`) : undefined;
     return object ? new Response(object.body) : new Response('Not found', { status: 404 });
@@ -76,7 +73,6 @@ describe('publishing a library', () => {
 
     const row = await t.run(ctx => ctx.db.query('libraryVersions').withIndex('by_library_version', q => q.eq('libraryId', id).eq('version', 1)).unique());
     expect(row).toMatchObject({ contentHash: sha256(served.body), sourceHash: sha256(draft), transform: `ds1-library@${LIBRARY_REVISION}`, byteSize: new TextEncoder().encode(served.body).length });
-    // The editor compares drafts, so a just-published library has no unpublished changes.
     expect((await as.query(api.libraries.get, { id }))!).toMatchObject({ state: 'published', publishedHash: sha256(draft) });
     await expect(as.action(api.publish.publish, { id, baseRev: library.draftRev })).rejects.toThrow(/nothing_to_publish|already matches/);
   });
@@ -85,7 +81,6 @@ describe('publishing a library', () => {
     const { t, as, id } = await owner();
     const library = (await as.query(api.libraries.get, { id }))!;
     await as.action(api.publish.publish, { id, baseRev: library.draftRev });
-    // As a version published before preparation was: the draft's bytes untransformed.
     await t.run(async ctx => {
       const row = await ctx.db.query('libraryVersions').withIndex('by_library_version', q => q.eq('libraryId', id).eq('version', 1)).unique();
       await ctx.db.patch(row!._id, { transform: 'none' });
@@ -96,7 +91,6 @@ describe('publishing a library', () => {
     expect(store.objects.get(`${library.publicId}/v/1`)!.body).toBe(first);
     expect(store.writes.filter(key => key.endsWith('/v/1'))).toHaveLength(1);
 
-    // Rolling back restores v1's exact bytes and keeps the draft comparison right.
     await as.action(api.versions.rollback, { id, version: 1 });
     expect(store.objects.get(`${library.publicId}/latest`)!.body).toBe(first);
     expect((await as.query(api.libraries.get, { id }))!).toMatchObject({ state: 'published', publishedVersion: 1, publishedHash: sha256(draft) });

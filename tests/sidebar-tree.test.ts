@@ -189,7 +189,6 @@ describe("connectSidebar, the native tree", () => {
     expect(item("readme").tabIndex).toBe(-1);
     key(item("src"), "ArrowDown");
     key(item("lib"), "ArrowDown");
-    // The hidden row inside the closed one is skipped.
     expect(document.activeElement).toBe(item("main"));
   });
 

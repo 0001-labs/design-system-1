@@ -27,7 +27,6 @@ import "./screens/ComponentCanvas";
 import { propertyGroups } from "./screens/PropertyGroups";
 import "./system-workbench.css";
 
-/** The public catalogue as a tree: each layer opens onto its components, each row naming its element. */
 const treeNodes: TreeNode[] = LAYERS.map(layer => ({ id: `layer-${layer.number}`, label: `${layer.number} ${layer.name}`, children: layer.entries.map(item => ({ id: item.href, label: item.name, meta: item.tag })) }));
 
 export type LibraryWorkbenchConfig = { schema: number; [key: string]: unknown };
@@ -40,11 +39,6 @@ const aliases: Record<string, string> = { "--ds-accent-color": "--one-accent-col
 
 export type ButtonMetrics = { box: ButtonBox; contentSize: { width: number; height: number } };
 
-/**
- * One example in its frame. The frame takes the library's stylesheet (and the
- * box region under the pointer); with `metrics`, it reports the button's box
- * back as `button-metrics`.
- */
 export class ExamplePreview extends AppElement {
   static properties = {
     example: { type: String },
@@ -104,17 +98,6 @@ export class ExamplePreview extends AppElement {
 }
 defineElement("ds1-example-preview", ExamplePreview);
 
-/**
- * The library workbench: the catalogue, the open component's examples and its
- * tokens, and the stylesheet. `initialCss` and `initialConfig` seed it once;
- * every edit is a `workbench-dirty` with the CSS and the configuration.
- * `header` stands at its top (a library's own actions).
- *
- * A component the base editor's specs cover (`component-specs.ts`) leads with the
- * same canvas and property groups (`screens/ComponentCanvas.ts`, `PropertyGroups.ts`),
- * over the library's stylesheet: a token reads from it and writes through
- * `#setToken`, so autosave, the stylesheet and the token list follow at once.
- */
 export class SystemWorkbench extends AppElement {
   static properties = {
     initialCss: { attribute: false },
@@ -139,7 +122,6 @@ export class SystemWorkbench extends AppElement {
   declare boxPreview: Partial<ButtonBox> | null;
   declare hoverRegion: BoxRegion | null;
   #config: LibraryWorkbenchConfig | undefined;
-  /** The library's stylesheet as the canvas's draft: one handle's release is one `workbench-dirty`. */
   readonly editing = new PropertyEditing(libraryDraft(() => this.css ?? this.initialCss ?? libraryTemplate, (name, value) => this.#setToken(name, value), libraryTemplate));
 
   constructor() {
@@ -165,7 +147,6 @@ export class SystemWorkbench extends AppElement {
     const { path, search } = currentLocation.get();
     const query = new URLSearchParams(search);
     query.set("component", component);
-    // A library's publish panel closes; the base's token view (`view=tokens`) stays open.
     if (query.get("view") === "overview") query.delete("view");
     navigate(`${path}?${query}`);
   }
@@ -177,11 +158,9 @@ export class SystemWorkbench extends AppElement {
   }
 
   #setToken(name: string, value: string) {
-    // Preserve older native-element libraries while exposing the canonical component tokens.
     let next = setLibraryToken(this.css!, name, value);
     const alias = aliases[name];
     if (alias && libraryTokenValues(this.css!).get(alias) !== undefined) next = setLibraryToken(next, alias, value);
-    // An unchanged stylesheet (a drag let go where it began) is no edit.
     if (next !== this.css) this.#update(next);
   }
 
@@ -210,7 +189,6 @@ export class SystemWorkbench extends AppElement {
     const shownBox = { ...this.buttonMetrics.box, ...this.boxPreview };
     const previewCss = this.boxPreview ? writeButtonBox(css, shownBox, this.buttonMode) : css;
     const fieldValue = (event: Event) => (event.currentTarget as InputElement).value;
-    // The box model's block pins the single button's height, padding and corner over their tokens.
     const locked = spec?.id === "button" ? buttonBoxPins(css) : new Map<string, string>();
 
     return html`<div class=${`workbench system-workbench${this.stylesheetOpen ? "" : " system-workbench--no-stylesheet"}${routeSearch.get("view") === "overview" ? " system-workbench--overview" : ""}`} data-testid="workbench">

@@ -1,12 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { getText } from "../DS1/0-face/i18n";
 
-/**
- * A component for creating localized links that open in new tabs
- *
- * @element portfolio-link
- * @prop {string} href - The URL to link to
- */
 export class PortfolioLink extends LitElement {
   static get properties() {
     return {
@@ -25,7 +19,6 @@ export class PortfolioLink extends LitElement {
     this.href = "";
     this._text = "";
 
-    // Create bound event handlers for proper cleanup
     this.boundHandlers = {
       languageChanged: (() => {
         this._loadText();
@@ -54,13 +47,11 @@ export class PortfolioLink extends LitElement {
     super.connectedCallback();
     this._loadText();
 
-    // Listen for language changes
     window.addEventListener(
       "language-changed",
       this.boundHandlers.languageChanged
     );
 
-    // Also listen for translations loaded event
     window.addEventListener(
       "translations-loaded",
       this.boundHandlers.languageChanged

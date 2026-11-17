@@ -5,7 +5,6 @@ import { define } from "../0-face/define";
 import styles from "./chart/chart.css?inline";
 export * from "./chart/grid-chart";
 
-/** Independent chart configuration; no module-wide size or theme state. */
 export class ChartElement extends LitElement {
   static properties: PropertyDeclarations = {
     unit: { type: Number },
@@ -44,7 +43,6 @@ export class ChartElement extends LitElement {
   }
 }
 
-/** Whole-pixel width of an element, kept current. */
 function observeWidth(element: HTMLElement, callback: (width: number) => void): ResizeObserver {
   const observer = new ResizeObserver(() => callback(Math.floor(element.getBoundingClientRect().width)));
   observer.observe(element);
@@ -79,7 +77,6 @@ export class GridLineChart extends ChartElement {
   declare labels: boolean;
   declare live: boolean;
   declare format: (value: number) => string;
-  /** Changing this replays the draw-in. */
   declare drawKey: string;
 
   private declare dot: { x: number; y: number } | null;
@@ -267,16 +264,11 @@ export class GridSpark extends ChartElement {
 export interface BarItem {
   label: string;
   value: number;
-  /** Drawn as an outline at its height, e.g. the expected figure. */
   compare?: number;
   tone?: "up" | "down" | "ink";
   caption?: string;
 }
 
-/**
- * The round size each square of a bar chart stands for (the line chart's steps: 1, 2, 2.5 and 5 times
- * a power of ten), the smallest with which `max` fits in `squares`.
- */
 export function barStep(max: number, squares: number): number {
   return STEPS.find((step) => Math.ceil(max / step) <= Math.max(1, squares)) ?? STEPS[STEPS.length - 1]!;
 }
@@ -297,13 +289,9 @@ export class GridBars extends ChartElement {
   declare items: BarItem[];
   declare rows: number;
   declare span: number;
-  /** A scale at the end, two squares wide: each square of the area one round step, labelled just above its line, the lines across the bars. */
   declare axis: boolean;
-  /** Each bar's value written over it, by `format`. */
   declare values: boolean;
-  /** The bars share the width left beside the scale, in whole pixels, instead of `span` squares each. */
   declare fill: boolean;
-  /** Writes the scale's labels and the values over the bars. */
   declare format: (value: number) => string;
 
   constructor() {
@@ -321,8 +309,6 @@ export class GridBars extends ChartElement {
     const squares = Math.max(1, this.rows - 1);
     const height = squares * this.unit;
     const max = Math.max(...this.items.flatMap((item) => [item.value, item.compare ?? 0]), 1e-9);
-    // With a scale, a square is a step, so the bars stand on its lines; a value over the tallest
-    // keeps its square above it.
     const step = this.axis ? barStep(max, squares - (this.values ? 1 : 0)) : 0;
     const room = height - 4 - (this.values ? this.unit : 0);
     const px = (v: number) => Math.max(1, Math.round(this.axis ? (v / step) * this.unit : (v / max) * room));

@@ -1,9 +1,5 @@
 import SwiftUI
 
-/// `ds-overlay`'s box: 20 squares wide (the screen less a square at each side at most) on the
-/// paper, a 1-point border, square corners and no shadow, a square of padding and a square
-/// between its parts. Its `title` in the medium face, its `description` muted, the content,
-/// then `footer` at the end. Show it with `.ds1Overlay(isPresented:)`.
 public struct DS1OverlayBox<Content: View, Footer: View>: View {
     @Environment(\.ds1Paper) private var paper
     @Environment(\.ds1Scale) private var scale
@@ -66,16 +62,11 @@ private struct DS1OverlayPresenter<Box: View>: ViewModifier {
 }
 
 extension View {
-    /// Shows a dialog over this view on the page dimmed to 40% of the ink; a tap outside closes
-    /// it unless `closeOnOutside` is false. Put it on the root so it covers the whole screen.
     public func ds1Overlay<Box: View>(isPresented: Binding<Bool>, closeOnOutside: Bool = true, @ViewBuilder _ box: @escaping () -> Box) -> some View {
         modifier(DS1OverlayPresenter(isPresented: isPresented, closeOnOutside: closeOnOutside, box: box))
     }
 }
 
-/// The page's own dialogs, as `alert()`, `confirm()` and `prompt()` on the web: one at a time,
-/// the later ones waiting. `.ds1Theme()` shows them. The confirm button is primary; with
-/// `danger` it is secondary in the danger colour and a tap outside does not cancel.
 @MainActor
 public final class DS1Overlays: ObservableObject {
     public static let shared = DS1Overlays()
@@ -113,7 +104,6 @@ public final class DS1Overlays: ObservableObject {
     public static func prompt(_ title: String, text: String? = nil, label: String? = nil, value: String = "", placeholder: String = "", confirm: String? = nil, cancel: String? = nil) async -> String? {
         await wait(kind: .prompt(label: label, placeholder: placeholder), title: title, text: text, confirm: confirm ?? DS1Words.shared.text("OK"), cancel: cancel ?? DS1Words.shared.text("Cancel"), value: value)
     }
-    /// End pending reviews when an owner session ends. Every waiter resumes once, as cancelled.
     public static func cancelAll() { for request in shared.queue { shared.finish(request, nil) } }
     private func cancel(_ id: UUID) { if let request = queue.first(where: { $0.id == id }) { finish(request, nil) } }
     func promptValue(_ request: Request) -> String { promptValues[request.id] ?? request.value }
@@ -125,7 +115,6 @@ public final class DS1Overlays: ObservableObject {
 
 }
 
-/// Shows `DS1Overlays`' requests one at a time. `.ds1Theme()` places it.
 public struct DS1OverlayHost: View {
     @ObservedObject private var dialogs = DS1Overlays.shared
     @State private var value = ""

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { addTallies, hexOf, namesOf, parseColour, shareOf, tallyColours } from "./colours";
 
-// Ported from the sites' own editor's tests (team-cms/tests/app-pages.test.ts, deleted 26 October 2026).
 describe("colours in use", () => {
   it("reads the forms the browser computes colours in", () => {
     expect(parseColour("rgb(42, 42, 42)")).toEqual({ r: 42, g: 42, b: 42, a: 1 });

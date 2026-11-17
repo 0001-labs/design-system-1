@@ -36,7 +36,6 @@ function parseIssues(raw: string | null): Issue[] {
   }
 }
 
-/** The library's overview: its problems, publishing, install and pin entries, downloads and history. `publish-close` asks to close it. */
 export class PublishPanel extends AppElement {
   static properties = {
     libraryId: { attribute: false },
@@ -48,7 +47,6 @@ export class PublishPanel extends AppElement {
     state: { attribute: false },
     publishedVersion: { attribute: false },
     installUrl: { attribute: false },
-    /** Sticky issues from the last failed publish, as stored JSON. */
     lastPublishError: { attribute: false },
     stage: { state: true },
     error: { state: true },
@@ -82,12 +80,6 @@ export class PublishPanel extends AppElement {
     this.serverIssues = null;
   }
 
-  /**
-   * Client-side validation is advisory — the deployment re-runs it and is
-   * authoritative. A user on a cached bundle can legitimately disagree with the
-   * server, which is exactly why server-returned issues render through this
-   * same list rather than a separate error path.
-   */
   #localIssues() {
     if (this.#validated?.css !== this.css) this.#validated = { css: this.css, issues: validateCss(this.css).issues };
     return this.#validated.issues;
@@ -124,7 +116,6 @@ export class PublishPanel extends AppElement {
     const issues = this.serverIssues ?? (localIssues.length > 0 ? localIssues : parseIssues(this.lastPublishError));
     const blocking = issues.filter(issue => issue.severity === "error");
     const snippet = this.installUrl ? `<link rel="stylesheet" href="${this.installUrl}">` : null;
-    // A product that pins the live version copies it with Sync 1, which records its hash.
     const pin = this.publishedVersion !== null
       ? JSON.stringify({ library: { to: "src/design", id: this.publicId, version: this.publishedVersion } }, null, 2)
       : null;
@@ -161,7 +152,6 @@ export class PublishPanel extends AppElement {
         <h3 class="ds-text ds-text--muted">Install</h3>
         ${snippet ? html`<pre data-testid="install-snippet">${snippet}</pre>
           ${button("Copy install link", () => void copyText(snippet), { testid: "install-link" })}`
-          // A copied link to a 404 is the obvious top support ticket.
           : empty("Publish once to get an install link.", { heading: "No install link yet" })}
       </section>
 
@@ -180,8 +170,6 @@ export class PublishPanel extends AppElement {
         <ds-row>
           ${button("Download draft", () => downloadCss(this.css, `${this.slug}-draft.css`))}
           ${this.installUrl ? button("Download published", () => {
-            // Fetched from the public URL, so it is byte-identical to what
-            // customers receive rather than to what the editor happens to hold.
             void fetch(this.installUrl!).then(response => response.text()).then(text => downloadCss(text, `${this.slug}-v${this.publishedVersion}.css`));
           }) : nothing}
         </ds-row>

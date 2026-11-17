@@ -4,19 +4,10 @@ export type ButtonBox = BoxModelConfig & { gap: number };
 export const defaultButtonBox: ButtonBox = { paddingX: 4, paddingY: 0, radius: 4, gap: 4, borderTop: 0, borderRight: 0, borderBottom: 0, borderLeft: 0, marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
 const scaled = (value: number | undefined) => `calc(${value ?? 0}px * var(--ds-sf, 1))`;
 const SINGLE = ['/* ds1:button-box:start */', '/* ds1:button-box:end */'] as const;
-/**
- * The button's tokens a single button's box block pins, each with what the block draws instead:
- * its padding (inline) and corner in px, its height `auto`; "" where the block does not say a
- * length plainly (the canvas then reads it from the component as drawn). The block overrides those
- * tokens on the part, so the canvas shows them as measures and leaves editing them to the box
- * model. The last block counts, as in the browser. Empty without one. (A split block styles only
- * split buttons, which the canvas does not draw.)
- */
 export function buttonBoxPins(css: string): Map<string, string> {
   const from = css.lastIndexOf(SINGLE[0]); const to = from < 0 ? -1 : css.indexOf(SINGLE[1], from);
   if (to < 0) return new Map();
   const block = css.slice(from, to);
-  // Each length of a declaration, as written by writeButtonBox (`calc(Npx * var(--ds-sf, 1))`) or by hand (`Npx`).
   const lengths = (name: string) => [...(new RegExp(`${name}\\s*:\\s*([^;]+);`).exec(block)?.[1] ?? '').matchAll(/(?:calc\(\s*)?(-?[\d.]+)px(?:\s*\*\s*var\([^)]*\)\s*\))?|(\S+)/g)].map(match => match[2] === undefined ? Number(match[1]) : NaN);
   const px = (value: number | undefined) => value === undefined || !Number.isFinite(value) ? '' : `${value}px`;
   const padding = lengths('--ds-button-padding');
@@ -27,13 +18,11 @@ export function buttonBoxPins(css: string): Map<string, string> {
     ['--ds-button-corner-size', px(radius.length === 1 ? radius[0] : undefined)],
   ]);
 }
-/** An opt-in rule for the shared button; no unrelated component rules are rebuilt. */
 export function writeButtonBox(css: string, box: ButtonBox, mode: 'single' | 'split' = 'single'): string {
   const [start, end] = mode === 'single' ? SINGLE : ['/* ds1:button-split-box:start */', '/* ds1:button-split-box:end */'];
   const selector = mode === 'single' ? 'ds-button:not([split])' : 'ds-button[split]';
   const a = css.indexOf(start); const b = a < 0 ? -1 : css.indexOf(end, a);
   let base = a >= 0 && b >= 0 ? css.slice(0, a) + css.slice(b + end.length) : css;
-  // Libraries made in the earlier native-element editor retain those consumers.
   const tokens = libraryTokenValues(base);
   for (const [name, value] of [['--one-button-padding-inline', box.paddingX], ['--one-button-padding-block', box.paddingY], ['--one-radius', box.radius]] as const) {
     if (mode === 'single' && tokens.has(name)) base = setLibraryToken(base, name, `${value}px`);

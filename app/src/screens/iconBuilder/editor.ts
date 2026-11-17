@@ -24,17 +24,13 @@ const touched = new Set<string>();
 const undo: Drawing[] = [];
 const redo: Drawing[] = [];
 let previewId = 0;
-/** Messages go to Design system 1's toast stack. */
 const notice = (message: string) => { toast(message); };
-/** The `ds-button` face around a native control; disabling the face disables the control. */
 const face = (control: HTMLElement) => control.closest('ds-button') as ButtonElement;
 const enable = (id: string, on: boolean) => { face($(id)).disabled = !on; };
-/** A choice is pressed on its native button and `active` on its face. */
 function press(control: HTMLElement, on: boolean) {
   control.setAttribute('aria-pressed', String(on));
   face(control)?.toggleAttribute('active', on);
 }
-/** A colour choice: a shared button face holding the shared swatch. */
 function swatchButton(color: string, label: string, selected: boolean, tooltip = false) {
   const host = document.createElement('ds-button'); host.setAttribute('control', 'slotted'); host.setAttribute('choice', ''); host.setAttribute('icon', '');
   if (selected) host.setAttribute('active', '');

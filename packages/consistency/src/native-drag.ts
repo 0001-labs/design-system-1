@@ -5,62 +5,34 @@ import type { EditorSurface } from './editor-surface';
 import { itemLabel, itemsSlot, sectionValue, soleColumnBlock, type NativeEntry } from './native-page-model';
 import type { SortableController, SortableResult } from './vendor/drag/sortable';
 
-/*
- * Dragging on a native page: the gesture, and nothing of the document.
- *
- * Drag (vendor/drag) carries an element between lists. This module tells it which of the page's
- * blocks and lists those are, folds a selection into one carrier, shows where a drop beside a
- * block would land, and says what the carried preview looks like. What a drop does to the page is
- * the page's: it is handed over as a place (a list and the block it lands before) through
- * NativeDragPage, and the page's model writes the document.
- */
-
-/** What dragging asks of the page it is on. */
 export interface NativeDragPage {
   doc: Document;
   view: Window;
   root: HTMLElement;
-  /** The editor's own layer over the page, where the line of a drop beside a block is drawn. */
   guides: HTMLElement;
   surface: EditorSurface;
   active(): boolean;
   entries(): Map<string, NativeEntry>;
   element(id: string): HTMLElement | undefined;
-  /** A section's items by their derived ids. */
   items(): ReadonlyMap<string, { section: string; index: number }>;
   section(id: string): NativeSection | undefined;
   components(): NativeComponents | undefined;
   label(block: NativeBlock): string;
   selection(): ReadonlySet<string>;
-  /** The block chosen to be carried whole: a press anywhere inside it carries it, not what it holds. */
   whole(): string | undefined;
   select(ids: Set<string>): void;
-  /** A block moved into a list, before one of its blocks or last; returns the block that lands. */
   moveBlock(id: string, parent: string, before: string | undefined): string;
-  /** Several sibling blocks moved together, in document order. */
   moveBlocks(ids: string[], parent: string, before: string | undefined): void;
-  /** A section's item moved to another place in it. */
   moveItem(section: string, from: number, to: number): void;
-  /** A block put beside another, the two in a row. */
   placeBeside(id: string, target: string, at: 'start' | 'end'): void;
-  /**
-   * A press on writing of one block is the page's to carry, so the writing must not carry it too
-   * (Aa moves its own blocks): its own movement is held off; call what is returned to give it back.
-   */
   holdWriting(id: string): () => void;
-  /** A block is carried: the page holds its redraws until it is let go. */
   hold(): void;
-  /** The carry is over: the page may draw again. */
   release(): void;
-  /** Everything is back in the page: draw it as the document says. */
   redraw(): void;
 }
 
-/** The tags a component block may hold other blocks in. */
 const CONTAINER_TAGS = ['div', 'section', 'main', 'article', 'aside', 'nav', 'header', 'footer', 'ds-card', 'ds-carousel', 'ds-row', 'ds-page', 'ds-bento', 'ds-panel', 'ds-container', 'ds-grid'];
-/** The editor's own marks on a block. A clone of the block is Drag's preview, not a block: it carries none of them. */
 const EDITOR_MARKS = ['data-selectable', 'data-selected', 'data-composition-selected', 'data-selection-face', 'data-c9y-broken'];
-/** Presses that belong to the editor's controls or to a field, never to a drag. */
 const NEVER_DRAGS = '[data-editor-chrome],.aa-controls,.aa-menu,.aa-sheet,ds-context,input,textarea,select,summary';
 const WRITING = 'aa-editor,[contenteditable]:not([contenteditable="false"])';
 
@@ -70,26 +42,14 @@ const inDocumentOrder = (a: HTMLElement, b: HTMLElement) => a.compareDocumentPos
 
 export class NativeDrag {
   private sort: SortableController;
-  /** The blocks and items Drag knows, by id. */
   private sorts = new Map<string, { parent: string; element: HTMLElement; lead?: string; dispose(): void }>();
-  /** The lists Drag knows, by the id of the block that holds them. */
   private containers = new Map<string, { axis: string; element: HTMLElement; dispose(): void }>();
-  /** The block being carried, with its siblings as they stood at the lift. */
   private carried?: { id: string; parent: string; ids: string[]; rects: DOMRect[]; scrollX: number; scrollY: number };
-  /** Where the pointer was last seen, for a page that scrolls under it. */
   private pointer?: { x: number; y: number };
-  /** The sibling a drop would land beside, in a row with it. */
   private beside?: { id: string; at: 'start' | 'end' };
   private sideLine: HTMLElement;
-  /** A column carried for its single block stands at that block's height from the lift. */
   private folded?: HTMLElement;
-  /**
-   * Several selected siblings move together (drag.selection-together): before the lift is measured they are folded,
-   * in document order, into one carrier standing where the first of them stood, spaced as their list spaces them,
-   * and the carrier is lifted in the pressed block's place. The room it makes is the room they take together.
-   */
   private group?: { ids: string[]; carrier: HTMLElement; places: { element: HTMLElement; parent: Node; next: Node | null }[]; dispose(): void };
-  /** Gives the pressed writing its own movement back, once the press or the carry is over. */
   private releaseWriting?: () => void;
 
   constructor(private page: NativeDragPage) {
@@ -110,11 +70,9 @@ export class NativeDrag {
     page.view.addEventListener('pointerup', this.pressOver, true);
     page.view.addEventListener('pointercancel', this.pressOver, true);
   }
-  /** The press ended without a carry. While a block is carried, the carry's own end gives the writing back, once the drop is committed. */
   private pressOver = () => { if (!this.sort.isDragging()) this.giveWritingBack(); };
   private giveWritingBack() { this.releaseWriting?.(); this.releaseWriting = undefined; }
 
-  /** Whether a block or item can be carried now. */
   has(id: string) { return this.sorts.has(id); }
   isDragging() { return this.sort.isDragging(); }
   cancel() { this.sort.cancel(); }
@@ -128,7 +86,6 @@ export class NativeDrag {
     this.sideLine.remove();
   }
 
-  /** Tells Drag the page's lists and blocks as they are drawn now. Literal words belong to their visible block; layout containers share a drop type so nesting never traps a block. */
   bind() {
     const { page } = this, entries = page.entries(), items = page.items(), whole = page.whole();
     const carousel = (id: string) => isCarouselTrack(page.element(id));
@@ -156,7 +113,6 @@ export class NativeDrag {
           axis: carousel(id) ? 'horizontal' : this.axis(element, block), type: carousel(id) ? `carousel:${id}` : 'native-block', label: page.label(block),
         });
       }
-      // A section's items move inside it: side by side where they stand in columns, down the page where they stand in rows; a grouped list keeps its order by date.
       if (isNativeSection(block) && itemsSlot(block.kind) && !(block.kind === 'list' && sectionValue<boolean>(block, 'grouped'))) {
         const container = block.kind === 'footer' ? element.querySelector<HTMLElement>(':scope>.ds-footer__columns') : element;
         if (container) parents.set(`items:${id}`, { element: container, axis: ['questions', 'list'].includes(block.kind) ? 'vertical' : 'horizontal', type: `items:${id}`, label: page.label(block) });
@@ -169,11 +125,9 @@ export class NativeDrag {
       if (this.containers.has(id)) continue;
       this.containers.set(id, { axis: parent.axis, element: parent.element, dispose: this.sort.container({
         id, type: parent.type, element: parent.element, axis: parent.axis, label: parent.label, lockAxis: parent.type.startsWith('carousel:') ? 'x' : undefined,
-        // Never into the carried block itself, nor into anything it holds.
         isDropDisabled: () => !!this.carried && (id === this.carried.id || !!page.element(this.carried.id)?.contains(parent.element)),
       }) });
     }
-    // A deliberate canvas press outranks passive hover controls; the controls themselves never start a drag.
     const canDrag = ({ target }: { target: Element | null }) => page.active() && !page.root.hasAttribute('data-pointer-additive') && !!target && !target.closest(NEVER_DRAGS);
     for (const [id, entry] of entries) {
       if (!draggable(id) || this.sorts.has(id)) continue;
@@ -186,9 +140,7 @@ export class NativeDrag {
           const mine = canDrag(by)
             && (!inCarousel || !by.target?.closest(WRITING))
             && (inCarousel || writing || page.selection().has(id) || !by.target?.closest('aa-editor,[contenteditable],button,a'))
-            // Writing of several blocks reorders its own blocks: Aa carries those.
             && !(manyBlocks() && by.target?.closest('aa-editor'));
-          // One press, one carrier: writing the page carries is not carried by Aa as well.
           if (mine && lead.block.kind === 'content' && by.input !== 'keyboard') { this.giveWritingBack(); this.releaseWriting = page.holdWriting(lead.block.id); }
           return mine;
         },
@@ -202,7 +154,6 @@ export class NativeDrag {
     }
   }
 
-  /** The line a list's blocks run along, read from how they stand. */
   private axis(element: HTMLElement, block: NativeBlock): 'horizontal' | 'vertical' {
     const boxes = [...element.children].filter(child => child.hasAttribute('data-c9y-block') && !child.hasAttribute('hidden')).map(child => child.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0);
     if (boxes.length > 1) {
@@ -214,7 +165,6 @@ export class NativeDrag {
     return block.kind === 'flow' && block.direction === 'row' || css.display.includes('flex') && css.flexDirection.startsWith('row') ? 'horizontal' : 'vertical';
   }
 
-  /** The list a block stands in, as Drag knows it. */
   private home(id: string): string | undefined {
     for (let element = this.page.element(id)?.parentElement; element; element = element.parentElement) {
       for (const [key, container] of this.containers) if (!key.startsWith('items:') && container.element === element) return key;
@@ -222,7 +172,6 @@ export class NativeDrag {
     return undefined;
   }
 
-  /** The block a drop at this index of a list lands before, among the blocks the list keeps once the carried ones have left; none past its last. */
   private before(parent: string, index: number, carried: string[]): string | undefined {
     const entries = this.page.entries();
     const siblings = [...this.sorts.keys()].filter(key => !carried.includes(key) && entries.has(key) && this.home(key) === parent)
@@ -232,7 +181,6 @@ export class NativeDrag {
     return before;
   }
 
-  /** Before the lift is measured: a column carried for its single block stands at that block's height, the room it makes and where it lands bare. */
   private beforeLift(id: string) {
     const element = this.page.element(id);
     if (element && soleColumnBlock(this.page.entries(), id)) { element.style.alignSelf = 'flex-start'; this.folded = element; }
@@ -258,7 +206,6 @@ export class NativeDrag {
     };
   }
 
-  /** Puts folded blocks back where they stood; returns their ids in document order. */
   private unfold(): string[] | undefined {
     const group = this.group;
     if (!group) return undefined;
@@ -269,10 +216,6 @@ export class NativeDrag {
     return group.ids;
   }
 
-  /**
-   * The carried preview is the block as it looks (drag.appearance), not a block of the page: it wears none of the
-   * editor's marks, so no selection is painted on it, and a carried selection says how many blocks it holds.
-   */
   private dress(preview: HTMLElement) {
     for (const element of [preview, ...preview.querySelectorAll<HTMLElement>(EDITOR_MARKS.map(mark => `[${mark}]`).join(','))]) {
       for (const mark of EDITOR_MARKS) element.removeAttribute(mark);
@@ -296,7 +239,6 @@ export class NativeDrag {
     this.carried = { id, parent: entry.parent, ids, rects: ids.map(key => page.element(key)!.getBoundingClientRect()), scrollX: page.view.scrollX, scrollY: page.view.scrollY };
   }
 
-  /** The drop, handed to the page as a place; returns the element that landed, for Drag to land the preview on. */
   private drop(result: SortableResult): HTMLElement | null {
     const { page } = this, { destination } = result;
     page.release();
@@ -324,14 +266,11 @@ export class NativeDrag {
   private moved = (event: PointerEvent) => {
     if (!this.carried) return;
     this.pointer = { x: event.clientX, y: event.clientY };
-    // A carousel's cards only change places along their row.
     if (isCarouselTrack(this.page.element(this.carried.parent))) event.stopPropagation();
     this.side();
   };
-  /** The page scrolled under a resting pointer: what lies beside it has changed. */
   private scrolled = () => { if (this.carried) this.side(); };
 
-  /** Shows the line of a drop beside a sibling when the pointer is at its side; a carried selection and a carousel's cards never land beside. */
   private side() {
     const carry = this.carried, point = this.pointer, { view } = this.page;
     if (!carry || !point || this.group || isCarouselTrack(this.page.element(carry.parent))) { this.beside = undefined; this.sideLine.hidden = true; return; }

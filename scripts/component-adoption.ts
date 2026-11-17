@@ -15,10 +15,7 @@ const hash = (body: string | Buffer) => createHash("sha256").update(body).digest
 const git = (root: string, ...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 20_000_000 }).trim();
 export const excluded = /^(?:(?:client|src|web)\/)?(?:design|ds1)\/|^src\/pages\/design\/|(?:^|\/)(?:vendor|signIn|_generated|generated|node_modules|dist|__surface|surface|design-lab|designLab|dev|experiments|previews|__tests__|tests|test|fixtures|stories)(?:\/|$)|(?:\.test|\.spec|\.stories|\.d)\.[^.]+$/i;
 
-/** `source: "direct"` is Design system 1 itself: its app and site import DS1/ from the same commit, so there is no copy to verify. */
 export interface AppSpec { code?: string; version?: string; id: string; name: string; directory: string; roots: string[]; manifest?: string; source?: "direct"; group?: "Products" | "Clients"; excludes?: string[]; migration?: "deferred"; migrationReason?: string }
-/** The studio owns product names and scan scope; the reusable scanner owns recognition. */
-/** `ADOPTION_CONFIG` names another configuration file, to try a scope without editing the studio's. */
 export function loadAppSpecs(studio: string, configPath = process.env.ADOPTION_CONFIG ? resolve(process.env.ADOPTION_CONFIG) : join(studio, "0001/system/server/component-adoption.config.json")): AppSpec[] {
   const config = JSON.parse(readFileSync(configPath, "utf8")) as { apps: AppSpec[] };
   if (!Array.isArray(config.apps) || !config.apps.length) throw new Error("The studio adoption configuration has no apps.");
@@ -35,62 +32,35 @@ export function loadAppSpecs(studio: string, configPath = process.env.ADOPTION_C
   });
 }
 const known = new Set(IMPLEMENTATION_COLUMNS.map(c => c.id));
-/** The site chrome's native blocks: the header (its drawer drawn by drawer.css, which header.css imports), the footer, and the document page with its definition table. */
-/** The site chrome's sheets, React adapters and the header's page script, each verified on its own. */
 const siteChromeFiles = ["1-root/header.css", "1-root/footer.css", "1-root/document.css", "react/header.ts", "react/footer.ts", "react/document.ts", "0-face/header.ts"];
 const siteChromeBlocks: Record<string, { component: string; sheet: string }> = { "ds-header": { component: "header", sheet: "1-root/header.css" }, "ds-footer": { component: "footer", sheet: "1-root/footer.css" }, "ds-document": { component: "document", sheet: "1-root/document.css" }, "ds-definitions": { component: "document", sheet: "1-root/document.css" } };
-/** Blocks a native class draws on any element, each with the sheet that draws it. Text marked as one of their parts is the block's own. */
 const blockClasses: Record<string, { component: string; sheet: string }> = { "ds-empty": { component: "empty", sheet: "1-root/empty.css" }, "ds-notice": { component: "notice", sheet: "1-root/notice.css" }, "ds-table": { component: "table", sheet: "1-root/table.css" }, "ds-kbd": { component: "kbd", sheet: "1-root/kbd.css" }, "ds-carousel": { component: "carousel", sheet: "1-root/carousel.css" }, "ds-card": { component: "card", sheet: "1-root/card.css" }, "ds-stat": { component: "stat", sheet: "1-root/figures.css" }, "ds-progress": { component: "progress", sheet: "1-root/progress.css" }, "ds-row": { component: "row", sheet: "1-root/row.css" }, "ds-sidebar": { component: "sidebar", sheet: "1-root/row.css" }, ...siteChromeBlocks };
 const blockPart = /^ds-(?:empty|notice|carousel|progress|card|stat|header|footer|document)__/;
-/** A row's press target and a sidebar tree's rows and parts belong to the row or sidebar that counts them, on any element. */
 const rowPart = /^ds-(?:row|sidebar)__/;
-/**
- * Files verified on their own: the block sheets, the React adapters for empty states, notices, shortcut hints, carousels, stats and progress, and the page
- * scripts that draw DS1 without a component: the tooltip script and the feedback dialogs.
- */
 const entryFiles = ["1-root/empty.css", "1-root/notice.css", "1-root/table.css", "1-root/kbd.css", "1-root/carousel.css", "1-root/card.css", "1-root/figures.css", "1-root/progress.css", "1-root/row.css", "react/empty.ts", "react/notice.ts", "react/kbd.ts", "react/carousel.ts", "react/stat.ts", "react/progress.ts", "0-face/tooltips.ts", "0-face/feedback.ts", "0-face/feedback-overlays.ts", ...siteChromeFiles];
 const native: Record<string, string> = { a: "link", button: "button", input: "input", select: "select", textarea: "textarea", p: "text", h1: "text", h2: "text", h3: "text", h4: "text", h5: "text", h6: "text", ul: "list", ol: "list", table: "table", form: "form", dialog: "overlay", details: "accordion", meter: "progress", progress: "progress", kbd: "kbd" };
-/**
- * `prose` marks native text, a list or a table inside an element marked data-ds-prose, which DS1's prose sheet draws.
- * `column` places a site that is not an element of its own kind: a title or data-tooltip attribute (Tooltip), a
- * table or grid role (Table), a browser dialog call (Overlay). `module` and `imported` name the DS1 code a site
- * depends on: the tooltip script, or the dialogs imported under that local name. A `range` is a known gap, kept
- * outside the matrix.
- */
 export type TagSite = { tag: string; line: number; nativeStyle?: string; prose?: boolean; dialogRole?: boolean; controlKind?: "checkbox" | "radio" | "switch" | "color" | "file-picker" | "range"; column?: string; module?: "tooltips"; imported?: string };
 type OpenElement = { tag: string; prose?: boolean; className?: string; site?: TagSite; specimen?: boolean; children?: OpenElement[]; content?: boolean };
-/** The open elements of one markup context; `inTag` when a template chunk ended inside a tag. */
 type Stack = OpenElement[] & { inTag?: boolean };
 const textTags = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6"]);
-/** Elements whose title attribute is no tooltip: an abbreviation's expansion, a frame's accessible name, head elements. */
 const untitled = new Set(["abbr", "iframe", "link", "style", "meta", "title"]);
-/** The browser's own dialogs, which DS1's feedback module replaces with promise-based ones. */
 const browserDialogs = new Set(["alert", "confirm", "prompt"]);
-/** A literal title or data-tooltip attribute, each a site of its own in Tooltip. An empty value is no tooltip. */
 const tooltipSites = (tag: string, line: number, title: string | undefined, tooltip: string | undefined): TagSite[] => [
   ...(title?.trim() && !untitled.has(tag) ? [{ tag: `${tag}[title]`, line, column: "tooltip" }] : []),
   ...(tooltip?.trim() ? [{ tag: `${tag}[data-tooltip]`, line, column: "tooltip", module: "tooltips" as const }] : []),
 ];
-/** A literal table or grid role on an element that is neither a table nor a custom element with semantics of its own. */
 const roleColumn = (tag: string, role: string | undefined) => (role === "table" || role === "grid") && tag !== "table" && !tag.includes("-") ? "table" : undefined;
-/** A literal slider role, or a range input: DS1 has no range control yet. */
 const isRange = (tag: string, role: string | undefined, type: string | undefined) => (role === "slider" && !tag.includes("-")) || (tag === "input" && type === "range");
 const rangeTag = (tag: string) => tag === "input" ? "input[type=range]" : `${tag}[role=slider]`;
 const markupAttribute = (attributes: string, name: string) => { const match = new RegExp(`(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`).exec(attributes); return match ? match[1] ?? match[2] : undefined; };
 const markupFlag = (attributes: string, name: string) => new RegExp(`(?:^|\\s)${name}(?=[\\s=/]|$)`).test(attributes);
-/** The ds-overlay element, or the native dialog.ds-overlay frame, whose data-ds-overlay parts DS1 draws. */
 const dialogFrame = (open: { tag: string; className?: string }) => open.tag === "ds-overlay" || (open.tag === "dialog" && /(?:^|\s)ds-overlay(?:\s|$)/.test(open.className ?? ""));
-/**
- * A heading or paragraph that holds only a ds-text, or a list whose items are only ds-row (directly, or within
- * each li), is the DS1 site's native frame: the DS1 site counts, the wrapper does not.
- */
 function wrapsDs1(tag: string, children: { tag: string; content?: boolean; children?: { tag: string }[] }[], content: boolean | undefined): boolean {
   if (content) return false;
   if (textTags.has(tag)) return children.length === 1 && children[0]!.tag === "ds-text";
   if (tag !== "ul" && tag !== "ol") return false;
   return children.length > 0 && children.every(child => child.tag === "ds-row" || (child.tag === "li" && !child.content && Boolean(child.children?.length) && child.children!.every(row => row.tag === "ds-row")));
 }
-/** Literal class text: a string, or the static chunks of a template or a concatenation. Other expressions are not inferred. */
 function staticClasses(expression: ts.Expression | undefined): string | undefined {
   if (!expression) return undefined;
   if (ts.isStringLiteralLike(expression)) return expression.text;
@@ -103,19 +73,9 @@ function staticClasses(expression: ts.Expression | undefined): string | undefine
   return undefined;
 }
 const proseTags = new Set([...textTags, "ul", "ol", "table", "kbd"]);
-/**
- * The pieces controls.css draws on any element, and the column each counts in:
- * a field's label row counts with forms, a drop zone as a file picker.
- */
 export const nativePieces: Record<string, string> = { "ds-field": "form", "ds-avatar": "avatar", "ds-badge": "badge", "ds-icon": "icon", "ds-drop": "file-picker" };
-/** The column a native class moves its element into: the pieces, and a toggle button. */
 const nativeColumns: Record<string, string> = { ...nativePieces, "ds-toggle": "toggle", "ds-link": "link" };
-/** A field's label, hint and error, drawn by controls.css on native text. */
 const fieldParts = ["ds-field__label", "ds-field__hint", "ds-field__error"];
-/**
- * Classes newer than the first copies of controls.css: a site counts as DS1
- * styles only when the copy it is verified through defines the class.
- */
 export const definedNativeClasses = new Set([...Object.keys(nativeColumns), ...fieldParts]);
 function nativeStyle(tag: string, className: string): string | undefined {
   const classes = className.split(/\s+/);
@@ -123,16 +83,12 @@ function nativeStyle(tag: string, className: string): string | undefined {
   if (block) return block;
   if (classes.some(name => rowPart.test(name))) return "block-part";
   if (textTags.has(tag) && classes.some(name => blockPart.test(name))) return "block-part";
-  // A page dot is the dots' own button, counted with them.
   if (tag === "button" && classes.includes("ds-progress__dot")) return "block-part";
-  // Native text with a literal .ds-text class or one of its sizes and tones, or a field's part.
   if (textTags.has(tag)) return classes.some(name => name === "ds-text" || name.startsWith("ds-text--")) ? "ds-text" : fieldParts.find(name => classes.includes(name));
   const supported = tag === "a" ? ["ds-button", "ds-link"] : tag === "button" ? ["ds-toggle", "ds-button", "ds-switch"] : ["input", "select", "textarea"].includes(tag) ? ["ds-input", "ds-textarea", "ds-select", "ds-checkbox", "ds-radio"] : tag === "dialog" ? ["ds-overlay"] : tag === "kbd" ? ["ds-menu__shortcut"] : [];
   return supported.find(name => classes.includes(name)) ?? (native[tag] ? undefined : Object.keys(nativePieces).find(name => classes.includes(name)));
 }
-/** A file input directly inside a label drawn as a drop zone or a button is that file picker's frame. */
 const fileFrameClass = (className: string | undefined) => (className ?? "").split(/\s+/).find(name => name === "ds-drop" || name === "ds-button");
-/** The label counts as the file picker; a label.ds-button is one only once its file input is seen. */
 function claimFileFrame(label: TagSite | undefined, frameClass: string) {
   if (!label || frameClass !== "ds-button") return;
   label.nativeStyle = "ds-button";
@@ -147,26 +103,18 @@ function jsxClassName(initializer: ts.JsxAttributeValue | undefined): string {
   return "";
 }
 
-/**
- * Parse syntax, not comments, import/selector strings or code samples. Markup is read where it is markup: HTML and
- * Astro files, JSX, Lit html templates, and strings written into innerHTML/outerHTML, insertAdjacentHTML or React's
- * __html. Template chunks preserve line offsets.
- */
 export function sourceSites(file: string, source: string, exported?: ReadonlySet<string>): TagSite[] {
   return readSource(file, source, exported).sites;
 }
-/** Sites, and the imported names a file writes into markup, so the scan can follow them into their module. */
 export function readSource(file: string, source: string, exported?: ReadonlySet<string>): { sites: TagSite[]; markupImports: { module: string; name: string }[] } {
   const found: TagSite[] = [];
   const markupImports: { module: string; name: string }[] = [];
-  /** Native wrappers of a DS1 site, dropped once their content is known. */
   const dropped = new Set<TagSite>();
   const line = (offset: number) => source.slice(0, offset).split("\n").length;
   const markup = (text: string, offset: number, stack: Stack = [], followed = false) => {
     const clean = text.replace(/<!--[\s\S]*?-->/g, match => match.replace(/[^\n]/g, " "));
     let cursor = 0;
     if (stack.inTag) {
-      // The previous chunk ended inside a tag; an expression stood in an attribute.
       const end = clean.indexOf(">");
       if (end < 0) return;
       cursor = end + 1;
@@ -198,7 +146,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       const inProse = proseTags.has(tag) && [...stack].reverse().find(open => open.prose !== undefined)?.prose === true;
       const prose = /(?:^|\s)data-ds-not-prose(?=[\s=/]|$)/.test(attributes) ? false : /(?:^|\s)data-ds-prose(?=[\s=/]|$)/.test(attributes) ? true : undefined;
       const className = /\bclass\s*=\s*["']([^"']*)["']/.exec(attributes)?.[1] ?? /\bclass\s*=\s*["']([^"']*)$/.exec(attributes)?.[1] ?? "";
-      // Nothing inside an element marked data-ds-specimen is counted: it demonstrates native HTML.
       const specimen = markupFlag(attributes, "data-ds-specimen") || stack.some(open => open.specimen);
       const open: OpenElement = { tag, prose, className, children: [], ...(specimen ? { specimen } : {}) };
       parentElement?.children?.push(open);
@@ -207,7 +154,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       const at = line(offset + match.index!);
       found.push(...tooltipSites(tag, at, markupAttribute(attributes, "title"), markupAttribute(attributes, "data-tooltip")));
       if (fileFrame) claimFileFrame(parentElement!.site, fileFrame);
-      // A dialog's data-ds-overlay parts are drawn by the ds-overlay or dialog.ds-overlay around them.
       const dialogPart = markupFlag(attributes, "data-ds-overlay") && stack.some(element => element !== open && dialogFrame(element));
       if (frame || dialogPart) continue;
       const dialogRole = /\brole\s*=\s*["'](?:alertdialog|dialog)["']/.test(attributes);
@@ -220,12 +166,10 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       found.push(site);
     }
     content(cursor, clean.length);
-    // An expression between template chunks is content of the element it stands in.
     if (followed && !stack.inTag && stack.length) stack.at(-1)!.content = true;
   };
   const kept = () => ({ sites: found.filter(site => !dropped.has(site)), markupImports });
   if (/\.(html|astro)$/.test(file)) {
-    // Astro frontmatter is code, not markup. Embedded JS is walked separately below.
     const body = source.replace(/^---[\s\S]*?\n---/, match => match.replace(/[^\n]/g, " "));
     markup(body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, match => match.replace(/[^\n]/g, " ")), 0);
     for (const match of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -249,7 +193,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       if (module !== "react" && (binding.propertyName ?? binding.name).text === "h") domFactories.add(binding.name.text);
     }
   }
-  // Names this file declares or imports: a call to one of them is not the browser's alert, confirm or prompt.
   const declared = new Set<string>();
   const imported = new Map<string, string>();
   const findNames = (node: ts.Node) => {
@@ -261,10 +204,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
   };
   findNames(ast);
   const isDocumentCreate = (node: ts.Node): node is ts.CallExpression => ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.expression.getText(ast) === "document" && node.expression.name.text === "createElement";
-  /**
-   * Local DOM builders, recognized by their definition: a function whose first parameter goes straight into
-   * document.createElement. `classParam` is the parameter it writes into the element's class.
-   */
   const builders = new Map<string, { classParam?: number }>();
   const findBuilders = (node: ts.Node) => {
     const definition = ts.isFunctionDeclaration(node) && node.name ? { name: node.name.text, fn: node as ts.FunctionLikeDeclaration }
@@ -294,7 +233,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     ts.forEachChild(node, findBuilders);
   };
   findBuilders(ast);
-  /** The literal tag of an element made by document.createElement, an imported h, or a local builder. */
   const createdTag = (node: ts.Node): string | undefined => {
     if (!ts.isCallExpression(node)) return undefined;
     const tag = node.arguments[0];
@@ -302,16 +240,9 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     if (isDocumentCreate(node)) return tag.text;
     return ts.isIdentifier(node.expression) && (builders.has(node.expression.text) || domFactories.has(node.expression.text)) ? tag.text : undefined;
   };
-  /**
-   * What the same lexical block writes onto an element it creates: literal classes (className, the class attribute,
-   * classList.add), title, data-tooltip, a table, grid or slider role, the specimen marker, and markup written into it.
-   * Dynamic values and other scopes are not inferred.
-   */
   type Created = { tag: string; call: ts.CallExpression; classes: string[]; title?: string; tooltip?: string; role?: string; specimen?: boolean };
   const created = new Map<ts.CallExpression, Created>();
-  /** setAttribute calls read as a created element's own attributes, not counted again on their own. */
   const consumed = new Set<ts.Node>();
-  /** Markup written into a created element opens inside it. */
   const markupTargets = new Map<ts.Node, ts.CallExpression>();
   const trackCreated = (scope: ts.Node) => {
     if (ts.isSourceFile(scope) || ts.isBlock(scope)) {
@@ -366,8 +297,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     ts.forEachChild(scope, trackCreated);
   };
   trackCreated(ast);
-  // A direct, const DOM append is evidence that the native control is the
-  // shared host's required frame. Do not infer dynamic factories or aliases.
   const frameHosts = new Map<ts.CallExpression, string>();
   const findFrames = (scope: ts.Node) => {
     if (ts.isSourceFile(scope) || ts.isBlock(scope)) {
@@ -395,11 +324,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     ts.forEachChild(scope, findFrames);
   };
   findFrames(ast);
-  /**
-   * What a name in markup holds, for markup assembled before it is written: a variable's initializer and every
-   * value assigned to it, a function's returned expressions. Names resolve through their lexical scope; an
-   * imported name is reported so the scan can follow it into the module that exports it.
-   */
   const declarationOf = (identifier: ts.Identifier): ts.Node | undefined => {
     for (let scope: ts.Node | undefined = identifier.parent; scope; scope = scope.parent) {
       if (ts.isFunctionLike(scope)) for (const parameter of scope.parameters) if (ts.isIdentifier(parameter.name) && parameter.name.text === identifier.text) return parameter;
@@ -427,7 +351,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       const declaration = declarationOf(node.left);
       if (declaration) assignedValues.set(declaration, [...(assignedValues.get(declaration) ?? []), node.right]);
     }
-    // Pieces pushed onto an array that is later joined into the markup.
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ["push", "unshift"].includes(node.expression.name.text) && ts.isIdentifier(node.expression.expression)) {
       const declaration = declarationOf(node.expression.expression);
       if (declaration) assignedValues.set(declaration, [...(assignedValues.get(declaration) ?? []), ...node.arguments]);
@@ -448,12 +371,10 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     const bindings = statement.importClause?.namedBindings;
     if (bindings && ts.isNamedImports(bindings)) for (const binding of bindings.elements) importSources.set(binding.name.text, { module: statement.moduleSpecifier.text, name: (binding.propertyName ?? binding.name).text });
   }
-  /** Strings that are markup, each with the created element it is written into, if known. */
   const markupStrings = new Map<ts.Node, ts.CallExpression | undefined>();
   const followed = new Set<ts.Node>();
   const collect = (node: ts.Node, target: ts.CallExpression | undefined) => {
     if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && !markupStrings.has(node)) markupStrings.set(node, target);
-    // A name in the markup: follow it once to what it holds, or report the module it is imported from.
     if (ts.isIdentifier(node) && !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node) && !(ts.isPropertyAssignment(node.parent) && node.parent.name === node)) {
       const declaration = declarationOf(node);
       if (declaration && !followed.has(declaration)) {
@@ -464,14 +385,12 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     }
     ts.forEachChild(node, child => collect(child, target));
   };
-  // Functions this module exports that another module writes into markup.
   for (const statement of ast.statements) {
     if (ts.isFunctionDeclaration(statement) && statement.name && exported?.has(statement.name.text)) collect(statement.name, undefined);
     if (ts.isVariableStatement(statement)) for (const declaration of statement.declarationList.declarations) if (ts.isIdentifier(declaration.name) && exported?.has(declaration.name.text)) collect(declaration.name, undefined);
   }
   const findMarkup = (node: ts.Node) => {
     if (ts.isTaggedTemplateExpression(node) && ts.isIdentifier(node.tag) && node.tag.text === "html") markupStrings.set(node.template, undefined);
-    // A whole document written as a string, such as a rendered page or a server response.
     if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /^\s*<(?:!doctype\s+html|html)[\s>]/i.test(node.text)) collect(node, undefined);
     if (ts.isTemplateExpression(node) && /^\s*<(?:!doctype\s+html|html)[\s>]/i.test(node.head.text)) collect(node, undefined);
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ["write", "writeln"].includes(node.expression.name.text) && /(?:^|\.)document$/.test(node.expression.expression.getText(ast))) for (const arg of node.arguments) collect(arg, undefined);
@@ -481,7 +400,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     ts.forEachChild(node, findMarkup);
   };
   findMarkup(ast);
-  /** Markup written into a created element starts inside it, and inside the shared host it is the frame of. */
   const seed = (call: ts.CallExpression | undefined): Stack => {
     const element = call && created.get(call);
     if (!element) return [];
@@ -489,7 +407,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     return [...(host ? [{ tag: host, children: [] }] : []), { tag: element.tag, className: element.classes.join(" "), children: [], ...(element.specimen ? { specimen: true } : {}) }];
   };
   const templateStacks = new Map<ts.Node, Stack>();
-  /** Sites and classes of JSX elements and h/createElement calls, for a file input to claim its label. */
   const elementSites = new Map<ts.Node, OpenElement>();
   const jsxTag = (element: ts.JsxElement | ts.JsxSelfClosingElement | ts.JsxOpeningElement) => (ts.isJsxElement(element) ? element.openingElement : element).tagName.getText(ast);
   const jsxAttribute = (element: ts.JsxOpeningElement | ts.JsxSelfClosingElement, name: string) => element.attributes.properties.find((p): p is ts.JsxAttribute => ts.isJsxAttribute(p) && p.name.getText(ast) === name);
@@ -498,13 +415,11 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     if (value && ts.isStringLiteral(value)) return value.text;
     return value && ts.isJsxExpression(value) && value.expression && ts.isStringLiteralLike(value.expression) ? value.expression.text : undefined;
   };
-  /** The JSX elements around a node, nearest first. */
   const jsxAncestors = (node: ts.Node) => {
     const found: ts.JsxOpeningElement[] = [];
     for (let parent = node.parent; parent; parent = parent.parent) if (ts.isJsxElement(parent) && parent.openingElement !== node) found.push(parent.openingElement);
     return found;
   };
-  /** The nearest JSX ancestor marked data-ds-prose or data-ds-not-prose decides. */
   const jsxInProse = (node: ts.Node) => {
     for (const element of jsxAncestors(node)) {
       if (jsxAttribute(element, "data-ds-not-prose")) return false;
@@ -512,7 +427,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     }
     return false;
   };
-  /** A JSX element's element children, and whether it holds anything else: text or an expression. */
   const jsxChildren = (element: ts.JsxElement) => {
     const children: { tag: string; content?: boolean; children?: { tag: string }[] }[] = [];
     let content = false;
@@ -528,7 +442,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
     if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && !jsxAttribute(node, "data-ds-specimen") && !jsxAncestors(node).some(element => jsxAttribute(element, "data-ds-specimen"))) {
       const tag = node.tagName.getText(ast);
       const at = line(node.getStart(ast));
-      // A title on a React component is a prop; only intrinsic and custom elements carry the attribute.
       if (/^[a-z]/.test(tag)) found.push(...tooltipSites(tag, at, jsxLiteral(jsxAttribute(node, "title")), jsxLiteral(jsxAttribute(node, "data-tooltip"))));
       const className = jsxClassName(jsxAttribute(node, "className")?.initializer ?? jsxAttribute(node, "class")?.initializer);
       const role = jsxLiteral(jsxAttribute(node, "role"));
@@ -569,7 +482,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
           const style = nativeStyle(arg.text, className);
           const at = line(arg.getStart(ast));
           found.push(...tooltipSites(arg.text, at, strings.title ?? element?.title, strings["data-tooltip"] ?? element?.tooltip));
-          // A file input passed straight to the call that makes its label.
           const label = controlKind === "file-picker" ? elementSites.get(node.parent) : undefined;
           const fileFrame = label?.tag === "label" ? fileFrameClass(label.className) : undefined;
           if (fileFrame) claimFileFrame(label!.site, fileFrame);
@@ -594,7 +506,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
         if (name.text === "data-tooltip") found.push(...tooltipSites("", at, undefined, value.text));
       }
     }
-    // The browser's alert, confirm and prompt, called globally or on window; or DS1's, imported by name.
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
       const at = line(node.getStart(ast));
@@ -603,7 +514,6 @@ export function readSource(file: string, source: string, exported?: ReadonlySet<
       else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && ["window", "globalThis"].includes(callee.expression.text) && !declared.has(callee.expression.text) && browserDialogs.has(callee.name.text)) found.push({ tag: `${callee.name.text}()`, line: at, column: "overlay" });
     }
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
-      // Only markup contexts: a plain string or a code sample is not a site.
       const template = ts.isTemplateHead(node) ? node.parent : (ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) ? node.parent.parent : node;
       if (markupStrings.has(template)) {
         let stack = templateStacks.get(template);
@@ -683,25 +593,16 @@ export function checkSnapshots(root: string, manifestPath: string | undefined, d
     cell.snapshot = modified ? "modified" : unverifiable ? "unverified" : "verified";
     cell.current = current && !unverifiable;
   }
-  // Context is drawn by the menu engine: a copy taken before Context has the engine as "menu".
   if (!manifest.components.includes("context") && manifest.components.includes("menu") && cells.context && cells.menu) Object.assign(cells.context, { snapshot: cells.menu.snapshot, current: cells.menu.current, issues: [...cells.menu.issues] });
   return { commit: manifest.commit, cells, controls, text, prose, reactInput, reactButton, reactOverlay, reactChoice, reactSplit, reactComposer, reactMenu, reactAccordion, reactAvatar, reactAvatarGroup, reactToken, reactFilePicker, reactContextMenu, reactBadge, entries };
 }
 
-/**
- * A product that copies only the tokens and controls.css (Sync 1's `tokens` or
- * `root` export) has no component manifest. Its sync.lock.json records the DS1
- * revision and each copied file's hash: the copy is verified when the files on
- * disk match the lock and the lock matches DS1 at that revision.
- */
 const componentStyles = ["component-tokens.css", "component-metrics.css", "component-appearance.css"];
 const lockedControlStyles = ["controls.css", ...componentStyles];
-/** The sheets that draw native text: text.css today, or one.css from before it, which held .ds-text itself. */
 const lockedTextStyles: LockedStyles[] = [{ names: ["text.css", ...componentStyles] }, { names: ["one.css", ...componentStyles], defines: { "one.css": /\.ds-text\s*\{/ } }];
 const lockedProseStyles = ["prose.css", ...componentStyles];
 type LockedStyles = { names: string[]; defines?: Record<string, RegExp> };
 const withoutComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
-/** A rule whose selector names the class, outside comments. */
 export const classRule = (name: string) => new RegExp(`\\.${name}(?![\\w-])[^{};]*\\{`);
 export function checkLockedStyles(root: string, dsRoot: string, { names, defines = {} }: LockedStyles): ComponentCell | undefined {
   const lockPath = join(root, "sync.lock.json");
@@ -738,7 +639,6 @@ export function checkLockedStyles(root: string, dsRoot: string, { names, defines
   return best;
 }
 export const checkLockedControls = (root: string, dsRoot: string, defines?: string) => checkLockedStyles(root, dsRoot, { names: lockedControlStyles, ...(defines ? { defines: { "controls.css": classRule(defines) } } : {}) });
-/** The first verified of the text sheets, else the closest attempt. */
 export function checkLockedText(root: string, dsRoot: string): ComponentCell | undefined {
   let best: ComponentCell | undefined;
   for (const styles of lockedTextStyles) {
@@ -753,11 +653,6 @@ export const checkLockedProse = (root: string, dsRoot: string) => checkLockedSty
 type Lock = Record<string, { commit?: string; files?: Record<string, string> }>;
 const readLock = (root: string): Lock => existsSync(join(root, "sync.lock.json")) ? JSON.parse(readFileSync(join(root, "sync.lock.json"), "utf8")) as Lock : {};
 const relativeImports = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s*|@import\s*)["'](\.[^"']+)["']/gm;
-/**
- * A DS1 page script copied without a component manifest (the root export's `modules`, or the feedback export),
- * at `path`, which lies under its copy's 0-face/. It is verified when it and everything it imports match
- * sync.lock.json on disk and the lock matches DS1 at its revision.
- */
 export function checkLockedModule(root: string, dsRoot: string, path: string): ComponentCell | undefined {
   const source = readLock(root)["Design system 1"];
   const at = path.lastIndexOf("0-face/");
@@ -790,17 +685,12 @@ export function checkLockedModule(root: string, dsRoot: string, path: string): C
   return cell;
 }
 
-/** A relative or `@/` import from a source file, resolved inside the app. */
 function resolveImport(root: string, from: string, name: string): string | undefined {
   if (!name.startsWith(".") && !name.startsWith("@/")) return undefined;
   const base = name.startsWith("@/") ? resolve(root, "src", name.slice(2)) : resolve(dirname(from), name);
   if (!base.startsWith(resolve(root) + "/")) return undefined;
   return [base, `${base}.ts`, `${base}.tsx`, base.replace(/\.js$/, ".ts"), join(base, "index.ts")].find(path => existsSync(path) && statSync(path).isFile());
 }
-/**
- * alert, confirm and prompt imported by name from DS1's feedback module or its dialogs, by local name, with the
- * app path of the module they come from. Script blocks in HTML and Astro files are read the same way.
- */
 export function importedDialogs(root: string, file: string, source: string): Map<string, string> {
   const found = new Map<string, string>();
   for (const match of source.matchAll(/\bimport\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
@@ -814,13 +704,7 @@ export function importedDialogs(root: string, file: string, source: string): Map
   return found;
 }
 
-/** Folders that hold copies of shared parts, which the scan leaves out as their internals. */
 const sharedFolder = /(?:^|\/)(?:vendor|signIn)\//;
-/**
- * Custom elements that are not the product's own: defined (customElements.define, with the tag as a literal in
- * the same file) in a copied shared folder. `lock` names the sync.lock.json source whose recorded hash the
- * definition matches; without it, the copy's provenance rests on the folder alone.
- */
 export function findSharedParts(root: string, tracked: string[], tags: string[]): Record<string, { definition: string; lock?: string }> {
   const parts: Record<string, { definition: string; lock?: string }> = {};
   if (!tags.length) return parts;
@@ -838,11 +722,6 @@ export function findSharedParts(root: string, tracked: string[], tags: string[])
   return parts;
 }
 
-/**
- * Design system 1's own app and site import DS1/ directly, at the same commit:
- * a component is its source when DS1 defines it and DS1/ has no uncommitted
- * changes. There is no copy, so nothing is recorded as a consumer manifest.
- */
 function directSnapshots(dsRoot: string): ReturnType<typeof checkSnapshots> {
   const dirty = Boolean(git(dsRoot, "status", "--porcelain", "--", "DS1"));
   const source = (): ComponentCell => dirty
@@ -852,13 +731,8 @@ function directSnapshots(dsRoot: string): ReturnType<typeof checkSnapshots> {
   const cells = Object.fromEntries(IMPLEMENTATION_COLUMNS.map(c => [c.id, files.some(f => f.endsWith(`/ds-${c.id}.ts`)) ? source() : emptyCell()]));
   return { commit: git(dsRoot, "rev-parse", "HEAD"), cells, controls: source(), text: source(), prose: source(), reactInput: source(), reactButton: source(), reactOverlay: source(), reactChoice: source(), reactSplit: source(), reactComposer: source(), reactMenu: source(), reactAccordion: source(), reactAvatar: source(), reactAvatarGroup: source(), reactToken: source(), reactFilePicker: source(), reactContextMenu: source(), reactBadge: source(), entries: Object.fromEntries(entryFiles.map(file => [file, source()])) };
 }
-/** Where a direct-source app's shared adapters live, as if DS1/ were its snapshot. */
 const directManifest = "DS1/components-manifest.json";
 
-/** Follow direct imports and pure registration/re-export entries to the snapshot.
- * Matching names alone never establish adoption. The adapter's full dependency
- * graph is checked separately from direct Lit usage.
- */
 type SharedAdapter = { component: string; contextMenu: boolean; file: string };
 function importedSharedAdapters(root: string, file: string, source: string, manifestPath?: string): Map<string, SharedAdapter> {
   const found = new Map<string, SharedAdapter>();
@@ -883,7 +757,6 @@ function importedSharedAdapters(root: string, file: string, source: string, mani
     [resolve(root, dirname(manifestPath), "react/table.ts")]: { Table: "table" },
     [resolve(root, dirname(manifestPath), "react/avatar.ts")]: { Avatar: "avatar", Logo: "avatar" },
     [resolve(root, dirname(manifestPath), "react/accordion.ts")]: { Accordion: "accordion" },
-    // Select and Context, and the copies from before them (a menu, a context menu).
     [resolve(root, dirname(manifestPath), "react/select.ts")]: { Select: "select" },
     [resolve(root, dirname(manifestPath), "react/menu-engine.ts")]: { MenuHost: "select" },
     [resolve(root, dirname(manifestPath), "react/context.ts")]: {
@@ -904,7 +777,6 @@ function importedSharedAdapters(root: string, file: string, source: string, mani
     [resolve(root, dirname(manifestPath), 'react/input.ts')]: { Input: 'input', Textarea: 'textarea' },
     [resolve(root, dirname(manifestPath), 'react/button.ts')]: { Button: 'button', ButtonLink: 'button' },
     [resolve(root, dirname(manifestPath), 'react/overlay.ts')]: { OverlayContent: 'overlay' },
-    // A copy from before Overlay keeps the dialog's adapter, counted as Overlay.
     [resolve(root, dirname(manifestPath), 'react/dialog.ts')]: { DialogContent: 'overlay' },
     [resolve(root, dirname(manifestPath), 'react/choice.ts')]: { Checkbox: 'checkbox', Radio: 'radio', Switch: 'switch', Select: 'select', ColorInput: 'color' },
   };
@@ -942,7 +814,6 @@ function importedSharedAdapters(root: string, file: string, source: string, mani
   return found;
 }
 
-/** Only these inspected, thin adapters are expanded. Their DS tags must still exist. */
 const linkAdapters: Record<string, Record<string, string>> = {
   "client/components/TabPills.tsx": { TabPill: "button", TabPillRow: "tabs" },
   "client/components/Tooltip.tsx": { Tooltip: "tooltip", Tooltop: "tooltip" },
@@ -968,10 +839,8 @@ function importedAdapters(root: string, file: string, source: string): Record<st
 
 const ds1Icons = (dsRoot: string) => readIconMap(join(dsRoot, "DS1/2-core/generated/ds-icon-map.ts")) ?? new Map<string, string>();
 
-/** A stylesheet link to the live base, in markup or in a string a build writes into its pages. */
 const LIVE_BASE_LINK = String.raw`href=["'][^"']*/ds1/base/latest\.css["']`;
 
-/** The app's tracked files that link the live base sheet; none when nothing matches (git grep then exits 1). */
 export function liveBaseLinks(root: string): string[] {
   try { return git(root, "grep", "-l", "-E", LIVE_BASE_LINK, "--", ".").split("\n").filter(file => file && !excluded.test(file)); }
   catch { return []; }
@@ -982,7 +851,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
   const app: AdoptionApp = { id: spec.id, name: spec.name, code: spec.code, version: spec.version, status: "unavailable", commit: null, dirty: false, files: 0, scope: spec.roots, snapshotCommit: null, cells: {}, otherCustomElements: {}, group: spec.group ?? "Products", ...(spec.migration ? { migration: spec.migration, migrationReason: spec.migrationReason } : {}) };
   try {
     app.commit = git(root, "rev-parse", "HEAD");
-    // Several products share one repository: only this app's own folder counts.
     app.dirty = Boolean(git(root, "status", "--porcelain", "--", "."));
     const liveBase = liveBaseLinks(root);
     if (liveBase.length) app.liveBase = liveBase;
@@ -991,14 +859,12 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
     const snapshots = spec.source === "direct" ? directSnapshots(dsRoot) : checkSnapshots(root, spec.manifest, dsRoot);
     let lockedControls = false;
     if (spec.source !== "direct") {
-      // Without a manifest copy, a product's sync.lock.json can still show its native class sheets.
       for (const [name, check] of [["controls", checkLockedControls], ["text", checkLockedText], ["prose", checkLockedProse]] as const) {
         if (snapshots[name].snapshot !== "none") continue;
         const locked = check(root, dsRoot);
         if (locked) { snapshots[name] = locked; lockedControls ||= name === "controls"; }
       }
     }
-    // A newer class is DS1 styles only where the verified copy of controls.css defines it.
     const classEvidence = new Map<string, ComponentCell>();
     const controlsFor = (style: string): ComponentCell => {
       if (spec.source === "direct" || !definedNativeClasses.has(style) || snapshots.controls.snapshot !== "verified") return snapshots.controls;
@@ -1009,7 +875,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
       }
       return classEvidence.get(style)!;
     };
-    // A native block is verified through the sheet that draws it: from the manifest, else from sync.lock.json.
     const blockSheets: Record<string, ComponentCell> = Object.fromEntries(Object.values(blockClasses).map(({ sheet }) => {
       const copied = snapshots.entries[sheet];
       return [sheet, copied ?? (spec.source === "direct" ? undefined : checkLockedStyles(root, dsRoot, { names: [basename(sheet), ...componentStyles] })) ?? emptyCell()];
@@ -1020,7 +885,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
     const library = publishedLibrary(root);
     const tracked = git(root, "ls-files", "-z", "--", ...spec.roots).split("\0").filter(Boolean);
     const files = tracked.filter(f => (/\.(tsx?|jsx?|[cm]js|html|astro)$/.test(f) || markdown.includes(f)) && !excluded.test(f) && !(spec.excludes ?? []).some(prefix => f === prefix || f.startsWith(prefix + "/")) && existsSync(join(root, f)));
-    // DS1 page scripts (the tooltip script, the feedback dialogs) are verified like the block sheets: from the manifest, else the lock.
     const moduleCells = new Map<string, ComponentCell>();
     const moduleEvidence = (path: string): ComponentCell => {
       if (!moduleCells.has(path)) {
@@ -1043,9 +907,7 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
       roots(file, readFileSync(join(root, file), "utf8"), app.cells);
     }
     const sources = new Map(files.map(file => [file, readFileSync(join(root, file), "utf8")]));
-    // Markdown is read per file below; the script and markup reader takes the rest.
     const reads = new Map(files.filter(file => !markdown.includes(file)).map(file => [file, readSource(file, sources.get(file)!)]));
-    // A function another file writes into markup is read as markup in the module that exports it.
     const exportsInMarkup = new Map<string, Set<string>>();
     for (let round = 0; round < 4; round++) {
       let grown = false;
@@ -1073,13 +935,10 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
         : new Set<string>();
       for (const site of sites) {
         if (adapterTags.has(site.tag) || site.nativeStyle === "block-part") continue;
-        // A published library's controls are needs review; a wrapper's own face counts at its uses.
         const viaLibrary = libraryFile?.site(site);
         if (viaLibrary !== undefined) { if (viaLibrary) countLibrarySite(app.cells[viaLibrary.component]!, file, site, library!); continue; }
-        // DS1 has no range control: a range is recorded as a known gap, outside the matrix.
         if (site.controlKind === "range") { ((app.gaps ??= {}).range ??= []).push({ file, line: site.line, tag: site.tag, kind: "local" }); continue; }
         if (site.column && !site.nativeStyle) {
-          // A name imported from somewhere other than DS1's dialogs is the product's own function, not a site.
           if (site.imported && !dialogs.has(site.imported)) continue;
           const evidence = site.module === "tooltips" ? tooltipScript() : site.imported ? moduleEvidence(dialogs.get(site.imported)!) : undefined;
           const cell = app.cells[site.column]!;
@@ -1106,7 +965,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
           cell.issues = [...new Set([...cell.issues, ...evidence.issues])];
           cell.current = cell.current === true && evidence.current === true;
         }
-        // Native classes are verified by the sheet that draws them: controls.css, text.css, or prose.css for writing marked data-ds-prose.
         const styled = block ? blockSheets[block.sheet] : site.nativeStyle === "ds-text" ? snapshots.text : site.nativeStyle ? controlsFor(site.nativeStyle) : site.prose ? snapshots.prose : undefined;
         const kind: UsageSite["kind"] = ds ? cell.snapshot === "verified" && evidence.snapshot === "verified" ? "shared" : "unverified"
           : styled ? styled.snapshot === "verified" ? "styled" : "unverified" : "local";
@@ -1115,7 +973,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
         cell.sites.push({ file, line: site.line, tag: site.tag + (site.nativeStyle ? `.${site.nativeStyle}` : site.prose ? "[data-ds-prose]" : ""), kind });
       }
     }
-    // A custom element defined in a copied shared folder is a studio part, not the product's own.
     for (const [tag, part] of Object.entries(findSharedParts(root, tracked, Object.keys(app.otherCustomElements)))) {
       (app.sharedParts ??= {})[tag] = { uses: app.otherCustomElements[tag]!, ...part };
       delete app.otherCustomElements[tag];
@@ -1128,7 +985,6 @@ export function scanApp(spec: AppSpec, studio: string, dsRoot = repository): Ado
   return app;
 }
 
-/** Locate the studio even when this public source is checked out under Worktrees. */
 export function adoptionStudio(start = repository): string {
   let directory = resolve(start);
   while (true) {
@@ -1140,7 +996,6 @@ export function adoptionStudio(start = repository): string {
 }
 
 export function scanReport(studio = adoptionStudio()): AdoptionReport {
-  // The report describes canonical apps, even when its scanner runs from a source worktree.
   const dsRoot = dirname(git(repository, "rev-parse", "--path-format=absolute", "--git-common-dir"));
   return {
     schema: 1, generatedAt: new Date().toISOString(), sourceCommit: git(dsRoot, "rev-parse", "HEAD"), sourceDirty: Boolean(git(dsRoot, "status", "--porcelain")),

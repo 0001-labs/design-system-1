@@ -1,7 +1,3 @@
-/* The base system's component editor: the components down the side (eight squares), the canvas
-   on the grid, the properties beside it (twelve squares). Everything stands on whole squares and
-   on the lower sixteen of its square. The canvas and the property groups are shared with a
-   library's workbench (ComponentCanvas.ts, PropertyGroups.ts), so they take their measures there too. */
 .component-editor,
 .component-editor-canvas,
 .component-editor-note,
@@ -38,12 +34,10 @@
 }
 .component-editor-stage > ds-notice { margin: var(--editor-unit) calc(2 * var(--editor-unit)) 0; }
 
-/* The canvas: the grid behind, the states one square apart from two squares in. */
 .component-editor-canvas {
   position: relative;
   flex: 1 0 auto;
   padding: calc(2 * var(--editor-unit));
-  /* The handles and readouts stay on the canvas. */
   overflow: clip;
 }
 .component-editor-specimens {
@@ -78,13 +72,9 @@
   display: flex;
   align-items: flex-end;
   min-height: var(--editor-unit);
-  /* Whole squares however tall the component is drawn, the component at their foot. */
   height: calc-size(max-content, round(up, size, var(--editor-unit)));
 }
-/* The faint outline another state under the pointer takes on its face, drawn inside the specimen's
-   shadow root (ComponentCanvas.ts) in the canvas's colour, which a design's stylesheet cannot reach. */
 .component-editor-canvas { --component-editor-hover-line: color-mix(in srgb, var(--sharp-blue) 40%, transparent); }
-/* A line under the canvas, as muted text on the lower sixteen of its square. */
 .component-editor-note {
   margin: 0;
   padding: calc(4px * var(--ds-sf, 1)) calc(2 * var(--editor-unit)) 0;
@@ -94,9 +84,6 @@
   line-height: var(--editor-line);
 }
 
-/* The selected face's handles, positioned from its measured box (CanvasHandles.ts): a crisp 1px
-   outline on the face, edges and corners that drag, padding bands in the spacing blush and plain
-   numbers in soft highlights. Nothing moves but opacity, and nothing during a drag. */
 .component-editor-handles {
   --handle-line: var(--sharp-blue);
   --handle-mark: calc(4px * var(--ds-sf, 1));
@@ -126,8 +113,6 @@
 .component-editor-handle[data-handle="height"] { cursor: ns-resize; }
 .component-editor-handle:is([data-handle="width"], [data-handle^="padding"]) { cursor: ew-resize; }
 .component-editor-handle:is([data-handle="corner"], [data-handle="size"]) { cursor: nwse-resize; }
-/* The mark each handle draws: a short bar across an edge, a dot inset at the corner, a square on
-   the far corner, white on the line's colour. Bands are their own mark. */
 .component-editor-handle:not([data-handle^="padding"])::after {
   content: "";
   position: absolute;
@@ -141,7 +126,6 @@
 .component-editor-handle[data-handle="corner"]::after { left: 50%; top: 50%; width: calc(6px * var(--ds-sf, 1)); height: calc(6px * var(--ds-sf, 1)); border-radius: 50%; }
 .component-editor-handle[data-handle="size"]::after { left: 50%; top: 50%; width: calc(6px * var(--ds-sf, 1)); height: calc(6px * var(--ds-sf, 1)); }
 .component-editor-handle:is(:hover, :focus-visible)::after { background: var(--handle-line); }
-/* Plain numbers in a soft highlight, beside the face's foot or on the size line's row. */
 .component-editor-readouts {
   position: absolute;
   left: var(--x);
@@ -152,7 +136,6 @@
   pointer-events: none;
 }
 .component-editor-readouts[data-group="below"] { justify-content: space-between; }
-/* Beside a face that reaches the canvas's edge there is no room: above it, at its end. */
 .component-editor-readouts[data-group="side"][data-flip] { left: auto; right: 0; top: calc(-18px * var(--ds-sf, 1)); }
 .component-editor-readout {
   height: var(--editor-line);
@@ -165,7 +148,6 @@
 }
 .component-editor-readout[data-readout="padding-end"] { margin-left: auto; }
 .component-editor-readout[data-readout^="padding"] { background: color-mix(in srgb, var(--ds-pink) 32%, var(--ds-background, Canvas)); }
-/* The readouts take the size line's row while they show. */
 .component-editor-canvas:has(.component-editor-readout) .component-editor-size { visibility: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -177,7 +159,6 @@
 .component-editor-history .base-history { margin: 0; padding: 0; list-style: none; }
 .component-editor-history .base-history li { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--editor-unit); min-height: var(--editor-unit); }
 
-/* The properties: a label four squares wide, its control, a reset on the last square. */
 .component-editor-inspector {
   min-width: 0;
   overflow: auto;
@@ -202,13 +183,11 @@
 }
 .component-editor-property > :nth-child(2) { justify-self: start; max-width: 100%; }
 .component-editor-property > .component-editor-reset { grid-column: 3; }
-/* A width and a colour take the row below their label, which has the row's whole width. */
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > .component-editor-label { grid-column: 1 / 3; }
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > :nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
 .component-editor-property:is([data-kind="width"], [data-kind="colour"]) > .component-editor-reset { grid-row: 1; }
 .component-editor-pinned { display: block; padding-top: calc(4px * var(--ds-sf, 1)); color: var(--ds-text-color-muted); font-variant-numeric: tabular-nums; }
 .component-editor-label { display: block; padding-top: calc(4px * var(--ds-sf, 1)); color: var(--ds-text-color-muted); white-space: nowrap; }
-/* A link in running text, as Design system 1's link. */
 .component-editor-link {
   color: currentColor;
   text-decoration-line: underline;

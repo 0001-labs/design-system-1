@@ -1,7 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-tabs.css */
-
 :host {
   box-sizing: border-box;
   display: flex;
@@ -25,10 +23,6 @@
   justify-content: center;
 }
 
-/*
- * An option group (role="group"): grey choices, the chosen one in the accent,
- * as DS one's secondary and primary buttons.
- */
 :host([role="group"]) ::slotted(ds-button) {
   --ds-button-height: var(--ds-row-height);
   --ds-button-padding: 0 calc(4px * var(--ds-sf));
@@ -45,16 +39,7 @@
   --ds-button-color: var(--ds-button-text-color-on-accent);
 }
 
-/*
- * Text tabs (`text`): the words alone, no fill in any state, the current one
- * in the ink and the others muted until the pointer is over them. The tabs
- * stay 4px apart, as every tab run, each with its 4px of padding, so the words
- * stand twelve apart; the run is drawn 4px back so the first word starts on
- * the column's edge, as a heading would.
- */
 :host([text]) {
-  /* Important: a page's `* { margin: 0 }` reset (Tailwind's preflight, say)
-     reaches the host from outside and would set the first word 4px in. */
   margin-inline-start: calc(-4px * var(--ds-sf)) !important;
 }
 
@@ -65,7 +50,6 @@
 }
 
 :host([text]) ::slotted(ds-button) {
-  /* The words at the tab's start, so the first stands on the column's edge. */
   --ds-button-align: flex-start;
   --ds-text-tab-padding: 0 calc(4px * var(--ds-sf));
   --ds-button-color: var(--ds-text-color-muted);
@@ -76,12 +60,6 @@
   --ds-button-color: var(--ds-text-color);
 }
 
-/*
- * Split tabs (`split`): joined into one face a control high, as the split
- * button draws it: a pixel of the paper between them, the run's outer corners
- * rounded (each tab's `segment` place), the tabs muted on the secondary
- * ground, the current one on the accent.
- */
 :host([split]) {
   display: inline-flex;
   align-items: stretch;
@@ -107,16 +85,6 @@
   --ds-button-color: var(--ds-button-text-color-on-accent);
 }
 
-/*
- * Paper tabs (`paper`): a notebook's tabs hanging from a page's top edge.
- * Each tab is a row high with its words on the sixteen, 4px of room at its
- * sides, as every hugging face, the tabs 4px apart, rounded at the top and square at the foot
- * where they join the page (each tab's `paper` mark, which the run sets):
- * the current one on the paper's colour in the ink, so it reads as part of
- * the page below; the others on the quiet fill in the muted ink, lit under
- * the pointer. The run stands at the page's edge; the page places it, over a
- * header's band, say, so the tabs hang into it.
- */
 :host([paper]) {
   align-items: flex-end;
   height: var(--ds-row-height);
@@ -136,7 +104,6 @@
 
 :host([paper]) ::slotted(ds-button[active]),
 :host([paper]) ::slotted(ds-button[active]:hover) {
-  /* The page's own colour: a product's --ds-background, else the paper's. */
   --ds-button-background: var(--ds-background, var(--background, Canvas));
   --ds-button-color: var(--ds-text-color);
 }

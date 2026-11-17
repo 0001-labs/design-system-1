@@ -2,15 +2,6 @@ import type { C9yComponent, C9yRelation, C9ySite, C9ySystem, Realisation } from 
 import { KIND_WORDS, LAYERS, relationsOf, renderMap } from './map';
 import { renderMatrix } from './matrix';
 
-/**
- * C9Y System's page: three views of one catalogue (the map, the components, the sites) and the focused node's
- * details beside them. What is shown lives in the address, `?view=components&focus=c9y-card`, so a link opens the
- * page where it was. Pressing a node focuses it, pressing it again or Escape lets it go.
- *
- * Design system 1 is the presentation; a C9Y component is what Consistency adds to it. Every component says both:
- * "Presents with" names the DS1 elements it is drawn with, "Adds" the behaviour Consistency gives it.
- */
-
 export type View = 'map' | 'matrix' | 'components' | 'sites';
 const VIEWS: { view: View; title: string }[] = [
   { view: 'map', title: 'Map' },
@@ -31,7 +22,6 @@ function realised(realisation: Realisation): string {
   const { as, ...rest } = realisation;
   return `${REALISED[as]} ${code(String(Object.values(rest)[0] ?? ''))}`;
 }
-/** `Repository: path`, the repository in words and the path in the code face. */
 function sourceLine(source: string): string {
   const at = source.indexOf(': ');
   return at < 0 ? code(source) : `${escape(source.slice(0, at))} ${code(source.slice(at + 2))}`;
@@ -71,7 +61,6 @@ export function mountC9ySystem(root: HTMLElement, system: C9ySystem): { setView(
   const detail = root.querySelector<HTMLElement>('.c9y-detail')!;
 
   const render = () => {
-    // Pressing a node redraws the view: the map keeps its scroll and the keyboard keeps its place.
     const frame = main.querySelector<HTMLElement>('.c9y-map-frame, .c9y-matrix-frame');
     const scroll = frame && main.dataset.view === state.view ? [frame.scrollLeft, frame.scrollTop] : null;
     const active = document.activeElement instanceof HTMLElement && root.contains(document.activeElement) ? document.activeElement : null;
@@ -105,7 +94,6 @@ export function mountC9ySystem(root: HTMLElement, system: C9ySystem): { setView(
   const focusButton = (id: string, label: string) =>
     `<button type="button" class="c9y-link" data-focus="${escape(id)}" aria-pressed="${state.focus === id}">${escape(label)}</button>`;
 
-  /** DS1 on one side, what Consistency adds on the other. */
   const split = (component: C9yComponent) => `<div class="c9y-split">
       <section class="c9y-presents"><h3>Presents with</h3><p class="c9y-by">Design system 1</p>${component.presents.length
         ? `<ul>${component.presents.map(element => `<li>${code(element)}</li>`).join('')}</ul>` : '<p class="c9y-none">Nothing: it draws nothing</p>'}</section>

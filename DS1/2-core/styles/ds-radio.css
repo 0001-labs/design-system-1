@@ -9,7 +9,6 @@
   height: var(--ds-unit);
 }
 :host([hidden]) { display: none !important; }
-/* A plain radio as the checkbox: a 16px circle on its square's lower sixteen, at its start. */
 :host(:not([choice])) { display: inline-grid; align-items: end; justify-items: start; vertical-align: top; }
 :host(:not([choice])) ::slotted(input[type="radio"]) { width: var(--ds-control-height) !important; height: var(--ds-control-height) !important; }
 ::slotted(input[type="radio"]) {
@@ -83,7 +82,6 @@
   text-align: center;
   text-overflow: clip;
 }
-/* A cut label fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 .label[data-cut="end"] { mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent); }
 :host(:dir(rtl)) .label[data-cut="end"] { mask-image: linear-gradient(to left, #000 calc(100% - var(--ds-unit)), transparent); }
 :host([compact]) .label { padding-inline: 0; }

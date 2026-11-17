@@ -22,9 +22,6 @@
 .adoption-controls { margin-block: var(--report-unit); }
 .adoption-controls label { display: inline-flex; align-items: center; gap: calc(.5 * var(--report-unit)); }
 .adoption-scroll { overflow: auto; padding-right: calc(5 * var(--report-unit)); padding-bottom: var(--report-unit); }
-/* Both matrices and every evidence list are Design system 1 tables (.ds-table):
-   one-square rows on a hairline, title-grey headers, a sticky first column.
-   The matrices keep their 20px count cells, ruled on every side. */
 .adoption .adoption-matrix { border-collapse: separate; table-layout: fixed; width: max-content; min-width: 0; }
 .adoption-matrix th, .adoption-matrix td { box-sizing: border-box; border: 0; padding: 0; font-weight: 400; text-align: center; }
 .adoption-matrix td { font-size: calc(10px * var(--sf, 1)); width: var(--report-unit); min-width: var(--report-unit); max-width: var(--report-unit); height: var(--report-unit); box-shadow: inset -1px -1px var(--report-line); font-family: var(--typeface-compressed); font-variant-numeric: tabular-nums; }
@@ -69,7 +66,6 @@
 
 }
 
-/* Filled status cells keep a dark ink even when the page uses a dark theme. */
 .adoption :is(.shared, .styled, .local, .unverified, .mixed) { color: var(--base-slate); }
 .adoption-column-names th { height: calc(9 * var(--report-unit)); }
 .adoption-heading, .adoption-detail-heading { flex-wrap: wrap; }
@@ -77,18 +73,14 @@
 
 .adoption-app-group th { text-align: left; font-weight: normal; height: var(--1); background: var(--report-paper); }
 .adoption-deferred { font-weight: normal; }
-/* The live base: a bolt before the app's name, which stays aligned to the column's edge. */
 .adoption-live { --ds-icon-size: calc(.8 * var(--report-unit)); margin-right: calc(.25 * var(--report-unit)); vertical-align: -.125em; }
 
-/* The icon matrix: its own section, each DS1 icon drawn one square high beside its name. */
 .adoption-icons { padding-block: var(--report-unit); border-top: 1px solid var(--report-line); }
 .adoption-icons .adoption-column-names th { height: calc(7 * var(--report-unit)); }
 .adoption-icon-name { display: flex; align-items: center; justify-content: flex-end; gap: calc(.5 * var(--report-unit)); height: var(--report-unit); }
 .adoption-icon-name > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .adoption-icon-name ds-icon { flex: none; width: var(--report-unit); height: var(--report-unit); }
-/* A local icon that stands for a DS1 icon shows that drawing, quieter than DS1's own. */
 .adoption-icon-name .adoption-icon-stands { opacity: .45; }
-/* What each kind of site means, on one-square rows below the legend. */
 .adoption-kinds { display: flex; flex-wrap: wrap; gap: 0 var(--report-unit); margin: 0 0 var(--report-unit); }
 .adoption-kinds div { display: flex; gap: calc(.5 * var(--report-unit)); height: var(--report-unit); }
 .adoption-kinds dt, .adoption-kinds dd { margin: 0; line-height: var(--report-unit); white-space: nowrap; }
@@ -99,7 +91,6 @@
 
 .adoption-icons .adoption-matrix .adoption-total { width: var(--report-unit); min-width: var(--report-unit); max-width: var(--report-unit); padding: 0; text-align: center; white-space: nowrap; }
 
-/* In documentation, the site owns the paper, title, spacing and page scroll. */
 .adoption.adoption-document { padding: 0; min-height: 0; background: transparent; --report-paper: var(--ds1-docs-content-bg, var(--background)); }
 .adoption-document :is(ds1-component-matrix, ds1-icon-matrix, ds1-component-glossary) { min-width: 0; }
 .adoption-document h2 { font-family: inherit; font-size: var(--ds-type-size-heading, calc(20px * var(--sf, 1))); line-height: calc(2 * var(--report-unit)); }
@@ -109,7 +100,6 @@
 .adoption-document .adoption-column-names th { height: calc(9 * var(--report-unit)); }
 .adoption-document .adoption-matrix :is(th, td) { padding: 0; }
 
-/* Names and metadata share one footprint, so hovering never moves the matrix. */
 .adoption-identity { display: inline-grid; }
 .adoption-identity > span { grid-area: 1 / 1; }
 .adoption-code-version { visibility: hidden; }

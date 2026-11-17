@@ -1,11 +1,4 @@
-/* Design system 1's named colours as tokens: --one-<colour> and --one-<colour>-pastel,
-   each light-dark(light, dark), and the named pastels (--one-zenith-blue,
-   --one-comfortable-green). light-dark() follows the page's color-scheme, which
-   one.css sets. Written by scripts/write-palette-css.ts from palette.ts; never edit it
-   by hand. */
-
 :root {
-  /* Palette: written by scripts/write-palette-css.ts from DS1/1-root/palette.ts. */
   --one-red-for-blood: light-dark(#de0331, #9c374c);
   --one-red-for-blood-pastel: light-dark(#fecdd7, #4b1b25);
   --one-dark-red-variant: light-dark(#c50124, #d20126);
@@ -54,5 +47,4 @@
   --one-ink: light-dark(#2c2c2b, #c0c0bf);
   --one-black: light-dark(#2a2a2a, #c0c0c0);
   --one-slate: light-dark(#1e1e1e, #cacaca);
-  /* Palette: end */
 }

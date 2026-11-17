@@ -41,7 +41,6 @@ export function focusSplit(host: SplitButtonState, options?: FocusOptions) {
   (buttons.find(button => button.getAttribute("aria-pressed") === "true") ?? buttons[0])?.focus(options);
 }
 export function renderSplit(host: SplitButtonState) {
-    // `labelled` writes a segment's words after its icon; otherwise an icon stands alone and names it.
     const words = (segment: SplitSegment) => html`<ds-text .text=${segment.label} .literal=${host.literal}></ds-text>`;
     return html`${choices(host).map(segment => html`<button
       type="button" part="segment" value=${segment.value}

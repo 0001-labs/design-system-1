@@ -1,16 +1,8 @@
-/**
- * The app frame (`ds-app`) in headless Chrome, on the fixture `e2e/fixtures/app-frame.html`:
- * Desktop aligned at several window sizes (the bar two squares and the leftover high, the panes on
- * whole squares down to the window's bottom edge), the dividers by pointer and keyboard and the
- * widths they remember, empty areas taking no room, a phone's drawer and one scrolling document,
- * and an overlay and a toast above the frame. `vp run e2e:app-frame`.
- */
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import puppeteer, { KnownDevices } from 'puppeteer-core';
 import { createServer } from 'vite';
 
-/** Layout is in 1/64px steps and a scaled square is rarely a whole pixel: a tenth of a pixel is on the line. */
 const STEP = 0.1;
 const root = fileURLToPath(new URL('..', import.meta.url));
 const server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0 } });
@@ -42,7 +34,6 @@ async function open(page, width, height, query = '') {
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
-/** The frame's parts, in squares from the window's top-left corner under the leftover. */
 const frame = page => page.evaluate(() => {
   const style = getComputedStyle(document.documentElement);
   const unit = 20 * Number(style.getPropertyValue('--sf'));
@@ -177,7 +168,6 @@ await check('a phone: the menu in the bar opens the navigation, the page scrolls
   assert.equal(await menu.evaluate(button => button.getAttribute('aria-expanded')), 'false');
   await menu.tap();
   await page.waitForFunction(() => document.querySelector('ds-app').page.drawerOpen);
-  // The panel settles half a square as it arrives.
   await page.evaluate(() => Promise.all(document.querySelector('ds-app').page.shadowRoot.querySelector('[part="drawer"]').getAnimations().map(animation => animation.finished)));
   const opened = await page.evaluate(() => {
     const app = document.querySelector('ds-app');

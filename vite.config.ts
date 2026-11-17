@@ -2,8 +2,6 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   check: {
-    // Adopt Oxfmt separately from the Vite+ toolchain migration so existing
-    // source and documentation files do not create one large formatting diff.
     fmt: false,
   },
   fmt: {
@@ -21,7 +19,6 @@ export default defineConfig({
     ignorePatterns: [
       ".wrangler/**",
       "app/**",
-      // The shared sign-in, copied from Sign-in by `vp run sync-sign-in`, keeps its own formatting.
       "convex/signIn/**",
       "dist/**",
       "move out/**",
@@ -40,9 +37,6 @@ export default defineConfig({
     },
     overrides: [
       {
-        // A component's template listeners (@click=${this.handle}) are called by Lit with the
-        // element as `this` (lit-html's EventPart calls them on options.host), so they are
-        // bound; anywhere else a method passed on its own is still flagged.
         files: ["DS1/**/ds-*.ts"],
         rules: { "typescript/unbound-method": "off" },
       },
@@ -53,15 +47,8 @@ export default defineConfig({
     },
   },
   test: {
-    // Browser suites each launch a browser and a Vite server. Unbounded forks
-    // exhaust memory and race Vite's ephemeral-port probes. Release runs keep
-    // the same assertions and timeouts, but give each suite its own turn.
     maxWorkers: 4,
     fileParallelism: !process.env.CI,
-    // Vitest v4 compatibility: preserve mock call history.
-    // Remove after tests no longer rely on calls from setup or earlier tests.
-    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
-    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
     clearMocks: false,
     exclude: ["**/node_modules/**", "**/.git/**"],
   },

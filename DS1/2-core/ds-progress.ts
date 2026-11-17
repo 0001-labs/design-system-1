@@ -1,12 +1,3 @@
-// ds-progress.ts
-// Progress, as HTML's <progress> names it: how much of a range a value fills,
-// one square high, as a bar half a square high or the range in squares (past
-// the end it is "over", filled whole in the danger colour); or, with `steps`,
-// a numbered sequence of steps one square high, those before the current one
-// done; or, with `dots`, a dot for each slide or page, one square each.
-// Drawn by 1-root/progress.css, the same classes a page without scripts
-// writes.
-
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { getText } from "../0-face/i18n";
 import { define } from "../0-face/define";
@@ -19,20 +10,15 @@ import metrics from "../1-root/component-metrics.css?inline";
 import progress from "../1-root/progress.css?inline";
 import styles from "./styles/ds-progress.css?inline";
 
-/** The most squares a range is drawn in. */
 const MOST_SQUARES = 100;
 
-/** Where a step stands: before the current one, the current one, after it, or stopped. */
 export type StepState = "done" | "current" | "upcoming" | "failed";
 const STATES: readonly StepState[] = ["done", "current", "upcoming", "failed"];
 
-/** A step: its name (a translation key, or literal words), and optionally its own state and where it goes. */
 export type Step = string | { label: string; state?: StepState; href?: string };
 
-/** The words assistive technology reads after a step's name for its state; aria-current says the current one. */
 const STATE_WORDS: Partial<Record<StepState, string>> = { done: "Done", failed: "Failed" };
 
-/** Each step's state: its own if it names one, else done before `current`, current at it and upcoming after. */
 export function stepStates(steps: readonly Step[], current: number): StepState[] {
   return steps.map((step, index) => {
     const own = typeof step === "object" && step ? step.state : undefined;
@@ -42,64 +28,13 @@ export function stepStates(steps: readonly Step[], current: number): StepState[]
   });
 }
 
-/** Detail of `select`. Cancel the event to keep the current dot where it is. */
 export interface ProgressSelectDetail {
-  /** The dot picked, from 0. */
   index: number;
-  /** The dot that was current. */
   previous: number;
 }
 
-/** What the element draws: a bar or squares, a sequence of steps, or dots. */
 export type ProgressMode = "meter" | "steps" | "dots";
 
-/**
- * @element ds-progress
- *
- * A value against its range (the default):
- * @prop {number} value - The value. Past `max`, it is over.
- * @prop {number} min - The start of the range, 0 by default.
- * @prop {number} max - The end of the range, 1 by default.
- * @prop {number} squares - Draw the range in this many squares, one square each, instead of a bar.
- * @prop {boolean} over - Show it as over whatever the value, where the page decides it.
- * @prop {string} valuetext - What the value says (`aria-valuetext`), in place of "7 of 10".
- * @prop {"number" | "compact" | "percent" | "money"} format - How the value and the range are written in the words.
- * @prop {string} currency - The ISO 4217 code for money.
- * @prop {boolean} minor - The money is counted in the currency's minor unit.
- * @prop {boolean} whole - Money in whole units only.
- * @prop {number} digits - Decimals in the words.
- *
- * A sequence of steps:
- * @prop {Step[]} steps - The steps in order: names, or `{ label, state, href }`. As an attribute, a JSON array.
- * @prop {number} current - The number of the current step, counted from 1. Past the last, every step is done; 0, none has started.
- * @prop {boolean} vertical - One step to a row, with each step's `step-N` slot under it.
- * @slot step-N - In a vertical sequence, what belongs under step N (counted from 1): a line of text, a form.
- *
- * Dots:
- * @prop {number} dots - A dot for each of this many pages.
- * @prop {number} active - The current dot, from 0.
- * @prop {boolean} end - Draw the last dot as an end marker (a ring in the text colour) unless it is current.
- * @prop {string} dotLabel - Each dot's name, with `{index}` for its number from 1: the shared words' "Slide {index}" by default.
- * @fires select - A person picked a dot, by a click or a key. `detail` is `{ index, previous }`. Cancelable.
- *
- * @prop {string} label - The element's name for assistive technology: a translation key, or literal words
- *   (the dots' group is the shared word "Slides" by default).
- * @prop {boolean} literal - Show `label`, `valuetext`, the step names and `dotLabel` as written, never looked up.
- *
- * A value is `role="meter"` on the element with `aria-valuenow` (kept inside
- * the range, as ARIA requires), `-min`, `-max` and `-valuetext` ("12 of 10,
- * over by 2"). Steps are an ordered list; the current one carries
- * `aria-current="step"`, a done or failed one says so in hidden words, and a
- * step with `href` is a link reached with Tab. Dots are a group of buttons,
- * only the current one in the tab order; the arrow keys, Home and End move
- * to the others and pick them.
- *
- * @example
- * <ds-progress label="Spent" value="7400" max="10000" format="money" currency="DKK"></ds-progress>
- * <ds-progress label="Seats" value="7" max="10" squares="10"></ds-progress>
- * <ds-progress current="2" steps='["Apply", "Approval", "Connect payouts"]' label="Getting started" literal></ds-progress>
- * <ds-progress dots="5" active="1"></ds-progress>
- */
 export class Progress extends LitElement {
   static properties = {
     value: { type: Number },
@@ -125,7 +60,6 @@ export class Progress extends LitElement {
   };
 
   static styles = [unsafeCSS(metrics), unsafeCSS(progress), unsafeCSS(styles)];
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".ds-progress__label" });
 
   declare value: number;
@@ -149,7 +83,6 @@ export class Progress extends LitElement {
   declare label: string | undefined;
   declare literal: boolean;
 
-  /** The role this element last set, so a role the page wrote is left alone. */
   private ownRole: string | null = null;
   private focusAfterUpdate = false;
   private readonly relabel = () => this.requestUpdate();
@@ -170,7 +103,6 @@ export class Progress extends LitElement {
     this.literal = false;
   }
 
-  /** What the element draws, from what it was given: steps, dots, or a value against its range. */
   get mode(): ProgressMode {
     if (Array.isArray(this.steps)) return "steps";
     if (this.dots !== undefined && this.dots !== null) return "dots";
@@ -201,7 +133,6 @@ export class Progress extends LitElement {
     return params ? text.replace(/\{\{?(\w+)\}?\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole)) : text;
   }
 
-  /** Sets a role of this element's own; a role the page wrote stays. */
   private setRole(role: string | null) {
     const written = this.getAttribute("role");
     if (written !== null && written !== this.ownRole) return;
@@ -210,9 +141,6 @@ export class Progress extends LitElement {
     else if (written !== role) this.setAttribute("role", role);
   }
 
-  // ---- A value against its range ----
-
-  /** The values the element says and draws, in the current language. */
   get aria(): MeterAria {
     return meterAria(this.value, this.min, this.max, {
       over: this.over, format: figureFormat(this.format), currency: this.currency,
@@ -220,15 +148,11 @@ export class Progress extends LitElement {
     });
   }
 
-  /** How many squares the range is drawn in, or 0 for a bar. */
   get squareCount(): number {
     const count = Math.floor(Number(this.squares));
     return Number.isFinite(count) && count > 0 ? Math.min(MOST_SQUARES, count) : 0;
   }
 
-  // ---- A sequence ----
-
-  /** Each step's state, as drawn. */
   get states(): StepState[] {
     return stepStates(Array.isArray(this.steps) ? this.steps : [], Number(this.current));
   }
@@ -237,20 +161,15 @@ export class Progress extends LitElement {
     return [...this.children].some(node => node.getAttribute("slot") === name);
   }
 
-  // ---- Dots ----
-
-  /** The number of dots drawn: a whole number, never below zero. */
   get dotCount(): number {
     return Number.isFinite(this.dots) ? Math.max(0, Math.floor(this.dots as number)) : 0;
   }
 
-  /** The current dot, inside the count. */
   get currentDot(): number {
     const active = Number.isFinite(this.active) ? Math.floor(this.active) : 0;
     return Math.max(0, Math.min(this.dotCount - 1, active));
   }
 
-  /** Pick a dot as a person would: fires `select` and, unless it is cancelled, makes it current. */
   select(index: number): boolean {
     if (this.dotCount === 0) return false;
     const target = Math.max(0, Math.min(this.dotCount - 1, Math.floor(index)));
@@ -270,7 +189,6 @@ export class Progress extends LitElement {
       this.focusAfterUpdate = true;
       return;
     }
-    // A cancelled pick leaves the current dot as it is; focus still follows the key.
     this.renderRoot.querySelectorAll<HTMLButtonElement>(".ds-progress__dot")[to]?.focus();
   }
 
@@ -296,7 +214,6 @@ export class Progress extends LitElement {
       if (!this.hasAttribute("aria-labelledby")) this.setAttribute("aria-label", this.wordsWith(this.label, "Slides"));
       return;
     }
-    // Steps name their list inside; the element itself has no role.
     this.setRole(null);
     if (changed.has("label") || changed.has("steps")) this.removeAttribute("aria-label");
   }

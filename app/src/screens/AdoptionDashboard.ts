@@ -7,12 +7,6 @@ import "./ComponentAdoption";
 import "./ComponentGlossary";
 import "./SignIn";
 
-/**
- * The owner's session on a private host: the Worker gates the page, this
- * session bridge and every read on its own; this only bridges the sign-in
- * token into the host's cookie, then reloads the protected page. The host
- * reads `ready` and `error`, and calls `leave()` to sign out.
- */
 export class OwnerSession implements ReactiveController {
   ready = false;
   error = "";
@@ -35,7 +29,6 @@ export class OwnerSession implements ReactiveController {
     this.#token = undefined;
   }
 
-  /** Each new session is bridged once. */
   hostUpdate() {
     const token = authToken.get();
     if (token === this.#token) return;
@@ -50,7 +43,6 @@ export class OwnerSession implements ReactiveController {
         if (!controller.signal.aborted) {
           this.ready = true;
           this.host.requestUpdate();
-          // Prove the protected HTML route before showing anything after sign-in.
           if (window.location.hostname === "system.designsystem1.com" ? window.location.pathname.startsWith("/app/") : window.location.pathname !== "/" && window.location.pathname !== "/app/adoption") window.location.replace(this.#destination);
         }
       }).catch(caught => {
@@ -67,7 +59,6 @@ export class OwnerSession implements ReactiveController {
   };
 }
 
-/** The Worker independently gates the page, session bridge and every report read. */
 export class AdoptionDashboard extends AppElement {
   static properties = { glossary: { state: true } };
   declare glossary: boolean;

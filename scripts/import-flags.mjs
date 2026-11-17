@@ -1,15 +1,3 @@
-/**
- * Writes DS1/x-flag/ from country-flag-icons' 3:2 drawings: every flag by its
- * code in lower case (`ie.svg`, `gb-sct.svg`), framed thirty by twenty so an
- * `<img>` has the flag's own size, its drawing untouched. Japan's is Ezo's
- * (the disc three-fifths of the height, the 1999 law), the flag the set is
- * drawn after. The user-assigned codes the package gives disputed regions
- * (XA, XC, XO) are left out; Kosovo's XK stays, as Cloudflare places
- * addresses there.
- *
- *   npm pack country-flag-icons@<version> && tar xzf country-flag-icons-*.tgz
- *   node scripts/import-flags.mjs package/3x2 <version>
- */
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';

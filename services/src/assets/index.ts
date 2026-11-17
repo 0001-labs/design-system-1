@@ -1,8 +1,3 @@
-/**
- * Public CSS reads for the unified Design system 1 Worker.
- * The router passes only the R2 binding, so reads do not depend on
- * authentication, publishing, or the Convex backend.
- */
 import {
   baseArtifactHeaders,
   corsPreflight,
@@ -39,8 +34,6 @@ export default {
       return new Response(null, { headers });
     }
 
-    // The edge cache is keyed on the URL alone, never on the conditional
-    // headers, so one cached entry serves both fresh and revalidating clients.
     const cache = caches.default;
     const cacheKey = new Request(url.toString(), { method: "GET" });
 
@@ -53,9 +46,6 @@ export default {
       return cached;
     }
 
-    // Hand the request's own preconditions to R2 so it evaluates
-    // If-None-Match / If-Modified-Since natively. A failed precondition yields
-    // an R2Object with no body, which is exactly a 304.
     const object = await env.LIBRARIES.get(ref.key, { onlyIf: request.headers });
     if (!object) return notFound();
 
@@ -75,15 +65,10 @@ function describe(object: R2Object, cacheControl: string): Headers {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
 
-  // R2's own etag is a strong MD5 over the exact bytes for single-part uploads.
-  // Because latest.css is a byte copy of its version, the two objects share an
-  // etag automatically — which is the correct semantic, at zero cost.
   headers.set("etag", object.httpEtag);
   baseArtifactHeaders(headers);
   headers.set("cache-control", cacheControl);
   headers.set("ds1-version", object.customMetadata?.version ?? "");
-  // The sha256 the publish recorded and checked: a product that pins this version (Sync 1's
-  // `library` export) compares it with the bytes it received.
   headers.set("ds1-content-hash", object.customMetadata?.contentHash ?? "");
   headers.set("access-control-expose-headers", "ds1-version, ds1-content-hash");
   return headers;
@@ -93,7 +78,6 @@ function isBody(object: R2Object | R2ObjectBody): object is R2ObjectBody {
   return "body" in object && object.body !== null;
 }
 
-/** RFC 9110 If-None-Match: a list of etags, or `*`. Weak comparison. */
 function matchesIfNoneMatch(header: string | null, etag: string): boolean {
   if (!header) return false;
   if (header.trim() === "*") return true;

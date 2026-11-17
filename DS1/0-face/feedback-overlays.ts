@@ -1,48 +1,22 @@
-/**
- * Dialogs that answer with a promise, in place of the browser's `alert()`,
- * `confirm()` and `prompt()`, for pages without Lit or any other framework.
- *
- * Each is drawn on the native `dialog.ds-overlay` frame from `1-root/controls.css`
- * (which the page loads), as a sheet from the screen's foot on a phone, with its native buttons, `.ds-button--primary`,
- * `--secondary` and `--danger`, and opened with `showModal()`, so the browser
- * keeps the rest of the page inert behind it. Their words default to the
- * shared words (OK, Cancel) in the page's language where the page loads the
- * language module, and English otherwise (`./feedback-words.ts`).
- *
- * - Focus moves into the dialog when it opens, and back to what had it when it
- *   closes.
- * - Escape cancels; Enter in a prompt's field confirms it.
- * - A click on the backdrop cancels, except on a destructive confirmation
- *   (`danger`), which takes an answer.
- * - Two never open at once: a dialog asked for while another is open waits
- *   for it to close.
- * - A dialog asked for in a click opens within that click, so a phone shows
- *   its keyboard for a prompt's field.
- */
 import { feedbackWord } from "./feedback-words";
 
 export interface AlertOptions {
   title: string;
   text?: string;
-  /** The button's words; the shared word "OK" by default. */
   confirm?: string;
 }
 
 export interface ConfirmOptions {
   title: string;
   text?: string;
-  /** The confirming button's words; the shared word "OK" by default. Name the action when it has one ("Delete"). */
   confirm?: string;
-  /** The cancelling button's words; the shared word "Cancel" by default. */
   cancel?: string;
-  /** A destructive action: the confirming button in the danger colour, Cancel focused, and no backdrop dismissal. */
   danger?: boolean;
 }
 
 export interface PromptOptions {
   title: string;
   text?: string;
-  /** The field's label, shown above it; without one, the title names the field. */
   label?: string;
   value?: string;
   placeholder?: string;
@@ -61,7 +35,6 @@ interface Spec {
   field?: { label?: string; value: string; placeholder?: string };
 }
 
-/* One dialog at a time; the next waits in line. */
 const waiting: Array<() => void> = [];
 let open = false;
 let count = 0;
@@ -80,7 +53,6 @@ function inLine<T>(show: () => Promise<T>): Promise<T> {
   });
 }
 
-/** The element with focus, inside open shadow roots too. */
 function focused(): HTMLElement | null {
   let active = document.activeElement;
   while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
@@ -94,12 +66,10 @@ function element<K extends keyof HTMLElementTagNameMap>(name: K, attributes: Rec
   return node;
 }
 
-/** Answers `true` for the confirming button, `false` for Cancel, Escape and the backdrop; a prompt answers its text. */
 function show(spec: Spec): Promise<boolean | string | null> {
   return new Promise(resolve => {
     const id = `ds-feedback-${++count}`;
     const opener = focused();
-    // A sheet from the foot of a phone's screen, never a modal there (Joachim, 20 October 2026).
     const phone = typeof matchMedia === "function" && matchMedia("(max-width: 768px)").matches;
     const dialog = element("dialog", {
       class: phone ? "ds-overlay ds-overlay--sheet" : "ds-overlay",
@@ -153,10 +123,8 @@ function show(spec: Spec): Promise<boolean | string | null> {
       finish(true);
     });
     dialog.addEventListener("cancel", event => { event.preventDefault(); finish(false); });
-    // The browser can still close it (a second Escape): that is a cancel too.
     dialog.addEventListener("close", () => finish(false));
 
-    // The backdrop is the dialog itself, outside its box; a press must start and end there.
     const outside = (event: MouseEvent) => {
       if (event.target !== dialog) return false;
       const box = dialog.getBoundingClientRect();
@@ -184,21 +152,18 @@ function show(spec: Spec): Promise<boolean | string | null> {
   });
 }
 
-/** In place of `alert()`: a message with one button. Resolves when it is dismissed. */
 export function alert(options: AlertOptions | string): Promise<void> {
   const { title, text, confirm } = typeof options === "string" ? { title: options } as AlertOptions : options;
   if (typeof document === "undefined") return Promise.resolve();
   return inLine(() => show({ kind: "alert", title, text, confirm: confirm ?? feedbackWord("OK") })).then(() => undefined);
 }
 
-/** In place of `confirm()`: resolves to `true` when confirmed, `false` otherwise. */
 export function confirm(options: ConfirmOptions | string): Promise<boolean> {
   const { title, text, confirm: yes, cancel, danger } = typeof options === "string" ? { title: options } as ConfirmOptions : options;
   if (typeof document === "undefined") return Promise.resolve(false);
   return inLine(() => show({ kind: "confirm", title, text, confirm: yes ?? feedbackWord("OK"), cancel: cancel ?? feedbackWord("Cancel"), danger })).then(answer => answer === true);
 }
 
-/** In place of `prompt()`: resolves to the text written, or `null` when cancelled. */
 export function prompt(options: PromptOptions | string): Promise<string | null> {
   const { title, text, label, value = "", placeholder, confirm: yes, cancel } = typeof options === "string" ? { title: options } as PromptOptions : options;
   if (typeof document === "undefined") return Promise.resolve(null);

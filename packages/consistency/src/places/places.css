@@ -1,8 +1,5 @@
 @import "../../../../DS1/1-root/table.css";
-/* The places of an open site in Consistency's app (places/*.ts), on Design system 1's measures: every line a square,
-   words on its lower sixteen, widths in whole squares. Ported from the sites' own editor's app.css. */
 .place{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-/* Emails and Design stand in a column at most forty squares wide. */
 .place-column{max-width:calc(40 * var(--ds-unit))}
 .place-title{margin-top:calc(var(--ds-unit) / -2)}
 .place-section{display:flex;flex-direction:column;gap:var(--ds-unit)}
@@ -10,18 +7,13 @@
 .place-code,.place-address{font-family:var(--ds-typeface-mono,monospace);font-size:calc(13px * var(--ds-sf,1))}
 .place-languages{flex:none;flex-wrap:wrap;height:auto}
 
-/* Pages in three columns two squares apart, to the foot of the work: the list sixteen squares wide, the chosen page
-   at most thirty-two, its share image sixteen. The list and the page scroll on their own. */
 .place-pages{display:grid;grid-template-columns:calc(16 * var(--ds-unit)) minmax(0,calc(32 * var(--ds-unit))) calc(16 * var(--ds-unit));gap:calc(2 * var(--ds-unit));overflow:hidden;height:100%}
 .place-pages-side,.place-pages-page{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .place-pages-list{flex:none;padding-bottom:calc(2px * var(--ds-sf,1))}
 .place-pages-list>ds-row .place-address{flex:0 1 auto;min-width:0}
 .place-count{color:var(--ds-text-color-muted);font-variant-numeric:tabular-nums}
-/* The chosen page: its title and Edit on the square level with the list's title, then its details a square below. */
 .place-pages-head{display:flex;flex:none;align-items:flex-end;gap:var(--ds-unit);min-width:0;min-height:calc(2 * var(--ds-unit))}
 .place-pages-title{flex:1 1 auto;min-width:0}
-/* The details: a heading on its square, then lines of a name eight squares wide, the value, and its count four
-   squares at the end, each line at least a square, its words on the sixteen. */
 .place-details{display:flex;flex:none;flex-direction:column;padding-bottom:var(--ds-unit)}
 .place-details__heading{display:block;min-height:var(--ds-unit)}
 .place-details>.place-details__heading:not(:first-child){margin-top:var(--ds-unit)}
@@ -31,18 +23,14 @@
 .place-details__value{min-width:0;min-height:var(--ds-unit);line-height:calc(16px * var(--ds-sf,1))}
 .place-details__value>ds-text,.place-details__label,.place-details__count{display:block;min-height:var(--ds-unit)}
 .place-details__end{text-align:end;font-variant-numeric:tabular-nums}
-/* A title or description edited in place: Aa's plain editor, 4px in, a square a line, on the fill under the pointer. */
 .place-details__words{box-sizing:border-box;min-height:var(--ds-unit);padding:calc(4px * var(--ds-sf,1)) calc(4px * var(--ds-sf,1)) 0;margin-inline-start:calc(-4px * var(--ds-sf,1));border-radius:var(--ds-radius);line-height:calc(16px * var(--ds-sf,1))}
 .place-details__words:is(:hover,:focus-within){background:var(--ds-fill)}
-/* The share image: its heading level with Search and sharing, the card as a link preview shows it (the picture at
-   1.91:1 in the card's corners, the host, title and description under it), then Change half a square below. */
 .place-pages-share{display:flex;flex-direction:column;align-items:flex-start;gap:calc(var(--ds-unit) / 2);min-width:0;padding-top:calc(3 * var(--ds-unit))}
 .place-share{box-sizing:border-box;width:100%;margin:0;overflow:hidden;border:1px solid var(--ds-border-color);border-radius:var(--ds-radius-card,var(--ds-radius))}
 .place-share__image{display:block;width:100%;aspect-ratio:1.91 / 1;object-fit:cover;background:var(--ds-fill)}
 .place-share__image--none{display:flex;align-items:center;justify-content:center}
 .place-share__words{display:flex;flex-direction:column;padding:calc(var(--ds-unit) / 2);border-top:1px solid var(--ds-border-color)}
 .place-share__words>ds-text{display:block;min-width:0}
-/* The picker: the site's pictures two to a line in the drawer, half a square apart; the one in use is ringed. */
 :is(.place-pages,.place-pages-place,.place-emails) .place-drawer[open]{overflow-y:auto}
 :is(.place-pages,.place-pages-place,.place-emails) .place-drawer [data-ds-overlay="footer"]{margin-top:auto}
 .place-picker{display:grid;flex:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(var(--ds-unit) / 2)}
@@ -59,8 +47,6 @@
   .place-details__value:last-child{grid-column:1 / -1}
 }
 
-/* Emails: the search and the kind on one row half a square apart, then the rows: the time four squares, the address
-   eight (giving way first), the kind's tag, then the subject, fading where it is cut. A failed one is in the danger colour. */
 .place-emails__filters{display:flex;flex-wrap:wrap;gap:calc(var(--ds-unit) / 2)}
 .place-emails__search{flex:1 1 calc(12 * var(--ds-unit));min-width:0}
 .place-emails__kind{flex:0 0 calc(10 * var(--ds-unit))}
@@ -71,7 +57,6 @@
 .place-email__to{flex:0 1 calc(8 * var(--ds-unit));min-width:0}
 .place-email__kind,.place-email__kind-name{flex:none}
 .place-email__kind-name{width:calc(10 * var(--ds-unit))}
-/* The email flow designer (email-flows.ts): a group a flow, its emails in order, the timing on one line in the drawer. */
 .place-flows{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0}
 .place-flows__add{align-self:flex-start;min-width:calc(10 * var(--ds-unit))}
 .place-flows__removed,.place-flow__actions,.place-flow__timing{display:flex;flex-wrap:wrap;align-items:center;gap:calc(var(--ds-unit) / 2)}
@@ -84,8 +69,6 @@
 .place-email[data-failed]{color:var(--ds-danger-color)}
 ds-tag[data-tone="danger"]{--ds-tag-accent:var(--ds-danger-color)}
 ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
-/* The email in the drawer: on white in a frame twenty-four squares high that scrolls inside, the small corner and a
-   hairline; its plain text under a disclosure a square high. */
 .place-email-drawer{--ds-overlay-width:calc(24 * var(--ds-unit))}
 .place-email__frame{box-sizing:border-box;flex:none;width:100%;height:calc(24 * var(--ds-unit));border:1px solid var(--ds-border-color);border-radius:var(--ds-radius);background:#fff}
 .place-email__text>summary{cursor:pointer;list-style:none}
@@ -94,7 +77,6 @@ ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
 .place-drawer__group{display:flex;flex-direction:column}
 @media(max-width:600px){.place-email__to{display:none}}
 
-/* Design: swatches in columns twelve squares wide, each two squares high; the lists a square a line. */
 .place-design__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--ds-unit)}
 .place-measure{position:fixed;z-index:-1;top:0;left:0;width:100vw;height:100vh;border:0;visibility:hidden;pointer-events:none}
 .place-swatches,.place-design__list{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(12 * var(--ds-unit)),1fr));gap:0 var(--ds-unit);margin:0;padding:0;list-style:none}
@@ -108,10 +90,6 @@ ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
 .place-design__corner{width:var(--ds-control-height);height:var(--ds-control-height);background:var(--ds-fill-hover,var(--ds-fill))}
 .place-design__specimen{box-sizing:border-box;width:100%;min-height:calc(20 * var(--ds-unit));border:0}
 
-/* CPH Raft's places (Bookings, Gift cards) on the same measures. */
-/* A site's places in Consistency's app (Bookings, Gift cards): Design system 1's sheet for the schedule's matrix,
-   and the few lines the places lay out, on whole squares with everything on the lower sixteen. */
-
 .place { padding: var(--ds-unit); }
 .place[hidden], .place-schedule[hidden] { display: none; }
 .place-head, .place-tools, .place-line {
@@ -120,13 +98,11 @@ ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
 }
 .place-head { min-height: calc(2 * var(--ds-unit)); }
 .place-tools { justify-content: space-between; }
-/* Text tabs stand where a heading would: the run drawn 4px back so the first word starts on the column's edge. */
 .place-tabs { margin-inline-start: calc(-4px * var(--ds-sf, 1)); }
 .place-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .place-note { display: block; }
 .place-day + .place-day { margin-top: var(--ds-unit); }
 
-/* A booking's row: its time or nights on four squares, the offer and the guests after the name. */
 .place-booking { --ds-row-padding: 0px; }
 .place-booking__when { flex: 0 0 auto; width: calc(4 * var(--ds-unit)); font-variant-numeric: tabular-nums; }
 .place-booking > .ds-row__name, .place-card > .ds-row__name { flex: 0 1 auto; width: calc(8 * var(--ds-unit)); }
@@ -137,20 +113,17 @@ ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
 .place-card { --ds-row-padding: 0px; }
 .place-card > .place-code { flex: 0 0 auto; width: calc(8 * var(--ds-unit)); }
 
-/* An order's row: its code on four squares in the code face, the customer, its kind and status tags, its day, its total. */
 .place-order { --ds-row-padding: 0px; }
 .place-order > .place-order__code { flex: 0 0 auto; width: calc(4 * var(--ds-unit)); }
 .place-order > .ds-row__name { flex: 0 1 auto; width: calc(8 * var(--ds-unit)); }
 .place-order > .place-order__kind { flex: 0 1 auto; width: calc(4 * var(--ds-unit)); min-width: 0; }
 .place-order > .place-order__status { flex: 0 1 auto; width: calc(6 * var(--ds-unit)); min-width: 0; }
 .place-order__when { flex: 0 1 auto; width: calc(4 * var(--ds-unit)); min-width: 0; white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums; }
-/* The status Select hugs its words; the search is eight squares. */
 .place-filters { display: inline-flex; flex-wrap: wrap; align-items: flex-end; gap: 0 calc(4px * var(--ds-sf, 1)); min-height: var(--ds-unit); }
 .place-search { width: calc(8 * var(--ds-unit)); }
 .place-field { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: calc(16px * var(--ds-sf, 1)); }
 .place-order__note { display: block; width: 100%; }
 
-/* In a drawer: the groups a square apart, a confirmation in place under what it asks about. */
 .place-drawer[open] { display: flex; flex-direction: column; gap: var(--ds-unit); }
 .place-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 calc(4px * var(--ds-sf, 1)); min-height: var(--ds-unit); }
 .place-confirm { display: flex; flex-direction: column; gap: 0; }
@@ -159,7 +132,6 @@ ds-tag[data-tone="success"]{--ds-tag-accent:var(--ds-success-color)}
 .place-number { width: calc(2 * var(--ds-unit)); }
 .place-recipient { width: calc(10 * var(--ds-unit)); }
 
-/* The schedule: its matrix on the sheet, every cell four squares by one, the offer's name two cells, the ⋯ a square. */
 .place-schedule { display: flex; flex-direction: column; gap: var(--ds-unit); min-width: 0; }
 .place-matrix-scroll > .ds-table[data-sheet].place-matrix,
 .ds-table[data-sheet].place-matrix { width: calc(var(--place-matrix-cells, 11) * var(--ds-table-cell) + var(--ds-table-row)); }
@@ -184,17 +156,14 @@ td[data-numeric] > .place-cell__press { justify-content: flex-end; text-align: e
 }
 .place-cell[data-invalid] .place-cell__input, .place-cell__input[aria-invalid="true"] { color: var(--ds-danger-color); outline-color: var(--ds-danger-color); }
 .place-matrix__open ds-switch { display: block; }
-/* Unsaved: a cell, a field or a day list changed since it was saved, on a pale fill of the warning. */
 .place-matrix [data-changed], .place-limits [data-changed] { background-color: color-mix(in srgb, var(--ds-warning-color) 14%, transparent); }
 .place-limit, .place-chips { display: inline-flex; flex-wrap: wrap; align-items: flex-end; gap: 0 calc(4px * var(--ds-sf, 1)); min-height: var(--ds-unit); }
 .place-chips__list { display: inline-flex; flex-wrap: wrap; align-items: flex-end; gap: 0 calc(4px * var(--ds-sf, 1)); }
-/* A closed day: the tag's face, a control high, with the small close after its words. */
 .place-chip {
   box-sizing: border-box; display: inline-flex; align-items: center; height: var(--ds-control-height, calc(16px * var(--ds-sf, 1)));
   padding-inline-start: calc(4px * var(--ds-sf, 1)); border-radius: var(--ds-radius); background: var(--ds-fill); white-space: nowrap;
 }
 
-/* Email wording uses the same fields and square rhythm as the rest of the drawer. */
 .place-email-editor{display:flex;flex-direction:column;gap:var(--ds-unit);min-width:0}
 .place-email-editor>ds-input{width:100%;min-width:0}
 .place-email-editor__actions{display:flex;flex-wrap:wrap;gap:var(--ds-unit)}
@@ -204,6 +173,5 @@ td[data-numeric] > .place-cell__press { justify-content: flex-end; text-align: e
 .place-peer-product__photos img{display:block;width:100%;aspect-ratio:1;object-fit:contain}
 .place-peer-product__description{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .place-peer-product__form label{display:flex;flex-direction:column;gap:calc(var(--ds-unit) / 2)}
-/* A site's meetings (site-meetings.ts): the days half a square apart, each box with its own name, and the meeting's name in a field of eight squares. */
 .place-meetings__days { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 calc(var(--ds-unit) / 2); }
 .place-meetings__name { width: calc(8 * var(--ds-unit)); }

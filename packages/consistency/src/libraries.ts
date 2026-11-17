@@ -1,14 +1,10 @@
 import voyageStyles from '../../../website/public/examples/libraries/voyage.css?raw';
 import { decodePageFonts, encodePageFonts, fontTokens } from './fonts';
-// Read the canonical example library's root roles; never duplicate its palette here.
 const voyageTokens: Record<string, string> = {};
 for (const rule of voyageStyles.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
   if (!rule[1].trim().split(',').some(selector => selector.trim() === ':root')) continue;
   for (const declaration of rule[2].matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) voyageTokens[declaration[1]] = declaration[2].trim();
 }
-/** Local presets of DS1's public library token roles, not saved account libraries.
- * Geometry and component implementations stay DS1's; the selected map also travels
- * to authored atom previews that render outside the composition. */
 export type LibraryId = 'original' | 'blue' | 'ink' | 'soft' | 'bold' | 'editorial' | 'voyage';
 export interface LibraryPreset { id: LibraryId; label: string; tokens: Record<string, string> }
 export const LIBRARY_PRESETS: readonly LibraryPreset[] = [
@@ -77,8 +73,6 @@ export const LIBRARY_PRESETS: readonly LibraryPreset[] = [
 export function libraryTokens(id: string): Record<string, string> {
   return { ...(LIBRARY_PRESETS.find(preset => preset.id === id) ?? LIBRARY_PRESETS[0]).tokens };
 }
-/** Switching back to Original clears every previously applied role. The page's faces (`heading|text`, as the
- * sheet's `data-consistency-fonts` carries them) go over the library's. */
 export function applyLibraryTokens(element: HTMLElement, id: string, fonts?: string): void {
   const keys = new Set([...LIBRARY_PRESETS.flatMap(preset => Object.keys(preset.tokens)), '--ds-typeface-medium', '--ds-typeface-regular']);
   for (const key of keys) element.style.removeProperty(key);

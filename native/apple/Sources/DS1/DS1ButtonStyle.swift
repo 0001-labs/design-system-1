@@ -1,16 +1,9 @@
 import SwiftUI
 
-/// `ds-button` for SwiftUI's `Button`: a face one control high, hugging its label, with the
-/// 4-point corner, standing at the foot of a one-square box, as a slotted `ds-button` keeps its
-/// face on the square's lower sixteen with the spare four above (an icon's face on the first
-/// sixteen), so a button beside words or under a row stays on the grid. `plain` on the paper,
-/// `secondary` on the fill, `primary` on the accent. Pressed and disabled states change only
-/// opacity; the whole square is the press target.
 public struct DS1ButtonStyle: ButtonStyle {
     public enum Kind: Sendable { case plain, secondary, primary }
 
     let kind: Kind
-    /// An icon alone stands on the square's first sixteen, as the web's.
     let icon: Bool
     public init(_ kind: Kind = .plain) { self.kind = kind; self.icon = false }
     init(_ kind: Kind, icon: Bool) { self.kind = kind; self.icon = icon }
@@ -51,10 +44,6 @@ public struct DS1ButtonStyle: ButtonStyle {
     }
 }
 
-/// Words and an icon on one button face, hugging them as the web's: a 16-point icon carries
-/// about 4 points of its own room around its glyph, so it takes no gap from the words and, on a
-/// filled face, none of the padding on its side. The glyph then stands 4 points from the words
-/// and from the face's edge, as the words stand from the other edge.
 public struct DS1ButtonLabel: View {
     public enum Side: Sendable { case leading, trailing }
 
@@ -87,8 +76,6 @@ private struct DS1ButtonFilledKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Whether the button face around a label is filled (secondary or primary), so its padding
-    /// can give way to an icon's own room.
     var ds1ButtonFilled: Bool {
         get { self[DS1ButtonFilledKey.self] }
         set { self[DS1ButtonFilledKey.self] = newValue }
@@ -100,8 +87,6 @@ extension ButtonStyle where Self == DS1ButtonStyle {
     public static func ds1(_ kind: DS1ButtonStyle.Kind) -> DS1ButtonStyle { DS1ButtonStyle(kind) }
 }
 
-/// An icon alone on a square button (`ds-button icon`), one control across, labelled for
-/// VoiceOver; on the paper the icon is in the muted ink, as the web draws it.
 public struct DS1IconButton: View {
     let icon: DS1IconName
     let label: String
@@ -121,7 +106,6 @@ public struct DS1IconButton: View {
     }
 }
 
-/// A secondary button lettered in the danger colour, for an action that loses something.
 public struct DS1DangerButton: View {
     let label: String
     let action: () -> Void

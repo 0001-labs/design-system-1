@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Nonnegative plot fractions with unknown periods kept separate from a measured zero.
 public struct DS1ComparisonValues: Hashable, Sendable {
     public let current: Double?
     public let previous: Double?
@@ -14,9 +13,6 @@ public struct DS1ComparisonValues: Hashable, Sendable {
     public var previousFraction: Double? { previous.map { max(0, min(1, $0 / maximum)) } }
 }
 
-/// Two horizontal period bars in one square: current blue above previous grey. Each measured
-/// period has a fill track, even zero; an unknown period has neither track nor bar. The caller
-/// supplies the accessible description and can fix the domain (for example, 1 for percentages).
 public struct DS1ComparisonBars: View {
     @Environment(\.ds1Scale) private var scale
     let values: DS1ComparisonValues

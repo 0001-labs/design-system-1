@@ -1,5 +1,3 @@
-// Rendered text, across slots and open shadow roots. Token pairs alone cannot
-// tell what ink a component actually draws on its own surface.
 export type RGBA = [number, number, number, number];
 const clear: RGBA = [0, 0, 0, 0];
 export const TEXT_CONTRAST_MINIMUM = 4.5;
@@ -14,12 +12,10 @@ export function composite(top: RGBA, bottom: RGBA): RGBA {
   return alpha ? [...[0, 1, 2].map(i => (top[i]! * top[3] + bottom[i]! * bottom[3] * (1 - top[3])) / alpha), alpha] as RGBA : [...clear];
 }
 const styleOf = (e: Element, pseudo?: string) => e.ownerDocument.defaultView!.getComputedStyle(e, pseudo);
-/** The painted parent, including the slot's styles and the shadow host's surface. */
 export function paintedParent(e: Element): Element | null {
   return e.assignedSlot ?? e.parentElement ?? (e.getRootNode() as ShadowRoot).host ?? null;
 }
 
-/** Computed RGB stays full precision; modern colour spaces use the browser's sRGB canvas conversion. */
 export function colorReader(document: Document) {
   const cache = new Map<string, RGBA | null>();
   let context: CanvasRenderingContext2D | null | undefined;
@@ -47,7 +43,6 @@ export function colorReader(document: Document) {
 
 type TextSample = { element: Element; text: string; pseudo?: string; paintElement?: Element };
 
-/** Screen-reader-only text still has layout rectangles, but a collapsed clip paints none of it. */
 function fullyClipped(style: CSSStyleDeclaration): boolean {
   const rect = /^rect\(([^)]+)\)$/.exec(style.clip);
   if (rect && (style.position === 'absolute' || style.position === 'fixed')) {
@@ -63,7 +58,6 @@ function fullyClipped(style: CSSStyleDeclaration): boolean {
   return top! + bottom! >= 100 || right! + left! >= 100;
 }
 
-/** Text nodes are visited once in their composed position; hidden menus and inactive controls do not count. */
 function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclaration): Generator<TextSample | undefined> {
   const seen = new Set<Node>();
   const excluded = new Map<Element, boolean>();
@@ -72,8 +66,6 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
     const cached = excluded.get(e);
     if (cached !== undefined) return cached;
     const s = style(e);
-    // The auto container has a box even while its contents are skipped. Stop
-    // here before querying descendants or pseudo styles can wake that layout.
     if (s.contentVisibility === 'auto' && s.display !== 'contents') {
       const rect = e.getBoundingClientRect();
       const view = e.ownerDocument.defaultView!;
@@ -141,7 +133,6 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
         return;
       }
       if (e.shadowRoot) { yield* visit(e.shadowRoot); return; }
-      // Values/placeholder above represent these controls, not their fallback children.
       if (e.matches('input, textarea, select')) return;
     }
     for (const child of node.childNodes) yield* visit(child);
@@ -152,7 +143,6 @@ function* textSamples(root: ParentNode, style: (e: Element) => CSSStyleDeclarati
 export type TextContrastResult = { element: Element; text: string; ratio?: number; reason?: string; foreground?: string; background?: string };
 const rgbLabel = (c: RGBA) => `rgb(${c.slice(0, 3).map(v => Math.round(v * 255)).join(', ')})`;
 
-/** Yields between DOM nodes so passive callers can scan in short idle slices. */
 export function* scanTextContrast(root: ParentNode): Generator<TextContrastResult | undefined> {
   const document = (root as Node).ownerDocument ?? root as Document;
   const read = colorReader(document);
@@ -167,8 +157,6 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
     const chain: CSSStyleDeclaration[] = [];
     if (pseudo) chain.push(inkStyle);
     for (let p: Element | null = paintElement; p; p = paintedParent(p)) chain.push(style(p));
-    // Transparent text paints no glyphs. Keep text painted by shadows, outlines or clipped
-    // backgrounds in the review path, and keep every nonzero alpha in normal measurement.
     if (Number(inkStyle.opacity) === 0) return;
     if (foreground[3] === 0) {
       const otherPaint = (inkStyle.textShadow && inkStyle.textShadow !== 'none')
@@ -191,8 +179,6 @@ export function* scanTextContrast(root: ParentNode): Generator<TextContrastResul
       foreground[3] *= opacity;
       background[3] *= opacity;
     }
-    // With no declared page background, compare both possible user-agent canvases.
-    // Usually the opaque html/body surface makes these identical.
     const candidates: RGBA[] = [[1, 1, 1, 1], [0, 0, 0, 1]];
     const pairs = candidates.map(canvas => ({ foreground: composite(foreground!, canvas), background: composite(background, canvas) }));
     const values = pairs.map(pair => ({ ...pair, ratio: contrastRatio(pair.foreground, pair.background) })).sort((a, b) => a.ratio - b.ratio);
@@ -212,7 +198,6 @@ export function measureTextContrast(root: ParentNode): TextContrastResult[] {
 export function inspectTextContrast(root: ParentNode) {
   return measureTextContrast(root).flatMap(result => {
     const label = `“${result.text}”`;
-    // What cannot be measured is a review for a person, not a broken rule; a colour that could not be read is.
     if (result.reason) return [{ element: result.element, message: `${label}: ${result.reason}`, review: /visual contrast review/.test(result.reason) }];
     return result.ratio! < TEXT_CONTRAST_MINIMUM ? [{ element: result.element, message: `${label} has ${result.ratio!.toFixed(2)}:1 text contrast (${result.foreground} on ${result.background}); at least ${TEXT_CONTRAST_MINIMUM}:1 is required.` }] : [];
   });

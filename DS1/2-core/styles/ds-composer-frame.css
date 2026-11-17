@@ -1,4 +1,3 @@
-/* Native pseudo-elements cannot be reached through ::slotted in every engine. */
 ds-composer > textarea::placeholder {
   color: var(--ds-text-color-muted) !important;
   -webkit-text-fill-color: var(--ds-text-color-muted) !important;

@@ -1,15 +1,5 @@
-/**
- * The Kotlin package in native/android, as one folder: its Gradle project with the
- * handwritten and generated sources, and the resources laid out from their canonical
- * files (the icons in DS1/x-icon as vector drawables, the typefaces as the TrueType and
- * OpenType builds in native/android/fonts, written from the web's woff2 files by
- * scripts/fonts/build-android-fonts.py). Sync 1's `kotlin` export and
- * scripts/write-native-tokens.ts both lay it out with `androidPackage`, so a product's
- * copy and the local build match.
- */
 import { posix } from 'node:path';
 
-/** The typefaces the package can carry, by the web's file names, and their builds here. */
 export const androidFonts = {
   'Inter-Arrows.woff2': 'native/android/fonts/Inter-Arrows.ttf',
   'Iosevka-Regular.woff2': 'native/android/fonts/Iosevka-Regular.ttf',
@@ -18,7 +8,6 @@ export const androidFonts = {
   'GT-America-Compressed-Regular.woff2': 'native/android/fonts/GT-America-Compressed-Regular.otf',
   'OlivettiDot-Regular.woff2': 'native/android/fonts/OlivettiDot-Regular.otf',
 };
-/** Faces that may be redistributed travel always; arrows are Inter in every typeface. */
 export const androidFontsAlways = ['Inter-Arrows.woff2', 'Iosevka-Regular.woff2'];
 const licences = {
   'Inter-LICENSE.md': 'DS1/1-root/fonts/Inter-LICENSE.md',
@@ -28,24 +17,13 @@ const licences = {
 
 const res = 'ds1/src/main/res';
 
-/** `GT-America-Standard-Regular.woff2` → `ds1_gt_america_standard_regular`. */
 export const fontResource = file => `ds1_${file.replace(/\.[a-z0-9]+$/i, '').replace(/[^A-Za-z0-9]+/g, '_').toLowerCase()}`;
-/** `shield-alt` → `ds1_icon_shield_alt`, `1x` → `ds1_icon_1x`. */
 export const iconResource = name => `ds1_icon_${name.replace(/[^A-Za-z0-9]+/g, '_').toLowerCase()}`;
 
-/** The icon names in DS1/x-icon, sorted. */
 export function iconNames(tree) {
   return [...tree('DS1/x-icon', { only: /^[^/]+\.svg$/ }).keys()].map(file => file.slice(0, -4)).sort();
 }
 
-/**
- * Every file of the package, keyed by its path inside native/android. `fonts` names the
- * faces to carry besides the ones that always travel; `sources` is false for the
- * resources alone (the local build, whose sources are committed).
- *
- * @param {{ read: (path: string) => Buffer, tree: (path: string, filter?: { only?: RegExp, skip?: RegExp }) => Map<string, Buffer>, fonts?: string[], sources?: boolean }} context
- * @returns {Map<string, Buffer | string>}
- */
 export function androidPackage({ read, tree, fonts = [], sources = true }) {
   const files = new Map();
   if (sources)
@@ -65,14 +43,6 @@ export function androidPackage({ read, tree, fonts = [], sources = true }) {
   return files;
 }
 
-/* ------------------------------------------------------------------------------------------
- * SVG to Android vector drawable. Every shape becomes a path with its transforms applied to
- * its points (arcs and quadratic curves become cubic curves first), so matrix transforms,
- * which a vector drawable's groups cannot hold, come out exact. Clip paths become a group's
- * clip-path; filters are left out. `currentColor` is black: icons are tinted where drawn.
- * ---------------------------------------------------------------------------------------- */
-
-/** A small XML reader for the icon files: elements, attributes and nesting. */
 function parseXml(text) {
   const root = { name: '#root', attrs: {}, children: [] };
   const stack = [root];
@@ -125,14 +95,12 @@ function parseTransform(value) {
   return m;
 }
 
-/** Path data as absolute segments: ['M', x, y], ['L', x, y], ['C', x1, y1, x2, y2, x, y], ['Z']. */
 function parsePath(d) {
   const tokens = [...d.matchAll(/[MmLlHhVvCcSsQqTtAaZz]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g)].map(m => m[0]);
   const out = [];
   let i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0, lastC = null, lastQ = null;
   const isCmd = t => /^[A-Za-z]$/.test(t);
   const next = () => parseFloat(tokens[i++]);
-  // Arc flags may be written without separators ("a1 1 0 011 1"): split them out.
   const flag = () => {
     const t = tokens[i];
     if (t.length > 1 && /^[01]/.test(t)) { tokens[i] = t.slice(1); return Number(t[0]); }
@@ -175,7 +143,6 @@ function parsePath(d) {
   return out;
 }
 
-/** An elliptical arc as cubic curves (SVG implementation notes, F.6). */
 function arcToCubics(x1, y1, rx, ry, angle, large, sweep, x2, y2) {
   if (rx === 0 || ry === 0 || (x1 === x2 && y1 === y2)) return [[x1, y1, x2, y2, x2, y2]];
   rx = Math.abs(rx); ry = Math.abs(ry);
@@ -211,10 +178,6 @@ function arcToCubics(x1, y1, rx, ry, angle, large, sweep, x2, y2) {
   return curves;
 }
 
-/**
- * A nested <svg>'s own transform: its position, and its viewBox fitted into its width and
- * height as `preserveAspectRatio` says (centred and whole by default).
- */
 function viewport(a) {
   const x = num(a.x), y = num(a.y);
   if (!a.viewBox) return [1, 0, 0, 1, x, y];
@@ -229,7 +192,6 @@ function viewport(a) {
   return [sx, 0, 0, sy, x + ax - vx * sx, y + ay - vy * sy];
 }
 
-/** A shape element as path data, before transforms. */
 function shapePath(node) {
   const a = node.attrs;
   switch (node.name) {
@@ -275,7 +237,6 @@ function pathData(segments, m) {
 }
 
 const NAMED = { black: '#000000', white: '#ffffff', red: '#ff0000', none: 'none' };
-/** An SVG paint as `#AARRGGBB`, or null for none. */
 function paint(value, opacity = 1) {
   if (!value || value === 'none') return null;
   let v = value.trim().toLowerCase();
@@ -301,7 +262,6 @@ function paint(value, opacity = 1) {
 const INHERITED = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'fill-rule', 'fill-opacity', 'stroke-opacity', 'vector-effect'];
 const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-/** An SVG icon as an Android vector drawable. */
 export function vectorDrawable(svgText) {
   const svg = parseXml(svgText);
   if (!svg) throw new Error('Not an SVG');

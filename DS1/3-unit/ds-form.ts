@@ -1,6 +1,4 @@
 import { define } from "../0-face/define";
-// ds-form.ts
-// Form component for handling form submissions and validation
 
 import { LitElement, html, css } from "lit";
 import { translate } from "../0-face/i18n";
@@ -14,9 +12,7 @@ export interface FormValidationResult {
   errors: { [key: string]: string };
 }
 
-/** Inputs Enter does not submit from: it presses or toggles them instead. */
 const IMPLICIT_SUBMIT_SKIPS = new Set(["button", "submit", "reset", "image", "checkbox", "radio", "file", "color", "range"]);
-/** Inputs whose value is their label or their data, so a reset leaves it alone. */
 const IMPLICIT_RESET_SKIPS = new Set(["button", "submit", "reset", "image", "hidden"]);
 
 export class Form extends LitElement {
@@ -73,9 +69,6 @@ export class Form extends LitElement {
     }
   `;
 
-  /**
-   * Get all form data as an object
-   */
   getFormData(): FormData {
     const data: FormData = {};
     const slot = this.shadowRoot?.querySelector("slot");
@@ -89,12 +82,10 @@ export class Form extends LitElement {
   }
 
   private _collectFormData(element: HTMLElement, data: FormData): void {
-    // Check if element has name and value properties
     const name = element.getAttribute("name") || (element as any).name;
     if (name) {
       const value = (element as any).value;
       if (value !== undefined) {
-        // Handle checkboxes and radio buttons
         if (
           element instanceof HTMLInputElement &&
           (element.type === "checkbox" || element.type === "radio")
@@ -110,7 +101,6 @@ export class Form extends LitElement {
       }
     }
 
-    // Recursively check children
     const children =
       element.shadowRoot?.querySelectorAll("*") || element.querySelectorAll("*");
     children.forEach((child) => {
@@ -118,9 +108,6 @@ export class Form extends LitElement {
     });
   }
 
-  /**
-   * Validate the form
-   */
   validate(): FormValidationResult {
     const result: FormValidationResult = {
       valid: true,
@@ -147,7 +134,6 @@ export class Form extends LitElement {
   ): void {
     const name = element.getAttribute("name") || (element as any).name;
 
-    // Check for custom validation on ds-input elements
     if (element.tagName.toLowerCase() === "ds-input") {
       const input = element as any;
       if (input.required && !input.value) {
@@ -156,7 +142,6 @@ export class Form extends LitElement {
       }
     }
 
-    // Check native form elements
     if (
       element instanceof HTMLInputElement ||
       element instanceof HTMLTextAreaElement ||
@@ -164,12 +149,10 @@ export class Form extends LitElement {
     ) {
       if (!element.checkValidity()) {
         result.valid = false;
-        // A ds-input's own field comes after it: the words already given stand.
         result.errors[name || "unknown"] ??= element.validationMessage;
       }
     }
 
-    // Recursively check children
     const children =
       element.shadowRoot?.querySelectorAll("*") || element.querySelectorAll("*");
     children.forEach((child) => {
@@ -177,9 +160,6 @@ export class Form extends LitElement {
     });
   }
 
-  /**
-   * Reset the form
-   */
   reset(): void {
     const slot = this.shadowRoot?.querySelector("slot");
     const elements = slot?.assignedElements({ flatten: true }) || [];
@@ -192,7 +172,6 @@ export class Form extends LitElement {
   }
 
   private _resetElement(element: HTMLElement): void {
-    // A field of this system resets itself to what it started with, and owns what is inside it.
     const field = element as HTMLElement & { formResetCallback?: () => void };
     if (typeof field.formResetCallback === "function") {
       field.formResetCallback();
@@ -208,7 +187,6 @@ export class Form extends LitElement {
       for (const option of element.options) option.selected = option.hasAttribute("selected");
     }
 
-    // Recursively reset children
     const children =
       element.shadowRoot?.querySelectorAll("*") || element.querySelectorAll("*");
     children.forEach((child) => {
@@ -216,9 +194,6 @@ export class Form extends LitElement {
     });
   }
 
-  /**
-   * Submit the form
-   */
   async submit(): Promise<void> {
     if (this._isSubmitting) return;
 
@@ -234,7 +209,6 @@ export class Form extends LitElement {
     }
 
     this._isSubmitting = true;
-    // Whatever throws on the way (reading the fields, a listener), the form can submit again.
     try {
       const formData = this.getFormData();
 
@@ -245,7 +219,6 @@ export class Form extends LitElement {
         })
       );
 
-      // If action is provided, submit to the server
       if (this.action) {
         try {
           const response = await fetch(this.action, {
@@ -278,7 +251,6 @@ export class Form extends LitElement {
 
   private _handleSubmit(e: Event): void {
     e.preventDefault();
-    // submit() reports a failed request itself, as form-error.
     void this.submit();
   }
 
@@ -294,12 +266,6 @@ export class Form extends LitElement {
     super.disconnectedCallback();
   }
 
-  /**
-   * The form is drawn in this element's shadow, so a submit or reset button
-   * put inside it belongs to no form of its own. Its click does what it would
-   * in a form: a native button (bare or in `ds-button control="slotted"`), or
-   * `<ds-button type="submit">`. A button in a real <form> is left to that form.
-   */
   private _handleButtonClick = (e: Event): void => {
     if (e.defaultPrevented) return;
     const control = (e.target as Element | null)?.closest?.("button, input, ds-button[type]");
@@ -318,8 +284,6 @@ export class Form extends LitElement {
 
   private _handleKeydown = (e: KeyboardEvent): void => {
     if (e.key !== "Enter" || e.shiftKey || e.defaultPrevented) return;
-    // Enter submits from a field, as in a form: on a button it presses that
-    // button, and in a textarea (a multiline ds-input's too) it starts a line.
     const origin = e.composedPath()[0];
     if (!(origin instanceof HTMLInputElement) || origin.form || IMPLICIT_SUBMIT_SKIPS.has(origin.type)) return;
     e.preventDefault();

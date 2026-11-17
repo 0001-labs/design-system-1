@@ -1,25 +1,15 @@
-/**
- * A block whose fence holds only its words (`shared/consistency-fence-words.ts`), in the editor: drawn as it will
- * publish, each word written in place where the markup marks it, the fence keeping only the words that differ from
- * the defaults. What the block does stays inert until it is published. Signup and Booking are made this way.
- */
 import type { Atom } from '../../../website/src/vendor/aa/aa';
 import { createPlainEditor } from '../../../website/src/vendor/aa/aa';
 import { applyLibraryTokens } from './libraries';
 
 export interface WordsBlock<Field extends string> {
-  /** The atom's name and its fence, `c9y-…`. */
   name: string; fence: string;
-  /** How the editor's menu offers it. */
   label: string; icon: string; keywords: string;
   empty: string; fields: readonly Field[];
-  /** The words that may run over several lines; the others are kept on one. */
   lines?: readonly Field[];
   read(source: string): Record<Field, string> | null;
   write(value: Record<Field, string>): string;
-  /** The block as it publishes, with each word marked by `attribute` in the editor. */
   markup(value: Record<Field, string>, options: { editor: true }): string;
-  /** The attribute the markup marks a word with (`data-signup-field`), and the class its editor styles hang on. */
   attribute: string; className: string;
 }
 
@@ -45,7 +35,6 @@ export function wordsAtom<Field extends string>(block: WordsBlock<Field>, canWri
         node.textContent = '';
         editors.set(field, createPlainEditor(node, { value: value[field], readOnly: !canWrite() }));
       }
-      // One history entry for a field's edit: the words are written back when the field is left.
       const commit = () => {
         if (!canWrite() || !value) return;
         const next = { ...value };

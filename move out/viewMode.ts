@@ -1,5 +1,3 @@
-// to be moved into portfolio project. not realted to here
-
 export type ViewMode = "text" | "image";
 
 const STORAGE_KEY = "ds-one:view-mode";

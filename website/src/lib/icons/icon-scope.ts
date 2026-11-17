@@ -1,4 +1,3 @@
-/** Repeated drawings resolve to the original shared icon; runtime keys stay compatible. */
 export const interfaceIconAliases: Record<string, string> = {
   'check-alt': 'check',
   'lock-filled': 'lock',
@@ -13,12 +12,10 @@ export const interfaceIconAliases: Record<string, string> = {
   titlestyle: 'title',
 };
 
-/** Product artwork and repeated drawings remain available to existing consumers. */
 export function isSharedInterfaceIcon(key: string): boolean {
   return key !== 'status-alt' && key !== 'image' && key !== 'warning' && !Object.hasOwn(interfaceIconAliases, key) && !/^(badge-|block-|pattern-|arrange-|navigation-)/.test(key);
 }
 
-/** One semantic word on the sheet; technical keys stay stable for consumers. */
 export function sharedIconName(key: string): string {
   const word = ({
     '1x': 'Single', '2x': 'Double', '4x4': 'Matrix',

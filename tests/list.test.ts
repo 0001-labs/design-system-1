@@ -9,7 +9,6 @@ afterEach(() => document.body.replaceChildren());
 
 const settle = async (list: HTMLElement & { updateComplete: Promise<unknown> }) => {
   await list.updateComplete;
-  // slotchange is dispatched after the slot's assignment settles.
   await new Promise(resolve => setTimeout(resolve));
 };
 
@@ -78,7 +77,6 @@ test('a heading is drawn on the square above the rows and names the list, unless
   expect(heading.getAttribute('aria-hidden')).toBe('true');
   expect(heading.getAttribute('part')).toBe('heading');
   expect(list.getAttribute('aria-label')).toBe('Monday');
-  // The heading changes with the day; taken away, the name it gave goes with it.
   list.setAttribute('heading', 'Tuesday');
   await settle(list);
   expect(list.getAttribute('aria-label')).toBe('Tuesday');

@@ -1,6 +1,3 @@
-/* ds-table.css */
-/* The element only places the table; 1-root/table.css draws it. */
-
 :host {
   display: block;
   width: 100%;

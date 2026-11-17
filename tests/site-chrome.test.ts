@@ -54,7 +54,6 @@ test("a native header's menu button opens its navigation and actions in a modal 
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
   expect(toggle.getAttribute("aria-haspopup")).toBe("dialog");
   expect(toggle.getAttribute("aria-controls")).toBe("site-nav");
-  // A second start does not wire the header twice.
   expect(startHeaders()).toEqual([]);
 
   toggle.click();
@@ -91,10 +90,8 @@ test("Tab and Shift+Tab go round the drawer's controls and never leave it", () =
   expect(document.activeElement).toBe(controls[0]);
   expect(key(controls[0]!, "Tab", { shiftKey: true }).defaultPrevented).toBe(true);
   expect(document.activeElement).toBe(controls.at(-1));
-  // Between the first and the last, Tab is the browser's own.
   controls[1]!.focus();
   expect(key(controls[1]!, "Tab").defaultPrevented).toBe(false);
-  // Focus that slipped out comes back in.
   document.querySelector<HTMLElement>("main a")!.focus();
   key(document.body, "Tab");
   expect(document.activeElement).toBe(controls[0]);
@@ -111,7 +108,6 @@ test("the drawer holds the page's scroll while it is open, and closes on its clo
   expect(document.documentElement.style.overflow).toBe("clip");
 
   toggle.click();
-  // A link closes it, even when a router takes the click.
   const help = drawer.panel.querySelector<HTMLAnchorElement>('a[href="/help"]')!;
   help.addEventListener("click", event => event.preventDefault(), { once: true });
   const click = new MouseEvent("click", { bubbles: true, composed: true, cancelable: true });
@@ -119,7 +115,6 @@ test("the drawer holds the page's scroll while it is open, and closes on its clo
   expect(click.defaultPrevented).toBe(true);
   expect(drawer.isOpen).toBe(false);
   expect(help.closest(".ds-header")).toBe(header);
-  // Clicking the toggle twice closes it again.
   toggle.click(); toggle.click();
   expect(drawer.isOpen).toBe(false);
 });
@@ -134,7 +129,6 @@ test("two drawers share the page's scroll, and destroy takes a made panel away",
   first.open(); second.open();
   first.close();
   expect(document.documentElement.style.overflow).toBe("hidden");
-  // Only the drawer opened last answers Escape.
   first.open();
   key(document.body, "Escape");
   expect(first.isOpen).toBe(false);
@@ -153,7 +147,6 @@ test("the link to the address being read is marked as the current page, unless o
   const links = document.querySelectorAll<HTMLAnchorElement>("a");
   expect(markCurrentLink(links, { href: `${location.origin}/help/index.html` })?.textContent).toBe("Help");
   expect(links[1]!.getAttribute("aria-current")).toBe("page");
-  // Already marked: left alone.
   expect(markCurrentLink(links, { href: `${location.origin}/` })).toBe(links[1]);
   expect(links[0]!.hasAttribute("aria-current")).toBe(false);
   links[1]!.removeAttribute("aria-current");
@@ -201,7 +194,6 @@ test("ds-header opens its drawer from the menu button, tells the page, and close
   toggle.click();
   expect(header.menuOpen).toBe(true);
   expect(nav.parentElement).toBe(panel);
-  // The actions are empty, so they stay where they are.
   expect(root.querySelector('[part="actions"]')!.parentElement).not.toBe(panel);
   expect(header.shadowRoot!.activeElement).toBe(root.querySelector('[part="close"]'));
   key(panel, "Escape");
@@ -248,7 +240,6 @@ test("ds-page with drawer folds its navigation into the same drawer", async () =
   const toggle = root.querySelector<HTMLButtonElement>('[part="drawer-toggle"]')!;
   expect(toggle.getAttribute("aria-label")).toBe("Menu");
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
-  // The drawer's script loads after the first paint.
   await vi.waitFor(() => expect(toggle.getAttribute("aria-haspopup")).toBe("dialog"));
   const nav = root.querySelector('[part="nav"]')!;
   const told: boolean[] = [];
@@ -256,7 +247,6 @@ test("ds-page with drawer folds its navigation into the same drawer", async () =
   toggle.click();
   expect(page.drawerOpen).toBe(true);
   expect(nav.parentElement).toBe(root.querySelector('[part="drawer"]'));
-  // Escape closes it (a slotted link does too, measured in Chromium, where events cross the slot).
   key(root.querySelector('[part="drawer"]')!, "Escape");
   expect(page.drawerOpen).toBe(false);
   expect(nav.parentElement).toBe(root.querySelector('[part="page"]'));

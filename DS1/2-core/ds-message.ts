@@ -1,10 +1,4 @@
 import { hasSlottedContent } from "../0-face/light-dom";
-// ds-message.ts
-// An inline notice in the flow of the page: a tone, a title and/or text,
-// actions and an optional dismiss; with `banner`, a strip across the top of
-// its positioning context instead; with `form="app"`, a row at the top of the
-// page leading to the site's iPhone app (0-face/app-banner.ts decides where).
-// Drawn by 1-root/notice.css, the same classes a page without scripts writes.
 
 import { reportFailure, type Failure } from "../0-face/failures";
 import { LitElement, html, nothing, unsafeCSS, type PropertyValues } from "lit";
@@ -24,7 +18,6 @@ import styles from "./styles/ds-notice.css?inline";
 
 export type MessageTone = "neutral" | "success" | "warning" | "danger";
 const TONES: readonly MessageTone[] = ["neutral", "success", "warning", "danger"];
-/** The icon each tone's mark carries unless `icon` names another. */
 export const MESSAGE_ICONS: Readonly<Record<MessageTone, string>> = {
   neutral: "info",
   success: "check",
@@ -32,52 +25,8 @@ export const MESSAGE_ICONS: Readonly<Record<MessageTone, string>> = {
   danger: "warning",
 };
 
-/** Detail of `ds-message-dismiss`. Cancel the event to keep the notice and remove it yourself. */
 export interface MessageDismissDetail { tone: MessageTone }
 
-/**
- * @element ds-message
- * @prop {"neutral" | "success" | "warning" | "danger"} tone - The mark's colour
- *   and icon; danger also turns the words into the danger colour. Neutral by default.
- * @prop {string} heading - A title: a translation key, or literal words.
- * @prop {string} text - The text: a translation key, or literal words.
- * @prop {boolean} literal - Show `heading` and `text` as written, never looked up.
- * @prop {string} icon - An icon from the library in place of the tone's own.
- * @prop {boolean} dismissible - Show a close button at the end of the first line.
- * @prop {boolean} banner - A strip one square high across the top of its
- *   positioning context, filled in the tone's colour, its words, actions and
- *   close button on one line; it reserves no room in the flow.
- * @prop {string} form - `inline` (the default), `banner`, `toast`,
- *   `assistant`, or `app`: a row at the top of the page leading to the site's
- *   iPhone app, with its picture, `heading` (the app's name), `text` (one
- *   line about it), Open and a close. On iOS Safari it draws nothing and puts
- *   Apple's Smart App Banner on instead; in iOS's other browsers it draws
- *   itself; never on a computer, Android, from the home screen or in a web
- *   view; once closed, never again in this browser.
- * @prop {string} src - (app) The app's icon.
- * @prop {string} app-id - (app) The App Store id, for Apple's banner and the store address.
- * @prop {string} app-url - (app) The store address, when it is not the App Store's own.
- * @prop {string} open - (app) The address that opens the app at this page.
- * @prop {string} remember - (app) The name the close is remembered by; one per app by default.
- * @prop {boolean} preview - (app) Draw it on any device, for documentation.
- *
- * @slot - The text, when it needs more than words: a link, a strong word.
- * @slot heading - The title, as inline content.
- * @slot icon - An icon of the page's own inside the mark.
- * @slot actions - Buttons or links on the row under the words.
- *
- * @fires ds-message-dismiss - The close button was pressed. Cancelable: unless
- *   it is cancelled, the notice hides itself.
- *
- * The element is a live region: `role="status"`, or `role="alert"` for danger,
- * unless the page gives it a role of its own.
- *
- * @example
- * <ds-message tone="danger" heading="Couldn't save" dismissible>
- *   Your changes are kept on this device.
- *   <ds-button slot="actions" secondary>Try again</ds-button>
- * </ds-message>
- */
 export class Message extends LitElement {
   static properties = {
     failure: { attribute: false },
@@ -107,10 +56,8 @@ export class Message extends LitElement {
   };
 
   static styles = [unsafeCSS(metrics), unsafeCSS(controls), unsafeCSS(styles)];
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".ds-notice__title, .ds-notice__text" });
 
-  /** Authored diagnostic for a real failure; never derived from slotted user content. */
   declare failure: Failure | undefined;
   private reportedFailure = "";
 
@@ -139,10 +86,8 @@ export class Message extends LitElement {
   declare open: string | undefined;
   declare remember: string | undefined;
   declare preview: boolean;
-  /** (app) Where this device shows it, decided before each render. */
   private placement: AppBannerPlacement = "none";
 
-  /** The role this element last set, so a role the page wrote is left alone. */
   private ownRole: string | null = null;
   private readonly relabel = () => this.requestUpdate();
 
@@ -165,7 +110,6 @@ export class Message extends LitElement {
     this.preview = false;
   }
 
-  /** The tone in effect: an unknown value reads as neutral. */
   get resolvedTone(): MessageTone {
     return TONES.includes(this.tone) ? this.tone : "neutral";
   }
@@ -207,7 +151,6 @@ export class Message extends LitElement {
     return { appId: this.appId, appUrl: this.appUrl, open: this.open, key: this.remember };
   }
 
-  /** Decides where the app banner shows, before it draws, so it never pops in after the page. */
   private place() {
     this.placement = this.preview ? "drawn" : appBannerPlacement(this.app);
     if (this.placement === "safari") ensureSmartAppBanner(this.app);
@@ -229,20 +172,11 @@ export class Message extends LitElement {
     return this.literal ? value : getText(value) || value;
   }
 
-  /**
-   * Whether light-DOM content fills a slot: elements, or text that is not
-   * blank. The blank text between slotted children still counts as assigned
-   * to the default slot and hides its fallback, so `text` is drawn beside the
-   * slot rather than inside it.
-   */
 
-
-  /** Ask to close: hides the notice unless a listener cancels `ds-message-dismiss`. */
   dismiss(): boolean {
     const event = new CustomEvent<MessageDismissDetail>(this.dismissEvent, {
       bubbles: true, composed: true, cancelable: true, detail: { tone: this.resolvedTone },
     });
-    // An app banner closed stays closed in this browser, whoever removes it.
     if (this.form === "app" && !this.preview) closeAppBanner(this.app);
     if (!this.dispatchEvent(event)) return false;
     this.hidden = true;

@@ -4,14 +4,12 @@ import { beginMarquee, canStartMarquee, paintCompositionSelection } from './marq
 import { createSortable, type SortableOptions } from './vendor/drag/sortable';
 import { MovementLedger, type C9yFinding } from './c9y-constraints';
 
-/** Custom elements are constructed in the editor's registered realm, then adopted into a sandbox page. */
 export function createSurfaceElement<K extends keyof HTMLElementTagNameMap>(doc: Document, name: K): HTMLElementTagNameMap[K];
 export function createSurfaceElement(doc: Document, name: string): HTMLElement;
 export function createSurfaceElement(doc: Document, name: string): HTMLElement {
   return doc !== document && customElements.get(name) ? doc.adoptNode(document.createElement(name)) : doc.createElement(name);
 }
 
-/** The editor's interaction surface. Document adapters own content, never gestures or selection history. */
 export class EditorSurface {
   private pointer: PointerActivity;
   private boundaries: {root: HTMLElement; doc: Document}[] = [];
@@ -28,12 +26,9 @@ export class EditorSurface {
     beforeDrag?: () => void;
     contextChanged?: (active: boolean) => void;
     contextRoot?: HTMLElement;
-    /** A C9Y constraint broke as it was drawn: show it, so whoever edits sees what moved. */
     constraintBroken?: (finding: C9yFinding) => void;
   }) {
     root.setAttribute('data-editor-surface', '');
-    // The browser can select an iframe as one object from its containing app.
-    // Guard each same-origin boundary as well as the canvas document itself.
     for (let boundary: HTMLElement | null = root; boundary;) {
       const doc = boundary.ownerDocument;
       this.boundaries.push({root: boundary, doc});
@@ -66,7 +61,6 @@ export class EditorSurface {
   private textInput(event: Event) {
     if (this.dragging) return false;
     let element = event.composedPath().find(node => (node as Node).nodeType === 1) as HTMLElement | undefined;
-    // Selection events can be retargeted to a component's host rather than its editable label.
     while (element?.shadowRoot?.activeElement) element = element.shadowRoot.activeElement as HTMLElement;
     return !!element && (element.isContentEditable || !!element.closest('input,textarea'));
   }
@@ -75,7 +69,6 @@ export class EditorSurface {
     const scope = this.boundaries.find(({doc}) => doc === event.currentTarget);
     return !!scope && !!scope.root.getClientRects().length && (scope.root.contains(target) || target === scope.doc.body || target === scope.doc.documentElement || (target.nodeType === 1 && !!(target as Element).closest('[data-editor-chrome]')));
   }
-  /** Browser commands can create a range without a cancellable selectstart. */
   private selectionChanged = (event: Event) => {
     const scope = this.boundaries.find(({doc}) => doc === event.currentTarget);
     if (!scope) return;
@@ -88,7 +81,6 @@ export class EditorSurface {
       if (selection.getRangeAt(index).intersectsNode(scope.root)) { selection.removeAllRanges(); break; }
     }
   };
-  /** Cancel the browser menu without stopping the editor's own context handlers. */
   private browserContext = (event: MouseEvent) => { if (this.onCanvas(event)) event.preventDefault(); };
   private selectText = (event: Event) => { if (this.onCanvas(event) && !this.textInput(event)) event.preventDefault(); };
   private selectAll = (event: KeyboardEvent) => {
@@ -138,7 +130,6 @@ export class EditorSurface {
       onMovement: movement => { this.ledger.record(movement); options.onMovement?.(movement); },
     });
   }
-  /** drag.one-movement as it is drawn: the blocks that moved again after release are outlined for a moment. */
   private ledger = new MovementLedger(finding => {
     console.warn(`C9Y constraint ${finding.code}: ${finding.message}`, finding.elements);
     for (const element of finding.elements) {

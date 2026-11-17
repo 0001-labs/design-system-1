@@ -1,6 +1,3 @@
-/* ds-kbd.css */
-/* The element only places the hint; 1-root/kbd.css draws it. */
-
 :host {
   display: inline-flex;
   vertical-align: top;

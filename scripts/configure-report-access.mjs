@@ -1,4 +1,3 @@
-/** Resolve the existing studio owner without printing or storing account values. */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

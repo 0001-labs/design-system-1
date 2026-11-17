@@ -14,57 +14,6 @@ const MAIN = "main, [role='main']";
 export type PageLayout = "sidebar" | "split" | "inspector" | "column" | "centered" | "tiles";
 export const PAGE_LAYOUTS: readonly PageLayout[] = ["sidebar", "split", "inspector", "column", "centered", "tiles"];
 
-/**
- * A standard page: where units stand on the grid. Every layout uses the same
- * five areas, so content can move between layouts without being rewritten.
- *
- * - `slot="header"` runs along the top of the main area
- * - `slot="nav"` is the leading column: navigation, or the list in `split`
- * - the default slot is the main area
- * - `slot="aside"` is the trailing column, shown by `inspector`
- * - `slot="footer"` runs along the bottom of the main area
- *
- * The main area is the document's main landmark (`role="main"`), unless the
- * page stands inside a `<main>` or another page, or is given a `<main>` itself.
- *
- * Columns are whole squares: `sidebar` and `inspector` lead with 12, `split`
- * with 16; `column` is 32 wide and `centered` 16, and `measure` sets either in
- * whole squares. A centred column stands on a whole square: the room beside it
- * is rounded down to squares, so the column never straddles a grid line.
- * `tiles` places each main child in a 12-square tile. Below 30 squares of
- * width every layout stacks.
- *
- * With `drawer`, the navigation folds away below 30 squares instead of
- * standing above the work: a menu button one square wide stands before the
- * header and opens it in a drawer over the page (0-face/attach-overlay.ts, the
- * header's), with focus kept inside, closed by Escape, its close button, a
- * link or the page widening, and the page's scroll held behind it. A frame
- * that has a bar of its own gives the page its menu button instead
- * (`drawerToggle`): the page then draws no row for one, and the header takes
- * the whole width.
- *
- * @element ds-page
- * @attr layout - `sidebar`, `split`, `inspector`, `column`, `centered` or `tiles`.
- * @attr resize-key - Optional local storage key for remembered column widths.
- * @attr nav-width - Sidebar width in whole squares (4–24).
- * @attr resizable - Adds draggable, keyboard-accessible dividers to sidebar, split and inspector layouts.
- * @attr split - Leading column share (0–1), default 0.5; resizing emits ds-page-resize with detail.split.
- * @attr divided - Draws a hairline between the columns.
- * @attr measure - Width of the `column` or `centered` column in whole squares.
- * @attr fill - Takes its container's height; each column scrolls on its own.
- * @attr flush - The work runs to its pane's edges (a wall of pictures, a canvas): the square of room around it goes, the navigation and the inspector keep theirs.
- * @attr view - Labels each area with its slot name, for inspection.
- * @attr drawer - Folds the navigation into a drawer on a narrow page.
- * @attr drawer-label - The menu button's and drawer's name: a translation key, the shared word "Menu" by default.
- * @fires ds-page-drawer - The drawer opened or closed; `detail.open` says which.
- *
- * @example
- * <ds-page layout="sidebar">
- *   <ds-sidebar slot="nav" label="Projects"></ds-sidebar>
- *   <ds-row slot="header" fill>…</ds-row>
- *   <ds-list>…</ds-list>
- * </ds-page>
- */
 export class Page extends LitElement {
   static properties = {
     resizable: { type: Boolean, reflect: true },
@@ -97,7 +46,6 @@ export class Page extends LitElement {
   declare view: boolean;
   declare drawer: boolean;
   declare drawerLabel: string | undefined;
-  /** A menu button outside the page (an app's bar) that opens the drawer in place of the page's own. */
   declare drawerToggle: HTMLElement | null;
   private declare landmark: boolean;
 
@@ -105,9 +53,7 @@ export class Page extends LitElement {
 
   private navigationDrawer: Drawer | null = null;
   private drawerAttempt = 0;
-  /** The widths the page was given, before any remembered ones: what Enter and a double press go back to. */
   private givenWidths = { nav: 12, aside: 12 };
-  /** Watches what the areas hold for `hidden`, so an area whose content is all hidden takes no room. */
   private readonly hiding = typeof MutationObserver === "function" ? new MutationObserver(() => this.syncAreas()) : null;
   private readonly relabel = () => this.requestUpdate();
 
@@ -127,10 +73,6 @@ export class Page extends LitElement {
     this.landmark = true;
   }
 
-  /**
-   * The main area is the page's main landmark, unless the page stands inside
-   * one (or inside another page) or is given its own `<main>`.
-   */
   private readonly syncLandmark = () => {
     const slot = this.renderRoot?.querySelector?.<HTMLSlotElement>("slot:not([name])");
     const given = slot?.assignedElements({ flatten: true }).some(element => element.matches(MAIN) || !!element.querySelector(MAIN));
@@ -148,7 +90,7 @@ export class Page extends LitElement {
         if (saved && Number.isFinite(saved.navWidth)) this.navWidth = Math.max(4, Math.min(24, saved.navWidth));
         if (saved && Number.isFinite(saved.asideWidth)) this.asideWidth = Math.max(4, Math.min(24, saved.asideWidth));
         if (saved && Number.isFinite(saved.split)) this.split = Math.max(0.1, Math.min(0.9, saved.split));
-      } catch { /* Storage is optional; malformed preferences keep the defaults. */ }
+      } catch {}
     }
     window.addEventListener("language-changed", this.relabel);
     window.addEventListener("translations-loaded", this.relabel);
@@ -167,15 +109,12 @@ export class Page extends LitElement {
     super.disconnectedCallback();
   }
 
-  /** Whether the navigation drawer is open. */
   get drawerOpen(): boolean {
     return this.navigationDrawer?.isOpen ?? false;
   }
 
-  /** Open the navigation drawer (on a narrow page with `drawer`). */
   openDrawer(): void { this.navigationDrawer?.open(); }
 
-  /** Close the navigation drawer. */
   closeDrawer(): void { this.navigationDrawer?.close(); }
 
   protected updated(changed: PropertyValues<this>) {
@@ -184,7 +123,6 @@ export class Page extends LitElement {
     void this.attachDrawer();
   }
 
-  /** The drawer's script comes after the first paint: the toggle is drawn closed until it does. */
   private async attachDrawer() {
     const attempt = ++this.drawerAttempt;
     this.navigationDrawer?.destroy();
@@ -201,7 +139,6 @@ export class Page extends LitElement {
       toggle, panel, content: [nav],
       onToggle: open => this.dispatchEvent(new CustomEvent("ds-page-drawer", { bubbles: true, composed: true, detail: { open } })),
     });
-    // An id names an element in its own root only: a button outside the page cannot point at the panel.
     if (toggle.getRootNode() !== panel.getRootNode()) toggle.removeAttribute("aria-controls");
   }
 
@@ -229,7 +166,7 @@ export class Page extends LitElement {
   private rememberResize() {
     if (!this.resizeKey) return;
     try { localStorage.setItem(this.resizeKey, JSON.stringify({ navWidth: this.navWidth, split: this.split, asideWidth: this.asideWidth })); }
-    catch { /* Resizing works even when storage is unavailable. */ }
+    catch {}
   }
   private cancelResize() {
     const drag = this.drag;
@@ -259,14 +196,12 @@ export class Page extends LitElement {
     const minimum = Math.min((this.layout !== "split" ? 4 : 10) * drag.unit, Math.floor(drag.available / 2 / drag.unit) * drag.unit);
     const delta = (event.clientX - drag.startX) * (drag.rtl !== (drag.area === "aside") ? -1 : 1);
     drag.width = Math.max(minimum, Math.min((this.layout !== "split" ? Math.min(24 * drag.unit, drag.available - 10 * drag.unit) : drag.available - minimum), drag.startWidth + delta));
-    // Preview the real columns immediately; only release persists a snapped preference.
     this.renderRoot.querySelector<HTMLElement>('.page')!.style.setProperty(drag.area === 'aside' ? '--ds-page-resize-aside' : '--ds-page-resize-width', `${drag.width}px`);
   }
   private startResize(event: PointerEvent) {
     if (event.button !== 0 || this.drag) return;
     event.preventDefault();
     const handle = event.currentTarget as HTMLElement;
-    // Focused for Escape while dragging, never shown as focused: only a keyboard's focus darkens the line.
     handle.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     handle.setPointerCapture(event.pointerId);
     const area = handle.dataset.resize === "aside" ? "aside" : "nav";
@@ -302,9 +237,6 @@ export class Page extends LitElement {
     else this.resizeTo(0.5);
   }
 
-  /**
-   * Dividers are siblings of the scroll areas, so scrolling cannot move or clip their targets.
-   */
   private resizer(area: "nav" | "aside" = "nav") {
     if (!this.resizable || !["sidebar", "split", "inspector"].includes(this.layout)) return undefined;
     const column = this.layout !== "split";
@@ -335,7 +267,6 @@ export class Page extends LitElement {
     `;
   }
 
-  /** An area with nothing in it, or only hidden things, takes no room, so a header, a footer or an inspector is optional. */
   private syncAreas() {
     this.hiding?.disconnect();
     for (const slot of this.renderRoot.querySelectorAll("slot")) {
@@ -352,11 +283,6 @@ export class Page extends LitElement {
   }
 }
 
-/**
- * A measure is a count of squares: 28 is 28 squares, never 28.5 or 28px. A
- * fraction rounds to the nearest square, and anything that is not a positive
- * number is ignored so the layout keeps its own width.
- */
 export function measureStyle(measure: number | null | undefined): string | undefined {
   const squares = Math.round(Number(measure));
   return Number.isFinite(squares) && squares >= 1 ? `--ds-page-measure: calc(${squares} * var(--ds-unit))` : undefined;

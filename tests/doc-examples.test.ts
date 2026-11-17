@@ -9,7 +9,6 @@ it('keeps every authored documentation example in the owner visibility catalogue
     ...Object.keys(LAYOUT_EXAMPLES), ...HTML_EXAMPLES.map(example => `html-${example.id}`),
   ].sort());
   expect(new Set(DOC_EXAMPLES.map(example => example.id)).size).toBe(DOC_EXAMPLES.length);
-  // Each example appears on its group's page and in the overview's lists, so the Worker can hide it from both.
   const folder = 'website/src/content/docs/start-here/examples';
   const document = readdirSync(folder).filter(name => name !== 'index.mdx').map(name => readFileSync(`${folder}/${name}`, 'utf8')).join('\n');
   const overview = readFileSync(`${folder}/index.mdx`, 'utf8');

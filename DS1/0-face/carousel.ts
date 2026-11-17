@@ -1,87 +1,21 @@
-/**
- * Carousels without Lit: the behaviour of `.ds-carousel` (drawn by
- * `1-root/carousel.css`) and its dots (`.ds-progress--dots`, from
- * `progress.css`) on a page's own markup, and the pieces `ds-carousel` and
- * `ds-progress` share with it. No framework and no imports.
- *
- * ```html
- * <section class="ds-carousel" aria-label="Colours">
- *   <div class="ds-carousel__track">
- *     <figure>…</figure>
- *     <figure>…</figure>
- *   </div>
- *   <div class="ds-carousel__controls">
- *     <button class="ds-button ds-button--icon ds-carousel__previous" type="button">…</button>
- *     <div class="ds-progress ds-progress--dots"></div>
- *     <button class="ds-button ds-button--icon ds-carousel__next" type="button">…</button>
- *   </div>
- * </section>
- * <script type="module">
- *   import { startCarousels } from "/ds1/0-face/carousel.js";
- *   startCarousels();
- * </script>
- * ```
- *
- * `startCarousels()` starts every `.ds-carousel` on the page: it makes the
- * block a region described as a carousel, each slide a group labelled "2 of
- * 5" (unless the page labels it), fills `.ds-progress--dots` with a dot for each
- * slide, keeps the dots and the buttons on the slide in view, and announces
- * the current slide politely in a `.ds-carousel__status` it adds. Dots take
- * the arrow keys, Home and End. Scrolling is instant when the reader asks for
- * reduced motion. The block fires `change` (`detail: { index, previous }`)
- * when a person moves to another slide.
- *
- * A strip of things of their own width (`data-slides="auto"`, several in
- * view, each stopping at the strip's start) takes three more options, as data
- * attributes on `.ds-carousel` (and attributes of the same names on
- * `ds-carousel`):
- *
- * - `data-bleed`: `none` (the default) keeps the strip in its box; `end` runs
- *   it on to the window's end edge, the first slide still on the box's start;
- *   `both` runs it to both edges, slides passing out of the box at its start.
- * - `data-loop`: the slides held three times over, the copies unseen by
- *   assistive technology and never focused, so the strip has no end. A
- *   looping carousel draws no dots.
- * - `data-autoplay`: move on a slide at a time by itself every so many
- *   milliseconds (`data-autoplay="5000"`; empty is 5000). Held while the
- *   pointer, a finger or the keyboard is in the strip, while it is out of
- *   view or the page hidden, and never for a reader who asks for reduced
- *   motion. A pause button (`.ds-carousel__pause`) is always drawn with it
- *   (WCAG 2.2.2).
- * - `data-snap="none"`: slide freely, without stopping at slides.
- *
- * The words read English, or the shared words in the page's language where
- * the page loads the language module; `setCarouselWords()` gives others.
- */
-
-/** The words a carousel says, keyed by the shared words' English. */
 export type CarouselWord = "Carousel" | "Slide" | "Slides" | "Slide {index}" | "{index} of {count}" | "Previous slide" | "Next slide" | "Pause" | "Play";
 
-/** What a strip's drive can be told; every option is off unless given. */
 export interface CarouselDriveOptions {
   bleed?: "none" | "end" | "both";
   loop?: boolean;
-  /** Milliseconds between steps; `0` or absent for none. */
   autoplay?: number;
-  /** A copy was made: mark and change it before it is placed. */
   onCopy?: (copy: HTMLElement) => void;
 }
 
-/** A running drive: the bleed's measures, the loop's copies and autoplay. */
 export interface CarouselDrive {
-  /** Moves a slide on (`1`) or back (`-1`). */
   step(direction: 1 | -1): void;
-  /** Holds or resumes autoplay, as the pause button does. */
   pause(paused: boolean): void;
-  /** Whether autoplay is held by the pause button. */
   readonly paused: boolean;
   stop(): void;
 }
 
-/** How long an autoplaying carousel stands when no interval is given. */
 export const CAROUSEL_AUTOPLAY_MS = 5000;
 
-/** An autoplay interval from an attribute: empty or `true` is the default, a number of milliseconds otherwise, at least a second. */
 export function autoplayInterval(value: string | number | boolean | null | undefined): number {
   if (value === null || value === undefined || value === false || value === "false") return 0;
   if (value === "" || value === true || value === "true") return CAROUSEL_AUTOPLAY_MS;
@@ -89,18 +23,14 @@ export function autoplayInterval(value: string | number | boolean | null | undef
   return Number.isFinite(milliseconds) && milliseconds > 0 ? Math.max(1000, milliseconds) : 0;
 }
 
-/** Marks an element as a copy made for a loop. */
 export const COPY = "data-ds-carousel-copy";
 const isCopy = (element: Element) => element.hasAttribute(COPY);
-/** Whether an attribute asks for a bleed. */
 export const bleedOf = (value: string | undefined): CarouselDriveOptions["bleed"] => (value === "end" || value === "both" ? value : "none");
 export type CarouselWords = Partial<Record<CarouselWord, string>> | ((word: CarouselWord, params: Record<string, string | number>) => string);
 
-/** Where the language module leaves its `translate()`, shared with the feedback module. */
 const TRANSLATOR = Symbol.for("design-system-1.translate");
 let words: CarouselWords | null = null;
 
-/** Give the carousel script words of the page's own, or `null` for the language module's (or English). */
 export function setCarouselWords(next: CarouselWords | null): void {
   words = next;
 }
@@ -108,7 +38,6 @@ export function setCarouselWords(next: CarouselWords | null): void {
 const fill = (text: string, params: Record<string, string | number>) =>
   text.replace(/\{\{?(\w+)\}?\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole));
 
-/** A carousel word in the page's language, with its placeholders filled. */
 export function carouselWord(word: CarouselWord, params: Record<string, string | number> = {}): string {
   if (typeof words === "function") return words(word, params);
   const own = words?.[word];
@@ -117,10 +46,8 @@ export function carouselWord(word: CarouselWord, params: Record<string, string |
   return fill(typeof translate === "function" ? String(translate(word, params)) : word, params);
 }
 
-/** How a dot is drawn: before, at or after the current slide, or the end marker. */
 export type DotState = "past" | "current" | "next" | "future" | "end";
 
-/** The state of dot `index` of `count` when `current` is the slide in view. */
 export function dotState(index: number, current: number, count: number, end = false): DotState {
   if (index === current) return "current";
   if (end && index === count - 1) return "end";
@@ -128,10 +55,6 @@ export function dotState(index: number, current: number, count: number, end = fa
   return index === current + 1 ? "next" : "future";
 }
 
-/**
- * The dot a key moves to from `index`, or `undefined` for a key dots leave
- * alone. Left and right follow the reading direction.
- */
 export function dotForKey(key: string, index: number, count: number, rtl = false): number | undefined {
   const forward = rtl ? "ArrowLeft" : "ArrowRight";
   const back = rtl ? "ArrowRight" : "ArrowLeft";
@@ -142,35 +65,24 @@ export function dotForKey(key: string, index: number, count: number, rtl = false
   return undefined;
 }
 
-/** Whether the reader asks for reduced motion. */
 export function prefersReducedMotion(): boolean {
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const isRtl = (element: Element) => getComputedStyle(element).direction === "rtl";
 
-/**
- * Scrolls the track so `slide` stands at its start: smoothly, unless the
- * reader asks for reduced motion. Says whether the track had to move.
- */
 export function scrollToSlide(track: HTMLElement, slide: HTMLElement, smooth = true): boolean {
   const rtl = isRtl(track);
   const box = track.getBoundingClientRect();
   const rect = slide.getBoundingClientRect();
   const reach = Math.max(0, track.scrollWidth - track.clientWidth);
   const wanted = track.scrollLeft + (rtl ? rect.right - box.right : rect.left - box.left);
-  // Right to left, the track scrolls from 0 down to minus its reach.
   const left = rtl ? Math.max(-reach, Math.min(0, wanted)) : Math.max(0, Math.min(reach, wanted));
   if (Math.abs(left - track.scrollLeft) < 1) return false;
   track.scrollTo({ left, behavior: smooth && !prefersReducedMotion() ? "smooth" : "instant" });
   return true;
 }
 
-/**
- * The slide in view: the one whose start is nearest the track's. At the far
- * end, where the last slides cannot reach the start, the current slide stays
- * while it is wholly in view, and the last slide is current otherwise.
- */
 export function nearestSlide(track: HTMLElement, slides: readonly HTMLElement[], current = 0): number {
   if (!slides.length) return 0;
   const rtl = isRtl(track);
@@ -192,14 +104,6 @@ export function nearestSlide(track: HTMLElement, slides: readonly HTMLElement[],
 }
 
 
-/**
- * A strip under the pointer. A finger, a pen or a trackpad scrolls the track
- * natively; a mouse drags it the same way (snapping held off while it drags),
- * and on letting go `settle` puts it on a slide. A press that ends a drag or a
- * scroll, by any pointer, never presses what it started on, so a person can
- * swipe across cards that open something without choosing one. Returns the
- * function that stops it.
- */
 export function dragTrack(track: HTMLElement, settle: () => void): () => void {
   let held: { id: number; x: number; left: number; mouse: boolean } | null = null;
   let moved = false;
@@ -214,7 +118,7 @@ export function dragTrack(track: HTMLElement, settle: () => void): () => void {
     const dx = event.clientX - held.x;
     if (!moved && Math.abs(dx) < 6) return;
     if (!moved && held.mouse) {
-      try { track.setPointerCapture(event.pointerId); } catch { /* a pointer already gone */ }
+      try { track.setPointerCapture(event.pointerId); } catch {}
       track.setAttribute("data-dragging", "");
     }
     moved = true;
@@ -231,14 +135,12 @@ export function dragTrack(track: HTMLElement, settle: () => void): () => void {
       settle();
     }
   };
-  // A native scroll while a finger is down is a swipe: the press it ends is not a choice.
   const scrolled = () => { if (held) moved = true; };
   const click = (event: MouseEvent) => {
     if (performance.now() > quietUntil) return;
     event.preventDefault();
     event.stopPropagation();
   };
-  // A picture in a slide would be dragged out of the page instead of the strip.
   const dragstart = (event: DragEvent) => event.preventDefault();
   track.addEventListener("pointerdown", down);
   track.addEventListener("pointermove", move);
@@ -259,18 +161,12 @@ export function dragTrack(track: HTMLElement, settle: () => void): () => void {
   };
 }
 
-/** Where a slide starts along the track, from the track's own start, in its scroll's terms. */
 function startOf(track: HTMLElement, slide: HTMLElement): number {
   const box = track.getBoundingClientRect();
   const rect = slide.getBoundingClientRect();
   return isRtl(track) ? track.scrollLeft + rect.right - box.right : track.scrollLeft + rect.left - box.left;
 }
 
-/**
- * The room between an element and the window's edges, at its start and its
- * end, for a strip that bleeds out to them. Measured against the document's
- * width, so a scrollbar is never covered.
- */
 export function bleedRoom(element: HTMLElement): { before: number; after: number } {
   const width = document.documentElement.clientWidth || window.innerWidth;
   const rect = element.getBoundingClientRect();
@@ -279,14 +175,6 @@ export function bleedRoom(element: HTMLElement): { before: number; after: number
   return isRtl(element) ? { before: right, after: left } : { before: left, after: right };
 }
 
-/**
- * Drives a strip: `block` carries the bleed's measures, `track` scrolls, and
- * the slides (the children of `holder`, the track itself on a native page)
- * are what it holds. The bleed's room is measured as the page's width
- * changes; a loop holds the slides three times over, opened on the middle
- * set and kept within it; autoplay steps a slide at a time while nobody is in
- * the strip and it can be seen.
- */
 export function driveCarousel(block: HTMLElement, track: HTMLElement, holder: HTMLElement, options: CarouselDriveOptions = {}): CarouselDrive {
   const stops: (() => void)[] = [];
   const slides = () => [...holder.children].filter((child): child is HTMLElement => child instanceof HTMLElement && !child.hasAttribute("slot"));
@@ -326,13 +214,11 @@ export function driveCarousel(block: HTMLElement, track: HTMLElement, holder: HT
     holder.append(...after);
     stops.push(() => slides().filter(isCopy).forEach((copy) => copy.remove()));
   }
-  // A set's length: from a slide to the same slide in the next set.
   const span = () => {
     const all = slides();
     return looping && all.length > count ? Math.abs(startOf(track, all[count]) - startOf(track, all[0])) : 0;
   };
   const direction = () => (isRtl(track) ? -1 : 1);
-  // Kept within the middle set: past either side, the strip moves a whole set at once, the same slides under the eye.
   const within = () => {
     const length = span();
     if (!length) return;
@@ -355,7 +241,6 @@ export function driveCarousel(block: HTMLElement, track: HTMLElement, holder: HT
     stops.push(() => track.removeEventListener("scrollend", within));
   }
 
-  /** The slide standing at the strip's start, or the nearest to it. */
   const atStart = (): number => {
     const all = slides();
     const at = Math.abs(track.scrollLeft);
@@ -413,7 +298,6 @@ export function driveCarousel(block: HTMLElement, track: HTMLElement, holder: HT
   };
 }
 
-/** An icon button the script adds: the pause button of an autoplaying strip. */
 function iconButton(className: string, icon: string): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
@@ -426,7 +310,6 @@ function iconButton(className: string, icon: string): HTMLButtonElement {
   return button;
 }
 
-/** Points a native icon at its file in the icon folder beside the page's copy (`--ds-icon` from `data-icon`). */
 function drawIcon(button: HTMLButtonElement, icon: string, base: string) {
   const mark = button.querySelector<HTMLElement>(".ds-icon");
   if (!mark) return;
@@ -434,24 +317,18 @@ function drawIcon(button: HTMLButtonElement, icon: string, base: string) {
   if (base) mark.style.setProperty("--ds-icon", `url("${base}${icon}.svg")`);
 }
 
-/** What `startDots` is given: the number of dots, the current one and the end marker. */
 export interface DotsOptions {
   count: number;
   current?: number;
-  /** Draw the last dot as an end marker. */
   end?: boolean;
-  /** Called when a person picks a dot, by a click or a key. */
   onSelect?: (index: number) => void;
 }
 
-/** A running set of native dots. */
 export interface DotsHandle {
-  /** Draw `count` dots, `current` among them. */
   set(count: number, current: number): void;
   stop(): void;
 }
 
-/** Attributes the script wrote, so what the page wrote is left alone and the script's own follow the language. */
 const written = new WeakMap<Element, Set<string>>();
 function own(element: Element, name: string, value: string): void {
   const mine = written.get(element) ?? new Set<string>();
@@ -460,21 +337,13 @@ function own(element: Element, name: string, value: string): void {
   written.set(element, mine);
   if (element.getAttribute(name) !== value) element.setAttribute(name, value);
 }
-/** Whether the page names an element itself. */
 const named = (element: Element) => element.hasAttribute("aria-labelledby") || (element.hasAttribute("aria-label") && !written.get(element)?.has("aria-label"));
-/** Calls `relabel` whenever the language or its words change; returns the way to stop. */
 function onLanguage(relabel: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   for (const name of ["language-changed", "translations-loaded"]) window.addEventListener(name, relabel);
   return () => { for (const name of ["language-changed", "translations-loaded"]) window.removeEventListener(name, relabel); };
 }
 
-/**
- * Fills a `.ds-progress--dots` element with a button for each dot and keeps
- * its states: a group labelled "Slides", each dot "Slide 2", the current one
- * `aria-current` and the only one in the tab order, arrows, Home and End
- * moving between them.
- */
 export function startDots(element: HTMLElement, options: DotsOptions): DotsHandle {
   let count = Math.max(0, Math.floor(options.count));
   let current = options.current ?? 0;
@@ -526,33 +395,25 @@ export function startDots(element: HTMLElement, options: DotsOptions): DotsHandl
   };
 }
 
-/** A running native carousel. */
 export interface CarouselHandle {
-  /** The slide in view. */
   readonly current: number;
-  /** Go to a slide, as its dot does. */
   goTo(index: number): void;
   stop(): void;
 }
 
-/** Detail of a carousel's `change` event. */
 export interface CarouselChangeDetail { index: number; previous: number }
 
 const running = new WeakMap<HTMLElement, CarouselHandle>();
 
-/** What `startCarousel` and `startCarousels` are told. */
 export interface StartCarouselOptions {
-  /** Where the icons are, for the pause button the script adds (`/ds1/x-icon/`). */
   icons?: string;
 }
 
-/** Starts one `.ds-carousel` block; starting it again returns the running one. */
 export function startCarousel(element: HTMLElement, options: StartCarouselOptions = {}): CarouselHandle {
   const existing = running.get(element);
   if (existing) return existing;
   const track = element.querySelector<HTMLElement>(".ds-carousel__track");
   if (!track) throw new Error("A .ds-carousel needs a .ds-carousel__track");
-  // A strip's options: the bleed's room, a loop's copies and autoplay come from the drive.
   const bleed = bleedOf(element.dataset.bleed);
   const loop = element.dataset.loop !== undefined && element.dataset.loop !== "false";
   const every = autoplayInterval(element.dataset.autoplay ?? null);
@@ -574,7 +435,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
   let settle: ReturnType<typeof setTimeout> | undefined;
   let frame = 0;
 
-  /** The region, the slides and the buttons, named in the page's language unless the page names them. */
   const label = () => {
     own(element, "role", "region");
     own(element, "aria-roledescription", carouselWord("Carousel"));
@@ -588,7 +448,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
     if (previousButton && !named(previousButton)) own(previousButton, "aria-label", carouselWord("Previous slide"));
     if (nextButton && !named(nextButton)) own(nextButton, "aria-label", carouselWord("Next slide"));
   };
-  // A looping strip has no place to point to, so it draws no dots.
   const dotsElement = loop ? null : element.querySelector<HTMLElement>(".ds-progress--dots");
   const dots = dotsElement ? startDots(dotsElement, { count: slides().length, end: dotsElement.hasAttribute("data-end"), onSelect: index => go(index, true) }) : undefined;
 
@@ -620,7 +479,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
     if (loop) return;
     frame = requestAnimationFrame(() => {
       if (pending !== undefined) {
-        // A scroll asked for by a dot or a button: wait for it to stop before following the track again.
         clearTimeout(settle);
         settle = setTimeout(() => { pending = undefined; }, 150);
         return;
@@ -631,7 +489,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
   const ended = () => { pending = undefined; };
   const previous = () => (drive ? drive.step(-1) : go(current - 1, true));
   const next = () => (drive ? drive.step(1) : go(current + 1, true));
-  // Autoplay always comes with its pause button, in the controls row the page wrote or one the script adds.
   let pause: HTMLButtonElement | null = null;
   const drawPause = () => {
     if (!pause || !drive) return;
@@ -655,7 +512,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
 
   track.addEventListener("scroll", scrolled, { passive: true });
   track.addEventListener("scrollend", ended);
-  // A loop's drive settles the strip itself; every other strip settles on the nearest slide.
   const undrag = dragTrack(track, () => (loop ? undefined : go(nearestSlide(track, slides(), current), true)));
   previousButton?.addEventListener("click", previous);
   nextButton?.addEventListener("click", next);
@@ -686,7 +542,6 @@ export function startCarousel(element: HTMLElement, options: StartCarouselOption
   return handle;
 }
 
-/** Starts every `.ds-carousel` inside `root` (the document by default); the returned function stops them. */
 export function startCarousels(root: ParentNode = document, options: StartCarouselOptions = {}): () => void {
   const handles = [...root.querySelectorAll<HTMLElement>(".ds-carousel")].map((element) => startCarousel(element, options));
   return () => handles.forEach(handle => handle.stop());

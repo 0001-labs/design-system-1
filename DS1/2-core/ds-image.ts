@@ -4,7 +4,6 @@ import { styleMap } from "lit/directives/style-map.js";
 import { define } from "../0-face/define";
 import styles from "./styles/ds-image.css?inline";
 
-/** Responsive image with native alternative text, optional crop and caption. */
 export class Image extends LitElement {
   static properties = {
     src: { type: String }, alt: { type: String }, caption: { type: String },

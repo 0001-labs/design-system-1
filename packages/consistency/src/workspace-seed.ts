@@ -1,5 +1,4 @@
 import type { WorkspacePage } from '../../../shared/consistency-workspace-page';
-/** The lab starts with the same blocks and controls that published pages use. */
 export function workspaceSeed(): WorkspacePage {
   return {schema:2,kind:'page',example:'editor',library:'original',fonts:{},page:{schema:1,kind:'native-page',layout:{maxWidth:800,padding:40,gap:20},blocks:[
     {id:'sequence_0',kind:'flow',direction:'column',padding:0,gap:20,children:[

@@ -2,7 +2,6 @@ import { DOC_EXAMPLES } from '../../../shared/doc-examples';
 import { LAYOUT_EXAMPLES } from '../../../website/src/lib/layout-examples';
 import { HTML_EXAMPLES } from '../../../website/src/lib/html-examples';
 
-/** One catalogue drives documentation, the picker and editable template documents. */
 export const SITE_TEMPLATES = [
   { id: 'blank', label: 'Blank site', description: 'Start with an empty page.', href: '', html: '<ds-page layout="column"><article data-ds-prose><h1>Your site</h1><p>Start writing.</p></article></ds-page>', script: '', library: undefined },
   ...DOC_EXAMPLES.map(entry => {

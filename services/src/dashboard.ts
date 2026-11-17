@@ -1,8 +1,6 @@
-/** Owner-only adoption inside the documentation site. The public sign-in shell contains no report data. */
 import { authorizeReport, type ReportsEnv } from './reports';
 
-export const DASHBOARD_HOST = 'adoption.designsystem1.com'; // Retired host: deny requests if still routed.
-/** The owner's icon builder: the same gate and session as the dashboard, on its own host. */
+export const DASHBOARD_HOST = 'adoption.designsystem1.com';
 export const ICON_HOST = 'icon.designsystem1.com';
 const COOKIE = '__Host-ds1-dashboard';
 const security = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'same-origin', Vary: 'Cookie, Authorization' };
@@ -35,13 +33,11 @@ export async function dashboard(request: Request, env: ReportsEnv & { ASSETS: Fe
   }
   if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 404, headers: security });
   if (url.pathname.startsWith('/app/assets/') || url.pathname === '/icons/design-system-1.svg') return env.ASSETS.fetch(request);
-  // Owner documents in the docs: Adoption and Architecture.
   const ownerPage = ['/adoption/', '/architecture/'].find(page => url.pathname === page || url.pathname === page.slice(0, -1));
   const adoption = Boolean(ownerPage) || url.pathname === '/app/adoption';
   const privateApp = url.pathname === '/private-app/' || /^\/private-app\/[a-zA-Z0-9._-]+$/.test(url.pathname);
   if (!adoption && !privateApp && !['/', '/app/', '/app/signin', '/app/reports/components'].includes(url.pathname)) return new Response(null, { status: 404, headers: security });
   if (url.pathname !== '/app/signin') {
-    // Revalidate the token with Convex on every HTML request; cookies confer no authority alone.
     const denied = await authorizeReport(sessionRequest(request), env, send);
     if (denied) {
       if (denied.status === 401) return new Response(null, { status: 302, headers: { ...security, Location: privateApp ? `/app/signin?next=${encodeURIComponent(url.hostname === 'designsystem1.com' ? '/libraries/workspace/' : '/private-app/')}` : '/app/signin', 'Set-Cookie': expired } });

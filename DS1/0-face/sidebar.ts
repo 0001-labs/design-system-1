@@ -1,36 +1,10 @@
-/**
- * The keyboard and pointer of a tree of rows, shared by `<ds-sidebar tree>`
- * and the native `.ds-sidebar` classes of `row.css`.
- *
- * A tree is one stop for Tab: the row that has the focus (the selected row
- * at first, otherwise the first) carries `tabindex="0"` and every other row
- * `-1`. Up and Down move between rows that are not disabled, Home and End to
- * the first and last; Right opens a closed row and enters an open one; Left
- * closes an open row and moves to its parent; a printed character moves to
- * the next row whose label starts with it. Space selects the row, Enter
- * selects and activates it, as a double click does.
- *
- * `treeStep()` is that model alone, on the visible rows. `connectSidebar()`
- * puts it on a native tree: rows with `role="treeitem"` and `aria-level`,
- * flat, in order, inside an element with `role="tree"`. It dispatches the
- * same events as `<ds-sidebar tree>` (`sidebar-toggle`, `sidebar-select`,
- * `sidebar-activate`, each with `{ id }`), and unless the page cancels one
- * it does what the event asks: opens or closes the row, hiding the rows
- * inside it, or selects it.
- */
-
-/** A visible row of a tree, as the keyboard sees it. */
 export interface TreeRow {
-  /** 1 for a row at the root. */
   level: number;
-  /** `true` open, `false` closed; a leaf has none. */
   expanded?: boolean;
   disabled?: boolean;
-  /** The words the type-ahead matches. */
   label?: string;
 }
 
-/** What a key asks of the tree: move the focus to a row, open or close the row, select or activate it. */
 export interface TreeStep {
   focus?: number;
   toggle?: boolean;
@@ -43,7 +17,6 @@ const available = (rows: readonly TreeRow[], from: number, step: 1 | -1) => {
   return undefined;
 };
 
-/** The next row after `index` whose label starts with `letter`, from the top again after the last. */
 function typeahead(rows: readonly TreeRow[], index: number, letter: string) {
   const wanted = letter.toLocaleLowerCase();
   for (let offset = 1; offset <= rows.length; offset++) {
@@ -54,10 +27,6 @@ function typeahead(rows: readonly TreeRow[], index: number, letter: string) {
   return undefined;
 }
 
-/**
- * What `key` does on the row at `index` of the visible `rows`, or
- * `undefined` when the tree leaves the key alone.
- */
 export function treeStep(rows: readonly TreeRow[], index: number, key: string): TreeStep | undefined {
   const row = rows[index];
   if (!row) return undefined;
@@ -78,7 +47,6 @@ export function treeStep(rows: readonly TreeRow[], index: number, key: string): 
     case "Enter": return row.disabled ? {} : { select: true, activate: true };
     case " ": return row.disabled ? {} : { select: true };
     default: {
-      // One printed character, a letter outside the basic plane included; named keys are longer.
       if (!/^\S$/u.test(key)) return undefined;
       const at = typeahead(rows, index, key);
       return at === undefined ? {} : { focus: at };
@@ -86,7 +54,6 @@ export function treeStep(rows: readonly TreeRow[], index: number, key: string): 
   }
 }
 
-/** The events a tree sends, the same from `<ds-sidebar tree>` and a native tree. */
 export interface SidebarEvents {
   "sidebar-toggle": CustomEvent<{ id: string; expanded: boolean }>;
   "sidebar-select": CustomEvent<{ id: string }>;
@@ -101,26 +68,12 @@ const expandedOf = (item: Element) => {
 };
 const disabledOf = (item: Element) => item.getAttribute("aria-disabled") === "true";
 const labelOf = (item: Element) => (item.querySelector(".ds-sidebar__label") ?? item).textContent ?? "";
-/** A row's name in the events: `data-id`, else its `id`. */
 const idOf = (item: HTMLElement) => item.dataset.id ?? item.id;
 
-/**
- * Gives a native tree its keyboard and pointer. Returns a function that
- * takes them away again.
- *
- *   <ul class="ds-sidebar" role="tree" aria-label="Files">
- *     <li class="ds-sidebar__item" role="treeitem" aria-level="1" aria-expanded="true" data-id="src">
- *       <span class="ds-sidebar__disclosure" aria-hidden="true"></span>
- *       <span class="ds-sidebar__label">src</span>
- *     </li>
- *     <li class="ds-sidebar__item" role="treeitem" aria-level="2" data-id="main">…</li>
- *   </ul>
- */
 export function connectSidebar(tree: HTMLElement): () => void {
   const items = () => [...tree.querySelectorAll<HTMLElement>(ITEM)];
   const visible = () => items().filter(item => !item.hidden && !item.closest("[hidden]"));
 
-  /** Exactly one visible row is the Tab stop: the focused one, else the selected one, else the first available. */
   const rove = (focus?: HTMLElement) => {
     const rows = visible();
     const current = focus ?? rows.find(item => item.tabIndex === 0 && !disabledOf(item)) ?? rows.find(item => item.getAttribute("aria-selected") === "true") ?? rows.find(item => !disabledOf(item)) ?? rows[0];
@@ -131,7 +84,6 @@ export function connectSidebar(tree: HTMLElement): () => void {
   const send = <K extends keyof SidebarEvents>(name: K, detail: SidebarEvents[K]["detail"]) =>
     tree.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true, cancelable: true }));
 
-  /** Opens or closes a row and shows or hides the rows inside it, keeping closed rows inside it closed. */
   const toggle = (item: HTMLElement, expanded: boolean) => {
     if (!send("sidebar-toggle", { id: idOf(item), expanded })) return;
     item.setAttribute("aria-expanded", String(expanded));
@@ -186,7 +138,6 @@ export function connectSidebar(tree: HTMLElement): () => void {
 
   if (!tree.hasAttribute("role")) tree.setAttribute("role", "tree");
   rove();
-  // Rows the page adds or removes keep one Tab stop.
   const observer = typeof MutationObserver === "undefined" ? undefined : new MutationObserver(() => { if (!items().some(item => item.tabIndex === 0 && !item.hidden)) rove(); });
   observer?.observe(tree, { childList: true, subtree: true });
   tree.addEventListener("keydown", keydown);

@@ -15,7 +15,6 @@ function diff(previous: CardDesign, next: CardDesign, change: CardDesign) {
  for (const [key, value] of Object.entries(next.gaps ?? {})) if (previous.gaps?.[key] !== value) change.gaps = { ...change.gaps, [key]: value };
 }
 function merge<T extends CardDesign>(card: T, design: CardDesign): T { return { ...card, ...design, ...(design.gaps ? { gaps: { ...card.gaps, ...design.gaps } } : {}) }; }
-/** Fan out design before history records the transaction; words never participate. */
 export function linkCardDesign(previous: Composition, next: Composition): Composition {
  if (!next.consistency || previous.consistency !== next.consistency) return next;
  const change: CardDesign = {};

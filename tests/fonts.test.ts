@@ -5,7 +5,6 @@ import { expect, test } from 'vite-plus/test';
 const rootDir = join(import.meta.dirname, '../DS1/1-root');
 const read = (file: string) => readFileSync(join(rootDir, file), 'utf8');
 const code = (file: string) => read(file).replace(/\/\*[\s\S]*?\*\//g, '');
-/** Each token as the sheet first declares it (later rules, such as :lang(), only point it elsewhere). */
 const tokens = (file: string, prefix: string) => {
   const found: Record<string, string> = {};
   for (const [, name, value] of code(file).matchAll(new RegExp(`(${prefix}[\\w-]+):\\s*([^;]+);`, 'g'))) found[name!] ??= value!.replace(/\s+/g, ' ').trim();

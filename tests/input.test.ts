@@ -114,8 +114,6 @@ test.each([false, true])('a reflected disabled state can re-enable the field aft
   control.multiline = multiline;
   document.body.append(control);
   await control.updateComplete;
-  // Browsers deliver this native reaction synchronously during Lit's attribute
-  // reflection. happy-dom does not implement form-associated custom elements.
   const setAttribute = control.setAttribute.bind(control), removeAttribute = control.removeAttribute.bind(control);
   vi.spyOn(control, 'setAttribute').mockImplementation((name, value) => {
     setAttribute(name, value);

@@ -73,8 +73,6 @@ test('token refresh keeps the running bridge alive until its new owner check fin
   localStorage.setItem(key, 'refreshed-session');
   window.dispatchEvent(new StorageEvent('storage', { storageArea: localStorage, key, oldValue: 'previous-session', newValue: 'refreshed-session' }));
   expect(publish.mock.calls.at(-1)?.[0]).toMatchObject({ owner: false });
-  // Convex refreshes on connection. Reloading here starts another refresh and
-  // interrupts the bridge before it can report the server's owner decision.
   expect(reload).not.toHaveBeenCalled();
   session.receive(summary);
   expect(publish.mock.calls.at(-1)?.[0]).toMatchObject({ authenticated: true, owner: true });
@@ -85,7 +83,6 @@ test('another part of the page can start the bridge on a warm cache, once, and t
   await saveNavigationCache(key, 'session-a', summary);
   const { frame, publish, session } = page();
   const load = vi.spyOn(frame, 'src', 'set');
-  // Asked before the cache has been read: the summary is not held back for the bridge.
   window.dispatchEvent(new Event(NAVIGATION_BRIDGE_REQUEST));
   await session.ready;
   expect(publish).toHaveBeenCalledWith(summary);

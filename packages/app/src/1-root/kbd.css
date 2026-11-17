@@ -1,22 +1,8 @@
-/*
- * `.ds-kbd` is a keyboard shortcut's hint, the `ds-kbd` element's look on a
- * native `<kbd>`: one control high (16px) on a one-square line, at least as
- * wide as it is high, padded 4px at the sides, with the system's 4px corners
- * and the fill a control stands on; in the code face at 13px, as `<kbd>` is in
- * prose, so a shortcut reads the same in an interface and in writing. Write
- * its words with `shortcutLabel()` from `0-face/keys.ts` (⇧⌘D, Ctrl+Shift+D).
- * Arrows are Inter's, through the Inter Arrows face that leads the typeface.
- *
- * `.ds-kbd--plain` is the words alone in the title grey, with no fill, as a
- * menu entry writes its shortcut at the row's end.
- */
-
 .ds-kbd {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Two pixels above and below: the hint stands in its one-square line. */
   vertical-align: top;
   height: var(--ds-control-height);
   min-width: var(--ds-control-height);

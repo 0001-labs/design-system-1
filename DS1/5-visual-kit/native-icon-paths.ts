@@ -54,7 +54,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-/** Chromium 155 (BSD-3-Clause) and Microsoft Fluent system icons (MIT). See browser-icons.LICENSE. */
 export const chromiumIcons = {
   "back": {
     "size": 24,

@@ -5,7 +5,6 @@ import styles from "./styles/ds-tooltip.css?inline";
 
 let nextDescription = 0;
 
-/** A translated or literal label for one slotted control. */
 export class Tooltip extends LitElement {
   static properties = {
     text: { type: String },
@@ -80,8 +79,6 @@ export class Tooltip extends LitElement {
     this.trigger = undefined;
   }
 
-  // ID references cannot cross a shadow boundary. Keep a hidden description
-  // beside the consumer's children, never replacing or moving those children.
   private describe = (): void => {
     const trigger = this.querySelector<HTMLElement>("button, a[href], input, select, textarea, [tabindex], [role=button], [role=tab]")
       ?? [...this.children].find(child => child !== this.description) as HTMLElement | undefined;
@@ -107,16 +104,9 @@ export class Tooltip extends LitElement {
     else if (bubble && open(bubble)) bubble.hidePopover();
   }
 
-  /**
-   * Keeps the bubble inside the window, as the page's tooltips do (0-face/tooltips.ts): four
-   * pixels from its edges, and below the control when there is no room above (or above when
-   * `placement="bottom"` has no room below). A tooltip at a frame's edge is never cut short.
-   */
   private place(): void {
     const bubble = this.shadowRoot?.querySelector<HTMLElement>(".bubble");
     if (!bubble || bubble.hidden) return;
-    // The bubble stands in the browser's top layer, where no scrolling frame,
-    // dialog or sheet can cut it short, placed by the control's own box.
     if (typeof bubble.showPopover === "function" && !open(bubble)) bubble.showPopover();
     const scale = parseFloat(getComputedStyle(this).getPropertyValue("--ds-sf")) || 1;
     const edge = 4 * scale;
@@ -140,7 +130,6 @@ export class Tooltip extends LitElement {
   }
 }
 
-/** Whether a bubble is open in the top layer; false where the browser has no popovers. */
 function open(bubble: HTMLElement): boolean {
   try { return bubble.matches(":popover-open"); } catch { return false; }
 }

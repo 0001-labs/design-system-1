@@ -1,4 +1,3 @@
-/** Inline editing of a site's real email wording, with revisioned automatic persistence. */
 import { LitElement, html, nothing } from 'lit';
 import { DocumentState } from '../document-state';
 import { siteApi } from './api';
@@ -35,7 +34,7 @@ export class EmailTemplateEditor extends LitElement {
         if (draft.base === snapshot.base && draft.build === snapshot.build && draft.revision === snapshot.revision) { this.state.document = draft.document; this.state.error = 'Your unsaved draft is kept. Try again to save it.'; }
         else { this.state.document = draft.document; this.state.error = 'This email changed elsewhere. Your draft is kept. Use the saved version to replace it.'; }
       }
-    } catch { /* An unreadable local draft does not replace the site's words. */ }
+    } catch {}
     this.requestUpdate();
   }
   private keepDraft() {
@@ -43,7 +42,7 @@ export class EmailTemplateEditor extends LitElement {
     try {
       if (this.state.dirty) sessionStorage.setItem(this.key, JSON.stringify({ ...this.state.snapshot, document: this.state.document }));
       else sessionStorage.removeItem(this.key);
-    } catch { /* Memory still retains the draft and navigation remains guarded. */ }
+    } catch {}
   }
   private change(field: keyof EmailTemplateSource, value: string) { this.state?.commit({ ...this.state.document, [field]: value }); }
   async flush() { return await this.state?.flush() !== false; }

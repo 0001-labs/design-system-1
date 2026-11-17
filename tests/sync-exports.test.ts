@@ -56,7 +56,6 @@ test('fonts.css travels on its own: through root with its faces in fonts/, or th
   expect(urls).toContain('Iosevka-Regular.woff2');
   for (const url of urls) expect(flat).toHaveProperty([url]);
   expect(css).toContain('--typeface-mono:');
-  // Named faces with the stylesheet: those, and always the arrows and the code face with their licences.
   expect(Object.keys(files('fonts', { stylesheet: true, fonts: ['GT-America-Standard-Regular.woff2', 'Iosevka-Regular.woff2'] }))).toEqual(['GT-America-Standard-Regular.woff2', 'Iosevka-Regular.woff2', 'Inter-Arrows.woff2', 'Inter-LICENSE.md', 'Iosevka-LICENSE.md', 'fonts.css']);
   expect(() => files('fonts')).toThrow(/Name the fonts/);
 });
@@ -67,7 +66,6 @@ test('the tokens export carries the palette, and Noto Sans only when asked for',
   expect(files('root', { cjk: true, fonts: false })).toHaveProperty(['cjk.css']);
   expect(Object.keys(files('root', { styles: ['cjk.css'], fonts: false }))).toEqual(['cjk.css']);
   const bundle = String(files('tokens', { cjk: true, bundle: true })['bundle.css']);
-  // A stylesheet from another host is imported before any rule, or the browser drops it.
   const firstRule = bundle.search(/^[^@/\s*][^\n]*{/m);
   expect(bundle.indexOf('@import url("https://fonts.googleapis.com')).toBeGreaterThan(0);
   expect(bundle.lastIndexOf('@import url(')).toBeLessThan(firstRule);
@@ -94,13 +92,10 @@ test('every root page script travels with what it imports', () => {
     }
   }
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['theme'] }))).toEqual(['0-face/theme.ts', '0-face/theme-bootstrap.js', '0-face/preference-options.ts']);
-  // The keyboard helpers and a native sheet's swipe are plain modules, with nothing to bring.
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['keys', 'overlay-swipe'] }))).toEqual(['0-face/keys.ts', '0-face/overlay-swipe.ts']);
-  // The header's script is plain TypeScript: the drawer it opens, and nothing of Lit's or Vite's.
   const header = files('root', { styles: [], fonts: false, modules: ['header'] });
   expect(Object.keys(header)).toEqual(['0-face/header.ts', '0-face/attach-overlay.ts']);
   for (const content of Object.values(header)) expect(String(content)).not.toMatch(/from ["']lit|\?(?:inline|raw)["']/);
-  // The carousel script stands alone: no imports, so a page without Lit takes one file.
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['carousel'] }))).toEqual(['0-face/carousel.ts']);
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['sidebar'] }))).toEqual(['0-face/sidebar.ts']);
 });
@@ -109,7 +104,6 @@ test('scriptsTo puts the page scripts apart from the stylesheets', () => {
   const copy = files('root', { styles: ['grid.css'], fonts: false, modules: ['scaling', 'tooltips'], scriptsTo: '../../src/ds1' });
   expect(Object.keys(copy)).toEqual(['grid.css', '../../src/ds1/0-face/scaling.ts', '../../src/ds1/0-face/tooltips.ts']);
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['scaling'], scriptsTo: 'scripts' }))).toEqual(['scripts/0-face/scaling.ts']);
-  // Without it, one folder as before.
   expect(Object.keys(files('root', { styles: [], fonts: false, modules: ['scaling'] }))).toEqual(['0-face/scaling.ts']);
 });
 
@@ -151,7 +145,6 @@ test('controls.css always arrives with the table, text, empty-state, notice, dia
   expect(Object.keys(files('tokens', { nativeControls: true }))).toEqual(['component-tokens.css', 'component-metrics.css', 'component-appearance.css', 'palette.css', 'table.css', 'text.css', 'empty.css', 'notice.css', 'overlay.css', ...chrome, 'bento.css', 'carousel.css', 'card.css', 'figures.css', 'progress.css', 'row.css', 'context.css', 'native-controls.css', 'controls.css']);
   expect(Object.keys(files('tokens'))).not.toContain('text.css');
   expect(Object.keys(files('root', { styles: ['grid.css'], fonts: false, nativeControls: true }))).toEqual(['grid.css', 'table.css', 'empty.css', 'notice.css', 'overlay.css', ...chrome, 'bento.css', 'carousel.css', 'card.css', 'figures.css', 'progress.css', 'row.css', 'context.css', 'native-controls.css', 'controls.css', 'text.css']);
-  // Every sheet controls.css imports, and every sheet those import, is copied beside it, by either export.
   for (const copy of [files('tokens', { nativeControls: true }), files('root', { fonts: false, nativeControls: true })]) {
     for (const sheet of Object.keys(copy).filter(name => name.endsWith('.css'))) {
       for (const [, file] of String(copy[sheet]).matchAll(/@import "\.\/([^"]+)";/g)) expect(copy, `${sheet} imports ${file}`).toHaveProperty([file!]);
@@ -175,7 +168,6 @@ test('the sheets export carries a native sheet with the root sheets it imports, 
   const copy = files('sheets', { sheets: ['context.css'] });
   expect(Object.keys(copy)).toEqual(['context.css', 'component-metrics.css', 'component-appearance.css']);
   for (const [, imported] of String(copy['context.css']).matchAll(/@import "\.\/([^"]+)";/g)) expect(copy).toHaveProperty([imported!]);
-  // The scale and the colours fall back to their values; the measures are the metrics'.
   expect(String(copy['context.css'])).not.toMatch(/var\(--ds-(sf|black|slate|white|tuned-red|focus-ring)\)/);
   expect(() => files('sheets')).toThrow(/Name the sheets/);
   expect(() => files('sheets', { sheets: ['one.css'] })).toThrow(/Unknown sheet/);
@@ -194,7 +186,6 @@ test('the languages export carries formatting with every module the language run
 test('the feedback export carries the module with everything it imports, by its paths in DS1', () => {
   const copy = files('feedback');
   expect(Object.keys(copy).sort()).toEqual(['0-face/copy-text.ts', '0-face/failures.ts', '0-face/feedback-overlays.ts', '0-face/feedback-words.ts', '0-face/feedback.ts', '0-face/generated/toast-assets.ts', '0-face/load-toaster.ts', '0-face/toast-queue.ts', '0-face/toaster.ts']);
-  // No Lit, no component, no stylesheet or icon to import with a query, and no language runtime.
   expect(Object.keys(copy).some((file) => /^2-core\/ds-|^3-unit|^4-page/.test(file))).toBe(false);
   expect(Object.values(copy).some((content) => /from\s+["']lit/.test(String(content)))).toBe(false);
   expect(copy).not.toHaveProperty(['0-face/i18n.ts']);
@@ -250,12 +241,9 @@ test.skipIf(!existsSync(join(root, built)))('the bundle export carries the built
   const copy = exports.bundle.files({ read, options: {}, exists: (path: string) => existsSync(join(root, path)) } as never) as Map<string, string>;
   expect(copy.has('design-system-1.js')).toBe(true);
   for (const [file, text] of copy) {
-    // No map is copied, so no line points at one.
     expect(text, file).not.toMatch(/sourceMappingURL/);
-    // Every chunk a file imports, now or on demand, is beside it.
     for (const [, chunk] of text.matchAll(/(?:from\s*|import\s*\(\s*)["']\.\/([^"']+\.js)["']/g)) expect(copy.has(chunk!), `${file} imports ${chunk}`).toBe(true);
   }
-  // Only what the bundle reaches: another entry's copy of Lit stays out.
   const lits = [...copy.keys()].filter(file => file.startsWith('lit-'));
   expect(lits).toHaveLength(1);
   const named = exports.bundle.files({ read, options: { entry: 'components.js' }, exists: (path: string) => existsSync(join(root, path)) } as never) as Map<string, string>;
@@ -269,13 +257,11 @@ test('the library-prepare export writes the component tokens after a library\'s 
   const copy = await (exports['library-prepare'].files as unknown as () => Promise<Record<string, string>>)();
   const script = copy['prepare-library.mjs']!;
   expect(script.startsWith('#!/usr/bin/env node')).toBe(true);
-  // One file: run alone from an empty folder, so nothing it needs can come from beside it or a package.
   const dir = mkdtempSync(join(tmpdir(), 'ds1-prepare-'));
   writeFileSync(join(dir, 'prepare-library.mjs'), script);
   const css = execFileSync(process.execPath, [join(dir, 'prepare-library.mjs'), '-'], { input: ':root {\n  --one-accent-color: #005ce6;\n  --one-radius: 2px;\n}\n' }).toString();
   expect(css).toContain('--ds-accent-color: var(--one-accent-color);');
   expect(css).toContain('--ds-corner-size: var(--one-radius);');
   expect(css).toContain('--ds-card-corner-size: var(--one-radius);');
-  // Preparing a prepared library gives the same library.
   expect(execFileSync(process.execPath, [join(dir, 'prepare-library.mjs'), '-'], { input: css }).toString()).toBe(css);
 });

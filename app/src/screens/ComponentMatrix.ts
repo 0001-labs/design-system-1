@@ -28,7 +28,6 @@ const cellClass = (cell: ComponentCell, view: View) => {
   return cell.shared ? "shared" : cell.styled ? "styled" : cell.local ? "local" : "unverified";
 };
 
-/** Kept separate from authentication so the evidence view can be verified with fixtures. */
 export class ComponentMatrix extends AppElement {
   static properties = {
     report: { attribute: false },

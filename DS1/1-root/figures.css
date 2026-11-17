@@ -1,43 +1,5 @@
 @import "./component-metrics.css";
 
-/*
- * Figures, as plain classes on native elements: a stat and a group of stats.
- * The `ds-stat` element draws the same parts; controls.css imports this
- * file. A value against its range, steps and page dots are `progress.css`.
- *
- * Everything sits on the paper with no box, every line is one square and
- * widths come in whole squares. Colour is kept for a state: the danger colour
- * for a figure that is over.
- *
- * A stat: a label, a figure and a line for its change or caption.
- *
- *   ds-stat                  the block, as wide as its column
- *   ds-stat__label           one line, muted; an icon may lead it on its own square
- *   ds-stat__icon            the square an icon from the library stands on
- *   ds-stat__figure          the figure in tabular numerals, 20 on two squares
- *   ds-stat__digit           one digit in a cell of one width, for a face without tabular numerals
- *   ds-stat__caption         one line, muted, under the figure
- *   ds-stat__change          the change at the start of the caption, in the text colour;
- *                            --danger or --warning where the page knows which way is bad
- *   ds-stat--danger, --warning    the figure in that colour
- *   ds-stats                 a group of stats on whole squares: columns eight
- *                            squares wide, one square between them and between rows
- *   ds-stats[data-frame]     the group in a rounded 1px frame with a 1px line
- *                            between stats, as a framed table: the columns share
- *                            the width, each stat's words 4px in from its lines
- *                            as a framed table's, and a square at its foot, so
- *                            the frame stays whole squares high
- *
- * Tokens: `--ds-stat-size` (the figure's type size before the scale, 20px)
- * and `--ds-stat-lines` (the squares its line takes, 2), `--ds-stat-typeface`
- * (the medium face), `--ds-stat-digit` (a digit cell's width, 1ch),
- * `--ds-stat-change-color`, and `--ds-stats-width` (a column's width in
- * squares, 8).
- *
- */
-
-/* ---- Stat ------------------------------------------------------------ */
-
 .ds-stat {
   box-sizing: border-box;
   display: flex;
@@ -65,7 +27,6 @@
   letter-spacing: inherit;
 }
 
-/* Optional spacing between distinct text groups, independent of line height. */
 .ds-stat__label { margin-block-end: var(--ds-stat-label-gap, 0px); }
 .ds-stat__figure { margin-block-end: var(--ds-stat-figure-gap, 0px); }
 
@@ -102,7 +63,6 @@
   text-overflow: clip;
 }
 
-/* A figure too wide for its column fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 .ds-stat__figure[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }
@@ -160,7 +120,6 @@
   gap: 0;
   border-radius: var(--ds-stats-radius);
 }
-/* The frame is drawn over the stats, as a framed table's is over its cells. */
 .ds-stats[data-frame]::after {
   position: absolute;
   inset: 0;

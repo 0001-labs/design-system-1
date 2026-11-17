@@ -48,7 +48,6 @@ describe('editing a site in the editor', () => {
     expect(siteOrigins({ url: 'https://cphraft.dk/', address: 'coral.c9y.site', domain: 'cphraft.dk' })).toEqual(['https://cphraft.dk', 'https://coral.c9y.site']);
     expect(siteOrigins({ url: 'https://coral.c9y.site/', address: 'coral.c9y.site' })).toEqual(['https://coral.c9y.site']);
     expect(siteOrigins({ url: 'not an address', address: 'coral.c9y.site' })).toEqual(['https://coral.c9y.site']);
-    // The platform writes the framed page's links on the site's first platform host; a connected domain is `url`.
     const connected = siteOrigins({ url: 'https://cphraft.dk/', address: 'coral.c9y.site', domain: 'cphraft.dk' });
     expect(sitePagePath('https://coral.c9y.site/en/blueraft/', connected, paths)).toBe('/en/blueraft/');
     expect(sitePagePath('https://cphraft.dk/en/', connected, paths)).toBe('/en/');

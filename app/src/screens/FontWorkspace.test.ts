@@ -9,10 +9,8 @@ vi.mock('./SignIn', () => ({}));
 import './FontWorkspace';
 let host: HTMLDivElement;
 const settle = async () => { for (let tick = 0; tick < 4; tick++) await new Promise(resolve => setTimeout(resolve, 5)); };
-/** Waits for the elements' updates after a change made outside them. */
 const act = async (run: () => unknown) => { await run(); await settle(); };
 const render = async () => { host.append(document.createElement('ds1-font-workspace')); await settle(); };
-/** Wait for something that loads on its own time, such as a lazily loaded module. */
 const until = async (ready: () => boolean) => { for (let tries = 0; tries < 200 && !ready(); tries += 1) await settle(); };
 beforeEach(() => {
   vi.stubGlobal('FontFace', class { family: string; constructor(family: string) { this.family = family; } async load() { return this; } });
@@ -43,7 +41,6 @@ describe('font workspace', () => {
     const specimen = host.querySelector('textarea')!;
     expect(specimen).not.toBeNull();
     const words = specimen.value;
-    // Size is Design system 1's cycle: its face is a shared button inside the cycle's shadow root.
     const cycle = host.querySelector<HTMLElement & { updateComplete: Promise<unknown> }>('ds-cycle[data-setting="size"]')!;
     await cycle.updateComplete;
     const face = cycle.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<unknown> }>('ds-button')!;

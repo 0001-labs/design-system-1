@@ -1,9 +1,3 @@
-/*
- * The badge and favicon builder, drawn on Design system 1's square: every
- * control is a shared face (button, tabs, checkbox, select, colour, input,
- * file picker, swatch), every size a whole or half square, every colour a
- * token. Only the drawing grid and its previews are the builder's own.
- */
 .icon-builder {
   --u: var(--ds-unit);
   --ds-app-paper: var(--ds-paper);
@@ -16,17 +10,14 @@
 .icon-tool :is(h2, p, fieldset, legend) { margin: 0; }
 .icon-tool svg { display: block; flex-shrink: 0; }
 
-/* A heading and its count or action on one square. */
 .icon-tool .section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--u); height: var(--u); margin-top: var(--u); }
 .icon-tool .section-heading:first-child { margin-top: 0; }
 
-/* The company's own favicons, words straight on the paper. */
 .company-favicons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--u); }
 .company-favicons > div:first-child { margin-right: auto; }
 .company-favicon { display: flex; align-items: center; gap: calc(var(--u) / 2); }
 .company-favicon img { width: calc(2 * var(--u)); height: calc(2 * var(--u)); border-radius: var(--ds-radius); outline: 1px solid var(--ds-border-color); outline-offset: -1px; }
 
-/* Library, drawing and inspector: 12 squares, the rest, 14 squares. */
 .workspace { display: grid; grid-template-columns: calc(12 * var(--u)) minmax(0, 1fr) calc(14 * var(--u)); gap: calc(2 * var(--u)); }
 .library, .editor, .inspector { min-width: 0; }
 
@@ -37,7 +28,6 @@
 .product-name { overflow: hidden; text-overflow: ellipsis; }
 .product-kind { margin-left: auto; color: var(--ds-text-color-muted); font-size: var(--ds-type-size-small); }
 
-/* Drawings are pictures two squares high. */
 .collection { display: flex; flex-wrap: wrap; margin-bottom: var(--u); }
 .collection .drawing-choice { --ds-button-height: calc(2 * var(--u)); }
 .collection .drawing-choice svg { width: calc(32px * var(--ds-sf)); height: calc(32px * var(--ds-sf)); }
@@ -54,7 +44,6 @@
 .editor-heading > span { white-space: nowrap; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--u); height: var(--u); }
 
-/* The drawing grid: sixteen cells of one square each. */
 .drawing-space { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-block: calc(2 * var(--u)); }
 .ruler { width: calc(16 * var(--u)); max-width: 100%; display: flex; justify-content: space-between; height: var(--u); font-variant-numeric: tabular-nums; }
 .ruler span:last-child { transform: translateX(50%); }
@@ -79,7 +68,6 @@
 .ink-edit ds-input { flex: 1; min-width: 0; }
 .range-label { display: flex; justify-content: space-between; margin-top: calc(var(--u) / 2); }
 .range-label output { color: var(--ds-text-color); font-variant-numeric: tabular-nums; }
-/* A range has no Design system 1 control yet: the native one, in the text's ink. */
 .inspector input[type=range] { display: block; width: 100%; height: var(--u); margin: 0; accent-color: var(--ds-text-color); }
 .pattern-row { display: flex; align-items: center; gap: calc(var(--u) / 2); }
 .pattern-row ds-select { flex: 1; min-width: 0; }
@@ -87,7 +75,6 @@
 .export > ds-button[primary] { --ds-button-width: 100%; margin-bottom: calc(var(--u) / 2); }
 .export-row { display: flex; flex-wrap: wrap; gap: calc(var(--u) / 2); margin-bottom: calc(var(--u) / 2); }
 
-/* Previews at their real sizes, light and dark, and in a browser tab. */
 .previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--u); margin-top: var(--u); }
 .size-card { display: flex; align-items: center; justify-content: center; gap: var(--u); min-height: calc(8 * var(--u)); background: var(--ds-paper); outline: 1px solid var(--ds-border-color); outline-offset: -1px; }
 .size-card > div { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) / 2); font-size: var(--ds-type-size-small); line-height: var(--u); color: var(--ds-text-color-muted); }

@@ -1,8 +1,3 @@
-/** Mobile anchored choices stay centred on their field, four CSS pixels away.
- * Keep panel dimensions on the design's grid; never round away the trigger gap.
- * At an edge shift sideways, flip above when it has more room, then bound the
- * height to the visible viewport (including the keyboard and safe areas).
- */
 export type PanelViewport = { left: number; top: number; width: number; height: number };
 export function anchoredPanel(rect: Pick<DOMRect, "left" | "right" | "top" | "bottom" | "width">, size: { width: number; height: number }, viewport: PanelViewport, margin = 4) {
   const gap = 4;

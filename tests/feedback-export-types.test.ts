@@ -5,13 +5,6 @@ import { dirname, join } from 'node:path';
 import { afterAll, expect, test } from 'vite-plus/test';
 import config from '../sync.exports.mjs';
 
-/*
- * The feedback export's files, written out as Sync 1 copies them, must type-check
- * on their own in a strict project with nothing but the DOM's types, and in the
- * Worker and backend projects products check shared code with: no `?inline` or
- * `?raw` import, no Vite types and no special types.
- */
-
 const root = join(import.meta.dirname, '..');
 const tsc = join(root, 'node_modules/typescript/bin/tsc');
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -21,7 +14,6 @@ const feedback = (config.exports as unknown as Record<string, Exported>).feedbac
 const work = mkdtempSync(join(tmpdir(), 'ds1-feedback-types-'));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
-/** The flags strict products add to `strict`. */
 const strict = {
   strict: true,
   noEmit: true,
@@ -39,11 +31,8 @@ const strict = {
 };
 
 const projects: Record<string, Record<string, unknown>> = {
-  /** A browser project with only the DOM's types. */
   browser: { ...strict, target: 'ES2020', lib: ['ES2020', 'DOM', 'DOM.Iterable'], types: [] },
-  /** A Worker project that also checks the page's code, with the DOM beside the Workers types. */
   worker: { ...strict, target: 'ES2022', lib: ['ES2022', 'DOM', 'DOM.Iterable'], typeRoots: [join(root, 'services/node_modules/@cloudflare')], types: ['workers-types'] },
-  /** A backend project as Convex sets one up, whose shared folder holds the copy. */
   backend: { ...strict, target: 'ESNext', lib: ['ES2021', 'dom'], allowJs: true, typeRoots: [join(root, 'node_modules/@types')], types: ['node'] },
 };
 

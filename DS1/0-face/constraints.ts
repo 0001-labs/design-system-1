@@ -5,40 +5,19 @@ import { inspectTextContrast, measureTextContrast } from "./text-contrast";
 import { inspectWordWrap, wordHeaders } from './word-wrap';
 import { windowRatioFloor } from './window-shape';
 
-// Design system 1's small rules: one list, each rule a sentence a component keeps and a check that
-// measures it on a page as it is drawn. Five presses of C show what a page breaks, in a panel at
-// its side, for the page's owner (constraint-panel.ts). The Constraints page
-// (website/src/content/docs/1-root/constraints.mdx) lists them all under its big rules, each
-// component's page lists its own, and the design-system-1 skill carries them between its
-// constraints markers, written by scripts/write-constraints.ts. tests/constraints.test.ts fails
-// while a rule has no source test, a component no page, or the skill an old list.
-//
-// A new rule: add it here with its `inspect`, make the component keep it, write its source test,
-// then run `vp run constraints:write`.
-
-/** Where a page breaks a rule: the element, and what is wrong with it in a sentence. `review` marks what the
- *  check could not measure (words over a picture, a blend) and asks a person to look, which breaks no rule. */
 export type Finding = { element: Element; message: string; review?: boolean };
 
 export type Constraint = {
-  /** `<component>.<what>`, lower case, never changed once given. */
   code: string;
-  /** The rule, one sentence, said of the thing and not of a product. */
   rule: string;
-  /** Why it holds, when the rule alone does not say. */
   why?: string;
-  /** The elements that keep it, by tag. */
   components: string[];
-  /** The test that measures it in the source: a file in tests/ and the name it is given there. */
   check: { file: string; test: string } | { manual: true; test: string };
-  /** Measures it on a page as drawn, and returns where the page breaks it. */
   inspect: (root: ParentNode) => Finding[];
-  /** What it measures on a page, one and many (`['card', 'cards']`), and how many of them a page has. */
   measures: [one: string, many: string];
   count: (root: ParentNode) => number;
 };
 
-/** The actual initial, including a component nested in another open shadow root. */
 function isAvatarInitial(element: Element): boolean {
   for (let parent: Element | null = element; parent; parent = parent.assignedSlot ?? parent.parentElement ?? (parent.getRootNode() as ShadowRoot).host ?? null) {
     if (parent.matches('ds-avatar, .ds-avatar')) return true;
@@ -46,13 +25,10 @@ function isAvatarInitial(element: Element): boolean {
   return false;
 }
 
-/** A pixel either way is the same place. */
 const near = (a: number, b: number) => Math.abs(a - b) <= 1;
 const px = (n: number) => `${Math.round(n)}px`;
-/** An element's style, from its own window: a page checked in a frame is measured by the frame's. */
 const styleOf = (element: Element) => (element.ownerDocument.defaultView ?? window).getComputedStyle(element);
 
-/** Every window with a computer's chrome as drawn: a `ds-window`, or the frame a `ds-app-chrome` heads. */
 function windows(root: ParentNode) {
   return Array.from(root.querySelectorAll<HTMLElement>('ds-window:not([frameless]), ds-app-chrome:is([kind=macos], [kind=macos-compact], [kind=safari], [kind=chrome], [kind=edge], [kind=figma], [kind=codex], [kind=claude])')).flatMap(element => {
     const frame = element.localName === 'ds-window' ? element : element.parentElement;
@@ -61,7 +37,6 @@ function windows(root: ParentNode) {
   });
 }
 
-/** Every drawn card with its picture: `ds-card` and its slotted picture, or `.ds-card` and its media's. */
 function cards(root: ParentNode) {
   return Array.from(root.querySelectorAll<HTMLElement>('ds-card, .ds-card')).flatMap(card => {
     const slotted = card.localName === 'ds-card'
@@ -76,7 +51,6 @@ function cards(root: ParentNode) {
   });
 }
 
-/** The element's parent as drawn: the slot it is given to, the host of the shadow root it is in, or its parent. */
 function drawnParent(element: Element): Element | null {
   if (element.assignedSlot) return element.assignedSlot;
   const parent = element.parentNode;
@@ -84,8 +58,6 @@ function drawnParent(element: Element): Element | null {
   return element.parentElement;
 }
 
-/** Whether something the element stands in cuts it off or scrolls it, so it cannot widen the page: a slide in
- *  a carousel's track stands in the track, whichever side of a shadow root the two are on. */
 function contained(element: Element) {
   for (let box = drawnParent(element); box && box !== element.ownerDocument.documentElement; box = drawnParent(box)) {
     const style = styleOf(box);
@@ -94,7 +66,6 @@ function contained(element: Element) {
   return false;
 }
 
-/** Every piece of the page that is drawn: it has a size. */
 function drawn(root: ParentNode) {
   return Array.from(root.querySelectorAll('body *')).filter(element => {
     const box = element.getBoundingClientRect();
@@ -102,16 +73,13 @@ function drawn(root: ParentNode) {
   });
 }
 
-/** Sideways scrolling by design: a carousel's track, a table, a block of code and a matrix scroll in their own frame. */
 const SIDEWAYS_BY_DESIGN = '.ds-carousel__track, .ds-carousel, ds-carousel, .ds-table-scroll, .ds-table, ds-table, table, pre, ds-matrix, .ds-matrix';
 
-/** Every box on the page that scrolls sideways: its overflow lets it, and it holds more than its width. */
 function sidewaysScrollers(root: ParentNode) {
   return Array.from(root.querySelectorAll<HTMLElement>('body *')).filter(element =>
     element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1 && /auto|scroll/.test(styleOf(element).overflowX));
 }
 
-/** Cards side by side: one parent, one top and one height. */
 function rows(found: ReturnType<typeof cards>) {
   const groups: (typeof found)[] = [];
   for (const entry of found) {
@@ -122,7 +90,6 @@ function rows(found: ReturnType<typeof cards>) {
   return groups.filter(row => row.length > 1);
 }
 
-/** Text inside native, component and composed tables, including open component shadows. */
 function tableType(root: ParentNode) {
   return Array.from(root.querySelectorAll<HTMLElement>('table, [role="table"], [data-ds-table]')).flatMap(table => {
     const expected = parseFloat(styleOf(table).fontSize);
@@ -199,7 +166,6 @@ export const constraints: Constraint[] = [
       if (!select || !arrow) return [];
       const field = select.getBoundingClientRect(), mark = arrow.getBoundingClientRect();
       if (!field.width || !mark.width) return [];
-      // The words end where the field's padding begins; the arrow must start at or after it.
       const wordsEnd = field.right - (Number.parseFloat(styleOf(select).paddingRight) || 0);
       return mark.left < wordsEnd - 0.5
         ? [{ element, message: `The arrow starts ${px(wordsEnd - mark.left)} inside the chosen words; keep it in the field's own room.` }]
@@ -322,7 +288,6 @@ export const constraints: Constraint[] = [
       for (const element of drawn(root)) {
         const reach = past(element);
         if (reach <= 1 || styleOf(element).position === 'fixed' || contained(element)) continue;
-        // Only the outermost: the element whose own box first passes the edge.
         if (element.parentElement && past(element.parentElement) > 1) continue;
         const box = element.getBoundingClientRect();
         const side = box.right - width >= -box.left ? 'right' : 'left';
@@ -366,23 +331,19 @@ export const constraints: Constraint[] = [
   },
 ];
 
-/** Every rule a page breaks, in the list's order. */
 export function inspectConstraints(root: ParentNode = document): (Finding & { constraint: Constraint })[] {
   return constraints.flatMap(constraint => constraint.inspect(root).map(finding => ({ ...finding, constraint })));
 }
 
-/** Every rule with how many things it measured on the page and where the page breaks it, in the list's order. */
 export function measureConstraints(root: ParentNode = document): { constraint: Constraint; measured: number; findings: Finding[] }[] {
   return constraints.map(constraint => ({ constraint, measured: constraint.count(root), findings: constraint.inspect(root) }));
 }
 
-/** The component's name as its page is called: `ds-card` is Card. */
 export const componentName = (tag: string) => {
   const name = tag.replace(/^ds-/, '').replace(/-/g, ' ');
   return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
-/** The rules grouped by the first component that keeps them, in the list's order. */
 export function byComponent(list: Constraint[] = constraints): [string, Constraint[]][] {
   const groups = new Map<string, Constraint[]>();
   for (const constraint of list) {
@@ -395,7 +356,6 @@ export function byComponent(list: Constraint[] = constraints): [string, Constrai
 export const skillStart = '<!-- constraints:start (written by scripts/write-constraints.ts from DS1/0-face/constraints.ts) -->';
 export const skillEnd = '<!-- constraints:end -->';
 
-/** The skill's list: a line a rule, under its component, between the markers. */
 export function skillBlock(list: Constraint[] = constraints): string {
   const lines = [skillStart];
   for (const [tag, rules] of byComponent(list)) {

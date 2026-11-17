@@ -1,9 +1,3 @@
-/**
- * Every documentation page written and open in Aa, counted on the built pages (`website/dist/docs-pages`):
- * - written: a description, enough words of its own, nothing left to do, and a page for every public component;
- * - Aa: the page opens in Aa, saves back to exactly its source, and nothing in it needs the build to be read.
- * Run after the documentation's build; `docs:build` fails on any page that falls short.
- */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { docRefusal, fromEditable, renderDoc, toEditable, type DocPage } from '../shared/doc-pages';
@@ -14,9 +8,7 @@ const walk = (directory: string): string[] => readdirSync(directory).flatMap(nam
   const path = join(directory, name);
   return statSync(path).isDirectory() ? walk(path) : [path];
 });
-/** Pages whose work is the app or address they stand in for, so a sentence is all they need. */
 const SHELLS = new Set(['/account/', '/libraries/design-system-1/', '/libraries/playground/', '/libraries/workspace/', '/2-core/notice/', '/2-core/toast/']);
-/** Components documented together on another page. */
 const COVERED: Record<string, string> = { window: '/visual-kit/', 'device-bezel': '/visual-kit/', 'app-chrome': '/visual-kit/' };
 const MIN_WORDS = 60;
 

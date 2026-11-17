@@ -8,7 +8,6 @@ import './insertions.css';
 const entry = (id: string) => PAGE_INSERTIONS.find(item => item.id === id)!;
 const iconNames = new Set([...Object.keys(icons), ...deferredIconNames]);
 
-/** Aliases complement Aa's existing Table and Tabs commands without replacing either. */
 export const pageCommands: Command[] = ['list', 'link'].map(id => ({
   id: `insert-page-${id}`, label: entry(id).label, icon: entry(id).icon,
   run(editor) {
@@ -20,7 +19,6 @@ export const pageCommands: Command[] = ['list', 'link'].map(id => ({
   },
 }));
 
-/** Only the empty image needs an adapter; uploading replaces it with Aa's normal image Markdown. */
 export function pageAtoms(canWrite: () => boolean, media?: EditorMedia): Atom[] {
   return [{
     name: 'page-image', fence: 'c9y-image', match: () => 0, insert: entry('image'),

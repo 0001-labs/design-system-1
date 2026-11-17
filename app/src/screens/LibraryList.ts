@@ -13,7 +13,6 @@ import { follow, href, navigate } from "../router";
 import "./LibraryPreview";
 import "./library-cards.css";
 
-/** Human labels for the states convex/lib/libraryState.ts derives. */
 const STATE_LABEL: Record<string, string> = {
   draft: "Draft",
   published: "Published",
@@ -23,7 +22,6 @@ const STATE_LABEL: Record<string, string> = {
   archived: "Archived",
 };
 
-/** The signed-in account's libraries, after Design system 1's own. */
 export class LibraryList extends AppElement {
   static properties = { busy: { state: true }, error: { state: true } };
   declare busy: boolean;

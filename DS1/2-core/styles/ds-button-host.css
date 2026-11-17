@@ -1,7 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* ds-button.css */
-
 :host([control="host"]),
 :host([control="slotted"]) ::slotted(:is(button, a)) {
   box-sizing: border-box !important;
@@ -12,8 +10,6 @@
   min-width: 0 !important;
   max-width: 100% !important;
   height: var(--ds-button-height, var(--_button-height, var(--ds-control-height))) !important;
-  /* Important, so a page's `* { padding: 0 }` reset cannot reach it: the
-     padding is set through --ds-button-padding. */
   padding: var(--ds-button-padding, 0) !important;
   border-radius: var(--_button-radius, var(--ds-radius)) !important;
   corner-shape: var(--ds-corner-shape, round) !important;
@@ -39,7 +35,6 @@
 }
 
 :host([fit][control="slotted"]) ::slotted(:is(button, a)) {
-  /* The host hugs on the grid; its visible face must occupy that same box. */
   width: 100% !important;
   min-width: var(--ds-button-min-width, 0px) !important;
   justify-content: var(--ds-button-align, flex-start) !important;
@@ -68,7 +63,6 @@
   --ds-button-background: var(--ds-fill);
 }
 
-/* A tab: muted until it is hovered or current. */
 :host([control="host"][role="tab"]),
 :host([control="host"][choice]),
 :host([control="slotted"][choice]) {
@@ -119,7 +113,6 @@
   --ds-button-color: var(--ds-text-color);
 }
 
-/* A choice in a ds-menu: a full-width row, filled under the pointer or focus. */
 :host([control="host"][role="option"]),
 :host([control="host"][role="menuitem"]),
 :host([control="host"][role="menuitemradio"]),
@@ -158,8 +151,6 @@
   pointer-events: none !important;
 }
 
-/* The light-DOM button keeps native forms, submitters and fieldset semantics.
-   DS1 owns its face; product layout belongs on the host. */
 :host([control="slotted"]) ::slotted(:is(button, a)) {
   appearance: none !important;
   box-sizing: border-box !important;
@@ -180,18 +171,12 @@
 }
 
 :host([control="slotted"]) {
-  /* The native focus ring extends beyond the face; only its text is clipped. */
   overflow: visible;
-  /* The face is one control high, as the host and native faces are. Its box
-     stays one square, as before, with the face at its foot, so the words take
-     the lower sixteen of the square in a row or at the foot of a line and no
-     row around it changes height. */
   align-items: flex-end;
   min-height: var(--ds-row-height);
   vertical-align: bottom;
   width: var(--ds-button-width, var(--_button-inline-size, max-content));
 }
-/* An icon's square: the face takes its first sixteen, the spare four above. */
 :host([control="slotted"][icon]) {
   justify-content: flex-start !important;
   width: max(var(--ds-row-height), var(--ds-button-height, var(--ds-control-height))) !important;
@@ -217,7 +202,6 @@
 
 :host([hidden]) { display: none !important; }
 
-/* Native actions in menus, including grouped and nested choices. */
 :host([menu-item]) {
   flex: 0 0 auto;
   width: 100%;
@@ -225,7 +209,6 @@
   --ds-button-align: flex-start;
   --ds-button-padding: 0 calc(4px * var(--ds-sf));
 }
-/* A row-high entry's words and icon stand on the lower sixteen, the spare four above. */
 :host([menu-item][control="host"]),
 :host([menu-item][control="slotted"]) ::slotted(:is(button, a)) {
   align-items: flex-end !important;
@@ -237,8 +220,6 @@
   box-shadow: inset 0 0 0 1px var(--ds-focus-ring) !important;
 }
 
-/* A paper tab (`ds-tabs paper`): a row high with its words on the sixteen,
-   rounded at the top only and square at the foot, where it joins the page. */
 :host([control="host"][paper]),
 :host([control="slotted"][paper]) ::slotted(:is(button, a)) {
   align-items: flex-end !important;
@@ -248,7 +229,6 @@
   border-end-end-radius: 0 !important;
 }
 
-/* A tab in a joined run (`ds-tabs split`): square inside, rounded at the run's ends. */
 :host([control="host"][segment]) {
   border-radius: 0 !important;
 }
@@ -261,12 +241,10 @@
   border-end-end-radius: var(--ds-radius) !important;
 }
 
-/* Tabs hug their words with the run's padding, unrounded, as on the shadow face. */
 :host([control="host"]:not([icon]):not([split]):not([menu-item]):not([segment]):not([paper]):not([role="tab"])) {
   min-width: var(--ds-button-min-width, max-content) !important;
   min-width: var(--ds-button-min-width, calc-size(max-content, round(up, size, var(--ds-unit)))) !important;
 }
-/* The rounding's spare room on both sides of the words, as on the shadow face. */
 :host([control="host"]:not([icon]):not([split]):not([menu-item]):not([role="option"]):not([role^="menuitem"])) {
   justify-content: var(--ds-button-align, center) !important;
 }

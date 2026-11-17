@@ -1,10 +1,6 @@
-/* version 0.3.2 */
-
 @import "./grid.css";
 @import "./component-tokens.css";
 @import "./text.css";
-/* The faces and typeface tokens (fonts.css), and the named palette colours as
-   --one-* tokens (palette.css, written from palette.ts). */
 @import "./fonts.css";
 @import "./palette.css";
 
@@ -13,12 +9,7 @@ input {
 }
 
 :root {
-  /* Design system 1 colors */
-
-  /* Default scale for CSS-only usage. The device helper can override this. */
   --sf: 1;
-
-  /* Base/[color]  */
 
   --white: rgb(255 255 255);
   --light-grey: #e8e8e8;
@@ -31,7 +22,6 @@ input {
   --stealth: #554455;
   --black: #2a2a2a;
 
-  /* Accent/[color]  */
   --tuned-red: #ff5f5f;
   --pink: #f5aad1;
   --sharp-blue: #594dff;
@@ -44,16 +34,9 @@ input {
 
   --accent-color: var(--apple-green);
 
-  /* 4-page component colors */
-
-  /* ds-grid color */
   --grid-color: light-dark(var(--grid-color-light), var(--grid-color-dark));
   --grid-color-light: #1e1e1e2b;
   --grid-color-dark: var(--white);
-
-  /* typefaces: fonts.css */
-
-  /* typefaces sizes and weight */
 
   --type-size-default: calc(14px * var(--sf));
   --type-size-small: calc(10px * var(--sf));
@@ -72,34 +55,21 @@ input {
   --type-weight-book: 400;
   --type-lineheight-book: 15px;
 
-  /* ----------------------------------------------------------
-   SIZING SCALE
-   - Define a base unit ( --1 ) and derive all other sizes
-   - Larger sizes are simple multipliers (×2, ×3, ×4)
-   - Smaller sizes use fractional multipliers (0.1, 0.25, 0.8)
-   ---------------------------------------------------------- */
-
-  /* Layouts */
-
-  /* Home layout (used for lists) */
   --home-layout: calc(var(--unit) * var(--sf)) calc(var(--unit) * var(--sf))
     calc(var(--unit) * var(--sf)) calc(var(--unit) * var(--sf))
     calc(var(--oct) * var(--sf));
   --home-layout-areas: "banner" "." "header" "." "lists";
 
-  /* App layout */
   --app-layout: calc(var(--unit) * var(--sf)) calc(var(--unit) * var(--sf))
     calc(var(--unit) * var(--sf)) calc(var(--double) * var(--sf))
     calc(var(--dozen) * var(--sf)) calc(var(--unit) * var(--sf))
     calc(var(--quad) * var(--sf)) calc(var(--double) * var(--sf));
   --app-layout-areas: "banner" "." "header" "." "main" "page-dots" "." "footer";
 
-  /* Settings layout */
   --settings-layout: calc(var(--unit) * var(--sf)) calc(var(--unit) * var(--sf))
     1fr;
   --settings-layout-areas: "banner" "." "settings";
 
-  /* size */
   --outline-stroke: 1px solid var(--slate-light);
   --outline-stroke-mobile: 2px solid var(--sharp-blue);
   --item-width: calc(79px * var(--sf));
@@ -111,15 +81,9 @@ input {
   --column-header-height: calc(var(--unit) * var(--sf));
   --column-header-width: calc(var(--quad) * var(--sf));
 
-  /* ----------------------------------------------------------
-   SURFACE COLORS
-   - 
-   ---------------------------------------------------------- */
-
   --background: light-dark(var(--white), var(--black));
   --dialog-background: var(--background);
 
-  /* button */
   --button-background-color-primary: var(--accent-color);
   --button-background-color-secondary: light-dark(var(--slate-light), var(--slate-dark));
   --button-text-color: light-dark(var(--black), var(--white));
@@ -129,11 +93,9 @@ input {
     var(--slate-light)
   );
 
-  /* text-color */
   --text-color: light-dark(var(--black), var(--white));
   --text-color-dimmed: light-dark(var(--slate), var(--slate-light));
 
-  /* icon colors */
   --icon-background: light-dark(var(--slate-light), var(--slate-dark));
   --icon-color: light-dark(var(--black), var(--white));
 
@@ -172,12 +134,6 @@ body {
   margin: 0;
   padding: 0;
 }
-
-/* ----------------------------------------------------------
-   CSS-ONLY COMPONENTS
-   Native HTML classes that do not require the JavaScript bundle.
-   The text classes (.ds-text, its sizes and tones) are text.css.
-   ---------------------------------------------------------- */
 
 .ds-button {
   appearance: none;
@@ -246,7 +202,6 @@ body {
 }
 
 .ds-input::placeholder {
-  /* one.css is copied on its own, without component-tokens.css: the fallback is that file's muted ink. */
   color: var(--ds-input-placeholder-color, var(--ds-text-color-muted, light-dark(#5f5f5f, #cacaca)));
 }
 
@@ -305,14 +260,11 @@ body {
 
 .matrix__row-header {
   position: relative;
-  /* top: calc(0.5px * var(--sf)); */
   display: flex;
   align-items: center;
   justify-content: center;
   width: calc(var(--unit) * var(--sf));
   height: calc(var(--unit) * var(--sf));
-  /* margin-right: var(--margin-correction);
-  margin-bottom: var(--margin-correction); */
   background-color: light-dark(rgb(220 241 213), var(--slate-dark));
 }
 
@@ -509,7 +461,6 @@ body {
   white-space: nowrap;
 }
 
-/* Cut words fade over the last square, never an ellipsis (0-face/cut-fade.ts marks them). */
 .item-text[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }

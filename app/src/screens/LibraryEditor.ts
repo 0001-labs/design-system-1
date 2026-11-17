@@ -32,7 +32,6 @@ const SAVE_LABEL: Record<SaveState, string> = {
   error: "Could not save",
 };
 
-/** A saved library in the workbench, autosaved as it changes. */
 export class LibraryEditor extends AppElement {
   static properties = {
     libraryId: { type: String, attribute: "library-id" },
@@ -53,12 +52,7 @@ export class LibraryEditor extends AppElement {
 
   #library = new LiveQuery(this, api.libraries.get, () => ({ id: this.libraryId as Id<"libraries"> }));
 
-  // The CSS currently in the editor, which may be newer than what the server
-  // has returned. The publish panel validates against this so its issue list
-  // matches what the user is looking at.
   #liveCss: string | null = null;
-  // Latest editor state, kept outside rendering so the debounce timer never
-  // re-arms on every keystroke and the flush handlers always see current values.
   #pending: { css: string; config: string } | null = null;
   #baseRev: number | null = null;
   #lastSavedCss: string | null = null;
@@ -101,7 +95,6 @@ export class LibraryEditor extends AppElement {
     if (this.#pending) void this.#flush();
   };
 
-  // Seed the revision the first time the library arrives.
   override willUpdate() {
     const library = this.#library.value;
     if (library && this.#baseRev === null) {
@@ -115,8 +108,6 @@ export class LibraryEditor extends AppElement {
     const rev = this.#baseRev;
     if (!draft || rev === null) return;
 
-    // The drag handles emit many byte-identical states; skipping them is what
-    // keeps autosave off the mutation-rate ceiling, not a micro-optimization.
     if (draft.css === this.#lastSavedCss) {
       this.#pending = null;
       if (this.#mounted) this.saveState = "saved";
@@ -141,8 +132,6 @@ export class LibraryEditor extends AppElement {
         if (this.#mounted) this.saveState = "conflict";
         return;
       }
-      // Anything else — offline, a deploy blip — keeps the work on the device
-      // and retries. Never drop the user's edits on the floor.
       stashLocalDraft(this.libraryId, { ...draft, baseRev: rev, savedAt: Date.now() });
       this.#attempt += 1;
       if (this.#mounted) this.saveState = navigator.onLine ? "error" : "offline";
@@ -161,7 +150,6 @@ export class LibraryEditor extends AppElement {
     if (this.saveState !== "conflict") this.saveState = "dirty";
     if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
     this.#debounceTimer = setTimeout(() => void this.#flush(), AUTOSAVE_DEBOUNCE_MS);
-    // Checkpoint even if the user never pauses.
     if (!this.#maxWaitTimer) {
       this.#maxWaitTimer = setTimeout(() => {
         this.#maxWaitTimer = null;
@@ -228,7 +216,6 @@ export class LibraryEditor extends AppElement {
       ${this.saveState === "conflict" ? notice("Your changes are safe on this device.", {
         tone: "warning", role: "alert", testid: "conflict-bar",
         heading: `This library was edited somewhere else${this.serverRev === null ? "" : ` (revision ${this.serverRev})`}`,
-        // Never auto-merge CSS text — the user decides.
         actions: html`${button("Keep mine", () => {
           if (this.serverRev !== null) this.#baseRev = this.serverRev;
           this.saveState = "dirty";
@@ -253,7 +240,6 @@ export class LibraryEditor extends AppElement {
         ${button("Back to your libraries", () => navigate("/libraries"))}
       </main>`;
     }
-    // Keyed on the library, so the workbench seeds again from initialCss when another opens.
     return keyed(this.libraryId, html`<ds1-system-workbench
       .initialCss=${library.draftCss}
       .initialConfig=${parseConfig(library.draftConfig, library.publicId)}
@@ -263,11 +249,6 @@ export class LibraryEditor extends AppElement {
 }
 defineElement("ds1-library-editor", LibraryEditor);
 
-/**
- * `draftConfig` is advisory. If it is unparseable or from a future schema, the
- * editor still opens. Preserve any readable advisory configuration; token
- * controls derive their values from the stylesheet.
- */
 function parseConfig(raw: string, label: string): WorkbenchConfig | undefined {
   try {
     const parsed = JSON.parse(raw) as Partial<WorkbenchConfig>;

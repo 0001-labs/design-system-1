@@ -1,13 +1,3 @@
-/**
- * The badges on the icon page of the ds1 Figma file (node 403:4011), drawn
- * again as gridded icons: the builder's starting points, and the proof that
- * its grammar holds the Figma's shapes.
- *
- * Colours are the ones the Figma paints. Where it laid a tint over a colour,
- * the tint is an ink with alpha, or the two are mixed into the colour the
- * canvas shows. Frames the Figma turns a quarter or a half are drawn upright
- * here and turned the same way.
- */
 import {
   CLEAR,
   ICON_UNITS,
@@ -20,10 +10,8 @@ import {
 } from './gridIcon'
 
 export interface FigmaIcon {
-  /** What an item or a list stores to wear this icon; never renamed once used. */
   key: string
   name: string
-  /** The node on the Figma page this one is drawn from. */
   node: string
   icon: GridIcon
 }
@@ -44,7 +32,6 @@ function icon(inks: string[], ground: number[], shards: IconShard[] = [], mask: 
   return drawn
 }
 
-/** The two fans share one cut: eight shards, turned a half. */
 const FAN_SHARDS = [
   shard(0, [8, 16], [16, 16], [16, 8]),
   shard(1, [8, 16], [16, 8], [16, 0]),
@@ -56,10 +43,6 @@ const FAN_SHARDS = [
   shard(0, [8, 16], [8, 0], [4, 8]),
 ]
 
-/**
- * Orange, and two yellows taking turns in the gaps between: the Figma's
- * checker is three inks, not two.
- */
 function yellowChecker(x: number, y: number): number {
   const column = Math.floor(x / 2)
   const row = Math.floor(y / 2)
@@ -101,7 +84,6 @@ export const FIGMA_ICONS: FigmaIcon[] = [
       shard(1, [8, 0], [8, 16], [12, 8]),
     ], 'square', 1),
   },
-  // A grey and a red, each under a fifth of a tint, mixed as the canvas shows them.
   { key: 'split-circle', name: 'Split circle', node: '403:4091', icon: icon(['#e1aeae', '#d73300'], fill(0), [shard(1, [16, 0], [16, 16], [0, 16])], 'circle') },
   {
     key: 'round-fan',
@@ -125,7 +107,6 @@ export const FIGMA_ICONS: FigmaIcon[] = [
   },
 ]
 
-/** The icon a stored key names, or undefined for a key no icon answers to. */
 export function figmaIcon(key: string | null | undefined): FigmaIcon | undefined {
   return key ? FIGMA_ICONS.find(icon => icon.key === key) : undefined
 }

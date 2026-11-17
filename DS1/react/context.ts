@@ -1,4 +1,3 @@
-/** Context in React: the menu that opens where the pointer is, on the shared `ds-context`. React state and native events; no positioning or gesture code. */
 import {
   Children, cloneElement, createContext, createElement as h, forwardRef,
   useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState,
@@ -59,8 +58,6 @@ export const ContextTrigger = forwardRef<HTMLElement, ContextTriggerProps>(funct
   }, [ref, childRef, state.setTrigger, disabled]);
   const attributes = { ...props, ref: bind, "data-state": state.open ? "open" : "closed", "data-slot": "context-trigger" };
   if (child) {
-    // The child keeps its product handlers. A supplied trigger handler runs
-    // afterwards, unless the child deliberately consumed the event.
     const merged: Record<string, unknown> = { ...child.props, ...attributes };
     for (const [key, value] of Object.entries(props)) {
       const first = (child.props as Record<string, unknown>)[key];
@@ -74,9 +71,7 @@ export const ContextTrigger = forwardRef<HTMLElement, ContextTriggerProps>(funct
 });
 
 export type ContextContentProps = Omit<MenuProps, "open" | "trigger" | "anchor" | "triggerMode" | "onOpenChange"> & {
-  /** The context bar over what is selected: the rows side by side, standing over `anchor`, the focus left where it is. */
   bar?: boolean;
-  /** Where a bar stands: the selection's rectangle, or an element. */
   anchor?: MenuAnchor | null;
 };
 export const ContextContent = forwardRef<MenuElement, ContextContentProps>(function ContextContent(
@@ -84,8 +79,6 @@ export const ContextContent = forwardRef<MenuElement, ContextContentProps>(funct
 ) {
   const state = useMenu();
   useCommitEffect(() => { state.menu.current?.renderNow(); });
-  // Render the closed host so the source can continue listening to its trigger.
-  // Open descendants unmount together, including nested menu state.
   return h(MenuHost, { ...props, bar, tag: state.nested ? "ds-select" : "ds-context", id: props.id ?? state.id, role: "menu", hidden: !state.open,
     "data-slot": state.nested ? "context-sub-content" : "context-content",
     open: state.open, trigger: state.trigger, anchor: bar ? anchor ?? null : state.trigger,

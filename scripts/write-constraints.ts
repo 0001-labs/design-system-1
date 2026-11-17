@@ -1,5 +1,3 @@
-// Writes the constraints in DS1/0-face/constraints.ts into the design-system-1 skill, between its
-// constraints markers, so the agents that read the skill keep the same rules the site shows.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { skillBlock, skillEnd, skillStart } from '../DS1/0-face/constraints';

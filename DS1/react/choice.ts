@@ -1,4 +1,3 @@
-/** Native controls retain labels, forms and events. Shared Lit elements own their faces. Select is in `react/select`. */
 import { createElement, forwardRef, useCallback, type ButtonHTMLAttributes, type InputHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 
 export type ColorInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type">;

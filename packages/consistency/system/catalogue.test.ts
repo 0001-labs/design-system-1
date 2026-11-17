@@ -5,11 +5,9 @@ import { BLOCKS } from '../src/c9y-constraints';
 import { C9Y_SYSTEM } from './catalogue';
 import { REPOSITORIES } from './model';
 
-// The package folder, whether the run starts at the repository root or in the package.
 const packageDir = existsSync(resolve('packages/consistency/src')) ? resolve('packages/consistency') : resolve('.');
 const read = (path: string) => readFileSync(join(packageDir, path), 'utf8');
 
-/** PLACES ids, read from the registry's text: importing it pulls in Lit elements a node run cannot define. */
 function placeIds(): string[] {
   const registry = read('src/places/index.ts');
   const own = [...registry.matchAll(/PLACES\.set\('([a-z-]+)'/g)].map(match => match[1]);
@@ -23,7 +21,6 @@ const { components, sites, relations } = C9Y_SYSTEM;
 const componentIds = new Set(components.map(component => component.id));
 const siteIds = new Set(sites.map(site => site.id));
 
-/** `<Repository label>: <path>` to an absolute path, or null for an unknown label. */
 function onDisk(reference: string): string | null {
   const at = reference.indexOf(': ');
   if (at < 0) return null;

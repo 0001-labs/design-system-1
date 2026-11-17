@@ -14,7 +14,6 @@ export async function systemSite(request: Request, env: Env, send: typeof fetch 
   if (path === '/api/reports/components') return componentReport(sessionRequest(request), env, send);
   if (path === '/api/reports/architecture') return architectureReport(sessionRequest(request), env, send);
   if (path === '/app/signin') return dashboard(request, env, send);
-  // Only the existing public sign-in bundle and its public fonts/icon bypass the owner gate.
   if (request.method === 'GET' || request.method === 'HEAD') {
     if (url.pathname.startsWith('/app/assets/') || url.pathname === '/icons/design-system-1.svg') return env.ASSETS.fetch(request);
   }

@@ -5,7 +5,6 @@ export function labelledButtons(root: ParentNode): HTMLElement[] {
  return result.filter(button => button.getBoundingClientRect().width && (button.textContent?.trim() || button.getAttribute('text')));
 }
 
-/** Inspect actual labels, including a component's shadow face and slotted words. */
 export function inspectButtonLabels(root: ParentNode): Finding[] {
  const findings: Finding[] = [];
  for (const button of labelledButtons(root)) {

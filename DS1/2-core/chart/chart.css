@@ -146,7 +146,6 @@
   box-shadow: inset 0 -1px 0 var(--ds-chart-line);
 }
 
-/* A scale's lines across the bars, one a square, under them. */
 .bar-guides {
   position: absolute;
   inset-inline: 0;
@@ -186,7 +185,6 @@
   box-shadow: inset 0 0 0 1px var(--ds-chart-ink);
 }
 
-/* A bar's value just over it, in the small type, centred on the bar and free to run past it. */
 .bar-value {
   position: absolute;
   left: 0;
@@ -200,7 +198,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The scale at the end: two squares, each label just above its line, as the line chart's. */
 .bar-axis {
   position: relative;
   flex: none;

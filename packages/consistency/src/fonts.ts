@@ -1,7 +1,3 @@
-/** A page's Google Fonts: the choice the earlier site builder offered (its twenty curated families and their
- * fallback stacks, the same list its landing's libraries wear), loaded as it loaded them, from Google's css2
- * address with display=swap. A page may set a heading face and a text face over its library's; unset, the
- * library's own faces stay. Faces travel as DS1's typeface roles, so every component follows them. */
 import { correctedGoogleFonts } from '../../../DS1/0-face/face-correction';
 import FACE_METRICS from '../../../DS1/0-face/google-face-metrics.json';
 
@@ -34,19 +30,16 @@ export const GOOGLE_FONTS = {
 export type GoogleFont = keyof typeof GOOGLE_FONTS;
 export const GOOGLE_FONT_FAMILIES = Object.keys(GOOGLE_FONTS) as GoogleFont[];
 
-/** The page's faces; an absent one leaves the library's. */
 export interface PageFonts { heading?: GoogleFont; text?: GoogleFont }
 
 export const isGoogleFont = (value: unknown): value is GoogleFont => typeof value === 'string' && Object.hasOwn(GOOGLE_FONTS, value);
 
-/** Only known families survive, so a saved document can never name a stylesheet of its own. */
 export function readPageFonts(value: unknown): PageFonts {
   if (!value || typeof value !== 'object') return {};
   const { heading, text } = value as Record<string, unknown>;
   return { ...(isGoogleFont(heading) ? { heading } : {}), ...(isGoogleFont(text) ? { text } : {}) };
 }
 
-/** The roles the faces set: headings and labels wear the medium face, running text the regular one. */
 export function fontTokens(fonts: PageFonts): Record<string, string> {
   return {
     ...(fonts.heading ? { '--ds-typeface-medium': GOOGLE_FONTS[fonts.heading] } : {}),
@@ -54,8 +47,6 @@ export function fontTokens(fonts: PageFonts): Record<string, string> {
   };
 }
 
-/** One css2 stylesheet for the faces, or none. The heading face comes in 500 and the text face in 400; a
- * family chosen for both comes in both. */
 export function googleFontsHref(fonts: PageFonts): string | undefined {
   const weights = new Map<GoogleFont, Set<number>>();
   const add = (family: GoogleFont | undefined, weight: number) => { if (family) weights.set(family, (weights.get(family) ?? new Set()).add(weight)); };
@@ -65,9 +56,6 @@ export function googleFontsHref(fonts: PageFonts): string | undefined {
   return `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
 }
 
-/** Keeps one stylesheet in the document's head for the faces in use, replacing it when they change. It is Google's
- * css2 answer with each face corrected in its @font-face (DS1's face-correction.ts), so the page's words stand on
- * the sixteen whatever its faces; should Google's answer not be read, the plain stylesheet is linked instead. */
 export function loadPageFonts(fonts: PageFonts, root: Document = document): void {
   const href = googleFontsHref(fonts);
   const current = root.head.querySelector<HTMLElement>('[data-consistency-fonts]');
@@ -90,7 +78,6 @@ export function loadPageFonts(fonts: PageFonts, root: Document = document): void
   });
 }
 
-/** The faces as the sheet carries them for previews outside the composition: `heading|text`. */
 export const encodePageFonts = (fonts: PageFonts) => `${fonts.heading ?? ''}|${fonts.text ?? ''}`;
 export function decodePageFonts(value: string | undefined): PageFonts {
   const [heading, text] = (value ?? '').split('|');

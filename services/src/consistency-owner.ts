@@ -1,17 +1,3 @@
-/**
- * c9y.site's owner through System's One key: the same owner session as every Consistency site editor, so
- * signing in here opens them all, and signing out here ends them all. The protocol is the shared CMS's
- * (`system/parts/site-engine/worker/owner.ts` in the studio):
- *
- * - `GET /auth/start` goes to System's `/auth/authorize` for the `c9y` client with a fresh state and an S256
- *   challenge, kept in a ten-minute pending cookie (SameSite=None: System answers by a cross-site POST).
- *   `?silent=1` asks with `prompt=none`; System's quiet no comes back to `GET /auth/callback`, which then
- *   asks out loud, so the owner meets System's sign-in once.
- * - `POST /auth/callback` is taken from System's origin only, with the state, the pending cookie and the
- *   verifier; the delegated token goes in the host-only `__Host-c9y_owner`.
- * - The token is asked of System on every request through `C9Y_IDENTITY` (`ConsistencyIdentity`); nothing
- *   about the owner is kept here. Signing out revokes the System session behind it.
- */
 export interface OwnerIdentity {
   redeem(code: string, verifier: string): Promise<{ token: string; expiry: number; owner: string } | null>;
   validate(token: string): Promise<{ expiry: number; owner: string } | null>;
@@ -22,10 +8,8 @@ export interface OwnerEnv { C9Y_IDENTITY?: OwnerIdentity }
 export const OWNER_COOKIE = '__Host-c9y_owner';
 export const PENDING_COOKIE = '__Host-c9y_pending';
 const SYSTEM = 'https://system.0001.dev';
-/** The System client each origin signs in as; any other origin has no owner sign-in here. */
 const CLIENTS: Record<string, string> = { 'https://c9y.site': 'c9y', 'https://consistency.site': 'c9y-app', 'https://system.consistency.site': 'c9y-system', 'https://dash.c9y.site': 'c9y-dash' };
 const PENDING_TTL = 600_000;
-/** A same-origin path to return to after signing in (`/auth/start?next=`); anything else returns to `/`. */
 const returnPath = (value: unknown) => typeof value === 'string' && /^\/(?![/\\])[A-Za-z0-9._~/-]{0,200}$/.test(value) && !value.includes('/..') ? value : undefined;
 const headers = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'same-origin' };
 
@@ -46,10 +30,8 @@ function cookieValue(request: Request, name: string): string | null {
   return null;
 }
 
-/** Whether this address has the owner's System sign-in. */
 export const hasOwnerSignIn = (url: URL) => Object.hasOwn(CLIENTS, url.origin);
 
-/** Whether the request's owner token stands, asked of System now. */
 export async function systemOwner(request: Request, env: OwnerEnv, now = Date.now()): Promise<boolean> {
   const token = cookieValue(request, OWNER_COOKIE);
   if (!token || token.length > 100 || !env.C9Y_IDENTITY || !hasOwnerSignIn(new URL(request.url))) return false;
@@ -57,7 +39,6 @@ export async function systemOwner(request: Request, env: OwnerEnv, now = Date.no
   return owner?.owner === 'system-owner' && owner.expiry * 1000 > now;
 }
 
-/** Revokes the System session behind the request's owner token; the cookie that clears it, or null without one. */
 export async function ownerSignOut(request: Request, env: OwnerEnv): Promise<string | null> {
   const token = cookieValue(request, OWNER_COOKIE);
   if (!token) return null;
@@ -70,7 +51,6 @@ export async function ownerSignOut(request: Request, env: OwnerEnv): Promise<str
 
 interface Pending { state: string; verifier: string; until: number; silent: boolean; next?: string }
 
-/** `/auth/start` and `/auth/callback`; null for any other path. */
 export async function ownerRoutes(request: Request, env: OwnerEnv, now = Date.now()): Promise<Response | null> {
   const url = new URL(request.url);
   if (url.pathname !== '/auth/start' && url.pathname !== '/auth/callback') return null;
@@ -87,10 +67,9 @@ export async function ownerRoutes(request: Request, env: OwnerEnv, now = Date.no
   try {
     const value = JSON.parse(decodeURIComponent(cookieValue(request, PENDING_COOKIE) ?? '')) as Pending;
     if (/^[a-f0-9]{64}$/.test(value.state) && /^[a-f0-9]{64}$/.test(value.verifier) && Number.isFinite(value.until) && value.until >= now && value.until <= now + PENDING_TTL) pending = value;
-  } catch { /* No pending sign-in. */ }
+  } catch {}
   const cleared = cookie(PENDING_COOKIE, '', 0, 'None');
   if (request.method === 'GET') {
-    // System's quiet no: ask out loud, once, so the owner signs in to System.
     if (!pending || url.searchParams.get('state') !== pending.state || !url.searchParams.get('error')) return plain('Sign-in expired. Open c9y.site to try again.', 400);
     const next = returnPath(pending.next);
     return redirect(pending.silent ? `/auth/start${next ? `?next=${encodeURIComponent(next)}` : ''}` : '/app/signin', cleared);

@@ -1,4 +1,3 @@
-/** React state binding only. ds-input owns the field and all of its behavior. */
 import {
   createElement,
   forwardRef,
@@ -24,19 +23,12 @@ export type InputProps = Omit<
   variant?: InputElement["variant"];
   revealable?: boolean;
   quietFocus?: boolean;
-  /** The label on the row above the field, as written. */
   label?: string;
-  /** The label as a translation key, shown in the page's language. */
   labelText?: string;
-  /** The placeholder as a translation key; `placeholder` is as written. */
   placeholderKey?: string;
-  /** The error under the field, as written, in the danger colour. */
   error?: string;
-  /** The error as a translation key. */
   errorText?: string;
-  /** Suggestions offered while typing; `list` names a `<datalist>` instead. */
   suggestions?: InputElement["suggestions"];
-  /** A text area: the field across whole rows. */
   multiline?: boolean;
   rows?: number;
   wrap?: "soft" | "hard" | "off";
@@ -44,9 +36,6 @@ export type InputProps = Omit<
   maxRows?: number;
 };
 const useCommitEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
-/** Native listeners cross Lit's shadow boundary without React's input tracker.
- * Keep the familiar React event methods while exposing the shared element.
- */
 function reactEvent(event: Event, field: InputElement) {
   return new Proxy(event, {
     get(native, key) {
@@ -106,11 +95,8 @@ export const Input = forwardRef<InputElement, InputProps>(function Field(
       },
       [forwardedRef],
     );
-    // React does not restore controlled values on custom elements. Reconcile
-    // after every commit, including when an application rejects an edit.
     useCommitEffect(() => {
       if (controlled && field.current) field.current.value = String(value);
-      // form is a read-only ElementInternals getter, not a writable property.
       if (form !== undefined) field.current?.setAttribute("form", form);
       else field.current?.removeAttribute("form");
     });

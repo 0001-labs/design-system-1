@@ -9,7 +9,6 @@ import {
 } from '../website/src/lib/shell';
 
 const header = readFileSync('website/src/components/MyHeader.astro', 'utf8');
-// The bar's pieces, slotted into the app frame: the brand, the breadcrumb and the account.
 const barEnd = header.indexOf('</a>', header.indexOf('id="shell-account"')) + '</a>'.length;
 const markup = header.slice(header.indexOf('<a slot="brand"'), barEnd).replace(/\{[^{}]*\}/g, match => match === '{WORKSPACE_HREF}' ? '"/libraries/workspace/"' : '""');
 
@@ -88,16 +87,13 @@ test('the inline head script is the same decision, and sets the signed-in state 
     return { replaced, signedIn: root.hasAttribute('data-signed-in'), owner: root.hasAttribute('data-ds-owner'), space: root.getAttribute('data-shell-space') };
   };
   const signedIn = { owner: true, company: 'Studio', here: null };
-  // The owner's attribute waits for the server, whatever the snapshot says.
   expect(run(signedIn, { id: 'base' })).toEqual({ replaced: '/libraries/design-system-1/', signedIn: true, owner: false, space: 'documentation' });
   expect(run({ ...signedIn, owner: false }, { id: 'lib1', name: 'Shop' })).toEqual({ replaced: '/libraries/workspace/?library=lib1', signedIn: true, owner: false, space: 'documentation' });
   expect(run(signedIn, { id: 'base' }, { referrer: 'https://designsystem1.com/colours/' }).replaced).toBeNull();
-  // Without a session token a snapshot left behind draws nothing: signed out is already certain.
   expect(run(signedIn, { id: 'base' }, { token: false })).toEqual({ replaced: null, signedIn: false, owner: false, space: 'documentation' });
   expect(run(signedIn, { id: 'base' }, { search: '?q=1' }).replaced).toBeNull();
   expect(run(signedIn, { id: 'base' }, { hash: '#top' }).replaced).toBeNull();
   expect(run(null, { id: 'base' })).toEqual({ replaced: null, signedIn: false, owner: false, space: 'documentation' });
-  // The space is set on the first frame, from the same function the sidebar uses, signed in or not.
   for (const [pathname, search] of [['/libraries/design-system-1/', ''], ['/libraries/workspace/', '?library=lib1'], ['/libraries/workspace/', ''], ['/account/', ''], ['/libraries/workspace/', '?internal=indexeddb']]) {
     expect(run(null, null, { pathname, search }).space).toBe(shellSpace(pathname, search));
     expect(run(signedIn, null, { pathname, search }).space).toBe(shellSpace(pathname, search));
@@ -110,7 +106,6 @@ test('the breadcrumb: workspace, then the design system or Documentation, then t
   const shop = { id: 'lib1', name: 'Shop' };
   expect(shellCrumbs({ ...base, pathname: '/libraries/workspace/', search: '?library=lib1&view=overview', library: shop, page: 'Overview' }))
     .toEqual({ company: 'Studio', space: { label: 'Shop', href: activeLibraryHref(shop) }, page: 'Overview' });
-  // Another library open than the active one: its name comes when the frame says it.
   expect(shellCrumbs({ ...base, pathname: '/libraries/workspace/', search: '?library=lib2', library: shop }).space).toEqual({ label: '', href: null });
   expect(shellCrumbs({ ...base, pathname: '/libraries/workspace/', page: 'Ignored' })).toEqual({ company: 'Studio', space: { label: 'Libraries', href: null }, page: '' });
   expect(shellCrumbs({ ...base, pathname: '/account/' }).space).toEqual({ label: 'Account', href: null });
@@ -165,7 +160,6 @@ test('the snapshot follows the summary: kept signed in, forgotten with the activ
   rememberShell({ owner: true, companyName: 'Acme' }, { at: 'base:', label: 'Button' });
   rememberShell({ owner: true, companyName: 'Acme 2' });
   expect(readShellSnapshot()?.here).toEqual({ at: 'base:', label: 'Button' });
-  // A private document's name is never kept.
   rememberShell({ owner: true, companyName: 'Acme' }, { at: 'internal:indexeddb', label: 'IndexedDB' });
   expect(readShellSnapshot()?.here).toBeNull();
   localStorage.setItem(ACTIVE_LIBRARY_KEY, JSON.stringify({ id: 'base' }));
@@ -192,22 +186,17 @@ test('signed in with none stored: the owner starts in the base, anyone else in t
 test('the stored design system stays true to the account once its libraries have loaded', () => {
   const store = (value: unknown) => localStorage.setItem(ACTIVE_LIBRARY_KEY, JSON.stringify(value));
   const mine = { owner: false, librariesLoaded: true, libraries: [{ id: 'b', name: 'Latest' }, { id: 'c', name: 'Older' }] };
-  // Kept while the account has it.
   store({ id: 'c', name: 'Older' });
   settleActiveLibrary(mine);
   expect(readActiveLibrary()).toEqual({ id: 'c', name: 'Older' });
-  // Renamed: the new name.
   settleActiveLibrary({ ...mine, libraries: [{ id: 'b', name: 'Latest' }, { id: 'c', name: 'Older, renamed' }] });
   expect(readActiveLibrary()).toEqual({ id: 'c', name: 'Older, renamed' });
-  // Another account's or a deleted library: the default.
   store({ id: 'someone-else', name: 'Theirs' });
   settleActiveLibrary(mine);
   expect(readActiveLibrary()).toEqual({ id: 'b', name: 'Latest' });
-  // Nothing left to open: none.
   store({ id: 'gone', name: 'Gone' });
   settleActiveLibrary({ ...mine, libraries: [] });
   expect(readActiveLibrary()).toBeNull();
-  // The base is the owner's alone.
   store({ id: 'base' });
   settleActiveLibrary(mine);
   expect(readActiveLibrary()).toEqual({ id: 'b', name: 'Latest' });
@@ -217,7 +206,6 @@ test('the stored design system stays true to the account once its libraries have
   store({ id: 'gone', name: 'Gone' });
   settleActiveLibrary({ ...mine, owner: true });
   expect(readActiveLibrary()).toEqual({ id: 'base', name: 'Design system 1' });
-  // Before the libraries load nothing stored is judged.
   store({ id: 'someone-else', name: 'Theirs' });
   settleActiveLibrary({ ...mine, librariesLoaded: false, libraries: [] });
   expect(readActiveLibrary()).toEqual({ id: 'someone-else', name: 'Theirs' });

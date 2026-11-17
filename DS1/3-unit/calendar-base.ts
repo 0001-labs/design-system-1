@@ -1,10 +1,3 @@
-// calendar-base.ts
-// What ds-calendar's month, picker and activity share: the days a person may reach,
-// today, the selected day, the week's start, events, words in the current
-// language and the grid's keys. Each element draws its own grid; the month
-// calendar lays weeks in rows, the large calendar weeks in columns, and the
-// keys follow the drawing.
-
 import { LitElement, type PropertyValues } from "lit";
 import { getText } from "../0-face/i18n";
 import {
@@ -24,24 +17,16 @@ import {
 
 export type { CalendarEvent, Day } from "../0-face/calendar";
 
-/** Detail of `day-press`: the day and the events on it. Cancel it to keep a selectable calendar's value. */
 export interface CalendarDayDetail {
   day: Day;
   events: CalendarEvent[];
 }
 
-/** Detail of `event-press`: the event and the day it was pressed on. */
 export interface CalendarEventDetail {
   event: CalendarEvent;
   day: Day;
 }
 
-/**
- * Detail of `change`: the value a person chose and the one before it. The
- * first day pressed is `value` alone, with `end` empty while the end is still
- * to come; the second ends it, and `value` is `start/end` (one day when the
- * same day is pressed twice).
- */
 export interface CalendarChangeDetail {
   value: string;
   previous: string;
@@ -49,7 +34,6 @@ export interface CalendarChangeDetail {
   end: Day;
 }
 
-/** A value read as a range: `2026-10-21/2026-10-24`, or one day as both ends. Times after a `T` are left off. */
 export function readRange(value: string | null | undefined): { start: Day; end: Day } {
   const [first = "", second = ""] = (value ?? "").split("/").map(part => part.trim().slice(0, 10));
   const start = isDay(first) ? first : "";
@@ -58,12 +42,10 @@ export function readRange(value: string | null | undefined): { start: Day; end: 
   return { start, end };
 }
 
-/** Detail of `navigate`: the first month now shown, `YYYY-MM`. */
 export interface CalendarNavigateDetail {
   month: string;
 }
 
-/** A month written `YYYY-MM` or a day in it, as the first of that month; `null` for anything else. */
 export function readMonth(value: string | null | undefined): Day | null {
   const text = value?.trim() ?? "";
   const day = /^\d{4}-\d{2}$/.test(text) ? `${text}-01` : text;
@@ -87,37 +69,22 @@ export abstract class CalendarBase extends LitElement {
     endPending: { state: true },
   };
 
-  /** The selected day, `YYYY-MM-DD`, or a range of days, `YYYY-MM-DD/YYYY-MM-DD`; empty for none. */
   declare value: string;
-  /** The first day a person may choose. */
   declare min: string | undefined;
-  /** The last day a person may choose. */
   declare max: string | undefined;
-  /** Which days between min and max a person may choose, such as the days with room left; every one when left out. Set a new function to draw the days again. */
   declare dayAllowed: ((day: Day) => boolean) | undefined;
-  /** The day drawn as today; the reader's own today when left out. */
   declare today: string | undefined;
-  /** The first day of the week: `0`–`6` from Sunday, or a day's English name; the language's own when left out. */
   declare weekStart: string | undefined;
-  /** Pressing a day selects it and fires `change`: one day, or a first and a last. */
   declare selectable: boolean;
-  /** The grid's name: a translation key, or literal words. The month's name when left out. */
   declare label: string | undefined;
-  /** Show `label` as written, never looked up. */
   declare literal: boolean;
-  /** What happens on the days. */
   declare events: CalendarEvent[];
-  /** The day that holds the grid's one Tab stop. */
   declare focusDay: Day | undefined;
-  /** The day under the pointer, which previews a range's end. */
   declare hoverDay: Day | undefined;
-  /** A first day has been pressed and the next press ends the range. */
   protected declare endPending: boolean;
 
-  /** The value the last press wrote, so a value set from outside settles the range. */
   private pressedValue: string | undefined;
 
-  /** Weeks run along rows (a month) or along columns (the large calendar). */
   protected abstract readonly weeksRun: "rows" | "columns";
 
   private readonly relabel = () => this.requestUpdate();
@@ -146,17 +113,14 @@ export abstract class CalendarBase extends LitElement {
   protected willUpdate(changed: PropertyValues<this>) {
     super.willUpdate(changed);
     if (changed.has("value") && this.value && !readRange(this.value).start) this.value = "";
-    // A value given from outside is whole: the next press starts again.
     if (changed.has("value") && this.value !== this.pressedValue) this.endPending = false;
   }
 
-  /** Shared words, filled in: `words("Week {week}", { week: 42 })`. */
   protected words(key: string, params?: Record<string, string | number>): string {
     const text = getText(key, params) || key;
     return params ? text.replace(/\{\{?(\w+)\}?\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole)) : text;
   }
 
-  /** The page's name for the grid, or `fallback`. */
   protected nameOr(fallback: string): string {
     if (!this.label) return fallback;
     return this.literal ? this.label : getText(this.label) || this.label;
@@ -178,18 +142,15 @@ export abstract class CalendarBase extends LitElement {
     return isDay(this.max) ? this.max : undefined;
   }
 
-  /** Whether a person may choose the day. */
   protected allowed(day: Day): boolean {
     return clampDay(day, this.minDay, this.maxDay) === day && (this.dayAllowed?.(day) ?? true);
   }
 
-  /** The chosen days: the first and the last of a range, or the one day twice. */
   protected get chosen(): { start: Day; end: Day } {
     const { start, end } = readRange(this.value);
     return { start, end: end || start };
   }
 
-  /** How a day stands to the selection: an end of it, inside it, or neither; with the end still to come, the pointer previews it. */
   protected selection(day: Day): { selected: boolean; inside: boolean; first: boolean; last: boolean } {
     let { start, end } = this.chosen;
     if (this.endPending && start && this.hoverDay) end = this.hoverDay;
@@ -199,12 +160,10 @@ export abstract class CalendarBase extends LitElement {
     return { selected, inside: spans && day > start && day < end, first: spans && day === start, last: spans && day === end };
   }
 
-  /** What a day's cell is called: the whole date, then what is on it. */
   protected cellLabel(day: Day, events: readonly CalendarEvent[]): string {
     return [dayLabel(day), ...events.map(event => (event.time ? `${event.time} ${event.title}` : event.title))].join(", ");
   }
 
-  /** The day a key moves to from `from`, or `null` for a key the grid leaves alone. */
   protected keyTarget(event: KeyboardEvent, from: Day): Day | null {
     const rtl = getComputedStyle(this).direction === "rtl";
     const across = this.weeksRun === "rows" ? 1 : 7;
@@ -223,16 +182,8 @@ export abstract class CalendarBase extends LitElement {
     }
   }
 
-  /** The events a day holds, for `day-press`. */
   protected abstract eventsOn(day: Day): CalendarEvent[];
 
-  /**
-   * A person pressed a day: `day-press` fires, and unless it is cancelled a
-   * selectable calendar takes the day and fires `change`. There is one way to
-   * pick: the first press chooses a day, which is the value; the next ends a
-   * range from it, before or after (the same day again keeps the one day);
-   * the press after that starts again.
-   */
   protected press(day: Day) {
     const pressed = new CustomEvent<CalendarDayDetail>("day-press", {
       bubbles: true,
@@ -249,7 +200,6 @@ export abstract class CalendarBase extends LitElement {
     this.endPending = !ending;
     this.hoverDay = undefined;
     this.pressedValue = value;
-    // An end on the first day keeps the value but still says the range is whole.
     if (value === previous && !ending) return;
     this.value = value;
     const { start, end } = readRange(value);
@@ -264,7 +214,6 @@ export abstract class CalendarBase extends LitElement {
     this.dispatchEvent(new CustomEvent<CalendarNavigateDetail>("navigate", { bubbles: true, composed: true, detail: { month: month.slice(0, 7) } }));
   }
 
-  /** Puts keyboard focus on a drawn day once the grid has drawn it. */
   protected async focusCell(day: Day) {
     this.focusDay = day;
     await this.updateComplete;

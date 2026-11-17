@@ -62,7 +62,6 @@ test("choosing sets the select's value, sends input and change once, and closes 
   expect(events).toEqual(["input", "change"]);
   expect(list()!.open).toBe(false);
   expect(select.getAttribute("aria-expanded")).toBe("false");
-  // Choosing the chosen one again changes nothing.
   host.click(); await settle(host);
   list()!.querySelector<HTMLButtonElement>('[data-text-value="Small"]')!.click();
   await settle(host);

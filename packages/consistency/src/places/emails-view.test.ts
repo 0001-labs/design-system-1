@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { EMAIL_KIND_NAMES, templatePreview, emailDocument, emailsQuery, emailStatusName, kindName, relatedOf, sentAt, sizeName } from "./emails-view";
 
-// Ported from the sites' own editor's tests (team-cms/tests/app-emails.test.ts, deleted 26 October 2026).
 describe("the Emails place's list", () => {
   it("asks for a page by kind, words and cursor, leaving out what is not chosen", () => {
     expect(emailsQuery({})).toBe("emails");

@@ -1,10 +1,5 @@
 import SwiftUI
 
-/// A row, an item, a header, a menu entry: one square high, square-cornered, its content
-/// standing on the lower sixteen of the square with the spare four above, as Ezo sets it: a
-/// line of text, a 16-point icon and a control all end on the row's bottom line. With `rule`,
-/// it stands on a 1-point line at its foot, as a table row does (19 points of content and
-/// the line), the sixteen against the rule.
 public struct DS1Row<Content: View>: View {
     @Environment(\.ds1Scale) private var scale
     let rule: Bool
@@ -25,7 +20,6 @@ public struct DS1Row<Content: View>: View {
     }
 }
 
-/// A 1-point line in the border colour, across the width it is given.
 public struct DS1Rule: View {
     let colour: DS1Color
     public init(_ colour: DS1Color = .border) { self.colour = colour }

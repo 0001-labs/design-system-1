@@ -12,7 +12,6 @@ type View = "all" | "differs" | "local";
 type Kind = "all" | IconKind;
 type Extra = "dynamic" | "inline" | "script" | "fonts";
 const views: { id: View; name: string }[] = [{ id: "all", name: "All icons" }, { id: "differs", name: "Needs the DS1 drawing" }, { id: "local", name: "Local only" }];
-/** How a site draws its icon, as the filter and the drilldown name it. */
 const kinds: { id: IconKind; name: string; about: string }[] = [
   { id: "element", name: "ds-icon", about: "a ds-icon element naming the icon" },
   { id: "component", name: "Components", about: "the app's own React icon component" },
@@ -35,7 +34,6 @@ const copyText: Record<IconCell["copy"], string> = {
   local: "DS1 does not draw this icon; it exists only in this app.",
   none: "The app has no copy of the icon map and takes this drawing from DS1.",
 };
-/** Snapshots from before kinds were recorded hold ds-icon sites only. */
 const siteKind = (site: IconSite): IconKind => site.kind ?? "element";
 const siteStatus = (site: IconSite, cell?: IconCell): IconStatus => site.status ?? cell?.status ?? "local";
 const extras: { id: Extra; name: string; className: string; about: string }[] = [
@@ -47,7 +45,6 @@ const extras: { id: Extra; name: string; className: string; about: string }[] = 
 const extraSites = (icons: AppIcons, extra: Extra): IconSite[] =>
   extra === "dynamic" ? icons.dynamic : extra === "fonts" ? icons.fonts ?? [] : icons.inline.filter(site => (siteKind(site) === "script") === (extra === "script"));
 
-/** One row per icon, one column per app: the icons each app names or draws, against today's DS1 drawings. */
 export class IconMatrix extends AppElement {
   static properties = { report: { attribute: false }, view: { state: true }, kind: { state: true }, selection: { state: true } };
   declare report: AdoptionReport;
@@ -66,7 +63,6 @@ export class IconMatrix extends AppElement {
     const { report, view, kind, selection } = this;
     const apps = report.apps.filter(app => app.status === "scanned" && app.icons);
     const ds1 = new Set(report.icons?.names ?? []);
-    /** The sites a cell counts under the current filters; an unused copy has none. */
     const counted = (cell: IconCell | undefined) => cell?.sites.filter(site => (kind === "all" || siteKind(site) === kind) && (view === "all" || siteStatus(site, cell) === view)) ?? [];
     const shown = (cell: IconCell | undefined) => Boolean(cell) && (counted(cell).length > 0 || (kind === "all" && cell!.uses === 0 && (view === "all" || cell!.status === view)));
     const worst = (sites: IconSite[], cell: IconCell) => sites.length ? sites.reduce<IconStatus>((status, site) => severity[siteStatus(site, cell)] > severity[status] ? siteStatus(site, cell) : status, "shared") : cell.status;

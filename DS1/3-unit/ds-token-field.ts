@@ -6,8 +6,6 @@ import styles from "./styles/ds-token-field.css?inline";
 
 let nextId = 0;
 export type TokenCommit = { text: string; reason: "enter" | "separator" | "input" | "blur" };
-/** Native field and ARIA targets stay together in light DOM. This component
- * owns chip layout, editing gestures and suggestion navigation through its Select (`ds-select slot="suggestions"`). */
 export class TokenField extends LitElement {
   static formAssociated = true;
   static properties = {
@@ -49,7 +47,6 @@ export class TokenField extends LitElement {
     }
     this.savedAttributes.clear(); this.control = null; this.menu = null; this.expanded = false;
   }
-  /** Also called by the React binding after controlled values/options settle. */
   refresh() {
     if (!this.isConnected) return;
     const input = Array.from(this.children).find(child => child.localName === "input") as HTMLInputElement | undefined ?? null;

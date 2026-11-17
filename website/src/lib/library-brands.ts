@@ -1,10 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { icon, library, photo, text } from './library-example-parts';
 
-// Two brand sites in libraries that carry a brand of their own (library-example-parts.ts): a
-// travel booking site under a deep blue band, and a design tool's home page in black and white.
-// Both use the libraries' button sizes: data-size="medium" (two squares) and "large" (three).
-
 const composition = `<style>
 .brand-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--ds-unit); min-width:0; align-content:start; }
 .brand-tight { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(var(--ds-unit) / 2); min-width:0; align-content:start; }

@@ -17,7 +17,6 @@ function children(node: Node): Node[] {
   return Array.from(node.childNodes);
 }
 
-/** Headings in the rendered tree, including native table headers, slots and open shadow roots. */
 export function wordHeaders(root: ParentNode): Element[] {
   const headers: Element[] = [];
   function visit(node: Node, inHeader = false) {
@@ -45,7 +44,6 @@ function languageOf(element: Element): string {
 
 type Letter = { node: Text; offset: number; element: Element };
 
-/** Measure actual line breaks, not merely a CSS declaration that might never break a word. */
 export function inspectWordWrap(root: ParentNode): Finding[] {
   const findings: Finding[] = [];
   for (const header of wordHeaders(root)) {
@@ -68,8 +66,6 @@ export function inspectWordWrap(root: ParentNode): Finding[] {
       }
     }
     collect(header);
-    // These alphabetic scripts break at words. CJK and scripts with dictionary-based line
-    // breaking retain their native typesetting rules instead of being treated as long words.
     const words = text.matchAll(/[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Arabic}\p{Script=Hebrew}\p{M}\u00ad]+/gu);
     for (const match of words) {
       const word = match[0];
@@ -93,8 +89,6 @@ export function inspectWordWrap(root: ParentNode): Finding[] {
           const previousStyle = styleOf(previous.letter.element);
           const hyphens = style.hyphens || style.getPropertyValue('-webkit-hyphens');
           const manual = text.slice(previous.index + 1, index).includes('\u00ad') && hyphens !== 'none';
-          // Auto hyphenation is an engine/language decision. Never excuse emergency wrapping
-          // or an explicit line break just because hyphens:auto happens to be inherited.
           const automatic = hyphens === 'auto' && languageOf(letter.element) !== ''
             && letter.node === previous.letter.node
             && [style, previousStyle].every(s => !['break-all', 'break-word'].includes(s.wordBreak)

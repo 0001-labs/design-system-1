@@ -1,6 +1,3 @@
-// ds-input.ts
-// Input component for text and other input types
-
 import { LitElement, html, unsafeCSS, type CSSResultGroup, type PropertyDeclarations } from "lit";
 import { live } from "lit/directives/live.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -12,7 +9,6 @@ import { getText, currentLanguage } from "../0-face/i18n";
 import "./ds-text";
 import styles from "./styles/ds-input.css?inline";
 
-/** The autofill a field's type implies when it names none of its own. */
 const TYPE_AUTOCOMPLETE: Partial<Record<string, string>> = {
   email: "email",
   tel: "tel",
@@ -29,7 +25,6 @@ export class Input extends LitElement {
   private initialValue: string | undefined;
   static properties: PropertyDeclarations = {
     type: { type: String, reflect: true },
-    // A text area: the same field across whole rows.
     multiline: { type: Boolean, reflect: true },
     rows: { type: Number },
     maxRows: { type: Number, attribute: "max-rows" },
@@ -96,14 +91,8 @@ export class Input extends LitElement {
   private resizeObserver?: ResizeObserver;
   private readonly fontsChanged = () => this.resizeToContent();
   declare inputMode: string;
-  /** The return key's label on a touch keyboard: enter, done, go, next, previous, search or send. */
   declare enterKeyHint: string;
-  /**
-   * The id of a `<datalist>` beside the field. A shadow root keeps the inner
-   * input from reaching it, so its options are mirrored inside, and kept in step.
-   */
   declare list: string;
-  /** Suggestions offered while typing, as a datalist would. Wins over `list`. */
   declare suggestions: readonly (string | { value: string; label?: string })[];
   private listObserver?: MutationObserver;
   declare ariaLabel: string;
@@ -185,7 +174,6 @@ export class Input extends LitElement {
     this._placeholder = "";
     this._currentLanguage = currentLanguage.value;
 
-    // Create bound event handlers for proper cleanup
     this.boundHandlers = {
       languageChanged: (() => {
         this._currentLanguage = currentLanguage.value;
@@ -203,10 +191,8 @@ export class Input extends LitElement {
     this._loadPlaceholder();
     this.addEventListener("click", this.focusFromLabel);
 
-    // Listen for language changes
     window.addEventListener("language-changed", this.boundHandlers.languageChanged);
 
-    // Also listen for translations loaded event
     window.addEventListener("translations-loaded", this.boundHandlers.languageChanged);
     if (typeof ResizeObserver !== "undefined") {
       this.resizeObserver = new ResizeObserver((entries) => {
@@ -236,14 +222,11 @@ export class Input extends LitElement {
 
   firstUpdated(): void {
     if (this.autofocus) this.focus();
-    // A fixed-width field can change scale without changing its width. Measure
-    // one shared row separately from the content height that we set ourselves.
     const metric = this.shadowRoot?.querySelector(".row-metric");
     if (metric) this.resizeObserver?.observe(metric);
   }
 
   willUpdate(changed: Map<string, unknown>): void {
-    // A multiline field stands on its own by default, in the field treatment.
     if (changed.has("multiline") && this.multiline && this.variant === "default" && !this.hasAttribute("variant")) this.variant = "field";
   }
 
@@ -276,7 +259,6 @@ export class Input extends LitElement {
     this.listObserver.observe(source, { childList: true, subtree: true, attributes: true, characterData: true });
   }
 
-  /** The options the field offers, from `suggestions` or the named datalist. */
   protected suggestionOptions(): { value: string; label?: string }[] {
     if (this.suggestions?.length) return this.suggestions.map((option) => (typeof option === "string" ? { value: option } : option));
     const source = this.listSource();
@@ -343,9 +325,6 @@ export class Input extends LitElement {
   }
   formDisabledCallback(disabled: boolean): void {
     this._formDisabled = disabled;
-    // The browser can deliver this reaction while Lit reflects `disabled`,
-    // after render has already read the old state. Schedule a fresh render
-    // after that update so native inputs and inherited textareas re-enable.
     queueMicrotask(() => { if (this.isConnected) this.requestUpdate(); });
   }
   formResetCallback(): void {
@@ -361,12 +340,6 @@ export class Input extends LitElement {
     }
   }
 
-  /**
-   * What the browser may fill in. Without `autocomplete` an email, phone,
-   * web address or password field says what it holds (a sign-up's password
-   * sets "new-password"), and any other field is left to the browser, as a
-   * native input is; "off" still turns it off.
-   */
   protected resolvedAutocomplete(): string | undefined {
     if (this.autocomplete) return this.autocomplete;
     if (this.multiline) return undefined;
@@ -401,7 +374,6 @@ export class Input extends LitElement {
     const start = input.selectionStart,
       end = input.selectionEnd;
     this._passwordVisible = !this._passwordVisible;
-    // Change only display. The field's public type stays password for forms and adapters.
     input.type = this._passwordVisible ? "text" : "password";
     if (start !== null && end !== null) input.setSelectionRange(start, end);
   }
@@ -417,8 +389,6 @@ export class Input extends LitElement {
       event.shiftKey
     )
       return;
-    // Trusted browser events may run a microtask checkpoint between listeners.
-    // Wait until the complete dispatch so an outer application handler can cancel.
     setTimeout(() => {
       const form = this.form;
       if (event.defaultPrevented || !form || this.disabled || this._formDisabled) return;
@@ -474,7 +444,6 @@ export class Input extends LitElement {
       const translatedText = getText(placeholderText);
       this._placeholder = translatedText || placeholderText;
     } catch (error) {
-      // Fallback to original text if translation fails
       this._placeholder = placeholderText;
     }
     this.requestUpdate();
@@ -503,31 +472,20 @@ export class Input extends LitElement {
     this.dispatchEvent(new CustomEvent("input-blur", { bubbles: true }));
   }
 
-  /**
-   * Focus the input element
-   */
-  /** Render the native field within the tap that opens a phone keyboard. */
   renderNow(): void { this.performUpdate(); }
 
   focus(options?: FocusOptions): void {
     this.input?.focus(options);
   }
 
-  /**
-   * Blur the input element
-   */
   blur(): void {
     this.input?.blur();
   }
 
-  /**
-   * Select all text in the input
-   */
   select(): void {
     this.input?.select();
   }
 
-  /** Grow on the row grid, bounded by maxRows; the remainder scrolls. */
   private resizeToContent(): void {
     cancelAnimationFrame(this.resizeFrame);
     const control = this.input;
@@ -553,7 +511,6 @@ export class Input extends LitElement {
     });
   }
 
-  /** The multiline field: a native textarea across whole rows. */
   protected renderMultiline(hasError: boolean, description: string) {
     const rows = Math.max(1, Math.floor(this.rows || 1));
     return html`<span class="row-metric" aria-hidden="true"></span><textarea

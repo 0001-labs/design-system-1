@@ -21,7 +21,6 @@ const componentSources = () => {
   return files.join("\n");
 };
 
-/** [ids, classes, types] of one selector, with :where() as nothing and :is()/:not() as their most specific argument. */
 function specificity(selector: string): [number, number, number] {
   const score = (node: csstree.CssNode): [number, number, number] => {
     const total: [number, number, number] = [0, 0, 0];
@@ -94,7 +93,6 @@ describe("preparing a library for publishing", () => {
     expect(prepared.css).toContain("  --one-radius: 8px !important;\n  --ds-corner-size: var(--one-radius) !important;\n  --ds-card-corner-size: var(--one-radius) !important;");
     expect(prepared.css).toContain("--ds-text-size: var(--one-font-size)");
     expect(prepared.css).toContain("@media (prefers-color-scheme: dark) { :root { --one-accent-color: #8a2be2; --ds-accent-color: var(--one-accent-color); --accent-color: var(--one-accent-color); } }");
-    // The rule sets --ds-paper itself, so the owner's value stands.
     expect(prepared.css).not.toContain("--ds-paper: var(--one-background)");
     expect(prepared.css).toContain("--ds-paper: #fafafa;");
   });
@@ -108,7 +106,6 @@ describe("preparing a library for publishing", () => {
     expect(rules[1], "a field is never a link").toContain("input:disabled");
     const before = 'button[variant="neutral"]:hover, nav a, button:disabled, input:disabled'.split(", ");
     const after = rules[1]!.slice(0, rules[1]!.indexOf(" {")).split(",").reduce<string[]>((parts, piece) => {
-      // Rejoin the commas inside :is() and :where().
       const open = (parts.at(-1)?.match(/\(/g)?.length ?? 0) - (parts.at(-1)?.match(/\)/g)?.length ?? 0);
       if (parts.length && open > 0) parts[parts.length - 1] += `,${piece}`; else parts.push(piece);
       return parts;

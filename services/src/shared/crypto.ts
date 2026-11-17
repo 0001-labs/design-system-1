@@ -1,11 +1,3 @@
-/**
- * Constant-time string comparison.
- *
- * Adapted from Consistency's `functions/api/_security.ts`, with the array
- * accesses made safe under `noUncheckedIndexedAccess`. Length is folded into
- * the accumulator rather than short-circuiting, so a wrong-length secret takes
- * the same path as a wrong-value one.
- */
 export function timingSafeEqual(a: string, b: string): boolean {
   if (typeof a !== "string" || typeof b !== "string") return false;
 
@@ -28,7 +20,6 @@ export async function sha256Hex(input: string | ArrayBuffer): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/** Cloudflare sets CF-Connecting-IP; the rest are fallbacks for local runs. */
 export function clientIp(request: Request): string {
   const direct = request.headers.get("cf-connecting-ip");
   if (direct) return direct;
@@ -39,7 +30,6 @@ export function clientIp(request: Request): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-/** Extract a bearer token, or null when the header is absent or malformed. */
 export function bearerToken(request: Request): string | null {
   const header = request.headers.get("authorization");
   if (!header) return null;

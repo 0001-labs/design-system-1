@@ -1,15 +1,6 @@
 import { createElement, forwardRef, useEffect, type HTMLAttributes } from "react";
 import type { Toaster as ToasterElement, ToastId, ToastOptions, ToastPosition, ToastPromiseMessages } from "../2-core/ds-toast";
 
-/**
- * Toast for React, based on Sonner (https://sonner.emilkowal.ski, MIT licence).
- * The same names as Sonner: import `Toaster` and `toast` from this adapter,
- * then one `<Toaster />` in the app and `toast("Saved")` anywhere.
- *
- * SSR-safe: the Lit element is loaded only in the browser, on the first
- * `<Toaster />` or `toast()`. Calls made before it arrives wait for it, and
- * every call still returns its id at once, as Sonner's do.
- */
 type Runtime = typeof import("../2-core/ds-toast").toast;
 let runtime: Runtime | undefined;
 let loading: Promise<void> | undefined;
@@ -38,7 +29,6 @@ function show(kind: Kind | undefined, title: string, options?: ToastOptions): To
   return id;
 }
 
-/** Show a toast, as Sonner's `toast()`. Returns its id. */
 export const toast = Object.assign(
   (title: string, options?: ToastOptions): ToastId => show(undefined, title, options),
   {

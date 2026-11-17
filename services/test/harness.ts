@@ -4,20 +4,14 @@ import { fileURLToPath } from "node:url";
 
 const COMPATIBILITY_DATE = "2026-07-24";
 
-/** Crockford base32, lowercase — the alphabet `PUBLIC_ID_PATTERN` accepts. */
 const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 
-/**
- * Each test uses a fresh public id so the Worker's edge cache, which is keyed
- * on URL, cannot leak state between tests.
- */
 export function newPublicId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(20));
   return [...bytes].map((byte) => ALPHABET[byte % 32]).join("");
 }
 
 async function bundle(entry: string): Promise<string> {
-  // Decode the project directory's spaces before passing it to the bundler.
   const result = await build({
     entryPoints: [fileURLToPath(new URL(entry, import.meta.url).href)],
     bundle: true,
@@ -33,9 +27,6 @@ async function bundle(entry: string): Promise<string> {
   return output.text;
 }
 
-// Miniflare ships its own undici-based Request/Response/R2 types, which are
-// structurally similar to @cloudflare/workers-types but not identical. Derive
-// from Miniflare's own signatures rather than importing either set by name.
 type MiniflareBucket = Awaited<ReturnType<Miniflare["getR2Bucket"]>>;
 type MiniflareFetchInit = Parameters<Miniflare["dispatchFetch"]>[1];
 
@@ -79,7 +70,6 @@ export const startAssets = () => start("../src/index.ts");
 export const startPublish = (secret = "test-secret-value") =>
   start("../src/index.ts", { PUBLISH_SECRET: secret, MAX_CSS_BYTES: "524288" });
 
-/** Seed an artifact exactly the way the publish Worker would write it. */
 export async function seedArtifact(
   harness: Harness,
   key: string,
@@ -104,10 +94,6 @@ export async function sha256Hex(input: string): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Strip comments from JSONC while respecting string literals, so a `//` inside
- * a value is never mistaken for a comment.
- */
 export function parseJsonc(text: string): unknown {
   let out = "";
   let inString = false;
@@ -166,6 +152,5 @@ export function parseJsonc(text: string): unknown {
     out += char;
   }
 
-  // Trailing commas are legal in wrangler's JSONC but not in JSON.
   return JSON.parse(out.replace(/,(\s*[}\]])/g, "$1"));
 }

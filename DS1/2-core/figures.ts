@@ -1,39 +1,23 @@
-// figures.ts
-// The words of a figure, shared by ds-stat, ds-progress and their React
-// adapters: a value written through 0-face/format.ts in the current language,
-// the digits cut into cells of one width, and a meter's ARIA values. No
-// browser code, so the adapters write the same words on the server.
-
 import { formatCompact, formatMoney, formatNumber, formatPercent } from "../0-face/format";
 import { translate } from "../0-face/i18n";
 
-/** How a figure's value is written: a number, a short number (12K), a fraction as a percentage, or money. */
 export type FigureFormat = "number" | "compact" | "percent" | "money";
 const FORMATS: readonly FigureFormat[] = ["number", "compact", "percent", "money"];
 
 export interface FigureOptions {
-  /** `number` by default. `money` needs `currency`; without one it writes a number. */
   format?: FigureFormat;
-  /** An ISO 4217 code for `money`: `USD`, `DKK`, `JPY`. */
   currency?: string;
-  /** For money: the amount is in the currency's minor unit (cents, øre). */
   minor?: boolean;
-  /** For money: whole units only, rounded. */
   whole?: boolean;
-  /** Decimals, at least and at most. Unset, the format's own (none for a percentage, the currency's for money). */
   digits?: number;
-  /** Write a sign before a value that is not zero: `+12%`, `−3`. */
   signed?: boolean;
-  /** Format in this language rather than the current one. */
   language?: string;
 }
 
-/** A format name as given, or `number` for one this does not know. */
 export function figureFormat(value: string | null | undefined): FigureFormat {
   return FORMATS.includes(value as FigureFormat) ? (value as FigureFormat) : "number";
 }
 
-/** A value written as `options` say, in the current language: `1,234`, `12K`, `25%`, `$1,234.50`, `+12%`. */
 export function formatFigure(value: number, options: FigureOptions = {}): string {
   if (!Number.isFinite(value)) return "";
   const { currency, minor, whole, digits, signed, language } = options;
@@ -50,14 +34,8 @@ export function formatFigure(value: number, options: FigureOptions = {}): string
   return formatNumber(value, numeric);
 }
 
-/** A run of a figure's text: a digit, which takes a cell of its own, or the signs and letters between. */
 export interface FigureCell { text: string; digit: boolean }
 
-/**
- * A figure's text cut into its digits and the runs between them, for a face
- * whose digits are not all one width: each digit is drawn in a cell of one
- * width (`ds-stat__digit`), the rest at its own. The text is read whole.
- */
 export function figureCells(text: string): FigureCell[] {
   const cells: FigureCell[] = [];
   for (const character of text) {
@@ -69,26 +47,15 @@ export function figureCells(text: string): FigureCell[] {
   return cells;
 }
 
-/** What a meter says to assistive technology. */
 export interface MeterAria {
-  /** The value, kept inside the range as ARIA requires. */
   now: number;
   min: number;
   max: number;
-  /** "7 of 10", or "12 of 10, over by 2", in the current language. */
   text: string;
-  /** How much of the range is filled, 0 to 1. */
   fraction: number;
-  /** The value is past the end of the range. */
   over: boolean;
 }
 
-/**
- * A meter's values: the value kept inside `min` and `max`, how much of the
- * range it fills, whether it is past the end, and the words that say so, the
- * figures written as `options` say. A range that is empty or backwards reads
- * as 0 to 1.
- */
 export function meterAria(value: number, min = 0, max = 1, options: FigureOptions & { over?: boolean } = {}): MeterAria {
   const low = Number.isFinite(min) ? min : 0;
   const high = Number.isFinite(max) && max > low ? max : low + 1;

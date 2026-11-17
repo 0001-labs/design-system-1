@@ -1,27 +1,7 @@
-/* The native controls' own dress: buttons, links, fields, menus and the rest. controls.css
-   imports it after the sheets it gathers; a component whose shadow root draws only these
-   inlines it with component-metrics.css and the few sheets it also draws. */
-
-/*
- * Native controls in shared dress.
- *
- * DS one keeps a few components as plain classes on native elements. shared does
- * the same for everything a person types into or picks from: text fields,
- * selects and checkboxes stay `<input>` and `<select>`, so labels, form
- * semantics and React's controlled inputs work as they always have.
- *
- * `.ds-button` is the `ds-button` element's look on a native `<button>`,
- * for a button inside a drag handle. The drag library recognises only native
- * controls: inside a handle it would lift the row on Space where a
- * `ds-button` was meant to be pressed. Both read the same custom properties.
- * On an `<a href>` it is a link drawn as a button (see `a.ds-button` below).
- */
-
 .ds-button {
   appearance: none;
   box-sizing: border-box;
   display: inline-flex;
-  /* At the foot of a line, so the 16px face takes the lower sixteen of the square. */
   vertical-align: bottom;
   flex: 0 0 auto;
   width: var(--ds-button-width, max-content);
@@ -67,11 +47,6 @@
   opacity: 0.5;
 }
 
-/*
- * one.css carries older button rules that dim a button on hover and nudge it
- * on press. The shared button does neither: these match their specificity, so
- * controls.css, loaded after one.css, wins.
- */
 .ds-button:hover:not(:disabled, [aria-disabled="true"]) {
   filter: none;
 }
@@ -80,13 +55,6 @@
   transform: none;
 }
 
-/*
- * `a.ds-button` is a link drawn as a button. The browser keeps the link:
- * middle-click, a new tab, Copy link and Enter. It never takes the link's
- * underline or colours, in any state, so every face (primary, secondary,
- * icon, tabs) looks as it does on a `<button>`. A disabled link has no `href`
- * and carries `aria-disabled="true"` and `role="link"`.
- */
 a.ds-button,
 a.ds-button:is(:hover, :focus, :active) {
   text-decoration: none;
@@ -104,13 +72,6 @@ a.ds-button[aria-disabled="true"] {
   pointer-events: none;
 }
 
-/*
- * `.ds-link` is a link in running text: the text's ink, underlined by a
- * hairline 2px below the letters (as a toast's actions are), which turns to the full ink under
- * the pointer. A visited link is drawn in the muted ink. Words keep their
- * sentence case. Tokens: `--ds-link-color`, `--ds-link-visited-color`,
- * `--ds-link-line-color`, `--ds-link-hover-line-color`.
- */
 .ds-link {
   color: var(--ds-link-color, currentColor);
   text-decoration-line: underline;
@@ -128,7 +89,6 @@ a.ds-button[aria-disabled="true"] {
   text-decoration-color: var(--ds-link-hover-line-color, currentColor);
 }
 
-/* Quiet navigation and related-component lists: no underline in any state. */
 .ds-link.ds-link--plain {
   text-decoration: none;
 }
@@ -201,7 +161,6 @@ a.ds-button[aria-disabled="true"] {
   cursor: pointer;
 }
 
-/* A multiline field, `ds-input` on a <textarea>, spans whole rows: --ds-textarea-rows sets how many, three by default. */
 textarea.ds-input {
   display: block;
   height: var(--ds-textarea-height, calc(var(--ds-textarea-rows, 3) * var(--ds-row-height)));
@@ -211,15 +170,6 @@ textarea.ds-input {
   resize: vertical;
 }
 
-/*
- * `.ds-checkbox` and `.ds-radio` are the `ds-checkbox` and `ds-radio` elements'
- * faces on a native `<input>`: a box one control (16px) square on the field's
- * ground with a 1px line, standing as an icon does, on the lower sixteen at the
- * start of its square, so it takes one square and the words begin on the next
- * (Joachim, 19 October 2026). The checkbox has the corners of a control and fills with the accent,
- * the check (`x-icon/check.svg`) in its ink; the radio is a circle with a dot
- * half a square across in the text colour.
- */
 .ds-checkbox,
 .ds-radio {
   appearance: none;
@@ -285,14 +235,6 @@ textarea.ds-input {
   opacity: 1;
 }
 
-/*
- * `.ds-switch` is the `ds-switch` element's look on a native
- * `<button role="switch" aria-checked>`: two control heights wide less 4px (28 × 16),
- * its thumb one control high less a 2px inset, travelling 12px. A pill with a white
- * round thumb, grey when off and the darker green when on, whatever the page's accent: the
- * one switch (Joachim, 19 October 2026).
- */
-
 .ds-switch {
   --ds-choice-unit: var(--ds-control-height);
   appearance: none;
@@ -337,20 +279,6 @@ textarea.ds-input {
     transition: none;
   }
 }
-
-/*
- * `.ds-range` draws a native `<input type="range">`: one control high,
- * standing on the lower sixteen of its square (the spare four above it as a
- * margin, so it takes one square alone and in a row), eight squares wide.
- * The track is a 1px line across the middle of the control, the thumb one
- * control high and half a control wide with the shared corners, in the ink.
- * The browser keeps the value, the keys, the form data and the events.
- *
- * Tokens: `--ds-range-width` (eight squares), `--ds-range-track` (the line,
- * the title grey), `--ds-range-thumb` (the ink) and `--ds-range-thumb-width`.
- * WebKit and Blink draw the parts as `::-webkit-slider-*`, Firefox as
- * `::-moz-range-*`; both get the same track and thumb.
- */
 
 .ds-range {
   -webkit-appearance: none;
@@ -421,13 +349,6 @@ textarea.ds-input {
   opacity: 0.5;
 }
 
-/*
- * `.ds-tabs` is the `ds-tabs` element's row on native buttons. As an option
- * group (role="group", a segmented control) its `.ds-button` choices are
- * grey and the chosen one, aria-pressed, aria-selected or aria-current, is in
- * the accent, as the primary and secondary buttons are.
- */
-
 .ds-tabs {
   box-sizing: border-box;
   display: flex;
@@ -458,15 +379,6 @@ textarea.ds-input {
   --ds-button-background: var(--ds-button-background-color-primary);
   --ds-button-color: var(--ds-button-text-color-on-accent);
 }
-
-/*
- * `.ds-overlay` is the `ds-overlay` element's frame on a native `<dialog>`, a
- * modal by default: twenty squares wide, a square of padding, square corners,
- * a hairline and the paper. `ds-overlay--sheet`, `ds-overlay--drawer` (with
- * `ds-overlay--start` for the start side) and `ds-overlay--screen` are its
- * other types (overlay.css). Its header, title, description, footer and close button are marked
- * with data-ds-overlay, as inside the element.
- */
 
 dialog.ds-overlay {
   box-sizing: border-box;
@@ -508,12 +420,10 @@ dialog.ds-overlay::backdrop {
   flex-direction: column;
 }
 
-/* The header keeps the last square of its row for the close button, only when it has one. */
 dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   padding-inline-end: var(--ds-unit);
 }
 
-/* The title on its square's lower sixteen, as every row's words. */
 .ds-overlay [data-ds-overlay="title"] {
   display: flex;
   align-items: flex-end;
@@ -546,8 +456,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   right: var(--ds-unit);
 }
 
-/* A field in the frame, as a prompt has: its label one row high, the field
- * one row high beneath it and as wide as the frame, two squares in all. */
 .ds-overlay [data-ds-overlay="field"] {
   display: flex;
   flex-direction: column;
@@ -562,12 +470,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   --ds-input-height: var(--ds-row-height);
   width: 100%;
 }
-
-/*
- * `.ds-button--primary` and `--secondary` are the element's variants on a
- * native button: a form's submit button stays native so Enter in a field
- * submits the form. `--danger` is its `danger` attribute.
- */
 
 .ds-button--primary,
 .ds-button--secondary {
@@ -587,23 +489,10 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   --ds-button-background: var(--ds-fill-hover);
 }
 
-/* `.ds-button--danger` is the element's `danger`: a destructive action's words
- * in the danger colour, on the secondary face or none. */
 .ds-button--danger {
   --ds-button-color: var(--ds-danger-color, var(--ds-tuned-red));
 }
 
-/*
- * Words and an icon on one face hug them. A 16 × 16 icon carries about 4px
- * of its own room around its glyph, so beside words it takes no gap and, on a
- * filled face, none of the padding on its side: the glyph stands 4px from the
- * words and 4px from the face's edge, as the words stand from the other edge.
- * The same on every face: `.ds-button`, a slotted `ds-button`, the host face
- * (and the shadow face in ds-button.css). The words are an element beside the
- * icon (`ds-text`, a span); an icon of a product's own is an inline `svg` or
- * marked `data-ds-icon`, and is drawn sixteen square here. A menu's entries
- * keep their gap, so their words line up down the menu.
- */
 :is(.ds-button, ds-button[control="slotted"]:not([menu-item]) > :is(button, a), ds-button[control="host"]:not([menu-item])):not([role="option"], [role^="menuitem"]):has(> :is(ds-icon, .ds-icon, svg, [data-ds-icon]):not(:only-child)) {
   --ds-button-gap: 0px;
 }
@@ -630,16 +519,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   justify-content: center;
   width: 100%;
 }
-
-/*
- * `.ds-menu` is the `ds-menu` element's look on a menu a library draws:
- * the context menu's items come from Radix, which owns their roles, focus and
- * keys, so they stay Radix's and take shared's paper, rows and type.
- * On whole squares, as the element: the line and the padding inside it make
- * half a square on each side, entries are one square each with nothing
- * between them, a separator is one square with its line, and there is no
- * shadow. n entries make a menu n + 1 squares high.
- */
 
 .ds-menu {
   box-sizing: border-box;
@@ -683,8 +562,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   outline: none;
 }
 
-/* Words cut short fade over the entry's last square, never an ellipsis:
- * 0-face/cut-fade.ts marks the entry `data-cut="end"` while they do not fit. */
 .ds-menu__item[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }
@@ -692,8 +569,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   mask-image: linear-gradient(to left, #000 calc(100% - var(--ds-unit)), transparent);
 }
 
-/* An entry a library draws as its own button or link is one square high too,
- * whatever that library's button styles say. */
 .ds-menu > :is(button, a, [role="option"], [role^="menuitem"]),
 .ds-menu > [role="group"] > :is(button, a, [role="option"], [role^="menuitem"]) {
   box-sizing: border-box !important;
@@ -706,7 +581,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   line-height: var(--ds-type-lineheight-default) !important;
 }
 
-/* A menu item may be a native button: it keeps the row's look, not a button's. */
 :where(button).ds-menu__item {
   appearance: none;
   margin: 0;
@@ -771,7 +645,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
 .ds-menu__separator {
   flex: 0 0 auto;
   height: 1px;
-  /* One square with its line. */
   margin: calc(var(--ds-unit) / 2 - 1px) calc(6px * var(--ds-sf)) calc(var(--ds-unit) / 2);
   background: var(--ds-border-color);
 }
@@ -782,25 +655,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   color: var(--ds-title-color);
   font-size: var(--ds-type-size-small);
 }
-
-/*
- * Pieces the components draw, as classes on native elements: a field's label
- * row, an avatar, a badge, a toggle button, an icon and a file drop zone. Each
- * reads the same tokens as its element, so a page without Lit draws the same
- * look.
- */
-
-/*
- * `.ds-field` is the label row `ds-input` draws, around any native control:
- * the label (`.ds-field__label`) on a one-square line above it, then a hint
- * (`.ds-field__hint`) in the muted ink and an error (`.ds-field__error`) in
- * the danger colour, each on one-square lines. Every row is at least one
- * square high and a control lower than that stands centred on it, so the
- * field keeps to whole squares. `.ds-field--beside` sets the label beside the
- * control, in a column `--ds-field-label-width` wide (four squares), with the
- * hint and the error under the control. An empty hint or error takes no room,
- * so the error can stay in the page as a live region.
- */
 
 .ds-field {
   box-sizing: border-box;
@@ -864,20 +718,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   grid-row: 1;
   align-self: start;
 }
-
-/*
- * `.ds-avatar` is the `ds-avatar` element's mark: round and one control high,
- * an initial in small type on the neutral fill, or an `<img alt="">` after the
- * initial, covering it. While the picture loads the initial shows; remove a
- * picture that fails (`onerror`), as the element does, or the browser draws
- * its broken-image mark. `--large` is two squares with type a square high,
- * `--pair` fits two characters between the hairline edges, `--square` gives it
- * a picture's corners, `--outlined` draws the hairline in its ink and
- * `--pending` greys out someone who has not accepted yet.
- * `--ds-avatar-background` fills it with a colour and `--ds-avatar-color`
- * letters it: on a fill, pick the black or white ink that reads on it
- * (`--ds-black`, `--ds-white`).
- */
 
 .ds-avatar {
   --ds-avatar-size: var(--ds-control-height);
@@ -946,19 +786,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   opacity: 0.5;
 }
 
-/*
- * `.ds-badge` is the `ds-badge` element's status label: one square high on the
- * neutral fill, its words padded 4px, never a button. Words that do not fit
- * are cut, never with an ellipsis: in a `.ds-badge__label` of their own they
- * fade over its last square while marked `data-cut="end"`, the fill staying
- * whole. Where the browser can size to content in calc (calc-size), its width
- * rounds up to whole squares as the element's does; elsewhere it hugs the
- * words. An icon inside is a `.ds-icon` before the words. `--icon` shows the
- * icon alone, one square wide, and keeps the words for assistive technology:
- * put them in an element of their own. `--ds-badge-background` and
- * `--ds-badge-color` give a status a meaningful colour.
- */
-
 .ds-badge {
   box-sizing: border-box;
   display: inline-block;
@@ -1024,15 +851,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   white-space: nowrap;
 }
 
-/*
- * `.ds-toggle` makes a `.ds-button` a toggle button, `<button aria-pressed>`:
- * the secondary button's grey while it is off, the primary button's accent
- * while it is on, as a chosen segment of `.ds-tabs[role="group"]` is. Its
- * words stay the same in both states; the page toggles `aria-pressed`.
- * A setting that is on or off is a `.ds-switch`; one of several choices is a
- * `.ds-tabs[role="group"]`.
- */
-
 .ds-toggle {
   --ds-button-padding: 0 calc(4px * var(--ds-sf));
   --ds-button-background: var(--ds-button-background-color-secondary);
@@ -1047,18 +865,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   --ds-button-background: var(--ds-button-background-color-primary);
   --ds-button-color: var(--ds-button-text-color-on-accent);
 }
-
-/*
- * `.ds-icon` is the `ds-icon` element's drawing without the element: a
- * Design system 1 icon file as a mask, painted in the text colour
- * (`--ds-icon-color`), 14px by default, 12px with `--small` and 16px with
- * `--large`, times the scale. `--ds-icon` names the file, as Sync 1's `icons`
- * export copies it: `style="--ds-icon: url(icons/close.svg)"` (a path from the
- * page) or a rule per icon in the page's stylesheet. The mask takes only the
- * drawing's shape, so an icon with colours of its own is an `<img>`. These
- * rules have no specificity: a page that drew its own `.ds-icon` keeps its
- * rule until it removes it.
- */
 
 :where(.ds-icon) {
   --ds-icon-box: calc(var(--ds-icon-size, 14px) * var(--ds-sf));
@@ -1080,18 +886,6 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   --ds-icon-size: 16px;
 }
 
-/*
- * `.ds-flag` is a country's flag from `DS1/x-flag/`, an `<img>` of the file
- * named by its two-letter code in lower case (`x-flag/ie.svg`): 3:2 with
- * corners a quarter of its height (4px at 16) and a hairline in the fill's
- * grey centred on its edge, so a white field keeps its edge on the paper. One
- * control high (16px) and half as wide again, 12px high with `--small`, times
- * the scale; on a line it stands on the sixteen, and words after it start 4px
- * on. In a table's row it stands in the middle of the row instead, as much
- * room above as below. Its `alt` is the country's name, or empty beside the
- * name written out.
- */
-
 :where(.ds-flag) {
   --ds-flag-box: calc(var(--ds-flag-size, 16px) * var(--ds-sf));
   display: inline-block;
@@ -1111,26 +905,9 @@ dialog.ds-overlay:has(> [data-ds-overlay="close"]) [data-ds-overlay="header"] {
   --ds-flag-size: 12px;
 }
 
-/* The row's foot holds the flag's foot on the sixteen; lifting it half the room left over centres it. */
 :where(.ds-table :is(th, td) .ds-flag) {
   translate: 0 calc((var(--ds-flag-box) - var(--ds-table-row)) / 2);
 }
-
-/*
- * `.ds-drop` is `ds-file-picker`'s area on a `<label>` around a native
- * `<input type="file">`: the secondary button's face, as wide as its row and
- * eight squares high (`--compact`: four), its words centred in a square of
- * padding. The input covers the zone unseen, so a click, the keyboard and a
- * dropped file all reach it, and the browser keeps labels, forms, `required`,
- * `multiple` and reset. Keyboard focus draws the focus ring. A page that also
- * handles drops on a larger surface sets `data-dragging` on the zone while
- * files are dragged over it, for the ring and the hover fill. A `.ds-button`
- * on a `<span>` inside draws a button face among the words.
- *
- * The same native input directly inside a `label.ds-button` is the file
- * picker's button: the button's face, one control high like every button,
- * standing at the foot of its square beside them.
- */
 
 .ds-drop {
   box-sizing: border-box;
@@ -1214,11 +991,6 @@ label.ds-button:has(> input[type="file"]:disabled) {
   cursor: default;
 }
 
-/*
- * Every native piece above that sets a display hides with the `hidden`
- * attribute, as every element does: an author's display would otherwise win
- * over the browser's own `[hidden]` rule and leave the piece on the page.
- */
 :is(.ds-button, .ds-input, .ds-checkbox, .ds-radio, .ds-switch, .ds-range, .ds-tabs, .ds-menu, .ds-menu__item, .ds-menu__indicator, .ds-field, .ds-field__label, .ds-field__hint, .ds-field__error, .ds-avatar, .ds-badge, .ds-badge__label, .ds-icon, .ds-flag, .ds-drop)[hidden] {
   display: none;
 }

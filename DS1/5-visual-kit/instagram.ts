@@ -1,6 +1,5 @@
 import { css, html, svg, nothing } from 'lit';
 
-/** Presentation based on the supplied October 2026 iPhone Reels reference. Its frame and media are `instagram-frame.ts`, drawn before this loads. */
 export const instagramStyles = css`
   .reels::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(#0005,transparent 23%,transparent 55%,#0009); }
   .reels button { width:44px; height:44px; border-radius:8px; color:white; }

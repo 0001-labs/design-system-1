@@ -1,13 +1,3 @@
-// C9Y System's data: Consistency's components and the client sites built on them, with the relations between
-// them evidenced by files actually opened. The shape is model.ts; catalogue.test.ts holds every id, realisation
-// and path. Design system 1 is presentation only: each component names the DS1 elements it presents with and
-// what Consistency adds on top of them.
-//
-// What a site has composed in the editor (inserted blocks, groups, columns, designs, stored atoms) lives in that
-// site's Durable Object on the platform and cannot be read from source, so relations that would rest on it are
-// `unverified`. Blocks the platform reads from a site's own markup (Consistency/platform/worker/site-composition.ts,
-// `sourceKind`) are evidenced by that markup and marked `local`: the site draws its own DS1 element and the editor
-// gives it the block's handles.
 import type { C9yComponent, C9yRelation, C9ySite, C9ySystem, RelationKind } from './model';
 
 const REVIEWED = '2026-10-27';
@@ -23,7 +13,6 @@ const LANDING=(path:string)=>`Consistency landing: ${path}`;
 const SDG = (path: string) => `Søndergården: ${path}`;
 
 const components: C9yComponent[] = [
-  // Blocks: edited on a page.
   {id:'c9y-component',label:'Library component',layer:'block',summary:'A trusted DS1 or site-library presentation with native children, bounded words, values and geometry. The same renderer serves it and the same native editor edits it.',presents:['ds-card','ds-text','ds-page'],adds:['a named library presentation','native child blocks and revisioned words','the shared spacing, selection and context controls'],systems:['Platform native pages'],realisedAs:[{as:'native-block',kind:'component'}],source:[DS1('shared/consistency-components.ts'),DS1('shared/consistency-import.ts'),APP('component-surface.ts'),APP('native-site.ts')],uses:['c9y-layout']},
   {
     id: 'c9y-page',
@@ -178,7 +167,6 @@ const components: C9yComponent[] = [
     uses: ['c9y-site-runtime'],
   },
 
-  // Runtimes: site logic for visitors, with their back-office place where they are one capability.
   {
     id: 'c9y-booking',
     label: 'Booking',
@@ -249,7 +237,6 @@ const components: C9yComponent[] = [
     source: [PLATFORM('worker/site.ts'), PLATFORM('worker/index.ts')],
   },
 
-  // Places: the owner's back-office screens with no runtime of their own.
   {
     id: 'c9y-pages',
     label: 'Pages',
@@ -363,7 +350,6 @@ const components: C9yComponent[] = [
     source: [APP('media.ts'), APP('sites/flavo/media.ts'), FLAVO('src/consistency/media.ts')],
   },
 
-  // Services: platform or engine machinery.
   {
     id: 'c9y-members',
     label: 'Members',
@@ -488,7 +474,6 @@ const relations: C9yRelation[] = [
   relation('tivoli-garden-japan-2027', 'c9y-runtime-view', 'local', 'Video and the three original forms are trusted runtime islands. Form delivery still uses the original Convex service; their configuration is build-owned.', [PLATFORM('cli/legacy-blocks.mjs'), PLATFORM('sites/tivoli-garden-japan-2027/integrations.html')], '2026-10-28'),
   relation('tivoli-garden-japan-2027', 'c9y-pages', 'shared', 'The existing Pages API lists both public and private native pages from their current saved documents.', [PLATFORM('worker/native.ts')], '2026-10-28'),
 
-  // Flavo: native pages on its own runtime.
   relation('flavo', 'c9y-page', 'shared', 'Every Flavo route is a native page document built from its catalogue and validated by the shared native page model before it is served.', [FLAVO('src/native/pages.ts'), FLAVO('src/native/routes.ts'), FLAVO('sync.json')]),
   relation('flavo', 'c9y-layout', 'shared', 'Its header, navigation, main column, footer and catalogue grids are native flow and grid blocks.', [FLAVO('src/native/pages.ts')]),
   relation('flavo', 'c9y-text', 'shared', 'Its words are native content blocks, many bound to edited fields (`team-field`, `catalogue-page`) in Danish and English.', [FLAVO('src/native/pages.ts')]),
@@ -514,7 +499,6 @@ const relations: C9yRelation[] = [
   relation('flavo', 'c9y-domains', 'opportunity', 'flavo.flowers is to be connected at launch through Consistency’s Settings → Domains on a plan with domains.', [FLAVO('AGENTS.md')]),
   relation('flavo', 'c9y-analytics', 'unverified', 'It runs the Feedback loop client and its `site.json` does not turn analytics off, but the figures reaching the app were not checked.'),
 
-  // CPH Raft: a static site with the engine's booking and gift cards.
   relation('cph-raft', 'c9y-text', 'shared', 'Its words are the section vocabulary’s word slots in native page documents, edited as blocks in the app; the keyed-field annotation left with 0.7.0.', [RAFT('site/parts.ts'), RAFT('scripts/pages.ts')], '2026-10-28'),
   relation('cph-raft', 'c9y-page', 'shared', 'Every content page in Danish, English and German is a native page document drawn by the platform’s native runtime, live since 28 October 2026; the booking and gift card pages stay the Site engine’s.', [RAFT('scripts/pages.ts'), RAFT('scripts/site-json.ts'), PLATFORM('worker/native.ts')], '2026-10-28'),
   relation('cph-raft', 'c9y-section', 'shared', 'Its pages are built from typed sections: hero, split, statement, panels, cards, gallery, bento, questions, facts, action, header and footer.', [RAFT('site/parts.ts'), RAFT('site/layout.ts')], '2026-10-28'),
@@ -538,7 +522,6 @@ const relations: C9yRelation[] = [
   relation('cph-raft', 'c9y-mail', 'shared', 'Its emails are sent from `emailFrom: CPH Raft` through the engine’s mail.', [RAFT('scripts/site-json.ts')]),
   relation('cph-raft', 'c9y-analytics', 'shared', 'It reports to the Feedback loop as `cph-raft` and does not turn analytics off.', [RAFT('sync.json'), RAFT('AGENTS.md'), RAFT('scripts/site-json.ts')]),
 
-  // Søndergården: committed native page source; stored editor composition is not acceptance evidence.
   relation('soendergaarden', 'c9y-text', 'shared', 'Its Markdown is declared as native content blocks; the former keyed-field annotation step has been removed.', [SDG('scripts/native.ts'), SDG('sync.json')], '2026-10-28'),
   relation('soendergaarden', 'c9y-page', 'shared', 'Its build declares NativePageDocument pages, and the platform’s native runtime draws them into its shell, live since 28 October 2026. Owner editing in the app awaits acceptance.', [SDG('scripts/native.ts'), SDG('web/shell.html'), SDG('sync.json'), PLATFORM('worker/native.ts')], '2026-10-28'),
   relation('soendergaarden', 'c9y-site-runtime', 'shared', 'The platform’s general native runtime serves it (`runtime: native`), the first site on it.', [SDG('scripts/site-json.mjs'), PLATFORM('worker/runtimes.ts')], '2026-10-28'),

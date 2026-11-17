@@ -38,7 +38,6 @@ test("an empty state takes its heading, text and actions as slotted content", as
   const mount = document.createElement("div"); document.body.append(mount);
   const root = createRoot(mount);
   try {
-    // A test id is a native attribute on the host, as in JSX.
     const props = { heading: "No results", centered: true, level: 3, "data-testid": "empty" };
     await act(async () => root.render(createElement(Empty, props, "Try another word.")));
     const host = mount.querySelector("ds-empty")!; await host.updateComplete;

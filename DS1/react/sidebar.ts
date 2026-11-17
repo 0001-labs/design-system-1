@@ -1,34 +1,21 @@
-/** A sidebar in React: the rows go to ds-sidebar as a property, its events come
- * back as callbacks; `tree` makes it a tree of nested things. Browser-only
- * registration of ds-sidebar stays in the product's runtime entry; on the
- * server the element renders empty and fills on load. */
 import { createElement as h, forwardRef, useEffect, useLayoutEffect, useRef, type HTMLAttributes } from "react";
 import type { Sidebar as SidebarElement, SidebarItem, SidebarMoveDetail } from "../3-unit/ds-sidebar";
 
 export type { SidebarItem, SidebarMoveDetail };
 
 export type SidebarProps = Omit<HTMLAttributes<SidebarElement>, "onSelect" | "onToggle"> & {
-  /** The visible rows, in order; leave out the children of a closed row. */
   items: SidebarItem[];
-  /** The navigation's or the tree's accessible name. */
   label?: string;
-  /** The empty state's words. */
   empty?: string;
-  /** A tree of nested things instead of navigation. */
   tree?: boolean;
-  /** Navigation eight squares wide, each row hugging its words. */
   narrow?: boolean;
   disclosurePosition?: "start" | "end"; expandIcon?: string;
   collapseIcon?: string;
   reorderable?: boolean;
   onMove?: (move: SidebarMoveDetail) => void;
-  /** A row asks to open (`true`) or close. */
   onToggle?: (id: string, expanded: boolean) => void;
-  /** A click, Space or Enter chose a tree row. */
   onSelect?: (id: string) => void;
-  /** A row was pressed (navigation), or Enter or a double click opened one (a tree). */
   onActivate?: (id: string) => void;
-  /** A row's own action was pressed. */
   onAction?: (id: string, action: string) => void;
 };
 

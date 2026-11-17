@@ -49,11 +49,6 @@ it('times out inference with a retryable failure', async () => {
   expect((await pending).status).toBe(502);
 });
 
-/*
- * Ask, on the vocabulary: a section or a page generated from a request. The judgment runs through
- * TypeSafe when its key is there; without it the heuristic reads the request. The
- * generator's answer passes `checkAskAnswer` before it is given, and a refusal answers 422.
- */
 const nativeDocument = { schema: 1, kind: 'native-page', title: 'Harbour rafts', lang: 'en', layout: { padding: 20, gap: 40 }, blocks: [
   { id: 'top', kind: 'hero', height: 24, picture: { src: '/photos/harbour.jpg', alt: 'Three rafts' }, title: 'The cosiest boat hire in town' },
   { id: 'tours', kind: 'cards', items: [{ title: 'Green raft' }] },

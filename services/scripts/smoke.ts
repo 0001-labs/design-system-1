@@ -1,18 +1,3 @@
-/**
- * End-to-end smoke test against deployed Workers.
- *
- * Publishes a throwaway library through designsystem1, then checks that
- * the same Worker serves it correctly — the same assertions the miniflare suite
- * makes, but against the real Cloudflare runtime, real R2, and the real edge.
- *
- *   ASSETS_URL=https://designsystem1.com \
- *   PUBLISH_URL=https://designsystem1.com \
- *   PUBLISH_SECRET=... \
- *   vp run smoke
- *
- * Writes into whichever R2 bucket the Workers are bound to, under a random
- * public id. Pass --keep to leave the artifacts in place for manual poking.
- */
 const ASSETS_URL = process.env.ASSETS_URL?.replace(/\/$/, "");
 const PUBLISH_URL = process.env.PUBLISH_URL?.replace(/\/$/, "");
 const PUBLISH_SECRET = process.env.PUBLISH_SECRET;
@@ -107,7 +92,6 @@ console.log("read path");
     pinned.headers.get("cache-control") === "public, max-age=31536000, immutable",
     pinned.headers.get("cache-control") ?? "",
   );
-  // Proves latest.css is a byte copy rather than a redirect or a lookup.
   check("latest and v/1 share an etag", etag === pinned.headers.get("etag"));
 
   const conditional = await fetch(`${ASSETS_URL}/ds1/${publicId}/latest.css`, {
@@ -136,7 +120,6 @@ console.log("\npublish v2 and roll back");
 {
   await publish(2, V2);
 
-  // The edge may hold latest.css for up to s-maxage=10.
   await new Promise((resolve) => setTimeout(resolve, 12_000));
 
   const after = await fetch(`${ASSETS_URL}/ds1/${publicId}/latest.css`, { cache: "no-store" });
@@ -144,7 +127,6 @@ console.log("\npublish v2 and roll back");
   check("ds1-version reports 2", after.headers.get("ds1-version") === "2", after.headers.get("ds1-version") ?? "");
   check("v/1.css is still reachable forever", (await (await fetch(`${ASSETS_URL}/ds1/${publicId}/v/1.css`)).text()) === V1);
 
-  // Rollback is a repoint: write v1's bytes back to latest, minting no version.
   await fetch(`${PUBLISH_URL}/api/artifacts/${publicId}/latest`, {
     method: "PUT",
     body: V1,

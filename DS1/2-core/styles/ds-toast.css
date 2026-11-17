@@ -1,11 +1,5 @@
 @import "../../1-root/component-metrics.css";
 
-/* Toast, based on Sonner (https://sonner.emilkowal.ski, MIT licence).
- * Sonner's stack, drawn as Design system 1's label: an ink chip one control
- * high per line of words, the tooltip's colours, no line and no shadow. The
- * pile advances one square per toast (a control and the rest of the square),
- * one square clear of the edge. Sonner's 400ms transitions on transform and
- * opacity only. */
 :host {
   --ds-toast-width: calc(16 * var(--ds-unit));
   --ds-toast-offset: var(--ds-unit);
@@ -25,7 +19,6 @@ ol {
   --lift: -1;
   position: fixed;
   z-index: 2147483000;
-  /* A popover in the top layer (above an open sheet or modal): none of the browser's own frame. */
   inset: auto;
   overflow: visible;
   border: 0;
@@ -40,13 +33,11 @@ ol {
   outline: none;
   pointer-events: none;
 }
-/* In the window, the offset clears the phone's safe area too. */
 ol[data-y="top"] { --lift: 1; top: calc(var(--ds-toast-offset) + env(safe-area-inset-top, 0px)); }
 ol[data-y="bottom"] { bottom: calc(var(--ds-toast-offset) + env(safe-area-inset-bottom, 0px)); }
 ol[data-x="left"] { left: var(--ds-toast-offset); }
 ol[data-x="right"] { right: var(--ds-toast-offset); }
 ol[data-x="center"] { left: 50%; transform: translateX(-50%); }
-/* Contained: within the nearest positioned ancestor instead of the window. */
 :host([contained]) ol { position: absolute; z-index: var(--ds-toast-z-index, 60); }
 :host([contained]) ol[data-y="top"] { top: var(--ds-toast-offset); }
 :host([contained]) ol[data-y="bottom"] { bottom: var(--ds-toast-offset); }
@@ -82,18 +73,15 @@ ol[data-x="left"] .toast { margin-right: auto; }
 ol[data-x="right"] .toast { margin-left: auto; }
 .toast:focus-visible { outline: 2px solid var(--ds-focus-ring); outline-offset: 1px; }
 
-/* Entering: from beyond the edge, then into the stack. */
 .toast[data-mounted="false"] { transform: translateY(calc(var(--lift) * -100%)); }
 .toast[data-mounted="true"] { opacity: 1; }
 
-/* Collapsed: the front toast, and the next ones peeking out a little smaller. */
 ol[data-expanded="false"] .toast[data-mounted="true"] {
   transform: translateY(calc(var(--lift) * var(--index) * var(--ds-toast-gap) + var(--swipe))) scale(calc(1 - var(--index) * 0.05));
 }
 ol[data-expanded="false"] .toast[data-front="false"] { height: var(--front-height); }
 ol[data-expanded="false"] .toast[data-front="false"] .body { opacity: 0; }
 
-/* Expanded: each toast after the ones in front of it. */
 ol[data-expanded="true"] .toast[data-mounted="true"] {
   transform: translateY(calc(var(--lift) * (var(--offset) + var(--index) * var(--ds-toast-gap)) + var(--swipe)));
 }
@@ -101,12 +89,10 @@ ol[data-expanded="true"] .toast[data-mounted="true"] {
 .toast[data-visible="false"] { opacity: 0; pointer-events: none; }
 .toast[data-swiping="true"] { transition: none; }
 
-/* Leaving: the front one back over its edge, the others fade where they are. */
 .toast[data-removed="true"] { opacity: 0; pointer-events: none; }
 .toast[data-removed="true"][data-front="true"] { transform: translateY(calc(var(--lift) * -100%)); }
 .toast[data-swipe-out="true"] { transform: translateY(calc(var(--swipe) + var(--lift) * -100%)); }
 
-/* Words padded 4px from the chip's edge; each line one control high. */
 .body {
   display: flex;
   align-items: flex-start;
@@ -126,13 +112,11 @@ ol[data-expanded="true"] .toast[data-mounted="true"] {
   --ds-icon-color: currentColor;
 }
 .icon:first-child { margin-left: calc(-4px * var(--ds-sf)); }
-/* The page toaster (0-face/toaster.ts) draws its icons as inline SVG, at ds-icon's size. */
 .icon > svg, .close > svg { width: calc(14px * var(--ds-sf)); height: calc(14px * var(--ds-sf)); }
 .content { flex: 1 1 auto; min-width: 0; }
 .title, .description { white-space: normal; overflow-wrap: anywhere; }
 .description { opacity: 0.7; }
 
-/* Actions are words of the same size, underlined as text buttons are. */
 .button {
   flex: 0 0 auto;
   margin: 0 0 0 calc(4px * var(--ds-sf));
@@ -177,7 +161,6 @@ a.button { display: inline-block; }
 }
 @keyframes ds-toast-spin { to { transform: rotate(360deg); } }
 
-/* Sonner's rich colours: a meaningful fill for each type, lettered in the ink. */
 :host([rich-colors]) .toast[data-type="success"] { --ds-toast-background: var(--ds-apple-green); }
 :host([rich-colors]) .toast[data-type="info"] { --ds-toast-background: var(--ds-zenith-blue); }
 :host([rich-colors]) .toast[data-type="warning"] { --ds-toast-background: var(--ds-orange); }

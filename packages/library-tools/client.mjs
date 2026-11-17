@@ -33,7 +33,6 @@ export class LibraryClient {
     const { result } = await this.request('/api/library-auth/sign-in', { provider: 'email-code', params: { email, ...(code ? { code } : {}) } });
     if (code) await this.store(result?.tokens);
   }
-  // CLI and MCP share renewable sessions. Lock refreshes across processes.
   async session() {
     if (process.env.DS1_TOKEN) return process.env.DS1_TOKEN;
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
@@ -50,8 +49,7 @@ export class LibraryClient {
       let tokens = await this.credentials();
       if (!tokens) throw new Error('Run ds1 login before using libraries.');
       let expires = 0;
-      try { expires = JSON.parse(Buffer.from(tokens.token.split('.')[1], 'base64url').toString()).exp * 1000; } catch { /* Refresh an unreadable token. */ }
-      // This decoded expiry only decides when to refresh; the server validates authorization.
+      try { expires = JSON.parse(Buffer.from(tokens.token.split('.')[1], 'base64url').toString()).exp * 1000; } catch {}
       if (expires < Date.now() + 60_000) {
         const { result } = await this.request('/api/library-auth/sign-in', { refreshToken: tokens.refreshToken });
         await this.store(result?.tokens); tokens = result.tokens;

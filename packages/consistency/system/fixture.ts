@@ -1,6 +1,5 @@
 import type { C9ySystem } from './model';
 
-/** A small C9Y System for the page's own tests: two sites, one component in each layer and one of each relation kind. */
 export const FIXTURE: C9ySystem = {
   version: 1,
   reviewed: '2026-10-27',

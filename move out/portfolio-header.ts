@@ -1,11 +1,5 @@
 import { LitElement, html, css } from "lit";
 
-/**
- * A component for displaying page headers
- *
- * @element portfolio-header
- * @prop {string} gridarea - Grid area placement
- */
 export class PortfolioHeader extends LitElement {
   private _gridArea = "";
 

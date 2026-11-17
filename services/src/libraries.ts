@@ -1,4 +1,3 @@
-/** The app's existing functions remain the authorization boundary for every client. */
 export interface LibraryApiEnv { REPORTS_AUTH_URL?: string }
 type Property = { type: "string" | "number" | "boolean"; description?: string };
 type Operation = { description: string; kind: "query" | "mutation" | "action"; path: string; properties: Record<string, Property>; required: string[]; readOnly: boolean };
@@ -65,7 +64,6 @@ export async function libraryApi(request: Request, env: LibraryApiEnv, send: typ
       method: "POST", headers: { "Content-Type": "application/json", ...(authorization ? { authorization } : {}) },
       body: JSON.stringify({ path: backendPath, args: [args], format: "convex_encoded_json" }), redirect: "manual", signal: AbortSignal.timeout(60_000),
     });
-    // Workers accept only "follow" or "manual" (a "error" redirect throws before the request is sent), so a redirect is refused here.
     if (response.status >= 300 && response.status < 400) return fail("upstream_error", "Library service could not complete the request.", 502);
     if (response.status === 401 || response.status === 403) return fail("unauthenticated", "Sign in again.", 401);
     if (!response.ok) return fail("upstream_error", "Library service could not complete the request.", 502);

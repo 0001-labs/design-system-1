@@ -2,7 +2,6 @@ import { LitElement, html, css } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 import { define } from "../0-face/define";
 
-/** A colour sample, composed with ds-button for selectable library choices. */
 export class Swatch extends LitElement {
   static properties = { value: { type: String }, selected: { type: Boolean, reflect: true } };
   declare value: string;

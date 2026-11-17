@@ -2,7 +2,6 @@ import { render } from 'lit';
 import type { ReactiveControllerHost } from 'lit';
 import { TableColumns } from './table-columns';
 
-/** The leaf cells of a grouped/row-spanning heading, in physical column order. */
 function headings(table: HTMLTableElement): HTMLTableCellElement[] {
   const rows = table.tHead ? Array.from(table.tHead.querySelectorAll<HTMLTableRowElement>(':scope > tr')) : table.rows.length ? [table.rows[0]!] : [];
   const grid: HTMLTableCellElement[][] = [];
@@ -21,7 +20,6 @@ function headings(table: HTMLTableElement): HTMLTableCellElement[] {
   return result.every(cell => cell.colSpan === 1) ? result : [];
 }
 
-/** Add the shared column interaction without replacing cells, links, sorting or row handlers. */
 function bind(table: HTMLTableElement, cells: HTMLTableCellElement[]) {
   const ownViewport = !table.parentElement?.matches('[data-ds-table-viewport], .ds-table-scroll');
   const viewport = ownViewport ? document.createElement('div') : table.parentElement!;
@@ -76,7 +74,6 @@ function bind(table: HTMLTableElement, cells: HTMLTableCellElement[]) {
   };
 }
 
-/** Opt existing semantic tables into DS1 resizing, including tables added by later renders. */
 export function watchTableColumns(root: ParentNode = document, selector = 'table.ds-table'): () => void {
   const bound = new Map<HTMLTableElement, ReturnType<typeof bind>>();
   let frame = 0;

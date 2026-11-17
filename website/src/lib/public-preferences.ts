@@ -6,6 +6,4 @@ configureI18n(window.DS_ONE_I18N ?? { persist: false, autoLoad: false });
 const applyLanguage = () => setLanguage(getBrowserLanguage());
 applyLanguage();
 window.addEventListener('languagechange', applyLanguage);
-// Documentation and its catalogue ship together, so optional runtime requests
-// cannot delay header initialization or leave the selected language unavailable.
 loadTranslations(translations);

@@ -10,7 +10,6 @@ import { button, loading, notice } from "../lib/ui";
 import { follow, href } from "../router";
 import "./profile.css";
 
-/** The signed-in email, the company name and signing out. */
 export class Profile extends AppElement {
   static properties = {
     company: { state: true },

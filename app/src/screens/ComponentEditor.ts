@@ -14,14 +14,6 @@ import "./ComponentCanvas";
 import "./component-editor.css";
 import { propertyGroups } from "./PropertyGroups";
 
-/**
- * The base system's components on a canvas, edited by their own tokens: the components down the
- * side as the documentation lists them, the chosen one's states on the grid (`ComponentCanvas.ts`)
- * with handles on the selected one, and its properties beside it in whole squares, as a design tool
- * sets them (`PropertyGroups.ts`). Every edit goes into the draft (`lib/baseDraft.ts`), which makes
- * it live after a pause; the canvas shows the draft at once. The code stays behind the CSS
- * disclosure. Every token of the base is still at `?view=tokens`.
- */
 export class ComponentEditor extends AppElement {
   static override box = true;
   static properties = {
@@ -31,7 +23,6 @@ export class ComponentEditor extends AppElement {
   declare cssOpen: boolean;
   declare collapsed: boolean;
   readonly draft = new BaseDraft(this);
-  /** The draft and a drag's preview, shared by the canvas and the property groups. */
   readonly editing = new PropertyEditing(this.draft);
   #cssId = accordionId();
 

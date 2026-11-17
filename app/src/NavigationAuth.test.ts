@@ -124,14 +124,12 @@ test('the active library\'s draft reaches only the parent, live, and is withdraw
     ask('lib1');
     await settle();
     expect(styles()).toEqual([[{ type: 'ds1:active-library-styles', id: 'lib1', name: 'Acme', css: ':root { --ds-radius: 0px; }' }, location.origin]]);
-    // Unrelated updates send nothing new; a new draft is sent once.
     element.requestUpdate(); await settle();
     expect(styles()).toHaveLength(1);
     mocks.libraries.lib1 = { _id: 'lib1', name: 'Acme', draftCss: ':root { --ds-radius: 4px; }' };
     element.requestUpdate(); await settle();
     expect(styles().at(-1)?.[0]).toMatchObject({ id: 'lib1', css: ':root { --ds-radius: 4px; }' });
     expect(styles()).toHaveLength(2);
-    // Asking again answers again; another person's library, or one that is gone, is withdrawn.
     ask('lib1'); await settle();
     expect(styles()).toHaveLength(3);
     mocks.libraries.lib2 = null;
@@ -141,7 +139,6 @@ test('the active library\'s draft reaches only the parent, live, and is withdraw
     session.set({ isAuthenticated: false, isLoading: false });
     await settle();
     expect(styles().at(-1)?.[0]).toEqual({ type: 'ds1:active-library-styles', id: 'lib1', name: null, css: null });
-    // Stopping sends nothing more.
     const count = styles().length;
     ask(null); session.set({ isAuthenticated: true, isLoading: false }); await settle();
     expect(styles()).toHaveLength(count);

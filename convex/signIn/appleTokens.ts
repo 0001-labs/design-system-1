@@ -6,14 +6,6 @@ import { appleClientSecret } from './appleSecret'
 import { appleNativeClients, verifyAppleIdentityToken } from './appleIdentity'
 import type { Environment } from './social'
 
-/*
- * Apple's refresh tokens, kept per account and client so they can be revoked
- * when the account is deleted, as Apple requires of every app offering Sign in
- * with Apple. The web flow hands the token to the Apple provider's `profile`
- * (see `providers.ts`); the native flow exchanges the authorization code.
- * Client secrets are minted per call from the owner's signing key.
- */
-
 export function appleTokenKeysConfigured(env: Environment): boolean {
   return Boolean(env.APPLE_TEAM_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY)
 }
@@ -21,7 +13,6 @@ async function secret(env: Environment, clientId: string) {
   return appleClientSecret({ teamId: env.APPLE_TEAM_ID!, keyId: env.APPLE_KEY_ID!, privateKey: env.APPLE_PRIVATE_KEY!, clientId, days: 1 })
 }
 
-/** Native codes are bound to the same subject, audience and nonce as the identity already verified. Null when the signing keys are not configured. */
 export async function exchangeAppleCode(input: { code: string; nonce: string; subject: string; clientId: string }, env: Environment, verify = verifyAppleIdentityToken): Promise<string | null> {
   if (!appleTokenKeysConfigured(env)) return null
   if (!input.code || input.code.length > 4096) throw new Error('Apple authorization code is required')
@@ -37,7 +28,6 @@ export async function exchangeAppleCode(input: { code: string; nonce: string; su
   return tokens.refresh_token
 }
 
-/** False means the owner's signing keys are not configured; the pending token is kept for later. */
 export async function revokeAppleToken(clientId: string, refreshToken: string, env: Environment): Promise<boolean> {
   if (!appleTokenKeysConfigured(env)) return false
   const response = await fetch('https://appleid.apple.com/auth/revoke', {
@@ -56,7 +46,6 @@ export async function rememberAppleToken(ctx: MutationCtx, userId: Id<'users'>, 
   else await ctx.db.insert('appleRefreshTokens', { userId, clientId, refreshToken, status: 'active', attempts: 0, nextAttemptAt: 0 })
 }
 
-/** For a product's `createOrUpdateUser` or `afterUserCreatedOrUpdated` callback: keeps the token the web Apple provider put on the profile. */
 export async function rememberAppleTokenFromProfile(ctx: MutationCtx, userId: Id<'users'>, args: { type: string; provider?: { id: string }; profile: Record<string, unknown> }) {
   if (args.type === 'oauth' && args.provider?.id === 'apple' && typeof args.profile.appleRefreshToken === 'string' && typeof args.profile.appleClientId === 'string')
     await rememberAppleToken(ctx, userId, args.profile.appleClientId, args.profile.appleRefreshToken)
@@ -67,7 +56,6 @@ export const store = internalMutation({
   handler: async (ctx, args) => { await rememberAppleToken(ctx, args.userId, args.clientId, args.refreshToken); return null },
 })
 
-/** Call from account deletion. The token survives only until Apple confirms revocation; scheduled arguments carry its ID, never its secret. */
 export async function scheduleAppleRevocation(ctx: MutationCtx, userId: Id<'users'>) {
   const tokens = await ctx.db.query('appleRefreshTokens').withIndex('by_userId_and_clientId', (q) => q.eq('userId', userId)).take(11)
   if (tokens.length > 10) throw new Error('Too many Apple connections for account deletion')
@@ -104,12 +92,11 @@ export const revoke = internalAction({
     const token = await ctx.runQuery(internal.signIn.appleTokens.pending, { id })
     if (!token) return null
     let revoked = false
-    try { revoked = await revokeAppleToken(token.clientId, token.refreshToken, process.env) } catch { /* Retry without logging credentials or provider response bodies. */ }
+    try { revoked = await revokeAppleToken(token.clientId, token.refreshToken, process.env) } catch {}
     await ctx.runMutation(internal.signIn.appleTokens.finish, { id, revoked })
     return null
   },
 })
-/** Hourly, from the product's crons. */
 export const retry = internalMutation({
   args: {}, returns: v.null(),
   handler: async (ctx) => {

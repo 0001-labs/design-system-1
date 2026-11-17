@@ -1,15 +1,7 @@
 import SwiftUI
 
-/// `ds-input`'s faces: `field` (the default for a field on its own: the fill, a 1-point border
-/// and the corner), `row` (an 18-point field in a 20-point settings row, on the field's ground,
-/// square) and `plain` (words alone).
 public enum DS1FieldVariant: Sendable { case field, row, plain }
 
-/// `ds-input`: one square high, text inset 4, with an optional `label` above (a required field
-/// adds " *" in the danger colour), an `error` below on its own lines, and for a `secure` field
-/// a button that shows and hides the password. `rows` makes it the multiline field (`multiline`):
-/// the field's look across that many lines one square tall, growing with its text a line at a
-/// time up to `maxRows` with `autoGrow`, then scrolling.
 public struct DS1Field: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.isEnabled) private var enabled

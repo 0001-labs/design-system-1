@@ -7,7 +7,6 @@ const root = join(import.meta.dirname, '..');
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
 test('the committed toast assets match the stylesheet and icons they come from', () => {
-  // Run `vp run generate:toast-assets` after changing ds-toast.css, the sheets it imports or the icons.
   expect(read(TOAST_ASSETS)).toBe(toastAssets(read));
 });
 
@@ -19,7 +18,6 @@ test('the page toaster and <ds-toast> draw from one stylesheet source', async ()
   expect(read('DS1/2-core/ds-toast.ts')).toContain('import styles from "./styles/ds-toast.css?inline";');
   const { toastIcons, toastStyles } = await import('../DS1/0-face/generated/toast-assets');
   expect(toastStyles).toBe(minifyStylesheet(resolveStylesheet(read, '2-core/styles/ds-toast.css')));
-  // The imports are written in, each once, before the toast's own rules.
   expect(toastStyles).not.toMatch(/@import|\/\*/);
   expect(toastStyles.match(/--ds-corner-size: 0px/g)).toHaveLength(1);
   expect(toastStyles.indexOf('--ds-corner-size')).toBeLessThan(toastStyles.indexOf('}:host{'));

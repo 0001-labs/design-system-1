@@ -117,7 +117,7 @@
     try {
       const url = new URL(document.referrer);
       if (["https:", "http:"].includes(url.protocol)) referrer = url.origin + "/";
-    } catch { /* No valid referrer. */ }
+    } catch {}
     const fields = {
       page_location: settings.origin + (page === "home" ? "/" : "/" + page),
       page_title: settings.name + " · " + page,

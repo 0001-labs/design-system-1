@@ -26,7 +26,6 @@ export function cardMinimumWidth(target: HTMLElement, scale = 1): number {
   const inset = Math.max(20, (Number.parseFloat(style?.paddingLeft ?? '') || 20) / scale) + Math.max(20, (Number.parseFloat(style?.paddingRight ?? '') || 20) / scale);
   return Math.max(240, Math.ceil((widest / scale + inset) / 20) * 20);
 }
-/** Invisible edge targets share App's pointer, cancellation and keyboard lifecycle. */
 export class ResizingLayer {
   private bindings = new Map<HTMLElement, { dispose: () => void; edges: HTMLElement[] }>();
   private observer: MutationObserver;
@@ -50,8 +49,6 @@ export class ResizingLayer {
       }
       if (card && key && !target.closest('.aa-atom') && target.parentElement?.classList.contains('consistency-projects')) { const property = target === target.parentElement.firstElementChild ? '--resize-first' : '--resize-last'; const saved = this.options.size(key); if (saved) target.parentElement.style.setProperty(property, `calc(${saved.width}px * var(--sf))`); else target.parentElement.style.removeProperty(property); }
       if (!this.bindings.has(target) && card && !target.shadowRoot?.querySelector('.ds-card')) { if (!this.pending.has(target)) { this.pending.add(target); void (target as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete.then(() => { this.pending.delete(target); this.refresh(); }); } continue; }
-      // A linked size is the requested design size. Each instance still needs
-      // enough layout room for its own independent words at the applied width.
       if (card) target.style.minWidth = `calc(${cardMinimumWidth(target, this.scaleOf(target))}px * var(--sf))`;
       if (card) target.style.minHeight = `calc(${cardMinimumHeight(target, Number.parseFloat(getComputedStyle(target).getPropertyValue('--sf')) || 1)}px * var(--sf))`;
       if (!this.bindings.has(target)) this.bind(target, card, carousel);
@@ -114,7 +111,6 @@ export interface ResizeTargetOptions {
   begin: () => void; end: (cancelled: boolean) => void; paintSize: (size: ElementSize) => void; save: (size: ElementSize) => void;
   cancelSettle: () => void; settle: (update: () => Promise<unknown>) => Promise<unknown>;
 }
-/** Canonical edge and corner gestures. The adapter supplies only document measures and persistence. */
 export function bindResizeEdges(target: HTMLElement, options: ResizeTargetOptions): { edges: HTMLElement[]; dispose: () => void } {
   const { host, box, card, carousel, name, scale, size, minimumWidth, minimumHeight, maxWidth, begin, end, paintSize, save } = options;
   let minWidth = minimumWidth();

@@ -83,7 +83,6 @@ describe('edits a section as one block: slots, items and ranges from the vocabul
       const checked=validateNativePage(page([block]),context).blocks[0];
       expect(checked,kind).toEqual(block);
       expect(JSON.stringify(block),kind).not.toContain('harbour.jpg","alt":"Three');
-      // A form field's name is what its value is sent under, an identifier the example keeps, not words.
       expect(JSON.stringify(block,(key,value)=>key==='inputs'?(value as {name:string}[]).map(({name:_name,...rest})=>rest):value),kind).not.toMatch(/"(?:title|heading|text|answer|term|question|name)":"(?!Title|Heading|Text|Answer|Term|Question|Name|Button|Link|Policy|Follow|Line|Legal line|Tagline|Kicker|Label|Value)/);
     }
     const hero=newSection('hero',[],newId) as NativeHero;expect(hero.picture.src).toBe(PLACEHOLDER_PICTURE);expect(hero.title).toBe('Title');expect(hero.actions![0]).toEqual({text:'Button',href:'/book/',appearance:'primary',face:'outlined',size:'medium'});

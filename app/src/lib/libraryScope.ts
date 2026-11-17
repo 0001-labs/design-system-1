@@ -1,35 +1,5 @@
-/**
- * A library's stylesheet made fit for the specimens' shadow roots on the component canvas
- * (`ComponentCanvas.ts`): the rules go into each specimen's own shadow root, so they reach the
- * specimens and nothing around them, and nothing around them reaches in.
- *
- * Shadow roots rather than `@scope`: a scoped sheet would keep the library's rules on the
- * specimens, but the workbench's own element rules would still reach them. In a shadow root the
- * specimens stand only on what they inherit, the packaged defaults the app document loads
- * (`one.css`; the app never links the live base sheet), plus the library; and one constructed
- * sheet, shared by every specimen, works in current Chromium, Safari and Firefox.
- *
- * - `:root` becomes `:host`, the specimen's root (`:root.x` becomes `:host(.x)`; the canvas puts
- *   the document's theme classes on each specimen, so theme selectors match as on the page). A
- *   rule whose `:root` cannot be said as a `:host` (inside `:is()`/`:has()`, after a type such as
- *   `html:root`, or followed by `:has()`) is left out whole rather than written broken.
- * - `@font-face` cannot work in a shadow root (Chromium ignores it there), so the faces go to the
- *   document, each family under a private name the rules are rewritten to, so a library's face can
- *   never replace one the workbench itself draws with. A face inside `@media`, `@supports` or
- *   `@layer` goes with its conditions around it.
- * - `@import` cannot stand in a constructed stylesheet, and an imported font stylesheet would
- *   declare its families under their own names in the document, where they could replace the
- *   workbench's faces. So every import is left out of the specimens: imported faces show in the
- *   examples below the canvas, whose frames take the whole sheet, and not on the canvas.
- *
- * What does nothing inside a specimen, silently: `html` and `body` selectors (there is no such
- * element in it), `@property` (registered only from the document), and a relative `url()`, which
- * resolves against the app's page rather than the library's address.
- */
 export interface ScopedLibrary {
-  /** The rules for the specimens' shadow roots. */
   rules: string;
-  /** The faces for the document. */
   faces: string;
 }
 
@@ -49,7 +19,6 @@ export function scopeLibrary(css: string): ScopedLibrary {
   return { rules: rename(rules), faces: faces.map(rename).join("\n") };
 }
 
-/** One block's statements, scoped: faces collected with their conditions, imports left out, `:root` rules mapped. */
 function scopeBlock(css: string, faces: string[], conditions: string[]): string {
   let out = "";
   let from = 0;
@@ -73,7 +42,6 @@ function scopeBlock(css: string, faces: string[], conditions: string[]): string 
   return out + css.slice(from);
 }
 
-/** A selector list with each `:root` as the specimen's `:host`, or null when one cannot be said faithfully. */
 export function hostSelector(list: string): string | null {
   if (!/:root\b/i.test(list)) return list;
   const mapped = split(list).map(mapSelector);
@@ -85,7 +53,6 @@ function mapSelector(selector: string): string | null {
   let at = 0;
   for (let index = selector.indexOf(":root"); index >= 0; index = selector.indexOf(":root", at)) {
     if (/[\w-]/.test(selector[index + 5] ?? "")) { out += selector.slice(at, index + 5); at = index + 5; continue; }
-    // Inside parentheses or brackets, or after a type or class in the same compound: not a :host.
     if (depth(selector, index) > 0 || /[^\s>+~(,]$/.test(selector.slice(0, index))) return null;
     let end = index + 5;
     for (;;) {
@@ -108,7 +75,6 @@ function mapSelector(selector: string): string | null {
 
 const ident = (text: string, from: number) => { let end = from; while (/[\w-]/.test(text[end] ?? "")) end += 1; return end; };
 
-/** The index after the bracket that closes the one at `from`, or -1. */
 function close(text: string, from: number, open: string, shut: string) {
   let level = 0;
   for (let index = from; index < text.length; index += 1) {
@@ -127,7 +93,6 @@ function depth(text: string, until: number) {
   return level;
 }
 
-/** A selector list's selectors, split on the commas outside brackets. */
 function split(list: string) {
   const parts: string[] = [];
   let start = 0;
@@ -135,7 +100,6 @@ function split(list: string) {
   return [...parts, list.slice(start)];
 }
 
-/** Where a statement's block opens, outside strings, or -1 for a statement without one. */
 function openBrace(text: string) {
   let quote = "";
   for (let index = 0; index < text.length; index += 1) {
@@ -147,7 +111,6 @@ function openBrace(text: string) {
   return -1;
 }
 
-/** Each top-level statement or block, comment- and string-aware: its text and where it stands. */
 function statements(css: string) {
   const found: { start: number; end: number; text: string }[] = [];
   let level = 0;

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
 type Routing = typeof import("../DS1/0-face/language-routing");
 
-// A fresh module per test, since the routing options are module state
 async function load(): Promise<Routing> {
   vi.resetModules();
   return import("../DS1/0-face/language-routing");

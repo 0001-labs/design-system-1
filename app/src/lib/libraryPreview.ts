@@ -1,6 +1,5 @@
 import { libraryTokenValues } from './libraryTokens';
 
-/** Resolve colour references without installing a library's stylesheet in the app. */
 export function previewColours(css: string, defaults: string): Record<string, string> {
   const base = libraryTokenValues(defaults);
   const values = new Map([...base, ...libraryTokenValues(css)]);

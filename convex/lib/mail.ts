@@ -1,15 +1,5 @@
 import { escapeHref, escapeHtml } from "./escape";
 
-/**
- * Resend over plain `fetch`, no SDK — the same approach as the sibling
- * Consistency repo, with three deliberate changes:
- *
- *   1. The From address is a parameter, not a literal repeated at every call
- *      site.
- *   2. Everything interpolated into the HTML is escaped.
- *   3. There is exactly one no-key policy. Consistency has four different ones
- *      across four call sites — crash, 503, throw, and silent no-op.
- */
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 export interface Email {
@@ -23,7 +13,6 @@ export function resendApiKey(): string | undefined {
   return process.env.AUTH_RESEND_KEY ?? process.env.RESEND_API_KEY;
 }
 
-/** MAIL_FROM, or its address under another name when one is given (a product the sign-in serves). */
 export function mailFrom(name?: string): string {
   const from = process.env.MAIL_FROM ?? "Design system 1 <login@mail.dsone.dev>";
   if (!name) return from;
@@ -34,8 +23,6 @@ export function mailFrom(name?: string): string {
 export async function sendEmail(email: Email, fromName?: string): Promise<void> {
   const key = resendApiKey();
   if (!key) {
-    // The one no-key policy: never silently succeed in a way that looks like
-    // delivery. The caller is responsible for the dev fallback.
     throw new Error("AUTH_RESEND_KEY is not configured.");
   }
 
@@ -54,11 +41,6 @@ export function renderMagicLinkEmail(args: { url: string; expiresMinutes: number
   const href = escapeHref(args.url);
   const minutes = Math.max(1, Math.round(args.expiresMinutes));
 
-  // escapeHref collapses anything that is not http(s) to "#". That should be
-  // unreachable — we generate this URL — but if it ever happens, do not also
-  // print the raw value under "paste this into your browser". Telling someone
-  // to paste a javascript: URL is worse than showing them nothing, and some
-  // mail clients auto-linkify bare text.
   const usable = href !== "#";
 
   const fallback = usable

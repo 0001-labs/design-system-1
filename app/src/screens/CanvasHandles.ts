@@ -7,7 +7,6 @@ import { bandRect, canvasHandles, handleNumber, handleSlider, handleToken, hitRe
 import { AppElement, defineElement } from "../lib/element";
 
 export type CanvasBox = { width: number; height: number; left: number; top: number; sf: number };
-/** A handle's value on its way to the draft: `value` "" takes the token out; a null preview ends it. */
 export type HandleChange = { token: string; value: string };
 
 const LABELS: Record<HandleKind, string> = {
@@ -15,15 +14,6 @@ const LABELS: Record<HandleKind, string> = {
 };
 const px = (rect: Rect) => ({ left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
 
-/**
- * The selected component's handles on the canvas, as a design tool draws them: a 1px outline on the
- * box as drawn, its bottom edge for the height, its right edge for the width, a padding band inside
- * each side, a corner handle inset at the radius and a size handle on the far corner, each only
- * where the component has that property. A drag previews (`handle-preview`) without touching the
- * draft; letting go commits once (`handle-commit`); Escape restores. Holding Alt over the component
- * shows every measure at once. Each handle is a slider for the keyboard too. A `locked` property
- * (one something else draws over its token) keeps its measure, for Alt, and takes no pointer.
- */
 export class CanvasHandles extends AppElement {
   static properties = {
     spec: { attribute: false },
@@ -35,11 +25,8 @@ export class CanvasHandles extends AppElement {
   };
   declare spec: ComponentSpec;
   declare box: CanvasBox;
-  /** Each property's written value, a drag's preview included; undefined while unset. */
   declare values: Record<string, string | undefined>;
-  /** Tokens shown as measures only: their handles are not drawn. */
   declare locked: ReadonlySet<string>;
-  /** The handle being dragged or stepped from the keyboard, whose readout shows. */
   declare active: HandleKind | null;
   declare measuring: boolean;
   #unbind = new Map<HTMLElement, () => void>();
@@ -56,7 +43,6 @@ export class CanvasHandles extends AppElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    // Capture, so a drag's own move listener reads Shift as it stands on this move.
     window.addEventListener("pointermove", this.#track, true);
     window.addEventListener("keydown", this.#key);
     window.addEventListener("keyup", this.#key);
@@ -73,9 +59,7 @@ export class CanvasHandles extends AppElement {
     super.disconnectedCallback();
   }
 
-  /** Every handle of the spec, the locked ones' measures included. */
   get #all() { return canvasHandles(this.spec); }
-  /** The handles that take the pointer and the keyboard. */
   get #handles() { return this.#all.filter(handle => !this.locked.has(handle.property.token)); }
 
   #slider(handle: CanvasHandle) { return handleSlider(handle, this.values[handle.property.token], this.box, this.box.sf); }
@@ -87,12 +71,10 @@ export class CanvasHandles extends AppElement {
   #key = (event: KeyboardEvent) => {
     if (event.key !== "Alt") return;
     this.#measure(event.type === "keydown");
-    // Alt is only the measure's while it shows one; elsewhere it keeps its own meaning.
     if (this.measuring) event.preventDefault();
   };
   #leave = () => { this.measuring = false; };
 
-  /** Alt over the selected component, a square around it included, shows the measure. */
   #measure(alt: boolean) {
     const frame = this.querySelector(".component-editor-handles")?.getBoundingClientRect();
     const margin = SQUARE * this.box.sf;
@@ -109,7 +91,6 @@ export class CanvasHandles extends AppElement {
     for (const [element, unbind] of this.#unbind) if (!element.isConnected) { unbind(); this.#unbind.delete(element); }
     for (const element of this.querySelectorAll<HTMLElement>(".component-editor-handle")) {
       if (this.#unbind.has(element)) continue;
-      // This element's handle for its life: the element set is drawn anew for another component.
       const current = this.#handles.find(candidate => candidate.kind === element.dataset.handle);
       if (!current) continue;
       this.#unbind.set(element, bindSpacingHandle(element, () => {
@@ -122,7 +103,6 @@ export class CanvasHandles extends AppElement {
             this.#drag.value = snapHandle(slider, value, this.#pointer.shift);
             this.#emit("handle-preview", current, handleToken(current, this.#drag.value));
           },
-          // A drag commits the value it last showed (Shift's big step included); a key its own.
           onCommit: value => this.#emit("handle-commit", current, handleToken(current, this.#drag?.pointer ? this.#drag.value : value)),
           onEnd: () => {
             this.#drag = null;
@@ -135,7 +115,6 @@ export class CanvasHandles extends AppElement {
     this.#placeReadouts();
   }
 
-  /** Beside the foot when the canvas has room for it there, otherwise above the face at its end, so the number is never cut off. */
   #placeReadouts() {
     const side = this.querySelector<HTMLElement>(".component-editor-readouts[data-group='side']");
     const canvas = this.closest(".component-editor-canvas") ?? this.parentElement;
@@ -160,7 +139,6 @@ export class CanvasHandles extends AppElement {
       padding: padding ? readLength(padding.property, this.values[padding.property.token]) : 0,
       corner: corner ? readLength(corner.property, this.values[corner.property.token]) : 0,
     };
-    // The measure shows every readout but the second padding; a drag or a focused handle its own.
     const places = readoutPlaces(box, box.sf);
     const shown = this.measuring ? all.filter(handle => handle.kind !== "padding-end") : handles.filter(handle => handle.kind === this.active);
     return html`<div class="component-editor-handles" data-testid="canvas-handles" data-active=${this.active ?? nothing} ?data-measuring=${this.measuring}

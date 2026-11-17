@@ -1,20 +1,3 @@
-/**
- * Writes DS1/0-face/generated/toast-assets.ts: the toast's stylesheet and the
- * icons the page toaster draws, as plain strings, so the feedback module
- * (`0-face/feedback.ts`) is plain TypeScript that any bundler, runtime and
- * type check reads without `?inline` or `?raw` imports.
- *
- * The stylesheet is `2-core/styles/ds-toast.css` with the sheets it imports
- * written in where they are imported, as a bundler inlines them, without its
- * comments and spare whitespace, as a bundler minifies it. `<ds-toast>`
- * imports the same file, so both toasters draw from one stylesheet source.
- *
- *   node scripts/toast-assets.mjs           write the module
- *   node scripts/toast-assets.mjs --check   fail when it is out of date
- *
- * tests/toast-assets.test.ts fails when the committed module differs from
- * what this writes.
- */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +7,6 @@ export const TOAST_ASSETS = 'DS1/0-face/generated/toast-assets.ts';
 export const TOAST_STYLESHEET = '2-core/styles/ds-toast.css';
 export const TOAST_ICON_NAMES = ['check', 'close', 'notifications', 'warning'];
 
-/** A stylesheet inside DS1/ with its local `@import`s written in, each sheet once. */
 export function resolveStylesheet(read, file, seen = new Set()) {
   if (seen.has(file)) return '';
   seen.add(file);
@@ -35,11 +17,6 @@ export function resolveStylesheet(read, file, seen = new Set()) {
   });
 }
 
-/**
- * A stylesheet without comments and spare whitespace. Quoted strings are kept
- * as they are; elsewhere whitespace is one space, and none around braces and
- * semicolons.
- */
 export function minifyStylesheet(css) {
   return css
     .split(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|\/\*[\s\S]*?\*\/)/)
@@ -51,7 +28,6 @@ export function minifyStylesheet(css) {
     .trim();
 }
 
-/** The module's text, from DS1's sources as `read` gives them. */
 export function toastAssets(read = path => readFileSync(join(root, path), 'utf8')) {
   const styles = minifyStylesheet(resolveStylesheet(read, TOAST_STYLESHEET));
   const icons = TOAST_ICON_NAMES.map(name => `  ${JSON.stringify(name)}: ${JSON.stringify(read(`DS1/x-icon/${name}.svg`))},`);
@@ -79,7 +55,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const path = join(root, TOAST_ASSETS);
   const next = toastAssets();
   let current = '';
-  try { current = readFileSync(path, 'utf8'); } catch { /* not written yet */ }
+  try { current = readFileSync(path, 'utf8'); } catch {}
   if (process.argv.includes('--check')) {
     if (current !== next) {
       console.error(`${TOAST_ASSETS} is out of date: run vp run generate:toast-assets`);

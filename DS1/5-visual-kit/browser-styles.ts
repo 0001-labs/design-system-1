@@ -1,6 +1,5 @@
 import { css } from 'lit';
 
-/** macOS reference layouts: Safari 27 compact, Chrome 155, Edge 156. CSS pixels at 1×. */
 export const browserStyles = css`
   :host { --browser-strip:#dee1e6; --browser-toolbar:#fff; --browser-address:#f1f3f4; --browser-ink:#3c4043; }
   :host([appearance=dark]) { --browser-strip:#202124; --browser-toolbar:#35363a; --browser-address:#202124; --browser-ink:#e8eaed; }

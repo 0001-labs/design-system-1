@@ -2,8 +2,6 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 
-/// One app-owned layer above presented sheets. Toasts pass touches through outside their chips.
-/// It uses the attached view's scene, so no application singleton or product routing is involved.
 struct DS1PresentationLayer: View {
     @ObservedObject private var dialogs = DS1Overlays.shared
     @ObservedObject private var messages = DS1Toast.shared

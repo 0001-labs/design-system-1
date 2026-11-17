@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// `ds-tag`: a label that always hugs its complete words, one control high on the lower sixteen.
-/// The default tint follows ds-tag.css. A capsule and explicit surfaces compose neutral source marks.
 public struct DS1Tag<Leading: View>: View {
     @Environment(\.ds1Scale) private var scale
     let label: String
@@ -36,7 +34,6 @@ extension DS1Tag where Leading == EmptyView {
     }
 }
 
-/// The actual CSS uses srgb colour mixes; premultiplied alpha preserves translucent custom accents.
 struct DS1TagColours {
     let background: DS1Color
     let ink: DS1Color

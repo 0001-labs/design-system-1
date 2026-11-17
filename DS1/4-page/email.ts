@@ -1,20 +1,8 @@
-/** Resolved DS one desktop tokens: 12 columns × 20px, 14px text, 16px controls.
- * Email clients receive ordinary HTML and inline values instead of Lit components.
- */
 export const ink = '#2a2a2a'
 const green = '#99ff73'
 export const font = "'GT-America-Standard-Regular',Arial,Helvetica,sans-serif"
 export const emailType = `font-family:${font};font-size:14px;font-weight:400;line-height:20px;mso-line-height-rule:exactly;letter-spacing:-0.4px;color:${ink}`
-// A centered 20px tile starts 10px before the container midpoint. Offset it
-// so grid strokes begin on the centered 240px content edges.
-// Stroke widths remain literal 1px at every scale; avoid half-pixel phase offsets.
-// Match page-background.css: 8px paper inset; omit the first horizontal rule.
 const gridPosition = 'calc(50% + 10px) 0, 0 28px'
-// The ruling is a shade of black, not a grey: on white it is #ededed, and a
-// mail app that darkens the letter by itself, without reading the dark styles
-// below, turns the paper black but leaves a background image as it is. A
-// fixed light grey then stood as bright lines behind light text; a shade of
-// black disappears into the dark paper instead.
 const rule = 'rgba(0,0,0,0.07)'
 const grid =
   `linear-gradient(to right,${rule} 1px,transparent 1px),repeating-linear-gradient(to bottom,${rule} 0 1px,transparent 1px 20px)`
@@ -33,17 +21,10 @@ export function escapeHtml(value: string): string {
   )
 }
 
-/** Match the settings row's bottom-aligned 16px text box in a 20px row.
- * Offset the ink only: cell fills and the 20px line rhythm stay on the grid.
- */
 export function gridText(content: string): string {
   return `<div class="ds-email-ink" style="display:block;position:relative;top:2px;padding-left:2px">${content}</div>`
 }
 
-/** Static equivalent of a primary ds-button containing ds-text:
- * a 16px control with a 0.5px horizontal inset, and a centered 15px line in a 16px text box.
- * Half-pixel vertical padding reproduces that centering without Lit or flexbox.
- */
 export function primaryEmailButton(
   label: string,
   href: string,
@@ -51,10 +32,6 @@ export function primaryEmailButton(
   return `<a class="ds-email-action ds-email-type" href="${escapeHtml(href)}" style="${emailType};box-sizing:border-box;height:16px;line-height:15px;font-weight:500;letter-spacing:normal;vertical-align:top;display:inline-block;white-space:nowrap;border:0;border-radius:0;background:${green};padding:0.5px;text-align:left;text-decoration:none"><span class="ds-email-action-label" style="display:block;line-height:15px;mso-line-height-rule:exactly;letter-spacing:normal">${escapeHtml(label)}</span></a>`
 }
 
-/** DS one: viewport / 280, clamped to 0.75–2; desktop remains at 1.
- * Compile values into CSS rather than relying on custom properties in inboxes.
- * Width is our email-safe proxy for mobile; a narrow desktop reading pane also scales.
- */
 function scaledEmailCss(scale: number | 'fluid'): string {
   const px = (value: number) =>
     scale === 'fluid'
@@ -116,16 +93,12 @@ export interface EmailFrameOptions {
   language?: string
   fontUrl?: string
   wideLabel?: boolean
-  /** Plain paper with a wider reading column, without visible grid ruling. */
   plain?: boolean
-  /** Trusted HTML from a template renderer, never raw user input. */
   headerHtml?: string
   beforeHeaderHtml?: string
-  /** Trusted CSS from the product's validated branding tokens. */
   brandStyles?: string
 }
 
-/** Rows are trusted template HTML. Escape every interpolated user value. */
 export function emailFrame(options: EmailFrameOptions, body: string): string {
   const { product, homeUrl, title, preheader = '', language = 'en', fontUrl, wideLabel = false, headerHtml, beforeHeaderHtml = '', brandStyles = '' } = options
   const plain = options.plain === true
@@ -150,7 +123,6 @@ ${body}
 </table></td></tr></table></body></html>`
 }
 
-/** One paragraph on the email grid. html must already be escaped/rendered. */
 export function emailRow(html: string, gap: 0 | 20 | 40 = 20): string {
   const gapClass = gap === 40 ? ' ds-email-gap-two' : gap === 20 ? ' ds-email-gap-one' : ''
   return `<tr><td class="ds-email-type${gapClass}" style="padding:${gap}px 0 0;${emailType};overflow-wrap:anywhere;word-break:break-word">${gridText(html)}</td></tr>`

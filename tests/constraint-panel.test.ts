@@ -4,7 +4,6 @@ import { inspectConstraints } from "../DS1/0-face/constraints";
 import { initConstraintShortcut } from "../DS1/0-face/constraint-panel";
 
 type Box = { left: number; top: number; width: number; height: number };
-/** Draws an element at a place, as a browser would measure it. */
 const at = (element: Element, { left, top, width, height }: Box) => {
   element.getBoundingClientRect = () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
 };

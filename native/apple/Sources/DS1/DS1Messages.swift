@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// `ds-notice`'s tones.
 public enum DS1NoticeTone: Sendable {
     case neutral, success, warning, danger
     var icon: DS1IconName { self == .neutral ? .info : self == .success ? .check : .warning }
@@ -21,11 +20,6 @@ public enum DS1NoticeTone: Sendable {
     }
 }
 
-/// `ds-notice`: a message in the flow, beside what it is about. A one-square mark in its tone,
-/// the `heading` in the medium face and the `text`, every line one square, and `actions` a
-/// square below. `onDismiss` adds a close button. With `banner` it is a strip one square high
-/// across the top instead, on a fill of the tone's colour, everything on one line, the actions
-/// at the line's end.
 public struct DS1Notice<Actions: View>: View {
     @Environment(\.ds1Scale) private var scale
     let tone: DS1NoticeTone
@@ -89,9 +83,6 @@ extension DS1Notice where Actions == EmptyView {
     }
 }
 
-/// `ds-empty`: an empty place saying what fills it. An optional `icon` inline before the title, the
-/// `heading` in the medium face, the `text` muted, every line one square, at most 16 squares
-/// wide; `actions` a square below.
 public struct DS1Empty<Actions: View>: View {
     @Environment(\.ds1Scale) private var scale
     let heading: String?
@@ -129,12 +120,8 @@ extension DS1Empty where Actions == EmptyView {
     }
 }
 
-/// `ds-loading`'s two faces.
 public enum DS1LoadingVariant: Sendable { case bar, spinner }
 
-/// `ds-loading`: a status that something is on its way. The bar is three squares by 2 points,
-/// its fill sliding across in 1.8 s; the spinner one square, turning in 0.72 s. With reduce
-/// motion they stand still.
 public struct DS1Loading: View {
     @Environment(\.ds1Scale) private var scale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

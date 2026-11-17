@@ -8,24 +8,16 @@ import styles from './styles/ds-table-of-contents.css?inline';
 
 export interface TableOfContentsItem { href: string; label: string; depth?: number; }
 
-/** A page's section links. Placement belongs to the page, not this Unit.
- * Supply items or slot native anchors with data-depth. Same-page links track
- * their headings inside the actual scrolling container, including a shadow root.
- * @element ds-table-of-contents
- * @fires toc-change - { href }: the section in view changed.
- */
 export class TableOfContents extends LitElement {
   static properties = {
     items: { attribute: false }, label: { type: String }, literal: { type: Boolean },
     target: { attribute: false }, current: { state: true },
   };
   static styles = unsafeCSS(styles);
-  /** A cut label fades over its last square, never an ellipsis: marks it `data-cut="end"` while it does not fit. */
   protected readonly cuts = new CutFades(this, { selector: 'a', targets: () => this.querySelectorAll(':scope > a'), text: true });
   declare items: TableOfContentsItem[];
   declare label: string;
   declare literal: boolean;
-  /** Optional content scope, especially when the contents stand inside another component's shadow. */
   declare target?: HTMLElement;
   declare current: string;
   private links: HTMLAnchorElement[] = [];
@@ -77,7 +69,6 @@ export class TableOfContents extends LitElement {
       return root.getElementById(id) ?? null;
     } catch { return null; }
   }
-  /** Read links and targets again after replacing content or moving the Unit. */
   refresh() {
     if (!this.isConnected) return;
     this.links = this.items.length ? [...this.renderRoot.querySelectorAll<HTMLAnchorElement>('a')]
@@ -120,7 +111,6 @@ export class TableOfContents extends LitElement {
     const scrollTop = this.scroller?.scrollTop ?? window.scrollY;
     const scrollHeight = this.scroller?.scrollHeight ?? this.ownerDocument.documentElement.scrollHeight;
     const end = scrollTop > 0 && scrollTop + height >= scrollHeight - 1;
-    // The rendered row resolves nested scale and calc() tokens to actual pixels.
     const unit = this.renderRoot.querySelector<HTMLElement>('.title')?.getBoundingClientRect().height || 20;
     const line = top + (end ? height : unit);
     let current = this.sections[0].link.getAttribute('href')!;

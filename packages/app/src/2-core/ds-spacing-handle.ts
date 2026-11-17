@@ -3,9 +3,6 @@ import { define } from "../../../../DS1/0-face/define";
 import { bindSpacingHandle, type SpacingOptions } from "./spacing-handle";
 import styles from "./styles/ds-spacing-handle.css?inline";
 export { bindSpacingHandle, type SpacingOptions };
-/** @internal Built-in editor control, excluded from public catalogues.
- * Supply options with controlled value and callbacks. React uses the same
- * controller and face on a native slider target for SSR and native focus. */
 export class SpacingHandle extends LitElement {
   static properties = { options: { attribute: false }, label: { type: String } };
   static styles = unsafeCSS(styles);

@@ -9,7 +9,6 @@ import { bindContextMenuTrigger } from "./context-trigger";
 
 const ITEM = '[role="option"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]';
 const FOCUSABLE = 'button, a[href], input, select, textarea, [tabindex]';
-/** Every element the engine draws: the engine itself, Select and Context. */
 const MENUS = "ds-menu, ds-select, ds-context";
 export type MenuCloseReason = "escape" | "outside" | "select" | "back" | "parent" | "navigation";
 export type MenuTriggerMode = "click" | "context" | "submenu" | "manual";
@@ -18,7 +17,6 @@ export type MenuAnchor = HTMLElement | Pick<DOMRectReadOnly, "left" | "top" | "r
 
 const openMenus = new WeakMap<Document, Set<Menu>>();
 
-/** The topmost open floating menu, if any. Mobile sheet Escape defers to it. */
 export function topFloatingMenu(document: Document): Menu | undefined {
   const menu = [...(openMenus.get(document) ?? [])].at(-1);
   return menu?.open && menu.floating ? menu : undefined;
@@ -42,9 +40,6 @@ function menuNavigation(document: Document): MenuNavigation {
   document.addEventListener("pointerdown", pointer, { capture: true, passive: true });
   return state;
 }
-/** Close floating menus before a route swap. A control appearing under the pointer
- * becomes hoverable only after the pointer has travelled outside that control.
- * Explicit click and keyboard opening remain available immediately. */
 export function dismissMenusForNavigation(document: Document = window.document) {
   const state = menuNavigation(document);
   state.version++;
@@ -57,8 +52,6 @@ export function dismissMenusForNavigation(document: Document = window.document) 
   }
 }
 
-/** Shared option/action face and navigation. Floating menus use the native
- * popover layer; suggestions can keep focus on a light-DOM writing field. */
 export class Menu extends LitElement {
   static styles: CSSResultGroup = unsafeCSS(styles);
   static properties = {
@@ -80,16 +73,13 @@ export class Menu extends LitElement {
   declare compact: boolean;
   declare floating: boolean;
   declare open: boolean;
-  /** Stop new trigger requests without closing an operation already shown. */
   declare disabled: boolean;
   declare columns: number;
   declare anchor: MenuAnchor | null;
   declare placement: "top" | "bottom" | "right" | "left";
   declare triggerMode: MenuTriggerMode;
-  /** Delegate context gestures from trigger to matching descendants. */
   declare contextSelector: string;
   declare trigger: HTMLElement | null;
-  /** The id of the button that opens it, in the same document or shadow root, as `<label for>` names its field; `trigger` wins when both are set. */
   declare for: string;
   declare hover: boolean;
   declare controller: HTMLElement | null;
@@ -104,7 +94,6 @@ export class Menu extends LitElement {
   private search = "";
   private searchAt = 0;
   private gridColumn = 0;
-  /** Move focus into the menu when it opens (a person's opening always does); off to show a menu open without taking the reader's focus, as an example beside the page does. */
   focusOnOpen = true;
   private hoverTimer?: ReturnType<typeof setTimeout>;
   private hoverAwaitingExit = false;
@@ -121,7 +110,6 @@ export class Menu extends LitElement {
   private focusVersion = 0;
   private contextPoint: MenuAnchor | null = null;
   private invokingControl: HTMLElement | null = null;
-  /** Close the whole branch when a row is chosen (Select's and Context's menus); the engine alone leaves that to its product. */
   protected closesOnChoice = false;
   private get parentMenu(): Menu | null { return this.parentElement?.closest<Menu>(MENUS) ?? null; }
   private get rootMenu(): Menu { return this.parentMenu?.rootMenu ?? this; }
@@ -165,12 +153,10 @@ export class Menu extends LitElement {
     this.hide(true);
     super.disconnectedCallback();
   }
-  /** The element it stands by: its anchor, or for a menu from a button, the button. */
   private get anchorElement(): HTMLElement | null {
     if (this.anchor instanceof HTMLElement) return this.anchor;
     return !this.anchor && this.triggerMode !== "context" && this.triggerMode !== "manual" ? this.trigger : null;
   }
-  /** The opening button: `trigger`, else the element `for` names. */
   protected get forTarget(): HTMLElement | null {
     if (this.trigger) return this.trigger;
     if (!this.for) return null;
@@ -204,7 +190,6 @@ export class Menu extends LitElement {
     this.place();
     this.scrollActive();
   }
-  /** Prepare a newly inserted menu before gesture-time focus. */
   renderNow() { this.performUpdate(); }
   private bindTrigger(trigger: HTMLElement | null) {
     if (this.listeningTrigger === trigger && this.listeningSelector === this.contextSelector && this.listeningMode === this.triggerMode) return;
@@ -237,7 +222,6 @@ export class Menu extends LitElement {
     const event = new CustomEvent<MenuToggleDetail>("ds-menu-toggle", {detail: {open, ...detail}, bubbles: true, composed: true, cancelable: true});
     if (this.dispatchEvent(event)) this.open = open;
   }
-  /** Open a context menu from an actual viewport point or the trigger's keyboard position. */
   openAt(point: { x: number; y: number }, invokingControl = this.trigger, { focus = true }: { focus?: boolean } = {}) {
     if (this.disabled) return;
     if (this.trigger && !this.enabled(this.trigger)) return;
@@ -252,19 +236,13 @@ export class Menu extends LitElement {
     this.toggleFromTrigger(true, { trigger: invokingControl, point });
     if (this.open) this.place();
   }
-  /**
-   * A chosen row closes the branch after its own handlers ran, unless the row
-   * says `data-keep-open`, is disabled, or a handler prevented the click.
-   */
   private onChoice = (event: MouseEvent) => {
     if (!this.closesOnChoice) return;
     const row = event.composedPath().find(node => node instanceof HTMLElement && node.matches(ITEM)) as HTMLElement | undefined;
     if (!row || row.closest(MENUS) !== this || row.hasAttribute("data-keep-open") || !this.enabled(row)) return;
-    // A nested menu's row opens it; a file row waits for the platform's file choice.
     if (row.getAttribute("aria-haspopup") || row.matches('ds-file-picker, input[type="file"]') || row.querySelector('input[type="file"]')) return;
     queueMicrotask(() => { if (!event.defaultPrevented && this.open) this.select(); });
   };
-  /** A selected action dismisses its whole branch. Products can decline it. */
   select() { this.rootMenu.requestClose("select"); }
   private contextControl(event: Event): HTMLElement | null {
     if (this.disabled || !this.trigger) return null;
@@ -278,9 +256,6 @@ export class Menu extends LitElement {
   }
   private onTriggerClick = (event: MouseEvent) => {
     if (this.triggerMode === "context" || this.triggerMode === "manual" || event.defaultPrevented) return;
-    // A hover menu's trigger that is a link (`a href`, `ds-button href`) follows its link when pressed,
-    // unless the link leads to the page already shown: then the press opens the menu instead, since the
-    // link would go nowhere and a finger has no hover to open it with (a modifier press stays the browser's).
     if (this.hover && this.trigger?.matches("a[href], ds-button[href]")) {
       if (!this.triggerLinksHere() || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
@@ -289,7 +264,6 @@ export class Menu extends LitElement {
     this.openingEdge = "first";
     this.toggleFromTrigger(this.triggerMode === "submenu" || !this.open);
   };
-  /** Whether the trigger's link leads to the page already shown: same origin, path and query, and no fragment. */
   private triggerLinksHere(): boolean {
     const href = this.trigger?.getAttribute("href");
     const view = this.ownerDocument.defaultView;
@@ -318,7 +292,6 @@ export class Menu extends LitElement {
     this.openingEdge = event.key === "ArrowUp" ? "last" : "first";
     if (this.open) this.initialChoice()?.focus(); else this.toggleFromTrigger(true);
   };
-  /** @internal Arm against the pointer where this destination control actually appears. */
   holdNavigationHover() {
     if (!this.isConnected) return;
     const state = navigationState.get(this.ownerDocument);
@@ -333,7 +306,6 @@ export class Menu extends LitElement {
     this.hoverAwaitingExit = Boolean(point && rect.width > 0 && rect.height > 0 && point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom);
     if (this.hoverAwaitingExit) state.blocked.add(this); else state.blocked.delete(this);
   }
-  /** @internal Only movement after the control exists can release its hover guard. */
   releaseNavigationHoverIfOutside(point: { x: number; y: number }) {
     const rect = (this.trigger ?? this).getBoundingClientRect();
     if (point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom) return;
@@ -345,7 +317,6 @@ export class Menu extends LitElement {
     if ((!this.hover && this.triggerMode !== "submenu") || event.pointerType === "touch") return;
     clearTimeout(this.hoverTimer);
     const point = navigationState.get(this.ownerDocument)?.point;
-    // A layout change can enter a trigger without moving the mouse.
     if (point && point.x === event.clientX && point.y === event.clientY) this.holdNavigationHover();
     if (this.hoverAwaitingExit) return;
     if (!this.open) { this.focusOnOpen = false; this.toggleFromTrigger(true); }
@@ -354,7 +325,6 @@ export class Menu extends LitElement {
     if ((!this.hover && this.triggerMode !== "submenu") || event.pointerType === "touch") return;
     if (event.relatedTarget instanceof Node && (this.contains(event.relatedTarget) || this.trigger?.contains(event.relatedTarget))) return;
     clearTimeout(this.hoverTimer);
-    // The half-square gap stays traversable without an invisible product overlay.
     this.hoverTimer = setTimeout(() => {
       if (this.open && !this.contains(this.ownerDocument.activeElement)) this.requestClose("outside");
     }, 180);
@@ -380,8 +350,6 @@ export class Menu extends LitElement {
   }
   private onChoicesChanged = () => {
     this.syncTabStops(); this.place(); this.scrollActive();
-    // A confirmation can replace the focused row. Keep navigation in the menu
-    // without stealing focus from a field or dialog opened by a product action.
     if (this.shown && this.heldFocus && this.ownerDocument.activeElement === this.ownerDocument.body) this.focusInitial(this.ownerDocument.body);
   };
   private focusInitial(openingFocus: Element | null) {
@@ -426,7 +394,6 @@ export class Menu extends LitElement {
     this.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", this.place);
     this.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", this.place);
     if (!this.controller && this.focusOnOpen) {
-      // Native frames must be distributed through newly inserted Lit slots first.
       this.focusInitial(openingFocus);
     }
   }
@@ -438,8 +405,6 @@ export class Menu extends LitElement {
     this.focusVersion++;
     const active = this.ownerDocument.activeElement;
     const within = active instanceof Node && this.contains(active);
-    // Removal closes a native popover before disconnectedCallback runs. Without
-    // popovers (Safari before 17) `:popover-open` is not a selector and throws.
     if (this.isConnected && this.hidePopover && this.matches(":popover-open")) this.hidePopover();
     openMenus.get(this.ownerDocument)?.delete(this);
     this.observer?.disconnect(); this.observer = undefined; this.observedAnchor = null;
@@ -484,7 +449,6 @@ export class Menu extends LitElement {
     if (this.controller && event.button === 0 && event.composedPath().some(node => node instanceof HTMLElement && node.matches(ITEM))) event.preventDefault();
   };
   place = () => {
-    // A menu from a button stands by its button unless given another anchor.
     const anchor = this.triggerMode === "context" || this.triggerMode === "manual" ? this.contextPoint ?? this.anchor : this.anchor ?? this.trigger;
     if (!this.shown || !anchor) return;
     const rect = anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : anchor, view = this.ownerDocument.defaultView!;
@@ -492,21 +456,15 @@ export class Menu extends LitElement {
     const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? view.innerWidth, height = viewport?.height ?? view.innerHeight;
     const gap = parseFloat(view.getComputedStyle(this).scrollPaddingTop) || 10, unit = gap * 2;
-    // Whole squares: the room and the height a menu may take round down to
-    // them, and a menu as wide as its anchor rounds that width up.
     const squares = (length: number, round: typeof Math.floor) =>
       round(Math.max(0, length) / unit + (round === Math.floor ? 0.001 : -0.001)) * unit;
     const room = squares(width - 2 * gap, Math.floor);
     this.style.maxWidth = `${room}px`;
     const anchorWidth = Math.min(room, Math.max(4 * unit, squares(rect.width, Math.ceil)));
     this.style.setProperty("--ds-menu-anchor-width", `${anchorWidth}px`);
-    // A menu that hugs its words (Select's from a button, Context's) is as wide as they are,
-    // rounded up to whole squares, at least its anchor's width and at most the room there is;
-    // a product's --ds-menu-width still wins.
     if (this.hasAttribute("data-ds-hug") && !view.getComputedStyle(this).getPropertyValue("--ds-menu-width").trim()) {
       this.style.width = "max-content";
       const natural = this.getBoundingClientRect().width;
-      // Opened at a point it needs only four squares; by an element, at least that element's width.
       const least = (this.triggerMode === "context" || this.triggerMode === "manual") && this.contextPoint ? 4 * unit : anchorWidth;
       this.style.width = `${Math.min(room, Math.max(least, squares(natural, Math.ceil)))}px`;
     }
@@ -527,7 +485,6 @@ export class Menu extends LitElement {
       const box = this.getBoundingClientRect();
       const position = anchoredPanel(rect, { width: box.width, height: frame?.scrollHeight ?? box.height }, viewport);
       this.style.setProperty("--ds-menu-available-height", `${squares(position.availableHeight, Math.floor)}px`);
-      // Height can shrink to whole rows after the collision decision.
       const placed = anchoredPanel(rect, this.getBoundingClientRect(), viewport);
       this.style.left = `${placed.left}px`; this.style.top = `${placed.top}px`;
       return;
@@ -552,7 +509,6 @@ export class Menu extends LitElement {
     this.scrollChoice(item);
   }
   private scrollChoice(item: HTMLElement) {
-    // Scroll the accepted choice, never a controlled request the owner declined.
     const scroller = this.shadowRoot?.querySelector<HTMLElement>(".frame");
     if (!scroller) return;
     const box = item.getBoundingClientRect(), frame = scroller.getBoundingClientRect();
@@ -565,7 +521,6 @@ export class Menu extends LitElement {
     const items = this.items(true); if (!items.some(item => this.enabled(item))) return;
     const current = external ? items.findIndex(item => item.id === this.activeId) : items.findIndex(item => event.composedPath().includes(item));
     const columns = Math.max(1, Math.floor(this.columns || 1));
-    // A menu laid out in one line (Context's bar) steps sideways, in the reading direction.
     const across = this.getAttribute("aria-orientation") === "horizontal";
     const forward = this.ownerDocument.defaultView?.getComputedStyle(this).direction === "rtl" ? -1 : 1;
     let next: number;
@@ -601,7 +556,6 @@ export class Menu extends LitElement {
     if (external) this.activate(item); else { item.focus({preventScroll: true}); this.scrollChoice(item); }
   }
   private lastEnabled(items: HTMLElement[]) { return items.reduce((last, item, index) => this.enabled(item) ? index : last, -1); }
-  /** Full-width actions and section starts occupy their actual visual rows. */
   private gridStep(items: HTMLElement[], current: number, columns: number, direction: number) {
     if (current < 0) return direction > 0 ? items.findIndex(item => this.enabled(item)) : this.lastEnabled(items);
     const rows: { indices: number[]; wide: boolean }[] = [];

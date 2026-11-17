@@ -1,22 +1,3 @@
-/**
- * Design, one of an open site's places in Consistency's app, ported from the sites' own editor (deleted 26 October
- * 2026): the site's design read from the site itself, through the owner gateway's `document` route, the page as a
- * visitor sees it, on this origin and sandboxed with `allow-same-origin` alone, so none of the site's scripts run.
- *
- * - **Colours in use**, measured: each page (one per address, in the first language) is loaded in a hidden frame,
- *   one after another, saying how far it has got. Every visible element in its body gives its words', its
- *   background's, and its drawn borders' and outline's colours, counted the most used first, each with its share of
- *   the elements and the names of the tokens on the page's root whose value it is. It measures the theme the site
- *   draws in this browser, and says which.
- * - **The library's colours**, quieter: its semantic tokens in light and dark, resolved in the site's page.
- * - **Type and pieces**, drawn live in the site's own stylesheets: the typefaces and type sizes, then buttons, a card,
- *   a tag, a table, messages and prose, in a frame of their own (`srcdoc`, the site's stylesheets and no script).
- * - **Measures**: the square, the control and row heights, and the corners, as the site's page resolves them.
- * - A link to the libraries on designsystem1.com, when the site loads a published library.
- *
- * What was measured is kept for the next visit's first paint; it is measured again on entry, and on coming back to
- * the place or the window once the last measure is five minutes old.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/2-core/ds-button';
 import '../../../../DS1/2-core/ds-text';
@@ -31,7 +12,6 @@ import './places.css';
 
 type Theme = 'light' | 'dark';
 interface Token { name: string; value: string }
-/** What the site's pages say of its design. */
 export interface Measured {
   at: number;
   theme: Theme;
@@ -44,10 +24,8 @@ export interface Measured {
   sizes: Token[];
   measures: Token[];
   corners: Token[];
-  /** The site's stylesheets, as the page links them (addresses on this origin), and its own style blocks. */
   sheets: string[];
   styles: string[];
-  /** The page root's class and theme, so the pieces are drawn as the site draws them. */
   rootClass: string;
   rootTheme: string;
   libraryUrl: string | null;
@@ -55,17 +33,15 @@ export interface Measured {
 
 const AGAIN_AFTER = 5 * 60_000;
 
-/** The library's semantic colours, by what they are for. */
 const LIBRARY: [string, string][] = [
   ['Paper', '--ds-paper'], ['Text', '--ds-text-color'], ['Muted', '--ds-text-color-muted'], ['Fill', '--ds-fill'], ['Hover', '--ds-fill-hover'],
   ['Border', '--ds-border-color'], ['Accent', '--ds-accent-color'], ['On accent', '--ds-button-text-color-on-accent'], ['Focus', '--ds-focus-ring'],
   ['Danger', '--ds-danger-color'], ['Warning', '--ds-warning-color'], ['Success', '--ds-success-color'],
 ];
 
-/** Every custom property a document's stylesheets declare, found through their rules (imports, layers and media too). Rules are read by their shape, since a frame's are of another window's classes. */
 function declaredTokens(doc: Document): Set<string> {
   const names = new Set<string>();
-  const safely = (sheet: CSSStyleSheet) => { try { walk(sheet.cssRules); } catch { /* a sheet from another origin cannot be read; the site's own are on this origin */ } };
+  const safely = (sheet: CSSStyleSheet) => { try { walk(sheet.cssRules); } catch {} };
   const walk = (rules: CSSRuleList) => {
     for (const rule of Array.from(rules)) {
       if ('selectorText' in rule && 'style' in rule) for (const name of Array.from((rule as CSSStyleRule).style)) if (name.startsWith('--')) names.add(name);
@@ -79,7 +55,6 @@ function declaredTokens(doc: Document): Set<string> {
   return names;
 }
 
-/** A token's value in a colour scheme, resolved by a probe element in a document's body. */
 function resolved(doc: Document, name: string, property: 'color' | 'font-size' | 'font-family' | 'border-radius' | 'width', scheme?: Theme): string {
   const probe = doc.createElement('span');
   probe.setAttribute('aria-hidden', 'true');
@@ -96,7 +71,6 @@ function resolved(doc: Document, name: string, property: 'color' | 'font-size' |
 const isColour = (value: string) => value !== '' && !/^(?:-?\d|calc\(|inherit$|initial$|unset$|revert|currentcolor$)/i.test(value) && CSS.supports('color', value);
 
 let pixel: CanvasRenderingContext2D | null = null;
-/** A colour the browser writes in a form colours.ts does not read (oklch, say), painted on one pixel and read back in sRGB. */
 function painted(value: string): Rgba | null {
   pixel ??= Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
   if (!pixel || !CSS.supports('color', value)) return null;
@@ -107,13 +81,11 @@ function painted(value: string): Rgba | null {
   return { r: r!, g: g!, b: b!, a: a! / 255 };
 }
 const known = new Map<string, string | null>();
-/** A computed colour as one hex, or null when it is transparent. */
 function hexFor(value: string): string | null {
   if (!known.has(value)) { const colour = parseColour(value) ?? painted(value); known.set(value, colour ? hexOf(colour) : null); }
   return known.get(value) ?? null;
 }
 
-/** The theme a document is drawn in: Design system 1's mark on the root, else its colour scheme. */
 function themeOf(doc: Document): Theme {
   const root = doc.documentElement;
   if (root.classList.contains('dark-theme') || root.dataset.theme === 'dark') return 'dark';
@@ -126,7 +98,6 @@ function themeOf(doc: Document): Theme {
 }
 
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
-/** Each visible element's colours on a page: its words, its background, and its borders and outline where they are drawn. */
 function coloursOn(doc: Document): string[][] {
   const view = doc.defaultView;
   if (!view || !doc.body) return [];
@@ -146,7 +117,6 @@ function coloursOn(doc: Document): string[][] {
   return elements;
 }
 
-/** Everything the first page tells of the design, beyond its colours. */
 function designOf(doc: Document, tokens: string[]) {
   const root = (doc.defaultView ?? window).getComputedStyle(doc.documentElement);
   const value = (name: string) => root.getPropertyValue(name).trim();
@@ -173,7 +143,6 @@ function designOf(doc: Document, tokens: string[]) {
   };
 }
 
-/** Loads a page into the measuring frame and answers its document once it has drawn, or null if it does not load. */
 function load(frame: HTMLIFrameElement, url: string): Promise<Document | null> {
   return new Promise(resolve => {
     let timer = 0;
@@ -187,10 +156,6 @@ function load(frame: HTMLIFrameElement, url: string): Promise<Document | null> {
 
 const escapeText = (text: string) => text.replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]!);
 
-/**
- * The document the type and the pieces are drawn in: the site's stylesheets and style blocks, its root's class and
- * theme, and Design system 1's native classes, with no script at all.
- */
 export function specimenDocument(measured: Pick<Measured, 'sheets' | 'styles' | 'rootClass' | 'rootTheme' | 'faces' | 'sizes'>, name: string): string {
   const site = escapeText(name);
   return [
@@ -216,7 +181,6 @@ export function specimenDocument(measured: Pick<Measured, 'sheets' | 'styles' | 
 export class ConsistencyPlaceDesign extends LitElement {
   static properties = { measured: { state: true }, progress: { state: true }, problem: { state: true }, specimenHeight: { state: true } };
   declare measured: Measured | null;
-  /** How far the measuring has got: "Reading 3 of 11 pages", or nothing while it is not measuring. */
   declare progress: string;
   declare problem: string;
   declare specimenHeight: number;
@@ -242,7 +206,6 @@ export class ConsistencyPlaceDesign extends LitElement {
   }
   disconnectedCallback() { super.disconnectedCallback(); this.stop?.(); this.stop = null; this.turn++; this.measuring = null; }
 
-  /** The site's pages, each read in a hidden frame in turn; once at a time. */
   measure(): Promise<void> {
     this.measuring ??= this.read().finally(() => { this.measuring = null; });
     return this.measuring;

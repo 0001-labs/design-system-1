@@ -12,7 +12,6 @@ const write = (root: string, path: string, body: string) => { mkdirSync(dirname(
 const git = (root: string, ...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 const commit = (root: string, message: string) => { git(root, "add", "."); git(root, "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", message); };
 const sha = (body: string) => createHash("sha256").update(body).digest("hex");
-/** The same markup as HTML, or as JSX in a fragment. */
 const asFile = (file: string, markup: string) => file.endsWith(".tsx") ? `const view = <>${markup.replaceAll("class=", "className=").replace(/ style="[^"]*"/g, "")}</>;` : markup;
 
 const pieces = [".ds-button { }", ".ds-input { }", ".ds-field { }", ".ds-field__hint { }", ".ds-avatar { }", ".ds-badge { }", ".ds-toggle { }", ":where(.ds-icon) { }", ".ds-drop { }"].join("\n");
@@ -26,7 +25,6 @@ const page = [
   '<label class="ds-button ds-button--secondary">Choose a file<input type="file" /></label>',
 ].join("\n");
 
-/** A product that copies the tokens and controls.css with Sync 1, verified from its lock. */
 function lockFixture(controls: string) {
   const studio = mkdtempSync(join(tmpdir(), "native-pieces-")); temporary.push(studio);
   const ds = join(studio, "Design system 1"), app = join(studio, "Pieces");

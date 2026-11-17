@@ -9,8 +9,6 @@ import { startAuth } from "./lib/backend";
 import { followDocsScale, initializeDocsEmbed } from "./lib/docsEmbed";
 import "./Root";
 
-// Every screen stands on the app frame's scale: Desktop aligned on a computer, the width over 280
-// on a phone or tablet; framed in the documentation, the documentation's own.
 initializeDocsEmbed();
 if (document.documentElement.hasAttribute("data-docs-embed")) followDocsScale();
 else startAppScale();

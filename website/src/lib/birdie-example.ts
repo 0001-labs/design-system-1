@@ -2,25 +2,6 @@ import type { LayoutExample } from './layout-examples';
 import { choose, icon, library, photo, text } from './library-example-parts';
 import { composition as site } from './library-sites';
 
-// Birdie, a fictional bird guide kept by the people who watch, in the Birdie library: white paper,
-// ink buttons, square photographs as covers, Metal green bands and Yellow under the figures that
-// count. Seven pages that lead to each other: the front page, Discover, a species, a place, a
-// watcher's life list, Field notes and one story. Tabs draw their first state in the markup, so
-// every page reads the same with no script (the editor runs none).
-//
-// The photographs are from Unsplash under its licence, cropped square (public/examples/images/
-// birdie-<bird>.jpg): robin 1742676915509-5700bf8a8c0a, blue tit 1704561970425-bc779c5f9777,
-// great tit 1623771547547-098bf3d31c12, blackbird 1742676916561-88d56853cb8a, wren
-// 1792919671247-6fb566a1c919, goldfinch 1775503079623-34454849041e, kingfisher
-// 1444464666168-49d633b86797, barn owl 1467811884194-ae868cd3f090, puffin
-// 1694407116765-b21b4e80e722, heron 1649287860345-975c45561ba3, swan 1567112098492-382825853bdd,
-// woodpecker 1715424081094-c8ae410ca79c, jay 1743938155653-47ee73fd8b68, swallow
-// 1717780523593-e56fafcef141, kestrel 1696096520234-9883837e2968, long-tailed tit
-// 1698949171619-a55804ef6ac1, crane 1714639652143-926465a1da5f, oystercatcher
-// 1658947969660-49437d905a75, starling 1635931908546-24a7d2bdf199, mallard
-// 1715560016731-65dd8dba2819.
-
-/** A Birdie page's address among the layout examples. */
 const at = (page = '') => `/examples/layouts/birdie${page && `-${page}`}/`;
 
 const composition = `${site}<style>
@@ -86,7 +67,6 @@ const composition = `${site}<style>
 }
 </style>`;
 
-// The birds: a name, its scientific name, its family, where it is mostly met and what its picture shows.
 type Bird = { id: string; name: string; latin: string; family: string; habitat: string; alt: string; seen: string };
 const BIRDS: Bird[] = [
   { id: 'robin', name: 'European robin', latin: 'Erithacus rubecula', family: 'Old World flycatchers', habitat: 'Garden', alt: 'A robin with an orange breast on a twig', seen: '4,812' },
@@ -121,7 +101,6 @@ const title = (words: string, level = 3) => text(words, `strong wrap role="headi
 const more = (words: string, href: string) => `<ds-button href="${href}"><span>${words}</span>${icon('right')}</ds-button>`;
 const head = (words: string, note: string, link = '') => `<div class="site-between"><div class="site-tight">${big(words)}${note ? muted(note, 'wrap') : ''}</div>${link}</div>`;
 
-/** A species as a cover: its picture, its name and one or two quiet lines, the whole of it one link to the species. */
 const cover = (id: string, lines: string[] = [bird(id).latin], attrs = '') =>
   `<a class="birdie-cover" href="${at('species')}" ${attrs}>${picture(id)}<span>${text(bird(id).name, 'strong wrap')}${lines.map(line => muted(line, 'wrap')).join('')}</span></a>`;
 const person = (name: string, colour: string, extra = '') => `<div class="birdie-person"><ds-avatar initial="${name[0]}" color="${colour}"></ds-avatar>${text(name)}${extra}</div>`;
@@ -385,9 +364,6 @@ const storyPage = page('notes', `
     </div>
   </section>`);
 
-// What a page does when it runs scripts: tabs show their panel, Discover narrows to a habitat, a
-// call plays in the player, and the buttons that stay on say so. Each part looks for its own
-// pieces, so the seven pages share one script.
 const script = `${choose}
 document.querySelectorAll('[data-habitat]').forEach(button => button.addEventListener('click', () => {
   choose('[data-habitat]', button);
@@ -429,7 +405,6 @@ document.querySelector('#letter-join')?.addEventListener('click', () => {
 
 const example = (name: string, use: string, html: string): LayoutExample => ({ name, use, height: 900, library: library('birdie'), html, script });
 
-/** Birdie's pages by their example id; the labels are in shared/doc-examples.ts. */
 export const BIRDIE_EXAMPLES: Record<string, LayoutExample> = {
   birdie: example('Birdie', 'The front page of a bird guide kept by its watchers, in the Birdie library: a sentence of live figures, a strip of sightings, stories, life lists and green bands.', home),
   'birdie-discover': example('Birdie · Discover', 'Birdie’s catalogue: every species as a square cover, narrowed by habitat and ordered by sightings.', discover),

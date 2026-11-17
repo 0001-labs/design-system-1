@@ -1,4 +1,3 @@
-/** Also printed as each showcase's copyable, standalone setup. No live data is used. */
 export function mountShowcase(root: ParentNode): void {
   root.querySelectorAll<HTMLElement>('[data-showcase-props]').forEach(element => {
     const props = JSON.parse(element.dataset.showcaseProps!);

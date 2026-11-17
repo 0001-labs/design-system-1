@@ -1,12 +1,3 @@
-/**
- * Connections: how a site is connected, drawn as one chart. The site in the middle; its visitors (a language each)
- * at the start; what the site engine and its runtime give it above; the outside services it talks to at the end;
- * where its data is kept below. The platform works every node out from the code that runs the site
- * (`platform/worker/connections.ts`), so the chart is never written by hand and cannot fall behind the site.
- *
- * Play draws it arm by arm, a dot travelling each line from the site out; Loop plays it again and again. With
- * reduced motion the chart is drawn whole and still. Pressing a node says what it does under the chart.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/2-core/ds-button';
 import '../../../../DS1/2-core/ds-icon';
@@ -20,13 +11,10 @@ import './places.css';
 import './connections.css';
 
 type GroupId = SiteConnections['groups'][number]['id'];
-/** The order the chart is drawn in: the visitors reach the site, then what it does, whom it talks to, where it keeps things. */
 const STEPS: readonly GroupId[] = ['visitors', 'features', 'services', 'storage'];
-/** How long each arm takes to draw, and the rest between loops. */
 const STEP_MS = 520;
 const REST_MS = 1400;
 
-/** A node's icon from Design system 1's library, by what it is. */
 function iconOf(group: GroupId, id: string): string {
   if (group === 'visitors') return 'globe';
   const icons: Record<string, string> = {
@@ -41,7 +29,6 @@ export class ConsistencyPlaceConnections extends LitElement {
   static properties = { answer: { state: true }, error: { state: true }, step: { state: true }, loop: { state: true }, chosen: { state: true } };
   private declare answer: SiteConnections | null;
   private declare error: string;
-  /** How far the chart is drawn: 0 the site alone, one more arm a step, `STEPS.length` all of it. */
   private declare step: number;
   private declare loop: boolean;
   private declare chosen: { group: GroupId; node: SiteConnection } | null;
@@ -62,7 +49,6 @@ export class ConsistencyPlaceConnections extends LitElement {
         const first = !this.answer;
         this.answer = answer;
         this.error = '';
-        // Drawn once on the first visit; later reads only bring it up to date.
         if (first && !this.played) { this.played = true; this.play(); }
         return true;
       } catch (error) {
@@ -76,7 +62,6 @@ export class ConsistencyPlaceConnections extends LitElement {
 
   disconnectedCallback() { super.disconnectedCallback(); clearTimeout(this.timer); }
 
-  /** Draws the chart from the site out, an arm at a time; again from the start when it loops. */
   private play() {
     clearTimeout(this.timer);
     if (this.still.matches) { this.step = STEPS.length; return; }

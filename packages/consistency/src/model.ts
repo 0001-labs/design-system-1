@@ -17,7 +17,6 @@ export function dimensionValue(key: Dimension, value: number): number {
   const [min, max] = limits[key];
   return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value / 20) * 20)) : initialComposition[key];
 }
-/** Document history stays separate from the transient drag preview. */
 export class CompositionHistory {
   value: Composition;
   private past: Composition[] = [];
@@ -37,13 +36,10 @@ export class CompositionHistory {
   redo() { const next = this.future.pop(); if (next) { this.past.push(this.value); this.value = next; } }
 }
 
-/** A gap's centre moves half its size change; two logical units keep that
- * centre under one physical pointer unit, on either axis and at every scale. */
 export function pointerGain(key: Dimension, scale: number): number {
   return (key === 'width' ? 1 : 2) / (Number.isFinite(scale) && scale > 0 ? scale : 1);
 }
 
-/** Remove selected block source ranges in one document edit. */
 export function removeSourceRanges(source: string, ranges: readonly { start: number; end: number }[]): string {
   let result = source;
   for (const range of [...ranges].sort((a, b) => b.start - a.start)) result = result.slice(0, range.start) + result.slice(range.end);
@@ -52,7 +48,6 @@ export function removeSourceRanges(source: string, ranges: readonly { start: num
 
 export const READABLE_TEXT_MIN = 200;
 export const READABLE_CARD_MIN = 240;
-/** Every website keeps one square inside its edges and a readable column. */
 export function compositionBounds(width: number, padding: number, snap = true, minimumWidth = limits.width[0]) {
  const rawWidth = Number.isFinite(width) ? Math.min(limits.width[1], Math.max(280, minimumWidth, width)) : initialComposition.width;
  const safeWidth = snap ? Math.round(rawWidth / 20) * 20 : rawWidth;

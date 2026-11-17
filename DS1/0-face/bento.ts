@@ -1,37 +1,9 @@
 import { isHTMLElement } from "./light-dom";
-/**
- * Bentos without Lit: places the tiles of a `.ds-bento[data-squares]` (drawn
- * by `1-root/bento.css`) on their squares and lets each surface reach a
- * quarter square towards the tiles beside it, so the tiles stand half a
- * square apart while what they hold stays on the squares. A flow bento needs
- * no script. No framework and no imports.
- *
- * ```html
- * <div class="ds-bento" data-squares style="--ds-bento-columns: 48">
- *   <a class="ds-card" href="/archive/" data-place="0 0 15 7">…</a>
- *   <a class="ds-card" href="/ezo/" data-place="16 0 16 20">…</a>
- * </div>
- * <script type="module">
- *   import { placeBentos } from "/ds1/0-face/bento.js";
- *   placeBentos();
- * </script>
- * ```
- *
- * A tile's `data-place` is its square across, its square down, its width and
- * its height, in whole squares counted from 0. Tiles are placed a square
- * apart; a tile a square away from another, with the two overlapping along
- * that side, reaches towards it. A tile can have a place per layout,
- * `data-place-phone="0 0 12 7"`, taken while the bento says
- * `data-layout="phone"`; the page sets the layout and the columns for it.
- */
 
-/** A tile's place in squares: across, down, wide, high. */
 export type BentoPlace = readonly [x: number, y: number, w: number, h: number];
 
-/** Which sides of each tile face another tile a square away. */
 export interface BentoReach { start: boolean; top: boolean; end: boolean; bottom: boolean }
 
-/** Reads `data-place` ("x y w h"); `undefined` unless it is four whole numbers with a size. */
 export function bentoPlace(value: string | null | undefined): BentoPlace | undefined {
   const parts = (value ?? "").trim().split(/[\s,]+/).map(Number);
   if (parts.length !== 4 || parts.some(part => !Number.isInteger(part) || part < 0)) return undefined;
@@ -41,7 +13,6 @@ export function bentoPlace(value: string | null | undefined): BentoPlace | undef
 
 const overlaps = (a0: number, a1: number, b0: number, b1: number) => a0 < b1 && b0 < a1;
 
-/** For each place, the sides that face another tile across a one-square gap. */
 export function bentoReach(places: readonly BentoPlace[]): BentoReach[] {
   return places.map(([x, y, w, h], index) => {
     const others = places.filter((_, other) => other !== index);
@@ -54,13 +25,11 @@ export function bentoReach(places: readonly BentoPlace[]): BentoReach[] {
   });
 }
 
-/** A tile's place in the bento's layout: `data-place-<layout>` where the bento names one and the tile has it, else `data-place`. */
 export function tilePlace(tile: HTMLElement, layout = ""): BentoPlace | undefined {
   const own = layout ? tile.getAttribute(`data-place-${layout}`) : null;
   return bentoPlace(own ?? tile.dataset.place);
 }
 
-/** Places one squares bento's tiles: their squares and their reach, as custom properties. The bento's `data-layout` (or `layout`) picks each tile's place for that layout. */
 export function placeBento(bento: HTMLElement): void {
   const layout = bento.dataset.layout ?? bento.getAttribute("layout") ?? "";
   const tiles = [...bento.children].filter((child): child is HTMLElement => isHTMLElement(child) && !child.hidden);
@@ -76,7 +45,6 @@ export function placeBento(bento: HTMLElement): void {
   });
 }
 
-/** Places every squares bento on the page (or under `root`), and again when its tiles change. */
 export function placeBentos(root: ParentNode = document): () => void {
   const bentos = [...root.querySelectorAll<HTMLElement>(".ds-bento[data-squares]")];
   const observer = new MutationObserver(records => {

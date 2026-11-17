@@ -1,5 +1,4 @@
 const modules=import.meta.glob('../../../DS1/{2-core,3-unit,4-page}/ds-*.ts');
-/** Register only the components present in this page; product controls import their own dependencies. */
 export async function prepareComponents(root:ParentNode){
  const names=new Set([...root.querySelectorAll('*')].map(element=>element.localName).filter(name=>name.startsWith('ds-')&&!customElements.get(name)));
  await Promise.all([...names].map(name=>{const key=Object.keys(modules).find(path=>path.endsWith(`/${name}.ts`));return key?modules[key]():undefined;}));
@@ -7,7 +6,6 @@ export async function prepareComponents(root:ParentNode){
 import { createSurfaceElement } from './editor-surface';
 import type { NativeComponentDefinition } from '../../../shared/consistency-components';
 
-/** Only DS1's registered implementation runs in the parent realm. Site scripts never run in a canvas. */
 export function upgradeComponentTree(root: ParentNode, assetURL?: (source: string) => string, editing = false): HTMLElement[] {
   const elements = [...(root instanceof HTMLElement ? [root] : []), ...root.querySelectorAll<HTMLElement>('*')];
   const upgraded: HTMLElement[] = [];
@@ -18,7 +16,6 @@ export function upgradeComponentTree(root: ParentNode, assetURL?: (source: strin
       const value=element.getAttribute(name);
       if(value){const mapped=assetURL(value);if(mapped!==value)element.setAttribute(name,mapped);}
     }
-    // An element already created in the registered realm keeps its Lit state and focused fields.
     if (!customElements.get(element.localName)!.prototype.isPrototypeOf(element)) {
       const replacement = createSurfaceElement(element.ownerDocument,element.localName);
       for(const attribute of [...element.attributes]) replacement.setAttribute(attribute.name,attribute.value);

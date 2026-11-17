@@ -1,4 +1,3 @@
-/** Canonical carousel content, shared by editing and publication. No DOM. */
 export interface CarouselSlide { id: string; src: string; alt: string; fit: 'cover' | 'contain' }
 export interface CarouselContent { kind: 'carousel'; slides: CarouselSlide[]; width?: number; height: number; current?: number }
 export const EMPTY_CAROUSEL: CarouselContent = { kind: 'carousel', slides: [], height: 280 };

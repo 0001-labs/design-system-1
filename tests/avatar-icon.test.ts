@@ -2,7 +2,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
-// The deferred icon chunk never arrives: whatever draws, draws without it.
 vi.mock("../DS1/2-core/generated/icons-extra", () => new Promise(() => {}));
 const { avatarIcon } = await import("../DS1/2-core/generated/icon-avatar");
 await import("../DS1/2-core/ds-avatar");
@@ -20,7 +19,6 @@ test("the avatar's person drawing is its own, so it draws in the first frame", a
   await new Promise((done) => setTimeout(done, 0));
   expect(icon.shadowRoot!.querySelector("svg")).not.toBeNull();
   expect(avatar.shadowRoot!.querySelector(".initial")).toBeNull();
-  // A deferred icon outside the avatar still waits for the chunk.
   expect(other.shadowRoot!.querySelector("svg")).toBeNull();
 });
 

@@ -6,7 +6,6 @@ import { resolve } from 'path';
 
 console.log('Building CDN bundle...');
 
-// Build the main CDN bundle
 await build({
   entryPoints: ['dist/index.esm.js'],
   bundle: true,
@@ -26,7 +25,6 @@ await build({
 console.log('✓ CDN bundle created: dist/design-system-1.bundle.js');
 console.log('✓ Size:', (readFileSync('dist/design-system-1.bundle.js').length / 1024).toFixed(2), 'KB');
 
-// Create minified version
 await build({
   entryPoints: ['dist/index.esm.js'],
   bundle: true,

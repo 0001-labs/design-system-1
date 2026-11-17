@@ -8,29 +8,15 @@ import { SystemOwner, type SystemOwnerOptions } from './systemOwner'
 import { normalizeEmail } from './social'
 
 export type SignInOptions = {
-  /** The product's name as people read it: in the code email and as a nameless Apple account's name. */
   product: string
-  /** Password sign-in for the addresses in `SIGN_IN_PASSWORD_EMAILS`; off by default. Pass the Password provider's config (a `reset`, a `profile`) or true. */
   password?: boolean | Parameters<typeof OwnerPassword>[0]
-  /** The product's own way of sending the code email, instead of Resend from `AUTH_EMAIL_FROM`. */
   sendCode?: SendCode
-  /** Other names the product signs people in under, by the key the screen sends as `brand`: `{ consistency: 'Consistency' }`. The code email carries the one asked for. */
   brands?: Record<string, string>
-  /** Sign in with Apple from the product's own apps; needs `APPLE_NATIVE_CLIENTS`. Off by default. */
   appleNative?: boolean
-  /** One key: the owner's System session signs the owner's account in (`systemOwner.ts`); the product's name in System's `clients` and how it finds its owner account. Off by default. */
   systemOwner?: SystemOwnerOptions
-  /** The product's further providers (a purchase, a hand-off, an invitation). */
   extra?: AuthProviderConfig[]
 }
 
-/**
- * The providers every product offers: the emailed code, Google and Apple, with
- * a password for the owner and Apple's native sheet where a product wants them.
- * Google and Apple hand the product a lower-case email, whether it is verified,
- * and a name when the provider sends one; Apple's refresh token rides on the profile for
- * `rememberAppleTokenFromProfile`.
- */
 export function signInProviders(options: SignInOptions): AuthProviderConfig[] {
   return [
     ...(options.appleNative ? [AppleNative({ defaultName: `${options.product} user` })] : []),
@@ -43,8 +29,6 @@ export function signInProviders(options: SignInOptions): AuthProviderConfig[] {
       },
     }),
     Apple({
-      // Apple sends the name on the first consent alone: a later callback leaves it out,
-      // so a returning person keeps the name they have.
       profile(profile, tokens) {
         const name = profile.user?.name
         return {

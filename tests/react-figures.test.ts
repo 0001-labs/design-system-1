@@ -3,7 +3,6 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 import { act, createElement, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import type { Progress as ProgressElement } from "../DS1/2-core/ds-progress";
-// The adapters write figures through the language module, so they load after fetch is stubbed.
 vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
 const { Progress } = await import("../DS1/react/progress");
 const { Stat } = await import("../DS1/react/stat");
@@ -20,7 +19,6 @@ async function render(element: ReturnType<typeof createElement>) {
 }
 
 test("a stat from React shows its slotted figure, and the element draws the change", async () => {
-  // A test id is a native attribute on the host, as in JSX.
   const props = { label: "Revenue", value: 1200, format: "money" as const, currency: "USD", whole: true, change: -0.05, changeFormat: "percent" as const, tone: "danger" as const, "data-testid": "stat" };
   const { mount, unmount } = await render(createElement(Stat, props));
   try {

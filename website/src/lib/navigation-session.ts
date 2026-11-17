@@ -1,9 +1,7 @@
 import { clearNavigationCache, readNavigationCache, type NavigationSummary } from '../../../shared/navigation-cache';
 
-/** Another part of the page needs the running bridge (a custom design's live styles): it starts it once. */
 export const NAVIGATION_BRIDGE_REQUEST = 'ds1:navigation-bridge-request';
 
-/** Keep a tab's navigation warm across documents; start the hidden app only when needed. */
 export function connectNavigationSession(frame: HTMLIFrameElement, publish: (summary: NavigationSummary) => void) {
   const listeners = new AbortController();
   const options = { signal: listeners.signal };
@@ -30,7 +28,6 @@ export function connectNavigationSession(frame: HTMLIFrameElement, publish: (sum
     const current = ++generation;
     const cached = await readNavigationCache();
     if (current !== generation) return;
-    // A bridge started for another reason still answers later: the cached summary draws first.
     if (cached) { summary = cached.summary; publish(summary); if (!bridgeStarted) schedule(cached.expires); }
     else startBridge();
   };
@@ -40,8 +37,6 @@ export function connectNavigationSession(frame: HTMLIFrameElement, publish: (sum
     clearTimeout(refresh);
     summary = { type: 'ds1:navigation-auth', authenticated: false, loading: false, owner: false, appComponents: [], companyName: '', libraries: [], librariesLoaded: false, creating: false, creationError: null };
     publish(summary);
-    // The running bridge follows storage changes itself. Reloading it on token
-    // refresh reconnects Convex and starts another refresh before it can reply.
     startBridge();
   };
   frame.addEventListener('load', request, options);
@@ -63,7 +58,6 @@ export function connectNavigationSession(frame: HTMLIFrameElement, publish: (sum
       if (detail.loading) return;
       summary = detail;
       publish(summary);
-      // Once running, the bridge follows auth and library changes live.
       clearTimeout(refresh);
     },
   };

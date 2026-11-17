@@ -1,43 +1,15 @@
-/**
- * The one translations file format every product writes its words in.
- *
- *   { "<language>": { "<key>": "<text>" } }
- *
- * - `<language>` is a code from the language list (`da`, `pt-BR`).
- * - `<key>` is any string: the English sentence (`"Send": "Send"`) or a
- *   dotted id (`"settings.language": "Language"`). Both are the same format.
- * - English (`en`) is the fallback table. When a key is missing from `en`
- *   too, the key itself is the English text, so a sentence key needs no
- *   English entry and an id key needs one.
- * - Placeholders are `{name}` and `{{name}}` alike; `fillPlaceholders` (and
- *   `translate(key, params)`) fill both.
- * - A per-language file (`/translations/da.json`) holds one language's table,
- *   wrapped as `{ "da": { … } }` (or bare, `{ … }`, which `readLanguageFile`
- *   wraps).
- * - A product can ship the same shape as a TypeScript module and pass it to
- *   `loadTranslations`.
- *
- * A word is looked up in the language, its primary subtag (`ja-JP` reads
- * `ja`), its relatives (`nn` reads `nb`, `pt-BR` reads `pt`), then English,
- * then the key itself. See `resolveText`.
- */
 import { DEFAULT_LANGUAGE, LANGUAGES, fallbackLanguages } from "./languages";
 
-/** One language's words, key to text. Values may be absent (a `Partial` table). */
 export type TranslationTable = { readonly [key: string]: string | undefined };
 
-/** Every language's words, keyed by language code. */
 export type TranslationsFile = { readonly [language: string]: TranslationTable | undefined };
 
-/** Values for a text's placeholders, by name. */
 export type TranslationParams = { readonly [name: string]: string | number | boolean };
 
-/** The language whose table is the fallback. */
 export const FALLBACK_LANGUAGE = DEFAULT_LANGUAGE;
 
 const PLACEHOLDER = /\{\{\s*([\w.-]+)\s*\}\}|\{([\w.-]+)\}/g;
 
-/** The names of a text's placeholders, `{name}` and `{{name}}` alike, each once. */
 export function placeholdersIn(text: string): string[] {
   const names: string[] = [];
   for (const match of String(text ?? "").matchAll(PLACEHOLDER)) {
@@ -49,10 +21,6 @@ export function placeholdersIn(text: string): string[] {
   return names;
 }
 
-/**
- * Fill a text's placeholders, `{name}` and `{{name}}` alike. A placeholder
- * with no value is left as written, so it shows rather than vanishing.
- */
 export function fillPlaceholders(text: string, params?: TranslationParams): string {
   if (!params) {
     return text;
@@ -63,23 +31,15 @@ export function fillPlaceholders(text: string, params?: TranslationParams): stri
   });
 }
 
-/** A key's English text: the `en` table's, else the key itself. */
 export function englishText(file: TranslationsFile, key: string): string {
   return file[FALLBACK_LANGUAGE]?.[key] || key;
 }
 
 export type ResolvedText = {
   text: string;
-  /** The language the text was found in, or null when the key itself was used */
   language: string | null;
 };
 
-/**
- * A key's text in `language`, from several sets of words: for each language
- * in the fallback order (the language, its primary subtag, its relatives,
- * English), the first set that has the key wins. With no text anywhere, the
- * key itself. Placeholders are filled from `params`.
- */
 export function resolveText(
   key: string,
   language: string,
@@ -106,10 +66,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * A per-language file's words as a translations file: `{ "da": { … } }` as it
- * is, a bare `{ … }` table wrapped under `language`. Null when it is neither.
- */
 export function readLanguageFile(language: string, value: unknown): TranslationsFile | null {
   if (!isPlainObject(value)) {
     return null;
@@ -129,27 +85,17 @@ export function readLanguageFile(language: string, value: unknown): Translations
 }
 
 export type TranslationsCheck = {
-  /** True when the value is a translations file a product can load */
   valid: boolean;
-  /** What makes it unloadable */
   errors: string[];
-  /** What loads but is likely a mistake */
   warnings: string[];
 };
 
 export type TranslationsCheckOptions = {
-  /** The languages the file may hold. Defaults to the language list. */
   languages?: readonly string[];
 };
 
 const ID_KEY = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
 
-/**
- * Check a value against the format. Errors: it is not an object of language
- * tables, or a text is not a string. Warnings: a language outside the list,
- * an id key (`settings.language`) with no English text, a translation whose
- * placeholders differ from its English text's.
- */
 export function validateTranslations(
   value: unknown,
   options: TranslationsCheckOptions = {}
@@ -209,7 +155,6 @@ export function validateTranslations(
   return { valid: errors.length === 0, errors, warnings: [...new Set(warnings)] };
 }
 
-/** Whether a value is a translations file a product can load. */
 export function isTranslationsFile(value: unknown): value is TranslationsFile {
   return validateTranslations(value).valid;
 }

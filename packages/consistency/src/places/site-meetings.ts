@@ -1,12 +1,3 @@
-/**
- * A site's meetings, under Site settings: the Google account whose calendar takes them, when they are taken, the
- * site's own booking page and the meetings to come. The platform keeps all of it in the site's object
- * (`Consistency/platform/worker/meetings.ts`) and answers `meetings` to the owner alone; anyone else gets nothing,
- * and this draws nothing.
- *
- * Connecting leaves the app for Google's consent and comes back through `google-return.ts`; the code Google gave is
- * handed to the site here. Every change saves at once against the revision last read.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/2-core/ds-button';
 import '../../../../DS1/2-core/ds-checkbox';
@@ -35,7 +26,6 @@ export class ConsistencySiteMeetings extends LitElement {
   private declare status: MeetingsStatus | null;
   private declare busy: boolean;
   private declare error: string;
-  /** The meeting's name as it is being written, saved when the field is left. */
   private writing?: string;
   constructor() { super(); this.status = null; this.busy = false; this.error = ''; }
   protected createRenderRoot() { return this; }
@@ -45,7 +35,6 @@ export class ConsistencySiteMeetings extends LitElement {
   private ask<T = MeetingsStatus>(route: string, init: RequestInit & { json?: unknown } = {}) { return siteApi<T>(this.site.code, route, init); }
   private take(status: MeetingsStatus) { this.status = status.revision ? status : { ...status, settings: { ...status.settings, timeZone: ownZone() } }; }
 
-  /** Reads the meetings, then finishes a consent Google just returned from. Not there for this person: nothing is drawn. */
   private async open() {
     const returned = takeGoogleReturn(this.site.code);
     try { this.take(await this.ask('meetings')); } catch (error) { if (!(error instanceof SiteApiError && error.status === 404)) this.error = meetingWords(error); return; }
@@ -58,7 +47,6 @@ export class ConsistencySiteMeetings extends LitElement {
     try { this.take(await call()); } catch (error) { this.error = meetingWords(error); } finally { this.busy = false; }
   }
 
-  /** Leaves for Google's consent; only ever to Google's own address. */
   private async connect() {
     if (this.busy) return;
     this.busy = true; this.error = '';
@@ -70,7 +58,6 @@ export class ConsistencySiteMeetings extends LitElement {
   }
   private disconnect() { return this.run(() => this.ask('meetings/google', { method: 'DELETE', json: {} })); }
 
-  /** Shows the change at once and saves it; a save that fails shows what the platform still holds. */
   private async change(patch: Partial<MeetingSettings>) {
     const status = this.status;
     if (!status || this.busy) return;

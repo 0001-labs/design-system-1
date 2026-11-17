@@ -1,33 +1,18 @@
-/** A table in React: the rows go to ds-table as properties, a moved row comes
- * back as `onMove`. With `onMove` the rows are the page's: the table asks and
- * the page reorders its own state (`moveRow` from ds-table does it) and passes
- * the rows back; the moved row stays where it was dropped until they arrive.
- * Without it, a reorderable table keeps the order in its own data.
- * Browser-only registration of ds-table stays in the product's runtime entry;
- * on the server the element renders empty and fills on load. */
 import { createElement as h, forwardRef, useEffect, useLayoutEffect, useRef, type HTMLAttributes } from "react";
 import type { DsTable as TableElement, TableColumn, TableMoveDetail, ColumnResizeDetail, TableRow } from "../3-unit/ds-table";
 
 export type { TableColumn, TableMoveDetail, ColumnResizeDetail, TableRow };
 
 export type TableProps = HTMLAttributes<TableElement> & {
-  /** The body rows: objects read by column key, or arrays read by position. */
   data: TableRow[];
-  /** Headers as labels (`"Users"` reads `users`) or columns; unset, the first row's keys. */
   columns?: (string | TableColumn)[];
-  /** A totals row under the body. */
   footer?: TableRow;
-  /** Keeps the first column in place while the table scrolls sideways. */
   sticky?: boolean;
   resizable?: boolean;
   onColumnsResize?: (detail: ColumnResizeDetail) => void;
-  /** A spreadsheet: cells four squares by one, columns lettered, rows numbered. */
   sheet?: boolean;
-  /** A sheet's rows move by the grip on their number. */
   reorderable?: boolean;
-  /** The table's accessible name. */
   label?: string;
-  /** A row was moved: reorder the rows (`moveRow(rows, from, to)` from ds-table) and pass them back. */
   onMove?: (move: TableMoveDetail) => void;
 };
 

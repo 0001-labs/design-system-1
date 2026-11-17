@@ -1,5 +1,4 @@
 export type SurfaceMeasure='gap'|'padding'|'width'|'height'|'marginTop'|'marginBottom';
-/** Logical measures stay on whole squares even when CSS scaling leaves fractional physical bounds. */
 export function siteMeasureRange(property: SurfaceMeasure, available: number, width: number): [number, number] {
   if (property === 'gap' || property === 'marginTop' || property === 'marginBottom') return [0, 2000];
   if (property === 'height') return [80, 2000];

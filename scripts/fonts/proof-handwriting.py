@@ -32,7 +32,6 @@ def main(root):
         assert all(info.codepoint for info in buffer.glyph_infos), f'Missing glyph in {text!r}'
         return list(zip(buffer.glyph_infos, buffer.glyph_positions))
 
-    # WOFF2 round-trip must preserve all encoded characters and outlines.
     webfont = TTFont(build / 'Supernatural-Study-Regular.woff2', checkChecksums=2)
     assert webfont.getBestCmap() == font.getBestCmap()
     assert webfont.getGlyphOrder() == order

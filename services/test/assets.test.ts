@@ -15,7 +15,6 @@ afterAll(async () => {
   await mf.dispose();
 });
 
-/** Seed both keys with identical bytes, exactly as a publish does. */
 async function publishFixture(version = "1", body = CSS) {
   const publicId = newPublicId();
   await seedArtifact(mf, versionKey(publicId, version), body, version);
@@ -69,8 +68,6 @@ describe("GET v/{n}.css", () => {
     expect(head.headers.get("ds1-content-hash")).toBe(digest);
   });
 
-  // The byte-copy design, asserted rather than assumed. If someone turns
-  // latest.css into a redirect or a lookup, this is the test that fails.
   it("shares an ETag with latest.css when it is the live version", async () => {
     const id = await publishFixture("4");
 
@@ -140,7 +137,6 @@ describe("missing artifacts", () => {
     expect(response.status).toBe(404);
     expect(response.headers.get("content-type")).toBe("text/css; charset=utf-8");
     expect(await response.text()).toContain("library not found");
-    // Short, so a just-created library is not negatively cached at the edge.
     expect(response.headers.get("cache-control")).toBe("public, max-age=30");
   });
 
@@ -151,7 +147,7 @@ describe("missing artifacts", () => {
 });
 
 describe("path validation", () => {
-  const id = "abcdefghjkmnpqrstvwx"; // 20 valid crockford chars
+  const id = "abcdefghjkmnpqrstvwx";
 
   it.each([
     ["uppercase in the id", `/ds1/ABCDEFGHJKMNPQRSTVWX/latest.css`],
@@ -191,8 +187,6 @@ describe("methods", () => {
     expect(response.headers.get("allow")).toBe("GET, HEAD, OPTIONS");
   });
 
-  // The read Worker must never be able to mutate an artifact, even though the
-  // R2 binding it holds is technically read-write.
   it("leaves the artifact untouched after a rejected write", async () => {
     const id = await publishFixture();
     await mf.fetch(`/ds1/${id}/latest.css`, { method: "PUT", body: "body{color:red}" });

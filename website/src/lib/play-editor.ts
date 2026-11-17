@@ -1,8 +1,3 @@
-// Play's code editor: Aa's plain editor (one plain-text block, Aa's editing and rounded
-// selection), with line numbers beside it and the code coloured by the browser's CSS highlights,
-// which paint ranges of the text without changing it. HTML is coloured as written, the CSS in a
-// <style> and a .css file, and the JavaScript in a <script>. Nothing reacts to unfinished code: a
-// half-written tag is simply coloured as far as it goes, and nothing is ever marked wrong.
 import { createPlainEditor } from '../vendor/aa/aa.js';
 
 export type TokenKind = 'tag' | 'attribute' | 'string' | 'comment' | 'keyword' | 'property' | 'number' | 'punctuation';
@@ -11,7 +6,6 @@ export interface Token { from: number; to: number; kind: TokenKind }
 const KINDS: TokenKind[] = ['tag', 'attribute', 'string', 'comment', 'keyword', 'property', 'number', 'punctuation'];
 const JS_KEYWORDS = /\b(?:await|async|break|case|catch|class|const|continue|default|delete|do|else|export|extends|false|finally|for|from|function|if|import|in|instanceof|let|new|null|of|return|static|super|switch|this|throw|true|try|typeof|undefined|var|void|while|yield)\b/y;
 
-/** Colours CSS from `start`, as far as `end`. */
 function css(code: string, start: number, end: number, tokens: Token[]): void {
   const pattern = /\/\*[\s\S]*?(?:\*\/|$)|"[^"\n]*"?|'[^'\n]*'?|@[\w-]+|--[\w-]+|[\w-]+(?=\s*:(?!:))|#[0-9a-fA-F]{3,8}\b|-?\d*\.?\d+(?:[a-z%]+)?|[{}:;,()]/g;
   pattern.lastIndex = start;
@@ -26,7 +20,6 @@ function css(code: string, start: number, end: number, tokens: Token[]): void {
   }
 }
 
-/** Colours JavaScript from `start`, as far as `end`. */
 function javascript(code: string, start: number, end: number, tokens: Token[]): void {
   const pattern = /\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?|`(?:\\.|[^`\\])*`?|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][\w$]*\b|[{}()[\];,.=<>+\-*/!?:&|]/g;
   pattern.lastIndex = start;
@@ -45,7 +38,6 @@ function javascript(code: string, start: number, end: number, tokens: Token[]): 
   }
 }
 
-/** The coloured ranges of a file: HTML, or CSS when it is a stylesheet. */
 export function highlight(code: string, language: 'html' | 'css' = 'html'): Token[] {
   const tokens: Token[] = [];
   if (language === 'css') { css(code, 0, code.length, tokens); return tokens; }
@@ -67,7 +59,6 @@ export function highlight(code: string, language: 'html' | 'css' = 'html'): Toke
       }
     }
     if (text.endsWith('>')) tokens.push({ from: at + text.length - (text.endsWith('/>') ? 2 : 1), to: at + text.length, kind: 'tag' });
-    // What a <style> or <script> holds is CSS or JavaScript, to its closing tag or the end.
     const element = name[1].toLowerCase();
     if (!name[0].startsWith('</') && text.endsWith('>') && (element === 'style' || element === 'script')) {
       const start = at + text.length;
@@ -81,11 +72,8 @@ export function highlight(code: string, language: 'html' | 'css' = 'html'): Toke
 }
 
 export interface PlayEditor {
-  /** The file as written. */
   readonly value: string;
-  /** Where the caret is, from the start of the file; the end when the editor is not focused. */
   readonly caret: number;
-  /** Show another file, coloured as its language. */
   set(value: string, language?: 'html' | 'css'): void;
 }
 
@@ -103,7 +91,6 @@ export function createPlayEditor(parent: HTMLElement, value: string, onChange: (
   const block = host.querySelector<HTMLElement>('.aa-block')!;
   let language: 'html' | 'css' = 'html';
 
-  // Offsets in the text as the editor reads it (text and line breaks), mapped onto its nodes.
   function nodes(): { node: Node; from: number; length: number }[] {
     const out: { node: Node; from: number; length: number }[] = [];
     let at = 0;
@@ -148,7 +135,6 @@ export function createPlayEditor(parent: HTMLElement, value: string, onChange: (
     for (const kind of KINDS) CSS.highlights.set(`play-${kind}`, new Highlight(...groups.get(kind)!));
   }
 
-  // The caret's line is numbered in the ink, the others muted.
   let marked: Element | null = null;
   function mark() {
     const line = caretOffset() === null ? -1 : editor.value.slice(0, caretOffset()!).split('\n').length - 1;
@@ -168,7 +154,6 @@ export function createPlayEditor(parent: HTMLElement, value: string, onChange: (
   }
   document.addEventListener('selectionchange', mark);
 
-  // Tab writes two spaces, as the browser would type them, so undo takes them back too.
   block.addEventListener('keydown', event => {
     if (event.key !== 'Tab' || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return;
     event.preventDefault();

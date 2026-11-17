@@ -1,8 +1,3 @@
-/**
- * Ezo's arrow in place of the browser's arrow and pointing hand, 16 CSS pixels wide with a Retina source.
- * The page's own rule has no weight, so the editor's resize, grab and text cursors still win; buttons and
- * Design system 1's shadow roots set their own arrow or hand, which the pointer's path replaces as it enters.
- */
 const small=new URL('./cursor/arrow-cursor-small.png',import.meta.url).href;
 const retina=new URL('./cursor/arrow-cursor-rounded.png',import.meta.url).href;
 const retinaSet=`image-set(url('${small}') 1x, url('${retina}') 2x) 2 2, default`;

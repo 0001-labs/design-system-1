@@ -14,12 +14,6 @@ import "./component-editor.css";
 const GROUPS = ["Layout", "Shape", "Text", "Colour"] as const;
 const WIDTH_LABELS: Record<WidthMode, string> = { hug: "Hug", fill: "Fill", fixed: "Fixed" };
 
-/**
- * A component's properties in their groups (Layout, Shape, Text, Colour), each in whole squares as
- * a design tool sets them, with a reset while it is set. They show a drag's preview and write
- * through `editing`, as the canvas's handles do. A `locked` property (something else draws it)
- * shows its value without a control.
- */
 export function propertyGroups(editing: PropertyEditing, spec: ComponentSpec, locked: ReadonlyMap<string, string> = new Map()): TemplateResult[] {
   return GROUPS.flatMap(group => {
     const properties = spec.properties.filter(property => property.group === group);
@@ -37,7 +31,6 @@ export function propertyGroups(editing: PropertyEditing, spec: ComponentSpec, lo
   });
 }
 
-/** A pinned property's value: the height "Auto", a length as written, or as the canvas measured it where it is not written plainly. */
 function pinnedText(editing: PropertyEditing, property: ComponentProperty, pinned: string) {
   if (pinned === "auto") return "Auto";
   const drawn = editing.drawn.get().get(property.token);

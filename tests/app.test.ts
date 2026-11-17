@@ -68,7 +68,6 @@ test("the menu button in the bar is the page's drawer toggle, shown only when th
   expect(app.page!.drawerToggle).toBe(menu);
   expect(menu.getAttribute("aria-expanded")).toBe("false");
   expect(menu.hasAttribute("aria-controls")).toBe(false);
-  // The page draws no menu row of its own.
   expect(app.page!.shadowRoot!.querySelector<HTMLElement>('[part="bar"]')!.hidden).toBe(true);
   expect(app.page!.shadowRoot!.querySelector('[part="page"]')!.hasAttribute("data-toggle-outside")).toBe(true);
 });
@@ -91,7 +90,6 @@ test("the app scale manages the page's scale once, with the components following
   stop();
   stop = undefined;
   expect(root.hasAttribute("data-ds-scaling-managed")).toBe(false);
-  // Stopped, it can start again.
   stop = startAppScale();
   expect(root.hasAttribute("data-ds-scaling-managed")).toBe(true);
 });

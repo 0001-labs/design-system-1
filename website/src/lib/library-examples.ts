@@ -1,9 +1,6 @@
 import type { LayoutExample } from './layout-examples';
 import { choices, choose, heading, icon, library, photo, text } from './library-example-parts';
 
-// Four apps, each drawn by a published design library (library-example-parts.ts).
-
-// Composition only: every colour, face, corner and measure comes from DS1 and the library.
 const composition = `<style>
 .lib-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--ds-unit); min-width:0; align-content:start; }
 .lib-tight { display:grid; grid-template-columns:minmax(0,1fr); gap:calc(var(--ds-unit) / 2); min-width:0; align-content:start; }

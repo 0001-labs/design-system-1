@@ -44,7 +44,7 @@ test("suggestions keep native field focus and editing keys while requesting cont
   menu.addEventListener("ds-menu-active", request);
   expect(key(field, "ArrowDown").defaultPrevented).toBe(true);
   expect((request.mock.calls[0]![0] as CustomEvent).detail.id).toBe("last");
-  expect(menu.activeId).toBe("first"); // The owner can decline a request.
+  expect(menu.activeId).toBe("first");
   expect(document.activeElement).toBe(field);
   expect([...menu.querySelectorAll("button")].every(button => button.tabIndex === -1)).toBe(true);
   menu.activeId = "last"; await menu.updateComplete;
@@ -204,12 +204,10 @@ test("a hover menu's link to the page already shown opens the menu when pressed"
   menu.innerHTML = '<button role="menuitem">Settings</button>';
   document.body.append(trigger, menu); await menu.updateComplete;
   const request = vi.fn(); menu.addEventListener("ds-menu-toggle", request);
-  // A link to another page is followed.
   const away = vi.fn((event: MouseEvent) => { expect(event.defaultPrevented).toBe(false); event.preventDefault(); });
   trigger.addEventListener("click", away, {once: true});
   trigger.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true})); await menu.updateComplete;
   expect(away).toHaveBeenCalledOnce(); expect(request).not.toHaveBeenCalled(); expect(menu.open).toBe(false);
-  // A link to the page already shown opens the menu, and a modifier press stays the browser's.
   trigger.href = location.pathname + location.search;
   const browsers = vi.fn((event: MouseEvent) => { expect(event.defaultPrevented).toBe(false); event.preventDefault(); });
   trigger.addEventListener("click", browsers, {once: true});
@@ -236,7 +234,7 @@ test("rectangle anchors share viewport placement and return focus to the invokin
     expect(menu.style.left).toBe("200px"); expect(menu.style.top).toBe("250px");
     expect(document.activeElement).toBe(menu.firstElementChild);
     menu.anchor = new DOMRect(200, 0, 80, 20); await menu.updateComplete;
-    expect(menu.style.top).toBe("30px"); // Prefer above, but flip when it has no space.
+    expect(menu.style.top).toBe("30px");
     key(menu.firstElementChild as HTMLElement, "Escape"); await menu.updateComplete;
     expect(document.activeElement).toBe(opener);
   } finally { observe.mockRestore(); }
@@ -300,7 +298,7 @@ test("fast pointer movement before a destination trigger mounts does not count a
   const old = document.createElement("ds-menu"); document.body.append(old); await old.updateComplete;
   move(300, 20);
   dismissMenusForNavigation(document);
-  move(30, 20); // The destination is still preparing; its button does not exist yet.
+  move(30, 20);
   const trigger = document.createElement("button"), menu = document.createElement("ds-menu");
   trigger.getBoundingClientRect = () => new DOMRect(10, 10, 100, 30);
   menu.hover = menu.floating = true; menu.trigger = menu.anchor = trigger;

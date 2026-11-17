@@ -1,29 +1,7 @@
-/**
- * Dates, times, numbers, money and lists written the way the reader's
- * language writes them, through the platform's `Intl` formatters.
- *
- * Every function formats in the current language (`currentLanguage.value`
- * from `./i18n`), read again on every call, so the text drawn after a
- * language change is in the new language. Pass `language` to format in
- * another one: a server answering a request names the request's language,
- * since its current language is nobody's in particular.
- *
- * Each formatter is made once per locale and options, then kept. No browser
- * code: it runs in a Worker, Node or a test as it does in a page.
- */
 import { currentLanguage } from "./i18n";
 import { DEFAULT_LANGUAGE, LANGUAGES, normalizeLanguage } from "./languages";
 import type { Language } from "./languages";
 
-// ============================================================================
-// Locales
-// ============================================================================
-
-/**
- * The locale each language of the list formats in: the language with the
- * region it is most read in. `pt` is Portugal's Portuguese and `pt-BR`
- * Brazil's; `Intl` alone reads a bare `pt` as Brazil's.
- */
 export const LOCALE_TAGS: Readonly<Record<Language, string>> = {
   da: "da-DK",
   de: "de-DE",
@@ -45,25 +23,14 @@ export const LOCALE_TAGS: Readonly<Record<Language, string>> = {
 };
 
 export type FormatSettings = {
-  /**
-   * The locale a language formats in, where a product's readers expect
-   * another region than `LOCALE_TAGS` gives: `{ en: "en-GB" }` writes
-   * English dates day first.
-   */
   locales?: Partial<Record<string, string>>;
-  /**
-   * The time zone dates and times are shown in, unless a call names one.
-   * Without it, the runtime's own zone (a Worker's is UTC).
-   */
   timeZone?: string;
 };
 
 let settings: FormatSettings = {};
 
-/** Each language or tag asked for, to the locale it formats in. */
 const resolvedTags = new Map<string, string>();
 
-/** Set the locales and time zone every call starts from (see `FormatSettings`). */
 export function configureFormat(next: FormatSettings): void {
   settings = {
     ...settings,
@@ -86,12 +53,6 @@ function regional(language: Language): string {
   return (own && canonical(own)) || LOCALE_TAGS[language];
 }
 
-/**
- * The locale tag a language formats in: `da` gives `da-DK`, `pt` gives
- * `pt-PT`, `pt-br` gives `pt-BR`. A tag with its own region or script keeps
- * it (`en-GB`, `zh-Hant`), and a language outside the list passes through
- * (`nl`). Without an argument, the current language's.
- */
 export function localeTag(language?: string | null): string {
   const tag = String(language || currentLanguage.value || "")
     .trim()
@@ -99,7 +60,6 @@ export function localeTag(language?: string | null): string {
   let resolved = resolvedTags.get(tag);
   if (!resolved) {
     resolved = resolveTag(tag);
-    // Tags come from a short list; a server reading arbitrary ones starts over
     if (resolvedTags.size >= MAX_FORMATTERS) {
       resolvedTags.clear();
     }
@@ -119,14 +79,11 @@ function resolveTag(tag: string): string {
     return regional(member);
   }
 
-  // A tag of its own, when the runtime has its conventions (not the
-  // runtime's default standing in for one it lacks)
   const written = canonical(tag);
   if (written && supported(written)) {
     return written;
   }
 
-  // Otherwise the list's language it names, else the default
   const known = normalizeLanguage(tag, null);
   return regional(known ?? DEFAULT_LANGUAGE);
 }
@@ -139,12 +96,7 @@ function supported(tag: string): boolean {
   }
 }
 
-// ============================================================================
-// Kept formatters
-// ============================================================================
-
 type WithLanguage = {
-  /** The language to format in, instead of the current one: a code of the list or any locale tag. */
   language?: string;
 };
 
@@ -170,7 +122,6 @@ function kept<T>(
     return formatters.get(key) as T;
   }
   if (formatters.size >= MAX_FORMATTERS) {
-    // The oldest goes first
     const oldest = formatters.keys().next();
     if (!oldest.done) {
       formatters.delete(oldest.value);
@@ -188,11 +139,6 @@ function split<T extends WithLanguage>(
   return [localeTag(language), rest];
 }
 
-/**
- * The kept `Intl.DateTimeFormat` for any options the named functions do not
- * cover (`{ weekday: "short" }`), in the current language or `language`. The
- * time zone set with `configureFormat` applies unless the options name one.
- */
 export function dateFormatter(
   options: Intl.DateTimeFormatOptions & WithLanguage = {}
 ): Intl.DateTimeFormat {
@@ -204,7 +150,6 @@ export function dateFormatter(
   return kept("date", locale, resolved, () => new Intl.DateTimeFormat(locale, resolved));
 }
 
-/** The kept `Intl.NumberFormat` for any options, in the current language or `language`. */
 export function numberFormatter(
   options: Intl.NumberFormatOptions & WithLanguage = {}
 ): Intl.NumberFormat {
@@ -212,7 +157,6 @@ export function numberFormatter(
   return kept("number", locale, rest, () => new Intl.NumberFormat(locale, rest));
 }
 
-/** The kept `Intl.RelativeTimeFormat`, in the current language or `language`. */
 export function relativeTimeFormatter(
   options: Intl.RelativeTimeFormatOptions & WithLanguage = {}
 ): Intl.RelativeTimeFormat {
@@ -228,7 +172,6 @@ export function relativeTimeFormatter(
 export type ListType = "conjunction" | "disjunction" | "unit";
 export type ListStyle = "long" | "short" | "narrow";
 
-/** What `Intl.ListFormat` offers, for runtimes whose types predate it. */
 export type ListFormatter = {
   format(items: Iterable<string>): string;
 };
@@ -238,7 +181,6 @@ type ListFormatConstructor = new (
   options: { type?: ListType; style?: ListStyle }
 ) => ListFormatter;
 
-/** The kept `Intl.ListFormat`, in the current language or `language`. */
 export function listFormatter(
   options: { type?: ListType; style?: ListStyle } & WithLanguage = {}
 ): ListFormatter {
@@ -246,35 +188,23 @@ export function listFormatter(
   return kept("list", locale, rest, () => {
     const ListFormat = (Intl as unknown as { ListFormat?: ListFormatConstructor })
       .ListFormat;
-    // A runtime without it joins with commas, as English would
     return ListFormat
       ? new ListFormat(locale, rest)
       : { format: (items: Iterable<string>) => [...items].join(", ") };
   });
 }
 
-// ============================================================================
-// Dates and times
-// ============================================================================
-
-/**
- * A moment: a `Date`, milliseconds since 1970 or a date string. A date
- * written without a time (`2026-10-17`) is that day wherever it is read.
- */
 export type DateInput = Date | number | string;
 
 export type DateLength = "short" | "medium" | "long";
 
 export type DateOptions = WithLanguage & {
-  /** How much is written: `short` (10/17/26), `medium` (Oct 17, 2026) or `long` (October 17, 2026). */
   length?: DateLength;
-  /** The time zone to show it in (`Asia/Tokyo`, `UTC`). */
   timeZone?: string;
 };
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** The moment, and whether it is a day without a time. */
 function readDate(value: DateInput): { time: number; day: boolean } {
   if (typeof value === "string") {
     const day = DATE_ONLY.exec(value.trim());
@@ -311,12 +241,10 @@ function formatMoment(
   if (!Number.isFinite(time)) {
     return "";
   }
-  // A day without a time is kept on its own date in every zone
   const zone = day ? "UTC" : timeZone;
   return dateFormatter({ ...parts, timeZone: zone, language }).format(time);
 }
 
-/** A date: `Oct 17, 2026` (medium, the default), `10/17/26` (short), `October 17, 2026` (long). */
 export function formatDate(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -325,7 +253,6 @@ export function formatDate(
   return formatMoment(value, { dateStyle: length }, rest);
 }
 
-/** A time of day: `2:30 PM` (short, the default), `2:30:05 PM` (medium), `2:30:05 PM UTC` (long). */
 export function formatTime(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -334,7 +261,6 @@ export function formatTime(
   return formatMoment(value, { timeStyle: length }, rest);
 }
 
-/** A date at a time: the date at `length` (medium by default), the time to the minute. */
 export function formatDateTime(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -349,7 +275,6 @@ const MONTH: Record<DateLength, "numeric" | "short" | "long"> = {
   long: "long",
 };
 
-/** A month of a year: `October 2026` (long, the default), `Oct 2026` (medium), `10/2026` (short). */
 export function formatMonthYear(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -358,7 +283,6 @@ export function formatMonthYear(
   return formatMoment(value, { year: "numeric", month: MONTH[length] }, rest);
 }
 
-/** A day of a month, without the year: `Oct 17` (medium, the default), `10/17` (short), `October 17` (long). */
 export function formatMonthDay(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -367,10 +291,6 @@ export function formatMonthDay(
   return formatMoment(value, { month: MONTH[length], day: "numeric" }, rest);
 }
 
-/**
- * A day of a month at a time, without the year: `Oct 17, 2:30 PM` (medium,
- * the default), `10/17, 2:30 PM` (short), `October 17 at 2:30 PM` (long).
- */
 export function formatMonthDayTime(
   value: DateInput,
   options?: DateOptions | DateLength
@@ -383,10 +303,6 @@ export function formatMonthDayTime(
   );
 }
 
-// ============================================================================
-// Relative time
-// ============================================================================
-
 export type RelativeUnit =
   | "second"
   | "minute"
@@ -398,15 +314,10 @@ export type RelativeUnit =
   | "year";
 
 export type RelativeTimeOptions = WithLanguage & {
-  /** The moment it is measured from. Defaults to now. */
   now?: DateInput;
-  /** Always count in this unit, rather than the one that reads best. */
   unit?: RelativeUnit;
-  /** `auto` (the default) writes "yesterday" and "now"; `always` writes "1 day ago". */
   numeric?: "auto" | "always";
-  /** `long` (the default), `short` ("3 min. ago") or `narrow`. */
   style?: "long" | "short" | "narrow";
-  /** The zone whose calendar decides what "yesterday" is. Defaults as dates do. */
   timeZone?: string;
 };
 
@@ -428,7 +339,6 @@ const UNIT_LENGTH: Record<RelativeUnit, number> = {
   year: YEAR_DAYS * DAY,
 };
 
-/** The calendar day a moment falls on in a zone, counted from 1970. */
 function dayNumber(time: number, timeZone: string | undefined): number {
   if (!timeZone) {
     const date = new Date(time);
@@ -453,14 +363,6 @@ function dayNumber(time: number, timeZone: string | undefined): number {
   return Math.round(Date.UTC(part("year"), part("month") - 1, part("day")) / DAY);
 }
 
-/**
- * The count and unit a moment reads best in, from `now`: under 45 seconds is
- * now, under 45 minutes counts minutes, under 22 hours (or the same day)
- * hours, under a week calendar days (so "yesterday" is the day before
- * today), under 26 days weeks, under 335 days months, then years. A day
- * without a time (`2026-10-17`) counts days from today. Negative counts are
- * in the past.
- */
 export function relativeTimeUnit(
   value: DateInput,
   now: DateInput = Date.now(),
@@ -473,12 +375,10 @@ export function relativeTimeUnit(
   const sign = elapsed < 0 ? -1 : 1;
 
   if (day) {
-    // A day without a time is counted in days from today: "today", "yesterday"
     const days = Math.round(at / DAY) - dayNumber(from, timeZone);
     return days === 0 ? [0, "day"] : inDays(days);
   }
   if (size < 45 * SECOND) {
-    // -0 keeps the past's wording where a count is written ("0 seconds ago")
     return [elapsed < 0 ? -0 : 0, "second"];
   }
   if (size < 45 * MINUTE) {
@@ -491,7 +391,6 @@ export function relativeTimeUnit(
   return inDays(days);
 }
 
-/** A count of calendar days (never 0) in the unit it reads best in. */
 function inDays(days: number): [number, RelativeUnit] {
   const whole = Math.abs(days);
   const sign = days < 0 ? -1 : 1;
@@ -507,11 +406,6 @@ function inDays(days: number): [number, RelativeUnit] {
   return [sign * Math.max(1, Math.round(whole / YEAR_DAYS)), "year"];
 }
 
-/**
- * How long ago or how far ahead a moment is: "3 minutes ago", "yesterday",
- * "in 2 days", "now", in the unit that reads best (see `relativeTimeUnit`)
- * or the one given.
- */
 export function formatRelativeTime(
   value: DateInput,
   options: RelativeTimeOptions = {}
@@ -530,18 +424,12 @@ export function formatRelativeTime(
   return relativeTimeFormatter({ numeric, style, language }).format(count, chosen);
 }
 
-// ============================================================================
-// Numbers
-// ============================================================================
-
 export type NumberOptions = WithLanguage & Intl.NumberFormatOptions;
 
-/** A number with the language's separators: `1,234.5`, `1.234,5`. Any `Intl.NumberFormat` option applies. */
 export function formatNumber(value: number | bigint, options: NumberOptions = {}): string {
   return numberFormatter(options).format(value);
 }
 
-/** A number in short: `12K`, `1.2M`, `1,2 mio.`, `1.2万`, to one decimal unless the options say otherwise. */
 export function formatCompact(value: number | bigint, options: NumberOptions = {}): string {
   return numberFormatter({
     notation: "compact",
@@ -550,27 +438,16 @@ export function formatCompact(value: number | bigint, options: NumberOptions = {
   }).format(value);
 }
 
-/** A fraction as a percentage: `0.25` gives `25%` (`25 %` in Danish). */
 export function formatPercent(value: number, options: NumberOptions = {}): string {
   return numberFormatter({ style: "percent", ...options }).format(value);
 }
-
-// ============================================================================
-// Money
-// ============================================================================
 
 export type CurrencyDisplay = "symbol" | "narrowSymbol" | "code" | "name";
 
 export type MoneyOptions = WithLanguage &
   Omit<Intl.NumberFormatOptions, "style" | "currency" | "currencyDisplay"> & {
-    /**
-     * The amount is counted in the currency's minor unit, as payment
-     * services send it: 1999 is $19.99, and 1999 yen are 1999 yen.
-     */
     minor?: boolean;
-    /** The currency as its symbol (`$`, the default), its narrow symbol, its code (`USD`) or its name. */
     display?: CurrencyDisplay;
-    /** Whole units only, rounded: `$20`. */
     whole?: boolean;
   };
 
@@ -578,11 +455,6 @@ function currencyCode(currency: string): string {
   return String(currency ?? "").trim().toUpperCase();
 }
 
-/**
- * How many decimals a currency's minor unit has, as ISO 4217 counts them:
- * 2 for USD, EUR and DKK, 0 for JPY and KRW, 3 for BHD. 2 for a code the
- * runtime does not know.
- */
 export function currencyDigits(currency: string): number {
   const code = currencyCode(currency);
   try {
@@ -597,12 +469,10 @@ export function currencyDigits(currency: string): number {
   }
 }
 
-/** An amount in minor units as whole units: 1999 cents are 19.99 dollars; yen stay as they are. */
 export function fromMinorUnits(amount: number, currency: string): number {
   return amount / 10 ** currencyDigits(currency);
 }
 
-/** An amount in whole units as minor units, rounded: 19.99 dollars are 1999 cents. */
 export function toMinorUnits(amount: number, currency: string): number {
   return Math.round(amount * 10 ** currencyDigits(currency));
 }
@@ -630,13 +500,6 @@ function moneyFormatter(
   }
 }
 
-/**
- * An amount of money in the language's way: `$1,234.50`, `1.234,50 kr.`,
- * `￥1,235`. The currency decides the decimals (none for yen). With `minor`,
- * the amount is in cents, øre or the like. A currency code that is not one
- * (not three letters) is written after the number (`12.00 US`) rather than
- * throwing.
- */
 export function formatMoney(
   amount: number,
   currency: string,
@@ -654,11 +517,6 @@ export function formatMoney(
   })} ${code}`;
 }
 
-/**
- * The parts of `formatMoney`'s text, as `Intl.NumberFormat.formatToParts`
- * gives them (`currency`, `integer`, `group`, `decimal`, `fraction`, …), for
- * drawing digits apart from the rest, each in a cell of its own width.
- */
 export function formatMoneyToParts(
   amount: number,
   currency: string,
@@ -671,7 +529,6 @@ export function formatMoneyToParts(
   return [{ type: "literal", value: formatMoney(amount, currency, options) }];
 }
 
-/** The symbol the language writes a currency with: `$`, `kr.`, `€`, `US$` in British English. */
 export function currencySymbol(
   currency: string,
   options: WithLanguage & { display?: "symbol" | "narrowSymbol" } = {}
@@ -680,18 +537,11 @@ export function currencySymbol(
   return parts.find((part) => part.type === "currency")?.value ?? currencyCode(currency);
 }
 
-// ============================================================================
-// Lists
-// ============================================================================
-
 export type ListOptions = WithLanguage & {
-  /** `conjunction` (the default) joins with "and", `disjunction` with "or", `unit` with neither. */
   type?: ListType;
-  /** `long` (the default), `short` or `narrow`. */
   style?: ListStyle;
 };
 
-/** Items joined the language's way: `A, B, and C`, `A, B og C`, `A、B、C`. */
 export function formatList(items: Iterable<string>, options: ListOptions = {}): string {
   const { type = "conjunction", style = "long", language } = options;
   return listFormatter({ type, style, language }).format(

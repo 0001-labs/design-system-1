@@ -8,7 +8,6 @@ export interface ComponentRequest { prompt: string; kind: string; text?: string;
 interface Candidate { id: string; source: string; start: number; end: number; value: BasicContentElement }
 export interface ComponentContext { input: ComponentRequest; source: string; candidates: Candidate[]; insertion: boolean }
 
-/** Skip ordinary code fences, including examples containing component syntax. */
 export function componentContext(input: ComponentRequest): ComponentContext | null {
   if (input.kind !== 'writing') return null;
   const source = input.document ?? input.text ?? '';
@@ -69,7 +68,6 @@ export function componentQuestions(context: ComponentContext) {
   };
 }
 
-/** Strict policy for the owner trial. Thresholds still need evaluation on real requests. */
 function chosen(value: unknown, criteria: Record<string, string>): string | null {
   if (!value || typeof value !== 'object') return null;
   const answer = value as Record<string, unknown>;
@@ -105,7 +103,6 @@ export function applyComponentDecision(context: ComponentContext, result: unknow
   const [operation, target] = action.split('__');
   const candidate = context.candidates.find(candidate => candidate.id === target);
   if (!candidate || !operation?.startsWith(`${candidate.value.kind}_`)) return null;
-  // Preserve every authored field, including future properties unknown to this dispatcher.
   const fields = JSON.parse(candidate.source.slice(candidate.source.indexOf('\n') + 1, candidate.source.lastIndexOf('\n')));
   if (operation === 'button_primary' || operation === 'button_secondary') fields.secondary = operation === 'button_secondary';
   else if (operation === 'card_filled' || operation === 'card_outlined') fields.variant = operation === 'card_filled' ? 'filled' : 'outlined';
@@ -113,6 +110,5 @@ export function applyComponentDecision(context: ComponentContext, result: unknow
   const replacement = `\`\`\`c9y-${candidate.value.kind}\n${JSON.stringify(fields).replaceAll('`', '\\u0060')}\n\`\`\``;
   if (!readBasicContentElement(replacement)) return null;
   const changed = context.source.slice(0, candidate.start) + replacement + context.source.slice(candidate.end);
-  // Aa applies an exact passage only when it still occurs once, preserving later edits elsewhere.
   return context.input.document === undefined ? { insert: changed } : { edits: [{ find: candidate.source, replace: replacement }] };
 }

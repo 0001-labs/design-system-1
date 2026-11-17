@@ -77,8 +77,6 @@ test('application Enter handlers can cancel implicit submission', async () => {
   const render = (cancel: boolean) => createElement('form', { onSubmit: submit }, createElement(Input, { onKeyDown: event => { if (cancel) event.preventDefault(); } }), createElement('button', { type: 'submit' }, 'Save'));
   await act(async () => root.render(render(true)));
   const { field, native } = await input();
-  // happy-dom does not associate custom controls with forms; native browser
-  // coverage separately verifies ElementInternals and validation.
   Object.defineProperty(field, 'form', { get: () => host.querySelector('form') });
   await act(async () => native.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true, cancelable: true })));
   await act(async () => new Promise(resolve => setTimeout(resolve, 0)));

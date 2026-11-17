@@ -6,7 +6,6 @@ import styles from "./styles/ds-grid.css?inline";
 export type GridPattern = "grid" | "lines" | "columns" | "dots" | "none";
 const patterns = new Set<GridPattern>(["grid", "lines", "columns", "dots", "none"]);
 
-/** Decorative paper or an alignment overlay; never arranges or captures content. */
 export class Grid extends LitElement {
   static properties = {
     align: { type: String, reflect: true },

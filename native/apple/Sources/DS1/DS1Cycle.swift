@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// `ds-cycle`: a button that steps to the next of `values` on each press, wrapping round, its
-/// label the current value's. Disabled when there is nothing to step to.
 public struct DS1Cycle<Value: Equatable>: View {
     let values: [Value]
     let value: Value
@@ -23,7 +21,6 @@ public struct DS1Cycle<Value: Equatable>: View {
     }
 }
 
-/// The theme cycle: light, dark, system, saved with `DS1Preferences`.
 public struct DS1ThemeCycle: View {
     @ObservedObject private var preferences = DS1Preferences.shared
     @ObservedObject private var words = DS1Words.shared
@@ -33,7 +30,6 @@ public struct DS1ThemeCycle: View {
     }
 }
 
-/// A normal button that fits the language name. Legacy compact and chip arguments remain compatible.
 public struct DS1LanguageCycle: View {
     @ObservedObject private var words = DS1Words.shared
     let primary: Bool

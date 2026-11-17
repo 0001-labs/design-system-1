@@ -34,29 +34,13 @@ import { SidebarEdge } from './sidebar-edge';
 import type { SidebarItem } from '../../../DS1/3-unit/ds-sidebar';
 import './home.css';
 
-/**
- * Consistency's app, at consistency.site (c9y.site's home leads there): the workspace's sites as cards, each opened
- * here in the editor, and Settings; pressing the workspace shows the sites again. Each client has a workspace of its
- * own (`workspace-choice.ts`): the owner moves between all of them in Settings → Workspaces, and the people invited
- * to one see only theirs. The address is consistency.site and
- * nothing more (Joachim, 26 October 2026): where the app stands is its own state, kept in the history so Back and
- * Forward still move between places. Sites are known by their IDv1 codes. A site once opened stays open, hidden
- * while another is shown, so going back to it is instant: no reload and no sign-in again. With a site open, the
- * sidebar is that site's: its plain name at the top (Back returns to the workspace's sites to choose another
- * site), then the site's own address, which shows the site itself and is current while it is shown, and the site's
- * places under it, the menus the platform says it has and the app has an element for (`places/`). There is no list of pages: the owner moves between pages by the site's own links.
- */
-
-/** What the app shows: the sites, one site (by its IDv1 code) on its canvas or at one of its places, or Settings at one of its tabs. */
 export type Place = { page: 'new-site' } | { page: 'draft-site'; id: string; workspace: string } | { page: 'sites' } | { page: 'site'; code: string; place?: string } | { page: 'settings'; tab: SettingsTab };
 export type SettingsTab = 'workspaces' | 'members' | 'domains' | 'account';
 const TABS: SettingsTab[] = ['workspaces', 'members', 'domains', 'account'];
 const SITE_CODE = /^\d{2}[A-Za-z]{4}$/;
 const PLACE_ID = /^[a-z][a-z0-9-]{0,31}$/;
-/** The sidebar row of the site itself, its address; never a place's id, which has no colon. */
 const SITE_ROW = ':site';
 const ROLE_WORDS: Record<WorkspaceSummary['role'], string> = { owner: 'Owner', admin: 'Admin', editor: 'Editor' };
-/** A place as the history keeps it, or the sites for anything else. */
 export function placeFrom(state: unknown): Place {
   const place = state as Partial<Place> | null;
   if (place?.page === 'new-site') return { page: 'new-site' };
@@ -68,13 +52,8 @@ export function placeFrom(state: unknown): Place {
   }
   return { page: 'sites' };
 }
-/**
- * Where the app opens: a site named in the address once (`?open=12ABCD`, from a site's own /edit) or an older address
- * (`#settings/account`), both taken off at once; otherwise the place the history kept, else the sites.
- */
 export function openingPlace(search: string, hash: string, state: unknown): Place {
   const open = new URLSearchParams(search).get('open');
-  // Back from Google's consent for a site's calendar: its settings finish the connection (`places/google-return.ts`).
   if (open && SITE_CODE.test(open)) return keepGoogleReturn(search) ? { page: 'site', code: open, place: 'settings' } : { page: 'site', code: open };
   if (hash === '#domains' || hash === '#settings' || hash === '#settings/domains') return { page: 'settings', tab: 'domains' };
   if (hash === '#settings/account') return { page: 'settings', tab: 'account' };
@@ -82,7 +61,6 @@ export function openingPlace(search: string, hash: string, state: unknown): Plac
   return placeFrom(state);
 }
 
-// Each workspace's sites as last read, so the sidebar and the cards are drawn at once and the registry only confirms them.
 const SITES_KEY = (workspace: string) => `consistency-home-sites:${workspace}`;
 function storedSites(workspace: string): SiteSummary[] {
   if (!workspace) return [];
@@ -91,7 +69,6 @@ function storedSites(workspace: string): SiteSummary[] {
     return Array.isArray(value) ? value.filter((site): site is SiteSummary => !!site && typeof site.code === 'string' && typeof site.name === 'string' && typeof site.url === 'string') : [];
   } catch { return []; }
 }
-// Each site's places as last read, so its sidebar draws at once and the platform only confirms them.
 const PLACES_KEY = (code: string) => `consistency-site-places:${code}`;
 function storedPlaces(code: string): SitePlace[] | undefined {
   try {
@@ -100,14 +77,11 @@ function storedPlaces(code: string): SitePlace[] | undefined {
   } catch { return undefined; }
 }
 
-/** A site's own address, for its card: its host without the editor's path. */
 export const siteHost = (site: SiteSummary) => { try { return new URL(site.url).host; } catch { return ''; } };
-/** A site's card label: a domain of its own after a globe, else its built-in colour address, else its host. */
 const siteLabel = (site: SiteSummary) => site.domain
   ? html`<span slot="label" class="home-site-domain"><ds-icon type="globe" size="large" role="img" aria-label="Connected domain"></ds-icon>${site.domain}</span>`
   : html`<span slot="label">${site.address ?? siteHost(site)}</span>`;
 
-// Each workspace's people as last read, so the cards' avatars are drawn at once and the platform only confirms them.
 const PEOPLE_KEY = (workspace: string) => `consistency-people:${workspace}`;
 function storedPeople(workspace: string): Member[] {
   if (!workspace) return [];
@@ -116,56 +90,34 @@ function storedPeople(workspace: string): Member[] {
     return Array.isArray(value) ? value.filter((person): person is Member => !!person && typeof person.email === 'string') : [];
   } catch { return []; }
 }
-/** How many people a card shows before the rest are a count. */
 const PEOPLE_SHOWN = 3;
 
-/** The avatar's letter: a name's first letter, a number's first figure after its leading zeros (0001 is 1). */
 export function workspaceInitial(name: string): string { return (name.trim().replace(/^0+(?=.)/, '')[0] ?? '?').toUpperCase(); }
 
-/** Consistency's app: a workspace's sites, each in the editor, and Settings. */
 export class ConsistencyHome extends LitElement {
   static properties = { error: { state: true }, workspaces: { state: true }, workspace: { state: true }, place: { state: true }, sites: { state: true }, naming: { state: true }, unread: { state: true }, failed: { state: true }, people: { state: true }, peopleOpen: { state: true }, draftSites: { state: true }, draftProblem: { state: true } };
-  /** The places the app can show, by id (`places/index.ts`), here too for a place defined outside the app's modules. */
   static readonly places = PLACES;
   declare place: Place;
   declare error: string;
-  /** Every workspace the person may open, as last read. */
   declare workspaces: WorkspaceSummary[];
-  /** The workspace the app is in, by its code. */
   declare workspace: string;
   declare sites: SiteSummary[];
   declare draftSites: DraftSiteSummary[];
   declare draftProblem: string;
   private readonly draftEditors = new Map<string, DraftSiteEditor>();
   private newSite?: NewSite;
-  /** True once the workspaces have been read and the person has none: invited nowhere yet. */
   declare unread: boolean;
-  /**
-   * Why the last read of the workspaces or the sites failed, or '' while the platform answers. The home says so under
-   * its title, over the workspaces and cards drawn from the last visit: they are the last known truth, not the current
-   * one. A read that succeeds takes the message off.
-   */
   declare failed: ReadFailure | '';
-  /** The workspace's people, as stored or read. */
   declare people: Member[];
-  /** Whether the people panel stands at the side. */
   declare peopleOpen: boolean;
-  /** The workspace's name as typed in Account, while it is being saved or has failed. */
   declare naming: { value: string; busy: boolean; error: string } | null;
-  /** The sidebar's edge: dragged, it folds the sidebar away and back (`sidebar-edge.ts`). */
   readonly edge = new SidebarEdge(this);
-  /** Every site opened so far, kept alive while hidden. */
   private stopAsk?:()=>void;
   private readonly editors = new Map<string, ConsistencySiteEditor | ConsistencyDocsEditor>();
-  /** Each site's places, as stored or read, by site code. */
   private readonly places = new Map<string, SitePlace[]>();
-  /** The sites whose places have been asked of the platform in this visit. */
   private readonly placesAsked = new Set<string>();
-  /** Every place opened so far, by site code and place id, kept alive while hidden. */
   private readonly placeElements = new Map<string, HTMLElement>();
-  /** Back and Forward: the place the history kept, after the word being edited is saved. */
   private readonly onPop = (event: PopStateEvent) => void this.move(placeFrom(event.state), 'none');
-  /** An older address with a place in its hash, followed inside the app and then taken off. */
   private readonly onHash = () => {
     if (!location.hash) return;
     const next = openingPlace('', location.hash, null);
@@ -181,12 +133,10 @@ export class ConsistencyHome extends LitElement {
     this.people = storedPeople(this.workspace);
     this.peopleOpen = false;
     this.place = openingPlace(location.search, location.hash, history.state);
-    // The address stays the app's own: what opened it is kept as history state instead.
     history.replaceState(this.place, '', location.pathname);
   }
   protected createRenderRoot() { return this; }
 
-  /** A place asks to show one of the site's pages on its canvas (Pages' Edit): the canvas is shown, opened on it. */
   private readonly onOpenPage = (event: Event) => {
     const path = (event as CustomEvent<{ path?: unknown }>).detail?.path;
     if (this.place.page !== 'site' || typeof path !== 'string') return;
@@ -195,8 +145,6 @@ export class ConsistencyHome extends LitElement {
     void this.editors.get(code)?.open(path);
   };
 
-  /** The people panel or Members read the people again or changed them: the cards follow. */
-  /** A panel open beside the page has the sidebar's room: the sidebar gives way while one is drawn, and comes back after. */
   private readonly syncPanel = () => this.edge.giveWay(Array.from(this.querySelectorAll<HTMLElement>('consistency-behaviour-panel')).some(panel => !panel.hidden && panel.getClientRects().length > 0));
   private readonly onMembers = (event: Event) => {
     const { workspace, members } = (event as CustomEvent<{ workspace: string; members: Member[] }>).detail;
@@ -205,10 +153,8 @@ export class ConsistencyHome extends LitElement {
 
   connectedCallback() { this.stopAsk=registerAskNavigation(this,()=>this.askChoices()); this.edge.connect(); super.connectedCallback(); addEventListener('popstate', this.onPop); addEventListener('hashchange', this.onHash); this.addEventListener(OPEN_PAGE, this.onOpenPage); this.addEventListener(PANEL_EVENT, this.syncPanel); this.addEventListener(MEMBERS_CHANGE, this.onMembers); void this.readWorkspaces(); }
 
-  /** Goes to a place inside the app, the address unchanged. */
   go(next: Place) { return this.move(next, 'push'); }
 
-  /** Moves to a place, first saving a word being edited on the site being left; a failed save stays put. */
   private async move(next: Place, record: 'push' | 'none') {
     const current = this.place;
     if (current.page === 'draft-site' && await this.draftEditors.get(`${current.workspace}:${current.id}`)?.flush() === false) return;
@@ -217,7 +163,6 @@ export class ConsistencyHome extends LitElement {
       const place = this.placeElements.get(`${current.code}:${oldPlace}`) as (HTMLElement & { flush?: () => Promise<boolean> }) | undefined;
       if (place?.flush && !await place.flush()) { if (record === 'none') history.pushState(current, '', location.pathname); return; }
     }
-    // The site's canvas is left for another site, one of its places, or anywhere else.
     const leaving = current.page === 'site' && !this.placeOf(current) && (next.page !== 'site' || next.code !== current.code || this.placeOf(next)) ? this.editors.get(current.code) : undefined;
     if (leaving && !(await leaving.flush())) { if (record === 'none') history.pushState(current, '', location.pathname); return; }
     if (record === 'push' && JSON.stringify(next) !== JSON.stringify(current)) history.pushState(next, '', location.pathname);
@@ -225,11 +170,6 @@ export class ConsistencyHome extends LitElement {
     this.edge.chosen();
   }
 
-  /**
-   * The workspaces the person may open, then the sites of the one the app is in: the one chosen last, else the one
-   * holding a site asked for by its code, else the first. A failed read is said under the title (`failed`) and the
-   * sites are not asked for: the same session or platform would fail them too. Try again reads from here.
-   */
   private async readWorkspaces() {
     const read = await readWorkspaces();
     if ('failed' in read) { this.failed = read.failed; return; }
@@ -246,7 +186,6 @@ export class ConsistencyHome extends LitElement {
 
   private async switchWorkspace(code: string) { await this.move({ page: 'sites' }, 'push'); if (this.place.page === 'sites') this.choose(code); }
 
-  /** Moves the app into another workspace: its sites as last read at once, confirmed by the registry. */
   private choose(code: string) {
     setActiveWorkspace(code);
     this.workspace = code;
@@ -257,7 +196,6 @@ export class ConsistencyHome extends LitElement {
     void this.readSites();
   }
 
-  /** The workspace's people from the platform, for the cards' avatars. */
   private async readPeople() {
     const workspace = this.workspace;
     if (!workspace) return;
@@ -268,13 +206,9 @@ export class ConsistencyHome extends LitElement {
 
   private keepPeople(members: Member[]) {
     this.people = members;
-    try { localStorage.setItem(PEOPLE_KEY(this.workspace), JSON.stringify(members)); } catch { /* read again next visit */ }
+    try { localStorage.setItem(PEOPLE_KEY(this.workspace), JSON.stringify(members)); } catch {}
   }
 
-  /**
-   * The workspace's sites from the registry: their names and their own addresses. A failed read keeps the cards as
-   * last read and says so under the title (`failed`); a read that succeeds takes the message off.
-   */
   private async readSites() {
     const workspace = this.workspace;
     if (!workspace) { this.sites = []; return; }
@@ -286,7 +220,7 @@ export class ConsistencyHome extends LitElement {
     if (!Array.isArray(body?.sites)) { this.failed = readFailure(response); return; }
     this.failed = '';
     this.sites = body.sites;
-    try { localStorage.setItem(SITES_KEY(workspace), JSON.stringify(this.sites)); } catch { /* read again next visit */ }
+    try { localStorage.setItem(SITES_KEY(workspace), JSON.stringify(this.sites)); } catch {}
   }
 
   private async readDraftSites(workspace: string) {
@@ -324,27 +258,24 @@ export class ConsistencyHome extends LitElement {
     return this.newSite;
   }
 
-  /** The editor for a site, made once and kept. */
   private editorFor(site: SiteSummary): ConsistencySiteEditor | ConsistencyDocsEditor {
     let editor = this.editors.get(site.code);
     if (!editor) { editor = site.docs ? new ConsistencyDocsEditor() : new ConsistencySiteEditor(); editor.site = site; editor.picker = false; this.editors.set(site.code, editor); }
     return editor;
   }
 
-  /** A site's places, drawn at once from the last visit; asked of the platform once a visit, which confirms them. */
   private placesFor(code: string): SitePlace[] {
     if (!this.places.has(code)) { const stored = storedPlaces(code); if (stored) this.places.set(code, stored); }
     if (!this.placesAsked.has(code)) {
       this.placesAsked.add(code);
       void sitePlaces(code).then(places => {
         if (JSON.stringify(places) !== JSON.stringify(this.places.get(code))) { this.places.set(code, places); this.requestUpdate(); }
-        try { localStorage.setItem(PLACES_KEY(code), JSON.stringify(places)); } catch { /* read again next visit */ }
-      }, () => { /* kept as stored; asked again next visit */ });
+        try { localStorage.setItem(PLACES_KEY(code), JSON.stringify(places)); } catch {}
+      }, () => {});
     }
     return this.places.get(code) ?? [];
   }
 
-  /** The place of a site being shown, when it is one the site has and the app can show; the canvas otherwise. */
   private placeOf(place: Place): string | undefined {
     if (place.page !== 'site') return undefined;
     const site = this.sites.find(site => site.code === place.code);
@@ -354,9 +285,7 @@ export class ConsistencyHome extends LitElement {
     return (this.places.get(place.code) ?? storedPlaces(place.code))?.some(each => each.id === place.place) ? place.place : undefined;
   }
 
-  /** Shows the site's canvas or the place being shown in the stage and hides the others, never taking them out of the page. */
   protected updated() {
-    // The page with an open panel may have been left or put away without a word: the sidebar follows what is drawn.
     this.syncPanel();
     const stage = this.querySelector<HTMLElement>('.home-stage');
     if (!stage) return;
@@ -391,17 +320,15 @@ export class ConsistencyHome extends LitElement {
     try {
       localStorage.removeItem(PLACES_KEY(code));
       localStorage.setItem(SITES_KEY(this.workspace), JSON.stringify(this.sites));
-    } catch { /* the next workspace read refreshes the list */ }
+    } catch {}
     if (this.place.page === 'site' && this.place.code === code) this.go({ page: 'sites' });
     void this.readSites();
   }
 
   disconnectedCallback() { this.stopAsk?.(); super.disconnectedCallback(); this.edge.disconnect(); removeEventListener('popstate', this.onPop); removeEventListener('hashchange', this.onHash); this.removeEventListener(OPEN_PAGE, this.onOpenPage); this.removeEventListener(PANEL_EVENT, this.syncPanel); this.removeEventListener(MEMBERS_CHANGE, this.onMembers); }
 
-  /** The workspace the app is in, as last read. */
   private get current(): WorkspaceSummary | undefined { return this.workspaces.find(each => each.code === this.workspace); }
 
-  /** Renames the workspace, for its admins and the owner: saved on Enter or on leaving the field; a failure keeps the words typed. */
   private async rename() {
     const naming = this.naming;
     const current = this.current;
@@ -421,7 +348,6 @@ export class ConsistencyHome extends LitElement {
   private async signOut() {
     this.error = '';
     const response = await fetch('/api/dashboard/session', { method: 'DELETE' }).catch(() => null);
-    // consistency.site's front page is the landing; the other addresses sign in again there.
     if (response?.ok) location.href = location.hostname === 'consistency.site' ? '/' : '/app/signin';
     else this.error = 'Could not sign out. Try again.';
   }
@@ -465,11 +391,6 @@ export class ConsistencyHome extends LitElement {
     ${this.peoplePanel(current)}`;
   }
 
-  /**
-   * Why the workspaces or the sites could not be read, under the title and over the cards from the last visit: the
-   * session ended, with Sign in leading to the gateway's sign-in page; or the platform could not be reached, with
-   * Try again reading the workspaces again. Nothing while the reads succeed.
-   */
   private readProblem() {
     if (!this.failed) return '';
     return this.failed === 'signed-out'
@@ -477,9 +398,6 @@ export class ConsistencyHome extends LitElement {
       : html`<ds-message class="home-problem" role="alert" tone="danger" literal text="Consistency could not be reached. Try again."><ds-button slot="actions" secondary @click=${() => void this.readWorkspaces()}>Try again</ds-button></ds-message>`;
   }
 
-  /**
-   * An open site's title returns to the workspace's sites; no avatar or site-switching menu.
-   */
   private askChoices():AskChoice[]{
     const current=this.place.page==='site'?this.place.code:'';
     const destination=(id:string,title:string,detail:string,next:Place,confirm=false):AskChoice=>({id,kind:next.page,label:next.page==='site'?'Site':'Consistency',title,detail,icon:next.page==='site'?'globe':'search',tone:'light-blue',preview:{type:'text',text:detail},href:next.page==='site'?`https://consistency.site/?open=${next.code}`:undefined,confirm,open:()=>this.go(next)});
@@ -508,11 +426,6 @@ export class ConsistencyHome extends LitElement {
     </nav>`;
   }
 
-  /**
-   * The workspace's sites as cards, each opening in the editor here: its address, a draft's mark before its name
-   * (a site on its built-in address alone, as Free's are), and on its foot the people who edit it, the workspace's;
-   * pressing them opens the people panel, never the site.
-   */
   private siteCards() {
     const full = this.current?.limits.sites != null && (this.current.sites + this.draftSites.length) >= this.current.limits.sites;
     return html`<ds-row><ds-button primary ?disabled=${!canManage(this.current)} @click=${() => this.go({ page: 'new-site' })}>Add new site</ds-button>${full ? html`<ds-text literal tone="muted" wrap text="This workspace has reached its site limit."></ds-text>` : ''}</ds-row>
@@ -520,7 +433,6 @@ export class ConsistencyHome extends LitElement {
     <div class="home-grid">${this.draftSites.map(site => html`<ds-card interactive data-draft-site=${site.id} width="12" height="8" @ds-card-press=${() => this.go({ page: 'draft-site', id: site.id, workspace: this.workspace })}><span slot="label">Private draft</span><span slot="title">${site.name}</span></ds-card>`)}${this.sites.map(site => html`<ds-card interactive data-site=${site.code} width="12" height="8" @ds-card-press=${() => this.go({ page: 'site', code: site.code })}>${siteLabel(site)}<span slot="title" class="home-site-title">${site.domain ? '' : html`<ds-icon type="arrange-draft" size="large" role="img" aria-label="Draft"></ds-icon>`}${site.name}</span>${this.peopleButton()}</ds-card>`)}</div>`;
   }
 
-  /** The workspace's people as overlapping avatars, the invited ones pending, and a plus for those who may invite. */
   private peopleButton() {
     const current = this.current;
     const manage = canManage(current);
@@ -535,7 +447,6 @@ export class ConsistencyHome extends LitElement {
     </button>`;
   }
 
-  /** The workspace's people in a panel at the side, the page still live beside it; admins and the owner invite more. */
   private peoplePanel(current: WorkspaceSummary | undefined) {
     return html`<ds-overlay class="home-people" type="drawer" side="end" non-modal .open=${this.peopleOpen} @ds-close-request=${() => { this.peopleOpen = false; }}>
       <dialog aria-labelledby="home-people-title">
@@ -546,7 +457,6 @@ export class ConsistencyHome extends LitElement {
     </ds-overlay>`;
   }
 
-  /** Every workspace the person may open, each with its avatar, name and role; the one the app is in is current. */
   private workspaceRows() {
     return html`<ds-list class="home-workspaces" aria-label="Workspaces">${this.workspaces.map(each => {
       const here = each.code === this.workspace;
@@ -559,11 +469,6 @@ export class ConsistencyHome extends LitElement {
     })}</ds-list>`;
   }
 
-  /**
-   * Settings as Money draws it: text tabs under the title, each tab its own address. Workspaces lists every workspace
-   * the person may open, as Link's Settings does, and pressing one moves to its sites. People is for the workspace's
-   * admins and the owner.
-   */
   private settings(asked: SettingsTab, current: WorkspaceSummary | undefined) {
     const manage = canManage(current);
     const tabs: { id: SettingsTab; label: string }[] = [{ id: 'workspaces', label: 'Workspaces' }, ...(manage ? [{ id: 'members' as const, label: 'People' }] : []), { id: 'domains', label: 'Domains' }, { id: 'account', label: 'Account' }];

@@ -14,18 +14,8 @@ function styleRoot(root: Node) {
   styledRoots.add(root);
 }
 
-/**
- * A range of the text, in UTF-16 offsets. `color` is any CSS colour, the
- * accent when left out. By default the words are tinted with it; with `fill`
- * the colour itself lies behind the words, which stay in the text colour, so
- * a pale colour shows and every palette colour keeps the words readable.
- */
 export type TextHighlight = { start: number; end: number; color?: string; fill?: boolean };
 
-/** A native writing field with metric-preserving highlights. Products own the
- * text and mention data; DS1 owns its face, growth and synchronized overlay.
- * Keeping the textarea in light DOM preserves native forms and ARIA ID refs.
- */
 export class Composer extends LitElement {
   static properties = {
     highlights: { attribute: false },
@@ -48,7 +38,6 @@ export class Composer extends LitElement {
   private mutations = new MutationObserver(() => this.refresh());
   private readonly edited = () => {
     this.refresh();
-    // Controlled frameworks can restore a declined edit after input bubbles.
     queueMicrotask(() => { if (this.isConnected) this.refresh(); });
   };
   private readonly scrolled = () => this.syncScroll();
@@ -109,7 +98,6 @@ export class Composer extends LitElement {
     }
     this.refresh();
   }
-  /** Call after programmatic native-value changes. React's adapter does this. */
   refresh() {
     const control = this.control;
     if (!control) return;
@@ -129,8 +117,6 @@ export class Composer extends LitElement {
     this.frame = requestAnimationFrame(() => {
       const control = this.control;
       if (!this.isConnected || !control) return;
-      // Browsers may run microtasks between native and framework listeners.
-      // Read the settled native value before painting a controlled edit.
       if (this.text !== control.value) { this.text = control.value; return; }
       if (this.autoGrow) {
         const row = this.shadowRoot!.querySelector(".row-metric")!.getBoundingClientRect().height || 20;
@@ -156,7 +142,6 @@ export class Composer extends LitElement {
     const mirror = this.shadowRoot?.querySelector<HTMLElement>(".mirror");
     const control = this.control;
     if (!mirror || !control) return;
-    // clientWidth excludes the scrollbar, so both layers wrap at the same x.
     const css = getComputedStyle(control);
     mirror.style.width = `${control.clientWidth + parseFloat(css.borderLeftWidth) + parseFloat(css.borderRightWidth)}px`;
     mirror.style.height = `${control.offsetHeight}px`;

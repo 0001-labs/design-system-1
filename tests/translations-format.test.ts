@@ -9,13 +9,11 @@ import {
   validateTranslations,
 } from "../DS1/0-face/translations-format";
 
-// Keyed by the English sentence, {name}
 const sentenceKeyed = {
   da: { Send: "Send", "Hello {name}": "Hej {name}" },
   ja: { Send: "送信" },
 };
 
-// Keyed by a dotted id, an English table, {{name}}
 const idKeyed = {
   en: { "settings.language": "Language", "auth.magicLinkSentTo": "We sent a link to {{email}}." },
   da: { "settings.language": "Sprog", "auth.magicLinkSentTo": "Vi sendte et link til {{email}}." },
@@ -75,7 +73,6 @@ describe("resolveText", () => {
     const product = { en: { Save: "Keep" }, da: { Close: "Luk ned" } };
     const shared = { da: { Save: "Gem", Close: "Luk" } };
     expect(resolveText("Close", "da", [product, shared]).text).toBe("Luk ned");
-    // A word in the reader's language beats the product's English
     expect(resolveText("Save", "da", [product, shared]).text).toBe("Gem");
     expect(resolveText("Save", "sv", [product, shared]).text).toBe("Keep");
   });

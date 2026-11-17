@@ -1,7 +1,6 @@
 import { mountShowcase } from "./showcase-runtime";
 import type { ComponentExample } from "./component-examples";
 
-/** Original, local-only specimens composed from the public component APIs. */
 export const SHOWCASE_EXAMPLES: Record<string, ComponentExample> = {
   "image-landscape": {
     title: "A wide photograph",

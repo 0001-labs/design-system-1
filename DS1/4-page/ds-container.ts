@@ -1,6 +1,4 @@
 import { define } from "../0-face/define";
-// ds-container.ts
-// Container component with responsive width constraints
 
 import { LitElement, html, unsafeCSS } from "lit";
 import styles from "./styles/ds-container.css?inline";

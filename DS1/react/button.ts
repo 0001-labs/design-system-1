@@ -1,4 +1,3 @@
-/** Native semantics and React events; the shared Lit element owns the face. */
 import { createElement, forwardRef, type AnchorHTMLAttributes, type ReactElement, type RefAttributes, type Ref, type ButtonHTMLAttributes } from "react";
 import { SplitButton, type SplitButtonProps } from "./button-split";
 export type { SplitButtonProps, SplitSegment } from "./button-split";
@@ -59,12 +58,6 @@ export const Button = ButtonControl as unknown as {
   displayName?: string;
 };
 
-/**
- * A real link: browser navigation, context menus and modifier clicks survive.
- * As `<ds-button href>`: `target="_blank"` gets `rel="noopener noreferrer"`
- * unless `rel` is given, and a disabled link loses its `href` and `target`, is
- * left out of the tab order and stays a link (`role="link"`, `aria-disabled`).
- */
 export type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> &
   Partial<Pick<ButtonElement, "primary" | "secondary" | "active" | "choice" | "icon" | "wide" | "fixed" | "fit" | "danger" | "menuItem">> & {disabled?: boolean};
 export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(function ButtonLink(

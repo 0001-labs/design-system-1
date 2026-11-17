@@ -1,12 +1,3 @@
-/**
- * Gift cards, the place of a site that sells them (CPH Raft), ported from the site engine's own app onto Design
- * system 1's Lit elements. Active, Used and All as text tabs, each a list of cards (a `ds-row` a card with its
- * code in the code face, the recipient, a status tag, the day it runs out, the amount and what is left in the
- * site's own money). Pressing one opens it in a non-modal drawer with its amounts, buyer and recipient, message,
- * uses (the bookings it paid) and history, and its actions: the PDF to look at, Resend to an address, and Void,
- * both confirmed in place before anything is sent. Issue a card gives one without payment, in the same drawer.
- * Every amount, balance, code and status is the engine's; what is typed is only asked for, and the engine checks it.
- */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
 import '../../../../DS1/3-unit/ds-row';
@@ -34,9 +25,7 @@ const EMPTY: Record<GiftCardsView, string> = { active: 'No active gift cards', u
 interface CardsAnswer { cards?: Card[]; currency?: string; testMode?: boolean }
 interface CardDetail { card?: Card; events?: GiftCardEvent[]; testMode?: boolean }
 
-/** A question asked in the drawer before anything is sent: resending to an address, or voiding. */
 interface Asking { kind: 'resend' | 'void'; to?: string }
-/** A card being issued: the amount, the recipient, the message, and what went wrong. */
 interface Issuing { amount: string; name: string; email: string; message: string; busy: boolean; error: string }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,7 +39,6 @@ export class ConsistencyPlaceGiftCards extends LitElement {
   declare view: GiftCardsView;
   declare answer: CardsAnswer | null;
   declare error: string;
-  /** The card in the drawer, and its history once read. */
   declare opened: { card: Card; events: GiftCardEvent[] | null } | null;
   declare resendTo: string;
   declare asking: Asking | null;
@@ -71,7 +59,6 @@ export class ConsistencyPlaceGiftCards extends LitElement {
       const list = await siteApi<CardsAnswer | Card[]>(this.code, 'giftcards');
       this.answer = Array.isArray(list) ? { cards: list } : list;
       this.error = '';
-      // The card in the drawer follows the list; what is being written there stays.
       const open = this.opened && this.answer.cards?.find(card => card.id === this.opened!.card.id);
       if (open && this.opened) this.opened = { ...this.opened, card: open };
       return true;
@@ -171,7 +158,6 @@ export class ConsistencyPlaceGiftCards extends LitElement {
       <div data-ds-overlay="footer">${pdf ? html`<ds-button secondary href=${pdf} target="_blank" rel="noopener">View the PDF</ds-button>` : nothing}<ds-button secondary @click=${() => this.close()}>Close</ds-button></div>`;
   }
 
-  // Resend: to the address it last went to, or another, confirmed in place before it is sent.
   private resend(card: Card) {
     const asking = this.asking?.kind === 'resend' ? this.asking : null;
     const ask = () => {
@@ -201,7 +187,6 @@ export class ConsistencyPlaceGiftCards extends LitElement {
         </div>` : html`<div class="place-actions"><ds-button secondary ?disabled=${this.acting} @click=${ask}>Resend</ds-button></div>`}`;
   }
 
-  // Void: the card can no longer pay; nothing is refunded.
   private voiding(card: Card) {
     const name = card.code ?? 'this card';
     const confirm = async () => {
@@ -227,7 +212,6 @@ export class ConsistencyPlaceGiftCards extends LitElement {
     this.issuing = { amount: '', name: '', email: '', message: '', busy: false, error: '' };
   }
 
-  // Issue a card: an amount in whole kroner, the recipient, a message; sent to the recipient at once.
   private issueForm(issuing: Issuing) {
     const currency = this.currencyOf();
     const set = (patch: Partial<Issuing>) => { this.issuing = { ...this.issuing!, ...patch }; };

@@ -7,35 +7,21 @@ import { setLibraryToken } from "./libraryTokens";
 
 export type Base = { css: string; rev: number; version: number; updatedAt: number; sheet: string; contentHash: string };
 export type BaseVersion = { version: number; createdAt: number; contentHash: string; restoredFrom: number | null; overrides: number };
-/** `live`: what is drawn is saved; `dirty`: an edit waits for its save; `conflict` and `error` stop saving until resolved. */
 export type DraftState = "live" | "dirty" | "saving" | "conflict" | "error";
 
 type Body = { base?: Base | null; history?: BaseVersion[]; error?: { code?: string; message?: string } | string };
 
 export interface BaseDraftOptions {
-  /** The component template the saved overrides sit under. */
   template?: string;
   fetch?: typeof fetch;
   token?: () => string | null;
 }
 
-/**
- * The owner's draft of the live base: loaded from the Worker's `/api/base`, edited a token at a
- * time or as a whole stylesheet, and saved as a new live version after a pause in editing (or at
- * the latest every few seconds while editing goes on), when the page is left, and never over a
- * version saved somewhere else. Saving is silent; `state` and `failure` say when it cannot go on.
- *
- * Every edit is kept in the stylesheet's final override block (`setLibraryToken`), which is all
- * `/ds1/base/latest.css` serves, under today's component template, so a newer template is never
- * hidden by an old save.
- */
 export class BaseDraft implements ReactiveController {
-  /** `undefined` while loading, `null` before the first save. */
   base: Base | null | undefined = undefined;
   history: BaseVersion[] = [];
   state: DraftState = "live";
   failure = "";
-  /** Counts loads, so a view seeded from `css` can start again after a restore. */
   seed = 0;
   #css = "";
   #rev = 0;
@@ -73,25 +59,19 @@ export class BaseDraft implements ReactiveController {
     this.#debounce = this.#maxWait = this.#retry = null;
   }
 
-  /** The draft: today's template under the overrides, with every edit not yet saved. */
   get css() { return this.#css; }
 
-  /** The overrides the draft holds, in order. */
   get overrides(): BaseOverride[] {
     const result = baseOverrides(this.#css);
     return "overrides" in result ? result.overrides : [];
   }
 
-  /** One override's value, or undefined while the token keeps its default. */
   value(name: string) { return this.overrides.find(([token]) => token === name)?.[1]; }
 
-  /** Sets one token in the override block; an empty value takes it out. */
   edit(name: string, value: string) { this.replace(setLibraryToken(this.#css, name, value)); }
 
-  /** Takes one token out of the override block, back to its default. */
   remove(name: string) { this.edit(name, ""); }
 
-  /** Takes a whole stylesheet as the draft (the token workbench's edits). */
   replace(css: string) {
     if (this.base === undefined || css === this.#css) return;
     this.#css = css;
@@ -104,7 +84,6 @@ export class BaseDraft implements ReactiveController {
     this.#update();
   }
 
-  /** Reads the base and its history again, dropping an edit that could not be saved. */
   async load() {
     const { response, body } = await this.#request("/api/base");
     if (!response.ok) {
@@ -124,7 +103,6 @@ export class BaseDraft implements ReactiveController {
     this.#update();
   }
 
-  /** Saves the waiting edit now. */
   flush = async () => {
     const css = this.#pending;
     if (css === null || this.state === "conflict" || this.state === "saving") return;
@@ -153,7 +131,6 @@ export class BaseDraft implements ReactiveController {
     this.#update();
   };
 
-  /** Makes an earlier version live again, as a new version. */
   async restore(version: number) {
     this.state = "saving";
     this.#update();

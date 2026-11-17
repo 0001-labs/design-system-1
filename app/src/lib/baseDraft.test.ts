@@ -69,7 +69,6 @@ test("an edit saves silently after a pause, as a new live version", async () => 
   expect(draft.state).toBe("live");
   expect(draft.base?.version).toBe(1);
   expect(draft.history[0]?.version).toBe(1);
-  // The next save builds on the new revision; taking the token out empties the block.
   draft.remove("--ds-button-size");
   replies.push(ok);
   await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS);

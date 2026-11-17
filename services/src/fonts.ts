@@ -1,15 +1,8 @@
-/** Private font workspace. Every data and font request verifies the existing owner session. */
 import type { ReportsEnv } from './reports';
 import { SOURCE_LIMITS, validateSource } from '../../shared/font-source';
 
 const OWNER_EMAIL = 'jaa90@icloud.com';
 const MAX_FONT_BYTES = 10 * 1024 * 1024;
-/**
- * The faces in development. Each build is stored by content hash under fonts/<id>/, and
- * fonts/<id>/current.json names the one shown. A face that is drawn in the workspace
- * (`drawing`) also keeps its outlines, by content hash under fonts/<id>/source/, with
- * fonts/<id>/source/current.json naming the latest.
- */
 const DEVELOPMENT: Record<string, { name: string; detail: string; drawing?: true }> = {
   supernatural: { name: 'Supernatural', detail: 'Handwriting · In development' },
   '0001-sans': { name: '0001 Sans', detail: 'Sans · In development', drawing: true },
@@ -18,7 +11,6 @@ const isDevelopment = (id: string) => Object.hasOwn(DEVELOPMENT, id);
 const currentKey = (id: string) => `fonts/${id}/current.json`;
 const sourceKey = (id: string) => `fonts/${id}/source/current.json`;
 const hex = async (bytes: Uint8Array) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(n => n.toString(16).padStart(2, '0')).join('');
-/** Read a request's body up to `limit` bytes, or answer why not. */
 async function readBody(request: Request, limit: number, tooLarge: string): Promise<Uint8Array | Response> {
   if (Number(request.headers.get('content-length')) > limit) return json({ error: tooLarge }, 413);
   const reader = request.body?.getReader();

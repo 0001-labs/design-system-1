@@ -1,16 +1,11 @@
 import SwiftUI
 
-/// `ds-avatar`'s sizes: one control (16), compact (the same) or large (two squares).
 public enum DS1AvatarSize: Sendable {
     case regular, compact, large
     var points: CGFloat { self == .large ? 40 : DS1Metrics.control }
     var initial: CGFloat { self == .large ? 20 : 10 }
 }
 
-/// `ds-avatar`: a person's or a workspace's mark, always round unless `square` or a `logo`. A
-/// `picture` covers it; without one it shows `initial` in an ink that reads on `colour`: black
-/// on a light fill, white on a dark one. `pending` greys it. With a `label` it is an image for
-/// VoiceOver, otherwise decorative.
 public struct DS1Avatar: View {
     @Environment(\.ds1Scale) private var scale
     let initial: String
@@ -55,7 +50,6 @@ public struct DS1Avatar: View {
         .accessibilityHidden(label == nil)
     }
 
-    /// The letters' ink on a fill: black where it is light (luminance above 0.22), white where it is dark.
     public static func ink(on fill: Color) -> DS1Color {
         #if canImport(UIKit)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
@@ -70,8 +64,6 @@ public struct DS1Avatar: View {
     }
 }
 
-/// `ds-avatar-group`: avatars overlapping 3 points, the earlier ones on top, with an optional
-/// `lead` 4 points before them.
 public struct DS1AvatarGroup<Lead: View, Members: View>: View {
     @Environment(\.ds1Scale) private var scale
     let vertical: Bool
@@ -99,7 +91,6 @@ extension DS1AvatarGroup where Lead == EmptyView {
     public init(vertical: Bool = false, @ViewBuilder members: () -> Members) { self.init(vertical: vertical, lead: { EmptyView() }, members: members) }
 }
 
-/// Lays subviews out in a row (or a column), each `overlap` over the one before, the earlier on top.
 struct Overlapping: Layout {
     let vertical: Bool
     let overlap: CGFloat

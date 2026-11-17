@@ -1,4 +1,3 @@
-/** Optional React composition; behavior and appearance belong to ds-overlay. */
 import { createContext, createElement, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type HTMLAttributes, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
 import type { Overlay as OverlayElement, OverlayCloseReason, OverlaySide, OverlayType } from "../4-page/ds-overlay";
@@ -22,7 +21,6 @@ export function Overlay({ open, defaultOpen = false, onOpenChange, children }: O
 
 export interface OverlayContentProps extends HTMLAttributes<HTMLDialogElement> {
   ref?: Ref<HTMLDialogElement>;
-  /** Keep floating panels within their product layout or containing modal. */
   portal?: boolean;
   nonModal?: boolean;
   closeOnOutside?: boolean;
@@ -34,31 +32,18 @@ export interface OverlayContentProps extends HTMLAttributes<HTMLDialogElement> {
   showClose?: boolean;
   closeOnEscape?: boolean;
   closeOnBackdrop?: boolean;
-  /** Content supplies its own internal spacing. The shared frame stays intact. */
   flush?: boolean;
-  /** Rotate a document frame while keeping it within the viewport. */
   rotated?: boolean;
-  /**
-   * What it is: a `"modal"` in the centre (the default), a `"sheet"` from the
-   * foot of the screen, a `"drawer"` at its `side`, a `"popover"` at `anchor`,
-   * or the whole `"screen"` (a document viewer; not the Fullscreen API). A
-   * sheet and a drawer slide out before they leave the page, and a finger
-   * swipes them away (reason `"swipe"`).
-   */
   type?: OverlayType;
-  /** A drawer's side: `"end"` (the default) or `"start"`. */
   side?: OverlaySide;
-  /** A field anchoring a small popover, centred below on mobile. */
   trigger?: HTMLElement | null;
 }
 
-/** The longest a sliding overlay stays on the page after closing, should its transition never end. */
 const LEAVING = 600;
 export function OverlayContent({ children, portal = true, nonModal = false, closeOnOutside = false, blockOutside = false, holdScroll = false, anchor = null, trigger = null, returnFocus = null, closeLabel = "Close", showClose = true, closeOnEscape = true, closeOnBackdrop = true, flush = false, rotated = false, type = "modal", side = "end", ...props }: OverlayContentProps) {
   const context = useOverlay();
   const host = useRef<OverlayElement>(null);
   const [mounted, setMounted] = useState(false);
-  // A sheet or drawer stays on the page while it slides out, then leaves.
   const sliding = type === "sheet" || type === "drawer" || type === "detail";
   const [leaving, setLeaving] = useState(false);
   const [wasOpen, setWasOpen] = useState(context.open);
@@ -79,10 +64,7 @@ export function OverlayContent({ children, portal = true, nonModal = false, clos
     const timer = setTimeout(done, LEAVING);
     return () => { clearTimeout(timer); native?.removeEventListener("transitionend", ended); native?.removeEventListener("transitioncancel", ended); };
   }, [leaving]);
-  // A portal has no server location. Keep the server and first client render
-  // identical, including when the application initially requests an open modal.
   useLayoutEffect(() => { setMounted(true); }, []);
-  // Install the request handler before opening, and keep the app's decision authoritative.
   useLayoutEffect(() => {
     const element = host.current;
     if (!element) return;

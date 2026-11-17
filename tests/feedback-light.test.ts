@@ -3,17 +3,10 @@ import { build } from "esbuild";
 import { join } from "node:path";
 import { expect, test, vi } from "vite-plus/test";
 
-/*
- * What a page pays for the feedback module: copyText alone does not load the
- * page toaster until it shows a toast, and the module carries no language
- * runtime unless the page loads one.
- */
-
 const root = join(import.meta.dirname, "..");
 const TRANSLATOR = Symbol.for("design-system-1.translate");
 const translator = () => (globalThis as unknown as Record<symbol, unknown>)[TRANSLATOR];
 
-/** The code a bundler puts in the page for `entry`, split at dynamic imports. */
 async function bundle(entry: string) {
   const result = await build({
     entryPoints: [join(root, entry)],
@@ -58,7 +51,6 @@ test("copyText with no toast never loads the page toaster, and with one loads it
   expect(toasterListening()).toBe(true);
   const host = document.querySelector<HTMLElement>("[data-ds-toaster]")!;
   await new Promise(resolve => setTimeout(resolve, 20));
-  // English, with no language module in the page.
   expect(translator()).toBeUndefined();
   expect([...host.shadowRoot!.querySelectorAll(".title")].map(title => title.textContent)).toEqual(["Copied"]);
   vi.unstubAllGlobals();
@@ -88,7 +80,6 @@ test("default words are English without the language module, and a product can g
   setFeedbackWords(null);
   expect(translator()).toBeUndefined();
 
-  // Once the page loads the language module, its words take over.
   const { configureI18n, loadSharedWords, setLanguage } = await import("../DS1/0-face/i18n");
   vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
   configureI18n({ languages: ["en", "da"], sharedWords: true, autoLoad: false });

@@ -1,53 +1,5 @@
 @import "./component-metrics.css";
 
-/*
- * Progress, as plain classes on native elements: a value against its range,
- * a sequence of steps, or a dot for each page. The `ds-progress` element
- * draws the same parts; controls.css imports this file.
- *
- * Everything sits on the paper with no box, every line is one square and
- * widths come in whole squares. Colour is kept for a state: the danger colour
- * for a value that is over or a step that failed, the ink for the current
- * step and the current dot.
- *
- * A value against its range, one square high (HTML's <progress>):
- *
- *   ds-progress              the row; role="meter" with aria-valuenow, -min, -max and -valuetext
- *   ds-progress__fill        the bar, half a square high, drawn to --ds-progress-value (0 to 1)
- *   ds-progress--squares     the range in squares instead, each one square
- *   ds-progress__square      one square of the range; --on when it is filled
- *   ds-progress--over        past the end: filled whole in the danger colour
- *
- * Tokens: `--ds-progress-value`, `--ds-progress-color` (the ink by default)
- * and `--ds-progress-track` (the grey fill).
- *
- * A sequence of steps, one square high, each step on whole squares:
- *
- *   ds-progress--steps       with ds-progress, on an <ol>; the steps on one row, joined by a line
- *   ds-progress--vertical    one step to a row, each with room for its body under it
- *   ds-progress__step        an <li>; aria-current="step" on the current one
- *   ds-progress__step--done, --current, --failed    states; upcoming without one
- *   ds-progress__link        a step that goes somewhere: an <a href> around its mark and label
- *   ds-progress__mark        the number (or the done or failed icon), one control high
- *   ds-progress__label       the step's name on one line
- *   ds-progress__state       the state in words for assistive technology, hidden ("Done")
- *   ds-progress__body        what belongs under a step in a vertical sequence
- *
- * A dot for each page, one square each:
- *
- *   ds-progress--dots        with ds-progress, a group of dots (role="group")
- *   ds-progress__dot         a button; `data-state` is `past`, `current` (with
- *                            `aria-current="true"`), `next`, `future`, or `end` for a
- *                            last dot marked as an end
- *
- * Tokens: the dot colours `--ds-progress-dot-past` and `-future` (the muted
- * text colour by default), `-current`, `-next` and `-end` (the text colour),
- * set on the dots or any element around them. Past, current and next dots are
- * filled; future dots and the end marker are rings.
- */
-
-/* ---- A value against its range: the bar, or the range in squares ---- */
-
 .ds-progress {
   box-sizing: border-box;
   position: relative;
@@ -57,8 +9,6 @@
   margin: 0;
 }
 
-/* The range and its bar are a band half a square high across the middle of
-   the row, as a chart's ratio is drawn. */
 .ds-progress:not(.ds-progress--squares, .ds-progress--steps, .ds-progress--dots)::before,
 .ds-progress__fill {
   position: absolute;
@@ -118,8 +68,6 @@
   }
 }
 
-/* ---- A sequence of steps --------------------------------------------- */
-
 .ds-progress--steps {
   box-sizing: border-box;
   position: static;
@@ -142,8 +90,6 @@
   text-transform: none;
 }
 
-/* Each step rounds its width up to whole squares where the browser can size
-   to content in calc; elsewhere it hugs its words. */
 .ds-progress__step {
   --ds-progress-mark: transparent;
   --ds-progress-mark-ink: var(--ds-text-color-muted);
@@ -161,8 +107,6 @@
   color: var(--ds-text-color-muted);
 }
 
-/* A line joins a step to the next: at least one square, across whatever the
-   step's rounding leaves, a quarter of a square short of each end. */
 .ds-progress__step:not(:last-child)::after {
   content: "";
   flex: 1 0 var(--ds-unit);
@@ -241,7 +185,6 @@
   text-overflow: clip;
 }
 
-/* A cut step name fades over its last square, never an ellipsis (0-face/cut-fade.ts marks it). */
 .ds-progress__label[data-cut="end"] {
   mask-image: linear-gradient(to right, #000 calc(100% - var(--ds-unit)), transparent);
 }
@@ -277,8 +220,6 @@
   content: none;
 }
 
-/* Its content stands in a column, so an inline element in it (text drawn by
-   an element, say) takes its own lines rather than a line box's descent. */
 .ds-progress__body {
   box-sizing: border-box;
   display: flex;
@@ -288,8 +229,6 @@
   padding-inline-start: var(--ds-unit);
   color: var(--ds-text-color);
 }
-
-/* ---- A dot for each page ------------------------------------------- */
 
 .ds-progress--dots {
   position: static;
@@ -322,7 +261,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The dot itself: 4px, scaled with the surface, a fifth of the square. */
 .ds-progress__dot::before {
   content: "";
   box-sizing: border-box;
@@ -343,7 +281,6 @@
   background: var(--ds-progress-dot-color);
 }
 
-/* The current dot is half again as large. */
 .ds-progress__dot[aria-current="true"]::before {
   transform: scale(1.5);
 }

@@ -8,7 +8,6 @@ import "../DS1/2-core/ds-swatch";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(() => document.body.replaceChildren());
-// The native value setter, as a browser sets the value, so React sees the change.
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!;
 const setValue = (element: HTMLInputElement, value: string) => nativeValue.set!.call(element, value);
 

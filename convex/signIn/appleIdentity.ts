@@ -1,7 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Environment } from './social'
 
-/** The bundle IDs whose identity tokens the app accepts, from `APPLE_NATIVE_CLIENTS`, comma-separated. None means no native Apple sign-in. */
 export function appleNativeClients(env: Environment): string[] {
   return (env.APPLE_NATIVE_CLIENTS ?? '').split(',').map((id) => id.trim()).filter(Boolean)
 }
@@ -12,7 +11,6 @@ export async function sha256(value: string): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-/** Only Apple's signature and claims identify the account; client-supplied email and subject never do. */
 export async function verifyAppleIdentityToken(token: string, nonce: string, clients: readonly string[], keys: JWTVerifyGetKey = appleKeys, now = new Date()) {
   if (!clients.length || !/^[a-f0-9]{64}$/.test(nonce) || token.length > 16_384) throw new Error('Invalid Apple sign-in')
   const { payload } = await jwtVerify(token, keys, {

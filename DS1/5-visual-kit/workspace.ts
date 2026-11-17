@@ -1,11 +1,6 @@
 import { css, html, nothing, svg, type TemplateResult } from 'lit';
 import type { WorkspaceKind } from './workspace-frame';
 
-/**
- * The panels of the Figma, Codex and Claude desktop apps around a product. Their layout is `workspace-frame.ts`,
- * drawn before this loads. Presentation templates in each app's own geometry, not version-certified replicas.
- * Claude follows the supplied 13 November 2026 screenshot of its Code tab.
- */
 export const workspaceStyles = css`
   .ws svg { width:16px; height:16px; flex:none; }
   .ws-figma svg { width:14px; height:14px; }
@@ -78,7 +73,6 @@ export const workspaceStyles = css`
   @container (max-width:520px) { .ws-claude .ws-pane .ws-bar > .lights, .ws-codex .ws-pane .ws-bar > .lights { display:flex; } }
 `;
 
-/** Glyphs on a 16px grid, drawn for these frames: not DS1 UI icons and not the apps' own artwork. */
 const paths: Record<string, string> = {
   sidebar: 'M2 3h12v10H2ZM6 3v10', back: 'M10 3 5 8l5 5', forward: 'm6 3 5 5-5 5', plus: 'M8 3v10M3 8h10',
   compose: 'M7 3H3v10h10V9M12 2l2 2-6 6H6V8Z', search: 'm11 11 3 3M12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z',
@@ -104,9 +98,7 @@ const row = (name: string | null, text: string, on = false, child = false) => ht
 
 export interface WorkspaceOptions {
   kind: WorkspaceKind; label: string; address: string; username: string; prompt: string; reply: string; model: string;
-  /** Other sessions, threads or layers in the side panel, after the current one. */
   items: string[];
-  /** The stage's drawn size, for Figma's frame badge and its width and height fields. */
   stageSize: { width: number; height: number } | null;
   lights: () => TemplateResult;
 }
@@ -167,7 +159,6 @@ function figma(o: WorkspaceOptions) {
   const size = o.stageSize;
   const field = (name: string, value: string | number) => html`<span class="ws-field"><i>${name}</i>${value}</span>`;
   const section = (title: string, body: TemplateResult | typeof nothing = nothing) => html`<section class="ws-section"><header><span>${title}</span>${ico('plus')}</header>${body}</section>`;
-  /** The selection's corners, on the stage's edges (the canvas pads it 40px, and 88px below for the toolbar). */
   const handles = ['left:36.5px;top:36.5px', 'right:36.5px;top:36.5px', 'left:36.5px;bottom:84.5px', 'right:36.5px;bottom:84.5px'];
   return html`<div class="ws ws-figma">
     <div class="ws-top">${o.lights()}${ico('home')}<span class="ws-tab"><span class="ws-text">${o.label}</span>${ico('close')}</span>${ico('plus')}</div>

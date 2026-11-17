@@ -12,10 +12,6 @@ import {
 } from "../convex/lib/token";
 
 describe("normalizeEmail", () => {
-  // The canonicalization that keeps one person from owning two disjoint sets of
-  // libraries. Convex Auth normalizes nothing itself — verified by running it,
-  // which produced separate users for Tester@Example.COM and tester@example.com
-  // before convex/auth.ts grew its createOrUpdateUser callback.
   it.each([
     ["Tester@Example.COM", "tester@example.com"],
     ["  spaced@example.com  ", "spaced@example.com"],
@@ -48,8 +44,6 @@ describe("isPlausibleEmail", () => {
 });
 
 describe("generateMagicLinkToken", () => {
-  // With `authorize: undefined` the token is the sole credential, so entropy is
-  // the whole security story. 32 bytes base64url is 43 characters.
   it("is 43 base64url characters, i.e. 256 bits", () => {
     const token = generateMagicLinkToken();
     expect(token).toHaveLength(43);
@@ -71,9 +65,6 @@ describe("generateMagicLinkToken", () => {
     expect(seen.size).toBe(20_000);
   });
 
-  // A regression guard against someone "simplifying" this to Math.random, which
-  // is safe for a short code only where an `authorize` check supplies a second
-  // factor.
   it("spreads across the alphabet rather than clustering", () => {
     const counts = new Map<string, number>();
     for (let i = 0; i < 2_000; i += 1) {
@@ -81,7 +72,6 @@ describe("generateMagicLinkToken", () => {
         counts.set(char, (counts.get(char) ?? 0) + 1);
       }
     }
-    // base64url has 64 symbols; a CSPRNG should touch essentially all of them.
     expect(counts.size).toBeGreaterThan(60);
   });
 });
@@ -145,8 +135,6 @@ describe("renderMagicLinkEmail", () => {
     expect(email.text).toContain("once");
   });
 
-  // An email renderer may interpolate unescaped, and a magic-link mail
-  // interpolates user-influenced values, so this is a real boundary.
   it("neutralizes a hostile URL rather than rendering it as markup", () => {
     const hostile = 'https://dsone.dev/?x="><script>alert(1)</script>';
     const email = renderMagicLinkEmail({ url: hostile, expiresMinutes: 15 });

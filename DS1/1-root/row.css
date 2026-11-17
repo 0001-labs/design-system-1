@@ -1,56 +1,5 @@
 @import "./component-metrics.css";
 
-/*
- * Rows, as plain classes on native elements: the `ds-row` and `ds-sidebar`
- * elements' look without the elements.
- *
- * A row is one square high, and what it holds stands on the lower sixteen of
- * the square with the spare four above, as every row is set: a line of
- * words on a 16px line box, a 16px icon and a 16px control all end on the
- * row's bottom line, so the capitals (7px below the top line, baseline 3px
- * above the next) are centred on an icon beside them. On an `<a href>` or a
- * `<button>` the whole row is one press target, a row, a tile or a card: the pointer over it, the
- * press and the focus ring cover the row, and its content keeps the row's
- * layout. A row that also holds controls of its own (a quick action, a link
- * in another cell) is any element, a `<li>`, a `<div>` or a `<tr>`, with one
- * `ds-row__target` inside: that link or button takes the press anywhere on
- * the row, and every other control inside stays separately pressable.
- *
- *   ds-row                 a row one square high; a press target on <a> or <button>
- *   ds-row__target         the row's press target, when the row holds other controls
- *   ds-row--auto           as high as its content, at least one square
- *   ds-row--stacked        the content stacked, each line one square (a tile, a card)
- *   ds-row--nav            a navigation row: the sidebar's two-pixel corners
- *   ds-row__picture        a record's picture before its words (a date or colour tile, an
- *                          avatar, a logo, or a button holding one): sixteen square at the
- *                          start of its square, the words on the next
- *   ds-row__name           a record's words: they hug and give way first; cut, they fade over
- *                          the last square, never an ellipsis (`data-cut="end"`, set by the
- *                          element, or 0-face/cut-fade.ts on a page without Lit)
- *   ds-row__value          the figure or date at the row's end, in tabular figures
- *   aria-current="page"    the destination being shown, filled and in the medium weight
- *   aria-disabled="true"   or `disabled` on a button: dimmed, not pressable
- *
- * A sidebar of nested things (the `ds-sidebar tree` element without Lit) is a
- * `role="tree"` list of `role="treeitem"` rows, flat, each with its
- * `aria-level`, one square further in per level. `0-face/sidebar.ts`
- * (`connectSidebar`) gives it the keyboard of the tree pattern.
- *
- *   ds-sidebar             the tree (`role="tree"`)
- *   ds-sidebar__item       a row (`role="treeitem"`, `aria-level`, `aria-expanded` on a parent, `aria-selected`)
- *   ds-sidebar__disclosure the arrow on its own square, turned down when the row is open; empty on a leaf
- *   ds-sidebar__label      the words; cut, they fade over the last square (`data-cut="end"`)
- *   ds-sidebar__meta       small muted words at the row's end
- *
- * An icon (`.ds-icon`) in a tree row takes a square of its own. Tokens:
- * `--ds-row-padding` (the words' distance from the row's edges, 4px),
- * `--ds-row-fill-hover`, `--ds-row-fill-press`, `--ds-row-fill-current` and
- * `--ds-row-current-weight` (component-tokens.css, shared with the
- * element), `--ds-sidebar-disclosure` (the arrow's drawing, the library's
- * `right` icon) and `--ds-sidebar-indent` (a row's depth in squares, read
- * from `aria-level` up to twelve levels).
- */
-
 :where(.ds-row):not(tr) {
   box-sizing: border-box;
   display: flex;
@@ -76,7 +25,6 @@
   height: auto;
 }
 
-/* The press target: the row itself, or the one target inside it. */
 a.ds-row,
 button.ds-row,
 .ds-row__target {
@@ -96,8 +44,6 @@ button.ds-row,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The font inherited above would bring the page's line into the row: the words go back on the
-   sixteen, as every row's (a stacked tile keeps its square lines below). */
 a.ds-row,
 button.ds-row {
   position: relative;
@@ -111,13 +57,10 @@ button.ds-row {
   padding: 0;
 }
 
-/* Each line of a tile one square, over the inherited font of a native link or button:
-   a tile's lines wrap, so they stay on whole squares rather than the sixteen. */
 .ds-row.ds-row--stacked {
   line-height: var(--ds-row-height);
 }
 
-/* A row with a target inside: the target's layers cover the row. */
 .ds-row:has(.ds-row__target) {
   position: relative;
   isolation: isolate;
@@ -139,16 +82,6 @@ button.ds-row {
   z-index: 2;
 }
 
-/*
- * The pointer, the press, the current destination and the focus ring are one layer under the
- * row's content (Joachim, 19 October 2026). On a one-square row it is a square high and sits two
- * pixels around what the row holds: from two above the lower sixteen to two below the row's foot,
- * and two past the content at each side, its corners the icon tiles' 4px and those two more, so a
- * 16px icon stands in it with two all round. It is drawn over the row, never moving its words or
- * icons off the grid. An open row (`data-open`) wears the same layer. A taller row (a stacked
- * tile, `auto`) is filled whole.
- * Tokens: `--ds-row-fill-radius` (6px), `--ds-row-fill-overhang` (2px).
- */
 a.ds-row,
 button.ds-row {
   isolation: isolate;
@@ -219,13 +152,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   --ds-row-radius: calc(2px * var(--ds-sf));
 }
 
-/* The parts of a record's row, as the element draws them: a 16px picture before the name takes
-   the first sixteen of its square and the row's 4px gap puts the words on the next; the name
-   hugs and gives way first; the value stands at the row's end. */
-/* The picture is exactly one control (16px) square, standing on the lower sixteen: whatever
-   holds it (a button that opens it, a property's trigger) adds no width, padding or margin,
-   so the 4px gap is the only space before the words, as in every record row. The measures
-   are important because a button's own face rules are more specific than a part's. */
 :is(.ds-row, ds-row, .ds-row__target) > .ds-row__picture {
   flex: none;
   display: inline-flex;
@@ -237,8 +163,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   margin: 0 !important;
   padding: 0 !important;
 }
-/* A picture that opens something of its own (a date to change) stands over the row's press
-   layer, as the end slot does; a plain tile lets the press through to the row. */
 .ds-row__picture:has(button, a) {
   position: relative;
   z-index: 2;
@@ -271,8 +195,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
-
-/* A sidebar of nested things: the tree. */
 
 .ds-sidebar {
   box-sizing: border-box;
@@ -334,8 +256,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   opacity: 0.5;
 }
 
-/* The arrow and an icon each stand on a whole square, drawn on the row's sixteen (two
-   pixels below the square's middle); a leaf keeps the arrow's square empty. */
 .ds-sidebar__disclosure,
 .ds-sidebar__item > .ds-icon {
   flex: 0 0 var(--ds-unit);
@@ -399,8 +319,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   }
 }
 
-/* A controlled detail view: the caller marks its open row, and clears it on close.
-   Navigation's current state and the text weight remain independent. */
 .ds-row[data-open]:not([data-open="false"]) {
   position: relative;
   isolation: isolate;
@@ -417,8 +335,6 @@ button.ds-row[aria-disabled="true"]:hover::after {
   border-radius: var(--ds-row-radius, var(--ds-row-fill-radius, calc(6px * var(--ds-sf))));
   background: var(--ds-row-fill-current, var(--ds-fill-hover));
 }
-/* A plain row (no press target inside) has no padding of its own: its words and icons stand on
-   the row's edges, so the layer reaches two past them, as a flush row's does. */
 .ds-row[data-open]:not([data-open="false"]):not(a, button, .ds-row--stacked, .ds-row--auto, :has(.ds-row__target))::after {
   inset: calc(var(--ds-row-height) - var(--ds-control-height) - var(--ds-row-overhang))
     calc(0px - var(--ds-row-overhang))

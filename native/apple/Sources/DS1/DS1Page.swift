@@ -1,10 +1,5 @@
 import SwiftUI
 
-/// A page on the paper (`ds-page` `column`, on `.ds1Paper`): it puts the device scale on, scrolls, keeps one
-/// square around its content and stands its column on whole squares, at most `measure`
-/// squares wide (`measure="N"`), centred in the room beside it. `bleed` (points at the base
-/// scale, `--ds-page-bleed`) lets the content stand that far outside the column on each side,
-/// the column's place and the grid's lines kept.
 public struct DS1Page<Content: View>: View {
     let measure: CGFloat
     let grid: Bool
@@ -35,7 +30,6 @@ public struct DS1Page<Content: View>: View {
         var body: some View {
             GeometryReader { geometry in
                 let width = min(scale.squares(measure), scale.wholeSquares(in: geometry.size.width - 2 * scale.unit))
-                // Centred, on a whole pixel, so the column's edge and the grid's lines meet exactly.
                 let inset = ((geometry.size.width - width) / 2 * pixels).rounded(.down) / pixels
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) { content }
@@ -44,8 +38,6 @@ public struct DS1Page<Content: View>: View {
                         .padding(.leading, inset - scale(bleed))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: geometry.size.height, alignment: .top)
-                        // The grid scrolls with the content and starts at the column's edge and
-                        // its first square, so every row and every edge stands on its lines.
                         .background(alignment: .topLeading) {
                             if grid { DS1PaperGrid(origin: CGPoint(x: inset, y: 0)) }
                         }
@@ -56,14 +48,11 @@ public struct DS1Page<Content: View>: View {
     }
 }
 
-/// The grid's lines on the paper, one square apart: through `origin` (a column's corner),
-/// or centred on the view without one.
 public struct DS1PaperGrid: View {
     @Environment(\.ds1Scale) private var scale
     let colour: DS1Color
     let origin: CGPoint?
 
-    /// `--grid-color-light`: the ink at about a sixth.
     public init(_ colour: DS1Color = DS1Color.slate.withOpacity(0.169), origin: CGPoint? = nil) {
         self.colour = colour
         self.origin = origin

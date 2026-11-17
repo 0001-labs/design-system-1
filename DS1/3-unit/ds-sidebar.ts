@@ -10,65 +10,25 @@ import "../2-core/ds-icon";
 import "./ds-row";
 import styles from "./styles/ds-sidebar.css?inline";
 
-/** Visible rows. The application owns hierarchy, expansion, selection and routing. */
 export interface SidebarItem {
   id: string;
-  /** Words a person reads; shown as written, never translated. */
   label: string;
-  /** Decorative leading icon; the label remains the accessible name. */
   icon?: string;
-  /** 0 for a row at the root; each level stands further in. */
   depth?: number;
   href?: string;
-  /** `true` open, `false` closed; leave it out for a leaf. */
   expanded?: boolean;
-  /** The destination being shown (navigation). */
   current?: boolean;
-  /** The row chosen (a tree). */
   selected?: boolean;
   disabled?: boolean;
-  /** Small muted words at the row's end: a count, a size. */
   meta?: string;
-  /** Small muted words just after the label, read with it: a version. */
   detail?: string;
-  /** Optional application content following this navigation row. */
   afterSlot?: string;
   action?: { id: string; label: string; icon?: string; disabled?: boolean };
-  /** Opt this row out of an enabled navigation reorder surface. */
   reorderable?: boolean;
 }
 
 export interface SidebarMoveDetail { id: string; targetId: string; position: "before" | "after"; }
 
-/**
- * Compact navigation composed from Row, Button and Icon: the application's
- * places, each row a link or a button and its own Tab stop. A label cut
- * short by the column's width shows in full in the shared tooltip
- * (`data-tooltip`, drawn by `0-face/tooltips.ts`); a label that fits carries
- * none, and no row carries the browser's `title`.
- *
- * With `tree`, it is a tree of the things inside one place (files, groups, a
- * page's parts): rows one square high, each level one square further in, a
- * disclosure arrow on its own square before each label. `role="tree"` with
- * one `role="treeitem"` per row, `aria-level`, `aria-expanded` and
- * `aria-selected`; one Tab stop, the keyboard of the tree pattern (see
- * `0-face/sidebar.ts`). The application keeps the rows: it passes the
- * visible ones in `items`, in order, and answers the events.
- *
- * With `narrow`, the navigation is eight squares wide and each row hugs its
- * words: the pointer's and the current row's fill wraps the label, its meta
- * and its disclosure, 4px either side, instead of running across the column.
- * For an application's few places beside its work.
- *
- * @element ds-sidebar
- * @attr label - The navigation's or the tree's accessible name.
- * @attr tree - A tree of nested things instead of navigation.
- * @attr narrow - Navigation eight squares wide, each row hugging its words.
- * @fires sidebar-toggle - `{ id, expanded }`: a row asks to open or close.
- * @fires sidebar-activate - `{ id }`: a row was pressed (navigation), or Enter or a double click opened one (a tree).
- * @fires sidebar-select - `{ id }`: a click, Space or Enter chose a tree row.
- * @fires sidebar-action - `{ id, action }`: a row's own action was pressed.
- */
 export class Sidebar extends LitElement {
   static properties = {
     items: { attribute: false },
@@ -84,21 +44,16 @@ export class Sidebar extends LitElement {
   declare items: SidebarItem[];
   declare label: string;
   declare empty: string;
-  /** Optional navigation disclosure pair; tree navigation keeps its directional arrow. */
   declare expandIcon?: string;
   declare collapseIcon?: string;
-  /** Place navigation disclosures before the label; default preserves trailing disclosures. */
   declare disclosurePosition?: "start" | "end";
   declare tree: boolean;
-  /** Eight squares wide, each row hugging its words (navigation only). */
   declare narrow: boolean;
   declare reorderable: boolean;
   private dragId?: string;
   static styles = unsafeCSS(styles);
-  /** Words cut short fade over their last square, never an ellipsis: marks them `data-cut="end"` while they do not fit. */
   protected readonly cuts = new CutFades(this, { selector: ".name, .tree .label" });
 
-  /** In a tree, the row that holds the Tab stop. */
   private focusId?: string;
 
   constructor() {
@@ -120,7 +75,6 @@ export class Sidebar extends LitElement {
       this.resizeObserver ??= new ResizeObserver(() => this.markCutLabels());
       this.resizeObserver.observe(this);
     }
-    // Labels measured before the typeface arrives are measured again once it has.
     const fonts = this.fontsReady ? undefined : document.fonts?.ready;
     if (fonts) void fonts.then(() => { this.fontsReady = true; this.markCutLabels(); });
   }
@@ -136,7 +90,6 @@ export class Sidebar extends LitElement {
     if (this.dragId && !this.canMove(this.items.find(item => item.id === this.dragId))) this.clearDrag();
   }
 
-  /** Only a label that does not fit its row gets a tooltip, holding the whole label. */
   private markCutLabels() {
     const labels = new Map(this.items.map(item => [item.id, item.label]));
     this.renderRoot.querySelectorAll<HTMLElement>("[data-item]").forEach(control => {
@@ -158,13 +111,11 @@ export class Sidebar extends LitElement {
 
   private activate(event: MouseEvent, item: SidebarItem) {
     if (item.disabled) { event.preventDefault(); return; }
-    // Let native links retain new-tab, download and context-menu behaviour.
     if (item.href && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)) return;
     if (!item.href && item.expanded !== undefined) { this.toggle(item); return; }
     if (!this.request("activate", { id: item.id })) event.preventDefault();
   }
 
-  /** Moves the focus to a row after `updateComplete`. */
   focusItem(id: string) {
     const row = this.row(id);
     if (!row) return;
@@ -172,12 +123,10 @@ export class Sidebar extends LitElement {
     row.focus();
   }
 
-  /** Scrolls the current destination, or the selected tree row, into view. */
   scrollToCurrent() {
     this.renderRoot.querySelector('[aria-current="page"], [aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   }
 
-  /** The row a pointer or keyboard event happened on, for a context menu or a drag of the application's own. */
   itemFromEvent(event: Event): SidebarItem | undefined {
     const row = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.dataset.item !== undefined && this.renderRoot.contains(node));
     return row ? this.items.find(item => item.id === row.dataset.item) : undefined;
@@ -187,7 +136,6 @@ export class Sidebar extends LitElement {
     return [...this.renderRoot.querySelectorAll<HTMLElement>("[data-item]")].find(row => row.dataset.item === id);
   }
 
-  /** A tree's Tab stop: the row last focused while it is still shown, else the selected row, else the first available. */
   private stop() {
     const usable = this.items.filter(item => !item.disabled);
     return usable.find(item => item.id === this.focusId)?.id ?? usable.find(item => item.selected)?.id ?? usable[0]?.id;
@@ -221,7 +169,6 @@ export class Sidebar extends LitElement {
 
   private renderTree() {
     const stop = this.stop();
-    // Each row's place among its siblings, for aria-setsize and aria-posinset.
     const places = new Map<string, [number, number]>();
     const open: SidebarItem[][] = [];
     for (const item of this.items) {

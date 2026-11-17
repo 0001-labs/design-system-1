@@ -10,7 +10,6 @@ import { signInAvailability } from './social'
 
 export const APPLE_NATIVE_PROVIDER_ID = 'apple-native'
 
-/** Keep only a token's digest until it expires, so the same credential cannot create another session. */
 export const consume = internalMutation({
   args: { digest: v.string(), expiresAt: v.number() }, returns: v.null(),
   handler: async (ctx, { digest, expiresAt }) => {
@@ -22,12 +21,6 @@ export const consume = internalMutation({
   },
 })
 
-/**
- * Sign in with Apple from the system sheet on iPhone and Mac: the app sends the
- * identity token, its nonce, the authorization code and the name Apple showed
- * once. The account is the web Apple provider's, by subject, so a person is
- * one account on the web and in the app.
- */
 export function AppleNative({ defaultName }: { defaultName: string }) {
   return ConvexCredentials<DataModel>({
     id: APPLE_NATIVE_PROVIDER_ID,
@@ -37,7 +30,6 @@ export function AppleNative({ defaultName }: { defaultName: string }) {
       const identity = await verifyAppleIdentityToken(params.identityToken, params.nonce, appleNativeClients(process.env))
       await ctx.runMutation(internal.signIn.appleNative.consume, { digest: await sha256(params.identityToken), expiresAt: identity.expiresAt })
       const refreshToken = await exchangeAppleCode({ code: typeof params.authorizationCode === 'string' ? params.authorizationCode : '', nonce: params.nonce, subject: identity.subject, clientId: identity.clientId }, process.env)
-      // createAccount returns an existing account by subject; the product's callback handles verified-email linking on the first visit.
       const { user } = await createAccount(ctx, {
         provider: 'apple', account: { id: identity.subject },
         profile: { ...(identity.email ? { email: identity.email } : {}), emailVerified: identity.emailVerified,

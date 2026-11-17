@@ -22,7 +22,6 @@ describe('library API', () => {
     const init = (send.mock.calls as unknown as [string, RequestInit][])[0]![1];
     expect(init.headers).toMatchObject({ authorization: 'Bearer session' });
     expect(JSON.parse(init.body as string)).toMatchObject({ path: 'libraries:list', args: [{}] });
-    // Cloudflare Workers throw on any redirect mode but "follow" and "manual".
     expect(['follow', 'manual']).toContain(init.redirect);
   });
   it('refuses a redirect from the backend', async () => {

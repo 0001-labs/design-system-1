@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-// The sweep is paused (see scripts/constraints-phone.ts): this opens WebKit, so it runs only when the sweep is switched on.
 test.runIf(process.env.DS1_BROWSER_CONSTRAINTS === '1')('the constraint CLI keeps a fault failure and saves its annotated viewport', async () => {
   const root = await mkdtemp(join(tmpdir(), 'fault-lines-'));
   try {

@@ -1,21 +1,7 @@
 @import "../../1-root/component-metrics.css";
 
-/*
- * Context's gap face: the rows carry the colour, the frame only
- * cuts the outer silhouette, so the page shows through a pixel between rows
- * and two between groups. The ink is the rows' fill and the paper their words,
- * turning over with the theme as the tooltip does. Every row is 19px with the
- * pixel under it, a square's pitch; a name stands on the sixteen and an icon
- * at the row's end.
- *
- * Tokens: --ds-context-fill and --ds-context-ink (the rows and their words),
- * --ds-context-hover (a hovered or focused row), --ds-context-danger (a
- * danger row's words), --ds-context-refused (a refused row's fill),
- * --ds-context-radius (the outer corners), --ds-menu-width.
- */
 :host {
   --ds-menu-row: calc(var(--ds-row-height) - 1px);
-  /* Black in both themes, as a menu always is: in dark the slate, darker than the page. */
   --ds-context-fill: light-dark(var(--ds-black, #2a2a2a), var(--ds-slate, #1e1e1e));
   --ds-context-ink: var(--ds-white, #ffffff);
   --ds-context-hover: color-mix(in srgb, var(--ds-context-fill) 78%, var(--ds-context-ink));
@@ -34,11 +20,6 @@
   clip-path: inset(0 round var(--ds-context-radius, var(--ds-radius, 4px)));
 }
 
-/* Rows: shared buttons through their tokens, native buttons and links through their box.
-   A row is an item, not a button: 19px drawn on a square's pitch, the words
-   4px in on the sixteen, an icon at its end. The button's own menu-entry and
-   floating-menu tokens (a square high, words at the start) would otherwise win,
-   so these are important. */
 ::slotted(ds-button) {
   --ds-button-height: var(--ds-menu-row) !important;
   --ds-button-padding: 0 calc(4px * var(--ds-sf)) !important;
@@ -85,17 +66,14 @@
 }
 :host([pending]) ::slotted(:is(button, a, ds-button)) { cursor: wait; }
 
-/* Danger is red, on either fill. */
 ::slotted(:is(button, a)[data-danger]) { color: var(--ds-context-danger) !important; }
 ::slotted(ds-button[danger]) { --ds-button-color: var(--ds-context-danger); }
 
-/* A refused change: its row turns red a moment. */
 ::slotted([data-ds-refused]) {
   --ds-button-background: var(--ds-context-refused);
   background: var(--ds-context-refused) !important;
 }
 
-/* Groups are a gap, never a line; an empty group leaves none. */
 ::slotted(:is(hr, [data-ds-menu-separator])) {
   flex: 0 0 0 !important;
   height: 0 !important;
@@ -108,17 +86,11 @@
   height: var(--ds-menu-row);
   padding: 0 calc(4px * var(--ds-sf));
   background: var(--ds-context-fill);
-  /* The spare three above the sixteen, as on any row with a line at its foot. */
   padding-top: calc(var(--ds-menu-row) - var(--ds-type-lineheight-default));
   color: color-mix(in srgb, var(--ds-context-ink) 60%, var(--ds-context-fill));
   line-height: var(--ds-type-lineheight-default);
 }
 
-/* The bar: the same rows side by side, the context bar over what is selected.
-   One row high, the cells a pixel apart and groups two, the page showing
-   through; a cell with words is 4px in on the sixteen, a cell holding only an
-   icon one square (19px with the pixel beside it), the icon in its middle.
-   As long as its cells, never rounded up, so the silhouette ends with them. */
 :host([bar]) {
   width: var(--ds-menu-width, max-content);
   min-width: 0;

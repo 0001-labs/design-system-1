@@ -1,9 +1,4 @@
 import { isPublicComponent } from "../DS1/0-face/component-visibility";
-/**
- * The system's four layers and what stands in each, as the sidebar numbers
- * them. `tag` is the name in code: the custom element, or the file for Root.
- * An entry with no `tag` is documented but has no element of its own.
- */
 export type DirectoryEntry = { name: string; href: string; tag?: string };
 export type DirectoryLayer = {
   number: number;
@@ -106,7 +101,6 @@ export const ALL_LAYERS: DirectoryLayer[] = [
 ];
 
 
-/** Public docs, workbench and normal library choices never list internal chrome. */
 export const LAYERS: DirectoryLayer[] = ALL_LAYERS.map(layer => ({
   ...layer, entries: layer.entries.filter(entry => isPublicComponent(entry.tag ?? entry.href.split("/").filter(Boolean).at(-1)!)),
 }));

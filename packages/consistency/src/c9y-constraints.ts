@@ -1,22 +1,10 @@
 import type { SortableMovement } from './vendor/drag/sortable';
 import type { SurfaceNode } from './surface-measures';
 
-// C9Y constraints: every rule the Consistency editor keeps, each a sentence and the test that holds
-// it, and the rules of every block it edits. C9Y-constraints.md is written from this file by
-// `vp run c9y-constraints`; src/c9y-constraints.test.ts fails while a rule has no test, a block
-// kind no rules, or the document an old list.
-//
-// A new rule: add it here, make the editor keep it, write its test under the name given in `check`,
-// then run `vp run c9y-constraints`. A new block kind: add its row to BLOCKS.
-
 export type C9yConstraint = {
-  /** `<area>.<what>`, lower case, never changed once given. */
   code: string;
-  /** The rule, one sentence. */
   rule: string;
-  /** Why it holds, when the rule alone does not say. */
   why?: string;
-  /** The test that holds it: a file in this package and the name it is given there. */
   check: { file: string; test: string } | { manual: true; test: string };
 };
 
@@ -238,10 +226,6 @@ export const C9Y_CONSTRAINTS: C9yConstraint[] = [
 export type BlockKind = NonNullable<SurfaceNode['kind']>;
 export type Capability = SurfaceNode['capabilities'][number];
 
-/**
- * The capabilities the platform gives a block (Consistency/platform/worker/site-composition.ts,
- * `capabilities`). `reorder` is added by blockReorders, from its siblings.
- */
 export function blockCapabilities(kind: BlockKind, protectedRegion = false): Capability[] {
   const caps: Capability[] = ['width'];
   if (kind !== 'root') caps.push('marginTop', 'marginBottom');
@@ -253,17 +237,13 @@ export function blockCapabilities(kind: BlockKind, protectedRegion = false): Cap
   return caps;
 }
 
-/** blocks.reorder: a placeable block, or one the platform said reorders, with a sibling to move among. */
 export function blockReorders(capabilities: readonly string[], siblings: number, wasReorderable = false): boolean {
   return siblings > 1 && (capabilities.includes('place') || wasReorderable);
 }
 
 export type BlockRule = {
-  /** What it is, in a sentence. */
   is: string;
-  /** How its children lie, and so which way they make room: down the page, or side by side. */
   axis: 'vertical' | 'horizontal' | null;
-  /** Its own rules, beyond its capabilities. */
   rules: string[];
 };
 
@@ -284,17 +264,12 @@ export const BLOCKS: Record<BlockKind, BlockRule> = {
 
 export type C9yFinding = { code: string; message: string; elements: HTMLElement[] };
 
-/**
- * Watches the drag engine's movements and reports drag.one-movement and drag.only-while-carried as
- * they break: any sibling moving after release. Hand `record` to the engine's `onMovement`.
- */
 export class MovementLedger {
   readonly movements: SortableMovement[] = [];
   private pending: SortableMovement[] = [];
   private scheduled = false;
   constructor(private readonly broken: (finding: C9yFinding) => void) {}
   record = (movement: SortableMovement) => {
-    // A long session carries thousands of blocks: the latest moves are kept, not every element ever moved.
     if (this.movements.length >= 512) this.movements.splice(0, 256);
     this.movements.push(movement);
     if (movement.phase !== 'drop') return;
@@ -316,7 +291,6 @@ export class MovementLedger {
   }
 }
 
-/** The constraints as a document: C9Y-constraints.md. */
 export function constraintsDocument(): string {
   const lines = [
     '# C9Y constraints',

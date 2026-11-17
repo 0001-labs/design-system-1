@@ -38,8 +38,5 @@ private struct DS1Tooltipped: ViewModifier {
 }
 
 extension View {
-    /// `ds-tooltip`: a label 2 above the view, centred, one control high with 2.5 at the sides and
-    /// the corner, wrapping past 320; under a pointer on a Mac, on a long press on iPhone and
-    /// iPad. It is also the view's VoiceOver hint. Do not put essential information in it.
     public func ds1Tooltip(_ text: String, colour: Color? = nil) -> some View { modifier(DS1Tooltipped(text: text, colour: colour)) }
 }

@@ -1,4 +1,3 @@
-/** The host owns durable media. The standalone lab keeps its local file drafts. */
 export interface EditorMedia {
   chooseImage(anchor: HTMLElement): Promise<{ src: string; alt: string } | null>;
 }

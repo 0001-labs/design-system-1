@@ -17,20 +17,16 @@ type FontEntry = { id: string; name: string; detail: string; available: boolean;
 const sizes = [20, 40, 60, 80, 100, 120];
 const spacings = [0, 1, 2, 3, 4];
 const alphabets = ["ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz", "0123456789", ".,:;!?—–“”‘’()[]{}@&", "ÅÆØåæø"];
-/** What a face in development says before a build is opened. The Worker lists the faces; a face without words of its own gets the plain ones. */
 const studies: Record<string, { heading: string; text: string }> = {
   supernatural: { heading: "Supernatural starts with your handwriting.", text: "Open a font build to try it here. Handwriting scans and original letterforms are still needed to create the first version. English first. About ten forms per letter, with variation in shape, spacing and rhythm." },
   "0001-sans": { heading: "0001 Sans starts with the Regular.", text: "Open a font build to try it here. The studio’s own sans: Regular first, then Medium, on the metrics of the text face it replaces, so nothing on the grid shifts." },
 };
 
-/** A secondary button, as every control in the workspace is. */
 const control = (label: string, onClick: () => void, options: { disabled?: boolean; pressed?: boolean } = {}) => button(label, onClick, options);
 
-/** Design system 1's cycle through the workspace's own values; each click moves to the next. */
 const cycle = (setting: string, values: string[], value: string, onChange: (value: string) => void) =>
   html`<ds-cycle secondary data-setting=${setting} .values=${values} .value=${value} @change=${(event: CustomEvent<{ value: string }>) => onChange(event.detail.value)}></ds-cycle>`;
 
-/** The private font workspace on fonts.designsystem1.com: signed in, the owner's faces. */
 export class FontWorkspace extends AppElement {
   override connectedCallback() {
     super.connectedCallback();
@@ -67,7 +63,6 @@ export class PrivateFonts extends AppElement {
   declare fonts: FontEntry[] | null;
   declare selected: string;
   declare mode: "specimen" | "glyphs" | "draw";
-  /** The face whose drawing is open: it stays open behind Specimen and Glyphs until another face is chosen. */
   declare drawFor: string | null;
   declare text: string;
   declare size: number;
@@ -124,7 +119,6 @@ export class PrivateFonts extends AppElement {
 
   override willUpdate() {
     const token = authToken.get();
-    // The list of faces, again for a new session or Try again.
     const listKey = JSON.stringify([token, this.retry]);
     if (listKey !== this.#listKey) {
       this.#listKey = listKey;
@@ -138,7 +132,6 @@ export class PrivateFonts extends AppElement {
         }).catch(problem => { if (!controller.signal.aborted) this.error = problem instanceof Error ? problem.message : "Could not open fonts."; });
       }
     }
-    // The chosen face's build, when it has one.
     const active = this.#active();
     const faceKey = JSON.stringify([this.selected, active?.available, token, this.retry]);
     if (faceKey !== this.#faceKey) {
@@ -192,7 +185,6 @@ export class PrivateFonts extends AppElement {
     this.busy = true; this.error = "";
     try {
       await this.#request(`/api/fonts/${id}`, { method: "PUT", headers: { "Content-Type": "application/octet-stream", "X-Font-Name": local.name.replace(/[^\x20-\x7e]/g, "_") }, body: local });
-      // Keep the loaded preview and text in place; the next visit reads the saved version.
       this.message = "Saved privately. Previous font versions are retained.";
       this.fonts = this.fonts?.map(font => font.id === id ? { ...font, available: true, fileName: local.name } : font) ?? null;
       this.local = null;
@@ -200,7 +192,6 @@ export class PrivateFonts extends AppElement {
     finally { this.busy = false; }
   }
 
-  /** The shared sidebar owns rows, focus and arrow keys; the workspace owns which font is open. */
   async #choose(id: string) {
     if (this.busy || id === this.selected) return;
     if (this.#drawingDirty && !(await confirm({ title: "Leave the drawing without saving?", text: "Changes since the last save are lost.", confirm: "Leave", danger: true }))) return;
@@ -215,7 +206,6 @@ export class PrivateFonts extends AppElement {
     this.mode = "draw"; this.drawFor = this.selected; this.message = "";
   }
 
-  // The workbench, with its font reader and writer, loads only when a drawing is opened.
   #workbench(active: FontEntry) {
     if (!this.workbenchReady) {
       void import("./fontWorkbench/Workbench").then(() => { this.workbenchReady = true; });

@@ -1,11 +1,3 @@
-// Design system 1's palette: one list, named by colour. The Colours page (website/src/pages/colours.astro)
-// draws it and the shared stylesheet (palette.css) carries it as tokens, written by
-// scripts/write-palette-css.ts. Change a colour here, then run that script.
-//
-// Every palette colour has a pastel (its hue and saturation at 90% lightness) and a dark-mode version
-// (the hue, the saturation times 0.49, at 41.4% lightness, as the ds1 Figma file derives Apple green:
-// #99ff73 to #529d36). In dark mode a pastel becomes a dim version at 20% lightness. Inks turn over.
-
 export const named: [string, string][] = [
   ['Tuned red', '#ff5f5f'], ['Signal red', '#ff4438'], ['Red for blood', '#de0331'], ['Dark red variant', '#c50124'],
   ['Orange', '#fec20d'], ['Old gold', '#b69e55'], ['Sand', '#dbc88f'], ['Drip yellow', '#fde70c'], ['Yellow', '#eaff00'],
@@ -15,7 +7,6 @@ export const named: [string, string][] = [
   ['Stealth', '#554455'], ['Slate dark', '#3c3c3c'], ['Ink', '#2c2c2b'], ['Black', '#2a2a2a'], ['Slate', '#1e1e1e'],
 ];
 
-/** Pastels that already have a name and a value keep them. */
 export const namedPastels: Record<string, [string, string]> = {
   'Sharp blue': ['Zenith blue', '#ccccff'],
   Chartreuse: ['Comfortable green', '#f2ffcf'],
@@ -55,8 +46,6 @@ export interface PaletteColour {
   pastelName: string; pastel: string; dim: string; hsl: Hsl;
 }
 
-/** The palette sorted around the wheel from red (the turn starts 30° before red, so deep reds lead and pink
- *  closes), lighter first within a hue; the inks after it, lightest first. */
 export function palette(): PaletteColour[] {
   const turn = (h: number) => (h + 30) % 360;
   return named
@@ -74,34 +63,19 @@ export function palette(): PaletteColour[] {
     });
 }
 
-export const paletteStart = '  /* Palette: written by scripts/write-palette-css.ts from DS1/1-root/palette.ts. */';
-export const paletteEnd = '  /* Palette: end */';
-
-/** The shared tokens: each colour and its pastel, both following the reader's light or dark mode. */
 export function paletteCss(): string {
-  const lines = [paletteStart];
+  const lines: string[] = [];
   for (const c of palette()) {
     lines.push(`  ${c.token}: light-dark(${c.hex}, ${c.dark});`);
     if (c.ink) continue;
     lines.push(`  ${c.token}-pastel: light-dark(${c.pastel}, ${c.dim});`);
     if (namedPastels[c.name]) lines.push(`  ${tokenName(namedPastels[c.name][0])}: var(${c.token}-pastel);`);
   }
-  lines.push(paletteEnd);
   return lines.join('\n');
 }
 
-/**
- * The palette on its own, for a page that does not take the shared sheet: palette.css,
- * imported by one.css and copied by Sync 1's `root` and `tokens` exports.
- */
 export function paletteSheet(): string {
   return [
-    '/* Design system 1\'s named colours as tokens: --one-<colour> and --one-<colour>-pastel,',
-    '   each light-dark(light, dark), and the named pastels (--one-zenith-blue,',
-    '   --one-comfortable-green). light-dark() follows the page\'s color-scheme, which',
-    '   one.css sets. Written by scripts/write-palette-css.ts from palette.ts; never edit it',
-    '   by hand. */',
-    '',
     ':root {',
     paletteCss(),
     '}',

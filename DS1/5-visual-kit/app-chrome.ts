@@ -8,7 +8,6 @@ import { mobileChromeStyles, cellularSignal } from './mobile-chrome';
 
 export type AppChromeKind = 'macos' | 'macos-compact' | 'ios' | 'ipados' | 'safari' | 'chrome' | 'edge' | 'safari-ios' | 'instagram' | WorkspaceKind;
 
-/** A presentation whose drawing loads on demand: no other kind carries its code. Its frame is drawn at once, so the slotted content shows and nothing moves meanwhile. */
 interface Overlay { styles: CSSResult; draw: (chrome: DsAppChrome) => TemplateResult }
 const action = (chrome: DsAppChrome) => (name: string) => chrome.dispatchEvent(new CustomEvent('chrome-action', { detail: { action: name }, bubbles: true, composed: true }));
 const workspace = () => import('./workspace').then((module): Overlay => ({ styles: module.workspaceStyles, draw: (c) => module.workspace({
@@ -19,7 +18,6 @@ const overlays: Partial<Record<AppChromeKind, () => Promise<Overlay>>> = {
   instagram: () => import('./instagram').then((module): Overlay => ({ styles: module.instagramStyles, draw: (c) => module.instagram({ interactive: c.interactive, username: c.username, caption: c.caption, avatar: c.avatar, verified: c.verified, likes: c.likes, comments: c.comments, reposts: c.reposts, shares: c.shares, progress: c.progress, action: action(c) }) })),
   figma: workspace, codex: workspace, claude: workspace,
 };
-/** Platform presentation chrome. Controls emit requests; they never navigate or close the host app. */
 export class DsAppChrome extends LitElement {
   static properties = {
     username: {}, caption: {}, avatar: {}, verified: {type:Boolean}, likes: {}, comments: {}, reposts: {}, shares: {}, progress: {type:Number},
@@ -44,7 +42,6 @@ export class DsAppChrome extends LitElement {
   declare dualSim: boolean;
   declare backAvailable: boolean;
   declare forwardAvailable: boolean;
-  /** Figma, Codex and Claude: the person's message, the reply beneath it, the model named under the composer and the side panel's other rows (comma-separated). */
   declare prompt: string; declare reply: string; declare model: string; declare items: string;
   declare stageSize: { width: number; height: number } | null;
   constructor(){super();this.username='account';this.caption='';this.avatar='';this.verified=false;this.likes='';this.comments='';this.reposts='';this.shares='';this.progress=0;this.kind='macos';this.appearance='light';this.time='00:01';this.address='';this.label='Application';this.href='';this.assetBase='';this.interactive=false;this.favicon='';this.network='4G';this.battery=80;this.dualSim=false;this.backAvailable=true;this.forwardAvailable=false;this.prompt='';this.reply='';this.model='';this.items='';this.stageSize=null;}
@@ -111,7 +108,6 @@ export class DsAppChrome extends LitElement {
       this.dispatchEvent(new CustomEvent('chrome-error', { detail: { kind: this.kind }, bubbles: true, composed: true }));
     });
   }
-  /** Settles once an on-demand presentation is drawn too, so a capture never takes the frame without it. */
   protected async getUpdateComplete(): Promise<boolean> {
     const settled = await super.getUpdateComplete();
     if (this.overlay || !this.overlayLoading) return settled;
@@ -133,7 +129,6 @@ export class DsAppChrome extends LitElement {
       this.dispatchEvent(new CustomEvent('chrome-error', { detail: { kind: this.kind }, bubbles: true, composed: true }));
     });
   }
-  /** Figma names its frame's size: the stage's, as drawn. */
   private observeStage() {
     const stage = this.kind === 'figma' ? this.renderRoot.querySelector('.ws-stage') : null;
     if (stage === this.observedStage) return;

@@ -1,23 +1,5 @@
 import { remoteConstraintPages, viewportBatches, visitAll } from './constraint-pages';
 import { calculateScalingFactor, defaultScalingConfig } from '../DS1/0-face/scaling';
-// The constraints on a phone: opens every page of a site, as its sitemap lists them, in WebKit as an
-// iPhone at each phone width, scrolls it through so everything it loads late is drawn, and runs every
-// rule in DS1/0-face/constraints.ts on it, as five presses of C would. Prints what each page breaks,
-// at which width, and fails while anything is broken.
-//
-//   vp run constraints:phone https://example.com
-//   vp run constraints:phone https://example.com --widths 320,393 --pages /,/about/
-//   vp run constraints:phone https://example.com --theme dark
-//   vp run constraints:phone --dist website/dist
-//   vp run constraints:phone --dist website/dist --workers 2
-//
-// `--dist` checks a built site before it is uploaded: the folder is served here, every page in its
-// sitemap is opened on this machine, and the full-page layout examples under /examples/layouts/,
-// which the sitemap leaves out, are opened too. A file the folder lacks (the live base stylesheet,
-// a hosted library) is fetched from `--origin`, https://designsystem1.com unless named.
-//
-// It only reads: GETs, without cookies or credentials, so it is safe against production. It needs
-// Google Chrome in headless mode.
 import { build } from 'esbuild';
 import { mkdirSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -26,10 +8,8 @@ import { extname, join, resolve } from 'node:path';
 import puppeteer, { KnownDevices, type Page, type HTTPResponse } from 'puppeteer-core';
 import { setTimeout as delay } from 'node:timers/promises';
 
-/** Representative phone, tablet and desktop widths; --widths adds breakpoint boundaries. */
 const WIDTHS = [320, 375, 393, 430, 768, 1024, 1440];
 
-/** Paused on 10 Nov 2026: the sweep opens every page at every width in WebKit and takes the Mac's sound and memory with it. Only Joachim switches it back on. */
 if (process.env.DS1_BROWSER_CONSTRAINTS !== '1') {
   console.log('Browser constraints sweep is paused on this Mac. Set DS1_BROWSER_CONSTRAINTS=1 only when Joachim asks for a run.');
   process.exit(0);
@@ -48,7 +28,6 @@ if (!named && !dist) {
   process.exit(2);
 }
 const widths = option('widths')?.split(',').map(Number) ?? WIDTHS;
-// Run one page at a time on the release machine to bound concurrent WebKit renderers.
 const workers = Number(args.includes('--workers') ? option('workers') : 1);
 if (!Number.isSafeInteger(workers) || workers < 1 || workers > 6) throw new Error('Use an integer from 1 to 6 for --workers.');
 
@@ -59,7 +38,6 @@ const TYPES: Record<string, string> = {
   '.map': 'application/json', '.mp4': 'video/mp4', '.webm': 'video/webm', '.wasm': 'application/wasm',
 };
 
-/** The file in the built folder a path names: the page's index.html for a folder, nothing for a path outside it. */
 function fileOf(folder: string, pathname: string) {
   const file = resolve(folder, '.' + decodeURIComponent(pathname));
   if (!file.startsWith(resolve(folder))) return undefined;
@@ -68,7 +46,6 @@ function fileOf(folder: string, pathname: string) {
   return existsSync(`${file}.html`) ? `${file}.html` : undefined;
 }
 
-/** Serves the built folder here, GETs only, fetching what it lacks from the origin. */
 async function serve(folder: string): Promise<{ server: Server; base: string }> {
   const server = createServer(async (request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') { response.writeHead(405).end(); return; }
@@ -96,7 +73,6 @@ async function serve(folder: string): Promise<{ server: Server; base: string }> 
 
 const locations = (xml: string) => [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map(match => match[1]!);
 
-/** The pages of a built folder: its sitemap's, by path, and every full-page layout example. */
 function builtPages(folder: string, base: string): string[] {
   const pages = new Set<string>();
   const sitemaps = ['sitemap-index.xml', 'sitemap.xml', 'sitemap-0.xml'].filter(name => existsSync(join(folder, name)));
@@ -119,7 +95,6 @@ function builtPages(folder: string, base: string): string[] {
   return pages.size ? [...pages] : [new URL('/', base).href];
 }
 
-/** The pages to open: those named, or the sitemap's on the site's own host, or the home page alone. */
 async function pagesOf(site: string): Promise<string[]> {
   const chosen = option('pages');
   if (chosen) return chosen.split(',').map(path => new URL(path, site).href);
@@ -127,7 +102,6 @@ async function pagesOf(site: string): Promise<string[]> {
   return remoteConstraintPages(site);
 }
 
-// The rules as one script for the page, which puts its inspector on window.
 const checker = (await build({
   stdin: {
     contents: `import { measureConstraints } from './constraints.ts';
@@ -169,17 +143,13 @@ const started = performance.now();
 let peakRss = process.memoryUsage().rss;
 const noteMemory = () => { peakRss = Math.max(peakRss, process.memoryUsage().rss); };
 let documentLoads = 0;
-// Keep release checks invisible even when Playwright debugging is enabled in the shell.
 const browser = await puppeteer.launch({ channel: 'chrome', headless: true });
 const batches = viewportBatches(widths);
 const report: string[] = [];
-/** What the rules could not measure and a person must look at: listed, never a failure. */
 const reviews: string[] = [];
 let broken = 0;
-/** Failed documents are availability failures, not broken layout rules. */
 let notOpened = 0;
 const measured: Record<string, number> = {};
-/** A page's address as the report names it: the production address for a page served here. */
 const shown = (url: string) => served ? new URL(new URL(url).pathname, origin).href : url;
 
 async function scrollForMeasurement(page: Page) {
@@ -228,7 +198,6 @@ async function recordAtWidth(page: Page, url: string, width: number) {
   if (toReview.length) reviews.push(`${width}px ${shown(url)}`, ...toReview.map(({ code, message, element }) => `  ${code}  ${element}: ${message}`));
 }
 
-/** Whether every width on the page loaded. A page that did not, on its first turn, is left for `visitAll` to try again alone. */
 async function openPage(url: string, last: boolean): Promise<boolean> {
   for (const batch of batches) {
     const mobile = batch[0]! < 768;

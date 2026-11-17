@@ -1,4 +1,3 @@
-/** Switch views without remounting the preview, preserving its interactive state. */
 export function wireExampleView(example: HTMLElement, openSource: (source: HTMLElement) => void): void {
   const buttons = example.querySelectorAll<HTMLButtonElement>('[data-example-view-choice]');
   const preview = example.querySelector<HTMLElement>('[data-example-preview]')!;

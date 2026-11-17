@@ -1,15 +1,8 @@
-/**
- * The documentation as a site in Consistency's app. It is not one of the platform's sites: it is this Worker's own
- * build, so the gateway answers for it here, owner only. A page saved from the app is kept in the libraries bucket
- * (`docs/pages/`, with every revision) and drawn over the build's page as it is delivered, so the words go live at once
- * and a page nobody edited is exactly the build's. `vp run docs:pull` writes saved pages back into their source files.
- */
 import { docContents, docRefusal, fromEditable, renderDoc, toEditable, type DocEdit, type DocListing, type DocPage } from '../../shared/doc-pages';
 import type { Person } from './consistency-sites';
 
 export const DOCS_SITE_CODE = '01Docs';
 export const DOCS_SITE = { code: DOCS_SITE_CODE, name: 'Design system 1', url: 'https://designsystem1.com', domain: 'designsystem1.com', docs: true } as const;
-/** A whole page with its Markdown; the largest source page is far under this. */
 export const DOC_PAGE_BYTES = 800_000;
 const ROUTE = new RegExp(`^/api/consistency/sites/${DOCS_SITE_CODE}/(places|pages|page|edit|detached|api/(?:pages|page|edit|detached|docs-page))$`);
 const INDEX_KEY = 'docs/pages/edited.json';
@@ -35,7 +28,6 @@ async function savedEdit(env: DocsEnv, path: string): Promise<DocEdit | null> {
   const object = await env.LIBRARIES.get(editKey(path));
   return object ? await object.json() as DocEdit : null;
 }
-/** A short name for the build's page, so a save made against an older build is noticed. */
 async function baseOf(page: DocPage): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${page.title}\n${page.description}\n${page.source}`));
   return [...new Uint8Array(digest).slice(0, 8)].map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -57,7 +49,6 @@ async function markEdited(env: DocsEnv, path: string, edited: boolean) {
   memory = null;
 }
 
-/** Saves a page, or takes the edit away when the page is back to what the build has. */
 async function store(env: DocsEnv, page: DocPage, edit: Omit<DocEdit, 'savedAt' | 'revision' | 'path' | 'base'>, revision: number): Promise<DocEdit> {
   const record: DocEdit = { ...edit, path: page.path, base: await baseOf(page), revision: revision + 1, savedAt: Date.now() };
   const json = JSON.stringify(record), options = { httpMetadata: { contentType: 'application/json' } };
@@ -84,7 +75,6 @@ export async function docsSiteApi(request: Request, env: DocsEnv, authorize: Aut
   const write = !['GET', 'HEAD'].includes(request.method);
   if (write && (route !== 'edit' && route !== 'docs-page')) return refuse('Method not allowed', 405);
   if (write && (request.headers.get('Origin') !== url.origin || request.headers.get('Content-Type')?.split(';')[0]?.trim() !== 'application/json')) return refuse('Forbidden', 403);
-  // The lab plays with real sites and never saves to one.
   if (write && url.hostname === 'editor.c9y.site') return refuse('Forbidden', 403);
 
   if (route === 'places') return Response.json({ places: [{ id: 'pages', label: 'Pages' }] });
@@ -110,11 +100,9 @@ export async function docsSiteApi(request: Request, env: DocsEnv, authorize: Aut
     const record = await store(env, page, { title: edit?.title ?? page.title, description: edit?.description ?? page.description, source: edit?.source ?? page.source, [body.key]: body.markdown }, edit?.revision ?? 0);
     return Response.json({ html: '', revision: record.revision, edit: { markdown: body.markdown, editor: 'owner', at: record.savedAt } });
   }
-  // docs-page
   const path = url.searchParams.get('path') ?? '', page = await buildPage(env, path);
   if (!page) return refuse('unknown-page', 404);
   const saved = await savedEdit(env, path), base = await baseOf(page);
-  // Words saved against an older build whose blocks have gone stay in the bucket for `docs:pull`, but the build's page is what opens.
   const edit = saved && !docRefusal(page, saved.source) ? saved : null;
   const answer = (current: DocEdit | null) => ({ ...toEditable(page, current?.source ?? page.source), headings: renderDoc(page, current?.source ?? page.source).headings, path, base, revision: current?.revision ?? 0, title: current?.title ?? page.title, description: current?.description ?? page.description, file: page.file, edited: !!current, superseded: !!saved && !edit });
   if (request.method === 'GET') return Response.json(answer(edit));
@@ -129,10 +117,6 @@ export async function docsSiteApi(request: Request, env: DocsEnv, authorize: Aut
   return Response.json({ revision: record.revision, savedAt: record.savedAt, headings: renderDoc(page, source).headings });
 }
 
-/**
- * The owner's sites with the documentation among them, in 0001's own workspace. `workspaces` is the platform's list of
- * the workspaces the owner can open; with none named for 0001 the site stays in the owner's every workspace, never lost.
- */
 export async function withDocsSite(answer: Response, workspaces: () => Promise<{ code?: string; name?: string }[]>): Promise<Response> {
   if (!answer.ok) return answer;
   const body = await answer.clone().json().catch(() => null) as { workspace?: string | null; sites?: unknown[] } | null;
@@ -142,7 +126,6 @@ export async function withDocsSite(answer: Response, workspaces: () => Promise<{
   return Response.json({ ...body, sites: [...body.sites, DOCS_SITE] }, { status: answer.status, headers: answer.headers });
 }
 
-/** A page as a reader gets it: the build's, or the build's with the owner's saved words in it. */
 export async function applyDocEdit(response: Response, pathname: string, env: DocsEnv): Promise<Response> {
   if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) return response;
   const path = normal(pathname);

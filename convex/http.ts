@@ -6,22 +6,8 @@ import { httpAction } from "./_generated/server";
 
 const http = httpRouter();
 
-// Mounts /api/auth/* on the Convex site domain.
 auth.addHttpRoutes(http);
 
-/**
- * Dev-only: hand back the most recent magic link so local sign-in checks can sign in
- * without a mail server.
- *
- * Guarded twice — here and in `devLinks.ts` — and 404s rather than 403s when
- * disabled, so production leaks no signal that the route exists at all.
- */
-/**
- * The sign-in screen fetches this from a different origin (the app runs on
- * localhost, this is served from *.convex.site), so it needs CORS. Allowing
- * any origin is acceptable precisely because the route only exists on
- * deployments that set DEV_LOGIN_LINKS, and returns 404 everywhere else.
- */
 const devCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, OPTIONS",

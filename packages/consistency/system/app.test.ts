@@ -19,7 +19,6 @@ test('the map draws one path per relation', () => {
   expect(edges).toHaveLength(FIXTURE.relations.length);
   expect(root.querySelectorAll('.c9y-edges path')).toHaveLength(FIXTURE.relations.length);
   expect([...edges].map(edge => edge.getAttribute('data-kind')).sort()).toEqual(FIXTURE.relations.map(relation => relation.kind).sort());
-  // Every site and component is a node, the sites in their own stack and the components under their layer.
   expect(root.querySelectorAll('.c9y-node')).toHaveLength(FIXTURE.sites.length + FIXTURE.components.length);
   expect(root.querySelector('[data-stack="sites"] [data-focus="flavo"]')).not.toBeNull();
   expect(root.querySelector('[data-stack="runtime"] [data-focus="c9y-booking"]')).not.toBeNull();
@@ -36,7 +35,6 @@ test('focusing a node dims the unrelated ones, shows its relations and writes ?f
   const on = [...root.querySelectorAll<SVGElement>('.c9y-edge.is-on')].map(edge => edge.dataset.relation).sort();
   expect(on).toEqual(['flavo-c9y-button', 'flavo-c9y-orders', 'flavo-c9y-publishing']);
   expect(root.querySelectorAll('.c9y-edges .c9y-edge.is-off')).toHaveLength(3);
-  // The details name the site's relations; pressing it again lets it go.
   expect(root.querySelector('.c9y-detail')!.textContent).toContain('Built on its own');
   press('.c9y-node[data-focus="flavo"]');
   expect(location.search).toBe('');
@@ -62,7 +60,6 @@ test('the components view tells what Design system 1 presents from what Consiste
   expect([...button.querySelectorAll('.c9y-adds li')].map(item => item.textContent)).toEqual(['links to a page of the site', 'starts a Stripe Checkout']);
   expect(button.querySelector('.c9y-facts')!.textContent).toContain('Stripe');
   expect(button.textContent).toContain('CPH Raft');
-  // A service draws nothing of its own.
   expect(root.querySelector('.c9y-entry[data-component="c9y-publishing"] .c9y-presents li')).toBeNull();
 });
 

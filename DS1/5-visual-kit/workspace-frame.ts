@@ -1,15 +1,9 @@
 import { css, html, type TemplateResult } from 'lit';
 
-/** Desktop apps a product is shown being built in: Figma's canvas, Codex's and Claude's preview pane. */
 export const WORKSPACE_KINDS = ['figma', 'codex', 'claude'] as const;
 export type WorkspaceKind = typeof WORKSPACE_KINDS[number];
 export const isWorkspace = (kind: string): kind is WorkspaceKind => (WORKSPACE_KINDS as readonly string[]).includes(kind);
 
-/**
- * The workspace's layout: its panels, their widths and the stage that holds the slotted product. App chrome draws
- * it from the start, so the product shows and nothing moves while the panels' contents (`workspace.ts`) load.
- * Narrow frames drop the side panels first, so the product keeps the room.
- */
 export const workspaceFrameStyles = css`
   :host([kind=figma]), :host([kind=codex]), :host([kind=claude]) { container-type:inline-size; height:100%; min-height:0; background:transparent; }
   :host([kind=claude]) { --ws-side:#f8f8f6; --ws-main:#fff; --ws-ink:#1f1e1d; --ws-muted:#73726c; --ws-line:#e8e7e3; --ws-field:#f4f3f0; --ws-selected:#ebeae6; --ws-accent:#d97757; }
@@ -41,7 +35,6 @@ export const workspaceFrameStyles = css`
   @container (max-width:600px) { .ws-figma { grid-template-columns:minmax(0,1fr); } .ws-figma .ws-side { display:none; } }
 `;
 
-/** The layout alone, until its contents have loaded. */
 export function workspaceFrame(kind: WorkspaceKind, lights: TemplateResult) {
   const stage = html`<div class="ws-stage" part="stage"><slot></slot></div>`;
   if (kind === 'figma') return html`<div class="ws ws-figma"><div class="ws-top">${lights}</div><aside class="ws-side"></aside><div class="ws-main">${stage}</div><aside class="ws-pane"></aside></div>`;

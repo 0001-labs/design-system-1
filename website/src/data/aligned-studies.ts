@@ -1,9 +1,3 @@
-/**
- * Studies on Desktop aligned: each page is the window in whole squares, drawn after a kind of
- * site or printed matter, often paired with something it would never meet. Local and unpublished:
- * every page carries `noindex`, and none is linked from the documentation.
- */
-/** The index's sections: one is shown, and its frames loaded, at a time. */
 export const SECTIONS = [
   { key: 'signage', title: 'Signs', about: 'Wayfinding, boards and signs on walls, roads and platforms.' },
   { key: 'editorial', title: 'Print', about: 'Newspapers, books, magazines and the slips tucked into them.' },
@@ -22,7 +16,6 @@ export interface Study {
   section: SectionKey;
   slug: string;
   title: string;
-  /** What the study is drawn after, in a line. */
   after: string;
 }
 
@@ -147,7 +140,6 @@ export const STUDIES: Study[] = [
 
 export const studyHref = (slug: string) => `/examples/aligned/${slug}/`;
 
-/** The study, its number from 1, and the ones before and after it (round the ends). */
 export function studyAt(slug: string) {
   const index = STUDIES.findIndex(study => study.slug === slug);
   if (index < 0) throw new Error(`No aligned study called ${slug}`);

@@ -1,16 +1,6 @@
 import { LitElement, css, html } from "lit";
 import { setTheme, currentTheme } from "../DS1/0-face/theme";
 
-/**
- * A component for theme toggle or project links (square or circle shape)
- *
- * @element portfolio-squarecircle
- * @prop {string} type - "theme-toggle" or "link"
- * @prop {string} shape - "square" or "circle"
- * @prop {string} href - URL for link type
- * @prop {string} project - Project name for color theming
- * @prop {boolean} loading - Loading state with pulse animation
- */
 export class PortfolioSquareCircle extends LitElement {
   static get properties() {
     return {

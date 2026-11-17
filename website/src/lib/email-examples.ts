@@ -1,7 +1,5 @@
 import { emailMessage } from '../../../DS1/4-page/email';
 
-// Three made-up products: a short name, a second short one, and a longer
-// name that takes the wide label.
 export const emailExamples = ['Notes', 'Projects', 'Site builder'].flatMap(product => {
   const homeUrl = { Notes: 'https://example.com', Projects: 'https://example.org', 'Site builder': 'https://example.net' }[product]!;
   const identity = { product, homeUrl, wideLabel: product === 'Site builder', fontUrl: '/email-assets/GT-America-Standard-Regular.woff2' };

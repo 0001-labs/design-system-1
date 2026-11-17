@@ -10,15 +10,7 @@ import '../../../DS1/2-core/ds-icon';
 import '../../../DS1/2-core/ds-avatar';
 import '../../../DS1/2-core/ds-empty';
 
-/**
- * The people in the workspace, in Settings → People and in the people panel a site card's avatars open. Everyone
- * in the workspace sees them; its admins and the owner (`manage`) invite and remove them. An invite is sent by
- * email, and sent again from an invited person's menu; the person is in once they sign in at consistency.site with
- * that address. The platform decides who may
- * do what; this shows what it says, and tells the page when the people change (`members-change`).
- */
 export interface Member { email: string; role: 'admin' | 'editor'; status: 'invited' | 'active' }
-/** A person's avatar letter: their address's first letter. */
 export const personInitial = (email: string) => (email.trim()[0] ?? '?').toUpperCase();
 export const MEMBERS_CHANGE = 'members-change';
 
@@ -32,9 +24,7 @@ const ROLE_WORDS: Record<Member['role'], string> = { admin: 'Admin', editor: 'Ed
 
 export class ConsistencyMembers extends LitElement {
   static properties = { workspace: { type: String }, manage: { type: Boolean }, members: { state: true }, email: { state: true }, role: { state: true }, error: { state: true }, notice: { state: true }, busy: { state: true } };
-  /** The workspace's code. */
   declare workspace: string;
-  /** Whether this person may invite and remove people. */
   declare manage: boolean;
   declare members: Member[] | null;
   declare email: string;
@@ -67,7 +57,6 @@ export class ConsistencyMembers extends LitElement {
     if (await this.send(email, this.role)) this.email = '';
   }
 
-  /** Invites the address, or sends a waiting invite again: the platform emails it to anyone not yet in. */
   private async send(email: string, role: Member['role'], again = false): Promise<boolean> {
     this.busy = true; this.error = ''; this.notice = '';
     try {

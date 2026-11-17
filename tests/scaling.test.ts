@@ -68,7 +68,6 @@ function held(width: number, height: number, turn: string) {
 }
 
 test("a phone's scale never comes from a page wider than its screen, so a page it has zoomed out never grows", () => {
-  // iOS: the upright size whichever way the phone is turned.
   screen(PHONE, 560, 3);
   held(393, 852, "portrait-primary");
   expect(screenWidth()).toBe(393);
@@ -76,7 +75,6 @@ test("a phone's scale never comes from a page wider than its screen, so a page i
   held(393, 852, "landscape-primary");
   expect(screenWidth()).toBe(852);
   expect(applyScaling()).toBe(2);
-  // A computer is never held to its screen.
   screen(COMPUTER, 560);
   held(393, 852, "portrait-primary");
   expect(applyScaling()).toBe(1);
@@ -109,9 +107,7 @@ test("a surface scales to its own width on a computer, with the same rule and sn
   const surface = surfaceOf(() => 390);
   expect(applyScaling({ surface })).toBe(calculateScalingFactor(390));
   expect(surface.style.getPropertyValue("--sf")).toBe(String(calculateScalingFactor(390)));
-  // Shared components inside take the same scale.
   expect(surface.style.getPropertyValue("--ds-sf")).toBe(String(calculateScalingFactor(390)));
-  // The page and data-mobile are left alone.
   expect(root.style.getPropertyValue("--sf")).toBe("");
   expect(surface.hasAttribute("data-mobile")).toBe(false);
   const snapped = applyScaling({ surface, snap: "pixel" });
@@ -196,21 +192,16 @@ function tall(height: number) {
 }
 
 test("Desktop aligned makes the width whole squares by the smaller change of scale", () => {
-  // Already whole: nothing changes.
   expect(alignedGrid(1440, 900)).toEqual({ factor: 1, columns: 72, rows: 45, top: 0 });
-  // 72.35 squares: 72 is nearer, so the page grows a little.
   const up = alignedGrid(1447, 900);
   expect(up.columns).toBe(72);
   expect(up.factor).toBe(1447 / 1440);
   expect(up.columns * 20 * up.factor).toBeCloseTo(1447, 9);
-  // 72.65 squares: 73 is nearer, so it shrinks a little.
   const down = alignedGrid(1453, 900);
   expect(down.columns).toBe(73);
   expect(down.factor).toBe(1453 / 1460);
-  // Either side of the tie, the count whose scale is nearer 1 wins (the tie is just under half a square).
   expect(alignedGrid(1449, 900).columns).toBe(72);
   expect(alignedGrid(1450, 900).columns).toBe(73);
-  // A window narrower than one square still has one, and no size is no grid.
   expect(alignedGrid(12, 900).columns).toBe(1);
   expect(alignedGrid(0, 900)).toEqual({ factor: 1, columns: 0, rows: 0, top: 0 });
 });
@@ -233,7 +224,6 @@ test("Desktop aligned gives the height's leftover to the top, always under one s
     expect(grid.top).toBeLessThan(square);
     expect(grid.rows * square + grid.top).toBeCloseTo(height, 3);
   }
-  // A height of whole squares keeps them all, whatever a float's last digit says.
   const exact = alignedGrid(1447, 44 * unit);
   expect(exact.rows).toBe(44);
   expect(exact.top).toBe(0);
@@ -257,12 +247,10 @@ test("a computer asked for Desktop aligned gets the grid on the root, and loses 
   expect(root.style.getPropertyValue("--ds-grid-columns")).toBe("72");
   expect(root.style.getPropertyValue("--ds-grid-rows")).toBe("44");
   expect(root.style.getPropertyValue("--ds-grid-top")).toBe("15.7222px");
-  // Without the option a computer is back at 1 with nothing left behind.
   expect(applyScaling()).toBe(1);
   expect(root.style.getPropertyValue("--sf")).toBe("1");
   expect(root.hasAttribute("data-desktop-aligned")).toBe(false);
   for (const property of ["--ds-grid-columns", "--ds-grid-rows", "--ds-grid-top"]) expect(root.style.getPropertyValue(property)).toBe("");
-  // A fixed scale stays 1 too.
   expect(applyScaling({ desktop: "aligned", mode: "fixed" })).toBe(1);
   expect(root.hasAttribute("data-desktop-aligned")).toBe(false);
 });
@@ -271,7 +259,6 @@ test("a phone keeps its own scale under Desktop aligned", () => {
   screen(COMPUTER, 1447);
   tall(900);
   applyScaling({ desktop: "aligned" });
-  // The same page on a phone: its fourteen squares, and nothing of the computer's grid.
   screen(PHONE, 375, 3);
   expect(applyScaling({ desktop: "aligned" })).toBe(1.339);
   expect(root.hasAttribute("data-mobile")).toBe(true);

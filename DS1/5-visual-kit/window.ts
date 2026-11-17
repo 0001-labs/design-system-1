@@ -3,7 +3,6 @@ import { define } from '../0-face/define';
 import { PHONE_WIDTH, PHONE_WINDOW_RATIO, WINDOW_RATIO } from '../0-face/window-shape';
 import './app-chrome';
 import { isWorkspace } from './workspace-frame';
-/** Window shell around real app DOM or an iframe, in a window's shape whatever it holds (`window.shape`). The default slot owns the viewport. */
 export class DsWindow extends LitElement {
   static properties = { frameless:{type:Boolean,reflect:true}, kind:{reflect:true}, appearance:{reflect:true}, label:{}, address:{}, href:{}, interactive:{type:Boolean}, favicon:{}, backAvailable:{type:Boolean,attribute:'back-available'}, forwardAvailable:{type:Boolean,attribute:'forward-available'}, username:{}, prompt:{}, reply:{}, model:{}, items:{} };
   declare frameless: boolean; declare kind: string; declare appearance: string; declare label: string; declare address: string; declare href: string; declare interactive: boolean; declare favicon: string; declare backAvailable: boolean; declare forwardAvailable: boolean; declare username: string; declare prompt: string; declare reply: string; declare model: string; declare items: string;

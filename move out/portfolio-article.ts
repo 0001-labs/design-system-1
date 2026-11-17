@@ -2,11 +2,6 @@ import { LitElement, css, html } from "lit";
 import { getText } from "../DS1/0-face/i18n";
 import { getViewMode } from "./viewMode";
 
-/**
- * A component for displaying article content with image/text toggle
- *
- * @element portfolio-article
- */
 export class PortfolioArticle extends LitElement {
   static get properties() {
     return {
@@ -255,7 +250,6 @@ export class PortfolioArticle extends LitElement {
         );
       }
     } catch (err) {
-      // no-op
     }
 
     window.addEventListener(
@@ -313,7 +307,6 @@ export class PortfolioArticle extends LitElement {
           this.boundHandlers.viewportChanged
         );
       } catch (err) {
-        // no-op
       }
     }
   }

@@ -5,7 +5,6 @@ import ts from "typescript";
 import type { IconAdoption, IconCell, IconKind, IconSite, IconStatus } from "../shared/component-adoption";
 import { interfaceIconAliases } from "../website/src/lib/icons/icon-scope";
 
-/** `"name": "<svg…>"` entries of a generated ds-icon map. */
 export function iconMap(source: string): Map<string, string> {
   const map = new Map<string, string>();
   for (const match of source.matchAll(/^\s*"([^"\n]+)":\s*("(?:[^"\\]|\\.)*")/gm)) map.set(match[1]!, JSON.parse(match[2]!) as string);
@@ -14,10 +13,8 @@ export function iconMap(source: string): Map<string, string> {
 export function readIconMap(path: string): Map<string, string> | null {
   return existsSync(path) ? iconMap(readFileSync(path, "utf8")) : null;
 }
-/** The same drawing whatever the whitespace. */
 const compact = (svg: string) => svg.replace(/\s+/g, "");
 const NAME = /^[a-z0-9][a-z0-9-]*$/i;
-/** Line numbers by offset, without re-reading the text for every site. */
 function lines(source: string): (offset: number) => number {
   const starts = [0];
   for (let i = source.indexOf("\n"); i !== -1; i = source.indexOf("\n", i + 1)) starts.push(i + 1);
@@ -28,14 +25,10 @@ function lines(source: string): (offset: number) => number {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Drawings: the geometry of an SVG, compared whatever the notation.
-
 type Shape = { sig: string; values: number[] };
 const NUMBER = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g;
 const ARGS: Record<string, number> = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
 
-/** A path in absolute commands, horizontal and vertical lines as lines, so equal geometry compares equal however it was written. */
 export function pathShape(d: string): Shape | null {
   const tokens = d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g);
   if (!tokens) return null;
@@ -71,7 +64,6 @@ export function pathShape(d: string): Shape | null {
   return sig.length ? { sig: sig.join(""), values } : null;
 }
 
-/** Attributes of one tag, in markup or JSX. An attribute written as an expression is marked dynamic. */
 function attributes(text: string): Record<string, string> {
   const found: Record<string, string> = {};
   for (const match of text.matchAll(/([@:\w.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*["'`]([^"'`$]*)["'`]\s*\}|(\{[^}]*\}?)|([^\s>"'`]+)))?/g)) {
@@ -82,7 +74,6 @@ function attributes(text: string): Record<string, string> {
 }
 const dynamicValue = (value: string | undefined) => value !== undefined && (value === "\u0000dynamic" || value.includes("${"));
 
-/** The shapes of an SVG in order, their numbers absolute; paint, ids, wrappers, definitions and clips are ignored. */
 export function drawingShapes(svg: string): Shape[] | null {
   const body = svg.replace(/<!--[\s\S]*?-->/g, "").replace(/<(defs|clipPath|mask|title|desc|style)\b[\s\S]*?<\/\1\s*>/gi, "");
   const shapes: Shape[] = [];
@@ -106,7 +97,6 @@ export function drawingShapes(svg: string): Shape[] | null {
 }
 const sameShapes = (a: Shape[], b: Shape[]) => a.length === b.length && a.every((shape, i) => shape.values.length === b[i]!.values.length && shape.values.every((value, k) => Math.abs(value - b[i]!.values[k]!) <= 0.02));
 
-/** DS1's drawings, indexed by the outline of their commands. */
 class Drawings {
   private byOutline = new Map<string, { name: string; shapes: Shape[] }[]>();
   constructor(ds1: Map<string, string>) {
@@ -117,7 +107,6 @@ class Drawings {
       this.byOutline.set(key, [...(this.byOutline.get(key) ?? []), { name, shapes }]);
     }
   }
-  /** The DS1 icon this drawing is, preferring the name it was given, then a canonical name over its repeats. */
   match(svg: string | Shape[], hint?: string): string | undefined {
     const shapes = typeof svg === "string" ? drawingShapes(svg) : svg;
     if (!shapes) return undefined;
@@ -130,7 +119,6 @@ class Drawings {
 const drawingIndexes = new WeakMap<Map<string, string>, Drawings>();
 const drawingsOf = (ds1: Map<string, string>) => drawingIndexes.get(ds1) ?? drawingIndexes.set(ds1, new Drawings(ds1)).get(ds1)!;
 
-/** An SVG drawn at icon size: at most 32 units each way. A larger one is a picture or a logo. */
 export function iconSized(svg: string): boolean {
   const root = /<svg\b([^>]*)>/i.exec(svg)?.[1];
   if (!root) return false;
@@ -140,21 +128,12 @@ export function iconSized(svg: string): boolean {
   return size.every(value => Number.isFinite(value) && value > 0 && value <= 32);
 }
 
-// ---------------------------------------------------------------------------
-// Icon files: a URL or import resolved to a tracked SVG.
-
-/** An SVG written into a `data:` address. */
 export function dataSvg(url: string): string | null {
   const match = /^data:image\/svg\+xml(;[^,]*)?,([\s\S]*)$/i.exec(url.trim());
   if (!match || match[2]!.includes("${")) return null;
   try { return /;base64/i.test(match[1] ?? "") ? Buffer.from(match[2]!, "base64").toString("utf8") : decodeURIComponent(match[2]!); } catch { return null; }
 }
 const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
-/**
- * The tracked SVG a reference points at, relative to the app. A relative path
- * resolves from the file that names it; a root path from the nearest folder
- * (or its `public/`) that holds it, else from the one tracked file it ends.
- */
 export function resolveSvg(root: string, from: string, url: string, svgs: string[] = []): { path: string; svg: string } | null {
   const clean = url.trim().replace(/[?#].*$/, "");
   if (!/\.svg$/i.test(clean) || /^(?:[a-z][\w+.-]*:|\/\/)/i.test(clean) || clean.includes("${")) return null;
@@ -174,16 +153,9 @@ export function resolveSvg(root: string, from: string, url: string, svgs: string
   return path ? { path, svg: readFileSync(join(root, path), "utf8") } : null;
 }
 
-/** A CSS reference to an SVG from a mask or background, or from a custom property one of them reads. */
 export interface StyleUse { property: string; url: string; line: number; block: number }
 const MASK_PROPERTY = /^(?:-webkit-mask(?:-image)?|mask(?:-image)?|background(?:-image)?|WebkitMask(?:Image)?|maskImage|backgroundImage)$/;
-/**
- * CSS declarations in stylesheets, `<style>`, style attributes, CSS in
- * template literals and style objects that name an SVG in `url(…)`, and the
- * custom properties a mask or background reads through `var()`.
- */
 export function styleIconUrls(text: string): { uses: StyleUse[]; consumed: Set<string> } {
-  // Quotes written as entities in a style attribute, kept at their length so offsets stay true.
   const source = text.replace(/&(?:quot|apos|#0?39);/g, entity => (entity === "&quot;" ? "\"" : "'").padEnd(entity.length, " "));
   const line = lines(source);
   const uses: StyleUse[] = [];
@@ -197,7 +169,6 @@ export function styleIconUrls(text: string): { uses: StyleUse[]; consumed: Set<s
     for (const match of value.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]*))\s*\)/g)) {
       const url = (match[1] ?? match[2] ?? match[3] ?? "").trim();
       if (!/\.svg(?:[?#]|$)/i.test(url) && !/^data:image\/svg\+xml/i.test(url)) continue;
-      // One rule (or one style attribute) that sets mask and -webkit-mask to the same file is one site.
       const block = Math.max(source.lastIndexOf("{", index), source.lastIndexOf("}", index), source.lastIndexOf("<", index));
       uses.push({ property, url, line: line(index), block });
     }
@@ -205,17 +176,12 @@ export function styleIconUrls(text: string): { uses: StyleUse[]; consumed: Set<s
   return { uses, consumed };
 }
 
-/** `<img src="….svg">` with a literal address. */
 export function imageIcons(source: string): { url: string; line: number }[] {
   const line = lines(source);
   return [...source.matchAll(/<img\b[^>]*?\bsrc\s*=\s*["']([^"'{}$]+?\.svg(?:[?#][^"']*)?)["']/gi)].map(match => ({ url: match[1]!, line: line(match.index!) }));
 }
 
-// ---------------------------------------------------------------------------
-// ds-icon elements, icon set packages and SVG imports.
-
 export interface IconUse { name: string | null; line: number; inline?: boolean; svg?: string; offset?: number }
-/** The markup of the `<svg>` that opens at `start`, up to its own closing tag. */
 function svgElement(source: string, start: number): string {
   const tag = /<(\/?)svg\b(?:[^>"'{]|"[^"]*"|'[^']*'|\{[^}]*\})*?(\/?)>/gi;
   tag.lastIndex = start;
@@ -228,12 +194,6 @@ function svgElement(source: string, start: number): string {
   }
   return source.slice(start, start + 2000);
 }
-/**
- * Icon sites in one file: `ds-icon` with a literal `type` in markup, Lit or
- * JSX, and `h`/`createElement("ds-icon", { type })` calls. A `type` that is
- * an expression is a dynamic use, its name unknown; a `ds-icon` without one
- * draws its own content. Inline `<svg>` drawings are counted apart, with their markup.
- */
 export function iconSites(source: string): IconUse[] {
   const uses: IconUse[] = [];
   const line = lines(source);
@@ -248,7 +208,6 @@ export function iconSites(source: string): IconUse[] {
     if (literal && NAME.test(literal)) uses.push({ name: literal, line: line(match.index!) });
     else if (/\btype\s*:/.test(match[1]!)) uses.push({ name: null, line: line(match.index!) });
   }
-  // An element made bare and named afterwards, e.g. `icon.type = "close"`.
   for (const match of source.matchAll(/\b(?:const|let)\s+(\w+)\s*=\s*document\.createElement\(\s*["']ds-icon["']\s*\)/g)) {
     const rest = source.slice(match.index!, match.index! + 600);
     const variable = match[1]!;
@@ -260,11 +219,9 @@ export function iconSites(source: string): IconUse[] {
   return uses;
 }
 
-// Icon sets an app can draw from instead of DS1; every icon taken from one is local.
 const ICON_LIBRARIES = /^(?:@tabler\/icons-react|lucide-react|lucide|@heroicons\/[\w/-]+|react-icons\/\w+|@phosphor-icons\/[\w-]+|@radix-ui\/react-icons)$/;
 const kebab = (name: string) => name.replace(/^Icon(?=[A-Z0-9])|Icon$/g, "").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/([A-Za-z])([0-9])/g, "$1-$2").toLowerCase();
 
-/** JSX uses of components imported from an icon set, and default imports of SVG files (DS1 `x-icon` drawings or the app's own). */
 export function importedIcons(source: string): { library: { name: string; set: string; icon: string; line: number }[]; files: { name: string; path: string; line: number }[] } {
   const line = lines(source);
   const library: { name: string; set: string; icon: string; line: number }[] = [];
@@ -285,13 +242,9 @@ export function importedIcons(source: string): { library: { name: string; set: s
   return { library, files };
 }
 
-// ---------------------------------------------------------------------------
-// Icon fonts: classes from a known set, and the stylesheet that loads it.
-
 const FONT_WEIGHTS = new Set(["thin", "light", "regular", "bold", "fill", "duotone"]);
 const FA_PREFIXES = new Set(["fa", "fas", "far", "fab", "fal", "fad", "fat", "fa-solid", "fa-regular", "fa-brands", "fa-light", "fa-thin", "fa-duotone", "fa-sharp"]);
 const FA_MODIFIERS = /^fa-(?:\d*x|[2]?xs|sm|lg|[2]?xl|fw|spin(?:-\w+)?|pulse|border|pull-\w+|stack(?:-\w+)?|inverse|rotate-\w+|flip(?:-\w+)?|beat(?:-\w+)?|bounce|fade|shake|li|ul|width-auto)$/;
-/** The set and icon a class list names, `{ icon: null }` when its icon is an expression. */
 export function fontIcon(classes: string): { set: string; icon: string | null } | null {
   const tokens = classes.split(/\s+/).filter(Boolean);
   const dynamic = tokens.some(token => token.includes("${") || token.includes("{"));
@@ -309,15 +262,8 @@ export function fontIcon(classes: string): { set: string; icon: string | null } 
   if (tokens.some(token => /^material-(?:icons|symbols)(?:-[a-z]+)?$/.test(token))) return { set: "material", icon: null };
   return null;
 }
-/** Stylesheets, links and imports that load a known icon font. */
 const ICON_FONT_SHEET = /phosphor|font-?awesome|fortawesome|bootstrap-icons|material[+_ -]?(?:symbols|icons)|icons?\/(?:regular|thin|light|bold|fill|duotone)\/style\.css/i;
 const sheetSet = (url: string) => /phosphor|icons?\/(?:regular|thin|light|bold|fill|duotone)\/style/i.test(url) ? "phosphor" : /awesome/i.test(url) ? "font awesome" : /bootstrap/i.test(url) ? "bootstrap" : "material";
-/**
- * Icon font sites in one file: a class list from Phosphor (`ph ph-x`), Font
- * Awesome (`fa-solid fa-x`), Bootstrap Icons (`bi bi-x`) or Material
- * (`material-symbols-outlined` with the icon's name as its text), and the
- * stylesheet links, `@import`s and imports that load one of them.
- */
 export function fontIcons(source: string): { icons: { set: string; icon: string | null; line: number; classes: string }[]; sheets: { set: string; url: string; line: number }[] } {
   const line = lines(source);
   const icons: { set: string; icon: string | null; line: number; classes: string }[] = [];
@@ -328,7 +274,6 @@ export function fontIcons(source: string): { icons: { set: string; icon: string 
   for (const { classes, index, end } of lists) {
     const found = fontIcon(classes);
     if (!found) continue;
-    // Material draws the icon named by the element's text, a ligature.
     if (found.set === "material") found.icon = /^[^<>]*?>\s*([a-z][a-z0-9_]*)\s*</.exec(source.slice(end, end + 300))?.[1] ?? null;
     icons.push({ ...found, line: line(index), classes });
   }
@@ -340,10 +285,6 @@ export function fontIcons(source: string): { icons: { set: string; icon: string 
   return { icons, sheets };
 }
 
-// ---------------------------------------------------------------------------
-// Glyphs: a control or icon whose whole text is one symbol.
-
-/** Symbol glyphs written as icons, and the DS1 icon each stands for. */
 export const GLYPHS: Record<string, string> = {
   "×": "close", "✕": "close", "✖": "close", "⨯": "close", "╳": "close",
   "▶": "play-alt", "▷": "play-alt", "►": "play-alt", "⏵": "play-alt", "■": "stop", "◼": "stop", "◾": "stop", "⏹": "stop", "⏸": "pause",
@@ -357,12 +298,6 @@ export const GLYPHS: Record<string, string> = {
 const glyphOf = (text: string) => { const glyph = text.replace(/[\uFE0E\uFE0F]/g, "").trim(); return Object.hasOwn(GLYPHS, glyph) ? glyph : null; };
 const GLYPH_CLASS = Object.keys(GLYPHS).map(glyph => glyph.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 const CONTROL_TAG = /^(?:button|a|summary)$/i;
-/**
- * A glyph element stands alone when it is a control (a button, a link, a
- * summary, a control role or a click handler), sits alone in one, or is
- * marked as an icon: hidden from assistive technology, labelled, an image
- * role or an icon-like class. A glyph inside running text is the text's own.
- */
 function standalone(tag: string, attrs: Record<string, string>, inControl: boolean): boolean {
   if (inControl || CONTROL_TAG.test(tag)) return true;
   if (/^(?:button|link|menuitem\w*|tab|switch|option|checkbox)$/.test(attrs.role ?? "") || attrs.role === "img") return true;
@@ -370,7 +305,6 @@ function standalone(tag: string, attrs: Record<string, string>, inControl: boole
   if (attrs["aria-hidden"] === "true" || "aria-label" in attrs || "ariaLabel" in attrs) return true;
   return /(?:^|[\s_-])(?:icon|arrow|caret|chevron|close|toggle|glyph|star)(?:[\s_-]|$)/i.test(attrs.class ?? attrs.className ?? "");
 }
-/** Glyph elements in markup: HTML, Lit templates and HTML strings. */
 function markupGlyphs(text: string, at: (offset: number) => number, offset = 0): { glyph: string; line: number }[] {
   const found: { glyph: string; line: number }[] = [];
   for (const match of text.matchAll(new RegExp(`>\\s*(${GLYPH_CLASS})[\\uFE0E\\uFE0F]?\\s*<\\/([A-Za-z][\\w-]*)\\s*>`, "gu"))) {
@@ -386,7 +320,6 @@ function markupGlyphs(text: string, at: (offset: number) => number, offset = 0):
   for (const match of text.matchAll(new RegExp(`<ds-text\\b[^>]*?\\btext\\s*=\\s*["'](${GLYPH_CLASS})[\\uFE0E\\uFE0F]?["']`, "gu"))) found.push({ glyph: match[1]!, line: at(offset + match.index!) });
   return found;
 }
-/** A template literal's text with its `${…}` parts blanked, so markup split by a binding still reads as one tag. */
 function templateText(node: ts.TemplateExpression, source: string): string {
   let text = source.slice(node.getStart(), node.getEnd());
   for (const span of node.templateSpans) {
@@ -396,7 +329,6 @@ function templateText(node: ts.TemplateExpression, source: string): string {
   }
   return text;
 }
-/** The glyph literals an expression can be: a string, or each branch of a condition. */
 function literalGlyphs(node: ts.Expression | undefined): string[] | null {
   if (!node) return null;
   if (ts.isParenthesizedExpression(node)) return literalGlyphs(node.expression);
@@ -414,11 +346,6 @@ function jsxAttributes(element: ts.JsxOpeningLikeElement): Record<string, string
   }
   return found;
 }
-/**
- * Glyph icons in one file: markup elements, JSX elements, `h`/`createElement`
- * calls with one glyph child, `<ds-text text="×">`, and a glyph assigned as
- * an element's whole `textContent`. A glyph in running text is not counted.
- */
 export function glyphSites(file: string, source: string): { glyph: string; line: number }[] {
   const at = lines(source);
   if (/\.(?:html|astro)$/.test(file)) {
@@ -471,20 +398,10 @@ export function glyphSites(file: string, source: string): { glyph: string; line:
   return found;
 }
 
-// ---------------------------------------------------------------------------
-// SVG made in script.
-
-/** The scripts of an HTML or Astro file, each with the line it starts on. */
 function embeddedScripts(source: string): { code: string; line: number }[] {
   const at = lines(source);
   return [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(match => ({ code: match[1]!, line: at(match.index! + match[0].indexOf(">") + 1) }));
 }
-/**
- * `createElementNS(…, "svg")` drawings, counted like inline `<svg>`, each
- * with its markup when the function that makes it gives every path a
- * literal `d` (through `setAttribute` or literal `innerHTML`), so a pasted
- * DS1 drawing can be named. A path drawn from data is not inferred.
- */
 export function scriptDrawings(file: string, source: string): { line: number; svg: string | null }[] {
   if (/\.(?:html|astro)$/.test(file)) return embeddedScripts(source).flatMap(script => scriptDrawings("embedded.ts", script.code).map(drawing => ({ ...drawing, line: drawing.line + script.line - 1 })));
   const at = lines(source);
@@ -518,21 +435,9 @@ export function scriptDrawings(file: string, source: string): { line: number; sv
   return found;
 }
 
-// ---------------------------------------------------------------------------
-// React icon components: an app's own icon set, recognised by its shape.
-
-/** What one export of an icon set draws: a DS1 icon through ds-icon, or its own SVG. */
 export type IconExport = { kind: "ds1"; type: string } | { kind: "svg"; name?: string };
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
-/** At least this many exported components drawing an icon make a module an icon set. */
 const ICON_SET_SIZE = 5;
-/**
- * The app's own icon components, read from the modules its files import.
- * A module is an icon set when it exports many components that each draw
- * an `<svg>` (a set converted locally) or render `ds-icon` with a literal
- * type, directly or through a factory such as `createIcon("X", "close")`.
- * Names alone never make a module an icon set.
- */
 export class IconComponents {
   private sets = new Map<string, Map<string, IconExport> | null>();
   private asts = new Map<string, ts.SourceFile | null>();
@@ -541,7 +446,6 @@ export class IconComponents {
     if (!this.asts.has(path)) this.asts.set(path, /\.[cm]?[jt]sx?$/.test(path) && isFile(join(this.root, path)) ? parsed(path, readFileSync(join(this.root, path), "utf8")) : null);
     return this.asts.get(path)!;
   }
-  /** A relative or `@/` import, resolved to a tracked module path. */
   resolve(from: string, specifier: string): string | undefined {
     if (!specifier.startsWith(".") && !specifier.startsWith("@/")) return undefined;
     const base = posix.normalize(specifier.startsWith("@/") ? posix.join("src", specifier.slice(2)) : posix.join(posix.dirname(from), specifier));
@@ -549,7 +453,6 @@ export class IconComponents {
     const stem = base.replace(/\.[cm]?[jt]sx?$/, "");
     return [base, ...[".ts", ".tsx", ".js", ".jsx"].map(ext => stem + ext), ...["index.ts", "index.tsx", "index.js"].map(index => posix.join(base, index))].find(path => isFile(join(this.root, path)));
   }
-  /** How a function creates `ds-icon` (the parameter that becomes its type, or a literal) or an `<svg>`. */
   private draws(fn: ts.Node, params: readonly ts.ParameterDeclaration[] = []): { type?: string; param?: number; svg?: boolean } | null {
     let found: { type?: string; param?: number; svg?: boolean } | null = null;
     const typeOf = (value: ts.Node | undefined, name?: string) => {
@@ -581,7 +484,6 @@ export class IconComponents {
     visit(fn);
     return found;
   }
-  /** The function a factory call names: declared in the module or imported from another one. */
   private factory(path: string, ast: ts.SourceFile, name: string, depth = 0): ts.SignatureDeclaration | undefined {
     for (const statement of ast.statements) {
       if (ts.isFunctionDeclaration(statement) && statement.name?.text === name) return statement;
@@ -605,7 +507,6 @@ export class IconComponents {
       const drawn = fn ? this.draws(fn, fn.parameters) : null;
       if (drawn?.param !== undefined) { const arg = init.arguments[drawn.param]; return arg && ts.isStringLiteralLike(arg) && NAME.test(arg.text) ? { kind: "ds1", type: arg.text } : undefined; }
       if (drawn?.type) return { kind: "ds1", type: drawn.type };
-      // A factory from a package that is handed path data, as a converted set does.
       if (drawn?.svg || (!fn && init.arguments.some(arg => ts.isArrayLiteralExpression(arg) && /["']path["']|\bd\s*:/.test(arg.getText())))) return { kind: "svg" };
       return undefined;
     }
@@ -615,7 +516,6 @@ export class IconComponents {
     }
     return undefined;
   }
-  /** The module's own icon components, when there are enough of them to call it an icon set. */
   iconSet(path: string): Map<string, IconExport> | null {
     if (this.sets.has(path)) return this.sets.get(path)!;
     const ast = this.ast(path);
@@ -639,7 +539,6 @@ export class IconComponents {
     this.sets.set(path, set);
     return set;
   }
-  /** What an imported name draws, following re-exports (`export *`, `export { X } from`) to the icon set. */
   lookup(path: string | undefined, name: string, depth = 0): IconExport | undefined {
     if (!path || depth > 4) return undefined;
     const own = this.iconSet(path)?.get(name);
@@ -654,7 +553,6 @@ export class IconComponents {
     }
     return undefined;
   }
-  /** JSX uses in one file of components imported from an icon set. */
   uses(file: string, source: string): { component: string; icon: IconExport; line: number }[] {
     if (!/\.[cm]?[jt]sx?$/.test(file)) return [];
     const ast = parsed(file, source);
@@ -684,10 +582,6 @@ export class IconComponents {
   }
 }
 
-// ---------------------------------------------------------------------------
-// The app's icons.
-
-/** Where an app's sources and drawings are, for the stylesheets and SVG files the component scan does not read. */
 export interface IconScope { roots: string[]; include: (file: string) => boolean }
 const STYLESHEET = /\.(?:css|scss|sass|less)$/i;
 function tracked(root: string, ...paths: string[]): string[] {
@@ -695,11 +589,6 @@ function tracked(root: string, ...paths: string[]): string[] {
     return execFileSync("git", ["ls-files", "-z", "--", ...paths], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 50_000_000 }).split("\0").filter(file => file && isFile(join(root, file)));
   } catch { return []; }
 }
-/**
- * Tracked stylesheets in the app's roots. A `design/` or `ds1/` folder at the
- * top of a root is skipped as a DS1 snapshot, unless it holds none of DS1's
- * layers: then it is the app's own stylesheets.
- */
 export function styleSheets(root: string, scope: IconScope): string[] {
   return tracked(root, ...scope.roots).filter(file => {
     if (!STYLESHEET.test(file)) return false;
@@ -711,14 +600,6 @@ export function styleSheets(root: string, scope: IconScope): string[] {
 
 const severity: Record<IconStatus, number> = { shared: 0, local: 1, differs: 2 };
 
-/**
- * Each icon an app names, against today's DS1 drawing. An app that carries a
- * copy of the icon map (beside its DS1 snapshot) is compared drawing by
- * drawing; one without a copy resolves names from DS1 itself. A name DS1
- * does not have is local only, used or merely added to the app's copy.
- * Files, masks and pasted drawings are compared with DS1's drawings by their
- * geometry. A cell takes the status of its furthest site from DS1.
- */
 export function scanIcons(root: string, manifest: string | undefined, files: string[], ds1: Map<string, string>, _ds1Icons?: string, scope?: IconScope): IconAdoption {
   const copyPath = manifest ? join(dirname(manifest), "2-core/generated/ds-icon-map.ts") : null;
   const copy = copyPath ? readIconMap(join(root, copyPath)) : null;
@@ -735,7 +616,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
     return { status: theirs === undefined ? "local" : state === "differs" || state === "missing" ? "differs" : "shared", copy: state };
   };
   const cell = (name: string): IconCell => cells[name] ??= { uses: 0, ...mapState(name), sites: [] };
-  /** A site of `kind` drawing `name`; without a status it draws through the app's icon map. */
   const add = (name: string, site: IconSite, kind: IconKind, status?: IconStatus, ds1Name?: string) => {
     const target = cell(name);
     const state = status ?? mapState(name).status;
@@ -744,7 +624,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
     target.sites.push({ ...site, kind, status: state });
     if (ds1Name && ds1Name !== name && ds1.has(ds1Name)) target.ds1 = ds1Name;
   };
-  /** A drawing named after DS1 when it is one, else after its file: a copy that differs, or local. Logos and codes are pictures. */
   const classify = (svg: string, hint: string, path: string): { name: string; status: IconStatus } | null => {
     const match = drawings.match(svg, hint);
     if (match) return { name: match, status: "shared" };
@@ -755,10 +634,8 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
   const svgs = scope ? tracked(root, "*.svg") : files.filter(file => /\.svg$/i.test(file));
   const sources = [...new Set([...files.filter(file => !/\.svg$/i.test(file)), ...styles])].map(file => ({ file, source: readFileSync(join(root, file), "utf8") }));
   const cssUses = sources.map(({ file, source }) => ({ file, ...styleIconUrls(source) }));
-  // A custom property counts where a mask or background reads it; DS1's .ds-icon reads --ds-icon.
   const consumed = new Set(["--ds-icon", ...cssUses.flatMap(use => [...use.consumed])]);
   const reference = (file: string, url: string, line: number, kind: IconKind) => {
-    // A file named by an expression is a dynamic use, its icon unknown.
     if (url.includes("${") && /\.svg(?:[?#]|$)/i.test(url)) { dynamic.push({ file, line, name: "url()", kind, status: "local" }); return; }
     const data = dataSvg(url);
     if (data !== null) {
@@ -799,7 +676,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
       const resolved = resolveSvg(root, file, use.path, svgs);
       const found = resolved ? classify(resolved.svg, use.name, resolved.path) : null;
       if (found) add(found.name, { ...site, drawing: resolved!.path }, "file", found.status);
-      // A DS1 drawing named by its path still names the icon when the file is not there.
       else if (!resolved && /(?:^|\/)x-icon\/[a-z0-9-]+\.svg$/.test(use.path)) add(use.name, site, "file");
     }
     for (const use of components.uses(file, source)) {
@@ -818,7 +694,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
     for (const use of iconSites(source)) {
       const site = { file, line: use.line, name: use.name ?? (use.inline ? "svg" : "ds-icon") };
       if (use.inline) {
-        // An inline drawing that is a DS1 drawing, pasted, is named; the <svg> wrapped inside it is the same drawing.
         if (use.offset! < named) continue;
         const match = use.svg ? drawings.match(use.svg) : undefined;
         if (match) { add(match, site, "inline", "shared"); named = use.offset! + use.svg!.length; }
@@ -828,7 +703,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
       else add(use.name, site, "element");
     }
   }
-  // Unused copies still matter when they are not DS1's drawing.
   for (const name of copy?.keys() ?? []) {
     if (cells[name]) continue;
     const target = cell(name);
@@ -836,9 +710,6 @@ export function scanIcons(root: string, manifest: string | undefined, files: str
   }
   return { copy: copy ? copyPath : null, cells, dynamic, inline, fonts };
 }
-
-// ---------------------------------------------------------------------------
-// Names of other icon sets that plainly mean a DS1 icon.
 
 const WELL_KNOWN: Record<string, string> = {
   x: "close", "x-mark": "close", xmark: "close", close: "close", cross: "close",
@@ -866,7 +737,6 @@ const WELL_KNOWN: Record<string, string> = {
   share: "shared", wifi: "wifi", "wifi-off": "offline", key: "key", keyboard: "keyboard", video: "video", music: "music", tag: "tag", gift: "gift", shield: "shield",
   "credit-card": "card", wallet: "wallet", "shopping-cart": "cart", cart: "cart", "shopping-bag": "bag", phone: "phone", map: "map", "map-pin": "map",
 };
-/** The DS1 icon an icon set's name obviously means (`x`, `trash-2`, `external-link`), if any. */
 export function wellKnown(name: string): string | undefined {
   const key = kebab(name).replace(/^icon-|-icon$/g, "").replace(/-\d+$/, "");
   return WELL_KNOWN[key];

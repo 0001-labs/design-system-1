@@ -2,7 +2,6 @@ import templates from './consistency-template-pages.json';
 import type { NativeComponents } from './consistency-components';
 import { validateNativePage, type NativePageDocument } from './consistency-native-page';
 
-/** Host metadata surrounds the same page used by published sites. It never defines blocks. */
 export interface WorkspacePage {
   schema: 2;
   kind: 'page';
@@ -15,8 +14,6 @@ const refusal = (): never => { throw new Error('invalid-workspace-page'); };
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : refusal();
 const only = (value: Record<string, unknown>, keys: string[]) => { if (Object.keys(value).some(key => !keys.includes(key))) refusal(); };
 const name = (value: unknown, pattern: RegExp, max: number): string => typeof value === 'string' && value.length <= max && pattern.test(value) ? value : refusal();
-/** No runtime or collection can be supplied by an unregistered private draft. Local images require
- * a future upload registry; absolute HTTP(S) images use the native page's existing URL validator. */
 export function validateWorkspacePage(value: unknown): WorkspacePage {
   const input = object(value);
   only(input, ['schema', 'kind', 'example', 'library', 'fonts', 'page']);

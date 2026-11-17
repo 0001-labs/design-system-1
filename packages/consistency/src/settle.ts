@@ -1,4 +1,3 @@
-/** Pointer release only: translate the final layout into place without scaling text. */
 export class CompositionSettle {
   private animations: Animation[] = [];
   private generation = 0;

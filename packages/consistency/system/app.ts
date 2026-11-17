@@ -7,7 +7,6 @@ import { C9Y_SYSTEM } from './catalogue';
 import { mountC9ySystem } from './view';
 import { mountDatabaseMatrix } from './database-view';
 
-// C9Y System at system.consistency.site: every Consistency component and the client sites built on them.
 const root = document.getElementById('c9y-system');
 if (root) {
   if (location.hostname === 'dash.c9y.site') mountDatabaseMatrix(root);

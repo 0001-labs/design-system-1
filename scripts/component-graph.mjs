@@ -1,19 +1,10 @@
-/** The shared component dependency graph a product copies: each selected component and everything it imports. */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
-/** Components folded into another, named so a product's sync.json says what to take instead (never resolved for it). */
 const RENAMED = { dialog: 'overlay', 'date-picker': 'calendar' };
 
-/**
- * Collects the files under DS1/ that the named components need, keyed by their
- * path inside DS1, with a generated `components.ts` that exports them all.
- * `react: false` leaves the React adapters (`react/*.ts`) out, for a product
- * that uses the Lit elements alone; by default they travel with their components.
- */
 export function componentGraph(ds1, names, { react = true } = {}) {
   const source = resolve(ds1) + '/';
-  // Internal App controls are opt-in Sync 1 inputs, never public package files.
   const appSource = resolve(ds1, '../packages/app/src');
   const actualPath = file => existsSync(resolve(source, file)) ? resolve(source, file) : resolve(appSource, file);
   const exists = path => existsSync(path) || (path.startsWith(source) && existsSync(resolve(appSource, relative(source, path))));
@@ -42,8 +33,6 @@ export function componentGraph(ds1, names, { react = true } = {}) {
     const imports = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s*|@import\s*)["'](\.[^"']+)["']/gm;
     for (const match of content.matchAll(imports)) {
       const base = resolve(dirname(path), match[1].split('?')[0]);
-      // TypeScript's own spelling names a source by its output: `./ds-text.js`
-      // is `./ds-text.ts` when no such script sits beside it.
       const compiled = base.endsWith('.js') ? [base.slice(0, -3) + '.ts'] : [];
       const dependency = [base, ...compiled, `${base}.ts`, `${base}.json`, join(base, 'index.ts')].find(exists);
       if (!dependency) throw new Error(`Unresolved ${match[1]} in ${file}`);
@@ -59,7 +48,6 @@ export function componentGraph(ds1, names, { react = true } = {}) {
     visit(file);
     return file;
   });
-  // React consumers may import the optional, source-owned state adapter.
   const adapter = file => { if (react) visit(file); };
   if (components.includes('spacing-handle')) adapter('react/spacing-handle.ts');
   if (components.includes('loading')) adapter('react/loading.ts');

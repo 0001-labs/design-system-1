@@ -60,7 +60,6 @@ describe("published library provenance", () => {
     write(app, "src/components/page.tsx", 'import { Button } from "../lib/controls";\nexport const Page = () => <><Button /><Button /></>;');
     commit(app);
     const report = scanApp(spec, studio, ds);
-    // Pair renders two marked controls: it is not a wrapper, so its elements count where they are written.
     expect(report.cells.button).toMatchObject({ unverified: 3, local: 0 });
     expect(report.cells.button?.sites.map(site => site.file)).toEqual(["src/lib/controls.tsx", "src/components/page.tsx", "src/components/page.tsx"].sort());
     expect(report.cells.input).toMatchObject({ unverified: 1 });
@@ -110,7 +109,6 @@ describe("Markdown and MDX", () => {
     commit(ds);
     const report = scanApp({ id: "ds", name: "DS", directory: "Design system 1", roots: ["website/src"], source: "direct" }, studio, ds);
     expect(report.status).toBe("scanned");
-    // Heading, paragraph and quote paragraph are prose; the paragraph inside data-ds-not-prose is local.
     expect(report.cells.text).toMatchObject({ styled: 6, local: 2 });
     expect(report.cells.list).toMatchObject({ styled: 2 });
     expect(report.cells.table).toMatchObject({ styled: 2 });

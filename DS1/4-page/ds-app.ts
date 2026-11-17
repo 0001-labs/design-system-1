@@ -10,64 +10,11 @@ import type { PageLayout } from "./ds-page";
 import "./ds-page";
 import styles from "./styles/ds-app.css?inline";
 
-/** An app the name's menu leads to: its name as written, and its address. */
 export interface AppLink {
   name: string;
   href: string;
 }
 
-/**
- * The app frame: one window every 0001 app stands in, edge to edge on the
- * scaled desktop. A top bar two squares high (and the height's leftover, on
- * Desktop aligned, so the panes below end on the window's bottom edge) holds
- * the app's name, what the bar slot gives it and the actions at its end.
- * Under it a `ds-page` fills the rest: navigation, the work and an inspector,
- * each scrolling on its own, with hairlines between them and dividers that
- * resize the navigation and the inspector in whole squares (4–24), remembered
- * per app. On a phone (under 30 squares) the navigation and the actions fold
- * into the page's drawer, opened by a menu button at the bar's end, and the
- * inspector stands under the work; the page is one document scrolling under
- * the bar.
- *
- * It starts the app scale (`app-scale.ts`): Desktop aligned on a computer,
- * fourteen squares on a phone, with the shared components following `--sf`.
- *
- * - `slot="brand"` replaces the name, a link home
- * - `apps` (`{ name, href }[]`, a property or a JSON attribute) lists the apps the name leads to: hovering,
- *   focusing or tapping the name opens them under the bar, the open one marked
- * - `slot="bar"` stands after the name: a breadcrumb, tabs, a search
- * - `slot="actions"` stands at the bar's end: buttons, the account; in the
- *   drawer, under the navigation, on a phone
- * - `slot="nav"` is the navigation, usually one `ds-sidebar`
- * - the default slot is the work, the main landmark unless it is a `<main>`
- * - `slot="aside"` is the inspector beside the work
- * - `slot="header"` and `slot="footer"` run above and below the work
- *
- * An empty area takes no room: an app without navigation or inspector gives
- * the work the window.
- *
- * @element ds-app
- * @attr name - The app's name, at the bar's start.
- * @attr home - Where the name leads, `/` by default.
- * @attr layout - The page's layout, `inspector` by default (navigation, work and inspector, each optional).
- * @attr nav-width - The navigation's width in whole squares (4–24), 12 by default.
- * @attr aside-width - The inspector's width in whole squares (4–24), 12 by default.
- * @attr resize-key - Where the widths are remembered; `ds-app:<name>` by default.
- * @attr drawer-label - The drawer's name, the shared word "Menu" by default.
- * @attr fixed-scale - Leaves the page's scale to the app (no app scale).
- * @attr flush - The work runs to its pane's edges; the navigation and the inspector keep their room.
- * @attr flow - The page is the document: the window scrolls it under a bar that stays at the top, for a site or an app whose pages scroll with the window.
- * @csspart bar - The top bar.
- * @csspart brand - The name's link.
- * @csspart switch - The name and its apps, with `apps`.
- * @csspart apps - The apps under the name.
- * @csspart actions - The actions' place at the bar's end, on a computer.
- * @csspart menu - The phone's menu button, at the bar's end; it opens the navigation's drawer.
- * @csspart page - The `ds-page` under the bar.
- * @csspart nav - The page's navigation pane (and `header`, `main`, `aside`, `footer`, `drawer`, `resize`, `resize-aside`: the page's own parts, passed on).
- * @fires ds-page-drawer - From the page: the drawer opened or closed (`detail.open`).
- * @fires ds-page-resize - From the page: a divider moved (`detail.navWidth`, `detail.asideWidth`).
- */
 export class App extends LitElement {
   static properties = {
     name: { type: String, reflect: true },
@@ -123,7 +70,6 @@ export class App extends LitElement {
   }
 
   private readonly relabel = () => this.requestUpdate();
-  /** Where the page folds its navigation away (its container under 600px), the actions go with it. */
   private readonly measure = () => {
     const width = this.getBoundingClientRect().width;
     if (!width) return;
@@ -152,23 +98,19 @@ export class App extends LitElement {
     super.disconnectedCallback();
   }
 
-  /** The page under the bar, for its drawer (`openDrawer`, `closeDrawer`). */
   get page() {
     return this.renderRoot?.querySelector("ds-page") ?? null;
   }
 
-  /** Settles once the frame and the page under its bar have both drawn: what is slotted then stands in its place. */
   protected async getUpdateComplete(): Promise<boolean> {
     const done = await super.getUpdateComplete();
     await this.page?.updateComplete;
     return done;
   }
 
-  /** The navigation's drawer, on a phone. */
   openDrawer(): void { this.page?.openDrawer(); }
   closeDrawer(): void { this.page?.closeDrawer(); }
 
-  /** Back to the top of the work, as a new place opens: its pane on a computer, the page on a phone. */
   scrollToStart(): void {
     if (this.flow) { window.scrollTo({ top: 0, left: 0 }); return; }
     const page = this.page;
@@ -197,7 +139,6 @@ export class App extends LitElement {
     else this.appsOpen = false;
   };
 
-  /** The name, and the apps beside it on a hover, a focus or a tap: each a link, the one open marked. */
   private switcher() {
     const here = typeof location === "undefined" ? "" : location.origin;
     const label = getText("Apps") || "Apps";
@@ -239,7 +180,6 @@ export class App extends LitElement {
 
   render() {
     const menu = getText(this.drawerLabel || "Menu") || this.drawerLabel || "Menu";
-    /* The menu's icons are drawn only with the menu, so a frame without one never asks for the deferred icon set. */
     const menuShown = this.hasNav || (this.narrow && this.hasActions);
     return html`
       <header class="bar" part="bar">

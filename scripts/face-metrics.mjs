@@ -1,6 +1,3 @@
-// Measures Google faces for DS1/0-face/google-face-metrics.json, which face-correction.ts puts on the sixteen.
-// `node scripts/face-metrics.mjs` measures every face already listed again; `node scripts/face-metrics.mjs
-// "Family" …` adds or measures those. Without a browser's user agent, css2 answers with TrueType files.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { readFaceMetrics } from '../DS1/0-face/face-correction.ts';
 

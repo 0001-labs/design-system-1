@@ -1,7 +1,4 @@
 // @vitest-environment happy-dom
-// Cut words fade over their last square, never an ellipsis (0-face/cut-fade.ts): an element is
-// marked `data-cut="end"` only while its words are wider than its box, and no stylesheet in DS1
-// ends cut words with an ellipsis.
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -13,10 +10,8 @@ await import("../DS1/2-core/ds-tag");
 
 afterEach(() => document.body.replaceChildren());
 
-/** Every watcher measures in the next frame, all together. */
 const frame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
-/** happy-dom has no layout: stand in for the measures a browser would give. */
 function measures(element: Element, scroll: number, client: number) {
   Object.defineProperty(element, "scrollWidth", { value: scroll, configurable: true });
   Object.defineProperty(element, "clientWidth", { value: client, configurable: true });
@@ -26,7 +21,6 @@ const DS1 = join(import.meta.dirname, "../DS1");
 function files(dir: string, found: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
-    // VisualKit draws another platform's chrome, which ends cut words as that platform does.
     if (name === "generated" || name === "x-icon" || name === "node_modules" || name === "5-visual-kit") continue;
     if (statSync(path).isDirectory()) files(path, found);
     else if (/\.(css|ts)$/.test(name)) found.push(path);
@@ -47,7 +41,6 @@ test("every fade is the one rule: a mask over the last square, only where marked
     const css = readFileSync(join(DS1, path), "utf8");
     expect(css, path).toContain(fade);
     expect(css, path).toContain("mask-image: linear-gradient(to left, #000 calc(100% - var(--ds-unit)), transparent)");
-    // The fade is drawn only under the mark.
     for (const rule of css.match(/[^{}]+\{[^}]*mask-image: linear-gradient\(to (right|left), #000 calc\(100% - var\(--ds-unit\)\)[^}]*\}/g) ?? []) {
       expect(rule.slice(0, rule.indexOf("{")), path).toContain('[data-cut="end"]');
     }
@@ -133,7 +126,6 @@ test("the watcher marks what a selector finds at each measure, and lets go when 
   measures(second, 100, 50);
   document.body.append(second);
   watcher.measure();
-  // Nothing is read until the frame, where every watcher measures together.
   expect(first.hasAttribute("data-cut")).toBe(false);
   await frame();
   expect(first.getAttribute("data-cut")).toBe("end");

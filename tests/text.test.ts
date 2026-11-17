@@ -19,7 +19,6 @@ afterEach(() => document.body.replaceChildren());
 test('tone, size, strength and wrapping are not limited to literal text', () => {
   for (const selector of [':host([strong])', ':host([wrap])', ':host([tone="muted"])', ':host([tone="title"])', ':host([tone="danger"])', ':host([tone="warning"])', ':host([size="small"])', ':host([size="heading"])', ':host([size="display"])']) rule(selector);
   expect(css).not.toMatch(/:host\(\[literal\]\[(?:tone|size|strong|wrap)/);
-  // The modifiers follow the literal rule at the same specificity, so they win.
   expect(css.indexOf(':host([literal]) {')).toBeLessThan(css.indexOf(':host([strong]) {'));
   expect(rule(':host')).toContain('color: var(--ds-text-tone, inherit)');
 });

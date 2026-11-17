@@ -2,7 +2,6 @@ import { describe, expect, test } from "vite-plus/test";
 import { LANGUAGES } from "../DS1/0-face/languages";
 import { languageValidator, languageValidatorFor } from "../DS1/0-face/language-validator";
 
-// What Convex checks a union of literals against: one of its members' values
 function accepts(validator: { members: { value: unknown }[] }, value: unknown): boolean {
   return validator.members.some((member) => member.value === value);
 }

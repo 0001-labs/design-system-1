@@ -17,7 +17,6 @@ import "../SignIn";
 import { builderMarkup } from "./markup";
 import "./icon-builder.css";
 
-/** The badge and favicon builder, for the owner alone on icon.designsystem1.com. */
 export class IconBuilder extends AppElement {
   #session = new OwnerSession(this, "Icon builder · Design system 1");
 
@@ -33,7 +32,6 @@ export class IconBuilder extends AppElement {
 }
 defineElement("ds1-icon-builder", IconBuilder);
 
-/** The builder itself: its markup, wired by the editor module as it loads, once per page. */
 export class IconStudio extends AppElement {
   static properties = { signOut: { attribute: false } };
   declare signOut: () => Promise<void>;
