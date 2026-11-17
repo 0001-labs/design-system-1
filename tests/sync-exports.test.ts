@@ -1,4 +1,6 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 import config from '../sync.exports.mjs';
@@ -241,4 +243,34 @@ test('documentation adapters import the consumer components and preserve named w
   expect(String(copied['frame.astro'])).toContain("{...{ slot: 'nav' }}");
   expect(String(copied['columns.astro'])).toContain("{...{ slot: 'aside' }}");
   expect(() => files('documentation', {})).toThrow('componentPath');
+});
+
+const built = 'dist/design-system-1.bundle.min.js';
+test.skipIf(!existsSync(join(root, built)))('the bundle export carries the built components and every chunk they reach', () => {
+  const copy = exports.bundle.files({ read, options: {}, exists: (path: string) => existsSync(join(root, path)) } as never) as Map<string, string>;
+  expect(copy.has('design-system-1.js')).toBe(true);
+  for (const [file, text] of copy) {
+    // No map is copied, so no line points at one.
+    expect(text, file).not.toMatch(/sourceMappingURL/);
+    // Every chunk a file imports, now or on demand, is beside it.
+    for (const [, chunk] of text.matchAll(/(?:from\s*|import\s*\(\s*)["']\.\/([^"']+\.js)["']/g)) expect(copy.has(chunk!), `${file} imports ${chunk}`).toBe(true);
+  }
+  // Only what the bundle reaches: another entry's copy of Lit stays out.
+  const lits = [...copy.keys()].filter(file => file.startsWith('lit-'));
+  expect(lits).toHaveLength(1);
+});
+
+test('the library-prepare export writes the component tokens after a library\'s own, with no dependencies', async () => {
+  const copy = await (exports['library-prepare'].files as unknown as () => Promise<Record<string, string>>)();
+  const script = copy['prepare-library.mjs']!;
+  expect(script.startsWith('#!/usr/bin/env node')).toBe(true);
+  // One file: run alone from an empty folder, so nothing it needs can come from beside it or a package.
+  const dir = mkdtempSync(join(tmpdir(), 'ds1-prepare-'));
+  writeFileSync(join(dir, 'prepare-library.mjs'), script);
+  const css = execFileSync(process.execPath, [join(dir, 'prepare-library.mjs'), '-'], { input: ':root {\n  --one-accent-color: #005ce6;\n  --one-radius: 2px;\n}\n' }).toString();
+  expect(css).toContain('--ds-accent-color: var(--one-accent-color);');
+  expect(css).toContain('--ds-corner-size: var(--one-radius);');
+  expect(css).toContain('--ds-card-corner-size: var(--one-radius);');
+  // Preparing a prepared library gives the same library.
+  expect(execFileSync(process.execPath, [join(dir, 'prepare-library.mjs'), '-'], { input: css }).toString()).toBe(css);
 });

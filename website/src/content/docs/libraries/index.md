@@ -38,3 +38,19 @@ Name the library and version under Design system 1 in the product's `sync.json` 
 Sync 1 fetches that version, checks it against the hash the publish recorded and its stamp, and copies it unchanged to `ds1-library/<id>/v/4.css` with `ds1-library/library-manifest.json` (its address, revision and sha256). `sync.lock.json` records both files' hashes at the Design system 1 commit, and `sync1 check` fails if either is edited. `"sha256"` also checks the version against a hash you name; `"styles": false` leaves out the run-time connector, `library-styles.ts`, for a `to` in `public/`. Import the copy as any stylesheet. To move to a new version, change `version` and run `sync1`.
 
 A version published before publishing stamped libraries cannot be pinned: publish the library again and pin the new version.
+
+## Keep a library as a file
+
+A product can also keep its library as a file it edits itself and prepare it as publishing does. Take `library-prepare` under Design system 1 in its `sync.json`:
+
+```json
+{ "library-prepare": { "to": "tools/design" } }
+```
+
+Sync 1 copies one Node script with no dependencies, `prepare-library.mjs`. The draft sets only the library's own `--one-*` tokens; the script writes, after each one, the `--ds-*` component tokens that follow it, the link-as-button faces and the revision stamp:
+
+```sh
+node tools/design/prepare-library.mjs library.css > public/library.css
+```
+
+`-` reads the draft from standard input. Preparing a prepared library gives the same library. When the components take a new library token, the next `sync1` brings it, and preparing the draft again writes it.

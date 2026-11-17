@@ -7,6 +7,7 @@ import { resolve as resolveNativeClient } from 'node:path';
  * sync.json; never edit the copies, change them here and sync.
  */
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { join, posix } from 'node:path';
 import { componentGraph } from './scripts/component-graph.mjs';
 import { applePackage } from './scripts/native-apple.mjs';
@@ -103,6 +104,25 @@ function moduleGraph(read, entry) {
   return files;
 }
 
+/**
+ * The built bundle and every chunk it reaches, static and on demand, by name beside it, with the
+ * lines pointing at source maps taken out (the maps are not copied).
+ */
+function bundleFiles(read, entry) {
+  const dist = posix.dirname(entry);
+  const strip = text => String(text).replace(/\n?\/\/# sourceMappingURL=\S*\s*$/, '\n');
+  const files = new Map();
+  const queue = [[posix.basename(entry), 'design-system-1.js']];
+  while (queue.length) {
+    const [name, as] = queue.shift();
+    if (files.has(as)) continue;
+    const text = strip(read(`${dist}/${name}`));
+    files.set(as, text);
+    for (const [, chunk] of text.matchAll(/(?:from\s*|import\s*\(\s*)["']\.\/([^"']+\.js)["']/g)) queue.push([chunk, chunk]);
+  }
+  return files;
+}
+
 export default {
   exports: {
     /** Native page publication: the editor's Aa parser and closed content atoms, without DOM. */
@@ -153,6 +173,36 @@ export default {
           'aa/parse.js': read('website/src/vendor/aa/parse.js'),
           ...Object.fromEntries([...tree('website/src/vendor/aa', { only: /^[^/]+\.d\.ts$/ })].map(([path, content]) => [`aa/${path}`, content])),
         };
+      },
+    },
+    /**
+     * The built components for a page without a bundler: `design-system-1.js` registers every
+     * `ds-*` element, Lit included, and the chunks it loads on demand travel beside it. It is built
+     * before the copy (`vp run build:bundle`); the folder belongs to the copy, so a chunk a later
+     * build renames goes with it.
+     */
+    bundle: {
+      owned: true,
+      build: ({ run }) => run('vp', ['run', 'build:bundle']),
+      files({ read, exists }) {
+        const entry = 'dist/design-system-1.bundle.min.js';
+        if (!exists(entry)) throw new Error('Design system 1 is not built: run vp run build:bundle');
+        return bundleFiles(read, entry);
+      },
+    },
+    /**
+     * Prepares a design library as publishing does (packages/css-validate/src/library.ts), for a
+     * product that keeps its libraries as files: `prepare-library.mjs`, one Node script with no
+     * dependencies. `node prepare-library.mjs draft.css > library.css` writes, after each
+     * `--one-*` token, the `--ds-*` component token that follows it, so a library sets only its own
+     * tokens and takes every new bridge with the next copy.
+     */
+    'library-prepare': {
+      async files() {
+        const script = await bundleNativeClient({ absWorkingDir: import.meta.dirname, entryPoints: [resolveNativeClient(import.meta.dirname, 'packages/css-validate/src/prepare-library-cli.ts')], bundle: true,
+          // css-tree's module build loads its data with createRequire at run time; its CommonJS build requires it statically, so the data is bundled in.
+          alias: { 'css-tree': createRequire(resolveNativeClient(import.meta.dirname, 'packages/css-validate/package.json')).resolve('css-tree') }, format: 'esm', platform: 'node', target: 'node20', write: false, banner: { js: '#!/usr/bin/env node' } });
+        return { 'prepare-library.mjs': script.outputFiles[0].text };
       },
     },
     /** Approved documentation artwork; components are selected separately through components. */
