@@ -186,6 +186,28 @@ export const constraints: Constraint[] = [
   },
 
   {
+    code: 'select.arrow-room',
+    rule: "A select's chosen words never run under its arrow: the arrow stays inside the room the field keeps for it, at every control height.",
+    why: 'A library may make controls taller; the arrow is an icon and keeps its size, so the words beside it stay whole.',
+    components: ['ds-select'],
+    check: { file: 'tests/select-arrow.test.ts', test: 'the select arrow stays clear of the chosen words at every control height' },
+    measures: ['select', 'selects'],
+    count: root => root.querySelectorAll('ds-select[data-field]:not([data-listbox])').length,
+    inspect: root => Array.from(root.querySelectorAll<HTMLElement>('ds-select[data-field]:not([data-listbox])')).flatMap(element => {
+      const select = element.querySelector<HTMLElement>('select');
+      const arrow = element.shadowRoot?.querySelector<HTMLElement>('.arrow:not([hidden])');
+      if (!select || !arrow) return [];
+      const field = select.getBoundingClientRect(), mark = arrow.getBoundingClientRect();
+      if (!field.width || !mark.width) return [];
+      // The words end where the field's padding begins; the arrow must start at or after it.
+      const wordsEnd = field.right - (Number.parseFloat(styleOf(select).paddingRight) || 0);
+      return mark.left < wordsEnd - 0.5
+        ? [{ element, message: `The arrow starts ${px(wordsEnd - mark.left)} inside the chosen words; keep it in the field's own room.` }]
+        : [];
+    }),
+  },
+
+  {
     code: 'button.visible-label',
     rule: 'Button labels stay fully visible, never faded, gradient-masked or truncated; round the required width up to whole grid squares.',
     why: 'The action must remain readable; a chosen width cannot cut off its label.',

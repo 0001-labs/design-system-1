@@ -48,14 +48,16 @@
   box-shadow: none !important;
   cursor: pointer !important;
 }
+/* The arrow is a 16px icon, as the list's check and marks are, never as high as the control: the field
+   keeps one square for it, so a taller control (a library's) still leaves the chosen words clear of it. */
 .arrow {
   position: absolute;
   pointer-events: none;
   inset-inline-end: calc(2px * var(--ds-sf));
   top: 50%;
   transform: translateY(-50%);
-  width: var(--ds-control-height);
-  height: var(--ds-control-height);
+  width: calc(16px * var(--ds-sf));
+  height: calc(16px * var(--ds-sf));
   background: var(--ds-input-color);
   mask: var(--ds-select-arrow) center / contain no-repeat;
 }

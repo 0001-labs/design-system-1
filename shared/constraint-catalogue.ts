@@ -2,6 +2,7 @@ import { constraints } from '../DS1/0-face/constraints';
 
 /** Permanent catalogue identities. Never renumber or reuse an ID when a rule is retired. */
 export const CONSTRAINT_IDENTITIES: Record<string, { id: string; tag: string }> = {
+  'select.arrow-room': { id: 'C015', tag: 'Arrow room' },
   'window.shape': { id: 'C014', tag: 'Window shape' },
   'overlay.escape-close': { id: 'C013', tag: 'Escape closes sheets' },
   'table.uniform-text': { id: 'C012', tag: 'Uniform table text' },

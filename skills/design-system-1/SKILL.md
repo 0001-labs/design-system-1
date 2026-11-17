@@ -411,6 +411,7 @@ The small rules every component keeps, each a sentence with a code that never ch
 **Select** (`ds-select`)
 
 - `select.hug`: Select and date-picker triggers use hug sizing, never fill sizing or growing to occupy the available row.
+- `select.arrow-room`: A select's chosen words never run under its arrow: the arrow stays inside the room the field keeps for it, at every control height. A library may make controls taller; the arrow is an icon and keeps its size, so the words beside it stay whole.
 
 **Button** (`ds-button`)
 
