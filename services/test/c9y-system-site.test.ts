@@ -168,3 +168,25 @@ describe('C9Y System build on other hosts', () => {
     expect(response.headers.get('location')).toBe('/auth/start?silent=1&next=%2Fmap');
   });
 });
+
+it('limits the database matrix and same-origin label edits to the dash owner', async () => {
+  const { env, tokens } = setup();
+  tokens.set('owner-test-token', 'system-owner');
+  const forward = vi.fn(async (_request: Request) => Response.json({ ok: true }));
+  const dashboard = 'https://dash.c9y.site';
+  const path = '/api/consistency/database-matrix';
+  const label = '/api/consistency/sites/12AbCd/capability-labels/products';
+  const owner = { Cookie: '__Host-c9y_owner=owner-test-token' };
+  const visit = (url: string, init?: RequestInit) =>
+    c9ySystemSite(new Request(url, init), { ...env, CONSISTENCY_WORKSPACE: { fetch: forward } as unknown as Fetcher });
+  expect((await visit(dashboard + '/database')).headers.get('location')).toBe('/auth/start?silent=1&next=%2Fdatabase');
+  expect(new URL((await visit(dashboard + '/auth/start')).headers.get('location')!).searchParams.get('client')).toBe('c9y-dash');
+  expect((await visit(dashboard + path)).status).toBe(401);
+  expect((await visit(origin + path, { headers: owner })).status).toBe(404);
+  expect((await visit(dashboard + label, { method: 'PUT', headers: { ...owner, Origin: origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(403);
+  expect(forward).not.toHaveBeenCalled();
+  expectPrivate(await visit(dashboard + path, { headers: owner }));
+  expect((await visit(dashboard + label, { method: 'PUT', headers: { ...owner, Origin: dashboard, 'Content-Type': 'application/json' }, body: '{"label":"Goods","revision":0}' })).status).toBe(200);
+  expect(forward.mock.calls[1]?.[0].headers.get('X-C9y-Actor')).toBe('owner');
+  expect(forward.mock.calls[1]?.[0].headers.get('Cookie')).toBeNull();
+});

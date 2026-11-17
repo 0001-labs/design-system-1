@@ -3,7 +3,7 @@ import { consistencyAI, type PreviewAIEnv } from "./consistency-ai";
 import { consistencyPreview, isConsistencyHost, type WorkspaceEnv, isEditorBuildPath } from "./consistency";
 import { appNavigation } from './app-navigation';
 import { systemSite, SYSTEM_HOST } from "./system-site";
-import { c9ySystemSite, C9Y_SYSTEM_HOST, isC9ySystemPath } from "./c9y-system-site";
+import { c9ySystemSite, C9Y_DASH_HOST, C9Y_SYSTEM_HOST, isC9ySystemPath } from "./c9y-system-site";
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { dashboard, sessionRequest, DASHBOARD_HOST, ICON_HOST } from "./dashboard";
 import { filterDocExamples, listExamples, setExample } from './doc-examples';
@@ -40,7 +40,7 @@ export default {
       return new Response(null, { status: 308, headers: { Location: url.href, "Cache-Control": "no-store" } });
     }
     if (url.hostname === SYSTEM_HOST) return systemSite(request, env);
-    if (url.hostname === C9Y_SYSTEM_HOST) return c9ySystemSite(request, env);
+    if (url.hostname === C9Y_SYSTEM_HOST || url.hostname === C9Y_DASH_HOST) return c9ySystemSite(request, env);
     // C9Y System's build is the System owner's, on its own host only; never public assets elsewhere.
     if (isC9ySystemPath(url.pathname)) return new Response("Not found", { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } });
     if (/^\/system-(?:data|previews)\//i.test(decodeURIComponent(url.pathname))) return new Response("Not found", { status: 404 });

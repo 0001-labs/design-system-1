@@ -6,6 +6,9 @@
 import { ownerRoutes, ownerSignOut, systemOwner, type OwnerEnv } from './consistency-owner';
 
 export const C9Y_SYSTEM_HOST = 'system.consistency.site';
+export const C9Y_DASH_HOST = 'dash.c9y.site';
+const databaseApi = '/api/consistency/database-matrix';
+const labelApi = /^\/api\/consistency\/sites\/\d{2}[A-Za-z]{4}\/capability-labels\/[a-z]+$/;
 const base = '/private-c9y-system/';
 const security = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'same-origin', 'X-Content-Type-Options': 'nosniff', Vary: 'Cookie' };
 /** The page's own addresses; each serves the one built page, which routes itself. */
@@ -33,9 +36,10 @@ export function isC9ySystemPath(path: string): boolean {
   return canonical.startsWith(base.slice(0, -1));
 }
 
-export async function c9ySystemSite(request: Request, env: OwnerEnv & { ASSETS: Fetcher }): Promise<Response> {
+export async function c9ySystemSite(request: Request, env: OwnerEnv & { ASSETS: Fetcher; CONSISTENCY_WORKSPACE?: Fetcher }): Promise<Response> {
   const url = new URL(request.url);
-  if (url.hostname !== C9Y_SYSTEM_HOST || url.protocol !== 'https:') return answer(404);
+  const dashboard = url.hostname === C9Y_DASH_HOST;
+  if ((!dashboard && url.hostname !== C9Y_SYSTEM_HOST) || url.protocol !== 'https:') return answer(404);
   const signingIn = await ownerRoutes(request, env);
   if (signingIn) return protect(signingIn);
   // System refused out loud (the owner cancelled): no sign-in page here, so say so instead of asking again.
@@ -50,9 +54,23 @@ export async function c9ySystemSite(request: Request, env: OwnerEnv & { ASSETS: 
     if (cleared.value) response.headers.append('Set-Cookie', cleared.value);
     return response;
   }
+  const matrix = url.pathname === databaseApi;
+  const label = labelApi.test(url.pathname);
+  if (dashboard && (matrix || label)) {
+    if (request.method !== (matrix ? 'GET' : 'PUT')) return answer(405);
+    if (label && (request.headers.get('Origin') !== url.origin || request.headers.get('Content-Type')?.split(';')[0] !== 'application/json')) return answer(403);
+    if (!(await systemOwner(request, env))) return answer(401);
+    if (!env.CONSISTENCY_WORKSPACE) return answer(503);
+    const body = label ? await request.text() : null;
+    if (body !== null && body.length > 2_000) return answer(413);
+    const headers = { 'X-C9y-Actor': 'owner', 'Content-Type': 'application/json' };
+    return protect(await env.CONSISTENCY_WORKSPACE.fetch(new Request('https://workspace.internal' + url.pathname, {
+      method: request.method, headers, body,
+    })));
+  }
   if (!['GET', 'HEAD'].includes(request.method)) return answer(404);
   const path = url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : url.pathname;
-  const page = isPage(path);
+  const page = dashboard ? path === '/' || path === '/database' : isPage(path);
   if (!page && !isAsset(url.pathname)) return answer(404);
   if (!(await systemOwner(request, env))) {
     // Ask System quietly first: signed in there, signed in here, back on the same page.

@@ -5,7 +5,11 @@ import '../../../DS1/2-core/ds-button';
 import './style.css';
 import { C9Y_SYSTEM } from './catalogue';
 import { mountC9ySystem } from './view';
+import { mountDatabaseMatrix } from './database-view';
 
 // C9Y System at system.consistency.site: every Consistency component and the client sites built on them.
 const root = document.getElementById('c9y-system');
-if (root) mountC9ySystem(root, C9Y_SYSTEM);
+if (root) {
+  if (location.hostname === 'dash.c9y.site') mountDatabaseMatrix(root);
+  else mountC9ySystem(root, C9Y_SYSTEM);
+}

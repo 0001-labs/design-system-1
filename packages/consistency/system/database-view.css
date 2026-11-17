@@ -1,0 +1,40 @@
+.database-matrix-frame { overflow: auto; }
+.database-matrix { min-width: max-content; }
+.database-matrix .c9y-matrix-row small { padding-inline-start: 4px; }
+.database-matrix .c9y-matrix-group { background: var(--ds-fill); color: var(--ds-text-color); }
+.database-matrix .c9y-matrix-column { height: calc(7 * var(--u)); }
+.database-matrix td { background: var(--ds-paper); }
+.database-matrix td[data-selected] { outline: 1px solid var(--ds-text-color); outline-offset: -1px; }
+.database-cell {
+  width: calc(var(--u) - 1px);
+  height: calc(var(--u) - 1px);
+  display: grid;
+  place-items: center;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-text-color);
+  cursor: pointer;
+}
+.database-cell:focus-visible { outline: 2px solid var(--ds-text-color); outline-offset: -2px; }
+.database-cell:hover { background: var(--ds-fill); }
+.database-matrix [data-state] i, .database-key [data-state] i {
+  display: inline-block;
+  width: calc(var(--u) / 2);
+  height: calc(var(--u) / 2);
+  color: var(--ds-text-color);
+}
+[data-state="shared"] i { background: currentColor; }
+[data-state="local"] i { border: 1px solid currentColor; }
+[data-state="waiting"] i { border: 1px dashed currentColor; }
+.database-matrix [data-state="unknown"] i, .database-key [data-state="unknown"] i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.database-matrix [data-state="unused"] i, .database-key [data-state="unused"] i {
+  height: 1px;
+  background: var(--ds-border-color);
+}

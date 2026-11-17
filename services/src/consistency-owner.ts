@@ -23,7 +23,7 @@ export const OWNER_COOKIE = '__Host-c9y_owner';
 export const PENDING_COOKIE = '__Host-c9y_pending';
 const SYSTEM = 'https://system.0001.dev';
 /** The System client each origin signs in as; any other origin has no owner sign-in here. */
-const CLIENTS: Record<string, string> = { 'https://c9y.site': 'c9y', 'https://consistency.site': 'c9y-app', 'https://system.consistency.site': 'c9y-system' };
+const CLIENTS: Record<string, string> = { 'https://c9y.site': 'c9y', 'https://consistency.site': 'c9y-app', 'https://system.consistency.site': 'c9y-system', 'https://dash.c9y.site': 'c9y-dash' };
 const PENDING_TTL = 600_000;
 /** A same-origin path to return to after signing in (`/auth/start?next=`); anything else returns to `/`. */
 const returnPath = (value: unknown) => typeof value === 'string' && /^\/(?![/\\])[A-Za-z0-9._~/-]{0,200}$/.test(value) && !value.includes('/..') ? value : undefined;
