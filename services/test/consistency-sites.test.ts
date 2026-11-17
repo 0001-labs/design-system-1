@@ -205,22 +205,18 @@ it('takes a write to the API as same-origin JSON within its bound: the engine\'s
   expect(put.headers.get('x-content-type-options')).toBe('nosniff');
 });
 
-it('answers email flows to the owner alone, and only while their flag is on', async () => {
-  const { call, workspace } = setup();
+it('answers email flows to the owner alone', async () => {
+  const { call } = setup();
   expect(apiRoute('emails/flows')?.methods).toEqual(['GET', 'PUT']);
-  // The flag store is missing here, which reads as Off.
-  expect((await call('10VNDG/api/emails/flows', { headers })).status).toBe(404);
-  expect(workspace.fetch).not.toHaveBeenCalled();
+  expect(await (await call('10VNDG/api/emails/flows', { headers })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/emails/flows', method: 'GET' });
   const other = setup('other');
   expect((await other.call('10VNDG/api/emails/flows', { headers })).status).toBe(403);
   const { sitesApi } = await import('../src/consistency-sites');
   const env = { CONSISTENCY_WORKSPACE: { fetch: vi.fn(async (request: Request) => Response.json({ path: new URL(request.url).pathname, method: request.method })) } } as never;
   const owner = async () => ({ owner: true }) as const, member = async () => ({ owner: false, email: 'm@example.com' }) as const;
-  const ask = (person: typeof owner | typeof member, on: boolean, init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/emails/flows`, init), env, person, async () => on);
-  expect((await ask(member, true)).status).toBe(404);
-  expect((await ask(owner, false)).status).toBe(404);
-  expect(await (await ask(owner, true)).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/emails/flows', method: 'GET' });
-  expect((await ask(owner, true, { method: 'PUT', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(200);
+  const ask = (person: typeof owner | typeof member, init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/emails/flows`, init), env, person);
+  expect((await ask(member)).status).toBe(404);
+  expect((await ask(owner, { method: 'PUT', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(200);
 });
 
 it('Site settings\' badge is a same-origin JSON write passed to the platform, and nothing but PUT', async () => {
@@ -237,26 +233,22 @@ it('Site settings\' badge is a same-origin JSON write passed to the platform, an
   expect([passed.method, new URL(passed.url).pathname, await passed.text()]).toEqual(['PUT', '/api/consistency/sites/10VNDG/badge', '{"show":true}']);
 });
 
-it('answers a site\'s meetings to the owner alone, and only while their flag is on', async () => {
-  const { call, workspace } = setup();
+it('answers a site\'s meetings to the owner alone', async () => {
+  const { call } = setup();
   expect(apiRoute('meetings')?.methods).toEqual(['GET', 'PUT']);
   expect(apiRoute('meetings/google')?.methods).toEqual(['POST', 'DELETE']);
   expect(apiRoute('meetings/google/callback')?.methods).toEqual(['POST']);
   expect(apiRoute('meetings/tokens')).toBeNull();
-  // The flag store is missing here, which reads as Off.
-  expect((await call('10VNDG/api/meetings', { headers })).status).toBe(404);
-  expect(workspace.fetch).not.toHaveBeenCalled();
+  expect(await (await call('10VNDG/api/meetings', { headers })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings', method: 'GET' });
   const { sitesApi } = await import('../src/consistency-sites');
   const env = { CONSISTENCY_WORKSPACE: { fetch: vi.fn(async (request: Request) => Response.json({ path: new URL(request.url).pathname, method: request.method })) } } as never;
   const owner = async () => ({ owner: true }) as const, member = async () => ({ owner: false, email: 'm@example.com' }) as const;
-  const ask = (person: typeof owner | typeof member, on: boolean, route = 'meetings', init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/${route}`, init), env, person, async () => false, async () => on);
-  expect((await ask(member, true)).status).toBe(404);
-  expect((await ask(owner, false)).status).toBe(404);
-  expect((await ask(owner, false, 'meetings/google/callback', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(404);
-  expect(await (await ask(owner, true)).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings', method: 'GET' });
-  expect(await (await ask(owner, true, 'meetings/google', { method: 'DELETE', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings/google', method: 'DELETE' });
+  const ask = (person: typeof owner | typeof member, route = 'meetings', init: RequestInit = {}) => sitesApi(new Request(`${origin}/api/consistency/sites/10VNDG/api/${route}`, init), env, person);
+  expect((await ask(member)).status).toBe(404);
+  expect((await ask(member, 'meetings/google/callback', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(404);
+  expect(await (await ask(owner, 'meetings/google', { method: 'DELETE', headers: { origin, 'Content-Type': 'application/json' }, body: '{}' })).json()).toEqual({ path: '/api/consistency/sites/10VNDG/api/meetings/google', method: 'DELETE' });
   // A write from another origin never reaches the platform.
-  expect((await ask(owner, true, 'meetings/google', { method: 'POST', headers: { origin: 'https://elsewhere.example', 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(403);
+  expect((await ask(owner, 'meetings/google', { method: 'POST', headers: { origin: 'https://elsewhere.example', 'Content-Type': 'application/json' }, body: '{}' })).status).toBe(403);
 });
 
 it('hands Google\'s return on to the app, naming the site its state opens with', async () => {

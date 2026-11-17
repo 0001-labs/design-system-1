@@ -93,19 +93,6 @@
       "packages/consistency/src/vendor/drag/util.ts": "20ea31f691c42d2b127fbb4d9ac565f1abd19323e64fc4ab64fb7c7f42640ba9"
     }
   },
-  "Feature flags": {
-    "commit": "8f88a640b365d76cae72a2fd674ced2779221997",
-    "version": null,
-    "owned": ["shared/feature-flags-runtime"],
-    "files": {
-      "shared/feature-flags-runtime/README.md": "0c9e8d80c6bcacd1675f5cb7e528b8cc9ed84c6bfe3489017e97ad39ee6f7e99",
-      "shared/feature-flags-runtime/audience.ts": "2b485b7112b88755546b810be56eb515c90865687e6a160dcf5d00a66947ae9d",
-      "shared/feature-flags-runtime/index.ts": "a022e435ac1f777678ad4686c4bc8d91a5813c0144f186670f90d8b7bad5cb92",
-      "shared/feature-flags-runtime/manage.ts": "9c2f5b4820b38c7d1116d9695e9cc5ec328433fd0b4a1f39ea0396ccde800ba7",
-      "shared/feature-flags-runtime/matrix.css": "3a8d2fd710cb7af2bf755e2b77b35225cd5d2ad2b68ecae3fe92e9cbbc0ac3b4",
-      "shared/feature-flags-runtime/matrix.ts": "4905fbdd8f7a54b3e0f84a25b9a13c326f70c0845df8705b1a6488d96c4134dc"
-    }
-  },
   "Feedback loop": {
     "commit": "382e7be1afba9137c75157ff35d6ec0a82758c00",
     "version": null,

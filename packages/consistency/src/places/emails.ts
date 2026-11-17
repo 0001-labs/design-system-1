@@ -12,7 +12,7 @@
  * focus again, drawn first from the last read.
  *
  * Flows, the third tab, is the email flow designer (`email-flows.ts`): shown only when the site answers its flows,
- * which it does for the owner while `consistency-email-flows` is on.
+ * which it does for the owner.
  */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';
@@ -61,7 +61,7 @@ export class ConsistencyPlaceEmails extends LitElement {
   declare from: string | null;
   declare lookProblem: string;
   declare shown: Shown | null;
-  /** The site's flows, when it answers them: the owner's, while their flag is on. */
+  /** The site's flows, when it answers them: the owner's. */
   declare flows: FlowsAnswer | null;
   private readonly flowsEditor = new ConsistencyEmailFlows();
   site!: SiteSummary;

@@ -1,7 +1,6 @@
 import { PAGE_INSERTIONS } from './consistency-insertions';
 import { componentDefaults, readBasicContentElement, writeBasicContentElement, type BasicContentElement } from './consistency-content';
 
-export const COMPONENT_ROUTING_FLAG = 'consistency-component-routing';
 export const COMPONENT_ROUTING_MODEL = 'jev-1.13.0';
 export const COMPONENT_ROUTING_TIMEOUT = 2500;
 const HERE = '⟦here⟧';

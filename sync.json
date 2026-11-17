@@ -14,11 +14,6 @@
         ]
       }
     },
-    "Feature flags": {
-      "runtime": {
-        "to": "shared/feature-flags-runtime"
-      }
-    },
     "Site engine": {
       "workspace": {
         "to": "packages/consistency/src/vendor/site-engine"

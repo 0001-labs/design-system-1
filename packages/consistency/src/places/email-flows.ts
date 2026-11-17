@@ -13,7 +13,7 @@
  * drawer, since it would not be sent. The site's offer, what `{{offer}}` stands for, is written above the flows, and
  * Welcome names the site's signup page.
  *
- * The owner's alone, behind `consistency-email-flows`; the Emails place shows the tab only when the flows answer.
+ * The owner's alone; the Emails place shows the tab only when the flows answer.
  */
 import { LitElement, html, nothing } from 'lit';
 import '../../../../DS1/3-unit/ds-list';

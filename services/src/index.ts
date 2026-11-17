@@ -5,7 +5,6 @@ import { appNavigation } from './app-navigation';
 import { systemSite, SYSTEM_HOST } from "./system-site";
 import { c9ySystemSite, C9Y_SYSTEM_HOST, isC9ySystemPath } from "./c9y-system-site";
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { featureFlags, manageFeatureFlags, setFeatureFlag } from "./flags";
 import { dashboard, sessionRequest, DASHBOARD_HOST, ICON_HOST } from "./dashboard";
 import { filterDocExamples, listExamples, setExample } from './doc-examples';
 import { applyDocEdit, docsSiteApi, isDocsSiteRoute } from './doc-pages';
@@ -62,12 +61,6 @@ export default {
     if (url.hostname === 'designsystem1.com' && url.pathname === '/api/dashboard/session') return dashboard(request, env);
     if (/^\/2-core\/kbd\/?$/.test(url.pathname)) return Response.redirect('https://designsystem1.com/libraries/workspace/?internal=keyboard-shortcut', 302);
     if (url.pathname === "/api/app-navigation") return appNavigation(request, env);
-    if (url.pathname === "/api/flags") return featureFlags(request, env);
-    // The release controls are in System CI's Flags matrix, behind the System login, which reads and
-    // saves them through FeatureFlagsService; the old page addresses send there.
-    if (["/flags", "/flags/", "/app/flags"].includes(url.pathname)) {
-      return new Response(null, { status: 308, headers: { Location: "https://system.0001.dev/system/ci", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } });
-    }
     if (url.hostname === ICON_HOST) return dashboard(request, env);
     if (url.pathname === "/api/libraries" || url.pathname.startsWith("/api/libraries/") || url.pathname.startsWith("/api/library-auth/")) return libraryApi(request, env);
     if (url.pathname === "/api/fonts" || url.pathname.startsWith("/api/fonts/")) return fontWorkspace(request, env);
@@ -193,10 +186,8 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-/** Private RPC only. System authenticates the owner before calling this binding. */
+/** Private RPC only: the documentation's examples. System authenticates the owner before calling this binding. */
 export class FeatureFlagsService extends WorkerEntrypoint<Env> {
-  async manage() { return manageFeatureFlags(this.env); }
-  async set(input: unknown) { return setFeatureFlag(this.env, input); }
   async listExamples() { return listExamples(this.env); }
   async setExample(input: unknown) { return setExample(this.env, input); }
 }

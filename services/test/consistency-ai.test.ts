@@ -4,7 +4,7 @@ const origin = 'https://editor.c9y.site';
 function setup(id = 'owner') {
   const run = vi.fn(async () => ({ response: 'Updated writing' }));
   const send = vi.fn(async () => Response.json({ status: 'success', value: { _id: id, email: 'jaa90@icloud.com', emailVerified: true } }));
-  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', AI: { run }, LIBRARIES:{get:vi.fn(async()=>({json:async()=>({enabled:true,audience:'owner'})}))} } as unknown as PreviewAIEnv;
+  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', AI: { run } } as unknown as PreviewAIEnv;
   return { run, env, send };
 }
 function request(body: unknown = { prompt: 'Improve this', kind: 'writing', text: 'Old writing' }, extra: Record<string, string> = {}) {
@@ -51,7 +51,7 @@ it('times out inference with a retryable failure', async () => {
 
 /*
  * Ask, on the vocabulary: a section or a page generated from a request. The judgment runs through
- * TypeSafe behind the component routing flag; without it the heuristic reads the request. The
+ * TypeSafe when its key is there; without it the heuristic reads the request. The
  * generator's answer passes `checkAskAnswer` before it is given, and a refusal answers 422.
  */
 const nativeDocument = { schema: 1, kind: 'native-page', title: 'Harbour rafts', lang: 'en', layout: { padding: 20, gap: 40 }, blocks: [
@@ -109,16 +109,15 @@ it('asks for a page: a whole document comes back checked, with the page\'s layou
   const slow = await pending;
   expect(slow.status).toBe(502); expect((await slow.json() as { error: string }).error).toBe('Ask did not get an answer. Try again.');
 });
-it('judges with TypeSafe when the key and flag are there: the intent, the kind and the pictures come from its answers', async () => {
+it('judges with TypeSafe when the key is there: the intent, the kind and the pictures come from its answers', async () => {
   const { env, send, run } = setup();
-  const get = vi.fn(async () => ({ json: async () => ({ enabled: true, audience: 'owner' }) }));
   const decide = vi.fn(async () => Response.json({ answers: { change: { type: 'noul', noul: 0.98 }, intent: { type: 'choice', choice: 'replace', confidence: 0.9, probabilities: {} }, kind: { type: 'choice', choice: 'cards', confidence: 0.85, probabilities: {} }, picture_0: { type: 'noul', noul: 0.1 }, picture_1: { type: 'noul', noul: 0.9 } } }));
   const both: typeof fetch = vi.fn(async (url, init) => String(url).startsWith("https://system.0001.dev/api/ai/typesafe/") ? decide() : (send as typeof fetch)(url, init));
-  const judgedEnv = { ...env, SYSTEM_AI_TOKEN: 'fixture-key', LIBRARIES: { get } } as unknown as PreviewAIEnv;
+  const judgedEnv = { ...env, SYSTEM_AI_TOKEN: 'fixture-key' } as unknown as PreviewAIEnv;
   run.mockResolvedValueOnce({ response: JSON.stringify({ id: 'tours', kind: 'cards', columns: 3, items: [{ title: 'Green raft', picture: { src: '/photos/logo.svg', alt: 'The mark' } }, { title: 'Sunset' }, { title: 'Quiz' }] }) });
   const response = await consistencyAI(request(askBody('section', 'Turn this into three cards with the logo')), judgedEnv, both);
   expect(await response.json()).toMatchObject({ level: 'section', intent: 'replace', kind: 'cards', block: { kind: 'cards', columns: 3 } });
-  expect(decide).toHaveBeenCalledOnce(); expect(get).toHaveBeenCalledWith('feature-flags/consistency-component-routing.json');
+  expect(decide).toHaveBeenCalledOnce();
   const init = vi.mocked(both).mock.calls.find(([url]) => String(url).startsWith('https://system.0001.dev/api/ai/typesafe/'))![1]!;
   const sent = JSON.parse(init.body as string);
   expect(sent.model).toBe('jev-1.13.0'); expect(sent.state).toMatchObject({ request: 'Turn this into three cards with the logo', level: 'section', selected: { kind: 'cards' } });
@@ -135,7 +134,6 @@ it('rejects a malformed Ask context before any inference, and needs the generato
   expect((await consistencyAI(request(askBody('section')), { ...env, AI: undefined }, send)).status).toBe(503);
 });
 
-it('gates generation before inference and withholds a draft after owner access is revoked',async()=>{
- const x=setup();vi.mocked(x.env.LIBRARIES.get).mockResolvedValue(null);expect((await consistencyAI(request(askBody('section')),x.env,x.send)).status).toBe(403);expect(x.run).not.toHaveBeenCalled();
+it('withholds a draft after owner access is revoked',async()=>{
  const y=setup();y.run.mockImplementation(async()=>{y.send.mockResolvedValue(Response.json({status:'success',value:{_id:'other',email:'jaa90@icloud.com',emailVerified:true}}));return{response:JSON.stringify(generatedHero)};});expect((await consistencyAI(request(askBody('section')),y.env,y.send)).status).toBe(403);
 });

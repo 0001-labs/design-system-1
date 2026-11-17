@@ -1,7 +1,5 @@
 import { TYPESAFE_URL } from './vendor/ai-gateway/client';
-import { FEATURE_FLAGS } from '../../shared/feature-flags';
-import { resolveFlag } from '../../shared/feature-flags-runtime/index';
-import { applyComponentDecision, componentContext, componentState, componentQuestions, COMPONENT_ROUTING_FLAG, COMPONENT_ROUTING_MODEL, COMPONENT_ROUTING_TIMEOUT, type ComponentRequest } from '../../shared/consistency-routing';
+import { applyComponentDecision, componentContext, componentState, componentQuestions, COMPONENT_ROUTING_MODEL, COMPONENT_ROUTING_TIMEOUT, type ComponentRequest } from '../../shared/consistency-routing';
 import type { ReportsEnv } from './reports';
 
 export interface ComponentRoutingEnv extends ReportsEnv { SYSTEM_AI_TOKEN?: string }
@@ -15,9 +13,6 @@ export async function routeComponentEdit(input: ComponentRequest, env: Component
   signal.addEventListener('abort', cancel, { once: true });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const work = async () => {
-    const object = await env.LIBRARIES.get(`feature-flags/${COMPONENT_ROUTING_FLAG}.json`);
-    const rules = object ? { [COMPONENT_ROUTING_FLAG]: await object.json() } : {};
-    if (!resolveFlag(FEATURE_FLAGS, COMPONENT_ROUTING_FLAG, rules, { accountId: env.REPORTS_OWNER_ID, isOwner: true }) || abort.signal.aborted) return null;
     const response = await send(TYPESAFE_URL, {
       method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: COMPONENT_ROUTING_MODEL, state: componentState(context), questions: componentQuestions(context) }),

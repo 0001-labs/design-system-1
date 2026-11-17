@@ -6,7 +6,7 @@
 // the Languages page, the README and Use with HTML, and AGENTS.md's
 // Distribution: the documentation and every page its navigation, directory and
 // sitemap name, the redirects and hosts, every file those pages load, the
-// hosted stylesheet and module, Play, System CI where /flags sends, the owner-only hosts
+// hosted stylesheet and module, Play, the owner-only hosts
 // asking to sign in, and the published package on npm and jsDelivr.
 //
 //   node scripts/e2e-blackbox.mjs                              # against https://designsystem1.com
@@ -20,7 +20,6 @@ import process from "node:process";
 
 const PUBLIC = "https://designsystem1.com";
 const PLAY = "https://play.designsystem1.com";
-const FLAGS_MATRIX = "https://system.0001.dev/system/ci";
 const ADOPTION = "https://designsystem1.com/adoption";
 const ICON = "https://icon.designsystem1.com";
 const EDITOR = "https://c9y.site";
@@ -465,14 +464,6 @@ await step("Redirects", [
         ["A moved address keeps its query", async () => expectRedirect(await request("/icons/?from=blackbox"), 308, `${APEX}/2-core/icon/?from=blackbox`)],
         ["/app goes to /app/", async () => expectRedirect(await request("/app"), 308, `${APEX}/app/`)],
         ...["/play", "/play/"].map((path) => [`${path} goes to Play`, async () => expectRedirect(await request(path), 308, `${PLAY}/`)]),
-        ...["/flags", "/flags/", "/app/flags"].map((path) => [
-          `${path} goes to System CI's Flags matrix`,
-          async () => {
-            const answer = await request(path);
-            expectRedirect(answer, 308, FLAGS_MATRIX);
-            expectPrivate(answer);
-          },
-        ]),
         ...["/reports", "/app/reports", "/reports/components"].map((path) => [
           `${path} goes to the adoption dashboard`,
           async () => {
@@ -605,10 +596,6 @@ if (PRODUCTION) {
     ["/private-app/ is not on Play", async () => expectStatus(await request(`${PLAY}/private-app/`), 404)],
   ]);
 
-  await step("Flags", [
-    ["System CI's Flags matrix, where /flags sends, asks to sign in", async () => expectRedirect(await request(FLAGS_MATRIX), 303, "https://system.0001.dev/login")],
-  ]);
-
   await step("Consistency public discovery", [
     ["Marketing robots names its sitemap", async () => {
       const answer = await request('https://consistency.site/robots.txt');
@@ -722,7 +709,6 @@ if (PRODUCTION) {
       [FONTS, "/api/fonts"],
       [PUBLIC, "/api/reports/components"],
       [PUBLIC, "/api/reports/architecture"],
-      [PUBLIC, "/api/flags"],
       [PUBLIC, "/api/app-navigation"],
       [PUBLIC, "/api/consistency/sites/01Docs/api/docs-page?path=/1-root/device/"],
     ].map(([origin, path]) => [

@@ -1,5 +1,3 @@
-import { FEATURE_FLAGS } from '../../shared/feature-flags';
-import { resolveFlag } from '../../shared/feature-flags-runtime/index';
 import { authorizeReport, type ReportsEnv } from './reports';
 import { BASE_ID, latestKey, versionKey } from './shared/keys';
 
@@ -10,12 +8,11 @@ import { BASE_ID, latestKey, versionKey } from './shared/keys';
  *   PUT  /api/base           { css, baseRev } saves a new live version
  *   POST /api/base/restore   { version } makes an earlier version live again
  *
- * Every call needs the verified owner and the `base-live-editing` flag; writes also need this
- * origin. Convex (convex/base.ts) checks the owner again and keeps every version. A version is
- * live once its sheet is in R2: `v/{n}.css` first, then `latest.css` as its byte copy, the same
- * layout libraries publish, so reading it needs neither Convex nor a session.
+ * Every call needs the verified owner; writes also need this origin. Convex (convex/base.ts)
+ * checks the owner again and keeps every version. A version is live once its sheet is in R2:
+ * `v/{n}.css` first, then `latest.css` as its byte copy, the same layout libraries publish, so
+ * reading it needs neither Convex nor a session.
  */
-export const BASE_FLAG = 'base-live-editing';
 const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Cookie, Authorization' };
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
 const fail = (code: string, message: string, status: number, details?: unknown) => json({ error: { code, message, ...(details ? { details } : {}) } }, status);
@@ -29,7 +26,6 @@ export async function baseApi(request: Request, env: ReportsEnv, ctx?: Pick<Exec
   if (route !== 'get' && request.headers.get('origin') !== new URL(request.url).origin) return fail('forbidden', 'Save from designsystem1.com.', 403);
   const denied = await authorizeReport(request, env, send);
   if (denied) return denied;
-  if (!await flagOn(env)) return fail('disabled', 'Live base editing is off.', 404);
   const authorization = request.headers.get('authorization')!;
 
   if (route === 'get') {
@@ -64,12 +60,6 @@ export async function publishBase(env: Pick<ReportsEnv, 'LIBRARIES'>, saved: Pic
   const options = { httpMetadata: { contentType: 'text/css; charset=utf-8' }, customMetadata: { version: String(saved.version), contentHash: saved.contentHash } };
   await env.LIBRARIES.put(versionKey(BASE_ID, saved.version), saved.sheet, options);
   await env.LIBRARIES.put(latestKey(BASE_ID), saved.sheet, options);
-}
-
-async function flagOn(env: ReportsEnv) {
-  const object = await env.LIBRARIES.get(`feature-flags/${BASE_FLAG}.json`);
-  const rules = object ? { [BASE_FLAG]: await object.json() } : {};
-  return resolveFlag(FEATURE_FLAGS, BASE_FLAG, rules, { accountId: env.REPORTS_OWNER_ID, isOwner: true });
 }
 
 async function call(env: ReportsEnv, send: typeof fetch, authorization: string, kind: 'query' | 'mutation', path: string, args: unknown): Promise<{ value: unknown } | { error: Response }> {

@@ -1,14 +1,11 @@
 import { TYPESAFE_URL } from './vendor/ai-gateway/client';
-import {consistencyAskEnabled} from './consistency-ask-access';
 /** The private editor's inference transport. Provider credentials never reach the browser. */
 import { authorizeReport, type ReportsEnv } from './reports';
 import { sessionRequest } from './dashboard';
 import { isConsistencyHost } from './consistency';
 import { routeComponentEdit, type ComponentRoutingEnv } from './consistency-routing';
 import { systemOwner, type OwnerEnv } from './consistency-owner';
-import { FEATURE_FLAGS } from '../../shared/feature-flags';
-import { resolveFlag } from '../../shared/feature-flags-runtime/index';
-import { COMPONENT_ROUTING_FLAG, COMPONENT_ROUTING_MODEL, COMPONENT_ROUTING_TIMEOUT } from '../../shared/consistency-routing';
+import { COMPONENT_ROUTING_MODEL, COMPONENT_ROUTING_TIMEOUT } from '../../shared/consistency-routing';
 import { ASK_LEVELS, ASK_TIMEOUTS, askHeuristic, askJudgmentQuestions, askPrompt, checkAskAnswer, readAskJudgment, type AskDocument, type AskInput, type AskJudgment, type AskLevel } from '../../shared/consistency-ask';
 export interface PreviewAIEnv extends ReportsEnv, ComponentRoutingEnv, OwnerEnv { AI?: Ai }
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -37,12 +34,10 @@ export async function consistencyAI(request: Request, env: PreviewAIEnv, send: t
   try { input = JSON.parse(await new Blob(chunks).text()); } catch { return error('Invalid JSON.', 400); }
   if (!input || typeof input !== 'object' || typeof input.prompt !== 'string' || !input.prompt.trim() || input.prompt.length > 4000 || !['writing', 'diagram', ...ASK_LEVELS].includes(String(input.kind))) return error('Provide a prompt and editing kind.', 400);
   if ((ASK_LEVELS as readonly string[]).includes(String(input.kind))) {
-    if(!await consistencyAskEnabled(env))return error('Ask is not enabled.',403);
     const answer=await ask(request,input,env,send);
     if(request.signal.aborted)return error('The edit was cancelled.',408);
     const revoked=(await systemOwner(request,env))?null:await authorizeReport(sessionRequest(new Request(request.url,{headers:request.headers})),env,send);
-    if(revoked)return revoked;
-    return await consistencyAskEnabled(env)?answer:error('Ask is not enabled.',403);
+    return revoked??answer;
   }
   for (const name of ['text', 'before', 'after', 'document']) if (input[name] !== undefined && typeof input[name] !== 'string') return error('Invalid document context.', 400);
   const routingStarted = Date.now();
@@ -116,7 +111,7 @@ async function ask(request: Request, input: Record<string, unknown>, env: Previe
   if (checked.level === 'section') return Response.json({ level, intent: judgment.intent, ...(judgment.kind ? { kind: judgment.kind } : {}), block: checked.block }, { headers: responseHeaders });
   return Response.json({ level, intent: 'rewrite', document: checked.document }, { headers: responseHeaders });
 }
-/** The judgment, when the TypeSafe key and the flag are there; null when it is off, slow, failed or unsure. Caller has authorized the owner. */
+/** The judgment, when the TypeSafe key is there; null when it is missing, slow, failed or unsure. Caller has authorized the owner. */
 async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetch, signal: AbortSignal): Promise<AskJudgment | null> {
   if (!env.SYSTEM_AI_TOKEN || signal.aborted) return null;
   const abort = new AbortController();
@@ -124,9 +119,6 @@ async function askJudgment(input: AskInput, env: PreviewAIEnv, send: typeof fetc
   signal.addEventListener('abort', cancel, { once: true });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const work = async () => {
-    const object = await env.LIBRARIES.get(`feature-flags/${COMPONENT_ROUTING_FLAG}.json`);
-    const rules = object ? { [COMPONENT_ROUTING_FLAG]: await object.json() } : {};
-    if (!resolveFlag(FEATURE_FLAGS, COMPONENT_ROUTING_FLAG, rules, { accountId: env.REPORTS_OWNER_ID, isOwner: true }) || abort.signal.aborted) return null;
     const { state, questions } = askJudgmentQuestions(input);
     const response = await send(TYPESAFE_URL, {
       method: 'POST', headers: { authorization: `Bearer ${env.SYSTEM_AI_TOKEN}`, 'content-type': 'application/json' },

@@ -151,13 +151,13 @@ test("restoring a version makes it live again and reloads the draft", async () =
 });
 
 test("a base that cannot be read says why", async () => {
-  replies.push(() => ({ status: 404, body: { error: { code: "disabled", message: "Live base editing is off." } } }));
+  replies.push(() => ({ status: 502, body: { error: { code: "upstream_error", message: "The base could not be reached." } } }));
   const h = host();
   const draft = new BaseDraft(h, { template: TEMPLATE, fetch: send as unknown as typeof fetch });
   h.controllers[0]!.hostConnected!();
   await settle();
   expect(draft.base).toBeUndefined();
-  expect(draft.failure).toBe("Live base editing is off.");
+  expect(draft.failure).toBe("The base could not be reached.");
   draft.edit("--ds-button-size", "24px");
   expect(draft.css).toBe("");
 });

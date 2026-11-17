@@ -1,8 +1,8 @@
 /**
  * A site's meetings, under Site settings: the Google account whose calendar takes them, when they are taken, the
  * site's own booking page and the meetings to come. The platform keeps all of it in the site's object
- * (`Consistency/platform/worker/meetings.ts`) and answers `meetings` to the owner alone while it is new and
- * `consistency-meetings` is on; anyone else gets nothing, and this draws nothing.
+ * (`Consistency/platform/worker/meetings.ts`) and answers `meetings` to the owner alone; anyone else gets nothing,
+ * and this draws nothing.
  *
  * Connecting leaves the app for Google's consent and comes back through `google-return.ts`; the code Google gave is
  * handed to the site here. Every change saves at once against the revision last read.

@@ -3,19 +3,18 @@ import { consistencyAI, type PreviewAIEnv } from '../src/consistency-ai';
 import { componentContext, componentQuestions } from '../../shared/consistency-routing';
 const origin = 'https://editor.c9y.site';
 const body = { prompt: 'Add a button', kind: 'writing', document: '# Keep\n\n⟦here⟧' };
-function setup(enabled = true, owner = true) {
+function setup(owner = true) {
   const run = vi.fn(async () => ({ response: 'Fallback writing' }));
-  const get = vi.fn(async () => ({ json: async () => ({ enabled, audience: 'owner' }) }));
   const questions = componentQuestions(componentContext(body)!);
   const answer = (criteria: Record<string, string>, choice: string) => ({ type: 'choice', choice, confidence: 1, probabilities: Object.fromEntries(Object.keys(criteria).map(key => [key, key === choice ? 1 : 0])) });
   const decide = vi.fn(async (_url?: RequestInfo | URL, _init?: RequestInit) => Response.json({ answers: { change: { type: 'noul', noul: 1 }, action: answer(questions.action.criteria, 'insert_button') } }));
   const send: typeof fetch = vi.fn(async (url, init) => String(url).startsWith('https://system.0001.dev/api/ai/typesafe/') ? decide(url, init) : Response.json({ status: 'success', value: { _id: owner ? 'owner' : 'another', email: 'jaa90@icloud.com', emailVerified: true } }));
-  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', SYSTEM_AI_TOKEN: 'fixture-key', LIBRARIES: { get }, AI: { run } } as unknown as PreviewAIEnv;
+  const env = { REPORTS_OWNER_ID: 'owner', REPORTS_AUTH_URL: 'https://example.convex.cloud', SYSTEM_AI_TOKEN: 'fixture-key', AI: { run } } as unknown as PreviewAIEnv;
   const request = new Request(origin + '/api/consistency/ai', { method: 'POST', headers: { origin, 'content-type': 'application/json', cookie: '__Host-ds1-dashboard=session' }, body: JSON.stringify(body) });
-  return { request, env, send, get, decide, run };
+  return { request, env, send, decide, run };
 }
 afterEach(() => vi.useRealTimers());
-it('uses an authenticated enabled decision to insert the existing component without generation', async () => {
+it('uses an authenticated decision to insert the existing component without generation', async () => {
   const { request, env, send, decide, run } = setup();
   const response = await consistencyAI(request, env, send);
   expect(await response.json()).toEqual({ insert: '```c9y-button\n{"label":"Get in touch","secondary":false}\n```' });
@@ -25,18 +24,16 @@ it('uses an authenticated enabled decision to insert the existing component with
   expect(init.redirect).toBe('manual');
   expect(JSON.parse(init.body as string).state).toMatchObject({ request: 'Add a button', insertionAvailable: true, components: [] });
 });
-it('honours explicit off and missing credentials without a decision call', async () => {
-  for (const key of [true, false]) {
-    const { request, env, send, decide, run } = setup(false);
-    if (!key) delete env.SYSTEM_AI_TOKEN;
-    expect(await (await consistencyAI(request, env, send)).json()).toEqual({ document: 'Fallback writing' });
-    expect(decide).not.toHaveBeenCalled(); expect(run).toHaveBeenCalledOnce();
-  }
+it('honours missing credentials without a decision call', async () => {
+  const { request, env, send, decide, run } = setup();
+  delete env.SYSTEM_AI_TOKEN;
+  expect(await (await consistencyAI(request, env, send)).json()).toEqual({ document: 'Fallback writing' });
+  expect(decide).not.toHaveBeenCalled(); expect(run).toHaveBeenCalledOnce();
 });
-it('denies a nonowner before flag storage or decision inference', async () => {
-  const { request, env, send, get, decide, run } = setup(true, false);
+it('denies a nonowner before decision inference', async () => {
+  const { request, env, send, decide, run } = setup(false);
   expect((await consistencyAI(request, env, send)).status).toBe(403);
-  expect(get).not.toHaveBeenCalled(); expect(decide).not.toHaveBeenCalled(); expect(run).not.toHaveBeenCalled();
+  expect(decide).not.toHaveBeenCalled(); expect(run).not.toHaveBeenCalled();
 });
 it('falls back on malformed responses and provider failures without leaking credentials', async () => {
   for (const failure of [Response.json({ answers: {} }), new Response('private provider details', { status: 500 })]) {

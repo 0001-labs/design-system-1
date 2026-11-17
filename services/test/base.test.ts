@@ -1,15 +1,14 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { baseApi, BASE_FLAG } from '../src/base';
+import { baseApi } from '../src/base';
 import type { ReportsEnv } from '../src/reports';
 import { parseArtifactPath, parseWritePath } from '../src/shared/keys';
 
 const owner = { _id: 'owner', email: 'jaa90@icloud.com', emailVerified: true };
 const saved = { css: ':root{}', rev: 2, version: 2, updatedAt: 1, sheet: '/* base */\n:root {\n}\n', contentHash: 'abc', unchanged: false };
 
-function setup({ flag = { enabled: true, audience: 'owner', accountIds: [] } as unknown, identity = owner as unknown, backend = (path: string): unknown => ({ status: 'success', value: path === 'base:history' ? [] : path === 'base:get' ? null : saved }) } = {}) {
+function setup({ identity = owner as unknown, backend = (path: string): unknown => ({ status: 'success', value: path === 'base:history' ? [] : path === 'base:get' ? null : saved }) } = {}) {
   const put = vi.fn().mockResolvedValue({});
-  const get = vi.fn(async (key: string) => key === `feature-flags/${BASE_FLAG}.json` && flag ? { json: async () => flag } : null);
-  const env = { LIBRARIES: { get, put }, REPORTS_AUTH_URL: 'https://example.convex.cloud', REPORTS_OWNER_ID: 'owner' } as unknown as ReportsEnv;
+  const env = { LIBRARIES: { put }, REPORTS_AUTH_URL: 'https://example.convex.cloud', REPORTS_OWNER_ID: 'owner' } as unknown as ReportsEnv;
   const send = vi.fn(async (_url: unknown, init?: RequestInit) => {
     const { path } = JSON.parse(String(init?.body));
     return Response.json(path === 'users:current' ? { status: 'success', value: identity } : backend(path));
@@ -20,14 +19,12 @@ const request = (method = 'GET', body?: unknown, path = '/api/base', origin = 'h
   new Request(`https://designsystem1.com${path}`, { method, headers: { authorization: 'Bearer token', origin, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
 
 describe('base editing', () => {
-  it('needs a session, the owner and the flag before it reaches the base', async () => {
+  it('needs a session and the owner before it reaches the base', async () => {
     const anonymous = setup();
     expect((await baseApi(new Request('https://designsystem1.com/api/base'), anonymous.env, undefined, anonymous.send)).status).toBe(401);
     const other = setup({ identity: { ...owner, _id: 'someone' } });
     expect((await baseApi(request(), other.env, undefined, other.send)).status).toBe(403);
-    const off = setup({ flag: null });
-    expect((await baseApi(request(), off.env, undefined, off.send)).status).toBe(404);
-    for (const { send } of [anonymous, other, off]) expect(send.mock.calls.map(call => JSON.parse(String(call[1]?.body)).path)).not.toContain('base:get');
+    for (const { send } of [anonymous, other]) expect(send.mock.calls.map(call => JSON.parse(String(call[1]?.body)).path)).not.toContain('base:get');
   });
 
   it('reads the base and its history for the owner', async () => {
