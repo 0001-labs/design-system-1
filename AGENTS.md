@@ -2,6 +2,8 @@
 
 > **Read first:** `/Users/joachim/.agents/harness-instructions.md` (harness instructions), `/Users/joachim/0001/AGENTS.md` (0001). This file wins where they differ.
 
+Ezo list: [`01Dgsn`](https://ezo.gs/01Dgsn) (Design system 1), where this project's documentation lives.
+
 Component-based design system with Lit Web Components.
 
 ## Web interface
