@@ -43,3 +43,25 @@ test("presses typed into a field never count", () => {
   expect(gridShown()).toBe(false);
   field.remove();
 });
+
+test("the grid follows a filled page's scrolling area inside an app frame's shadow root", () => {
+  const host = document.body.appendChild(document.createElement("ds-page"));
+  const area = host.attachShadow({ mode: "open" }).appendChild(document.createElement("div"));
+  area.setAttribute("data-ds-grid-scroll", "");
+  let scrolled = 0;
+  Object.defineProperties(area, {
+    getBoundingClientRect: { value: () => ({ left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 }) },
+    getClientRects: { value: () => [{}] },
+    clientWidth: { value: 100 },
+    clientHeight: { value: 100 },
+    scrollTop: { get: () => scrolled },
+  });
+  press("g", 5);
+  const region = () => [...document.body.children].map(el => el.shadowRoot?.querySelector<HTMLElement>("[data-ds-grid-region]")).find(Boolean);
+  expect(region()).toBeTruthy();
+  scrolled = 40;
+  area.dispatchEvent(new Event("scroll"));
+  expect(region()!.style.getPropertyValue("--ds-grid-scroll-y")).toBe("40px");
+  press("g", 5);
+  host.remove();
+});

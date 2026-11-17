@@ -6,6 +6,12 @@ import { initConstraintShortcut } from './constraint-panel';
 export const GRID_PRESSES = 5;
 let canTouchToggle: (() => boolean) | undefined;
 
+function scrollRegions(root: ParentNode, found: HTMLElement[] = []): HTMLElement[] {
+  root.querySelectorAll<HTMLElement>('[data-ds-grid-scroll]').forEach(element => found.push(element));
+  root.querySelectorAll<HTMLElement>('ds-app, ds-page').forEach(host => { if (host.shadowRoot) scrollRegions(host.shadowRoot, found); });
+  return found;
+}
+
 /**
  * Five presses of G toggle the grid and five of L inspect the layout, on every
  * page that loads this module and for everyone who reads it: never put them
@@ -85,7 +91,7 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
     overlay.style.setProperty("--ds-grid-scroll-y", `${window.scrollY}px`);
     const present = new Set<HTMLElement>();
     const holes: string[] = [];
-    document.querySelectorAll<HTMLElement>('[data-ds-grid-scroll]').forEach(element => {
+    scrollRegions(document).forEach(element => {
       const rect = element.getBoundingClientRect();
       let left = rect.left + element.clientLeft, top = rect.top + element.clientTop;
       let right = left + element.clientWidth, bottom = top + element.clientHeight;
@@ -99,7 +105,7 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       if (right <= left || bottom <= top || !element.getClientRects().length) return;
       present.add(element);
       let grid = scopedGrids.get(element);
-      if (!grid) { grid = document.createElement('div'); grid.className = 'grid'; grid.setAttribute('data-ds-grid-region', ''); shadow.append(grid); scopedGrids.set(element, grid); resize.observe(element); }
+      if (!grid) { grid = document.createElement('div'); grid.className = 'grid'; grid.setAttribute('data-ds-grid-region', ''); shadow.append(grid); scopedGrids.set(element, grid); resize.observe(element); element.addEventListener('scroll', updatePosition, { passive: true }); }
       const style = getComputedStyle(element);
       for (const property of ['--ds-grid-unit', '--unit', '--sf', '--ds-grid-color', '--ds-grid-origin-x', '--ds-grid-origin-y', '--ds-grid-line-offset']) {
         const value = style.getPropertyValue(property); if (value) grid.style.setProperty(property, value); else grid.style.removeProperty(property);
@@ -110,7 +116,7 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       // Opposite winding makes each viewport a hole in the page grid.
       holes.push(`M${left},${top}V${bottom}H${right}V${top}Z`);
     });
-    scopedGrids.forEach((grid, element) => { if (!present.has(element)) { resize.unobserve(element); grid.remove(); scopedGrids.delete(element); } });
+    scopedGrids.forEach((grid, element) => { if (!present.has(element)) { resize.unobserve(element); element.removeEventListener('scroll', updatePosition); grid.remove(); scopedGrids.delete(element); } });
     pageGrid.style.clipPath = holes.length ? `path("M0,0H${innerWidth}V${innerHeight}H0Z ${holes.join(' ')}")` : '';
   };
   const setVisible = (visible: boolean) => {
@@ -129,7 +135,7 @@ export function initGridShortcut(options: { canTouchToggle?: () => boolean } = {
       window.removeEventListener('scroll', updatePosition);
       window.removeEventListener('resize', updatePosition);
       regionsChanged.disconnect(); resize.disconnect();
-      scopedGrids.forEach(grid => grid.remove()); scopedGrids.clear(); pageGrid.style.clipPath = '';
+      scopedGrids.forEach((grid, element) => { element.removeEventListener('scroll', updatePosition); grid.remove(); }); scopedGrids.clear(); pageGrid.style.clipPath = '';
     }
     window.dispatchEvent(new CustomEvent("design-system-grid-changed", { detail: { visible } }));
   };

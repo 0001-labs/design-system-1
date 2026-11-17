@@ -326,10 +326,10 @@ export class Page extends LitElement {
             <ds-icon type="close" size="large" aria-hidden="true"></ds-icon>
           </button></div>
         </dialog>
-        <div class="area nav" part="nav" data-area="nav"><slot name="nav"></slot></div>${this.resizer()}${this.layout === "inspector" ? this.resizer("aside") : undefined}
+        <div class="area nav" part="nav" data-area="nav" ?data-ds-grid-scroll=${this.fill}><slot name="nav"></slot></div>${this.resizer()}${this.layout === "inspector" ? this.resizer("aside") : undefined}
         <div class="area header" part="header" data-area="header"><slot name="header"></slot></div>
-        <div class="area main" part="main" data-area="main" role=${ifDefined(this.landmark ? "main" : undefined)}><slot @slotchange=${this.syncLandmark}></slot></div>
-        <div class="area aside" part="aside" data-area="aside"><slot name="aside"></slot></div>
+        <div class="area main" part="main" data-area="main" ?data-ds-grid-scroll=${this.fill} role=${ifDefined(this.landmark ? "main" : undefined)}><slot @slotchange=${this.syncLandmark}></slot></div>
+        <div class="area aside" part="aside" data-area="aside" ?data-ds-grid-scroll=${this.fill}><slot name="aside"></slot></div>
         <div class="area footer" part="footer" data-area="footer"><slot name="footer"></slot></div>
       </div>
     `;
