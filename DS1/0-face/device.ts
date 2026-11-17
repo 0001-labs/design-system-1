@@ -176,20 +176,13 @@ export function initDeviceDetection(): DeviceInfo {
   // Update scaling factor (handles --sf CSS property)
   updateScalingFactor();
 
-  // Log device info
   const factor = scalingFactor.get();
-  if (deviceInfo.isMobile) {
-    console.log(
-      `[Design system 1] Mobile device detected - ${deviceInfo.deviceType} (${deviceInfo.screenWidth}x${deviceInfo.screenHeight}), scaling factor: ${factor.toFixed(2)}`
-    );
-  } else {
-    console.log(
-      `[Design system 1] Desktop device detected (${deviceInfo.screenWidth}x${deviceInfo.screenHeight})`
-    );
-  }
-
-  // Log additional details in development mode
   if (typeof window !== "undefined" && (window as any).DS_ONE_DEBUG) {
+    console.log(
+      deviceInfo.isMobile
+        ? `[Design system 1] Mobile device detected - ${deviceInfo.deviceType} (${deviceInfo.screenWidth}x${deviceInfo.screenHeight}), scaling factor: ${factor.toFixed(2)}`
+        : `[Design system 1] Desktop device detected (${deviceInfo.screenWidth}x${deviceInfo.screenHeight})`
+    );
     console.log("[Design system 1] Device Info:", {
       type: deviceInfo.deviceType,
       isMobile: deviceInfo.isMobile,

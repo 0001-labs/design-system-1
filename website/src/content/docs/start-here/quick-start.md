@@ -63,6 +63,6 @@ The [HTML downloads](/start-here/examples/html/) use this same component library
 
 The URLs above follow the current documentation release and require a connection. For a pinned or offline copy, use the [package](/getting-started/installation/) and host its bundle, referenced JavaScript chunks, stylesheets and font files together. Preserve their relative paths.
 
-A product that copies shared source with Sync 1 takes `bundle` under Design system 1 in its `sync.json` (`{ "bundle": { "to": "assets/ds1" } }`). Design system 1 is built first, and the copy is `design-system-1.js` with every chunk it loads, now or on demand, beside it, in a folder the copy owns: a chunk a later build renames is removed with the next `sync1`. Load `design-system-1.js` as a module script; the stylesheets and faces come through the `root` or `tokens` exports.
+A product that copies shared source with Sync 1 takes `bundle` under Design system 1 in its `sync.json` (`{ "bundle": { "to": "assets/ds1" } }`). Design system 1 is built first, and the copy is `design-system-1.js` with every chunk it loads, now or on demand, beside it, in a folder the copy owns: a chunk a later build renames is removed with the next `sync1`. `"entry": "components.js"` serves the entry under a name of the product's own. Load it as a module script; the stylesheets and faces come through the `root` or `tokens` exports.
 
 React apps use the adapters over these same Lit components. Server-rendered apps register the components in the browser.

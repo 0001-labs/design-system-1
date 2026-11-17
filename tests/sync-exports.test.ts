@@ -258,6 +258,11 @@ test.skipIf(!existsSync(join(root, built)))('the bundle export carries the built
   // Only what the bundle reaches: another entry's copy of Lit stays out.
   const lits = [...copy.keys()].filter(file => file.startsWith('lit-'));
   expect(lits).toHaveLength(1);
+  const named = exports.bundle.files({ read, options: { entry: 'components.js' }, exists: (path: string) => existsSync(join(root, path)) } as never) as Map<string, string>;
+  expect(named.has('components.js')).toBe(true);
+  expect(named.has('design-system-1.js')).toBe(false);
+  expect([...named.keys()].filter(file => file !== 'components.js')).toEqual([...copy.keys()].filter(file => file !== 'design-system-1.js'));
+  expect(() => exports.bundle.files({ read, options: { entry: '../x.js' }, exists: () => true } as never)).toThrow(/entry/);
 });
 
 test('the library-prepare export writes the component tokens after a library\'s own, with no dependencies', async () => {

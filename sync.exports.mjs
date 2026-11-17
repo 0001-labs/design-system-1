@@ -108,11 +108,11 @@ function moduleGraph(read, entry) {
  * The built bundle and every chunk it reaches, static and on demand, by name beside it, with the
  * lines pointing at source maps taken out (the maps are not copied).
  */
-function bundleFiles(read, entry) {
+function bundleFiles(read, entry, as = 'design-system-1.js') {
   const dist = posix.dirname(entry);
   const strip = text => String(text).replace(/\n?\/\/# sourceMappingURL=\S*\s*$/, '\n');
   const files = new Map();
-  const queue = [[posix.basename(entry), 'design-system-1.js']];
+  const queue = [[posix.basename(entry), as]];
   while (queue.length) {
     const [name, as] = queue.shift();
     if (files.has(as)) continue;
@@ -184,10 +184,11 @@ export default {
     bundle: {
       owned: true,
       build: ({ run }) => run('vp', ['run', 'build:bundle']),
-      files({ read, exists }) {
+      files({ read, exists, options }) {
         const entry = 'dist/design-system-1.bundle.min.js';
         if (!exists(entry)) throw new Error('Design system 1 is not built: run vp run build:bundle');
-        return bundleFiles(read, entry);
+        if (options.entry !== undefined && !/^[a-z0-9][a-z0-9.-]*\.js$/.test(String(options.entry))) throw new Error('"entry" is a file name ending in .js: "entry": "components.js"');
+        return bundleFiles(read, entry, options.entry);
       },
     },
     /**
